@@ -1075,7 +1075,7 @@ class AccreditationAdminViewContent
                             <?php endif ?>
                         </div>
                         <?php if ($edit && !$editorMode) : ?>
-                            <a href="./editor?id=<?php echo $el->id ?>">編集</a>
+                            <a href="<?php echo "./../{$el->type}/editor?id={$el->id}" ?>">編集</a>
                         <?php endif ?>
                     </div>
                     <p class="question_p"><?php echo $el->question ?></p>
