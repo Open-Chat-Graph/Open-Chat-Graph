@@ -146,6 +146,7 @@ class SyncOpenChat
         $this->rankingBanUpdater->updateRankingBanTable();
         $this->acrreditationCacheUpdater->updateStaticData();
         $this->recommendUpdater->updateRecommendTables();
+        purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
     }
 
     private function hourlyImageUpdate()
