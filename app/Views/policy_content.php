@@ -12,7 +12,6 @@
         <?php echo json_encode(['openChatId' => 0, 'baseUrl' => url()], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
     </script>
     <?php viewComponent('site_header') ?>
-    ?>
     <main style="overflow: hidden;">
         <article class="terms">
             <h1 style="letter-spacing: 0px;">オプチャグラフについて</h1>
