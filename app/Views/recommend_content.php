@@ -143,10 +143,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <hr class="hr-bottom">
-      <aside class="list-aside recommend-ranking-bottom">
-        <?php if (isset($tags) && $tags) : ?>
-          <?php viewComponent('recommend_content_tags', compact('tags')) ?>
+      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0;">
+        <?php if (isset($recommend)) : ?>
+          <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
           <hr class="hr-bottom" style="width: 100%;">
         <?php endif ?>
         <a style="margin: 1rem 0 0 0;" class="readMore-btn top-ranking-readMore unset" href="<?php echo url('ranking') ?>">
@@ -188,7 +187,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       }
     });
   </script>
-  
+
   <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
