@@ -1088,8 +1088,10 @@ class AccreditationAdminViewContent
                         <?php endforeach ?>
                     </ol>
 
-                    <p class="question_p"><b>正解: <?php echo strtoupper($el->answersArray['correct'] ?? 'Error: 配列の要素がありません') ?></b></p>
-                    <p class="question_p"><?php echo $el->explanationArray['explanation'] ?? 'Error: 配列の要素がありません(explanationArray)' ?></p>
+                    <?php if ($this->controller->isAdmin || $el->user_id === $this->controller->myId) : ?>
+                        <p class="question_p"><b>正解: <?php echo strtoupper($el->answersArray['correct'] ?? 'Error: 配列の要素がありません') ?></b></p>
+                        <p class="question_p"><?php echo $el->explanationArray['explanation'] ?? 'Error: 配列の要素がありません(explanationArray)' ?></p>
+                    <?php endif ?>
 
                     <?php if (!isset($el->explanationArray['source_title'], $el->explanationArray['source_url'])) : ?>
                         <p class="question_p">Error: 配列の要素がありません(explanationArray)</p>
