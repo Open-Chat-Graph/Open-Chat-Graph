@@ -79,7 +79,7 @@ class QuizApiService
     /**
      *  @return Question[]
      */
-    function buldSampleQuestions(): array
+    function buildSampleQuestions(): array
     {
         return [new Question(
             'サンプル問題(出題中の問題無し) オープンチャット利用時に守るべきことは？',
@@ -141,7 +141,7 @@ class QuizApiService
         if ($dbDtos) {
             $questions = $this->buildQuestions($dbDtos);
         } elseif (!$dbDtos && $type === ExamType::Bronze) {
-            $questions = $this->buldSampleQuestions();
+            $questions = $this->buildSampleQuestions();
         } else {
             return false;
         }

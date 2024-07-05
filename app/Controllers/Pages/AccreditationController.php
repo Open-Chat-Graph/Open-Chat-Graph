@@ -43,6 +43,15 @@ class AccreditationController
      */
     public array $questionList = [];
 
+    function homeLogin(CookieLineUserLogin $login)
+    {
+        $userId = $login->login();
+        if ($userId)
+            return redirect("accreditation/bronze/home", 307);
+
+        return view('accreditation/home_login');
+    }
+
     function route(
         CookieLineUserLogin $login,
         AccreditationUserModel $accreditationUserModel,
@@ -52,7 +61,7 @@ class AccreditationController
         int $id,
     ) {
         $type = ExamType::tryFrom($examType);
-        if (!$type || !method_exists($this, $pageType))
+        if (!$type || $pageType === 'homelogin' || !method_exists($this, $pageType))
             throw new NotFoundException;
 
         $this->type = $type;
@@ -115,15 +124,6 @@ class AccreditationController
     function login(array $controller)
     {
         return view('accreditation/login', $controller);
-    }
-
-    function homeLogin(CookieLineUserLogin $login)
-    {
-        $userId = $login->login();
-        if ($userId)
-            return redirect("accreditation/bronze/home", 307);
-
-        return view('accreditation/home_login');
     }
 
     function editor(array $controller)
