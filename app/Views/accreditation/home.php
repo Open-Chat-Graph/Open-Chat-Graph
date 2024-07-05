@@ -182,25 +182,25 @@ $view = new AccreditationAdminViewContent($controller);
 
         </div>
         <hr>
-        <a href="/accreditation" target="_blank" style="font-size: 16px; font-weight: bold; color: #1558d6;">オプチャ検定｜練習問題</a>
+        <a href="/accreditation" target="_blank" style="font-size: 16px; font-weight: bold; color: #1558d6;">オプチャ検定｜公式サイト</a>
         <div style="display: flex; gap: 24px; margin-top: 1rem; flex-wrap: wrap; align-items: center;">
             <small style="word-break: keep-all; text-wrap: nowrap; margin-right: -10px">シェア</small>
 
-            <div class="share-menu-item unset" onclick="copyUrl('LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜練習問題\nhttps://openchat-review.me/accreditation')">
+            <div class="share-menu-item unset" onclick="copyUrl('LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜公式サイト\nhttps://openchat-review.me/accreditation')">
                 <span class="copy-btn-icon share-menu-icon copy"></span>
             </div>
-            <a class="share-menu-item unset" href="https://twitter.com/intent/tweet?url=<?php echo urlencode('https://openchat-review.me/accreditation') ?>&text=<?php echo urlencode("LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜練習問題\n") ?>" rel="nofollow noopener" target="_blank" title="ポスト">
+            <a class="share-menu-item unset" href="https://twitter.com/intent/tweet?url=<?php echo urlencode('https://openchat-review.me/accreditation') ?>&text=<?php echo urlencode("LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜公式サイト\n") ?>" rel="nofollow noopener" target="_blank" title="ポスト">
                 <span class="share-menu-icon-twitter share-menu-icon"></span>
             </a>
 
-            <a class="share-menu-item unset" href="http://line.me/R/msg/text/?<?php echo urlencode("LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜練習問題\nhttps://openchat-review.me/accreditation") ?>" rel="nofollow noopener" target="_blank" title="LINEで送る">
+            <a class="share-menu-item unset" href="http://line.me/R/msg/text/?<?php echo urlencode("LINEオープンチャットを快適に利用できる知識を楽しく学ぼう！\nオプチャ検定｜公式サイト\nhttps://openchat-review.me/accreditation") ?>" rel="nofollow noopener" target="_blank" title="LINEで送る">
                 <span class="share-menu-icon-line share-menu-icon"></span>
             </a>
         </div>
         <br>
 
         <details>
-            <summary style="width: fit-content; font-size: 13px;">練習問題のページ訪問回数を見る</summary>
+            <summary style="width: fit-content; font-size: 13px;">オプチャ検定のページ訪問回数を見る</summary>
             <br>
             <div class="graph-ifame">
                 <iframe loading=lazy src="https://lookerstudio.google.com/embed/reporting/12373f52-b8f2-42d1-9935-d2ffd6bebfa2/page/usU4D" frameborder="0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
