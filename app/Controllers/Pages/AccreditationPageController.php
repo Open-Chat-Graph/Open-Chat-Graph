@@ -32,7 +32,7 @@ class AccreditationPageController
         $_argDto_silver = $quizApiService->getTopic(ExamType::Silver, 20, 160);
         $_argDto_gold = $quizApiService->getTopic(ExamType::Gold, 30, 240);
 
-        $title = 'オプチャ検定｜練習問題';
+        $title = 'オプチャ検定｜公式サイト';
         $description = 'オプチャ検定は、ガイドラインやルール、管理方法などについての知識を深める場所です。LINEオープンチャットを利用する際に必要な情報を楽しく学ぶことができます。';
         $ogp = fileUrl("assets/quiz-ogp.png");
         $canonical = url("accreditation");
