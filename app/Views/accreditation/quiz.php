@@ -48,7 +48,7 @@
         <?php endif ?>
         <?php if (isset($_argDto_gold)) : ?>
             <script type="application/json" id="arg-dto-gold">
-                <?php //echo json_encode($_argDto_gold, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); 
+                <?php echo json_encode($_argDto_gold, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); 
                 ?>
             </script>
         <?php endif ?>
