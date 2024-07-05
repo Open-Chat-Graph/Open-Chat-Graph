@@ -28,7 +28,7 @@ class AccreditationPageController
         if ($id)
             return $this->singleQuiz($quizApiService, $id, $_css, $_js);
 
-        $_argDto = $quizApiService->getTopic(ExamType::Bronze, 10, 100);
+        $_argDto = $quizApiService->getTopic(ExamType::Bronze, 10, 90);
         $_argDto_silver = $quizApiService->getTopic(ExamType::Silver, 20, 120);
         $_argDto_gold = $quizApiService->getTopic(ExamType::Gold, 30, 180);
 
