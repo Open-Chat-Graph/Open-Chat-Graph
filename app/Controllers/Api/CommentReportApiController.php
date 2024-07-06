@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
+use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Enum\CommentLogType;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\Admin\AdminTool;
@@ -15,6 +16,7 @@ use App\Services\Auth\GoogleReCaptcha;
 class CommentReportApiController
 {
     function index(
+        CommentPostRepositoryInterface $commentPostRepository,
         CommentListRepositoryInterface $commentListRepository,
         CommentLogRepositoryInterface $commentLogRepository,
         AuthInterface $auth,
@@ -25,6 +27,10 @@ class CommentReportApiController
     ) {
         $score = $googleReCaptcha->validate($token, 0.5);
         $report_user_id = $auth->loginCookieUserId();
+
+        if ($commentPostRepository->getBanUser($report_user_id, getIP())) {
+            return response(['success' => false]);
+        }
 
         $comment = $commentListRepository->findCommentById($comment_id);
         if (!$comment) {

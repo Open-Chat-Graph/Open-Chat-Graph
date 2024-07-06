@@ -10,7 +10,8 @@ class CommentPostApiArgs
         public string $user_id,
         public int $open_chat_id,
         public string $name,
-        public string $text
+        public string $text,
+        public int $flag,
     ) {
     }
 }

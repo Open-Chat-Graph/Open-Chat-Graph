@@ -202,8 +202,49 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 .catch(error => console.error('エラー', error))
         }
 
+        let lastComment = ''
+
+        function getCookieValue(key) {
+            const cookies = document.cookie.split(';')
+            const foundCookie = cookies.find(
+                (cookie) => cookie.split('=')[0].trim() === key.trim()
+            )
+            if (foundCookie) {
+                const cookieValue = decodeURIComponent(foundCookie.split('=')[1])
+                return cookieValue
+            }
+            return ''
+        }
+
+        function fetchComment(name) {
+            const cookieValue = getCookieValue(name)
+            if (!cookieValue) {
+                return
+            }
+
+            const comment = document.getElementById('recent_comment')
+
+            fetch('recent-comment-api')
+                .then((res) => {
+                    if (res.status === 200)
+                        return res.text();
+                    else
+                        throw new Error()
+                })
+                .then((data) => {
+                    if (lastList === data)
+                        return
+
+                    comment.textContent = ''
+                    comment.insertAdjacentHTML('afterbegin', data)
+                })
+                .catch(error => console.error('エラー', error))
+        }
+
+
         window.addEventListener("pageshow", function(event) {
             fetchMyList('myList')
+            fetchComment('comment_flag')
         });
     </script>
     <?php echo $_meta->generateTopPageSchema() ?>

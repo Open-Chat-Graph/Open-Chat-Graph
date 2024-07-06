@@ -35,11 +35,14 @@ class CommentPostApiController
             return false;
         }
 
+        $user_id = $auth->verifyCookieUserId();
+        $flag = $commentPostRepository->getBanUser($user_id, getIP()) ? 1 : 0;
         $args = new CommentPostApiArgs(
-            $auth->verifyCookieUserId(),
+            $user_id,
             $open_chat_id,
             $name,
-            $text
+            $text,
+            $flag,
         );
 
         $commentId = $commentPostRepository->addComment($args);
@@ -52,11 +55,15 @@ class CommentPostApiController
             "{$score}"
         );
 
-        purgeCacheCloudFlare(
-            AdminConfig::CloudFlareZoneID,
-            AdminConfig::CloudFlareApiKey,
-            [url()]
-        );
+        if (!$flag) {
+            purgeCacheCloudFlare(
+                AdminConfig::CloudFlareZoneID,
+                AdminConfig::CloudFlareApiKey,
+                [url()]
+            );
+        } else {
+            cookie(['comment_flag' => (string)$flag]);
+        }
 
         return response([
             'commentId' => $commentId,

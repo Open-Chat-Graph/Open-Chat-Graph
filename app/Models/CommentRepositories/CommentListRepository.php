@@ -12,20 +12,23 @@ class CommentListRepository implements CommentListRepositoryInterface
     function findComments(CommentListApiArgs $args): array
     {
         $query =
-            "SELECT
+        "SELECT
                 c.id,
                 c.comment_id AS commentId,
-                CASE c.flag
+                CASE c.flag AND c.user_id != :user_id
                     WHEN 0 THEN c.name
                     ELSE 'Anonymous'
                 END AS name,
-                CASE c.flag
+                CASE c.flag AND c.user_id != :user_id
                     WHEN 0 THEN c.text
                     ELSE ''
                 END AS text,
                 c.time,
                 c.user_id AS userId,
-                c.flag,
+                CASE
+                    WHEN c.user_id = :user_id THEN 0
+                    ELSE c.flag
+                END AS flag,
                 IFNULL(l.empathy, 0) AS empathyCount,
                 IFNULL(l.insights, 0) AS insightsCount,
                 IFNULL(l.negative, 0) AS negativeCount,
@@ -63,6 +66,7 @@ class CommentListRepository implements CommentListRepositoryInterface
                 ) AS l ON l.comment_id = c.comment_id
             WHERE
                 c.open_chat_id = :open_chat_id
+                AND (c.flag != 1 OR c.user_id = :user_id)
             ORDER BY
                 c.comment_id DESC
             LIMIT

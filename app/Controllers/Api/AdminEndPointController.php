@@ -56,6 +56,33 @@ class AdminEndPointController
         return redirect("oc/{$id}/admin");
     }
 
+    function deleteuser(
+        int $commentId,
+        int $id,
+        CommentPostRepositoryInterface $commentPostRepo,
+        DeleteCommentRepositoryInterface $deleteCommentRepository
+    ) {
+        $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
+        if (!$comment_id) {
+            return view('admin/admin_message_page', ['title' => 'ユーザー削除', 'message' => 'ユーザーがいません']);
+        }
+
+        $result = $commentPostRepo->addBanUser($comment_id);
+        if (!$result) {
+            return view('admin/admin_message_page', ['title' => 'ユーザー削除', 'message' => '削除されたユーザーはいません']);
+        }
+
+        $deleteCommentRepository->deleteCommentByUserIdAndIpAll($result['user_id'], $result['ip']);
+
+        purgeCacheCloudFlare(
+            AdminConfig::CloudFlareZoneID,
+            AdminConfig::CloudFlareApiKey,
+            [url()]
+        );
+
+        return redirect("oc/{$id}/admin");
+    }
+
     function commentbanroom(int $id, CommentPostRepositoryInterface $commentPostRepo)
     {
         $result = $commentPostRepo->addBanRoom($id);

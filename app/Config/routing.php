@@ -17,6 +17,7 @@ use App\Controllers\Api\OpenChatRankingPageApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
+use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AccreditationController;
 use App\Controllers\Pages\AdsRegistrationPageController;
 use App\Controllers\Pages\FuriganaPageController;
@@ -105,6 +106,7 @@ Route::path(
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index']);
+Route::path('recent-comment-api', [RecentCommentApiController::class, 'index']);
 
 Route::path('recommend', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 100)
@@ -213,12 +215,19 @@ Route::path(
 );
 
 Route::path(
-    'admin-api/deletecomment@post@get',
+    'admin-api/deletecomment@post',
     [AdminEndPointController::class, 'deletecomment']
 )
     ->matchNum('id')
     ->matchNum('commentId')
     ->matchNum('flag', min: 0, max: 3);
+
+Route::path(
+    'admin-api/deleteuser@post',
+    [AdminEndPointController::class, 'deleteuser']
+)
+    ->matchNum('id')
+    ->matchNum('commentId');
 
 Route::path(
     'admin-api/commentbanroom@post',

@@ -6,5 +6,7 @@
             </h2>
         </div>
     </header>
-    <?php viewComponent('open_chat_list_ranking_comment', ['openChatList' => $dto->recentCommentList]) ?>
+    <div id="recent_comment">
+        <?php viewComponent('open_chat_list_ranking_comment', ['openChatList' => $dto->recentCommentList]) ?>
+    </div>
 </article>

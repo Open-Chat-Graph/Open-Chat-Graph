@@ -31,6 +31,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                     comment
                 WHERE
                     open_chat_id != 0
+                    AND flag != 1
             )
             SELECT
                 open_chat_id,
@@ -79,25 +80,29 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
     /**
      * @return array{ id:int,name:string,img_url:string,description:string,member:int,emblem:int,category:int,time:string }[]
      */
-    public function findRecentCommentOpenChatAll(int $offset, int $limit, string $adminId = ''): array
+    public function findRecentCommentOpenChatAll(int $offset, int $limit, string $adminId = '', string $user_id = ''): array
     {
         $query =
         "SELECT
                 open_chat_id,
                 time,
                 name,
-                flag,
+                CASE
+                    WHEN user_id = :user_id THEN 0
+                    ELSE flag
+                END AS flag,
                 text
             FROM
                 comment
             WHERE
                 NOT user_id = :adminId
+                AND (flag != 1 OR user_id = :user_id)
             ORDER BY
                 time DESC
             LIMIT
                 :offset, :limit;";
 
-        $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId'));
+        $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId', 'user_id'));
 
         $ids = array_unique(array_column($comments, 'open_chat_id'));
         $ids = implode(',', $ids);
