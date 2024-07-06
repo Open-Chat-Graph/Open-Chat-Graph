@@ -10,7 +10,7 @@ interface CommentListRepositoryInterface
     /** @return CommentListApi[] */
     function findComments(CommentListApiArgs $args): array;
 
-    function findCommentById(int $comment_id): array;
+    function findCommentById(int $comment_id): array|false;
 
     /** @return int[] */
     function getCommentIdArrayByOpenChatId(int $open_chat_id): array;

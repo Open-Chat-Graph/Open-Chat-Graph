@@ -76,7 +76,7 @@ class CommentListRepository implements CommentListRepositoryInterface
         ], [\PDO::FETCH_CLASS, CommentListApi::class]);
     }
 
-    function findCommentById(int $comment_id): array
+    function findCommentById(int $comment_id): array|false
     {
         $query =
             "SELECT
