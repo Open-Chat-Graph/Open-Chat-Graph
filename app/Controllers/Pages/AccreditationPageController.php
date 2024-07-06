@@ -28,9 +28,9 @@ class AccreditationPageController
         if ($id)
             return $this->singleQuiz($quizApiService, $id, $_css, $_js);
 
-        $_argDto = $quizApiService->getTopic(ExamType::Bronze, 10, 180);
-        $_argDto_silver = $quizApiService->getTopic(ExamType::Silver, 20, 360);
-        $_argDto_gold = $quizApiService->getTopic(ExamType::Gold, 30, 540);
+        $_argDto = $quizApiService->getTopic(ExamType::Bronze, 10, 300);
+        $_argDto_silver = $quizApiService->getTopic(ExamType::Silver, 20, 600);
+        $_argDto_gold = $quizApiService->getTopic(ExamType::Gold, 30, 900);
 
         $title = 'オプチャ検定｜公式サイト';
         $description = 'オプチャ検定は、ガイドラインやルール、管理方法などについての知識を深める場所です。LINEオープンチャットを利用する際に必要な情報を楽しく学ぶことができます。';
