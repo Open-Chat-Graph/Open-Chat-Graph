@@ -53,6 +53,20 @@ class StaticDataGenerator
         $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);;
         $_argDto->subCategories = json_decode(file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
 
+        if (isset($_argDto->subCategories[6])) {
+            $key = array_search('オプチャ宣伝', $_argDto->subCategories[6]);
+            if ($key !== false) {
+                $_argDto->subCategories[6][$key] = 'オプチャ 宣伝';
+            }
+
+            $key = array_search('悩み相談', $_argDto->subCategories[6]);
+            if ($key !== false) {
+                $_argDto->subCategories[6][$key] = '悩み 相談';
+            }
+
+            $_argDto->subCategories[6] = array_values($_argDto->subCategories[6]);
+        }
+
         return $_argDto;
     }
 
