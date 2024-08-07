@@ -315,11 +315,9 @@ function isDailyUpdateTime(
     array $end = [0, AppConfig::CRON_START_MINUTE],
     DateTime $nowStart = new DateTime,
     DateTime $nowEnd = new DateTime,
-    bool $isNextDay = false,
 ): bool {
     $startTime = $nowStart->setTime(...$start);
     $endTime = $nowEnd->setTime(...$end);
-    if ($isNextDay) $nowEnd->modify('+1 day');
 
     if ($currentTime > $startTime) return true;
     if ($currentTime < $endTime) return true;

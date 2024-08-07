@@ -52,7 +52,7 @@ class SyncOpenChat
     {
         $this->init();
 
-        if (isDailyUpdateTime(isNextDay: true)) {
+        if (isDailyUpdateTime()) {
             $this->dailyTask();
         } else if ($this->isFailedDailyUpdate()) {
             addCronLog('Retry dailyTask');
