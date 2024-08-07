@@ -29,6 +29,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking') ?>">
                 <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small">24カテゴリー</span></span>
             </a>
+            <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation')  ?>">
+                <span class="ranking-readMore">オプチャ検定</span>
+            </a>
+            <a style="margin: auto; font-size: 13px; color:#111;" href="/labs/cacheclear">【画像が表示されない現象の対策】<br>オプチャの画像が表示されない場合、このリンクを押してキャッシュクリアをしてください。</a>
         </section>
         <hr class="hr-bottom">
 
@@ -137,9 +141,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('ads/google-responsive')
         ?>
         <section class="top-ranking top-btns" style="padding-top: 1rem;">
-            <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation')  ?>">
-                <span class="ranking-readMore">オプチャについて知る<span class="small">オプチャ検定</span></span>
-            </a>
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('official-ranking') ?>">
                 <span class="ranking-readMore">前回(1時間前)の公式急上昇と人数推移<span class="small">βテスト</span></span>
             </a>
