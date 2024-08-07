@@ -116,8 +116,11 @@ class OpenChatPageController
         $recommend = $recommendGenarator->getRecommend($tag, $oc['tag2'], $oc['tag3'], $oc['category']);
 
         $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
-        if (!$_statsDto)
-            throw new \RuntimeException('メンバー統計がありません');
+        if (!$_statsDto) {
+            http_response_code(503);
+            echo 'メンテナンス中';
+            exit;
+        }
 
         $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto);
 

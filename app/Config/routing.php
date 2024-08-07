@@ -32,6 +32,10 @@ use App\Middleware\VerifyCsrfToken;
 use App\Services\Accreditation\Enum\ExamType;
 use Shadow\Kernel\Reception;
 
+/* http_response_code(503);
+echo 'メンテナンス中';
+exit; */
+
 Route::middlewareGroup(RedirectLineWebBrowser::class)
     ->path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)

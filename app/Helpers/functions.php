@@ -315,9 +315,11 @@ function isDailyUpdateTime(
     array $end = [0, AppConfig::CRON_START_MINUTE],
     DateTime $nowStart = new DateTime,
     DateTime $nowEnd = new DateTime,
+    bool $isNextDay = false,
 ): bool {
     $startTime = $nowStart->setTime(...$start);
     $endTime = $nowEnd->setTime(...$end);
+    if ($isNextDay) $nowEnd->modify('+1 day');
 
     if ($currentTime > $startTime) return true;
     if ($currentTime < $endTime) return true;
@@ -518,7 +520,7 @@ function timeElapsedString2(string $datetime, int $thresholdMinutes = 15, int $i
 
     if ($totalMinutes <= $thresholdMinutes) {
         return 'たった今';
-    } elseif ($interval->y > 0 || $interval->d > $intervalDate) {
+    } elseif ($interval->y > 0 || $interval->m > 0 || $interval->d > $intervalDate) {
         return formatDateTime($datetime);
     } elseif ($interval->d > 0) {
         return $interval->d . '日前';
