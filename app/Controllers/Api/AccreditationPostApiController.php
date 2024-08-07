@@ -278,10 +278,6 @@ class AccreditationPostApiController
         if (!in_array($profile['id'], AdminConfig::ACCREDITATION_TRUE_ADMIN_USER_ID))
             throw new UnauthorizedException('設定権限がありません');
 
-        if ($id === 5) {
-            throw new UnauthorizedException('このユーザーは管理者権限を持つことができません');
-        }
-
         $model->setAdminPermission(
             $id,
             $is_admin,
