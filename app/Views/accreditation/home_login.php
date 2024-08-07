@@ -83,9 +83,6 @@ $returnTo = "?return_to=/accreditation/bronze/home";
     </main>
     <footer>
         <hr style="margin-top: 0rem;">
-        <p>
-            このサイトはLINEオープンチャット非公式です。LINEヤフー社はこの内容に関与していません。<br>監修しているのは一部のLINEオープンチャット公認メンターです。
-        </p>
         <a href="/accreditation/privacy" style="color: #b7b7b7; text-decoration: none;">プライバシーポリシー</a>
         <a href="/policy/term" style="color: #b7b7b7; text-decoration: none; margin-left: 1rem;">利用規約</a>
     </footer>

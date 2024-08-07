@@ -89,10 +89,7 @@
             <p><a href="/accreditation">トップ</a></p>
             <p><a href="/accreditation/login">問題投稿ページ</a></p>
             <p><a href="/policy/privacy">プライバシーポリシー</a></p>
-            <p>&copy; LINEオープンチャット公認メンター監修 オプチャ検定</p>
-            <p>
-                LINEヤフー社はこの内容に関与していません。監修しているのは一部のLINEオープンチャット公認メンターです。
-            </p>
+            <p>&copy; LINEオープンチャット オプチャ検定</p>
         </footer>
         <?php echo \App\Services\Accreditation\AccreditationSchemaGenerator::singleQuiz(
             $title,
