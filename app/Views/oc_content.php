@@ -292,7 +292,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
         </a>
         <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation') ?>">
-          <span class="ranking-readMore">オプチャについて知る<span class="small">オプチャ検定</span></span>
+          <span class="ranking-readMore">オプチャ検定</span>
         </a>
       </section>
     </aside>

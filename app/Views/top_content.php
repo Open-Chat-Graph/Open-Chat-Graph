@@ -29,10 +29,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking') ?>">
                 <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small">24カテゴリー</span></span>
             </a>
-            <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation')  ?>">
-                <span class="ranking-readMore">オプチャ検定</span>
-            </a>
-            <a style="margin: auto; font-size: 13px; color:#111;" href="/labs/cacheclear">【画像が表示されない現象の対策】<br>オプチャの画像が表示されない場合、このリンクを押してキャッシュクリアをしてください。</a>
         </section>
         <hr class="hr-bottom">
 
@@ -92,7 +88,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('ads/google-responsive')
             ?>
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <?php viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
+            <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
             <hr class="hr-bottom">
             <?php viewComponent('ads/google-responsive')
             ?>
@@ -115,7 +111,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('ads/google-responsive')
             ?>
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <?php viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
+            <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
             <hr class="hr-bottom">
             <?php viewComponent('ads/google-responsive')
             ?>
@@ -142,7 +138,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         ?>
         <section class="top-ranking top-btns" style="padding-top: 1rem;">
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('official-ranking') ?>">
-                <span class="ranking-readMore">前回(1時間前)の公式急上昇と人数推移<span class="small">βテスト</span></span>
+                <span class="ranking-readMore">前回(1時間前)の公式急上昇と人数推移</span>
             </a>
             <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs') ?>">
                 <span class="ranking-readMore" style="display: flex; align-items: center;">
