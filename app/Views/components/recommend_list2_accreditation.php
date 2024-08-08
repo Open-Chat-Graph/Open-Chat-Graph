@@ -20,7 +20,7 @@
         <?php endforeach ?>
         <li class="openchat-item unset" style="padding-left: 0; min-height: 0; cursor: unset; margin: 14px 1.5rem 6px 0">
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation/login') ?>">
-                <span class="ranking-readMore">オプチャ検定｜投稿ページ</span>
+                <span class="ranking-readMore">投稿ページ</span>
             </a>
         </li>
     </ol>
