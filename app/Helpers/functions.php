@@ -331,7 +331,7 @@ function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): strin
     while ($retryCount < $retryLimit) {
         try {
             $robots = file_get_contents('https://openchat.line.me/robots.txt');
-            if (!str_contains($robots, 'User-agent: *') || !str_contains($robots, 'Allow: /jp/')) {
+            if (!str_contains($robots, 'User-agent: *')) {
                 throw new \RuntimeException('Robots.txt: 拒否 ' . $robots);
             }
 
@@ -390,10 +390,10 @@ function formatMember(int $n)
 function sortAndUniqueArray(array $array, int $min = 2)
 {
     // 各要素の出現回数をカウント
-    $counts = array_count_values(array_filter($array, fn ($el) => is_string($el) || is_int($el) || $el));
+    $counts = array_count_values(array_filter($array, fn($el) => is_string($el) || is_int($el) || $el));
 
     // 出現回数が2以上の要素のみを保持
-    $filteredCounts = array_filter($counts, fn ($count) => $count >= $min);
+    $filteredCounts = array_filter($counts, fn($count) => $count >= $min);
 
     // 出現回数の多い順にソート（同じ出現回数の場合は元の順序を保持）
     uksort($filteredCounts, function ($a, $b) use ($filteredCounts) {

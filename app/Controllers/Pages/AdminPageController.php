@@ -44,17 +44,22 @@ class AdminPageController
         return view('admin/dash_my_list', ['result' => $result]);
     }
 
-    private function test()
+    function test()
     {
         $path = AppConfig::ROOT_PATH . 'test_exec.php';
-        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+        $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec("php {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
-    private function testpage(QuizOgpGenerator $quizOgpGenerator, AccreditationUserModel $accreditationUserModel)
+    function testpage()
+    {
+        return view('admin/admin_message_page', ['title' => 'test', 'message' => 'testを実行しました。']);
+    }
+
+    private function genequizogp(QuizOgpGenerator $quizOgpGenerator, AccreditationUserModel $accreditationUserModel)
     {
 
         foreach (ExamType::cases() as $type) {

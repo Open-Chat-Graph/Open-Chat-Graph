@@ -2,17 +2,17 @@
 RewriteEngine On
 
 # Block access to WordPress files and directories
-RewriteRule ^wp-.* - [R=404,L]
+#RewriteRule ^wp-.* - [R=404,L]
 
 # Redirect all non-www and non-https requests to https://openchat-review.me
 #RewriteCond %{HTTPS} off [OR]
-RewriteCond %{HTTP_HOST} ^www\.openchat-review\.me [NC]
-RewriteRule ^(.*)$ https://openchat-review.me/$1 [L,R=301]
+#RewriteCond %{HTTP_HOST} ^www\.openchat-review\.me [NC]
+#RewriteRule ^(.*)$ https://openchat-review.me/$1 [L,R=301]
 
 # Redirect /index to / using a single rule
-RewriteRule ^(.*)/index/?$  https://openchat-review.me/$1 [R=301,L]
-RewriteRule ^index/?$ https://openchat-review.me [R=301,L]
+#RewriteRule ^(.*)/index/?$  https://openchat-review.me/$1 [R=301,L]
+#RewriteRule ^index/?$ https://openchat-review.me [R=301,L]
 
-#RewriteRule ^oc-img/(.*)$ https://openchat-review.me/oc-img/$1 [R=301,L]
+RewriteRule ^oc-img/(.*)$ https://openchat-review.me/oc-img/$1 [R=301,L]
 
 RewriteRule ^(.*)$ public/$1 [QSA,L]
