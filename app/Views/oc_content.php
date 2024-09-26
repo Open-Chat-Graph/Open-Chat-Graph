@@ -145,7 +145,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <h2 class="graph-title">
             <div>メンバー数の推移グラフ</div>
           </h2>
-          <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+          <div class="title-bar-oc-name-wrapper">
+            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+            <div class="title-bar-oc-member">(<?php echo number_format($oc['member']) ?>)</div>
+          </div>
         </div>
         <span class="number-box created-at">
           <div class="openchat-itme-stats-title">登録</div>
@@ -231,7 +234,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <h2 class="graph-title">
             <div>オープンチャットについてのコメント</div>
           </h2>
-          <div class="title-bar-oc-name" style="padding-right: 1.5rem;"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+          <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
+            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+            <div class="title-bar-oc-member">(<?php echo number_format($oc['member']) ?>)</div>
+          </div>
         </div>
       </div>
       <div style="margin-bottom: 1.5rem; margin-top: 13px;">
