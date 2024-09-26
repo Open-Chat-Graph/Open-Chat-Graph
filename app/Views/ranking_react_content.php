@@ -12,9 +12,9 @@
     <?php endforeach ?>
     <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
     <link rel="canonical" hrefs="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
-<!--     <?php if (url() !== 'http://localhost') : ?>
+    <?php if (url() !== 'http://localhost') : ?>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" data-overlays="bottom" crossorigin="anonymous"></script>
-    <?php endif ?> -->
+    <?php endif ?>
 </head>
 
 <body style="margin: 0;">
