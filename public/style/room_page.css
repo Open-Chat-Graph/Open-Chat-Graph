@@ -392,7 +392,7 @@ html {
 .title-bar-oc-name-wrapper {
   display: flex;
   flex-direction: row;
-  gap: 2px;
+  gap: 4px;
 }
 
 .title-bar-oc-name {
