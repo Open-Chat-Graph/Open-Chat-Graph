@@ -26,8 +26,6 @@ use Shadow\DB;
 
 class OpenChatPageController
 {
-    const DefaultAdsId = 13;
-
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
         int $open_chat_id,
