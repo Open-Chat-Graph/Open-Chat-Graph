@@ -240,14 +240,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           </div>
         </div>
       </div>
-      <div style="margin-bottom: 1.5rem; margin-top: 13px;">
+      <div style="margin-top: 13px;">
         <?php viewComponent('comment_desc') ?>
       </div>
       <div id="comment-root"></div>
     </section>
-    <aside class="recommend-list-aside">
-      <?php viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
-    </aside>
+    <!-- <aside class="recommend-list-aside">
+      <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
+    </aside> -->
     <hr class="hr-bottom">
     <?php viewComponent('ads/google-responsive') ?>
 
@@ -297,9 +297,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <a class="readMore-btn top-ranking-readMore unset" href="<?php echo url('ranking') ?>">
           <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
         </a>
-        <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation') ?>">
+        <!-- <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('accreditation') ?>">
           <span class="ranking-readMore">オプチャ検定</span>
-        </a>
+        </a> -->
       </section>
     </aside>
     <hr class="hr-bottom">
