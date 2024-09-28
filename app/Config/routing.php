@@ -44,7 +44,7 @@ Route::middlewareGroup(RedirectLineWebBrowser::class)
     ->path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', emptyAble: true)
-    ->match(fn () => handleRequestWithETagAndCache(getHouryUpdateTime() . "ranking"))
+    ->match(fn() => handleRequestWithETagAndCache(getHouryUpdateTime() . "ranking"))
 
     ->path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
@@ -57,23 +57,23 @@ Route::middlewareGroup(RedirectLineWebBrowser::class)
     ->path('official-ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
     ->matchNum('category', emptyAble: true)
-    ->match(fn () => handleRequestWithETagAndCache(getHouryUpdateTime() . "official-ranking"));
+    ->match(fn() => handleRequestWithETagAndCache(getHouryUpdateTime() . "official-ranking"));
 
 Route::path('policy');
 
 Route::path('/')
-    ->match(fn () => handleRequestWithETagAndCache(getHouryUpdateTime() . 'index'));
+    ->match(fn() => handleRequestWithETagAndCache(getHouryUpdateTime() . 'index'));
 
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn (int $open_chat_id) => handleRequestWithETagAndCache(getHouryUpdateTime() . $open_chat_id));
+    ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache(getHouryUpdateTime() . $open_chat_id));
 
 Route::path('oc/{open_chat_id}/csv', [OpenChatPageController::class, 'csv'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn (int $open_chat_id) => handleRequestWithETagAndCache(getDailyUpdateTime() . $open_chat_id));
+    ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache(getDailyUpdateTime() . $open_chat_id));
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
-    ->match(fn (Reception $reception) => handleRequestWithETagAndCache(getHouryUpdateTime() . json_encode($reception->input())));
+    ->match(fn(Reception $reception) => handleRequestWithETagAndCache(getHouryUpdateTime() . json_encode($reception->input())));
 
 Route::path(
     'oc/{open_chat_id}/position',
@@ -175,7 +175,7 @@ Route::path(
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
     ->match(
-        fn (string $text, string $name) => removeAllZeroWidthCharacters($text)
+        fn(string $text, string $name) => removeAllZeroWidthCharacters($text)
             ? ['name' => removeAllZeroWidthCharacters($name) ? $name : '']
             : false,
         'post'
@@ -240,7 +240,7 @@ Route::path(
     [OpenChatPageController::class, 'index']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn () => ['isAdminPage' => '1']);
+    ->match(fn() => ['isAdminPage' => '1']);
 
 Route::path(
     'ads/register@post',
@@ -344,7 +344,7 @@ Route::path(
     ->matchStr('admin_key', maxLen: 200, emptyAble: true)
     ->matchStr('return_to')
     ->match(
-        fn (string $name) => !!removeAllZeroWidthCharacters($name)
+        fn(string $name) => !!removeAllZeroWidthCharacters($name)
     );
 
 Route::path(
@@ -361,7 +361,7 @@ Route::path(
     ->matchStr('source_url', maxLen: 2083, emptyAble: true)
     ->matchStr('type')
     ->matchStr('return_to')
-    ->match(fn (string $type) => !!ExamType::tryFrom($type));
+    ->match(fn(string $type) => !!ExamType::tryFrom($type));
 
 Route::path(
     'accreditation/edit-question@POST',
@@ -379,7 +379,7 @@ Route::path(
     ->matchNum('id')
     ->matchNum('publishing', emptyAble: true, default: 0)
     ->matchStr('return_to')
-    ->match(fn (string $type) => !!ExamType::tryFrom($type));
+    ->match(fn(string $type) => !!ExamType::tryFrom($type));
 
 Route::path(
     'accreditation/delete-question@POST',
@@ -401,7 +401,7 @@ Route::path(
 )
     ->matchNum('id')
     ->matchStr('type')
-    ->match(fn (string $type) => !!ExamType::tryFrom($type));
+    ->match(fn(string $type) => !!ExamType::tryFrom($type));
 
 Route::path(
     'accreditation/set-admin-permission@POST',
@@ -415,13 +415,13 @@ Route::path('furigana@POST')
     ->matchStr('json');
 
 Route::path('furigana/guideline')
-    ->match(fn () => handleRequestWithETagAndCache(getHouryUpdateTime() . 'guideline'));
+    ->match(fn() => handleRequestWithETagAndCache(getHouryUpdateTime() . 'guideline'));
 
 Route::path(
     'furigana/defamation-guideline',
     [FuriganaPageController::class, 'defamationGuideline']
 )
-    ->match(fn () => handleRequestWithETagAndCache(getHouryUpdateTime() . 'defamationGuideline'));
+    ->match(fn() => handleRequestWithETagAndCache(getHouryUpdateTime() . 'defamationGuideline'));
 
 Route::path('accreditation')
     ->matchNum('id', emptyAble: true, default: 0);
