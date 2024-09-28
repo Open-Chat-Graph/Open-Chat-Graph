@@ -39,7 +39,7 @@ $count3 = 0;
       <?php if ($count2 === 0 || $count3 >= 3) break; ?>
       <?php if (mb_strlen($oc['description']) > 10) : ?>
         <?php continue; ?>
-      <?php elseif ((mb_strlen($oc['description'] > 0))) : ?>
+      <?php elseif ((mb_strlen($oc['description']) > 0)) : ?>
         <?php $count2--;
         $count3++; ?>
         <li class="unset" style="position: relative; display:block; padding: 8px 0;">
