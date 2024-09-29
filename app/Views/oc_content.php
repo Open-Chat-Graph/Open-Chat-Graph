@@ -10,9 +10,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php viewComponent('ads/google-rectangle')
-    ?>
-
+    <?php viewComponent('ads/google-rectangle') ?>
 
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 1rem;">
@@ -128,10 +126,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <!-- <hr class="hr-bottom" style="padding: 8px 0; margin-top: 0;"> -->
-
-    <?php viewComponent('ads/google-rectangle')
-    ?>
+    <?php viewComponent('ads/google-rectangle') ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
@@ -175,7 +170,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
             </div>
             <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; line-height: 1.5; height: 100%">
               <?php if (is_int($oc['api_created_at'])) : ?>
-                <a href="<?php echo url('ranking'.($oc['category'] ? ('/'.$oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
+                <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
               <?php endif ?>
               <?php if (isset($recommend[2]) && $recommend[2]) : ?>
                 <a href="<?php echo url('ranking?keyword=' . urlencode('tag:' . htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
@@ -246,7 +241,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <div id="comment-root"></div>
     </section>
     <!-- <aside class="recommend-list-aside">
-      <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) ?>
+      <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) 
+      ?>
     </aside> -->
     <hr class="hr-bottom">
     <?php viewComponent('ads/google-responsive') ?>

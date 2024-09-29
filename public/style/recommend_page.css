@@ -25,9 +25,6 @@ li {
   }
 }
 
-.recommend-header-desc-wrapper {
-}
-
 @media screen and (min-width: 512px) {
   .recommend-header-desc-wrapper {
     order: 2;
