@@ -115,7 +115,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                     <div>「<?php echo $recommend->listName ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?? '' ?></div>
-                    <div>（<?php echo $key * $chunkLen + 1 ?>位〜）</div>
+                    <div>（<?php echo $time ?>）<?php echo $key * $chunkLen + 1 ?>位〜</div>
                   </h2>
                 </header>
               <?php endif ?>
