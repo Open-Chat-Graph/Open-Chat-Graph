@@ -9,7 +9,6 @@ use App\Services\Admin\AdminAuthService;
 use App\Services\Recommend\RecommendUpdater;
 use Shadow\Kernel\Reception;
 use Shared\Exceptions\NotFoundException;
-use Shared\Exceptions\BadRequestException as Bad;
 
 class AdsRegistrationApiController
 {
