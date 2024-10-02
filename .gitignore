@@ -31,3 +31,4 @@ app/Config/Shadow/GceDatabaseConfig.php
 /tsconfig.json
 vendor/bin/.phpunit.result.cache
 storage/SQLite
+*.Identifier
