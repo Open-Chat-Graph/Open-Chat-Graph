@@ -11,6 +11,9 @@
                 <p>オプチャグラフ</p>
             <?php endif ?>
         </a>
+        <a class="category-button" href="<?php echo url('ranking') ?>">
+            <span>カテゴリーから探す</span>
+        </a>
         <nav class="header-nav unset" style="height: 48px;">
             <button class="header-button unset" id="search_button" aria-label="検索">
                 <span class="search-button-icon"></span>

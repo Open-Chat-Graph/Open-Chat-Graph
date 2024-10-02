@@ -23,11 +23,11 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div class="pad-side-top-ranking pad-side-top-list body" style="overflow: hidden;">
+    <div class="pad-side-top-ranking pad-side-top-list body" style="overflow: hidden; padding-top: 8px;">
 
         <section class="top-ranking top-btns top">
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking') ?>">
-                <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small">24カテゴリー</span></span>
+                <span class="ranking-readMore">24時間の人数増加ランキング<span class="small">24カテゴリー</span></span>
             </a>
         </section>
         <hr class="hr-bottom">

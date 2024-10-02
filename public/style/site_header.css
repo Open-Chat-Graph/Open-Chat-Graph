@@ -177,11 +177,33 @@ body::before {
   align-items: center;
   width: 100%;
   margin-right: -8px;
-
   height: 48px;
   position: absolute;
   right: 1rem;
   width: fit-content;
+}
+
+/* カテゴリーボタン */
+.category-button {
+  margin: auto 50px auto auto;
+  height: 38px;
+  border: 1px solid #efefef;
+  border-radius: 7px;
+  display: flex;
+  text-decoration: unset;
+}
+
+.category-button span {
+  font-size: 14px;
+  display: block;
+  width: fit-content;
+  margin: auto;
+  line-height: 24px;
+  color: #111;
+  font-weight: bold;
+  padding: 0 1rem;
+  font-family: var(--font-family);
+  text-wrap: nowrap;
 }
 
 /* 検索フォーム */
@@ -493,6 +515,7 @@ body::before {
   .is-search-form-open .site_header {
     display: flex;
   }
+
   .is-search-form-open .search-form {
     display: flex;
     position: absolute;
