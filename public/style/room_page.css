@@ -3,7 +3,8 @@
 }
 
 html {
-  overflow-y: scroll; /* 常に垂直スクロールバーを表示 */
+  overflow-y: scroll;
+  /* 常に垂直スクロールバーを表示 */
 }
 
 .pc-hr {
@@ -205,9 +206,17 @@ html {
 .talkroom_description {
   margin: 0;
   line-height: 130%;
-  word-break: break-all;
   color: #111;
   text-align: center;
+}
+
+#talkroom-description-btn {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.talkroom_description_box.close #talkroom-description-btn {
+  white-space: unset;
 }
 
 .talkroom_description_box.close {

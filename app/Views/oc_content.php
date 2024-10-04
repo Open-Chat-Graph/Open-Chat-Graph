@@ -28,9 +28,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
         <div class="talkroom_description_box close" id="talkroom_description_box">
           <p class="talkroom_description" id="talkroom-description">
-            <span id="talkroom-description-btn">
-              <?php echo nl2brReplace(trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']))) ?>
-            </span>
+            <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
           </p>
           <button id="talkroom-description-close-btn" class="close-btn" title="一部を表示">一部を表示</button>
           <div class="more" id="read_more_btn">
@@ -126,6 +124,36 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
+    <nav style="margin: 0 1rem;" class="oc-desc-nav <?php if (!is_int($oc['api_created_at'])) echo 'no-ranking' ?>">
+      <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
+        <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
+          <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
+            <?php if (is_int($oc['api_created_at'])) : ?>
+              <div>カテゴリー&nbsp;</div>
+            <?php endif ?>
+            <?php if (isset($recommend[2]) && $recommend[2]) : ?>
+              <div>タグ&nbsp;</div>
+            <?php endif ?>
+          </div>
+          <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; line-height: 1.5; height: 100%">
+            <?php if (is_int($oc['api_created_at'])) : ?>
+              <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
+            <?php endif ?>
+            <?php if (isset($recommend[2]) && $recommend[2]) : ?>
+              <a href="<?php echo url('ranking?keyword=' . urlencode('tag:' . htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
+            <?php endif ?>
+          </div>
+        </span>
+      </aside>
+
+      <nav class="my-list-form">
+        <label class="checkbox-label" for="my-list-checkbox">
+          <input type="checkbox" id="my-list-checkbox">
+          <span>トップにピン留め</span>
+        </label>
+      </nav>
+    </nav>
+
     <?php viewComponent('ads/google-rectangle') ?>
 
     <?php if (isset($_adminDto)) : ?>
@@ -157,39 +185,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
       <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
 
-      <nav style="padding-bottom: 0;" class="oc-desc-nav <?php if (!is_int($oc['api_created_at'])) echo 'no-ranking' ?>">
-        <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
-          <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
-            <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
-              <?php if (is_int($oc['api_created_at'])) : ?>
-                <div>カテゴリー&nbsp;</div>
-              <?php endif ?>
-              <?php if (isset($recommend[2]) && $recommend[2]) : ?>
-                <div>タグ&nbsp;</div>
-              <?php endif ?>
-            </div>
-            <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; line-height: 1.5; height: 100%">
-              <?php if (is_int($oc['api_created_at'])) : ?>
-                <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
-              <?php endif ?>
-              <?php if (isset($recommend[2]) && $recommend[2]) : ?>
-                <a href="<?php echo url('ranking?keyword=' . urlencode('tag:' . htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
-              <?php endif ?>
-            </div>
-          </span>
-        </aside>
-
-        <nav class="my-list-form">
-          <label class="checkbox-label" for="my-list-checkbox">
-            <input type="checkbox" id="my-list-checkbox">
-            <span>トップにピン留め</span>
-          </label>
-        </nav>
-      </nav>
-
     </section>
 
-    <section class="open-btn sp-btn" style="padding: 12px 1rem 1rem 1rem;">
+    <section class="open-btn sp-btn" style="padding: 0 1rem 1rem 1rem;">
       <?php if ($oc['url']) : ?>
         <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
           <?php if ($oc['join_method_type'] !== 0) : ?>

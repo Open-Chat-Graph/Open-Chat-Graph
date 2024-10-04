@@ -74,7 +74,8 @@ body::before {
 
 .site_header_outer {
   all: unset;
-  position: fixed;
+  position: absolute;
+  /* position: fixed; */
   display: block;
   z-index: 30;
   top: 0;
