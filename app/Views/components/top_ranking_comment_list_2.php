@@ -14,7 +14,7 @@
 </article>
 
 <hr class="hr-bottom">
-<?php viewComponent('ads/google-responsive') ?>
+<?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteSeparatorResponsive']) ?>
 
 <article class="top-ranking created-at">
     <header class=" openchat-list-title-area unset">

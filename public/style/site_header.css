@@ -577,12 +577,27 @@ body::before {
   }
 }
 
+.adsbygoogle {
+  display: block;
+  background: rgb(250, 250, 250);
+}
+
 ins.adsbygoogle[data-ad-status='unfilled'] {
   display: none !important;
 }
 
 ins.adsbygoogle[data-anchor-status='dismissed'] {
   display: none !important;
+}
+
+.rectangle2-ads {
+  aspect-ratio: 16 / 9;
+}
+
+@media screen and (min-width: 512px) {
+  .rectangle2-ads {
+    aspect-ratio: 21 / 9;
+  }
 }
 
 .hr-top {

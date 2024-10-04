@@ -5,10 +5,6 @@
     <?php $timeFrame = $oc['end_datetime'] ? calculateTimeFrame($_now, $oc['end_datetime']) : calculateTimeFrame($_now, $oc['old_datetime']) ?>
     <li style="all: unset; display: block;">
 
-      <?php if ($key && $key % 5 === 0) : ?>
-        <?php viewComponent('ads/google-rectangle') ?>
-      <?php endif ?>
-
       <div class="openchat-item unset" style="margin-right: 0;">
         <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id'] . "?bar=ranking&limit={$timeFrame}") ?>" tabindex="-1" aria-hidden="true">
           <span class="visually-hidden"><?php echo $oc['name'] ?></span>

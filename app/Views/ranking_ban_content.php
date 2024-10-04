@@ -230,7 +230,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent('pager_nav_ranking_ban', $_pagerNavArg) ?>
         <?php endif ?>
     </main>
-    <?php viewComponent('ads/google-rectangle') ?>
     <footer class="footer-elem-outer">
         <?php viewComponent('footer_inner') ?>
     </footer>

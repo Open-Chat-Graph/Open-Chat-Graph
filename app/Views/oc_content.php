@@ -3,6 +3,7 @@
 <?php
 
 use App\Config\AppConfig;
+use App\Views\Ads\GoogleAdsence as GAd;
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto')); ?>
 
@@ -10,10 +11,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php viewComponent('ads/google-rectangle') ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
 
     <!-- オープンチャット表示ヘッダー -->
-    <section class="openchat-header unset" style="padding-top: 1rem;">
+    <section class="openchat-header unset" style="padding-top: 20px;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
       </div>
@@ -154,7 +155,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <?php viewComponent('ads/google-rectangle') ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
@@ -207,8 +208,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </section>
     <hr class="hr-bottom">
 
-    <?php viewComponent('ads/google-responsive')
-    ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
@@ -216,8 +216,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
       <hr class="hr-bottom">
-      <?php viewComponent('ads/google-rectangle')
-      ?>
+
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
     <?php endif ?>
 
     <section class="comment-section">
@@ -243,31 +244,34 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       ?>
     </aside> -->
     <hr class="hr-bottom">
-    <?php viewComponent('ads/google-responsive') ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[1]) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
       <hr class="hr-bottom">
-      <?php viewComponent('ads/google-responsive')
-      ?>
+
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
       <hr class="hr-bottom">
-      <?php viewComponent('ads/google-responsive')
-      ?>
+
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
       <hr class="hr-bottom">
-      <?php viewComponent('ads/google-responsive')
-      ?>
+
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
     <?php endif ?>
 
     <aside class="recommend-list-aside">
@@ -275,16 +279,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <?php viewComponent('ads/google-responsive')
-    ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPagedto]) ?>
     </aside>
     <hr class="hr-bottom">
 
-    <?php viewComponent('ads/google-responsive')
-    ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <aside class="recommend-list-aside">
       <section class="top-ranking">

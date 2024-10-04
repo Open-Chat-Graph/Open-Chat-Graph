@@ -3,6 +3,7 @@
 <?php
 
 use App\Config\AppConfig;
+use App\Views\Ads\GoogleAdsence as GAd;
 
 /** @var \App\Services\StaticData\Dto\StaticRecommendPageDto $_dto */
 
@@ -19,8 +20,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php viewComponent('ads/google-rectangle')
-    ?>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -70,8 +71,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </aside>
 
     <hr class="hr-bottom">
-    <?php viewComponent('ads/google-rectangle')
-    ?>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
@@ -129,8 +130,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
                 <hr class="hr-bottom">
-                <?php viewComponent('ads/google-responsive')
-                ?>
+
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
               </li>
             <?php endif ?>
           <?php endforeach ?>
@@ -156,16 +158,18 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </section>
 
     <hr class="hr-bottom">
-    <?php viewComponent('ads/google-responsive')
-    ?>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $rankingDto]) ?>
     </aside>
 
     <hr class="hr-bottom">
-    <?php viewComponent('ads/google-responsive')
-    ?>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $rankingDto]) ?>
