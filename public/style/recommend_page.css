@@ -10,7 +10,7 @@ li {
 
 @media screen and (min-width: 512px) {
   .recommend-header-wrapper {
-    padding-top: 1rem;
+    padding-top: 20px;
   }
 }
 
