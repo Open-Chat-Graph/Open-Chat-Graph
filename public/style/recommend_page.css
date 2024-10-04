@@ -10,12 +10,13 @@ li {
 
 @media screen and (min-width: 512px) {
   .recommend-header-wrapper {
-    padding-top: 20px;
+    padding-top: 1rem;
   }
 }
 
 .recommend-header {
   padding: 1rem;
+  padding-top: 20px;
   text-align: start;
 }
 
