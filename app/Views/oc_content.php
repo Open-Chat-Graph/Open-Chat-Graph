@@ -11,7 +11,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
 
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 20px;">
@@ -155,7 +155,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <?php //GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
