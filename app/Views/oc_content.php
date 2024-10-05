@@ -11,7 +11,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 20px;">
@@ -125,7 +125,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <nav style="margin: 0 1rem;" class="oc-desc-nav <?php if (!is_int($oc['api_created_at'])) echo 'no-ranking' ?>">
+    <hr class="hr-bottom">
+
+    <nav style="margin: 0 1rem; padding: 0; border: unset;" class="oc-desc-nav <?php if (!is_int($oc['api_created_at'])) echo 'no-ranking' ?>">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
@@ -156,6 +158,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </nav>
 
     <?php //GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <hr class="hr-top">
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>

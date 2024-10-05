@@ -70,7 +70,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
+    <?php // GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
