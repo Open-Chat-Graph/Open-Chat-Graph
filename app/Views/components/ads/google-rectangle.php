@@ -1,1 +1,0 @@
-<ins class="adsbygoogle rectangle-ads" data-ad-client="ca-pub-2330982526015125" data-ad-slot="8037531176"></ins>
