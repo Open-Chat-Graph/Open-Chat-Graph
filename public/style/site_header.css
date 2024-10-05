@@ -23,13 +23,13 @@ body {
   width: 100%;
 }
 
-body::before {
+/* body::before {
   width: 100%;
   max-width: var(--width);
   height: 48px;
   display: block;
   content: '';
-}
+} */
 
 .pad-side {
   margin-left: 1rem;
@@ -74,21 +74,21 @@ body::before {
 
 .site_header_outer {
   all: unset;
-  position: absolute;
+  /* position: absolute; */
   /* position: fixed; */
   display: block;
-  z-index: 30;
+/*   z-index: 30;
   top: 0;
   left: 0;
-  right: 0;
+  right: 0; */
   margin: 0 auto;
-  background-color: rgba(255, 255, 255, 0.85);
+/*   background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); */
   width: 100%;
-  max-width: var(--width);
+/*   max-width: var(--width);
   transition: transform 0.3s;
-  transform: translate(0px, 0px);
+  transform: translate(0px, 0px); */
 }
 
 .site_header {

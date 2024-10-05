@@ -13,7 +13,7 @@
     <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
     <link rel="canonical" hrefs="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
     <?php if (url() !== 'http://localhost') : ?>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
+        <script async data-overlays="bottom" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
     <?php endif ?>
 </head>
 
