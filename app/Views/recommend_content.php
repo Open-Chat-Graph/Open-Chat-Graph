@@ -62,8 +62,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-
-
     <aside class="list-aside recommend-ranking-bottom">
       <?php if (isset($recommend)) : ?>
         <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
