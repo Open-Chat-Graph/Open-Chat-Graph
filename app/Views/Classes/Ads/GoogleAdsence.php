@@ -28,11 +28,17 @@ class GoogleAdsence
         // サイトセパレーター-レスポンシブ
         'siteSeparatorResponsive' => ['4243068812'],
 
+        // サイトセパレーター-横長
+        'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
+
         // おすすめトップ-rectangle
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
         // おすすめトップ2-横長
         'recommendTopWide2' => ['1796098364', 'rectangle2-ads'],
+
+        // おすすめセパレーター-横長
+        'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads'],
 
         // おすすめセパレーター-レスポンシブ
         'recommendSeparatorResponsive' => ['7064673271'],
