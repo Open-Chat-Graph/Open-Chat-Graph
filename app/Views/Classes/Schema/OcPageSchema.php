@@ -2,11 +2,9 @@
 
 namespace App\Views\Schema;
 
-use App\Config\AppConfig;
 use Spatie\SchemaOrg\Schema;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
-use Spatie\SchemaOrg\Offer;
 
 class OcPageSchema
 {
