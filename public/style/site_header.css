@@ -76,6 +76,7 @@ body {
   all: unset;
   /* position: absolute; */
   /* position: fixed; */
+  position: relative;
   display: block;
 /*   z-index: 30;
   top: 0;
