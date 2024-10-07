@@ -157,7 +157,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <?php //// GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <?php // GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
     <hr class="hr-top">
 
     <?php if (isset($_adminDto)) : ?>
