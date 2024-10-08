@@ -74,7 +74,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </article>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php if ($newComment) : ?>
