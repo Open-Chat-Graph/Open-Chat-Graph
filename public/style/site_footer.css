@@ -36,7 +36,7 @@
   cursor: pointer;
   text-decoration: none;
   text-underline-offset: 0.15em;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   font-size: 13px;
   line-height: 2.3;
   display: block;
@@ -274,6 +274,7 @@
   .footer-link-inner a {
     font-size: 14px;
     line-height: 1.9;
+    margin-bottom: 8px;
   }
 
   .share-nav h3 {

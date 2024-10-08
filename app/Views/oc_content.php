@@ -291,7 +291,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
-    <aside class="recommend-list-aside">
+    <!-- <aside class="recommend-list-aside">
       <section class="top-ranking">
         <a class="readMore-btn top-ranking-readMore unset" href="<?php echo url('ranking') ?>">
           <span class="ranking-readMore">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
@@ -301,7 +301,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </a>
       </section>
     </aside>
-    <hr class="hr-bottom">
+    <hr class="hr-bottom"> -->
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">

@@ -12,13 +12,13 @@
             <li><a class="unset" style="margin-bottom: 0;" href="https://openchat.line.me/jp/explore" target="_blank">LINE公式ランキング<span class="line-link-icon777"></span></a></li>
         </ul>
     </section>
-    <aside class="open-btn2">
+    <!-- <aside class="open-btn2">
         <a href="https://openchat-jp.line.me/other/beginners_guide" class="app_link app-dl">
             <span class="text">はじめてのLINEオープンチャットガイド（LINE公式）</span>
         </a>
         <a href="https://line.me/download" class="app_link app-dl">
             <span class="text">LINEアプリをダウンロード（LINE公式）</span>
         </a>
-    </aside>
+    </aside> -->
     <div class="copyright">オプチャグラフ<span><a class="unset" style="text-decoration: underline; cursor: pointer;" href="https://github.com/pika-0203" target="_blank">Project on GitHub @pika-0203</a></span></div>
 </nav>
