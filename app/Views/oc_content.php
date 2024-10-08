@@ -13,8 +13,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <article class="unset openchat body" style="overflow: hidden;">
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
 
+    <hr class="hr-top">
+
     <!-- オープンチャット表示ヘッダー -->
-    <section class="openchat-header unset" style="padding-top: 20px;">
+    <section class="openchat-header unset" style="padding-top: 16px;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
       </div>
@@ -164,6 +166,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
 
+    <hr class="hr-top">
     <section class="openchat-graph-section">
 
       <div class="title-bar">
@@ -214,6 +217,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
+      <hr class="hr-top">
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
@@ -224,6 +228,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
 
+    <hr class="hr-top">
     <section class="comment-section">
       <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -250,6 +255,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
 
     <?php if ($recommend[1]) : ?>
+      <hr class="hr-top">
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
@@ -259,6 +265,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
+      <hr class="hr-top">
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
@@ -268,6 +275,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
+      <hr class="hr-top">
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true]) ?>
       </aside>
@@ -277,6 +285,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
 
+    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPagedto]) ?>
     </aside>
@@ -284,6 +293,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
 
+    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPagedto]) ?>
     </aside>

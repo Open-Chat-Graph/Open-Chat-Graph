@@ -75,7 +75,6 @@ body {
 .site_header_outer {
   all: unset;
   /* position: absolute; */
-  /* position: fixed; */
   position: relative;
   display: block;
 /*   z-index: 30;

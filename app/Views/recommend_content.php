@@ -129,7 +129,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <li>
                 <hr class="hr-bottom">
 
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
               </li>
             <?php endif ?>
@@ -157,7 +157,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
 
     <aside class="top-ranking-list-aside">
@@ -166,7 +166,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
 
     <aside class="top-ranking-list-aside">
