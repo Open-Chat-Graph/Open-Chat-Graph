@@ -23,9 +23,10 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
+    <hr class="hr-top">
     <section class="recommend-header-wrapper">
 
-      <header class="recommend-header">
+      <header class="recommend-header" style="padding-top: 1rem;">
         <?php if ($count) : ?>
           <h1 class="talkroom_link_h1 unset">【最新】「<?php echo $tag ?>」おすすめオープンチャットランキングTOP<?php echo $count ?></h1>
         <?php else : ?>
@@ -72,6 +73,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
+    <hr class="hr-top">
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
@@ -131,6 +133,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
                 <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
+                <hr class="hr-top">
               </li>
             <?php endif ?>
           <?php endforeach ?>
@@ -159,6 +162,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
+    <hr class="hr-top">
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $rankingDto]) ?>
@@ -168,6 +172,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
+    <hr class="hr-top">
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $rankingDto]) ?>
