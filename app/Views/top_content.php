@@ -83,13 +83,13 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_recent_comments', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
@@ -97,25 +97,25 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
@@ -124,7 +124,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
@@ -132,38 +132,38 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_recent_comments', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
         <?php endif ?>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
         <hr class="hr-top">
         <section class="top-ranking top-btns" style="padding-top: 1rem;">
