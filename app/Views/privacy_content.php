@@ -6,6 +6,8 @@
     <?php viewComponent('site_header') ?>
     <main>
         <article class="terms">
+            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteTopRectangle']) ?>
+
             <h1 style="letter-spacing: 0px; overflow: hidden;">プライバシーポリシー</h1>
             <p></p>
             <h2>個人情報の利用目的</h2>

@@ -21,7 +21,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
-    <?php // GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -70,7 +70,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php // GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
@@ -129,7 +129,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <li>
                 <hr class="hr-bottom">
 
-                <?php // GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
 
               </li>
             <?php endif ?>
@@ -157,7 +157,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php // GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
 
 
     <aside class="top-ranking-list-aside">
@@ -166,7 +166,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-bottom">
 
-    <?php // GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
 
 
     <aside class="top-ranking-list-aside">

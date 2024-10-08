@@ -13,6 +13,8 @@
     </style>
     <?php viewComponent('site_header') ?>
     <main style="padding: 0 1rem;" style="overflow: hidden;">
+        <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteTopRectangle']) ?>
+
         <h2>オプチャグラフにオープンチャットを手動で登録する</h2>
         <p>
             公式ランキングに掲載されているオープンチャットはオプチャグラフに自動登録されます。

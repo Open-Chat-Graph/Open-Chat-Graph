@@ -16,6 +16,9 @@ class GoogleAdsence
         // OCセパレーター-レスポンシブ
         'ocSeparatorResponsive' => ['2542775305'],
 
+        // OCセパレーター-rectangle
+        'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
+
         // OCセパレーター-横長
         'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
 
@@ -27,6 +30,9 @@ class GoogleAdsence
 
         // サイトセパレーター-レスポンシブ
         'siteSeparatorResponsive' => ['4243068812'],
+
+        // サイトセパレーター-rectangle
+        'siteSeparatorRectangle' => ['9793281538', 'rectangle-ads'],
 
         // サイトセパレーター-横長
         'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
@@ -42,6 +48,9 @@ class GoogleAdsence
 
         // おすすめセパレーター-レスポンシブ
         'recommendSeparatorResponsive' => ['7064673271'],
+
+        // おすすめセパレーター-Rectangle
+        'recommendSeparatorRectangle' => ['8031174545', 'rectangle-ads'],
     ];
 
     /**

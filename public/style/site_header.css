@@ -87,6 +87,7 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px); */
   width: 100%;
+  max-width: var(--width);
 /*   max-width: var(--width);
   transition: transform 0.3s;
   transform: translate(0px, 0px); */
