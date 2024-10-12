@@ -163,6 +163,15 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
+    <aside class="top-ranking-list-aside" style="margin: 0 1rem;">
+      <?php viewComponent('top_ranking_recent_comments') ?>
+    </aside>
+
+    <hr class="hr-bottom">
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
+    <hr class="hr-top">
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $rankingDto]) ?>
@@ -186,6 +195,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </footer>
 
   </article>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const num = document.querySelectorAll('ins').length;
@@ -193,6 +203,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         (adsbygoogle = window.adsbygoogle || []).push({});
       }
     });
+  </script>
+
+  <script type="module">
+    import {
+      setEvent
+    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+    setEvent()
   </script>
 
   <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>

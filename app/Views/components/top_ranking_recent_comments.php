@@ -7,6 +7,6 @@
         </div>
     </header>
     <div id="recent_comment">
-        <?php viewComponent('open_chat_list_ranking_comment', ['openChatList' => $dto->recentCommentList]) ?>
+        <?php if (isset($recentCommentList)) viewComponent('open_chat_list_ranking_comment', ['openChatList' => $recentCommentList]) ?>
     </div>
 </article>

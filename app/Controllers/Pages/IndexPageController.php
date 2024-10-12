@@ -39,7 +39,6 @@ class IndexPageController
         $dto->recentCommentList = $recentCommentListRepository->findRecentCommentOpenChatAll(
             0,
             15,
-            AdminConfig::ADMIN_API_KEY
         );
         $updatedAtHouryCron = $dto->rankingUpdatedAt;
 

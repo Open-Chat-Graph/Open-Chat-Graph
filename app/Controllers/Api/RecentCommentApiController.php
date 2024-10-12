@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\AdminConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Auth\AuthInterface;
 
@@ -14,12 +13,16 @@ class RecentCommentApiController
         RecentCommentListRepositoryInterface $recentCommentListRepository,
         AuthInterface $auth,
     ) {
-        $user_id = $auth->verifyCookieUserId();
+        try {
+            $user_id = $auth->verifyCookieUserId();
+        } catch (\Shared\Exceptions\UnauthorizedException $e) {
+            $user_id = '';
+        }
 
         $recentCommentList = $recentCommentListRepository->findRecentCommentOpenChatAll(
             0,
             15,
-            AdminConfig::ADMIN_API_KEY,
+            '',
             $user_id
         );
 

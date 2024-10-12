@@ -80,7 +80,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php if ($newComment) : ?>
             <hr class="hr-top">
-            <?php viewComponent('top_ranking_recent_comments', compact('dto')) ?>
+            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
             <hr class="hr-bottom">
 
             <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -93,8 +93,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) 
-            ?>
             <hr class="hr-bottom">
 
             <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -128,8 +126,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <?php //viewComponent('recommend_list2_accreditation', compact('acrreditation')) 
-            ?>
             <hr class="hr-bottom">
 
             <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -147,7 +143,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
             <hr class="hr-top">
-            <?php viewComponent('top_ranking_recent_comments', compact('dto')) ?>
+            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
             <hr class="hr-bottom">
 
             <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -229,51 +225,19 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 .catch(error => console.error('エラー', error))
         }
 
-        let lastComment = ''
-
-        function getCookieValue(key) {
-            const cookies = document.cookie.split(';')
-            const foundCookie = cookies.find(
-                (cookie) => cookie.split('=')[0].trim() === key.trim()
-            )
-            if (foundCookie) {
-                const cookieValue = decodeURIComponent(foundCookie.split('=')[1])
-                return cookieValue
-            }
-            return ''
-        }
-
-        function fetchComment(name) {
-            const cookieValue = getCookieValue(name)
-            if (!cookieValue) {
-                return
-            }
-
-            const comment = document.getElementById('recent_comment')
-
-            fetch('recent-comment-api')
-                .then((res) => {
-                    if (res.status === 200)
-                        return res.text();
-                    else
-                        throw new Error()
-                })
-                .then((data) => {
-                    if (lastList === data)
-                        return
-
-                    comment.textContent = ''
-                    comment.insertAdjacentHTML('afterbegin', data)
-                })
-                .catch(error => console.error('エラー', error))
-        }
-
-
         window.addEventListener("pageshow", function(event) {
             fetchMyList('myList')
-            fetchComment('comment_flag')
         });
     </script>
+
+    <script type="module">
+        import {
+            setEvent
+        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+        setEvent(true)
+    </script>
+
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>
 
