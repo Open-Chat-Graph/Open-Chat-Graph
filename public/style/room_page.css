@@ -68,13 +68,13 @@ html {
   border-top: 1px solid #efefef;
 }
 
-.oc-desc-nav.no-ranking {
+/* .oc-desc-nav.no-ranking {
   margin-top: -5rem;
   position: absolute;
   z-index: 100;
   width: calc(100% - 2rem);
   max-width: calc(var(--width) - 2rem);
-}
+} */
 
 .openchat-header a {
   cursor: pointer;

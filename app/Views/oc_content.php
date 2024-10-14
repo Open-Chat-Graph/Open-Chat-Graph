@@ -129,7 +129,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-bottom">
 
-    <nav style="margin: 0 1rem; padding: 0 0 1rem 0; border: unset;" class="oc-desc-nav <?php if (!is_int($oc['api_created_at'])) echo 'no-ranking' ?>">
+    <nav style="margin: 0 1rem; padding: 0 0 1rem 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
@@ -188,7 +188,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <!-- グラフセクション -->
       <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
         <div class="chart-canvas-box" id="dummy-canvas"></div>
-        <div id="app"></div>
+        <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
       </div>
       <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
 
