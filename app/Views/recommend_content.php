@@ -217,7 +217,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     });
   </script>
 
-  <script type="module" src="<?php echo fileUrl('/js/fetchComment.js') ?>"></script>
+  <script type="module">
+    import {
+      getComment
+    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+    getComment()
+  </script>
 
   <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
 

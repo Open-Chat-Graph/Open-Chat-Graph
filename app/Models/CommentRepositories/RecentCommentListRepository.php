@@ -12,10 +12,15 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
     /**
      * @return array{ id:int,user:string,name:string,img_url:string,description:string,member:int,emblem:int,category:int,time:string }[]
      */
-    public function findRecentCommentOpenChatAll(int $offset, int $limit, string $adminId = '', string $user_id = ''): array
-    {
+    public function findRecentCommentOpenChatAll(
+        int $offset,
+        int $limit,
+        string $adminId = '',
+        string $user_id = '',
+        int $open_chat_id = 0
+    ): array {
         $query =
-        "SELECT
+            "SELECT
                 open_chat_id,
                 time,
                 name,
@@ -29,12 +34,13 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             WHERE
                 NOT user_id = :adminId
                 AND (flag != 1 OR user_id = :user_id)
+                AND (open_chat_id != :open_chat_id OR open_chat_id = 0)
             ORDER BY
                 time DESC
             LIMIT
                 :offset, :limit;";
 
-        $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId', 'user_id'));
+        $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId', 'user_id', 'open_chat_id'));
 
         $ids = array_unique(array_column($comments, 'open_chat_id'));
         $ids = implode(',', $ids);

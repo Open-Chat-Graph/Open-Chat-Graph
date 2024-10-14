@@ -14,32 +14,36 @@ class RecentCommentApiController
         private RecentCommentListRepositoryInterface $recentCommentListRepository,
     ) {}
 
-    function index()
+    function index(int $open_chat_id)
     {
-        $updatedAt = file_get_contents(AppConfig::COMMENT_UPDATED_AT_MICROTIME);
+        if (!$open_chat_id) {
+            $updatedAt = file_get_contents(AppConfig::COMMENT_UPDATED_AT_MICROTIME);
+            handleRequestWithETagAndCache(
+                "recent-comment-api{$updatedAt}",
+                hourly: false
+            );
+        } else {
+            noStore();
+        }
 
-        handleRequestWithETagAndCache(
-            "recent-comment-api{$updatedAt}",
-            hourly: false
-        );
-
-        return $this->response('');
+        return $this->response('', $open_chat_id);
     }
 
-    function nocache(AuthInterface $auth)
+    function nocache(AuthInterface $auth, int $open_chat_id)
     {
         $user_id = $auth->verifyCookieUserId();
-        
-        return $this->response($user_id);
+
+        return $this->response($user_id, $open_chat_id);
     }
 
-    private function response(string $user_id)
+    private function response(string $user_id, int $open_chat_id)
     {
         $recentCommentList = $this->recentCommentListRepository->findRecentCommentOpenChatAll(
             0,
             15,
             '',
-            $user_id
+            $user_id,
+            $open_chat_id
         );
 
         return view('components/open_chat_list_ranking_comment2', ['openChatList' => $recentCommentList]);

@@ -340,7 +340,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       }
     });
   </script>
-  <script type="module" src="<?php echo fileUrl('/js/fetchComment.js') ?>"></script>
+  <script type="module">
+    import {
+      getComment
+    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+    getComment(<?php echo $oc['id'] ?>)
+  </script>
   <script async>
     (function() {
       // 説明文の続きを読むボタン

@@ -46,11 +46,12 @@ function getCookieValue(key = 'comment_flag') {
     return ''
 }
 
-async function fetchComment(url = '/recent-comment-api') {
+async function fetchComment(url = '/recent-comment-api', openChatId = 0) {
     const comment = document.getElementById('recent_comment')
+    const query = openChatId ? ('?open_chat_id=' + openChatId) : ''
 
     try {
-        const res = await fetch(url)
+        const res = await fetch(url + query)
         if (res.status !== 200) {
             throw new Error()
         }
@@ -73,4 +74,6 @@ async function fetchComment(url = '/recent-comment-api') {
     }
 }
 
-fetchComment(getCookieValue() ? '/recent-comment-api/nocache' : '/recent-comment-api')
+export function getComment(openChatId = 0) {
+    fetchComment(getCookieValue() ? '/recent-comment-api/nocache' : '/recent-comment-api', openChatId)
+}

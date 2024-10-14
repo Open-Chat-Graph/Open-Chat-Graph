@@ -110,8 +110,11 @@ Route::path(
 
 Route::path('mylist-api', [MyListApiController::class, 'index']);
 
-Route::path('recent-comment-api', [RecentCommentApiController::class, 'index']);
-Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'nocache']);
+Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
+    ->matchNum('open_chat_id', min: 1, emptyAble: true);
+
+Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'nocache'])
+    ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
 Route::path('recommend', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 100)

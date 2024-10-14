@@ -179,7 +179,13 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         });
     </script>
 
-    <script type="module" src="<?php echo fileUrl('/js/fetchComment.js') ?>"></script>
+    <script type="module">
+        import {
+            getComment
+        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+        getComment()
+    </script>
 
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>
