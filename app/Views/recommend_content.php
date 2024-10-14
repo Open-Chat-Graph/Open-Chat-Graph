@@ -176,6 +176,15 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </aside>
     <hr class="hr-bottom">
 
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
+    <hr class="hr-top">
+    <aside class="top-ranking-list-aside">
+      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
+    </aside>
+    <hr class="hr-bottom">
+
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
@@ -188,7 +197,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <hr class="hr-top">
     <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
+      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
     <hr class="hr-bottom">
 
