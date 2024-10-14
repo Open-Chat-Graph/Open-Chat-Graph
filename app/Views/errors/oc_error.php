@@ -91,11 +91,11 @@
             <hr class="hr-bottom">
         <?php endif ?>
         <aside class="recommend-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPagedto]) ?>
+            <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
         </aside>
         <hr class="hr-bottom">
         <aside class="recommend-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPagedto]) ?>
+            <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
         <hr class="hr-bottom">
         <aside class="recommend-list-aside">
