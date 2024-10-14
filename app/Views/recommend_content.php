@@ -163,30 +163,33 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
+    <aside class="top-ranking-list-aside">
+      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
+    </aside>
+    <hr class="hr-bottom">
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
+    <hr class="hr-top">
     <aside class="top-ranking-list-aside" style="margin: 0 1rem;">
       <?php viewComponent('top_ranking_recent_comments') ?>
     </aside>
-
     <hr class="hr-bottom">
 
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
-
     <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $rankingDto]) ?>
+      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-
     <hr class="hr-bottom">
 
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
-
     <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $rankingDto]) ?>
+      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-
     <hr class="hr-bottom">
 
     <footer class="footer-elem-outer">

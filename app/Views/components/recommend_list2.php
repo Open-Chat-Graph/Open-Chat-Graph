@@ -29,7 +29,7 @@ if ($recommend->type === RecommendListType::Category) {
 
     <?php if (isset($showTags) && $tags = $recommend->getFilterdTags(true)) : ?>
         <div>
-            <div style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;">関連タグ</div>
+            <div style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;">関連のテーマ</div>
             <?php viewComponent('tag_list_section', compact('tags')) ?>
         </div>
     <?php endif ?>

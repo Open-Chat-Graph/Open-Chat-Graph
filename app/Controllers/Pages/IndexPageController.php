@@ -50,8 +50,6 @@ class IndexPageController
             $newComment = false;
         }
 
-        $tags = $dto->recommendList ?? [];
-
         $officialDto = $officialPageList->getListDto(1)[0];
         $officialDto2 = $officialPageList->getListDto(2)[0];
 
@@ -61,7 +59,6 @@ class IndexPageController
             '_schema',
             '_updatedAt',
             'dto',
-            'tags',
             'officialDto',
             'officialDto2',
             'newComment',

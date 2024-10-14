@@ -202,7 +202,7 @@ class PageBreadcrumbsListSchema
             ->author($this->person())
             ->datePublished($datePublished)
             ->dateModified($dateModified)
-            ->articleSection([$title, '関連のタグ', "【{$time}】「{$tag}」おすすめランキングTOP{$count}", "人数増加アイコンの説明"])
+            ->articleSection([$title, '関連のテーマ', "【{$time}】「{$tag}」おすすめランキングTOP{$count}", "人数増加アイコンの説明"])
             ->about(Schema::thing()->name($tag))
             ->mainEntityOfPage(
                 Schema::collectionPage()

@@ -60,7 +60,7 @@ class RecommendOpenChatPageController
 
         $canonical = url('recommend?tag=' . urlencode($tag));
 
-        $rankingDto = $staticDataGeneration->getTopPageData();
+        $topPageDto = $staticDataGeneration->getTopPageData();
 
         $recommendArray = $recommendPageList->getListDto($tag);
         if (!$recommendArray) {
@@ -77,7 +77,7 @@ class RecommendOpenChatPageController
                 'count',
                 '_schema',
                 '_dto',
-                'rankingDto',
+                'topPageDto',
                 'canonical',
                 'time',
             ));
@@ -115,7 +115,7 @@ class RecommendOpenChatPageController
             'count',
             '_schema',
             '_dto',
-            'rankingDto',
+            'topPageDto',
             'canonical',
             'time',
             'hourlyUpdatedAt',

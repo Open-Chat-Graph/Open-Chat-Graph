@@ -292,7 +292,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPagedto]) ?>
+      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <hr class="hr-bottom">
 
@@ -300,7 +300,15 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPagedto]) ?>
+      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
+    </aside>
+    <hr class="hr-bottom">
+
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
+    <hr class="hr-top">
+    <aside class="recommend-list-aside">
+      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <hr class="hr-bottom">
 

@@ -28,7 +28,7 @@ class OpenChatPageController
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
         int $open_chat_id,
-        StaticTopPageDto $topPagedto
+        StaticTopPageDto $topPageDto
     ) {
         /** @var RecommendRankingRepository $repo */
         $repo = app(RecommendRankingRepository::class);
@@ -48,7 +48,7 @@ class OpenChatPageController
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
-        return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', '_deleted', 'topPagedto'));
+        return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', '_deleted', 'topPageDto'));
     }
 
     private function buildChartDto(array $oc, string $categoryName): RankingPositionChartArgDto
@@ -101,10 +101,10 @@ class OpenChatPageController
         ?string $isAdminPage,
     ) {
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
-        $topPagedto = $staticDataGeneration->getTopPageData();
+        $topPageDto = $staticDataGeneration->getTopPageData();
         $oc = $ocRepo->getOpenChatById($open_chat_id);
         if (!$oc)
-            return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPagedto);
+            return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
 
         $tag = $oc['tag1'];
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY) : null;
@@ -172,7 +172,7 @@ class OpenChatPageController
             '_hourlyRange',
             '_adminDto',
             'officialDto',
-            'topPagedto',
+            'topPageDto',
         ));
     }
 
