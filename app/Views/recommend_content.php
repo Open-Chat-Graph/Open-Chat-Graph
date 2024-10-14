@@ -171,7 +171,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
-    <aside class="top-ranking-list-aside" style="margin: 0 1rem;">
+    <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_recent_comments') ?>
     </aside>
     <hr class="hr-bottom">
