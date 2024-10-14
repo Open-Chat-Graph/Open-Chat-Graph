@@ -230,13 +230,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         });
     </script>
 
-    <script type="module">
-        import {
-            setEvent
-        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-        setEvent(true)
-    </script>
+    <script type="module" src="<?php echo fileUrl('/js/fetchComment.js') ?>"></script>
 
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>

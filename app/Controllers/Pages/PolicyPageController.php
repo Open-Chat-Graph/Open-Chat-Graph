@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Config\AppConfig;
 use App\Views\Content\TopPageNews;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
@@ -21,7 +22,7 @@ class PolicyPageController
         $_news = array_reverse(TopPageNews::getTopPageNews());
 
         $view = view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_news'));
-        handleRequestWithETagAndCache($view->getRenderCache(), 300, 3600 * 24);
+        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 
@@ -35,14 +36,14 @@ class PolicyPageController
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema('オプチャグラフについて', 'policy', 'プライバシーポリシー', 'privacy');
 
         $view = view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema'));
-        handleRequestWithETagAndCache($view->getRenderCache(), 300, 3600 * 24);
+        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 
     function term(PageBreadcrumbsListSchema $breadcrumbsShema)
     {
         $view = view('term_content');
-        handleRequestWithETagAndCache($view->getRenderCache(), 300, 3600 * 24);
+        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 
@@ -55,7 +56,7 @@ class PolicyPageController
         $_meta->setDescription($desc)->setOgpDescription($desc);
 
         $view = view('ads_policy_content', compact('_meta', '_css'));
-        handleRequestWithETagAndCache($view->getRenderCache(), 300, 3600 * 24);
+        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 }

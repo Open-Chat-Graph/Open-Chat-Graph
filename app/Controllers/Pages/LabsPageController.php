@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Config\AppConfig;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
@@ -30,7 +31,7 @@ class LabsPageController
             '_recommendDto',
         ));
 
-        handleRequestWithETagAndCache($view->getRenderCache(), 300, 3600);
+        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 

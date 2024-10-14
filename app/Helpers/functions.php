@@ -161,10 +161,14 @@ function noStore()
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
-function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600)
+function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
-    $etag = '"' . md5($content . filemtime(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+    if ($hourly) {
+        $etag = '"' . md5($content . filemtime(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+    } else {
+        $etag = '"' . md5($content) . '"';
+    }
 
     // max-ageと共にCache-Controlヘッダーを設定
     header("Cache-Control: public, max-age={$maxAge}, must-revalidate");
@@ -184,8 +188,6 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 
 function purgeCacheCloudFlare(string $zoneID, string $apiKey, ?array $files = null): string
 {
-    touch(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
-
     // cURLセッションを初期化
     $ch = curl_init();
 
@@ -369,16 +371,24 @@ function getFilePath($path, $pattern): string
     }
 }
 
-function localCORS()
+function isLocalHost(): bool
 {
-    $ip = getIP();
-    if (strstr($ip, '::1') !== false || strstr($ip, '192.168') !==false || strstr($ip, '172.18.0.1') !== false) {
-        header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE");
-        header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
-        if ($_SERVER['REQUEST_METHOD'] === "OPTIONS") {
-            exit;
-        }
+    $ip = $_SERVER['HTTP_HOST'] ?? '::1';
+
+    return
+        strstr($ip, 'localhost') !== false
+        || strstr($ip, '::1') !== false
+        || strstr($ip, '192.168') !== false
+        || strstr($ip, '172.18.0.1') !== false;
+}
+
+function allowCORS()
+{
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE");
+    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
+    if ($_SERVER['REQUEST_METHOD'] === "OPTIONS") {
+        exit;
     }
 }
 

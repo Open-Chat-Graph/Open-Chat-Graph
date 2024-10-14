@@ -1,5 +1,4 @@
 <!-- @param array $openChatList -->
-<!-- @param bool $isHourly -->
 <?php $count1 = 0;
 $count2 = 0;
 $count3 = 0;
@@ -24,7 +23,7 @@ $count3 = 0;
               <span aria-hidden="true">@</span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
             </div>
             <div class="comment-time">
-              <span><?php echo timeElapsedString($oc['time']) ?></span>
+              <span><?php echo $oc['time'] ?></span>
             </div>
           </a>
         </h3>
@@ -55,7 +54,7 @@ $count3 = 0;
                 <span aria-hidden="true">@</span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
               <div class="comment-time">
-                <span><?php echo timeElapsedString($oc['time']) ?></span>
+                <span><?php echo $oc['time'] ?></span>
               </div>
             </a>
           </h3>
@@ -76,7 +75,7 @@ $count3 = 0;
                 <span aria-hidden="true">@</span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
               <div class="comment-time">
-                <span><?php echo timeElapsedString($oc['time']) ?></span>
+                <span><?php echo $oc['time'] ?></span>
               </div>
             </a>
           </h3>

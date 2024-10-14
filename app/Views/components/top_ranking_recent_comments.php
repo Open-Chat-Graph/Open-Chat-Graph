@@ -7,6 +7,10 @@
         </div>
     </header>
     <div id="recent_comment">
-        <?php if (isset($recentCommentList)) viewComponent('open_chat_list_ranking_comment', ['openChatList' => $recentCommentList]) ?>
+        <?php if (isset($recentCommentList)) : ?>
+            <?php viewComponent('open_chat_list_ranking_comment', ['openChatList' => $recentCommentList]) ?>
+        <?php else: ?>
+            <?php viewComponent('open_chat_list_ranking_comment_dummy') ?>
+        <?php endif ?>
     </div>
 </article>

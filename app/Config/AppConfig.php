@@ -8,7 +8,7 @@ class AppConfig
     const RankingDayTable = 'statistics_ranking_hour24';
     const RankingWeekTable = 'statistics_ranking_week';
     const OpenChatTable = 'open_chat';
-    
+
     const RECOMMEND_LIST_LIMIT = 50;
     const MIN_MEMBER_DIFF_HOUR = 3;
     const MIN_MEMBER_DIFF_H24 = 8;
@@ -20,6 +20,8 @@ class AppConfig
     const GTM_ID = 'GTM-NTK2GPTF';
 
     const DEVICE_COOKIE_EXPIRES = 60 * 60 * 24 * 30;
+
+    const ETAG_ARG = [300, 3600 * 24, false];
 
     const LINE_URL = 'https://line.me/ti/g2/';
 
@@ -50,6 +52,7 @@ class AppConfig
     const DAILY_CRON_UPDATED_AT_DATE =  __DIR__ . '/../../storage/static_data_top/daily_updated_at.dat';
     const HOURLY_CRON_UPDATED_AT_DATETIME =     __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
     const HOURLY_REAL_UPDATED_AT_DATETIME =      __DIR__ . '/../../storage/static_data_top/real_updated_at.dat';
+    const COMMENT_UPDATED_AT_MICROTIME =      __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
 
     const ROOT_PATH = __DIR__ . '/../../';
 

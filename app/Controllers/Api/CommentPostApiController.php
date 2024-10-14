@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\AdminConfig;
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Dto\CommentPostApiArgs;
@@ -56,11 +57,13 @@ class CommentPostApiController
         );
 
         if (!$flag) {
-            purgeCacheCloudFlare(
+            !isLocalHost() && purgeCacheCloudFlare(
                 AdminConfig::CloudFlareZoneID,
                 AdminConfig::CloudFlareApiKey,
-                [url()]
+                [url('recent-comment-api')]
             );
+
+            safeFileRewrite(AppConfig::COMMENT_UPDATED_AT_MICROTIME, (string)microtime(true));
         } else {
             cookie(['comment_flag' => (string)$flag]);
         }

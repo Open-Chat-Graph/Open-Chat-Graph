@@ -123,7 +123,6 @@ class SyncOpenChat
         $this->hourlyImageUpdate();
         $this->hourlyMemberRankingUpdate();
         $this->hourlyInvitationTicketUpdate();
-        $this->hourlyImageUpdate();
     }
 
     private function hourlyMerge()
@@ -144,7 +143,7 @@ class SyncOpenChat
         purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
 
         $this->rankingBanUpdater->updateRankingBanTable();
-        $this->acrreditationCacheUpdater->updateStaticData();
+        //$this->acrreditationCacheUpdater->updateStaticData();
         $this->recommendUpdater->updateRecommendTables();
     }
 
