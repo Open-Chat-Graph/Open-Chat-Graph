@@ -20,11 +20,11 @@ function timeElapsedString(datetime, thresholdMinutes = 15) {
     const seconds = diffDate.getUTCSeconds();
 
     if (years > 0) {
-        return years + '年前';
+        return `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
     } else if (months > 0) {
-        return months + 'ヶ月前';
+        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
     } else if (days > 0) {
-        return days + '日前';
+        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
     } else if (hours > 0) {
         return hours + '時間前';
     } else if (minutes > 0) {

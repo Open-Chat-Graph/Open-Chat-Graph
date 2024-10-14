@@ -42,6 +42,6 @@ class RecentCommentApiController
             $user_id
         );
 
-        return view('components/open_chat_list_ranking_comment', ['openChatList' => $recentCommentList]);
+        return view('components/open_chat_list_ranking_comment2', ['openChatList' => $recentCommentList]);
     }
 }

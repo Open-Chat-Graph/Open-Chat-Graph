@@ -69,7 +69,7 @@
     </style>
 
     <!-- 固定ヘッダー -->
-    <main class="main pad-side-top-ranking pad-side-top-list body">
+    <main class="main pad-side-top-ranking body">
         <div style="margin: 0 -1rem; ">
             <?php viewComponent('site_header') ?>
         </div>

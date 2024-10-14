@@ -43,7 +43,7 @@
                         <small class="p-small"><a style="color:#777" rel="external nofollow noopener" href="https://openchat.line.me/jp/explore" target="_blank">ランキング（LINE公式サイト）<span class="line-link-icon777"></span></a>にランクインしたオープンチャットは、オプチャグラフに随時登録されます。</small>
                     </p>
                     <p>
-                        <small class="p-small">LINE公式サイトのランキングは1時間毎に更新されており、オプチャグラフもその時間帯に合わせて公式サイトからデータを取得しています。</small>
+                        <small class="p-small">LINE公式のランキングは1時間毎に更新されるため、オプチャグラフはその時間帯に合わせて公式サイトからデータを取得しています。</small>
                     </p>
                 </div>
             </header>

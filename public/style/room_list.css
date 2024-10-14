@@ -281,7 +281,7 @@
 }
 
 .top-ranking,
-.top-list {
+.recent-comment-list {
   display: flex;
   /* padding: 1rem 0; */
   padding: 1rem 0;
@@ -291,7 +291,7 @@
   /* border-top: 1px solid #efefef; */
 }
 
-.top-list .openchat-item-list {
+.recent-comment-list .openchat-item-list {
   margin-bottom: -1rem;
   margin-top: -0.5rem;
   width: 100%;
@@ -345,7 +345,7 @@
   pointer-events: none;
 }
 
-.top-list .openchat-item-img {
+.recent-comment-list .openchat-item-img {
   width: 40px;
   height: 40px;
   top: 8px;
@@ -410,7 +410,7 @@
   gap: 1px;
 }
 
-.top-list .openchat-item-lower-outer:has(.registration-date) {
+.recent-comment-list .openchat-item-lower-outer:has(.registration-date) {
   width: fit-content;
   position: absolute;
   bottom: 0;
@@ -429,7 +429,7 @@
   gap: 4px;
 }
 
-.openchat-item-lower > span:nth-child(2) {
+.openchat-item-lower>span:nth-child(2) {
   position: relative;
 }
 
@@ -477,7 +477,7 @@
   margin: 17px 1.5rem 17px 30px;
 }
 
-.top-list .openchat-item {
+.recent-comment-list .openchat-item {
   min-height: 40px;
   margin: 0;
   padding: 8px 0;
@@ -504,12 +504,14 @@
   margin-top: 2px;
 }
 
-.top-list .openchat-item-desc {
-  font-size: 13px;
+.recent-comment-list .openchat-item-desc {
+  font-size: 15px;
   margin-top: 3px;
   color: #111;
   font-weight: normal;
   line-height: 150%;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
 }
 
 .top-ranking .openchat-item h3 {
@@ -517,14 +519,14 @@
   max-width: unset;
 }
 
-.top-list .openchat-item h3 {
+.recent-comment-list .openchat-item h3 {
   display: block;
   min-width: 0px;
   max-width: min-content;
 }
 
-.top-list .openchat-item-title {
-  font-size: 13px;
+.recent-comment-list .openchat-item-title {
+  font-size: 14px;
   display: flex;
 }
 
@@ -534,31 +536,28 @@
 }
 
 .comment-user {
-  z-index: 1;
-  cursor: pointer;
+  color: #777;
+  font-size: 14px;
   display: block;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  min-width: max-content;
-  color: #aaa;
-  font-weight: bold;
+  font-weight: normal;
+  position: relative;
 }
 
 .openchat-item-title .comment-name {
-  z-index: 1;
-  cursor: pointer;
   display: block;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  color: #aaa;
-  font-weight: bold;
-  margin-left: 2px;
-  margin-right: 9px;
+  color: #111;
+  font-weight: 500;
 }
 
-.openchat-item-title .comment-time:before {
+.openchat-item-title .comment-member-count {
+  color: #111;
+  font-weight: 500;
+}
+
+/* .openchat-item-title .comment-user:before {
   content: '';
   position: absolute;
   top: 7.5px;
@@ -566,15 +565,24 @@
   width: 2px;
   height: 2px;
   background-color: #aaa;
+} */
+
+.comment-footer {
+  all: unset;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 1px;
 }
 
-.openchat-item-title .comment-time {
+.comment-time {
   font-weight: normal;
   position: relative;
   color: #aaa;
+  font-size: 13px;
 }
 
-.top-list .super-icon {
+.recent-comment-list .super-icon {
   scale: 70%;
   margin: -2px;
 }
@@ -586,14 +594,14 @@
   margin-right: 1px;
 }
 
-.top-list .openchat-item-lower,
+.recent-comment-list .openchat-item-lower,
 .top-ranking .openchat-item-lower {
   font-size: 13px;
   margin: 0;
   width: 100%;
 }
 
-.top-list .openchat-item-mui-chip-outer,
+.recent-comment-list .openchat-item-mui-chip-outer,
 .top-ranking .openchat-item-mui-chip-outer {
   font-size: 12px;
   margin: 0;
@@ -603,13 +611,13 @@
   height: fit-content;
 }
 
-.top-list .openchat-item-lower,
-.top-list .openchat-item-mui-chip-outer {
+.recent-comment-list .openchat-item-lower,
+.recent-comment-list .openchat-item-mui-chip-outer {
   font-size: 13px;
   margin: 0;
 }
 
-.top-list .registration-date {
+.recent-comment-list .registration-date {
   color: #aaa;
 }
 
@@ -629,7 +637,7 @@
 
 .readMore-btn.top-ranking-readMore,
 .top-ranking .top-ranking-readMore,
-.top-list .top-ranking-readMore {
+.recent-comment-list .top-ranking-readMore {
   margin: 0;
   height: 42px;
   border: 1px solid #efefef;
@@ -647,7 +655,7 @@
 }
 
 .top-ranking .ranking-readMore,
-.top-list .ranking-readMore {
+.recent-comment-list .ranking-readMore {
   font-size: 13px;
   line-height: unset;
   font-weight: bold;
@@ -907,6 +915,7 @@
 }
 
 @media screen and (max-width: 359px) {
+
   header,
   main {
     padding: 0rem 8px;
@@ -921,7 +930,7 @@
     margin-right: 5px;
   }
 
-  .top-list .openchat-item,
+  .recent-comment-list .openchat-item,
   .top-ranking .openchat-item,
   .openchat-item {
     margin-right: 0;
@@ -1037,12 +1046,12 @@
     text-decoration: underline 2px currentColor;
   }
 
-  .top-list .openchat-item:hover .openchat-item-title {
+  .recent-comment-list .openchat-item:hover .openchat-item-title {
     -webkit-text-decoration: unset;
     text-decoration: unset;
   }
 
-  .top-list .openchat-item:hover {
+  .recent-comment-list .openchat-item:hover {
     background: var(--hover);
   }
 
@@ -1110,15 +1119,15 @@
     font-size: 13px;
   }
 
-  .top-list .openchat-item-desc {
+  .recent-comment-list .openchat-item-desc {
     margin-top: 3px;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: normal;
   }
 
-  .top-list .openchat-item-lower,
+  .recent-comment-list .openchat-item-lower,
   .top-ranking .openchat-item-lower,
-  .top-list .openchat-item-mui-chip-outer,
+  .recent-comment-list .openchat-item-mui-chip-outer,
   .top-ranking .openchat-item-mui-chip-outer {
     font-size: 13px;
     margin-top: 1px;
@@ -1129,7 +1138,7 @@
     font-weight: 500;
   }
 
-  .top-list .openchat-item-title {
+  .recent-comment-list .openchat-item-title {
     font-size: 13px;
     font-weight: 500;
   }
@@ -1137,6 +1146,7 @@
   .refresh-time span {
     font-size: 1rem;
   }
+
   .openchat-list-title {
     font-size: 19px;
   }
@@ -1149,7 +1159,7 @@
   }
 
   .top-ranking .ranking-readMore,
-  .top-list .ranking-readMore {
+  .recent-comment-list .ranking-readMore {
     font-size: 14px;
   }
 }
@@ -1203,12 +1213,10 @@
   height: 38px;
   width: 48px;
   right: 0px;
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0.95) 37%,
-    rgba(255, 255, 255, 1) 99%
-  );
+  background-image: linear-gradient(90deg,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0.95) 37%,
+      rgba(255, 255, 255, 1) 99%);
 }
 
 .tag-btn.open-btn {

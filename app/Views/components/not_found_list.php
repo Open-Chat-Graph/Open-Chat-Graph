@@ -1,10 +1,6 @@
 <main style="padding-top: 0; padding-bottom: 0;">
-    <article class="top-list">
-        <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking') ?>">
-            <span class="ranking-readMore">カテゴリーからオープンチャットを探す</span>
-        </a>
-    </article>
 
+    <hr class="hr-top">
     <article class="top-ranking">
         <header class="openchat-list-title-area unset">
             <div class="openchat-list-date unset ranking-url">

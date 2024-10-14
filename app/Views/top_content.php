@@ -9,7 +9,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div class="pad-side-top-ranking pad-side-top-list body" style="overflow: hidden; padding-top: 8px;">
+    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 8px;">
 
         <section class="top-ranking top-btns top">
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking?list=daily') ?>">
