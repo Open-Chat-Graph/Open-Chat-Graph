@@ -26,7 +26,7 @@
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
     <?php endif ?>
-    <?php if (url() !== 'http://localhost') : ?>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
+    <?php if (!isLocalHost()) : ?>
+        <script async id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
     <?php endif ?>
 </head>

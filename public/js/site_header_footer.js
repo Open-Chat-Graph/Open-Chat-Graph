@@ -4,7 +4,7 @@ function validateStringNotEmpty(str) {
   return string.trim() !== ''
 }
 
-;(function () {
+; (function () {
   const siteHeader = document.getElementById('site_header')
   const searchInput = document.getElementById('q')
   const searchBtn = document.getElementById('search_button')
@@ -31,63 +31,63 @@ function validateStringNotEmpty(str) {
       if (!validateStringNotEmpty(e.target.elements['q'].value)) e.preventDefault()
     })
   })
-  ;(function (el) {
-    if (!el) return
-    const outer = document.getElementById('copy-btn-outer')
-    let flag = true
+    ; (function (el) {
+      if (!el) return
+      const outer = document.getElementById('copy-btn-outer')
+      let flag = true
 
-    const copyUrl = async () => {
-      if (!flag) return
-      flag = false
+      const copyUrl = async () => {
+        if (!flag) return
+        flag = false
 
-      const location = new URL(document.location)
-      const params = location.searchParams
-      const tag = params.get('tag')
+        const location = new URL(document.location)
+        const params = location.searchParams
+        const tag = params.get('tag')
 
-      let url = ''
-      if (tag) {
-        url = location.href
-      } else {
-        url = `https://${location.hostname}${location.pathname}`
-      }
+        let url = ''
+        if (tag) {
+          url = location.href
+        } else {
+          url = `https://${location.hostname}${location.pathname}`
+        }
 
-      const text = document.title + '\n' + url
+        const text = document.title + '\n' + url
 
-      try {
-        await navigator.clipboard.writeText(text)
-      } catch {
-        console.error('コピーできませんでした')
-        return false
-      }
+        try {
+          await navigator.clipboard.writeText(text)
+        } catch {
+          console.error('コピーできませんでした')
+          return false
+        }
 
-      document.getElementById('copy-btn-title').textContent = document.title
-      document.getElementById('copy-btn-url').textContent = url
+        document.getElementById('copy-btn-title').textContent = document.title
+        document.getElementById('copy-btn-url').textContent = url
 
-      outer.classList.remove('fade-out-copy')
-      outer.classList.add('copy-btn-copied')
-      outer.classList.add('fade-in-copy')
+        outer.classList.remove('fade-out-copy')
+        outer.classList.add('copy-btn-copied')
+        outer.classList.add('fade-in-copy')
 
-      // 1秒後にフェードアウトアニメーションを適用し、非表示（display:none）に変更
-      setTimeout(function () {
-        outer.classList.remove('fade-in-copy')
-        outer.classList.add('fade-out-copy')
+        // 1秒後にフェードアウトアニメーションを適用し、非表示（display:none）に変更
         setTimeout(function () {
-          outer.classList.remove('copy-btn-copied')
-          flag = true
-        }, 250) // フェードアウトにかかる時間（ミリ秒）
-      }, 1500) // 表示されてからフェードアウトまでの待機時間（ミリ秒）
+          outer.classList.remove('fade-in-copy')
+          outer.classList.add('fade-out-copy')
+          setTimeout(function () {
+            outer.classList.remove('copy-btn-copied')
+            flag = true
+          }, 250) // フェードアウトにかかる時間（ミリ秒）
+        }, 1500) // 表示されてからフェードアウトまでの待機時間（ミリ秒）
 
-      return true
-    }
+        return true
+      }
 
-    el.addEventListener('click', () => copyUrl())
+      el.addEventListener('click', () => copyUrl())
 
-    document.getElementById('copy-description').addEventListener('click', () => {
-      outer.classList.remove('fade-in')
-      outer.classList.add('fade-out')
-      outer.classList.remove('copy-btn-copied')
-    })
-  })(document.getElementById('copy-btn'))
+      document.getElementById('copy-description').addEventListener('click', () => {
+        outer.classList.remove('fade-in')
+        outer.classList.add('fade-out')
+        outer.classList.remove('copy-btn-copied')
+      })
+    })(document.getElementById('copy-btn'))
 })()
 
 const setHeaderShow = (header, hidden, show) => {
@@ -188,6 +188,35 @@ const setAnchorPosition = () => {
 
 //setAnchorPosition()
 
+function whiteOut() {
+  // オーバーレイの作成
+  const overlay = document.createElement('div')
+  overlay.style.position = 'fixed'
+  overlay.style.top = '0'
+  overlay.style.left = '0'
+  overlay.style.width = '100%'
+  overlay.style.height = '100%'
+  overlay.style.backgroundColor = 'white'
+  overlay.style.opacity = '0'
+  overlay.style.zIndex = '29'
+  overlay.style.transition = 'opacity 1s' // フェードインに3秒かける
+
+  // オーバーレイをbodyに追加
+  document.body.appendChild(overlay)
+
+  // フェードインの開始
+  setTimeout(function () {
+    overlay.style.opacity = '1' // 3秒後にオーバーレイを完全に表示
+  }, 0) // 0秒後に実行（すぐに実行）
+
+  // 全てを真っ白にする
+  setTimeout(function () {
+    document.body.style.backgroundColor = 'white' // 更に3秒後に背景色を白に変更
+  }, 1000) // 3秒後に実行
+
+  alert('お知らせ: エラーが発生したためページを更新してください。アドブロックが有効な場合は解除してください。')
+}
+
 async function blockblock() {
   const agentsJsonUrl =
     'https://raw.githubusercontent.com/monperrus/crawler-user-agents/master/crawler-user-agents.json'
@@ -205,35 +234,22 @@ async function blockblock() {
     mode: 'no-cors',
     cache: 'no-store',
   })
-    .then()
+    .then(() => {
+      console.log('adsbygoogle.js is loaded')
+      window.addEventListener('load', function () {
+        const loadedAds = []
+        document.querySelectorAll('ins.adsbygoogle').forEach(function (el) {
+          el.attributes['data-adsbygoogle-status'] && loadedAds.push(el)
+        })
+
+        document.querySelectorAll('ins.adsbygoogle').length
+          && !loadedAds.length
+          && document.getElementById('ads-by-google-script')
+          && whiteOut()
+      });
+    })
     .catch((err) => {
-      
-      // オーバーレイの作成
-      const overlay = document.createElement('div')
-      overlay.style.position = 'fixed'
-      overlay.style.top = '0'
-      overlay.style.left = '0'
-      overlay.style.width = '100%'
-      overlay.style.height = '100%'
-      overlay.style.backgroundColor = 'white'
-      overlay.style.opacity = '0'
-      overlay.style.zIndex = '29'
-      overlay.style.transition = 'opacity 1s' // フェードインに3秒かける
-
-      // オーバーレイをbodyに追加
-      document.body.appendChild(overlay)
-
-      // フェードインの開始
-      setTimeout(function () {
-        overlay.style.opacity = '1' // 3秒後にオーバーレイを完全に表示
-      }, 0) // 0秒後に実行（すぐに実行）
-      
-      // 全てを真っ白にする
-      setTimeout(function () {
-        document.body.style.backgroundColor = 'white' // 更に3秒後に背景色を白に変更
-      }, 1000) // 3秒後に実行
-      
-      alert('お知らせ: エラーが発生したためページを更新してください。アドブロックが有効な場合は解除してください。')
+      whiteOut()
     })
 }
 

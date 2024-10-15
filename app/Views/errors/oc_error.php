@@ -16,7 +16,9 @@
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css") ?>">
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo url(\App\Config\AppConfig::SITE_ICON_FILE_PATH) ?>">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
+    <?php if (!isLocalHost()) : ?>
+        <script async id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
+    <?php endif ?>
 </head>
 
 <body class="body">
