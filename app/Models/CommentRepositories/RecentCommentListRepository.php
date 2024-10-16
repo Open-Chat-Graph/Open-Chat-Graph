@@ -17,7 +17,8 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
         int $limit,
         string $adminId = '',
         string $user_id = '',
-        int $open_chat_id = 0
+        int $open_chat_id = 0,
+        string $order = 'DESC',
     ): array {
         $query =
             "SELECT
@@ -36,7 +37,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                 AND (flag != 1 OR user_id = :user_id)
                 AND (open_chat_id != :open_chat_id OR open_chat_id = 0)
             ORDER BY
-                time DESC
+                time {$order}
             LIMIT
                 :offset, :limit;";
 
@@ -96,5 +97,23 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
         }
 
         return $result;
+    }
+
+    public function getRecordCount(
+        string $adminId = '',
+        string $user_id = '',
+        int $open_chat_id = 0,
+    ): int {
+        $query =
+            "SELECT
+                COUNT(*)
+            FROM
+                comment
+            WHERE
+                NOT user_id = :adminId
+                AND (flag != 1 OR user_id = :user_id)
+                AND (open_chat_id != :open_chat_id OR open_chat_id = 0)";
+
+        return CommentDB::fetchColumn($query, compact('adminId', 'user_id', 'open_chat_id'));
     }
 }
