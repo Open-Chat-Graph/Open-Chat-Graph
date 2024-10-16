@@ -149,7 +149,7 @@
     </footer>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const num = document.querySelectorAll('ins').length;
+            const num = document.querySelectorAll('ins.manual').length;
             for (let i = 0; i < num; i++) {
                 (adsbygoogle = window.adsbygoogle || []).push({});
             }

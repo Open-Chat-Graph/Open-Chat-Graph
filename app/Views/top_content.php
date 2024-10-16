@@ -136,7 +136,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const num = document.querySelectorAll('ins').length;
+            const num = document.querySelectorAll('ins.manual').length;
             for (let i = 0; i < num; i++) {
                 (adsbygoogle = window.adsbygoogle || []).push({});
             }
