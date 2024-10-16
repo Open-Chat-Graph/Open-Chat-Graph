@@ -269,7 +269,7 @@ a i,
 a strong,
 button,
 input[type='submit'] {
-  border-radius: 10rem;
+  border-radius: 5px;
   display: inline-block;
   font-size: medium;
   font-weight: bold;

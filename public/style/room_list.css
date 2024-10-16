@@ -541,6 +541,9 @@
   display: block;
   font-weight: normal;
   position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .openchat-item-title .comment-name {
