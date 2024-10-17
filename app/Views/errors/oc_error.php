@@ -16,9 +16,7 @@
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css") ?>">
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo url(\App\Config\AppConfig::SITE_ICON_FILE_PATH) ?>">
-    <?php if (!isLocalHost()) : ?>
-        <script async id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
-    <?php endif ?>
+    <?php \App\Views\Ads\GoogleAdsence::gTag() ?>
 </head>
 
 <body class="body">

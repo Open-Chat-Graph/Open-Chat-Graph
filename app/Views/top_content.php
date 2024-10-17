@@ -134,14 +134,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div class="refresh-icon"></div><time style="font-size: 11px; color: #777; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const num = document.querySelectorAll('ins.manual').length;
-            for (let i = 0; i < num; i++) {
-                (adsbygoogle = window.adsbygoogle || []).push({});
-            }
-        });
-    </script>
+    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
     <script>
         let lastList = ''

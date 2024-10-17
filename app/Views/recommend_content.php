@@ -208,14 +208,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   </article>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const num = document.querySelectorAll('ins.manual').length;
-      for (let i = 0; i < num; i++) {
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    });
-  </script>
+  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
   <script type="module">
     import {

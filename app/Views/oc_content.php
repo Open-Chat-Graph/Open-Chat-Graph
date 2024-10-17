@@ -332,14 +332,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('footer_inner') ?>
     </footer>
   </article>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const num = document.querySelectorAll('ins.manual').length;
-      for (let i = 0; i < num; i++) {
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    });
-  </script>
+  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
   <script type="module">
     import {
       getComment

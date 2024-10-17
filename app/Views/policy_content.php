@@ -6,6 +6,7 @@
     <script type="application/json" id="comment-app-init-dto">
         <?php echo json_encode(['openChatId' => 0, 'baseUrl' => url()], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
     </script>
+    <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
     <main style="overflow: hidden;">
         <article class="terms">
@@ -147,14 +148,7 @@
     <footer class="footer-elem-outer">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const num = document.querySelectorAll('ins.manual').length;
-            for (let i = 0; i < num; i++) {
-                (adsbygoogle = window.adsbygoogle || []).push({});
-            }
-        });
-    </script>
+    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

@@ -16,7 +16,7 @@
         <link rel="stylesheet" href="<?php echo fileUrl('style/mvp.css') ?>">
     <?php endif ?>
 
-    <link rel="canonical" hrefs="<?php echo $canonical ?>">
+    <link rel="canonical" href="<?php echo $canonical ?>">
 
     <title><?php echo $title ?></title>
     <meta name="description" content="<?php echo $description ?>">
