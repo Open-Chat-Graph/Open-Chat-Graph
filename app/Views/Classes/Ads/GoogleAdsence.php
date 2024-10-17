@@ -95,13 +95,15 @@ class GoogleAdsence
         EOT;
     }
 
-    static function gTag()
+    static function gTag(?string $dataOverlays = null)
     {
         if (isLocalHost()) return;
 
+        $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = self::AD_CLIENT;
+
         echo <<<EOT
-        <script async id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
+        <script async {$dataOverlaysAttr}id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
         EOT;
     }
 }

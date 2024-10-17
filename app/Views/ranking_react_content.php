@@ -12,9 +12,7 @@
     <?php endforeach ?>
     <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
-    <?php if (!isLocalHost()) : ?>
-        <script async data-overlays="bottom" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
-    <?php endif ?>
+    <?php \App\Views\Ads\GoogleAdsence::gTag("bottom") ?>
 </head>
 
 <body style="margin: 0;">
