@@ -2,9 +2,10 @@
   min-height: 133px;
 }
 
-.limit-btns .MuiTab-fullWidth {
+.limit-btns.category-tab .MuiTab-root.MuiTab-textColorPrimary {
   min-width: 0;
   padding: 0;
+  min-height: 48px;
 }
 
 .chart-canvas-box {
