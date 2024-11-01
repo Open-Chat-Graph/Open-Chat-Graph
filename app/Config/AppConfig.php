@@ -34,6 +34,7 @@ class AppConfig
 
     const OPEN_CHAT_LIST_LIMIT = 100;
     const MY_LIST_LIMIT = 50;
+    const RECENT_COMMENT_LIST_LIMIT = 30;
 
     const TOP_RANKING_LIST_LIMIT = 5;
     const TOP_MENBER_RANKING_EXCLUDE_ID = [145145, 3454];

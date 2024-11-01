@@ -16,14 +16,17 @@ class OpenChatPagination
      * 
      * @return array|false `['pageNumber' => int, 'maxPageNumber' => int, 'openChatList' => array, 'totalRecords' => int, 'labelArray' => array]`
      */
-    function getSelectElementArgOrderDesc(int $pageNumber, int $totalRecords, \Closure $repository, array $labelArray = []): array|false
-    {
-        $limit = AppConfig::OPEN_CHAT_LIST_LIMIT;
-
+    function getSelectElementArgOrderDesc(
+        int $pageNumber,
+        int $totalRecords,
+        \Closure $repository,
+        array $labelArray = [],
+        int $limit = AppConfig::OPEN_CHAT_LIST_LIMIT
+    ): array|false {
         // ページの最大数を取得する
         $maxPageNumber = $this->calcMaxPages($totalRecords, $limit);
 
-        if(!$pageNumber) {
+        if (!$pageNumber) {
             $pageNumber = $maxPageNumber;
         }
 
