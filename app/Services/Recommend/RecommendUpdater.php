@@ -17,6 +17,7 @@ class RecommendUpdater
             ["荒野行動", ["荒野"]],
             ["ハイキュー!!FLY HIGH（ハイキューフライハイ／ハイフラ）", ["ハイフラ_OR_ハイキュー"]],
             ["ポケットモンスター（ポケモン）", ["ポケモン大好きチャット"]],
+            ["ポケポケ（Pokémon TCG Pocket／ポケモンカード アプリ）", ["ポケポケ"]],
             ["スプラトゥーン", ["スプラ"]],
         ],
         "41" => [
@@ -310,7 +311,7 @@ class RecommendUpdater
         };
 
         if (is_array($word)) {
-            return "(" . implode(") OR (", array_map(fn ($str) => $rep($str), $word[1])) . ")";
+            return "(" . implode(") OR (", array_map(fn($str) => $rep($str), $word[1])) . ")";
         }
 
         return $rep($word);
@@ -327,9 +328,9 @@ class RecommendUpdater
             ))
         );
 
-        $this->tags = array_map(fn ($el) => is_array($el) ? $el[0] : $el, $tags);
+        $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
 
-        return array_map(fn ($str) => $this->replace($str, $column), $tags);
+        return array_map(fn($str) => $this->replace($str, $column), $tags);
     }
 
     function formatTag(string $tag): string
@@ -377,9 +378,9 @@ class RecommendUpdater
         $this->tags = json_decode((file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH)), true);
 
         return [
-            array_map(fn ($a) => array_map(fn ($str) => $this->replace($str, $column), $a), $this->tags),
-            array_map(fn ($str) => $this->replace($str, $column), self::DESC_STRONG_TAG),
-            array_map(fn ($str) => $this->replace($str, $column), self::AFTER_DESC_STRONG_TAG)
+            array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
+            array_map(fn($str) => $this->replace($str, $column), self::DESC_STRONG_TAG),
+            array_map(fn($str) => $this->replace($str, $column), self::AFTER_DESC_STRONG_TAG)
         ];
     }
 
@@ -437,7 +438,7 @@ class RecommendUpdater
 
     protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend')
     {
-        $strongTags = array_map(fn ($a) => array_map(fn ($str) => $this->replace($str, $column), $a), self::BEFORE_CATEGORY_NAME);
+        $strongTags = array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), self::BEFORE_CATEGORY_NAME);
 
         $excute = function ($table, $tag, $search, $category) {
             $tag = $this->formatTag($tag);
@@ -567,7 +568,7 @@ class RecommendUpdater
         $this->start = $betweenUpdateTime ? $this->start : '2023-10-16 00:00:00';
         $this->end = $betweenUpdateTime ? OpenChatServicesUtility::getModifiedCronTime(strtotime('+1hour'))->format('Y-m-d H:i:s') : '2033-10-16 00:00:00';
 
-        $deleteRecommend = fn (string $table) => DB::execute(
+        $deleteRecommend = fn(string $table) => DB::execute(
             "DELETE FROM
                 {$table}
             WHERE
@@ -585,7 +586,7 @@ class RecommendUpdater
             ['start' => $this->start, 'end' => $this->end]
         );
 
-        $delete = fn (string $table) => DB::execute(
+        $delete = fn(string $table) => DB::execute(
             "DELETE FROM
                 {$table}
             WHERE
@@ -648,8 +649,8 @@ class RecommendUpdater
             ))
         );
 
-        $tags = array_map(fn ($el) => is_array($el) ? $el[0] : $el, $tags);
-        $tags = array_map(fn ($el) => $this->formatTag($el), $tags);
+        $tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
+        $tags = array_map(fn($el) => $this->formatTag($el), $tags);
         return array_unique($tags);
     }
 }

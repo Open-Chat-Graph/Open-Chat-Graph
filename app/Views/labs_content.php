@@ -51,6 +51,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
         </footer>
     </div>
 
+    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

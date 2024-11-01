@@ -253,4 +253,4 @@ async function blockblock() {
     })
 }
 
-blockblock()
+if(!admin) blockblock()

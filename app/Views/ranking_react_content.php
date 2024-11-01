@@ -11,10 +11,8 @@
         <link rel="stylesheet" href="<?php echo fileUrl($css) ?>">
     <?php endforeach ?>
     <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
-    <link rel="canonical" hrefs="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
-    <?php if (!isLocalHost()) : ?>
-        <script async data-overlays="bottom" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
-    <?php endif ?>
+    <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
+    <?php \App\Views\Ads\GoogleAdsence::gTag("bottom") ?>
 </head>
 
 <body style="margin: 0;">

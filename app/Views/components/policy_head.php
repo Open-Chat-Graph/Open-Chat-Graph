@@ -12,13 +12,10 @@
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css") ?>">
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo url(\App\Config\AppConfig::SITE_ICON_FILE_PATH) ?>">
-    <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
-    <link rel="canonical" hrefs="<?php echo url('policy') ?>">
+    <link rel="canonical" href="<?php echo url(path()) ?>">
     <?php if (isset($noindex)) : ?>
         <meta name="robots" content="noindex, nofollow">
     <?php endif ?>
-    <?php if (!isLocalHost()) : ?>
-        <script async id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2330982526015125" crossorigin="anonymous"></script>
-    <?php endif ?>
+    <?php \App\Views\Ads\GoogleAdsence::gTag() ?>
 </head>

@@ -332,14 +332,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('footer_inner') ?>
     </footer>
   </article>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const num = document.querySelectorAll('ins').length;
-      for (let i = 0; i < num; i++) {
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    });
-  </script>
+  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
   <script type="module">
     import {
       getComment
@@ -373,6 +366,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         })
       }
     })();
+
+    const admin = <?php echo isset($_adminDto) ? 1 : 0 ?>
   </script>
   <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
   <script src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>

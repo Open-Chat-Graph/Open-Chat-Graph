@@ -65,11 +65,14 @@
 
 .MuiTabs-root.category-tab {
   border-color: #efefef;
+  min-height: 39px;
 }
 
 .category-tab .MuiTab-root.MuiTab-textColorPrimary {
   font-weight: 700;
   color: #aaa;
+  min-height: 39px;
+  padding: 0 16px;
 }
 
 .category-tab-pc .MuiTab-root.MuiTab-textColorPrimary {
@@ -142,7 +145,7 @@
   min-width: 0;
 }
 
-@media screen and (width >= 600px) {
+@media screen and (width >=600px) {
   .MuiChip-root.openchat-item-header-chip.category:hover {
     background-color: rgba(0, 0, 0, 0.1);
   }

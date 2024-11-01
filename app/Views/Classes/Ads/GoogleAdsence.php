@@ -69,7 +69,7 @@ class GoogleAdsence
     {
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="horizontal"></ins>
+        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="horizontal"></ins>
         EOT;
     }
 
@@ -77,7 +77,33 @@ class GoogleAdsence
     {
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        EOT;
+    }
+
+    static function loadAdsTag()
+    {
+        echo <<<EOT
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const num = document.querySelectorAll('ins.manual').length;
+                for (let i = 0; i < num; i++) {
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                }
+            });
+        </script>
+        EOT;
+    }
+
+    static function gTag(?string $dataOverlays = null)
+    {
+        if (isLocalHost()) return;
+
+        $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
+        $adClient = self::AD_CLIENT;
+
+        echo <<<EOT
+        <script async {$dataOverlaysAttr}id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
         EOT;
     }
 }

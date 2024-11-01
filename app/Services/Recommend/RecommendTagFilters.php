@@ -7,9 +7,6 @@ namespace App\Services\Recommend;
 class RecommendTagFilters
 {
     const RecommendPageTagFilter = [
-        '営業',
-        '対荒らし',
-        'スタンプ',
         'Instagram（インスタ）',
         '著作権（知的財産権）',
         "東京",
@@ -17,32 +14,18 @@ class RecommendTagFilters
         "神奈川",
         "愛知",
         "京都",
-        "下ネタ",
         "大阪",
         "兵庫",
         "福岡",
         "新歓",
         "関東",
-        "サークル",
-        "セミナー",
         "関西",
         "九州",
         "大学",
         "沖縄",
-        "即承認",
         "海外",
-        "全国 雑談",
-        "70代",
-        '新入生',
-        "60代",
-        "50代",
-        "加工",
-        "フェス",
-        "自衛隊",
-        "レスバ",
         "unistyle",
         "jobhunt",
-        "邦画",
     ];
 
     const FilteredTagSort = [
