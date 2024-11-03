@@ -24,6 +24,7 @@ use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
+use App\Controllers\Pages\RecentCommentPageController;
 use App\Controllers\Pages\RecentOpenChatPageController;
 use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
@@ -146,6 +147,24 @@ Route::path(
     ->matchNum('page', emptyAble: true)
     ->match(function () {
         handleRequestWithETagAndCache("recently-registered");
+    });
+
+Route::path(
+    'comments-timeline/{page}@get',
+    [RecentCommentPageController::class, 'index'],
+)
+    ->matchNum('page')
+    ->match(function (int $page) {
+        handleRequestWithETagAndCache("recent-comments/{$page}");
+    });
+
+Route::path(
+    'comments-timeline@get',
+    [RecentCommentPageController::class, 'index'],
+)
+    ->matchNum('page', emptyAble: true)
+    ->match(function () {
+        handleRequestWithETagAndCache("recent-comments");
     });
 
 Route::path(

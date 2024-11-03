@@ -16,7 +16,7 @@ class RecentCommentTest extends TestCase
 
     public function test()
     {
-        debug($this->instance->getAllOrderByRegistrationDate(1));
+        debug($this->instance->getAllOrderByRegistrationDate(1, 1));
         $this->assertTrue(true);
     }
 }

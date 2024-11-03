@@ -1,6 +1,12 @@
 <?php $count1 = 0;
 $count2 = 0;
 $count3 = 0;
+$len = $listLen ?? 5;
+$ads = $showAds ?? false;
+$omit = $omitDeleted ?? true;
+
+use App\Views\Ads\GoogleAdsence as GAd;
+
 /**
  * @var array{ id:int,user:string,name:string,img_url:string,description:string,member:int,emblem:int,category:int,time:string }[] $openChatList
  */
@@ -8,9 +14,10 @@ $count3 = 0;
 
 <ol class="openchat-item-list unset" style="margin-bottom: -0.5rem;">
   <?php foreach ($openChatList as $oc) : ?>
-    <?php if ($count1 >= 5) break; ?>
-    <?php if (mb_strlen($oc['description']) > 0) : ?>
+    <?php if ($count1 >= $len) break; ?>
+    <?php if (mb_strlen($oc['description']) > 0 || !$omit) : ?>
       <?php $count1++ ?>
+
       <li class="openchat-item unset">
         <a class="link-overlay unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>" tabindex="-1" aria-hidden="true">
           <span class="visually-hidden"><?php echo $oc['name'] ?></span>
@@ -28,12 +35,20 @@ $count3 = 0;
               </div>
             <?php endif ?>
 
-            <div class="comment-user" style="margin-left: 3px;">
-              <span>@<?php echo $oc['user'] ?></span>
-            </div>
+            <?php if (mb_strlen($oc['description']) > 0) : ?>
+              <div class="comment-user" style="margin-left: 3px;">
+                <span>@<?php echo $oc['user'] ?></span>
+              </div>
+            <?php endif ?>
           </a>
         </h3>
-        <p class="openchat-item-desc unset"><?php echo $oc['description'] ?></p>
+        <?php if (mb_strlen($oc['description']) > 0) : ?>
+          <p class="openchat-item-desc unset"><?php echo $oc['description'] ?></p>
+        <?php else : ?>
+          <div class="comment-user" style="font-size: 12px;">
+            <span>削除されたコメント</span>
+          </div>
+        <?php endif ?>
 
         <footer class="comment-footer">
           <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
@@ -45,10 +60,24 @@ $count3 = 0;
         </footer>
 
       </li>
-    <?php else : ?>
+
+      <?php if ($ads && $count1 % 3 !== 0) : ?>
+        <hr class="hr-bottom" style="margin: 4px -1rem; padding: 0; width: calc(100% + 2rem);">
+      <?php endif ?>
+
+      <?php if ($ads && $count1 % 3 === 0) : ?>
+        <li class="unset" style="margin: 0 -1rem; display: block;">
+          <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+          <hr class="hr-top" style="margin: 8px 0 4px 0; padding: 0; width: 100%;">
+        </li>
+      <?php endif ?>
+
+    <?php else: ?>
       <?php $count2++ ?>
     <?php endif ?>
   <?php endforeach ?>
+
   <?php if ($count2) : ?>
     <?php foreach ($openChatList as $oc) : ?>
       <?php if ($count2 === 0 || $count3 >= 3) break; ?>

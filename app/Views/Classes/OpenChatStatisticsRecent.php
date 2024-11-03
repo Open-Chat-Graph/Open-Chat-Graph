@@ -15,19 +15,20 @@ class OpenChatStatisticsRecent
         private OpenChatListRepositoryInterface $openChatListRepository,
         private OpenChatPagination $openChatPagination,
     ) {}
-        
+
     /**
      * @return array|false `['pageNumber' => int, 'maxPageNumber' => int, 'openChatList' => array, 'totalRecords' => int, 'labelArray' => array]`
      */
-    public function getAllOrderByRegistrationDate(int $pageNumber): array|false
+    public function getAllOrderByRegistrationDate(int $pageNumber, int $limit): array|false
     {
         $labelArray = $this->openChatListRepository->findAllOrderByIdCreatedAtColumn();
-        
+
         return $this->openChatPagination->getSelectElementArgOrderDesc(
             $pageNumber,
             count($labelArray),
             $this->openChatListRepository->findAllOrderById(...),
-            $labelArray
+            $labelArray,
+            $limit,
         );
     }
 }

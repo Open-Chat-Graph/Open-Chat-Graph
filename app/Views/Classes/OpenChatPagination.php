@@ -12,7 +12,7 @@ class OpenChatPagination
     use TraitPaginationRecordsCalculator;
 
     /**
-     * @param \Closure $repository `function(int $offset, int $limit): array`
+     * @param \Closure $repository `function(int $startId, int $endId): array`
      * 
      * @return array|false `['pageNumber' => int, 'maxPageNumber' => int, 'openChatList' => array, 'totalRecords' => int, 'labelArray' => array]`
      */
@@ -20,8 +20,8 @@ class OpenChatPagination
         int $pageNumber,
         int $totalRecords,
         \Closure $repository,
-        array $labelArray = [],
-        int $limit = AppConfig::OPEN_CHAT_LIST_LIMIT
+        array $labelArray,
+        int $limit
     ): array|false {
         // ページの最大数を取得する
         $maxPageNumber = $this->calcMaxPages($totalRecords, $limit);

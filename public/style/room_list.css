@@ -553,6 +553,7 @@
   overflow: hidden;
   color: #111;
   font-weight: 500;
+  max-width: 70%; 
 }
 
 .openchat-item-title .comment-member-count {

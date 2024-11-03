@@ -17,20 +17,22 @@ class RecentOpenChatPageController
         private OpenChatStatisticsRecent $openChatStatsRecent,
         private SelectElementPagination $pagination,
         private PageBreadcrumbsListSchema $breadcrumbsShema
-    ) {
-    }
+    ) {}
 
     function index(AdminAuthService $adminAuthService)
     {
         $recentPage = Reception::input('page');
-        $rankingList = $this->openChatStatsRecent->getAllOrderByRegistrationDate($recentPage, AppConfig::OPEN_CHAT_LIST_LIMIT);
+        $rankingList = $this->openChatStatsRecent->getAllOrderByRegistrationDate(
+            $recentPage,
+            AppConfig::OPEN_CHAT_LIST_LIMIT
+        );
 
         if (!$rankingList) {
             // 最大ページ数を超えてる場合は404
             return false;
         }
 
-        $path = '/recently-registered/';
+        $path = 'recently-registered';
         $pageTitle = 'オプチャグラフに最近登録されたオープンチャット';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
