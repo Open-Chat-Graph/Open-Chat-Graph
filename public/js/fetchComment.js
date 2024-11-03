@@ -1,6 +1,6 @@
 let lastList = ''
 
-function timeElapsedString(datetime, thresholdMinutes = 15) {
+export function timeElapsedString(datetime, thresholdMinutes = 15) {
     const now = new Date();
     const targetDatetime = new Date(datetime.replace(/-/g, '/'));  // 日付形式を修正してDateオブジェクトを作成
 
@@ -34,6 +34,13 @@ function timeElapsedString(datetime, thresholdMinutes = 15) {
     }
 }
 
+export function applyTimeElapsedString() {
+    const commentTime = document.querySelectorAll('.comment-time span')
+    commentTime.forEach((time) => {
+        time.textContent = timeElapsedString(time.textContent)
+    })
+}
+
 function getCookieValue(key = 'comment_flag') {
     const cookies = document.cookie.split(';')
     const foundCookie = cookies.find(
@@ -65,10 +72,7 @@ async function fetchComment(url = '/recent-comment-api', openChatId = 0) {
         comment.textContent = ''
         comment.insertAdjacentHTML('afterbegin', data)
 
-        const commentTime = document.querySelectorAll('.comment-time span')
-        commentTime.forEach((time) => {
-            time.textContent = timeElapsedString(time.textContent)
-        })
+        applyTimeElapsedString()
     } catch (error) {
         console.error('エラー', error)
     }

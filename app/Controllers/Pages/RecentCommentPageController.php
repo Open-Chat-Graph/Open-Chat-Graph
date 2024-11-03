@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Views\OpenChatStatisticsRecent;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
+use App\Views\RecentComment;
+use App\Views\RecentCommentSelectElementPagination;
 use App\Views\Schema\PageBreadcrumbsListSchema;
-use App\Views\SelectElementPagination;
 use Shadow\Kernel\Reception;
 
-class RecentOpenChatPageController
+class RecentCommentPageController
 {
     function __construct(
-        private OpenChatStatisticsRecent $openChatStatsRecent,
-        private SelectElementPagination $pagination,
+        private RecentComment $recentComment,
+        private RecentCommentSelectElementPagination $pagination,
         private PageBreadcrumbsListSchema $breadcrumbsShema
     ) {}
 
     function index(AdminAuthService $adminAuthService)
     {
         $recentPage = Reception::input('page');
-        $rankingList = $this->openChatStatsRecent->getAllOrderByRegistrationDate(
+        $rankingList = $this->recentComment->getAllOrderByRegistrationDate(
             $recentPage,
-            AppConfig::OPEN_CHAT_LIST_LIMIT
+            AppConfig::RECENT_COMMENT_LIST_LIMIT
         );
 
         if (!$rankingList) {
@@ -32,7 +32,7 @@ class RecentOpenChatPageController
             return false;
         }
 
-        $path = 'recently-registered';
+        $path = 'comments-timeline';
         $pageTitle = 'オプチャグラフに最近登録されたオープンチャット';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
@@ -44,7 +44,7 @@ class RecentOpenChatPageController
             '',
             $rankingList['pageNumber'],
             $rankingList['totalRecords'],
-            AppConfig::OPEN_CHAT_LIST_LIMIT,
+            AppConfig::RECENT_COMMENT_LIST_LIMIT,
             $rankingList['maxPageNumber'],
             $rankingList['labelArray']
         );
@@ -55,7 +55,7 @@ class RecentOpenChatPageController
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema('最近登録されたオープンチャット', 'oc');
 
         return view(
-            'recent_content',
+            'recent_comment',
             compact('_meta', '_css', '_select', '_label', 'path', 'isAdmin', '_breadcrumbsShema') + $rankingList
         );
     }

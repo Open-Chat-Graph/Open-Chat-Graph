@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Views;
 
-use App\Models\Repositories\OpenChatListRepositoryInterface;
+use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Traits\TraitPaginationRecordsCalculator;
 
-class OpenChatStatisticsRecent
+class RecentComment
 {
     use TraitPaginationRecordsCalculator;
 
     public function __construct(
-        private OpenChatListRepositoryInterface $openChatListRepository,
+        private RecentCommentListRepositoryInterface $recentCommentListRepository,
         private OpenChatPagination $openChatPagination,
     ) {}
 
@@ -21,14 +21,15 @@ class OpenChatStatisticsRecent
      */
     public function getAllOrderByRegistrationDate(int $pageNumber, int $limit): array|false
     {
-        $labelArray = $this->openChatListRepository->findAllOrderByIdCreatedAtColumn();
+        //$labelArray = $this->openChatListRepository->findAllOrderByIdCreatedAtColumn();
 
         return $this->openChatPagination->getSelectElementArgOrderDesc(
             $pageNumber,
-            count($labelArray),
-            $this->openChatListRepository->findAllOrderById(...),
-            $labelArray,
-            $limit,
+            $this->recentCommentListRepository->getRecordCount(),
+            fn(int $startId, int $endId) => $this->recentCommentListRepository
+                ->findRecentCommentOpenChatAll($startId, $endId - $startId, order: 'ASC'),
+            [],
+            limit: $limit,
         );
     }
 }
