@@ -6,6 +6,7 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
+use App\Services\StaticData\StaticDataFile;
 use App\Views\RecentComment;
 use App\Views\RecentCommentSelectElementPagination;
 use App\Views\Schema\PageBreadcrumbsListSchema;
@@ -16,11 +17,14 @@ class RecentCommentPageController
     function __construct(
         private RecentComment $recentComment,
         private RecentCommentSelectElementPagination $pagination,
-        private PageBreadcrumbsListSchema $breadcrumbsShema
+        private PageBreadcrumbsListSchema $breadcrumbsShema,
+
     ) {}
 
-    function index(AdminAuthService $adminAuthService)
-    {
+    function index(
+        AdminAuthService $adminAuthService,
+        StaticDataFile $staticDataGeneration,
+    ) {
         $recentPage = Reception::input('page');
         $rankingList = $this->recentComment->getAllOrderByRegistrationDate(
             $recentPage,
@@ -59,9 +63,20 @@ class RecentCommentPageController
             $subTitle ? ((string)$recentPage) : ''
         );
 
+        $topPageDto = $staticDataGeneration->getTopPageData();
+
         return view(
             'recent_comment',
-            compact('_meta', '_css', '_select', '_label', 'path', 'isAdmin', '_breadcrumbsShema') + $rankingList
+            compact(
+                '_meta',
+                '_css',
+                '_select',
+                '_label',
+                'path',
+                'isAdmin',
+                '_breadcrumbsShema',
+                'topPageDto'
+            ) + $rankingList
         );
     }
 }

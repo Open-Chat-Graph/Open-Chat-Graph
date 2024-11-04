@@ -9,11 +9,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
     <style>
-        hr {
-            border-bottom: solid 1px var(--border-color);
-            margin: 12px 0;
-        }
-
         .list-title {
             color: #111;
             all: unset;
@@ -43,7 +38,27 @@ viewComponent('head', compact('_css', '_meta')) ?>
         }
 
         .search-pager {
-            padding: 0;
+            padding: 1.5rem 2rem;
+            margin: 0 -1rem;
+            background: rgb(250, 250, 250);
+            width: calc(100% + 2rem);
+            justify-content: space-around;
+        }
+
+        .top-ranking-list-aside {
+            all: unset;
+            display: block;
+        }
+
+        .top-ranking-list-aside .top-ranking,
+        .top-ranking-list-aside .recent-comment-list {
+            margin-left: 1rem;
+            margin-right: 1rem;
+        }
+
+        .button01.prev a {
+            border: solid 1px var(--border-color);
+            border-radius: var(--border-radius);
         }
     </style>
     <!-- 固定ヘッダー -->
@@ -83,11 +98,70 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+
+    <section class="unset" style="display: block; margin: 1rem 0">
+        <hr class="hr-bottom">
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
+        <hr class="hr-top">
+        <aside class="top-ranking-list-aside">
+            <?php viewComponent('topic_tag', compact('topPageDto')) ?>
+        </aside>
+        <hr class="hr-bottom">
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
+        <hr class="hr-top">
+        <aside class="top-ranking-list-aside">
+            <?php viewComponent('top_ranking_recent_comments') ?>
+        </aside>
+        <hr class="hr-bottom">
+
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
+        <hr class="hr-top">
+        <aside class="top-ranking-list-aside">
+            <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
+        </aside>
+        <hr class="hr-bottom">
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
+        <hr class="hr-top">
+        <aside class="top-ranking-list-aside">
+            <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
+        </aside>
+        <hr class="hr-bottom">
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
+        <hr class="hr-top">
+        <aside class="top-ranking-list-aside">
+            <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
+        </aside>
+        <hr class="hr-bottom">
+
+        <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
+
+        <footer class="footer-elem-outer">
+            <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
+            <?php viewComponent('footer_inner') ?>
+        </footer>
+
+    </section>
+
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+
+    <script type="module">
+        import {
+            getComment
+        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+        getComment()
+    </script>
+
     <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
     <script>
         ;
@@ -98,14 +172,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 el.value && (location.href = el.value)
             })
         })(document.getElementById('page-selector'))
-    </script>
-
-    <script type="module">
-        import {
-            applyTimeElapsedString
-        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-        applyTimeElapsedString()
     </script>
 
     <?php echo $_breadcrumbsShema ?>
