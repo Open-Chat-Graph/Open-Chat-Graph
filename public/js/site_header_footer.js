@@ -253,4 +253,4 @@ async function blockblock() {
     })
 }
 
-if(!admin) blockblock()
+if(typeof admin === 'undefined' || !admin) blockblock()

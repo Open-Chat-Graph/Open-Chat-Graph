@@ -33,7 +33,7 @@ class RecentCommentPageController
         }
 
         $path = 'comments-timeline';
-        $pageTitle = 'オプチャグラフに最近登録されたオープンチャット';
+        $pageTitle = 'コメントのタイムライン';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
         $isAdmin = $adminAuthService->auth();
@@ -52,7 +52,12 @@ class RecentCommentPageController
         $subTitle = $recentPage === 0 ? '' : "({$recentPage}ページ目)";
         $_meta = meta()->setTitle($pageTitle . $subTitle);
 
-        $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema('最近登録されたオープンチャット', 'oc');
+        $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema(
+            'コメント',
+            'comments-timeline',
+            $subTitle,
+            $subTitle ? ((string)$recentPage) : ''
+        );
 
         return view(
             'recent_comment',

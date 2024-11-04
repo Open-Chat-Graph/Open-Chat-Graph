@@ -54,10 +54,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <header class="openchat-list-title-area unset" style="margin: 1rem 0;">
             <div style="flex-direction: column;">
                 <h2 class="list-title">
-                    コメントタイムライン
+                    コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
-                    <small class="p-small">オプチャグラフに投稿されたコメントのタイムラインを表示します。</small>
+                    <small class="p-small">オプチャグラフに投稿されたすべてのコメントをタイムラインで表示します。</small>
                 </p>
             </div>
         </header>

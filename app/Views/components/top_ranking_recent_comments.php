@@ -13,4 +13,7 @@
             <?php viewComponent('open_chat_list_ranking_comment_dummy') ?>
         <?php endif ?>
     </div>
+    <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
+        <span class="ranking-readMore">コメントをもっと見る</span>
+    </a>
 </article>
