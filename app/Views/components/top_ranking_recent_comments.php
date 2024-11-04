@@ -14,6 +14,6 @@
         <?php endif ?>
     </div>
     <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
-        <span class="ranking-readMore">コメントのタイムライン</span>
+        <span class="ranking-readMore">コメントのタイムラインを見る</span>
     </a>
 </article>
