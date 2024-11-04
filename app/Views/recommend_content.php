@@ -151,7 +151,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
           <hr class="hr-bottom" style="width: 100%;">
         <?php endif ?>
-        <a style="margin: 1rem 0 0 0;" class="readMore-btn top-ranking-readMore unset" href="<?php echo url('ranking') ?>">
+        <a style="margin: 1rem 0 0 0;" class="readMore-btn top-ranking-readMore unset white-btn" href="<?php echo url('ranking') ?>">
           <span class="ranking-readMore" style="font-size: 11.5px;">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
         </a>
       </aside>
