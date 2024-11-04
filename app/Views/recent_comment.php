@@ -72,6 +72,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
             border: solid 1px var(--border-color);
             border-radius: var(--border-radius);
         }
+
+        section aside:hover {
+            all: unset;
+        }
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
