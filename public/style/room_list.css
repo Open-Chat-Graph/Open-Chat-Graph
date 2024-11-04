@@ -647,7 +647,7 @@
   border: 1px solid #efefef;
   border-radius: 7px;
   background: -webkit-linear-gradient(45deg, rgb(253, 18, 226) 20%, rgb(164, 67, 221), rgb(84, 126, 255) 90%);
-  opacity: .7;
+  opacity: .75;
 }
 
 .readMore-btn.top-ranking-readMore.white-btn,
@@ -668,7 +668,7 @@
   margin: auto;
   line-height: 24px;
   color: #fff;
-  font-weight: 900;
+  font-weight: bold;
 }
 
 .white-btn .ranking-readMore {
@@ -677,9 +677,9 @@
 
 .top-ranking .ranking-readMore,
 .recent-comment-list .ranking-readMore {
-  font-size: 14px;
+  font-size: 15px;
   line-height: unset;
-  font-weight: 900;
+  font-weight: bold;
 }
 
 .white-btn .ranking-readMore::after {
@@ -695,7 +695,7 @@
 }
 
 .ranking-readMore .small {
-  color: #fff;
+  color: #aaa;
   font-weight: normal;
   font-size: 13px;
   margin-left: 4px;
