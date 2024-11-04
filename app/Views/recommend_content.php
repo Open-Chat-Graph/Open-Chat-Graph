@@ -53,7 +53,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
       <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc">
+        <p class="recommend-header-desc" style="color: #111;">
           「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！
         </p>
         <p class="recommend-header-desc desc-bottom">
@@ -63,7 +63,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <aside class="list-aside recommend-ranking-bottom">
+    <!-- <aside class="list-aside recommend-ranking-bottom">
       <?php if (isset($recommend)) : ?>
         <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
       <?php endif ?>
@@ -73,7 +73,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
-    <hr class="hr-top">
+    <hr class="hr-top"> -->
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
@@ -83,15 +83,15 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           $listsLastKey = count($lists) - 1;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
-            <li class="top-ranking">
+            <li class="top-ranking" style="padding-top: 4px;">
               <?php if ($key === 0) : ?>
                 <header class="recommend-ranking-section-header">
-                  <h2 class="list-title oc-list">
+                  <!-- <h2 class="list-title oc-list">
                     <div>「<?php echo $tag ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?></div>
                     <div>（<?php echo $time ?>）</div>
-                  </h2>
+                  </h2> -->
                   <aside class="list-aside">
                     <details class="icon-desc">
                       <summary style="font-size: 13px; font-weight: normal;">人数増加アイコンの説明</summary>
