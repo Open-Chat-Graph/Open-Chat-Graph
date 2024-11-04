@@ -18,7 +18,7 @@
     <span class="button01label"><?php echo $pageNumber . ' / ' . $maxPageNumber ?></span>
     <?php if ($pageNumber > 1) : ?>
         <div class="button01 next">
-            <a href="<?php echo SelectElementPagination::pagerUrl($path, $pageNumber - 1, $maxPageNumber) . ($_queryString ?? '') ?>">前のページへ</a>
+            <a href="<?php echo SelectElementPagination::pagerUrl($path, $pageNumber - 1, $maxPageNumber) . ($_queryString ?? '') ?>">過去のページへ</a>
         </div>
     <?php endif ?>
 </nav>

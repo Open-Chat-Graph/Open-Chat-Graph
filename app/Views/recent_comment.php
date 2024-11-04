@@ -38,11 +38,23 @@ viewComponent('head', compact('_css', '_meta')) ?>
         }
 
         .search-pager {
-            padding: 1.5rem 2rem;
-            margin: 0 -1rem;
             background: rgb(250, 250, 250);
+            width: 100%;
+            justify-content: space-evenly;
+            padding: 1.5rem 2rem;
+        }
+
+        article .search-pager {
+            margin: 0 -1rem;
             width: calc(100% + 2rem);
-            justify-content: space-around;
+        }
+
+        .head-pager .search-pager {
+            padding: 8px 0rem;
+        }
+
+        .head-pager .button01 a {
+            height: 36px;
         }
 
         .top-ranking-list-aside {
@@ -76,6 +88,11 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 </p>
             </div>
         </header>
+
+        <div class="head-pager">
+            <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
+        </div>
+
         <!-- select要素ページネーション -->
         <nav class="page-select unset">
             <form class="unset">
@@ -85,6 +102,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 <label for="page-selector" class="unset"><span><?php echo $_label ?></span></label>
             </form>
         </nav>
+
         <section class="recent-comment-list unset">
             <?php viewComponent(
                 'open_chat_list_ranking_comment2',
