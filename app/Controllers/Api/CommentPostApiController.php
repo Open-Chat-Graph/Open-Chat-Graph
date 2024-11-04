@@ -60,7 +60,10 @@ class CommentPostApiController
             !isLocalHost() && purgeCacheCloudFlare(
                 AdminConfig::CloudFlareZoneID,
                 AdminConfig::CloudFlareApiKey,
-                [url('recent-comment-api')]
+                [
+                    url('recent-comment-api'),
+                    url('comments-timeline')
+                ]
             );
 
             safeFileRewrite(AppConfig::COMMENT_UPDATED_AT_MICROTIME, (string)microtime(true));
