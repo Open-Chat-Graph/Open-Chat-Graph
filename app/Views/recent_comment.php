@@ -57,7 +57,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
-                    <small class="p-small">オプチャグラフに投稿されたすべてのコメントをタイムラインで表示します。</small>
+                    <small class="p-small">オプチャグラフに投稿されたすべてのコメントを表示</small>
                 </p>
             </div>
         </header>
