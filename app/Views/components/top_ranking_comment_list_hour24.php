@@ -8,7 +8,7 @@
         </div>
     </header>
     <?php viewComponent('open_chat_list_ranking', ['openChatList' => $dto->dailyList, 'isHourly' => true]) ?>
-    <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking?list=daily') ?>">
+    <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?list=daily') ?>">
         <span class="ranking-readMore">24時間の人数増加ランキングをもっと見る</span>
     </a>
 </article>

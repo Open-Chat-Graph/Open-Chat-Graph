@@ -647,7 +647,7 @@
   border: 1px solid #efefef;
   border-radius: 7px;
   background: -webkit-linear-gradient(45deg, rgb(253, 18, 226) 20%, rgb(164, 67, 221), rgb(84, 126, 255) 90%);
-  opacity: .75;
+  opacity: .7;
 }
 
 .readMore-btn.top-ranking-readMore.white-btn,
@@ -668,20 +668,22 @@
   margin: auto;
   line-height: 24px;
   color: #fff;
-  font-weight: bold;
+  font-weight: 900;
+}
+
+
+.top-ranking .ranking-readMore,
+.recent-comment-list .ranking-readMore {
+  font-size: 14px;
+  line-height: unset;
+  font-weight: 900;
 }
 
 .white-btn .ranking-readMore {
   color: #111;
+  font-size: 13px;
+  
 }
-
-.top-ranking .ranking-readMore,
-.recent-comment-list .ranking-readMore {
-  font-size: 15px;
-  line-height: unset;
-  font-weight: bold;
-}
-
 .white-btn .ranking-readMore::after {
   display: inline-block;
   content: '';
@@ -695,7 +697,7 @@
 }
 
 .ranking-readMore .small {
-  color: #aaa;
+  color: #fff;
   font-weight: normal;
   font-size: 13px;
   margin-left: 4px;

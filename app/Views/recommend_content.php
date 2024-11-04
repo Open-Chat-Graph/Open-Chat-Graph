@@ -122,7 +122,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php endif ?>
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray')) ?>
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
-                <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
+                <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;">「<?php echo $tag ?>」をすべて見る<span class="small" style="font-size: 11.5px;"><?php echo $_dto->tagRecordCounts[$_tagIndex] ?>件</span></span>
                 </a>
               <?php endif ?>
@@ -133,7 +133,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
                 <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
-                <hr class="hr-top">
+                <hr class="hr-top" style="margin-bottom: 4px;">
               </li>
             <?php endif ?>
           <?php endforeach ?>
