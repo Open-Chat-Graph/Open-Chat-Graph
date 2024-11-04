@@ -78,7 +78,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
           <?php
-          $chunkLen = 10;
+          $chunkLen = 5;
           $lists = array_chunk($recommend->getList(false, null), $chunkLen);
           $listsLastKey = count($lists) - 1;
           ?>
