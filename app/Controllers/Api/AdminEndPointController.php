@@ -50,7 +50,10 @@ class AdminEndPointController
         purgeCacheCloudFlare(
             AdminConfig::CloudFlareZoneID,
             AdminConfig::CloudFlareApiKey,
-            [url()]
+            [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]
         );
 
         return redirect("oc/{$id}/admin");
