@@ -9,7 +9,7 @@
         <ul class="footer-link-inner">
             <li><a class="unset" href="<?php echo url('ranking') ?>">カテゴリから探す</a></li>
             <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li>
-            <li><a class="unset" style="margin-bottom: 0;" href="https://openchat.line.me/jp/explore" target="_blank">LINE公式ランキング<span class="line-link-icon777"></span></a></li>
+            <li><a class="unset" style="margin-bottom: 0;" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
         </ul>
     </section>
     <!-- <aside class="open-btn2">
