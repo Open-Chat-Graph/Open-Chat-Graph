@@ -7,7 +7,7 @@
         </div>
     </header>
     <?php viewComponent('open_chat_list_ranking', ['openChatList' => $dto->popularList]) ?>
-    <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('ranking') ?>">
+    <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking') ?>">
         <span class="ranking-readMore">人数ランキングをもっと見る</span>
     </a>
 </article>
