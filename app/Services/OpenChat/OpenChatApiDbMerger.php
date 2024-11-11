@@ -101,6 +101,7 @@ class OpenChatApiDbMerger
 
     static function checkKillFlag()
     {
+        clearstatcache(true, AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH);
         if (file_get_contents(AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH) === '1') {
             throw new ApplicationException('OpenChatApiDbMerger: 強制終了しました');
         }

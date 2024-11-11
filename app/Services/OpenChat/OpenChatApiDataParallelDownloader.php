@@ -113,7 +113,6 @@ class OpenChatApiDataParallelDownloader
     /** @throws ApplicationException */
     static function checkKillFlag()
     {
-        clearstatcache(true, AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH);
         OpenChatApiDbMerger::checkKillFlag();
     }
 

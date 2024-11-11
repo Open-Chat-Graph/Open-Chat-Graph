@@ -52,6 +52,7 @@ class OpenChatDailyCrawling
 
     private function checkKillFlag()
     {
+        clearstatcache(true, AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH);
         if (file_get_contents(AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH) === '1') {
             throw new ApplicationException('OpenChatDailyCrawling: 強制終了しました');
         }
