@@ -57,6 +57,7 @@ class SyncOpenChat
         } else if ($this->isFailedDailyUpdate()) {
             addCronLog('Retry dailyTask');
             AdminTool::sendLineNofity('Retry dailyTask');
+            OpenChatApiDataParallelDownloader::enableKillFlag();
             OpenChatDailyCrawling::enableKillFlag();
             sleep(3);
             $this->dailyTask();
@@ -120,9 +121,12 @@ class SyncOpenChat
             $this->hourlyRankingPosition();
         }
 
+        // TODO: 新しい処理停止フラグを作って各処理の途中でチェックする
         $this->hourlyImageUpdate();
         $this->hourlyMemberRankingUpdate();
         $this->hourlyInvitationTicketUpdate();
+        $this->hourlyRankingBanUpdate();
+        $this->hourlyRecommendUpdater();
     }
 
     private function hourlyMerge()
@@ -138,13 +142,30 @@ class SyncOpenChat
 
     private function hourlyMemberRankingUpdate()
     {
+        addCronLog('Start hourlyMemberColumnUpdate');
         $this->hourlyMemberColumn->update();
+        addCronLog('Done hourlyMemberColumnUpdate');
+
+        addCronLog('Start hourlyMemberRankingUpdate');
         $this->hourlyMemberRanking->update();
         purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
+        addCronLog('Done hourlyMemberRankingUpdate');
 
-        $this->rankingBanUpdater->updateRankingBanTable();
         //$this->acrreditationCacheUpdater->updateStaticData();
+    }
+
+    private function hourlyRankingBanUpdate()
+    {
+        addCronLog('Start updateRankingBanTable');
+        $this->rankingBanUpdater->updateRankingBanTable();
+        addCronLog('Done updateRankingBanTable');
+    }
+
+    private function hourlyRecommendUpdater()
+    {
+        addCronLog('Start updateRecommendTables');
         $this->recommendUpdater->updateRecommendTables();
+        addCronLog('Done updateRecommendTables');
     }
 
     private function hourlyImageUpdate()
