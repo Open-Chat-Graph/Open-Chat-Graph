@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\AdminConfig;
-use App\Services\Accreditation\YahooFuriganaService;
+use App\Services\Furigana\YahooFuriganaService;
 use Shadow\Kernel\Reception;
 
 class FuriganaApiController

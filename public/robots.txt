@@ -1,6 +1,3 @@
 User-agent: *
 Disallow: /auth/
-Disallow: /accreditation/bronze/
-Disallow: /accreditation/silver/
-Disallow: /accreditation/gold/
 Sitemap: https://openchat-review.me/sitemap.xml

@@ -2,14 +2,12 @@
 
 namespace App\Config;
 
-use App\Controllers\Api\AccreditationPostApiController;
 use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\AdsRegistrationApiController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
 use App\Controllers\Api\CommentReportApiController;
-use App\Controllers\Api\LineLoginApiController;
 use Shadow\Kernel\Route;
 use App\Middleware\RedirectLineWebBrowser;
 use App\Services\Admin\AdminAuthService;
@@ -18,7 +16,6 @@ use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
-use App\Controllers\Pages\AccreditationController;
 use App\Controllers\Pages\AdsRegistrationPageController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\OpenChatPageController;
@@ -30,7 +27,6 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
-use App\Services\Accreditation\Enum\ExamType;
 use Shadow\Kernel\Reception;
 
 Route::middlewareGroup(RedirectLineWebBrowser::class)
@@ -328,116 +324,6 @@ Route::path(
         return ['isAdminPage' => '1'];
     });
 
-Route::path(
-    'auth/login',
-    [LineLoginApiController::class, 'login']
-)
-    ->matchStr('return_to', maxLen: 100, emptyAble: true);
-
-Route::path(
-    'auth/callback',
-    [LineLoginApiController::class, 'callback']
-)
-    ->matchStr('error', emptyAble: true)
-    ->matchStr('code', emptyAble: true)
-    ->matchStr('state', emptyAble: true);
-
-Route::path(
-    'auth/logout',
-    [LineLoginApiController::class, 'logout']
-)
-    ->matchStr('return_to', maxLen: 100, emptyAble: true);
-
-Route::path(
-    'accreditation/login',
-    [AccreditationController::class, 'homeLogin']
-);
-
-Route::path(
-    'accreditation/{examType}/{pageType}',
-    [AccreditationController::class, 'route']
-)
-    ->matchStr('examType', maxLen: 10)
-    ->matchStr('pageType', maxLen: 20, emptyAble: true)
-    ->matchNum('page', emptyAble: true, default: 1)
-    ->matchNum('id', emptyAble: true, default: 0);
-
-Route::path(
-    'accreditation/register-profile@POST',
-    [AccreditationPostApiController::class, 'registerProfile']
-)
-    ->matchStr('name', maxLen: 20)
-    ->matchStr('url', regex: OpenChatCrawlerConfig::LINE_INTERNAL_URL_MATCH_PATTERN, emptyAble: true)
-    ->matchStr('admin_key', maxLen: 200, emptyAble: true)
-    ->matchStr('return_to')
-    ->match(
-        fn(string $name) => !!removeAllZeroWidthCharacters($name)
-    );
-
-Route::path(
-    'accreditation/register-question@POST',
-    [AccreditationPostApiController::class, 'registerQuestion']
-)
-    ->matchStr('question', maxLen: 4000)
-    ->matchStr('answers.a', maxLen: 4000)
-    ->matchStr('answers.b', maxLen: 4000)
-    ->matchStr('answers.c', maxLen: 4000)
-    ->matchStr('answers.d', maxLen: 4000)
-    ->matchStr('answers.correct', maxLen: 1)
-    ->matchStr('explanation', maxLen: 4000)
-    ->matchStr('source_url', maxLen: 2083, emptyAble: true)
-    ->matchStr('type')
-    ->matchStr('return_to')
-    ->match(fn(string $type) => !!ExamType::tryFrom($type));
-
-Route::path(
-    'accreditation/edit-question@POST',
-    [AccreditationPostApiController::class, 'editQuestion']
-)
-    ->matchStr('question', maxLen: 4000)
-    ->matchStr('answers.a', maxLen: 4000)
-    ->matchStr('answers.b', maxLen: 4000)
-    ->matchStr('answers.c', maxLen: 4000)
-    ->matchStr('answers.d', maxLen: 4000)
-    ->matchStr('answers.correct', maxLen: 1)
-    ->matchStr('explanation', maxLen: 4000)
-    ->matchStr('source_url', maxLen: 2083, emptyAble: true)
-    ->matchStr('type')
-    ->matchNum('id')
-    ->matchNum('publishing', emptyAble: true, default: 0)
-    ->matchStr('return_to')
-    ->match(fn(string $type) => !!ExamType::tryFrom($type));
-
-Route::path(
-    'accreditation/delete-question@POST',
-    [AccreditationPostApiController::class, 'deleteQuestion']
-)
-    ->matchNum('id')
-    ->matchStr('return_to');
-
-Route::path(
-    'accreditation/reset-permission-question@POST',
-    [AccreditationPostApiController::class, 'resetPermissionQuestion']
-)
-    ->matchNum('id')
-    ->matchStr('return_to');
-
-Route::path(
-    'accreditation/move-question@POST',
-    [AccreditationPostApiController::class, 'moveQuestion']
-)
-    ->matchNum('id')
-    ->matchStr('type')
-    ->match(fn(string $type) => !!ExamType::tryFrom($type));
-
-Route::path(
-    'accreditation/set-admin-permission@POST',
-    [AccreditationPostApiController::class, 'setAdminPermission']
-)
-    ->matchNum('id')
-    ->matchNum('is_admin', min: 0, max: 1)
-    ->matchStr('return_to');
-
 Route::path('furigana@POST')
     ->matchStr('json');
 
@@ -449,9 +335,6 @@ Route::path(
     [FuriganaPageController::class, 'defamationGuideline']
 )
     ->match(fn() => handleRequestWithETagAndCache('defamationGuideline'));
-
-Route::path('accreditation')
-    ->matchNum('id', emptyAble: true, default: 0);
 
 cache();
 Route::run();

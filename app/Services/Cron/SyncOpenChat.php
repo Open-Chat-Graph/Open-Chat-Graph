@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AdminConfig;
-use App\Services\Accreditation\Recommend\StaticData\AccreditationStaticDataGenerator;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\CronJson\SyncOpenChatState;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
@@ -36,7 +35,6 @@ class SyncOpenChat
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
         private RecommendUpdater $recommendUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
-        private AccreditationStaticDataGenerator $acrreditationCacheUpdater,
     ) {
         set_exception_handler($this->exceptionHandler(...));
     }
@@ -150,8 +148,6 @@ class SyncOpenChat
         $this->hourlyMemberRanking->update();
         purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
         addCronLog('Done hourlyMemberRankingUpdate');
-
-        //$this->acrreditationCacheUpdater->updateStaticData();
     }
 
     private function hourlyRankingBanUpdate()

@@ -5,25 +5,14 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\Accreditation\AccreditationDB;
-use App\Models\Accreditation\AccreditationUserModel;
-use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
-use App\Services\UpdateRankingService;
-use App\Services\StaticData\StaticDataGenerator;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
-use App\Services\Admin\AdminTool;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
-use App\Services\Accreditation\Enum\ExamType;
-use App\Services\Accreditation\QuizApi\QuizApiService;
-use App\Services\Accreditation\QuizOgpGenerator;
 use App\Services\OpenChat\OpenChatDailyCrawling;
-use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
-use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shadow\Kernel\Validator;
@@ -57,20 +46,6 @@ class AdminPageController
     function testpage()
     {
         return view('admin/admin_message_page', ['title' => 'test', 'message' => 'testを実行しました。']);
-    }
-
-    private function genequizogp(QuizOgpGenerator $quizOgpGenerator, AccreditationUserModel $accreditationUserModel)
-    {
-
-        foreach (ExamType::cases() as $type) {
-            $dtos = $accreditationUserModel->getQuestionList(1, $type);
-            foreach ($dtos as $dto) {
-                $quizOgpGenerator->generateTextOgp(
-                    $dto->question,
-                    'quiz_img_' . $dto->id,
-                );
-            }
-        }
     }
 
     private function halfcheck()
