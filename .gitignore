@@ -7,23 +7,18 @@ Thumbs.db
 /logs
 
 /public/oc-img**
-/public/quiz-img**
 
 /storage/ranking_position/**
 /storage/static_data_recommend/**
 /storage/json/**
-/storage/zip-backup-temp/**
 public/sitemaps/**
 app/Services/Admin/**
 app/Config/AdminConfig.php
-app/Services/Admin/FTPHandler.php
 app/Config/Shadow/DatabaseConfig.php
 app/Config/Shadow/StringCryptorConfig.php
 app/Config/RankingPositionDBConfig.php
 app/Config/UserLogDBConfig.php
 app/Config/CommentDBConfig.php
-app/Config/LineLoginConfig.php
-app/Config/Shadow/GceDatabaseConfig.php
 /node_modules
 /package-lock.json
 /package.json

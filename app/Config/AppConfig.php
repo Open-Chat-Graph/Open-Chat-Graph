@@ -19,8 +19,6 @@ class AppConfig
 
     const GTM_ID = 'GTM-NTK2GPTF';
 
-    const DEVICE_COOKIE_EXPIRES = 60 * 60 * 24 * 30;
-
     const ETAG_ARG = [300, 3600 * 24, false];
 
     const LINE_URL = 'https://line.me/ti/g2/';
@@ -37,9 +35,6 @@ class AppConfig
     const RECENT_COMMENT_LIST_LIMIT = 30;
 
     const TOP_RANKING_LIST_LIMIT = 5;
-    const TOP_MENBER_RANKING_EXCLUDE_ID = [145145, 3454];
-
-    const CRON_EXECUTE_COUNT = 500;
 
     const CRON_START_MINUTE = 30;
     const CRON_MERGER_HOUR_RANGE_START = 23;
@@ -112,7 +107,4 @@ class AppConfig
     const OPEN_CHAT_RANKING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/ranking';
     const OPEN_CHAT_RISING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/rising';
     const OPEN_CHAT_HOUR_FILTER_ID_DIR = __DIR__ . '/../../storage/ranking_position/filter.dat';
-
-    const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
-    const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
 }

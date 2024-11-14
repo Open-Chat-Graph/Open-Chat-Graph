@@ -10,7 +10,6 @@
     "require": {
         "fabpot/goutte": "^4.0.3",
         "spatie/schema-org": "^3.14",
-        "nelexa/zip": "^4.0",
         "asika/sitemap": "^2.0"
     },
     "require-dev": {
