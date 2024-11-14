@@ -9,7 +9,6 @@ use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
 use App\Controllers\Api\CommentReportApiController;
 use Shadow\Kernel\Route;
-use App\Middleware\RedirectLineWebBrowser;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
@@ -29,29 +28,28 @@ use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
 use Shadow\Kernel\Reception;
 
-Route::middlewareGroup(RedirectLineWebBrowser::class)
-    ->path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
+Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("ranking/{$category}");
         return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
-    })
+    });
 
-    ->path('ranking', [ReactRankingPageController::class, 'ranking'])
+Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', emptyAble: true)
-    ->match(fn() => handleRequestWithETagAndCache("ranking"))
+    ->match(fn() => handleRequestWithETagAndCache("ranking"));
 
-    ->path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
+Route::path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("official-ranking/{$category}");
         return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
-    })
+    });
 
-    ->path('official-ranking', [ReactRankingPageController::class, 'ranking'])
+Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
     ->matchNum('category', emptyAble: true)
     ->match(fn() => handleRequestWithETagAndCache("official-ranking"));
