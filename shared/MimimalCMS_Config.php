@@ -7,7 +7,7 @@
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
 
-const URL_ROOT = '';
+const URL_ROOT = '/th';
 const PUBLIC_DIR = __DIR__ . '/../public';
 const VIEWS_DIR = __DIR__ . '/../app/Views';
 const JSON_STORAGE_DIR =  __DIR__ . '/../storage/json';

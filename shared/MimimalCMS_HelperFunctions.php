@@ -607,16 +607,16 @@ function safeFileRewrite(string $targetFile, string $content, int $permissions =
  * If the file "images/logo.png" doesn't exist in the public directory, the output will be: 
  * `"http://example.com/images/logo.png"`
  */
-function fileUrl(string $filePath, string $publicDir = PUBLIC_DIR): string
+function fileUrl(string $filePath, string $publicDir = PUBLIC_DIR, string $urlRoot = URL_ROOT): string
 {
     $filePath = "/" . ltrim($filePath, "/");
     $fullFilePath = $publicDir . $filePath;
 
     if (!file_exists($fullFilePath)) {
-        return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . $filePath;
+        return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $filePath;
     }
 
-    return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . $filePath . '?v=' . filemtime($fullFilePath);
+    return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $filePath . '?v=' . filemtime($fullFilePath);
 }
 
 /**
@@ -846,7 +846,7 @@ function getFilesWithExtension(string $dir, string $ext): \CallbackFilterIterato
     $iterator = new \RecursiveIteratorIterator($directory);
 
     // Define a filter using an arrow function to select files with the specified extension
-    $filter = fn (\SplFileInfo $file) => !$file->isDir() && $file->getExtension() === $ext;
+    $filter = fn(\SplFileInfo $file) => !$file->isDir() && $file->getExtension() === $ext;
 
     // Return a filtered iterator containing files matching the extension
     return new \CallbackFilterIterator($iterator, $filter);
