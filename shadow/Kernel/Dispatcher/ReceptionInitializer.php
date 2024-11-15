@@ -32,14 +32,14 @@ class ReceptionInitializer implements ReceptionInitializerInterface
         Reception::$inputData =           $this->parseRequestBody($this->routeDto->paramArray);
     }
 
-    public static function getDomainAndHttpHost(): string
+    public static function getDomainAndHttpHost(string $urlRoot = URL_ROOT): string
     {
         if (isset(Reception::$domain)) {
             return Reception::$domain;
         }
 
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        Reception::$domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . URL_ROOT;
+        Reception::$domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $urlRoot;
 
         return Reception::$domain;
     }
