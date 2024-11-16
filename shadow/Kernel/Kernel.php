@@ -11,6 +11,7 @@ use Shadow\Kernel\Dispatcher\Routing;
 use Shadow\Kernel\Dispatcher\ControllerInvoker;
 use Shadow\Kernel\Dispatcher\MiddlewareInvoker;
 use Shadow\Kernel\Dispatcher\RouteCallbackInvoker;
+use Shadow\Kernel\Utility\KernelUtility;
 use Shared\Exceptions\NotFoundException;
 
 /**
@@ -46,7 +47,7 @@ class Kernel
     protected function parseRequest()
     {
         $request = new RequestParser;
-        $uri = str_replace(URL_ROOT, "",  $_SERVER['REQUEST_URI'] ?? '/');
+        $uri = KernelUtility::getCurrentUri() ?? '/';
         $request->parse($this->routeDto, $uri);
     }
 

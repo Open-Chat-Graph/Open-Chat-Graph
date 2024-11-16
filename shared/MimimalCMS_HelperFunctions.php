@@ -61,15 +61,16 @@ function response(mixed $data, int $responseCode = 200): \Shadow\Kernel\Response
  *
  * @param ?string $url      The url of path to be redirect.
  * @param int $responseCode [optional] HTTP status code
+ * @param string $urlRoot   [optional] The root of the url. Default is the constant URL_ROOT.
  * @return \Shadow\Kernel\Response
  */
-function redirect(?string $url = null, int $responseCode = 302): \Shadow\Kernel\Response
+function redirect(?string $url = null, int $responseCode = 302, string $urlRoot = URL_ROOT): \Shadow\Kernel\Response
 {
     if ($url === null) {
-        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost();
+        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot);
     } elseif (!preg_match("~^(?:f|ht)tps?://~i", $url)) {
         $path = ltrim($url, "/");
-        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . "/" . $path;
+        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . "/" . $path;
     }
 
     return new \Shadow\Kernel\Response($responseCode, $url);
@@ -155,7 +156,8 @@ function cookie(
  * 
  * Returns the absolute path to the public directory, optionally with a subdirectory appended.
  * 
- * @param string $path [optional] The path to a subdirectory within the public directory. Default is an empty string.
+ * @param string $path [optional] The path to a subdirectory within the public directory. Default is the constant URL_ROOT.
+ * @param string $publicDir [optional] The public directory path. Default is the constant PUBLIC_DIR.
  * 
  * @return string      The absolute path to the public directory with the specified subdirectory appended (if provided).
  * 
@@ -163,34 +165,44 @@ function cookie(
  * * **Example :** Input: `publicDir("css/styles.css")`  Output: `/var/www/public/css/styles.css`
  * * **Example :** Input: `publicDir("/css/styles.css")`  Output: `/var/www/public/css/styles.css`
  */
-function publicDir(string $path = ''): string
+function publicDir(string $path = '', string $publicDir = PUBLIC_DIR): string
 {
     if ($path !== '') {
         $path = "/" . ltrim($path, "/");
     }
 
-    return PUBLIC_DIR . $path;
+    return $publicDir . $path;
 }
 
 /**
  * Returns the full URL of the current website, including the domain and optional path.
  *
- * @param string $paths [optional] path to append to the domain in the URL.
+ * @param string|array{ urlRoot:string,paths:string|string[] } $paths [optional] path to append to the domain in the URL. 
  * 
  * @return string      The full URL of the current website domain.
  * 
  * * **Example :** Input: `url("home", "article")`  Output: `https://exmaple.com/home/article`
  * * **Example :** Input: `url("/home", "/article")`  Output: `https://exmaple.com/home/article`
  * * **Example :** Input: `url("home/", "article/")`  Output: `https://exmaple.com/home//article/`
+ * * **Example :** Input: `url(["urlRoot" => "/en", "paths" => ["home", "article"]])`  Output: `https://example.com/en/home/article`
+ * 
+ * @throws \InvalidArgumentException If the argument passed is an array and does not contain the required keys.
  */
-function url(string ...$paths): string
+function url(string|array ...$paths): string
 {
+    if (isset($paths[0]) && is_array($paths[0])) {
+        $urlRoot = $paths[0]['urlRoot'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
+        $paths = $paths[0]['paths'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
+    } else {
+        $urlRoot = URL_ROOT;
+    }
+
     $uri = '';
-    foreach ($paths as $path) {
+    foreach (is_array($paths) ? $paths : [$paths] as $path) {
         $uri .= "/" . ltrim($path, "/");
     }
 
-    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . $uri;
+    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $uri;
 }
 
 /**
@@ -198,33 +210,35 @@ function url(string ...$paths): string
  * 
  * @param string $path       The path to use.
  * @param int    $pageNumber The page number to generate the URL for. If 1, the page number is omitted.
- * 
+ * @param string $urlRoot    [optional] The root of the URL. Default is the constant URL_ROOT.
  * @return string The URL for the given page number.
  * 
  * * **Example :** Input: `pagerUrl("home", 5)`  Output: `https://exmaple.com/home/5`
  * * **Example :** Input: `pagerUrl("/home/", 5)`  Output: `https://exmaple.com/home/5`
  * * **Example :** Input: `pagerUrl("home", 1)`  Output: `https://exmaple.com/home`
  */
-function pagerUrl(string $path, int $pageNumber): string
+function pagerUrl(string $path, int $pageNumber, string $urlRoot = URL_ROOT): string
 {
     if ($path !== '') {
         $path = "/" . ltrim(rtrim($path, "/"), "/");
     }
 
     $secondPath = ($pageNumber > 1) ? "/" . (string) $pageNumber : '';
-    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . $path . $secondPath;
+    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $path . $secondPath;
 }
 
 /**
  * Returns the current request path.
  *
+ * @param string $urlRoot [optional] The root of the URL. Default is the constant URL_ROOT.
+ * 
  * @return string The current request path.
  *
  * * **Example :** Output: `/home`
  */
-function path(): string
+function path(string $urlRoot = URL_ROOT): string
 {
-    return $_SERVER['REQUEST_URI'] ?? '';
+    return \Shadow\Kernel\Utility\KernelUtility::getCurrentUri($urlRoot);
 }
 
 /**
@@ -591,6 +605,8 @@ function safeFileRewrite(string $targetFile, string $content, int $permissions =
  * Generates a versioned file URL based on the provided file path. If the file exists, a URL with a version query parameter is returned.
  *
  * @param string $filePath The path to the file, relative to the public directory.
+ * @param string $publicDir [optional] The public directory path. Default is the constant PUBLIC_DIR.
+ * @param string $urlRoot   [optional] The root of the url. Default is the constant URL_ROOT.
  * 
  * @return string The versioned file URL.
  * 
