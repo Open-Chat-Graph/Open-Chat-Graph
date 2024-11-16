@@ -7,7 +7,7 @@
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
 
-const URL_ROOT = '';
+// const URL_ROOT = '';
 const PUBLIC_DIR = __DIR__ . '/../public';
 const VIEWS_DIR = __DIR__ . '/../app/Views';
 const JSON_STORAGE_DIR =  __DIR__ . '/../storage/json';
@@ -48,3 +48,14 @@ if (($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me') {
     define('COOKIE_DEFAULT_SECURE', false);
 }
 
+if (preg_match("{^/th.*}", $_SERVER['REQUEST_URI'] ?? '')) {
+    define('URL_ROOT', '/th');
+    /*     define('PUBLIC_DIR', __DIR__ . '/../public/th');
+    define('VIEWS_DIR', __DIR__ . '/../app/Views/th');
+    define('JSON_STORAGE_DIR', __DIR__ . '/../storage/json/th');
+    define('CONFIG_JSON_FILE_PATH', __DIR__ . '/../app/Config/ConfigJson_th.json'); */
+} else if (preg_match("{^/tw.*}", $_SERVER['REQUEST_URI'] ?? '')) {
+    define('URL_ROOT', '/tw');
+} else {
+    define('URL_ROOT', '');
+}
