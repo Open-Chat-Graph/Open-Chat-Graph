@@ -34,10 +34,6 @@ class ReceptionInitializer implements ReceptionInitializerInterface
 
     public static function getDomainAndHttpHost(string $urlRoot = URL_ROOT): string
     {
-        if (isset(Reception::$domain)) {
-            return Reception::$domain;
-        }
-
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         Reception::$domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $urlRoot;
 
