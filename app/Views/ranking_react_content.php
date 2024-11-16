@@ -8,9 +8,9 @@
     <?php echo $_meta ?>
     <link rel="icon" type="image/png" href="<?php echo url(\App\Config\AppConfig::SITE_ICON_FILE_PATH) ?>">
     <?php foreach ($_css as $css) : ?>
-        <link rel="stylesheet" href="<?php echo fileUrl($css) ?>">
+        <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
     <?php endforeach ?>
-    <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
+    <script defer="defer" src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
     <?php \App\Views\Ads\GoogleAdsence::gTag("bottom") ?>
 </head>

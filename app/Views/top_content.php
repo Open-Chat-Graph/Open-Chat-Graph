@@ -135,7 +135,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </div>
     </div>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
         let lastList = ''
 
@@ -175,7 +175,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     <script type="module">
         import {
             getComment
-        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+        } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
         getComment()
     </script>

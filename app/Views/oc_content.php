@@ -336,7 +336,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <script type="module">
     import {
       getComment
-    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+    } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
     getComment(<?php echo $oc['id'] ?>)
   </script>
@@ -370,11 +370,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     const admin = <?php echo isset($_adminDto) ? 1 : 0 ?>
   </script>
   <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
-  <script src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+  <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script type="module">
     import {
       JsonCookie
-    } from '<?php echo fileUrl('/js/JsonCookie.js') ?>'
+    } from '<?php echo fileUrl('/js/JsonCookie.js', urlRoot: '') ?>'
 
     const OPEN_CHAT_ID = <?php echo $oc['id'] ?>;
     const MY_LIST_LIMIT = <?php echo AppConfig::MY_LIST_LIMIT ?>;

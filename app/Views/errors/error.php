@@ -207,34 +207,6 @@ class ErrorPage
         preg_match_all($this->STACKTRACE_FILE_PATH_PATTERN, $this->detailsMessage, $matches);
         return $matches[2] ?? [];
     }
-
-    public static function getDomainAndHttpHost(): string
-    {
-        $flagName = 'URL_ROOT';
-        if (defined($flagName) && is_string($url = constant($flagName))) {
-            $urlRoot = $url;
-        }
-
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($urlRoot ?? '');
-    }
-
-    public static function fileUrl(string $filePath): string
-    {
-        $flagName = 'PUBLIC_DIR';
-        if (!defined($flagName) || !is_string($publicDir = constant($flagName))) {
-            return self::getDomainAndHttpHost() . $filePath;
-        }
-
-        $filePath = "/" . ltrim($filePath, "/");
-        $fullFilePath = $publicDir . $filePath;
-
-        if (!file_exists($fullFilePath)) {
-            return self::getDomainAndHttpHost() . $filePath;
-        }
-
-        return self::getDomainAndHttpHost() . $filePath . '?v=' . filemtime($fullFilePath);
-    }
 }
 
 noStore();
@@ -258,15 +230,6 @@ try {
     }
 } catch (\Exception $e) {
     $errorMessage = $e->getMessage();
-}
-
-// Get the domain and http host of the current page using the static method getDomainAndHttpHost() of ErrorPage class.
-$siteUrl = ErrorPage::getDomainAndHttpHost();
-
-$iconUrl = '';
-$flagName = '\App\Config\AppConfig::SITE_ICON_FILE_PATH';
-if (defined($flagName) && is_string($siteIconFilePath = constant($flagName))) {
-    $iconUrl = ErrorPage::fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH);
 }
 
 $_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
@@ -378,7 +341,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
     <footer style="padding: 1rem;">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: "", urlRoot: '') ?>"></script>
 </body>
 
 </html>

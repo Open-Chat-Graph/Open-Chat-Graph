@@ -213,12 +213,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <script type="module">
     import {
       getComment
-    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+    } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
     getComment()
   </script>
 
-  <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+  <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
 </body>

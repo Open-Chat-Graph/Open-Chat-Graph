@@ -139,7 +139,7 @@ function memberCount(int $count)
         <?php viewComponent('footer_inner') ?>
     </footer>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <?php echo $_meta->generateTopPageSchema() ?>
     <?php if ($isAdminPage && isset($adsList)) : ?>
         <script>
