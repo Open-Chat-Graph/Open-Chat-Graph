@@ -8,6 +8,7 @@ namespace Shadow\Kernel\Utility;
  * @author mimimiku778 <0203.sub@gmail.com>
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
+
 class KernelUtility
 {
     /**
@@ -21,15 +22,16 @@ class KernelUtility
      */
     static public function getCurrentUri(string $urlRoot = URL_ROOT): string
     {
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
         if ($urlRoot === '') {
-            return $uri;
-        } else {
-            $result = preg_replace("{^{$urlRoot}(.*)}", '$1', $uri);
-
-            return is_string($result)
-                ? ($result === '' ? '/' : $result)
-                : $uri;
+            return $requestUri;
         }
+
+        if (preg_match("{^{$urlRoot}$}", $requestUri)) {
+            return '/';
+        }
+        
+        $replaced = preg_replace("{^{$urlRoot}(/.*)}", '$1', $requestUri);
+        return $replaced;
     }
 }
