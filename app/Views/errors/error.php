@@ -341,7 +341,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
     <footer style="padding: 1rem;">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: "", urlRoot: '') ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: "") ?>"></script>
 </body>
 
 </html>
