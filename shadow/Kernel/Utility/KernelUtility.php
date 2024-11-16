@@ -22,7 +22,7 @@ class KernelUtility
     static public function getCurrentUri(string $urlRoot = URL_ROOT): string
     {
         $uri = $_SERVER['REQUEST_URI'] ?? '';
-        if ($urlRoot === '' || $urlRoot === '/') {
+        if ($urlRoot === '') {
             return $uri;
         } else {
             $result = preg_replace("{^{$urlRoot}(.*)}", '$1', $uri);
