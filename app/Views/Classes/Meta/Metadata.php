@@ -23,14 +23,14 @@ class Metadata
 
     public function __construct()
     {
-        if ($_SERVER["REQUEST_URI"] ?? '/' === '/') {
+        if (path() ?? '/' === '/') {
             $this->og_type = 'website';
         } else {
             $this->og_type = 'article';
         }
 
         $this->site_url = url();
-        $this->image_url = url(\App\Config\AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
+        $this->image_url = fileUrl(\App\Config\AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
     }
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static
