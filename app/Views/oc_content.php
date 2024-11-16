@@ -338,7 +338,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       getComment
     } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-    getComment(<?php echo $oc['id'] ?>)
+    getComment(<?php echo $oc['id'] ?>, '<?php echo URL_ROOT ?>')
   </script>
   <script async>
     (function() {

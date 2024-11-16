@@ -148,7 +148,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 return
             }
 
-            fetch('mylist-api')
+            fetch('<?php echo URL_ROOT ?>/mylist-api')
                 .then((res) => {
                     if (res.status === 200)
                         return res.text();
@@ -177,7 +177,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             getComment
         } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-        getComment()
+        getComment(0, '<?php echo URL_ROOT ?>')
     </script>
 
     <?php echo $_meta->generateTopPageSchema() ?>

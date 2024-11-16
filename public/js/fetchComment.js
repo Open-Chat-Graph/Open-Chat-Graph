@@ -78,6 +78,6 @@ async function fetchComment(url = '/recent-comment-api', openChatId = 0) {
     }
 }
 
-export function getComment(openChatId = 0) {
-    fetchComment(getCookieValue() ? '/recent-comment-api/nocache' : '/recent-comment-api', openChatId)
+export function getComment(openChatId = 0, urlRoot = '') {
+    fetchComment(getCookieValue() ? `${urlRoot}/recent-comment-api/nocache` : `${urlRoot}/recent-comment-api`, openChatId)
 }

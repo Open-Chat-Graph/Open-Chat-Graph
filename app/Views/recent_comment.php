@@ -181,7 +181,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             getComment
         } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-        getComment()
+        getComment(0, '<?php echo URL_ROOT ?>')
     </script>
 
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
