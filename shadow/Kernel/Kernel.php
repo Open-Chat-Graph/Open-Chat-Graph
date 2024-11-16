@@ -47,7 +47,7 @@ class Kernel
     protected function parseRequest()
     {
         $request = new RequestParser;
-        $uri = KernelUtility::getCurrentUri() ?? '/';
+        $uri = KernelUtility::getCurrentUri() ?: '/';
         $request->parse($this->routeDto, $uri);
     }
 
