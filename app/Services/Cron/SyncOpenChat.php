@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
-use App\Config\AdminConfig;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Accreditation\Recommend\StaticData\AccreditationStaticDataGenerator;
 use App\Services\Admin\AdminTool;
-use App\Services\Cron\CronJson\SyncOpenChatState;
+use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use App\Services\DailyUpdateCronService;
-use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
@@ -25,7 +24,6 @@ use App\Services\UpdateHourlyMemberRankingService;
 class SyncOpenChat
 {
     function __construct(
-        private SyncOpenChatState $state,
         private OpenChatApiDbMergerWithParallelDownloader $merger,
         private SitemapGenerator $sitemap,
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
@@ -37,156 +35,83 @@ class SyncOpenChat
         private RecommendUpdater $recommendUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
         private AccreditationStaticDataGenerator $acrreditationCacheUpdater,
+        private SyncOpenChatStateRepositoryInterface $state,
     ) {
         set_exception_handler($this->exceptionHandler(...));
-    }
-
-    private function exceptionHandler(\Throwable $e)
-    {
-        OpenChatApiDataParallelDownloader::enableKillFlag();
-        AdminTool::sendLineNofity($e->__toString());
-        addCronLog($e->__toString());
-    }
-
-    function handle()
-    {
-        $this->init();
-
-        if (isDailyUpdateTime()) {
-            $this->dailyTask();
-        } else if ($this->isFailedDailyUpdate()) {
-            addCronLog('Retry dailyTask');
-            AdminTool::sendLineNofity('Retry dailyTask');
-            OpenChatApiDataParallelDownloader::enableKillFlag();
-            OpenChatDailyCrawling::enableKillFlag();
-            sleep(3);
-            $this->dailyTask();
-            AdminTool::sendLineNofity('Done retrying dailyTask');
-        } else {
-            $this->hourlyTask();
-        }
-
-        $this->finalize();
     }
 
     private function isFailedDailyUpdate(): bool
     {
         return isDailyUpdateTime(new \DateTime('-2 hour'), nowStart: new \DateTime('-1day'), nowEnd: new \DateTime('-1day'))
-            && $this->state->isDailyTaskActive;
-    }
-
-    function handleHalfHourCheck()
-    {
-        if ($this->state->isHourlyTaskActive) {
-            addCronLog('Retry hourlyTask');
-            OpenChatApiDataParallelDownloader::enableKillFlag();
-            OpenChatDailyCrawling::enableKillFlag();
-            sleep(3);
-            $this->handle();
-            return;
-        }
-
-        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-            addCronLog('Retry position perisistance');
-            $this->hourlyRankingPosition();
-            $this->hourlyMemberRankingUpdate();
-            return;
-        }
+            && $this->state->getBool(StateType::isDailyTaskActive);
     }
 
     private function init()
     {
         checkLineSiteRobots();
 
-        if ($this->state->isHourlyTaskActive) {
+        if ($this->state->getBool(StateType::isHourlyTaskActive)) {
             AdminTool::sendLineNofity('SyncOpenChat: hourlyTask is active');
+            addCronLog('SyncOpenChat: hourlyTask is active');
         }
 
-        if ($this->state->isDailyTaskActive) {
+        if ($this->state->getBool(StateType::isDailyTaskActive)) {
             AdminTool::sendLineNofity('SyncOpenChat: dailyTask is active');
+            addCronLog('SyncOpenChat: dailyTask is active');
         }
+    }
+
+    function handle(bool $dailyTest = false, bool $retryDailyTest = false)
+    {
+        $this->init();
+
+        if (isDailyUpdateTime() || ($dailyTest && !$retryDailyTest)) {
+            $this->dailyTask();
+        } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
+            addCronLog('Retry dailyTask');
+            AdminTool::sendLineNofity('Retry dailyTask');
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+            OpenChatDailyCrawling::setKillFlagTrue();
+            sleep(30);
+            $this->dailyTask();
+            AdminTool::sendLineNofity('Done retrying dailyTask');
+        } else {
+            $this->hourlyTask();
+        }
+
+        $this->sitemap->generate();
     }
 
     function hourlyTask()
     {
-        $this->state->isHourlyTaskActive = true;
-        $this->state->update();
+        $this->state->setTrue(StateType::isHourlyTaskActive);
 
-        $this->hourlyMerge();
-
-        $this->state->isHourlyTaskActive = false;
-        $this->state->update();
-
-        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-            $this->hourlyRankingPosition();
-        }
-
-        // TODO: 新しい処理停止フラグを作って各処理の途中でチェックする
-        $this->hourlyImageUpdate();
-        $this->hourlyMemberRankingUpdate();
-        $this->hourlyInvitationTicketUpdate();
-        $this->hourlyRankingBanUpdate();
-        $this->hourlyRecommendUpdater();
-    }
-
-    private function hourlyMerge()
-    {
         set_time_limit(1620);
         $this->merger->fetchOpenChatApiRankingAll();
-    }
 
-    private function hourlyRankingPosition()
-    {
-        $this->rankingPositionHourPersistence->persistStorageFileToDb();
-    }
+        $this->state->setFalse(StateType::isHourlyTaskActive);
 
-    private function hourlyMemberRankingUpdate()
-    {
-        addCronLog('Start hourlyMemberColumnUpdate');
-        $this->hourlyMemberColumn->update();
-        addCronLog('Done hourlyMemberColumnUpdate');
+        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
+            $this->executeAndCronLog([
+                fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
+                'persistStorageFileToDb'
+            ]);
+        }
 
-        addCronLog('Start hourlyMemberRankingUpdate');
-        $this->hourlyMemberRanking->update();
-        purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
-        addCronLog('Done hourlyMemberRankingUpdate');
-
-        //$this->acrreditationCacheUpdater->updateStaticData();
-    }
-
-    private function hourlyRankingBanUpdate()
-    {
-        addCronLog('Start updateRankingBanTable');
-        $this->rankingBanUpdater->updateRankingBanTable();
-        addCronLog('Done updateRankingBanTable');
-    }
-
-    private function hourlyRecommendUpdater()
-    {
-        addCronLog('Start updateRecommendTables');
-        $this->recommendUpdater->updateRecommendTables();
-        addCronLog('Done updateRecommendTables');
-    }
-
-    private function hourlyImageUpdate()
-    {
-        addCronLog('Start hourlyImageUpdate');
-        $this->OpenChatImageUpdater->hourlyImageUpdate();
-        addCronLog('Done hourlyImageUpdate');
-    }
-
-    private function hourlyInvitationTicketUpdate()
-    {
-        addCronLog('Start hourlyInvitationTicketUpdate');
-        $this->invitationTicketUpdater->updateInvitationTicketAll();
-        addCronLog('Done hourlyInvitationTicketUpdate');
+        $this->executeAndCronLog(
+            [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
+            [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
+            [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
+            [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
+            [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
+            [fn() => $this->recommendUpdater->updateRecommendTables(), 'updateRecommendTables'],
+        );
     }
 
     function dailyTask()
     {
-        $this->state->isDailyTaskActive = true;
-        $this->state->update();
-
+        $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
 
         set_time_limit(5400);
@@ -195,21 +120,56 @@ class SyncOpenChat
         $updater = app(DailyUpdateCronService::class);
         $updater->update();
 
-        $this->state->isDailyTaskActive = false;
-        $this->state->update();
-        $this->dailyImageUpdate();
-        purgeCacheCloudFlare(AdminConfig::CloudFlareZoneID, AdminConfig::CloudFlareApiKey);
+        $this->state->setFalse(StateType::isDailyTaskActive);
+
+        $this->executeAndCronLog(
+            [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
+            [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+        );
     }
 
-    private function dailyImageUpdate()
+    function handleHalfHourCheck()
     {
-        addCronLog('Start dailyImageUpdate');
-        $this->OpenChatImageUpdater->imageUpdateAll();
-        addCronLog('Done dailyImageUpdate');
+        if ($this->state->getBool(StateType::isHourlyTaskActive)) {
+            addCronLog('Retry hourlyTask');
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+            OpenChatDailyCrawling::setKillFlagTrue();
+            sleep(20);
+            $this->handle();
+            return;
+        }
+
+        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
+            $this->executeAndCronLog(
+                [
+                    fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
+                    'Retry persistStorageFileToDb'
+                ],
+                [fn() => $this->hourlyMemberColumn->update(), 'Retry hourlyMemberColumnUpdate'],
+                [fn() => $this->hourlyMemberRanking->update(), 'Retry hourlyMemberRankingUpdate'],
+                [fn() => purgeCacheCloudFlare(), 'Retry purgeCacheCloudFlare'],
+            );
+
+            return;
+        }
+    }
+    
+    /**
+     * @param array{ 0:callable, 1:string } ...$tasks
+     */
+    private function executeAndCronLog(array ...$tasks)
+    {
+        foreach ($tasks as $task) {
+            addCronLog('Start ' . $task[1]);
+            $task[0]();
+            addCronLog('Done ' . $task[1]);
+        }
     }
 
-    function finalize(): void
+    private function exceptionHandler(\Throwable $e)
     {
-        $this->sitemap->generate();
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+        AdminTool::sendLineNofity($e->__toString());
+        addCronLog($e->__toString());
     }
 }

@@ -7,10 +7,8 @@ namespace App\Controllers\Pages;
 use App\Config\AppConfig;
 use App\Models\Accreditation\AccreditationDB;
 use App\Models\Accreditation\AccreditationUserModel;
-use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
-use App\Services\UpdateRankingService;
-use App\Services\StaticData\StaticDataGenerator;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
 use App\Services\Admin\AdminTool;
@@ -20,7 +18,7 @@ use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Accreditation\Enum\ExamType;
 use App\Services\Accreditation\QuizApi\QuizApiService;
 use App\Services\Accreditation\QuizOgpGenerator;
-use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
@@ -77,7 +75,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'cron_half_check.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -139,21 +137,20 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
-    function killmerge()
+    function killmerge(SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository)
     {
-        OpenChatApiDbMerger::enableKillFlag();
-
+        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
         return view('admin/admin_message_page', ['title' => 'OpenChatApiDbMerger', 'message' => 'OpenChatApiDbMergerを強制終了しました']);
     }
 
-    function killdaily()
+    function killdaily(SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository)
     {
-        OpenChatDailyCrawling::enableKillFlag();
+        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatDailyCrawlingKillFlag);
         return view('admin/admin_message_page', ['title' => 'OpenChatApiDbMerger', 'message' => 'OpenChatDailyCrawlingを強制終了しました']);
     }
 

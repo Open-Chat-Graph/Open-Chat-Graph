@@ -58,9 +58,7 @@ class CommentPostApiController
 
         if (!$flag) {
             !isLocalHost() && purgeCacheCloudFlare(
-                AdminConfig::CloudFlareZoneID,
-                AdminConfig::CloudFlareApiKey,
-                [
+                files: [
                     url('recent-comment-api'),
                     url('comments-timeline')
                 ]

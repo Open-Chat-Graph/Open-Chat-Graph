@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Services\OpenChat;
 
 use App\Config\AppConfig;
+use App\Exceptions\ApplicationException;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\ParallelDownloadOpenChatStateRepositoryInterface;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
 use App\Services\RankingPosition\Store\RankingPositionStore;
@@ -19,8 +22,8 @@ class OpenChatApiDbMergerWithParallelDownloader
         private RankingPositionStore $rankingStore,
         private RisingPositionStore $risingStore,
         private OpenChatApiDbMergerProcess $process,
-    ) {
-    }
+        private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
+    ) {}
 
     private const OPEN_CHAT_CATEGORY = [
         'ゲーム' => 17,
@@ -52,7 +55,7 @@ class OpenChatApiDbMergerWithParallelDownloader
 
     function fetchOpenChatApiRankingAll()
     {
-        OpenChatApiDataParallelDownloader::disableKillFlag();
+        $this->setKillFlagFalse();
         $this->stateRepository->cleanUpAll();
 
         $categoryArray = array_values(self::OPEN_CHAT_CATEGORY);
@@ -80,19 +83,19 @@ class OpenChatApiDbMergerWithParallelDownloader
     private function download(array $args)
     {
         $arg = escapeshellarg(json_encode(
-            array_map(fn ($arg) => ['type' => $arg[0]->value, 'category' => $arg[1]], $args)
+            array_map(fn($arg) => ['type' => $arg[0]->value, 'category' => $arg[1]], $args)
         ));
 
         $path = AppConfig::ROOT_PATH . 'exec_parallel_downloader.php';
-        exec("/usr/bin/php8.2 {$path} {$arg} >/dev/null 2>&1 &");
+        exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
     }
 
     function mergeProcess(RankingType $type, int $category)
     {
         if (!$this->stateRepository->isDownloaded($type, $category)) return;
 
-        OpenChatApiDataParallelDownloader::checkKillFlag();
-        
+        $this->checkKillFlag();
+
         $dtos = match ($type) {
             RankingType::Rising => $this->risingStore->getStorageData((string)$category)[1],
             RankingType::Ranking => $this->rankingStore->getStorageData((string)$category)[1],
@@ -107,5 +110,26 @@ class OpenChatApiDbMergerWithParallelDownloader
         $this->stateRepository->updateComplete($type, $category);
 
         addCronLog("merge complete: {$log}");
+    }
+
+    /** @throws ApplicationException */
+    private function checkKillFlag()
+    {
+        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)
+            && throw new ApplicationException('OpenChatApiDbMergerWithParallelDownloader: 強制終了しました');
+    }
+
+    static function setKillFlagTrue()
+    {
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
+    }
+
+    static function setKillFlagFalse()
+    {
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setFalse(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
     }
 }

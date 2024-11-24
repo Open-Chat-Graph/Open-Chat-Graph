@@ -16,6 +16,8 @@ use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Exceptions\ApplicationException;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shadow\DB;
 
@@ -30,6 +32,7 @@ class OpenChatApiDbMerger
         private LogRepositoryInterface $logRepository,
         private RankingPositionStore $rankingStore,
         private RisingPositionStore $risingStore,
+        private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
         OpenChatApiRankingDownloaderProcess $openChatApiRankingDownloaderProcess,
         OpenChatApiRisingDownloaderProcess $openChatApiRisingDownloaderProcess,
     ) {
@@ -50,6 +53,8 @@ class OpenChatApiDbMerger
      */
     function fetchOpenChatApiRankingAll(): array
     {
+        $this->setKillFlagFalse();
+        
         try {
             $result1 = $this->fetchOpenChatApiRankingAllProcess($this->risingStore, $this->risingDownloader);
             $result2 = $this->fetchOpenChatApiRankingAllProcess($this->rankingStore, $this->rankingDownloader);
@@ -99,21 +104,24 @@ class OpenChatApiDbMerger
         return $downloader->fetchOpenChatApiRankingAll($callback, $callbackByCategoryBefore, $callbackByCategoryAfter);
     }
 
-    static function checkKillFlag()
+    /** @throws ApplicationException */
+    private function checkKillFlag()
     {
-        clearstatcache(true, AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH);
-        if (file_get_contents(AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH) === '1') {
-            throw new ApplicationException('OpenChatApiDbMerger: 強制終了しました');
-        }
+        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)
+            && throw new ApplicationException('OpenChatApiDbMerger: 強制終了しました');
     }
 
-    static function disableKillFlag()
+    static function setKillFlagTrue()
     {
-        file_put_contents(AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH, '0');
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
     }
 
-    static function enableKillFlag()
+    static function setKillFlagFalse()
     {
-        file_put_contents(AppConfig::OPEN_CHAT_API_DB_MERGER_KILL_FLAG_PATH, '1');
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setFalse(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
     }
 }

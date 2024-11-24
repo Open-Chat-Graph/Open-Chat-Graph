@@ -25,9 +25,7 @@ class AdminEndPointController
         $adminEndPoint->{$type}($id);
 
         purgeCacheCloudFlare(
-            AdminConfig::CloudFlareZoneID,
-            AdminConfig::CloudFlareApiKey,
-            [
+            files: [
                 url("oc/{$id}"),
                 url("oc/{$id}?limit=hour"),
                 url("oc/{$id}?limit=month"),
@@ -48,9 +46,7 @@ class AdminEndPointController
         if ($flag > 0) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
 
         purgeCacheCloudFlare(
-            AdminConfig::CloudFlareZoneID,
-            AdminConfig::CloudFlareApiKey,
-            [
+            files: [
                 url('recent-comment-api'),
                 url('comments-timeline'),
             ]
@@ -78,9 +74,7 @@ class AdminEndPointController
         $deleteCommentRepository->deleteCommentByUserIdAndIpAll($result['user_id'], $result['ip']);
 
         purgeCacheCloudFlare(
-            AdminConfig::CloudFlareZoneID,
-            AdminConfig::CloudFlareApiKey,
-            [
+            files: [
                 url('recent-comment-api'),
                 url('comments-timeline'),
             ]
