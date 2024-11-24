@@ -37,13 +37,32 @@ class SyncOpenChat
         private AccreditationStaticDataGenerator $acrreditationCacheUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
-        set_exception_handler($this->exceptionHandler(...));
+        ini_set('memory_limit', '2G');
+
+        set_exception_handler(function (\Throwable $e) {
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+            AdminTool::sendLineNofity($e->__toString());
+            addCronLog($e->__toString());
+        });
     }
 
-    private function isFailedDailyUpdate(): bool
+    // 毎時30分に実行
+    function handle(bool $dailyTest = false, bool $retryDailyTest = false)
     {
-        return isDailyUpdateTime(new \DateTime('-2 hour'), nowStart: new \DateTime('-1day'), nowEnd: new \DateTime('-1day'))
-            && $this->state->getBool(StateType::isDailyTaskActive);
+        $this->init();
+
+        if (isDailyUpdateTime() || ($dailyTest && !$retryDailyTest)) {
+            // 毎日23:30に実行
+            $this->dailyTask();
+        } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
+            // 毎日1:30にdailyTaskが実行中の場合は、前日のdailyTaskが失敗したとみなす
+            $this->retryDailyTask();
+        } else {
+            // 23:30を除く毎時30分に実行
+            $this->hourlyTask();
+        }
+
+        $this->sitemap->generate();
     }
 
     private function init()
@@ -60,45 +79,43 @@ class SyncOpenChat
             addCronLog('SyncOpenChat: dailyTask is active');
         }
     }
-
-    function handle(bool $dailyTest = false, bool $retryDailyTest = false)
+    
+    private function isFailedDailyUpdate(): bool
     {
-        $this->init();
-
-        if (isDailyUpdateTime() || ($dailyTest && !$retryDailyTest)) {
-            $this->dailyTask();
-        } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
-            addCronLog('Retry dailyTask');
-            AdminTool::sendLineNofity('Retry dailyTask');
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            OpenChatDailyCrawling::setKillFlagTrue();
-            sleep(30);
-            $this->dailyTask();
-            AdminTool::sendLineNofity('Done retrying dailyTask');
-        } else {
-            $this->hourlyTask();
-        }
-
-        $this->sitemap->generate();
+        return isDailyUpdateTime(new \DateTime('-2 hour'), nowStart: new \DateTime('-1day'), nowEnd: new \DateTime('-1day'))
+            && $this->state->getBool(StateType::isDailyTaskActive);
     }
 
-    function hourlyTask()
+    // 毎時0分に実行
+    function handleHalfHourCheck()
     {
-        $this->state->setTrue(StateType::isHourlyTaskActive);
+        if ($this->state->getBool(StateType::isHourlyTaskActive)) {
+            $this->retryHourlyTask();
+        } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
+            $this->hourlyTaskAfterDbMerge(true);
+        }
+    }
 
+    private function hourlyTask()
+    {
         set_time_limit(1620);
-        $this->merger->fetchOpenChatApiRankingAll();
 
+        $this->state->setTrue(StateType::isHourlyTaskActive);
+        $this->merger->fetchOpenChatApiRankingAll();
         $this->state->setFalse(StateType::isHourlyTaskActive);
 
-        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-            $this->executeAndCronLog([
-                fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
-                'persistStorageFileToDb'
-            ]);
-        }
+        $this->hourlyTaskAfterDbMerge(
+            !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
+        );
+    }
 
+    private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
+    {
         $this->executeAndCronLog(
+            $persistStorageFileToDb ? [
+                fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
+                'rankingPositionHourPersistence'
+            ] : null,
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
@@ -109,7 +126,18 @@ class SyncOpenChat
         );
     }
 
-    function dailyTask()
+    private function retryHourlyTask()
+    {
+        addCronLog('Retry hourlyTask');
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+        OpenChatDailyCrawling::setKillFlagTrue();
+        sleep(30);
+
+        $this->handle();
+        AdminTool::sendLineNofity('Done retrying hourlyTask');
+    }
+
+    private function dailyTask()
     {
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
@@ -128,48 +156,29 @@ class SyncOpenChat
         );
     }
 
-    function handleHalfHourCheck()
+    private function retryDailyTask()
     {
-        if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('Retry hourlyTask');
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            OpenChatDailyCrawling::setKillFlagTrue();
-            sleep(20);
-            $this->handle();
-            return;
-        }
-
-        if (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-            $this->executeAndCronLog(
-                [
-                    fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
-                    'Retry persistStorageFileToDb'
-                ],
-                [fn() => $this->hourlyMemberColumn->update(), 'Retry hourlyMemberColumnUpdate'],
-                [fn() => $this->hourlyMemberRanking->update(), 'Retry hourlyMemberRankingUpdate'],
-                [fn() => purgeCacheCloudFlare(), 'Retry purgeCacheCloudFlare'],
-            );
-
-            return;
-        }
+        addCronLog('Retry dailyTask');
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+        OpenChatDailyCrawling::setKillFlagTrue();
+        sleep(30);
+        
+        $this->dailyTask();
+        AdminTool::sendLineNofity('Done retrying dailyTask');
     }
-    
+
     /**
-     * @param array{ 0:callable, 1:string } ...$tasks
+     * @param null|array{ 0:callable, 1:string } ...$tasks
      */
-    private function executeAndCronLog(array ...$tasks)
+    private function executeAndCronLog(null|array ...$tasks)
     {
         foreach ($tasks as $task) {
+            if (!$task)
+                continue;
+
             addCronLog('Start ' . $task[1]);
             $task[0]();
             addCronLog('Done ' . $task[1]);
         }
-    }
-
-    private function exceptionHandler(\Throwable $e)
-    {
-        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-        AdminTool::sendLineNofity($e->__toString());
-        addCronLog($e->__toString());
     }
 }

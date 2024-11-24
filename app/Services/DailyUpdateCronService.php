@@ -23,7 +23,7 @@ class DailyUpdateCronService
         private OpenChatDailyCrawling $openChatDailyCrawling,
         private OpenChatRepositoryInterface $openChatRepository,
         private StatisticsRepositoryInterface $statisticsRepository,
-        private UpdateRankingService $updateRankingService,
+        private UpdateDailyRankingService $updateRankingService,
         private MemberColumnUpdater $memberColumnUpdater,
         private OpenChatSubCategorySynchronizer $openChatSubCategorySynchronizer,
     ) {

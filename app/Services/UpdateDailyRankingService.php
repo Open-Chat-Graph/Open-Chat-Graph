@@ -9,7 +9,7 @@ use App\Services\StaticData\StaticDataGenerator;
 use App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 
-class UpdateRankingService
+class UpdateDailyRankingService
 {
     function __construct(
         private StaticDataGenerator $staticDataGenerator,
