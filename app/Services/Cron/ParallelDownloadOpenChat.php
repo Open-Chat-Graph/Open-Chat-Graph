@@ -10,6 +10,7 @@ use App\Models\Repositories\ParallelDownloadOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
+use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 
 class ParallelDownloadOpenChat
 {
@@ -63,7 +64,7 @@ class ParallelDownloadOpenChat
     private function handleGeneralException(string|null $type, int|null $category, \Throwable $e)
     {
         // 全てのダウンロードプロセスを強制終了する
-        OpenChatApiDataParallelDownloader::enableKillFlag();
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
 
         $categoryStr = $category !== null ? (array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] ?? $category) : 'null';
         $typeStr = $type ?? 'null';

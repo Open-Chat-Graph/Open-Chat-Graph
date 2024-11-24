@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
+use App\Config\AdminConfig;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatImageStoreUpdater;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
@@ -13,8 +14,7 @@ class OpenChatImageUpdater
     function __construct(
         private UpdateOpenChatRepositoryInterface $updateOpenChatRepository,
         private OpenChatImageStoreUpdater $openChatImageStoreUpdater,
-    ) {
-    }
+    ) {}
 
     function hourlyImageUpdate()
     {
@@ -37,6 +37,14 @@ class OpenChatImageUpdater
 
     private function update(array $ocArray)
     {
+        // 開発環境の場合、更新制限をかける
+        if (AdminConfig::IS_DEVELOPMENT ?? false) {
+            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['OpenChatImageUpdater'] ?? 1;
+            $ocArrayCount = count($ocArray);
+            $ocArray = array_slice($ocArray, 0, $limit);
+            addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
+        }
+
         foreach ($ocArray as $oc) {
             if (base62Hash($oc['img_url']) === $oc['local_img_url']) {
                 continue;

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Config\AdminConfig;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
@@ -186,8 +187,15 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
     header("ETag: $etag");
 }
 
-function purgeCacheCloudFlare(string $zoneID, string $apiKey, ?array $files = null): string
-{
+function purgeCacheCloudFlare(
+    string $zoneID = AdminConfig::CloudFlareZoneID,
+    string $apiKey = AdminConfig::CloudFlareApiKey,
+    ?array $files = null
+): string {
+    if(AdminConfig::IS_DEVELOPMENT ?? false) {
+        return 'is Development';
+    }
+
     // cURLセッションを初期化
     $ch = curl_init();
 

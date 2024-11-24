@@ -29,7 +29,10 @@ const RELATIVE_PATH_PATTERN = '/^(?!(?:f|ht)tps?:\/\/)/i';
 
 date_default_timezone_set('Asia/Tokyo');
 
-if (($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me') {
+if (
+    ($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me'
+    || ($_SERVER['HTTP_HOST'] ?? '') === 'on'
+) {
     $_SERVER['HTTPS'] = 'on';
     define('SESSION_COOKIE_PARAMS', [
         'secure' => true,
@@ -47,4 +50,3 @@ if (($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me') {
 
     define('COOKIE_DEFAULT_SECURE', false);
 }
-

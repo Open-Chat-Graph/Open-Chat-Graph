@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
 use App\Services\OpenChat\Crawler\OpenChatApiRisingDownloaderProcess;
@@ -15,6 +14,8 @@ use App\Services\RankingPosition\Store\AbstractRankingPositionStore;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Exceptions\ApplicationException;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shadow\DB;
@@ -29,6 +30,7 @@ class OpenChatApiDataParallelDownloader
         private LogRepositoryInterface $logRepository,
         private RankingPositionStore $rankingStore,
         private RisingPositionStore $risingStore,
+        private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
         OpenChatApiRankingDownloaderProcess $openChatApiRankingDownloaderProcess,
         OpenChatApiRisingDownloaderProcess $openChatApiRisingDownloaderProcess,
     ) {
@@ -111,18 +113,9 @@ class OpenChatApiDataParallelDownloader
     }
 
     /** @throws ApplicationException */
-    static function checkKillFlag()
+    private function checkKillFlag()
     {
-        OpenChatApiDbMerger::checkKillFlag();
-    }
-
-    static function disableKillFlag(): void
-    {
-        OpenChatApiDbMerger::disableKillFlag();
-    }
-
-    static function enableKillFlag(): void
-    {
-        OpenChatApiDbMerger::enableKillFlag();
+        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)
+            && throw new ApplicationException('OpenChatApiDataParallelDownloader: 強制終了しました');
     }
 }
