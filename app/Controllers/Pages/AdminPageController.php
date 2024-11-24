@@ -71,6 +71,15 @@ class AdminPageController
         }
     }
 
+    function cron_crawling()
+    {
+        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+
+        exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
     private function halfcheck()
     {
         $path = AppConfig::ROOT_PATH . 'cron_half_check.php';
