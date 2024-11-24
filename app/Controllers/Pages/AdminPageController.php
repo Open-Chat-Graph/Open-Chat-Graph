@@ -71,11 +71,20 @@ class AdminPageController
         }
     }
 
+    function cron_crawling()
+    {
+        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+
+        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
     private function halfcheck()
     {
         $path = AppConfig::ROOT_PATH . 'cron_half_check.php';
 
-        exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -137,7 +146,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
 
-        exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
