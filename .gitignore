@@ -32,3 +32,5 @@ app/Config/Shadow/GceDatabaseConfig.php
 vendor/bin/.phpunit.result.cache
 storage/SQLite
 *.Identifier
+public/sitemap.xml
+storage/static_data_top

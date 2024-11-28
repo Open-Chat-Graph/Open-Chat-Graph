@@ -296,7 +296,7 @@ class RecommendUpdater
 
     function __construct()
     {
-        $this->start = file_get_contents(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME) ?: '';
+        $this->start = file_get_contents(AppConfig::TAG_UPDATED_AT_DATETIME) ?: '';
     }
 
     function replace(string|array $word, string $column): string
@@ -631,6 +631,8 @@ class RecommendUpdater
             $this->updateName2();
             $this->updateName2('oc.description');
         });
+
+        safeFileRewrite(AppConfig::TAG_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
     }
 
     private function modifyRecommendTags()
