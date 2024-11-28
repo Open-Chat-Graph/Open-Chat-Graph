@@ -75,7 +75,6 @@ class SyncOpenChat
         }
 
         if ($this->state->getBool(StateType::isDailyTaskActive)) {
-            AdminTool::sendLineNofity('SyncOpenChat: dailyTask is active');
             addCronLog('SyncOpenChat: dailyTask is active');
         }
     }
@@ -122,18 +121,28 @@ class SyncOpenChat
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
-            [fn() => $this->recommendUpdater->updateRecommendTables(), 'updateRecommendTables'],
+            [function () {
+                if ($this->state->getBool(StateType::isDailyTaskActive)) {
+                    AdminTool::sendLineNofity('hourlyTask: updateRecommendTables is skipped because dailyTask is active');
+                    addCronLog('hourlyTask: updateRecommendTables is skipped because dailyTask is active');
+                    return;
+                }
+
+                $this->recommendUpdater->updateRecommendTables();
+            }, 'updateRecommendTables'],
         );
     }
 
     private function retryHourlyTask()
     {
         addCronLog('Retry hourlyTask');
+        AdminTool::sendLineNofity('Retry hourlyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
+        addCronLog('Done retrying hourlyTask');
         AdminTool::sendLineNofity('Done retrying hourlyTask');
     }
 
@@ -144,11 +153,11 @@ class SyncOpenChat
 
         set_time_limit(5400);
 
-        /** @var DailyUpdateCronService $updater */
+        /** 
+         * @var DailyUpdateCronService $updater
+         */
         $updater = app(DailyUpdateCronService::class);
-        $updater->update();
-
-        $this->state->setFalse(StateType::isDailyTaskActive);
+        $updater->update(fn() => OpenChatDailyCrawling::setKillFlagTrue());
 
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
@@ -159,11 +168,13 @@ class SyncOpenChat
     private function retryDailyTask()
     {
         addCronLog('Retry dailyTask');
+        AdminTool::sendLineNofity('Retry dailyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
         
         $this->dailyTask();
+        addCronLog('Done retrying dailyTask');
         AdminTool::sendLineNofity('Done retrying dailyTask');
     }
 
