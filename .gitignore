@@ -33,9 +33,4 @@ vendor/bin/.phpunit.result.cache
 storage/SQLite
 *.Identifier
 public/sitemap.xml
-storage/static_data_top/hourly_updated_at.dat
-storage/static_data_top/ranking_arg_dto.dat
-storage/static_data_top/ranking_list.dat
-storage/static_data_top/real_updated_at.dat
-storage/static_data_top/recommend_page_dto.dat
-storage/static_data_top/tag_list.dat
+storage/static_data_top
