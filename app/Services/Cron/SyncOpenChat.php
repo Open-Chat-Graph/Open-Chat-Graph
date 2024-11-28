@@ -122,8 +122,13 @@ class SyncOpenChat
             [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             [function () {
-                if (!$this->state->getBool(StateType::isDailyTaskActive))
-                    $this->recommendUpdater->updateRecommendTables();
+                if ($this->state->getBool(StateType::isDailyTaskActive)) {
+                    addCronLog('Skip hourlyTask because dailyTask is active');
+                    AdminTool::sendLineNofity('Skip hourlyTask because dailyTask is active');
+                    return;
+                }
+
+                $this->recommendUpdater->updateRecommendTables();
             }, 'updateRecommendTables'],
         );
     }
