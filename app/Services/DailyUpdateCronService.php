@@ -45,7 +45,7 @@ class DailyUpdateCronService
         return array_filter($filteredIdArray, fn (int $id) => in_array($id, $memberChangeWithinLastWeekIdArray));
     }
 
-    function update(): void
+    function update(?\Closure $crawlingEndFlag = null): void
     {
         $this->rankingPositionDailyUpdater->updateYesterdayDailyDb();
 
@@ -66,6 +66,9 @@ class DailyUpdateCronService
         addCronLog('openChatCrawling done: ' . $result);
         unset($outOfRankId);
         OpenChatDataForUpdaterWithCacheRepository::clearCache();
+
+        if ($crawlingEndFlag)
+            $crawlingEndFlag();
 
         addCronLog('syncSubCategoriesAll start');
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
