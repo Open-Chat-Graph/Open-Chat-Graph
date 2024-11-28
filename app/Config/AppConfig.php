@@ -54,6 +54,7 @@ class AppConfig
     const HOURLY_CRON_UPDATED_AT_DATETIME =     __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
     const HOURLY_REAL_UPDATED_AT_DATETIME =      __DIR__ . '/../../storage/static_data_top/real_updated_at.dat';
     const COMMENT_UPDATED_AT_MICROTIME =      __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
+    const TAG_UPDATED_AT_DATETIME =      __DIR__ . '/../../storage/static_data_top/tag_updated_at.dat';
 
     const ROOT_PATH = __DIR__ . '/../../';
 

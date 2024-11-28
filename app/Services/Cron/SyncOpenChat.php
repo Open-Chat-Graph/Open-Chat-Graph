@@ -78,7 +78,7 @@ class SyncOpenChat
             addCronLog('SyncOpenChat: dailyTask is active');
         }
     }
-    
+
     private function isFailedDailyUpdate(): bool
     {
         return isDailyUpdateTime(new \DateTime('-2 hour'), nowStart: new \DateTime('-1day'), nowEnd: new \DateTime('-1day'))
@@ -122,13 +122,8 @@ class SyncOpenChat
             [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             [function () {
-                if ($this->state->getBool(StateType::isDailyTaskActive)) {
-                    AdminTool::sendLineNofity('hourlyTask: updateRecommendTables is skipped because dailyTask is active');
-                    addCronLog('hourlyTask: updateRecommendTables is skipped because dailyTask is active');
-                    return;
-                }
-
-                $this->recommendUpdater->updateRecommendTables();
+                if (!$this->state->getBool(StateType::isDailyTaskActive))
+                    $this->recommendUpdater->updateRecommendTables();
             }, 'updateRecommendTables'],
         );
     }
@@ -148,9 +143,9 @@ class SyncOpenChat
 
     private function dailyTask()
     {
-        $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
 
+        $this->state->setTrue(StateType::isDailyTaskActive);
         set_time_limit(5400);
 
         /** 
@@ -172,7 +167,7 @@ class SyncOpenChat
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
-        
+
         $this->dailyTask();
         addCronLog('Done retrying dailyTask');
         AdminTool::sendLineNofity('Done retrying dailyTask');
