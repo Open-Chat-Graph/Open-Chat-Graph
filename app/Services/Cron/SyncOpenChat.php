@@ -157,7 +157,7 @@ class SyncOpenChat
          * @var DailyUpdateCronService $updater
          */
         $updater = app(DailyUpdateCronService::class);
-        $updater->update(fn() => OpenChatDailyCrawling::setKillFlagTrue());
+        $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
