@@ -34,3 +34,17 @@ storage/SQLite
 *.Identifier
 public/sitemap.xml
 storage/static_data_top
+
+storage/th/ranking_position/ranking/*
+!storage/th/ranking_position/ranking/0.dat
+storage/th/ranking_position/rising/*
+!storage/th/ranking_position/rising/0.dat
+storage/th/SQLite/ranking_position/ranking_position.db
+storage/th/SQLite/statistics/statistics.db
+
+storage/tw/ranking_position/ranking/*
+!storage/tw/ranking_position/ranking/0.dat
+storage/tw/ranking_position/rising/*
+!storage/tw/ranking_position/rising/0.dat
+storage/tw/SQLite/ranking_position/ranking_position.db
+storage/tw/SQLite/statistics/statistics.db
