@@ -228,13 +228,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
 
-    <!-- <hr class="hr-top">
-    <aside class="top-ranking-list-aside" style="margin: 0 1rem;">
-      <?php viewComponent('top_ranking_recent_comments') ?>
-    </aside>
-    <hr class="hr-bottom">
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?> -->
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[1]) : ?>
       <hr class="hr-top">

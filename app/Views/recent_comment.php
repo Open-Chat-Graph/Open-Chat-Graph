@@ -167,14 +167,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
-    <script type="module">
-        import {
-            applyTimeElapsedString
-        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-        applyTimeElapsedString()
-    </script>
-
     <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
     <script>
         ;
