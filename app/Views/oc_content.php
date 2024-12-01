@@ -285,6 +285,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('comment_desc') ?>
       </div>
       <div id="comment-root"></div>
+      <aside class="recent-comment-list" style="padding-bottom: 0;">
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('comments-timeline') ?>">
+          <span class="ranking-readMore">コメントのタイムラインを見る</span>
+        </a>
+      </aside>
     </section>
 
     <hr class="hr-bottom">
