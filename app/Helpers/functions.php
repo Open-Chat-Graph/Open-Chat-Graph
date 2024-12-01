@@ -166,7 +166,7 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5($content . filemtime(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+        $etag = '"' . md5($content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
     } else {
         $etag = '"' . md5($content) . '"';
     }
@@ -238,12 +238,12 @@ function purgeCacheCloudFlare(
 
 function getHouryUpdateTime()
 {
-    return file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+    return file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 }
 
 function getDailyUpdateTime()
 {
-    return file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);
+    return file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
 }
 
 /* function imgUrl(int $id, string $img_url): string
@@ -305,7 +305,7 @@ function filePathNumById(int $id): string
 
 function getCategoryName(int $category): string
 {
-    return array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] ?? '';
+    return array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? '';
 }
 
 function addCronLog(string|array $log)

@@ -8,5 +8,8 @@ use App\Config\AppConfig;
 
 class RankingPositionStore extends AbstractRankingPositionStore
 {
-    protected string $filePath = AppConfig::OPEN_CHAT_RANKING_POSITION_DIR;
+    function __construct()
+    {
+        $this->filePath = AppConfig::$OPEN_CHAT_RANKING_POSITION_DIR;
+    }
 }

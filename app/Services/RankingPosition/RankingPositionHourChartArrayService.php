@@ -21,7 +21,7 @@ class RankingPositionHourChartArrayService
 
     function getPositionHourChartArray(RankingType $type, int $open_chat_id, int $category): RankingPositionHourChartDto
     {
-        $updatedAt = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+        $updatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
         
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,

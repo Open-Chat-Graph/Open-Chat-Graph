@@ -11,12 +11,12 @@ use Shadow\Kernel\Validator;
 abstract class AbstractOpenChatApiRankingDownloaderProcess
 {
     /**
-     * @var string $callableGenerateUrl `$callableGenerateUrl(string $category, string $ct)`
+     * @var \Closure $callableGenerateUrl `$callableGenerateUrl(string $category, string $ct)`
      */
-    protected string $callableGenerateUrl;
+    protected \Closure $callableGenerateUrl;
 
     function __construct(
-        private CrawlerFactory $crawlerFactory
+        protected CrawlerFactory $crawlerFactory
     ) {
     }
 

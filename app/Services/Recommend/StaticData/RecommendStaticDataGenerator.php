@@ -81,7 +81,7 @@ class RecommendStaticDataGenerator
 
     private function updateCategoryStaticData()
     {
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
             saveSerializedFile(
                 "static_data_recommend/category/{$category}.dat",
                 $this->getCategoryRanking($category)

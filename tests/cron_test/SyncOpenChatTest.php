@@ -13,7 +13,7 @@ class SyncOpenChatTest extends TestCase
          * @var SyncOpenChat $syncOpenChat
          */
         $syncOpenChat = app(SyncOpenChat::class);
-        $syncOpenChat->handle(true);
+        $syncOpenChat->handle();
 
         addCronLog('End');
         $this->assertTrue(true);

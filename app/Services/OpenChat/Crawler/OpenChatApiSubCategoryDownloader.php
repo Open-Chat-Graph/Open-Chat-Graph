@@ -56,7 +56,7 @@ class OpenChatApiSubCategoryDownloader
     function fetchOpenChatApiSubCategoriesAll(\Closure $callback): array
     {
         $result = [];
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $name => $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $name => $category) {
             if ($category === 0) {
                 continue;
             }

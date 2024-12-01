@@ -24,7 +24,7 @@ try {
     $recommendStaticDataGenerator->updateStaticData();
     AdminTool::sendLineNofity('recommendStaticDataGenerator done');
     
-    touch(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+    touch(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendLineNofity($e->__toString());

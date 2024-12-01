@@ -41,7 +41,7 @@ class ParallelDownloadOpenChat
 
     private function download(RankingType $type, int $category)
     {
-        $categoryStr = array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category];
+        $categoryStr = array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category];
         $typeStr = $type->value;
 
         addCronLog("download start: {$typeStr} {$categoryStr}");
@@ -56,7 +56,7 @@ class ParallelDownloadOpenChat
     {
         foreach ($args as $api) {
             $type = $api['type'];
-            $category = array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$api['category']] ?? 'UNDIFINED';
+            $category = array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$api['category']] ?? 'UNDIFINED';
             addCronLog("ParallelDownloadOpenChat {$type} {$category}: " . $e->getMessage());
         }
     }
@@ -66,7 +66,7 @@ class ParallelDownloadOpenChat
         // 全てのダウンロードプロセスを強制終了する
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
 
-        $categoryStr = $category !== null ? (array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] ?? $category) : 'null';
+        $categoryStr = $category !== null ? (array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? $category) : 'null';
         $typeStr = $type ?? 'null';
         $error = "ParallelDownloadOpenChat {$typeStr} {$categoryStr}: " . $e->__toString();
 
