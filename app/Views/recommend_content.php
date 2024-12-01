@@ -184,14 +184,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
-  <script type="module">
-    import {
-      getComment
-    } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-    getComment()
-  </script>
-
   <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
