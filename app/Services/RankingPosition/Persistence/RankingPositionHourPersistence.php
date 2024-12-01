@@ -43,7 +43,7 @@ class RankingPositionHourPersistence
         $this->openChatDataWithCache->cacheOpenChatData(true);
 
         $fileTime = '';
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $key => $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $key => $category) {
             [$risingFileTime, $risingOcDtoArray] = $this->risingPositionStore->getStorageData((string)$category);
             $risingInsertDtoArray = $this->createInsertDtoArray($risingOcDtoArray);
             unset($risingOcDtoArray);

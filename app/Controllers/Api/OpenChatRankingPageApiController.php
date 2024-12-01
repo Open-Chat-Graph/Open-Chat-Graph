@@ -28,7 +28,7 @@ class OpenChatRankingPageApiController
 
         $this->args->page = Valid::num(Recp::input('page', 0), min: 0, e: $error);
         $this->args->limit = Valid::num(Recp::input('limit'), min: 1, e: $error);
-        $this->args->category = (int)Valid::str(Recp::input('category', '0'), regex: AppConfig::OPEN_CHAT_CATEGORY, e: $error);
+        $this->args->category = (int)Valid::str(Recp::input('category', '0'), regex: AppConfig::$OPEN_CHAT_CATEGORY, e: $error);
 
         $this->args->list = Valid::str(Recp::input('list', 'daily'), regex: ['hourly', 'daily', 'weekly', 'all', 'ranking', 'rising'], e: $error);
         $this->args->order = Valid::str(Recp::input('order', 'asc'), regex: ['asc', 'desc'], e: $error);

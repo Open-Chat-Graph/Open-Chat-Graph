@@ -11,7 +11,7 @@ class RecommendStaticDataFile
 {
     private function checkUpdatedAt(RecommendListDto|false $data)
     {
-        if (!$data || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME))
+        if (!$data || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME))
             noStore();
     }
 

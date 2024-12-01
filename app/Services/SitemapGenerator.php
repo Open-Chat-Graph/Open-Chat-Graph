@@ -51,8 +51,8 @@ class SitemapGenerator
 
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);
-        $datetime = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+        $date = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
+        $datetime = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim(self::SITE_URL, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
@@ -76,7 +76,7 @@ class SitemapGenerator
                 lastmod: '@' . filemtime(PUBLIC_DIR . "/" . $accreditationJs)
             );
 
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
             $category && $sitemap->addItem(self::SITE_URL . 'ranking/' . $category, lastmod: $datetime);
         }
 

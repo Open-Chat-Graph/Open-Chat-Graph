@@ -29,7 +29,7 @@ class ReactRankingPageController
         $title1 = '';
         switch (!!$category) {
             case true:
-                $title1 = array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] . '｜';
+                $title1 = array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] . '｜';
                 break;
             default:
                 $title1 = $title0 ? '' : '【最新】';
@@ -92,7 +92,7 @@ class ReactRankingPageController
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             'ランキング',
             'ranking',
-            $category ? array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] : '',
+            $category ? array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] : '',
             $category ? (string)$category : ''
         );
 

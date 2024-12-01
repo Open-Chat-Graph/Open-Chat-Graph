@@ -39,7 +39,7 @@ Route::middlewareGroup(RedirectLineWebBrowser::class)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("ranking/{$category}");
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
     })
 
     ->path('ranking', [ReactRankingPageController::class, 'ranking'])
@@ -52,7 +52,7 @@ Route::middlewareGroup(RedirectLineWebBrowser::class)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("official-ranking/{$category}");
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
     })
 
     ->path('official-ranking', [ReactRankingPageController::class, 'ranking'])

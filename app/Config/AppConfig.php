@@ -48,17 +48,9 @@ class AppConfig
     const LINE_OPEN_URL = 'https://openchat.line.me/jp/cover/';
     const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
-    const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
-
-    const DAILY_CRON_UPDATED_AT_DATE =  __DIR__ . '/../../storage/static_data_top/daily_updated_at.dat';
-    const HOURLY_CRON_UPDATED_AT_DATETIME =     __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
-    const HOURLY_REAL_UPDATED_AT_DATETIME =      __DIR__ . '/../../storage/static_data_top/real_updated_at.dat';
-    const COMMENT_UPDATED_AT_MICROTIME =      __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
-    const TAG_UPDATED_AT_DATETIME =      __DIR__ . '/../../storage/static_data_top/tag_updated_at.dat';
-
     const ROOT_PATH = __DIR__ . '/../../';
 
-    const OPEN_CHAT_CATEGORY = [
+    public static $OPEN_CHAT_CATEGORY = [
         'ゲーム' => 17,
         'スポーツ' => 16,
         '芸能人・有名人' => 26,
@@ -104,15 +96,23 @@ class AppConfig
 
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 
+    const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
+
+    public static $DAILY_CRON_UPDATED_AT_DATE =  __DIR__ . '/../../storage/static_data_top/daily_updated_at.dat';
+    public static $HOURLY_CRON_UPDATED_AT_DATETIME = __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
+    public static $HOURLY_REAL_UPDATED_AT_DATETIME =  __DIR__ . '/../../storage/static_data_top/real_updated_at.dat';
+
+    const COMMENT_UPDATED_AT_MICROTIME = __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
+    const TAG_UPDATED_AT_DATETIME = __DIR__ . '/../../storage/static_data_top/tag_updated_at.dat';
+
     const OPEN_CHAT_SUB_CATEGORIES_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories.json';
     const OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories_tag.json';
 
-    const OPEN_CHAT_RANKING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/ranking';
-    const OPEN_CHAT_RISING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/rising';
-    const OPEN_CHAT_HOUR_FILTER_ID_DIR = __DIR__ . '/../../storage/ranking_position/filter.dat';
+    public static $OPEN_CHAT_RANKING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/ranking';
+    public static $OPEN_CHAT_RISING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/rising';
+    public static $OPEN_CHAT_HOUR_FILTER_ID_DIR = __DIR__ . '/../../storage/ranking_position/filter.dat';
 
     const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
     const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
-
     const ACCREDITATION_DATA_FILE_PATH = __DIR__ . '/../../storage/AccreditationBackupData';
 }
