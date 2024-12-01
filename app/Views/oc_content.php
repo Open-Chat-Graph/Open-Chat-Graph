@@ -228,7 +228,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?> -->
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[1]) : ?>
       <hr class="hr-top">
