@@ -169,10 +169,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
     <script type="module">
         import {
-            getComment
+            applyTimeElapsedString
         } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
 
-        getComment()
+        applyTimeElapsedString()
     </script>
 
     <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
