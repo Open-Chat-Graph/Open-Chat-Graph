@@ -86,8 +86,10 @@ class OpenChatApiDbMergerWithParallelDownloader
             array_map(fn($arg) => ['type' => $arg[0]->value, 'category' => $arg[1]], $args)
         ));
 
+        $arg2 = escapeshellarg(URL_ROOT);
+
         $path = AppConfig::ROOT_PATH . 'exec_parallel_downloader.php';
-        exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
+        exec(PHP_BINARY . " {$path} {$arg} {$arg2} >/dev/null 2>&1 &");
     }
 
     function mergeProcess(RankingType $type, int $category)

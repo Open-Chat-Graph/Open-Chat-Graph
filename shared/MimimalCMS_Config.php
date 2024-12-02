@@ -7,7 +7,7 @@
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
 
-const URL_ROOT = '';
+// const URL_ROOT = '';
 const PUBLIC_DIR = __DIR__ . '/../public';
 const VIEWS_DIR = __DIR__ . '/../app/Views';
 const JSON_STORAGE_DIR =  __DIR__ . '/../storage/json';
@@ -50,3 +50,22 @@ if (
 
     define('COOKIE_DEFAULT_SECURE', false);
 }
+
+!defined('URL_ROOT') && (function () {
+    /* $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    if (
+        preg_match("{^/th/.*}", $requestUri)
+        || preg_match("{^/th$}", $requestUri)
+    ) {
+        define('URL_ROOT', '/th');
+    } else if (
+        preg_match("{^/tw/.*}", $requestUri)
+        || preg_match("{^/tw$}", $requestUri)
+    ) {
+        define('URL_ROOT', '/tw');
+    } else {
+        define('URL_ROOT', '');
+    } */
+
+    define('URL_ROOT', '');
+})();

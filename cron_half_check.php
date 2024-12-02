@@ -1,5 +1,9 @@
 <?php
 
+if (isset($argv[1]) && $argv[1]) {
+    define('URL_ROOT', $argv[1]);
+}
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Services\Cron\SyncOpenChat;
