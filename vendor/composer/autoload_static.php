@@ -7,25 +7,24 @@ namespace Composer\Autoload;
 class ComposerStaticInitb99d262e1b8550ce1d6fd4bec6885e85
 {
     public static $files = array (
-        'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
-        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
+        'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '32ce0fe7e283c4ab2501f48c49b8b765' => __DIR__ . '/../..' . '/shared/MimimalCMS_Config.php',
         '072636c41bf6e1d1798641cf4f6d69ca' => __DIR__ . '/../..' . '/shared/MimimalCMS_Enums.php',
         'c855a0512e67c28b49c6128ad77e1863' => __DIR__ . '/../..' . '/shared/MimimalCMS_ExceptionHandler.php',
         '5f7bfa9cae57467db83be145516aa1f7' => __DIR__ . '/../..' . '/shared/MimimalCMS_HelperFunctions.php',
         'f7fa97712214d071ef2f311c97587004' => __DIR__ . '/../..' . '/app/Helpers/functions.php',
+        'ea6794f6e2c0a5dca1a3a94647db27e9' => __DIR__ . '/../..' . '/app/Config/AppDynamicConfig.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
-            'Symfony\\Polyfill\\Php72\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
@@ -72,10 +71,6 @@ class ComposerStaticInitb99d262e1b8550ce1d6fd4bec6885e85
     );
 
     public static $prefixDirsPsr4 = array (
-        'Symfony\\Polyfill\\Php72\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-php72',
-        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
