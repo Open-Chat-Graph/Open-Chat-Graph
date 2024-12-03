@@ -2,20 +2,18 @@
 
 declare(strict_types=1);
 
-use App\Services\Cron\SyncOpenChat;
+use App\Config\AppConfig;
 use PHPUnit\Framework\TestCase;
 
 class SyncOpenChatTest extends TestCase
 {
     public function test()
     {
-        /**
-         * @var SyncOpenChat $syncOpenChat
-         */
-        $syncOpenChat = app(SyncOpenChat::class);
-        $syncOpenChat->handle();
+        $arg = escapeshellarg('/tw');
 
-        addCronLog('End');
+        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+        exec(PHP_BINARY . " {$path} {$arg}");
+        
         $this->assertTrue(true);
     }
 }

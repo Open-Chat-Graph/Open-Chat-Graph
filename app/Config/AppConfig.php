@@ -98,9 +98,9 @@ class AppConfig
 
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
 
-    public static $DAILY_CRON_UPDATED_AT_DATE =  __DIR__ . '/../../storage/static_data_top/daily_updated_at.dat';
-    public static $HOURLY_CRON_UPDATED_AT_DATETIME = __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
-    public static $HOURLY_REAL_UPDATED_AT_DATETIME =  __DIR__ . '/../../storage/static_data_top/real_updated_at.dat';
+    public static string $DAILY_CRON_UPDATED_AT_DATE =  '';
+    public static string $HOURLY_CRON_UPDATED_AT_DATETIME = '';
+    public static string $HOURLY_REAL_UPDATED_AT_DATETIME =  '';
 
     const COMMENT_UPDATED_AT_MICROTIME = __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
     const TAG_UPDATED_AT_DATETIME = __DIR__ . '/../../storage/static_data_top/tag_updated_at.dat';
@@ -108,9 +108,9 @@ class AppConfig
     const OPEN_CHAT_SUB_CATEGORIES_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories.json';
     const OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories_tag.json';
 
-    public static $OPEN_CHAT_RANKING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/ranking';
-    public static $OPEN_CHAT_RISING_POSITION_DIR = __DIR__ . '/../../storage/ranking_position/rising';
-    public static $OPEN_CHAT_HOUR_FILTER_ID_DIR = __DIR__ . '/../../storage/ranking_position/filter.dat';
+    public static string $OPEN_CHAT_RANKING_POSITION_DIR = '';
+    public static string $OPEN_CHAT_RISING_POSITION_DIR = '';
+    public static string $OPEN_CHAT_HOUR_FILTER_ID_DIR = '';
 
     const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
     const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
