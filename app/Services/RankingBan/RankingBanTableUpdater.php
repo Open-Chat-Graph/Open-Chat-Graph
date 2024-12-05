@@ -11,7 +11,7 @@ use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterfa
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RankingBanTableUpdater
 {

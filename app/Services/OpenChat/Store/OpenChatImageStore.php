@@ -7,7 +7,7 @@ namespace App\Services\OpenChat\Store;
 use App\Config\AppConfig;
 use App\Services\OpenChat\Crawler\OpenChatImgDownloader;
 use App\Models\Repositories\Log\LogRepositoryInterface;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatImageStore
 {

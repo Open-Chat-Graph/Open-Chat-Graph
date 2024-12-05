@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\CommentRepositories;
 
 use App\Models\CommentRepositories\CommentDB;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RecentCommentListRepository implements RecentCommentListRepositoryInterface
 {

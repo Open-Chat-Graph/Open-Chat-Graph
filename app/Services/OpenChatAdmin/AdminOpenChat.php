@@ -7,7 +7,7 @@ namespace App\Services\OpenChatAdmin;
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\OpenChatAdmin\Dto\AdminOpenChatDto;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class AdminOpenChat
 {

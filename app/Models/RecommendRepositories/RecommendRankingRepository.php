@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\RecommendRepositories;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RecommendRankingRepository implements RecommendRankingRepositoryInterface
 {

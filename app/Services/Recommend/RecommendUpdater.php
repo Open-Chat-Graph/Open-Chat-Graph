@@ -6,7 +6,7 @@ namespace App\Services\Recommend;
 
 use App\Config\AppConfig;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RecommendUpdater
 {

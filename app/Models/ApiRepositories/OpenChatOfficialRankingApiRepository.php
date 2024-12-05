@@ -6,7 +6,7 @@ namespace App\Models\ApiRepositories;
 
 use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Services\OpenChat\Enum\RankingType;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatOfficialRankingApiRepository
 {

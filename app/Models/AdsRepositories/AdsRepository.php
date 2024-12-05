@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\AdsRepositories;
 
 use App\Views\Dto\AdsDto;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class AdsRepository
 {

@@ -8,7 +8,7 @@ use App\Models\ExecuteSqlFile;
 use App\Models\Importer\SqlInsert;
 use App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface;
 use App\Models\SQLite\SQLiteStatistics;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use Shadow\DBInterface;
 
 class SqliteStatisticsRankingUpdaterRepository implements StatisticsRankingUpdaterRepositoryInterface

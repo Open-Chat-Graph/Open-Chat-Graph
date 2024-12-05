@@ -10,7 +10,7 @@ use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\StaticData\StaticTopPageDataGenerator;
 use PHPUnit\Framework\TestCase;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class DBTest extends TestCase
 {
