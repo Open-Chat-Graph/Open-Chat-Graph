@@ -98,7 +98,7 @@ class AppConfig
 
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
 
-    public static string $DAILY_CRON_UPDATED_AT_DATE =  '';
+    public static string $DAILY_CRON_UPDATED_AT_DATE = '';
     public static string $HOURLY_CRON_UPDATED_AT_DATETIME = '';
     public static string $HOURLY_REAL_UPDATED_AT_DATETIME =  '';
 
@@ -115,4 +115,7 @@ class AppConfig
     const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
     const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
     const ACCREDITATION_DATA_FILE_PATH = __DIR__ . '/../../storage/AccreditationBackupData';
+
+    public static string $databaseConfigClass = '';
+    public static string $rankingPositionDBConfigClass = '';
 }
