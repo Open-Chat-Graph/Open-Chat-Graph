@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories;
 
 use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 

@@ -8,7 +8,7 @@ use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\RecommendUtility;
 use Shared\Exceptions\BadRequestException as Bad;
 use Shadow\Kernel\Reception as R;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class AdminEndPoint
 {

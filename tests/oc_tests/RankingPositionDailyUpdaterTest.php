@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Services\RankingPosition\RankingPositionDailyUpdater;
 use PHPUnit\Framework\TestCase;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RankingPositionDailyUpdaterTest extends TestCase
 {

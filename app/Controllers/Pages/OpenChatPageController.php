@@ -21,7 +21,7 @@ use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatPageController
 {

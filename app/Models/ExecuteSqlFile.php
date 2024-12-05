@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use Shadow\DBInterface;
 
 class ExecuteSqlFile

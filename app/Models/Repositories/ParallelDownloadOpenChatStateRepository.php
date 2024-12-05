@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories;
 
 use App\Services\OpenChat\Enum\RankingType;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class ParallelDownloadOpenChatStateRepository implements ParallelDownloadOpenChatStateRepositoryInterface
 {

@@ -8,7 +8,7 @@ use App\Config\AdminConfig;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatHourlyInvitationTicketUpdater
 {

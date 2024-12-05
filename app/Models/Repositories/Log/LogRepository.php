@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories\Log;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class LogRepository implements LogRepositoryInterface
 {

@@ -10,7 +10,7 @@ use App\Models\Accreditation\AccreditationUserModel;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Services\Admin\AdminTool;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Models\SQLite\SQLiteStatistics;

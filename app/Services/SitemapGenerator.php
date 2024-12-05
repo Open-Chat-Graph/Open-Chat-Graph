@@ -12,7 +12,7 @@ use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class SitemapGenerator
 {

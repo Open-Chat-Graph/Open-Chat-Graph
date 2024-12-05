@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 use App\Services\OpenChat\Dto\OpenChatUpdaterDto;
 

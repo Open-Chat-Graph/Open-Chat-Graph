@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\SQLite;
 
 use Shadow\DBInterface;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 abstract class AbstractSQLite extends DB implements DBInterface
 {

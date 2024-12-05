@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Config\AppConfig;
 use App\Services\OpenChat\DuplicateOpenChatMeger;
 

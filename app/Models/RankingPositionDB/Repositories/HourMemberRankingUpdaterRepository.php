@@ -7,7 +7,7 @@ namespace App\Models\RankingPositionDB\Repositories;
 use App\Models\Importer\SqlInsert;
 use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class HourMemberRankingUpdaterRepository implements HourMemberRankingUpdaterRepositoryInterface
 {
