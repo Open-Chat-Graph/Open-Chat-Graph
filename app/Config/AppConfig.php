@@ -116,6 +116,9 @@ class AppConfig
     const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
     const ACCREDITATION_DATA_FILE_PATH = __DIR__ . '/../../storage/AccreditationBackupData';
 
-    public static string $databaseConfigClass = '';
-    public static string $rankingPositionDBConfigClass = '';
+    public static string $DatabaseConfigClass = '';
+    public static string $RankingPositionDBConfigClass = '';
+
+    public static string $SQLiteRankingPositionDbfile = '';
+    public static string $SQLiteStatisticsDbfile = '';
 }

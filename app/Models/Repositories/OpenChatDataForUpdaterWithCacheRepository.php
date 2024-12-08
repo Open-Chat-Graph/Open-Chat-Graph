@@ -55,7 +55,10 @@ class OpenChatDataForUpdaterWithCacheRepository implements OpenChatDataForUpdate
          */
         $dataArray = DB::fetchAll($query);
         if (!$dataArray) {
-            throw new RuntimeException('DBが空です');
+            self::$openChatDataCache = [];
+            self::$openChatIdCache = [];
+            self::$openChatEmidCache = [];
+            return;
         }
 
         self::$openChatIdCache = array_column($dataArray, 'id');
