@@ -10,12 +10,12 @@ use App\Config\RankingPositionDBConfigTw;
 
 (function () {
     if (URL_ROOT === '/tw') {
-        $STORAGE_DIR = __DIR__ . '/../../tw/storage';
+        $STORAGE_DIR = __DIR__ . '/../../storage/tw';
 
         AppConfig::$DatabaseConfigClass = DatabaseConfigTw::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTw::class;
     } elseif (URL_ROOT === '/th') {
-        $STORAGE_DIR = __DIR__ . '/../../th/storage';
+        $STORAGE_DIR = __DIR__ . '/../../storage/th';
 
         AppConfig::$DatabaseConfigClass = DatabaseConfigTh::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTh::class;
