@@ -17,8 +17,8 @@ if (URL_ROOT === '/tw') {
     AppConfig::$OPEN_CHAT_RISING_POSITION_DIR =     __DIR__ . '/../../storage/tw/ranking_position/rising';
     AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR =      __DIR__ . '/../../storage/tw/ranking_position/filter.dat';
 
-    AppConfig::$databaseConfigClass =               DatabaseConfigTw::class;
-    AppConfig::$rankingPositionDBConfigClass =      RankingPositionDBConfigTw::class;
+    AppConfig::$DatabaseConfigClass =               DatabaseConfigTw::class;
+    AppConfig::$RankingPositionDBConfigClass =      RankingPositionDBConfigTw::class;
 } elseif (URL_ROOT === '/th') {
     AppConfig::$DAILY_CRON_UPDATED_AT_DATE =        __DIR__ . '/../../storage/th/static_data_top/daily_updated_at.dat';
     AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME =   __DIR__ . '/../../storage/th/static_data_top/hourly_updated_at.dat';
@@ -28,8 +28,8 @@ if (URL_ROOT === '/tw') {
     AppConfig::$OPEN_CHAT_RISING_POSITION_DIR =     __DIR__ . '/../../storage/th/ranking_position/rising';
     AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR =      __DIR__ . '/../../storage/th/ranking_position/filter.dat';
 
-    AppConfig::$databaseConfigClass =               DatabaseConfigTh::class;
-    AppConfig::$rankingPositionDBConfigClass =      RankingPositionDBConfigTh::class;
+    AppConfig::$DatabaseConfigClass =               DatabaseConfigTh::class;
+    AppConfig::$RankingPositionDBConfigClass =      RankingPositionDBConfigTh::class;
 } else {
     AppConfig::$DAILY_CRON_UPDATED_AT_DATE =        __DIR__ . '/../../storage/static_data_top/daily_updated_at.dat';
     AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME =   __DIR__ . '/../../storage/static_data_top/hourly_updated_at.dat';
@@ -39,6 +39,6 @@ if (URL_ROOT === '/tw') {
     AppConfig::$OPEN_CHAT_RISING_POSITION_DIR =     __DIR__ . '/../../storage/ranking_position/rising';
     AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR =      __DIR__ . '/../../storage/ranking_position/filter.dat';
 
-    AppConfig::$databaseConfigClass =               DatabaseConfig::class;
-    AppConfig::$rankingPositionDBConfigClass =      RankingPositionDBConfig::class;
+    AppConfig::$DatabaseConfigClass =               DatabaseConfig::class;
+    AppConfig::$RankingPositionDBConfigClass =      RankingPositionDBConfig::class;
 }
