@@ -118,4 +118,7 @@ class AppConfig
 
     public static string $DatabaseConfigClass = '';
     public static string $RankingPositionDBConfigClass = '';
+
+    public static string $SQLiteRankingPositionDbfile = '';
+    public static string $SQLiteStatisticsDbfile = '';
 }
