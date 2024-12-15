@@ -14,16 +14,90 @@ use App\Config\RankingPositionDBConfigTw;
 
         AppConfig::$DatabaseConfigClass = DatabaseConfigTw::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTw::class;
+        AppConfig::$OPEN_CHAT_CATEGORY = [
+            '流行／美妝' => 20,
+            '金融／商業' => 40,
+            '美食' => 12,
+            '團體／組織' => 6,
+            '旅遊' => 18,
+            '娛樂' => 42,
+            '家庭／親子' => 4,
+            '工作' => 44,
+            '學習' => 11,
+            '遊戲' => 17,
+            '興趣' => 14,
+            '運動／健身' => 16,
+            '寵物' => 27,
+            '公司／企業' => 5,
+            '心情' => 43,
+            '科技' => 34,
+            '健康' => 23,
+            '學校／校友' => 2,
+            '動畫／漫畫' => 22,
+            '其他' => 35,
+            '全部' => 0,
+        ];
     } elseif (URL_ROOT === '/th') {
         $STORAGE_DIR = __DIR__ . '/../../storage/th';
 
         AppConfig::$DatabaseConfigClass = DatabaseConfigTh::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTh::class;
+        AppConfig::$OPEN_CHAT_CATEGORY = [
+            'แฟนคลับ' => 10,
+            'การศึกษา' => 11,
+            'การเงิน & ธุรกิจ' => 40,
+            'งานอดิเรก' => 14,
+            'ท่องเที่ยว' => 18,
+            'เทคโนโลยี' => 34,
+            'เกม' => 17,
+            'ท้องถิ่น' => 8,
+            'สัตว์เลี้ยง' => 27,
+            'รถยนต์' => 19,
+            'เพลง' => 33,
+            'แฟชั่น & บิวตี้' => 20,
+            'กีฬา' => 16,
+            'อาหาร' => 12,
+            'อนิเมะ & การ์ตูน' => 22,
+            'ภาพยนตร์' => 30,
+            'โรงเรียน' => 2,
+            'การถ่ายภาพ' => 37,
+            'รายการทีวี' => 24,
+            'เด็ก' => 28,
+            'อื่นๆ' => 35,
+            'ทั้งหมด' => 0,
+        ];
     } else {
         $STORAGE_DIR = __DIR__ . '/../../storage';
 
         AppConfig::$DatabaseConfigClass = DatabaseConfig::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfig::class;
+        AppConfig::$OPEN_CHAT_CATEGORY = [
+            'ゲーム' => 17,
+            'スポーツ' => 16,
+            '芸能人・有名人' => 26,
+            '同世代' => 7,
+            'アニメ・漫画' => 22,
+            '金融・ビジネス' => 40,
+            '音楽' => 33,
+            '地域・暮らし' => 8,
+            'ファッション・美容' => 20,
+            'イラスト' => 41,
+            '研究・学習' => 11,
+            '働き方・仕事' => 5,
+            '学校・同窓会' => 2,
+            '料理・グルメ' => 12,
+            '健康' => 23,
+            '団体' => 6,
+            '妊活・子育て' => 28,
+            '乗り物' => 19,
+            '写真' => 37,
+            '旅行' => 18,
+            '動物・ペット' => 27,
+            'TV・VOD' => 24,
+            '本' => 29,
+            '映画・舞台' => 30,
+            'すべて' => 0,
+        ];
     }
 
     AppConfig::$DAILY_CRON_UPDATED_AT_DATE =      $STORAGE_DIR . '/static_data_top/daily_updated_at.dat';
