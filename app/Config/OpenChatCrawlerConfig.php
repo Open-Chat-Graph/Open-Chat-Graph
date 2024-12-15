@@ -25,8 +25,8 @@ class OpenChatCrawlerConfig
 
     const STORE_IMG_QUALITY = 50;
 
-    const OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER = [
-        "X-Line-Seo-User: x9bfc33ffe50854cf0d446a6013cf1824",
+    static array $OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER = [
+        "x-line-seo-user: xc5c0f67600885ce88324a52e74ff6923",
     ];
 
     static function generateOpenChatApiOcDataFromEmidUrl(string $emid)

@@ -7,11 +7,12 @@ use App\Config\DatabaseConfigTw;
 use App\Config\RankingPositionDBConfig;
 use App\Config\RankingPositionDBConfigTh;
 use App\Config\RankingPositionDBConfigTw;
+use App\Config\OpenChatCrawlerConfig;
 
 (function () {
     if (URL_ROOT === '/tw') {
         $STORAGE_DIR = __DIR__ . '/../../storage/tw';
-
+        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: tw";
         AppConfig::$DatabaseConfigClass = DatabaseConfigTw::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTw::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
@@ -39,7 +40,7 @@ use App\Config\RankingPositionDBConfigTw;
         ];
     } elseif (URL_ROOT === '/th') {
         $STORAGE_DIR = __DIR__ . '/../../storage/th';
-
+        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: th";
         AppConfig::$DatabaseConfigClass = DatabaseConfigTh::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTh::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
@@ -68,7 +69,6 @@ use App\Config\RankingPositionDBConfigTw;
         ];
     } else {
         $STORAGE_DIR = __DIR__ . '/../../storage';
-
         AppConfig::$DatabaseConfigClass = DatabaseConfig::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfig::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
