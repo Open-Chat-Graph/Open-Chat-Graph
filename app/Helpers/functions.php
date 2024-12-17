@@ -315,7 +315,7 @@ function addCronLog(string|array $log)
     }
 
     foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, __DIR__ . '/../../logs/cron.log');
+        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::$addCronLogDestination);
     }
 }
 

@@ -72,6 +72,8 @@ class AppConfig
 
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
 
+    public static string $addCronLogDestination = '';
+
     public static string $DAILY_CRON_UPDATED_AT_DATE = '';
     public static string $HOURLY_CRON_UPDATED_AT_DATETIME = '';
     public static string $HOURLY_REAL_UPDATED_AT_DATETIME =  '';

@@ -12,7 +12,8 @@ use App\Config\OpenChatCrawlerConfig;
 (function () {
     if (URL_ROOT === '/tw') {
         $STORAGE_DIR = __DIR__ . '/../../storage/tw';
-        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: tw";
+
+        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_tw.log';
         AppConfig::$DatabaseConfigClass = DatabaseConfigTw::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTw::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
@@ -38,9 +39,35 @@ use App\Config\OpenChatCrawlerConfig;
             '其他' => 35,
             '全部' => 0,
         ];
+
+        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: tw";
+        OpenChatCrawlerConfig::$parallelDownloaderCategoryOrder = [
+            '流行／美妝' => 20,
+            '全部' => 0,
+            '金融／商業' => 40,
+            '美食' => 12,
+            '團體／組織' => 6,
+            '旅遊' => 18,
+            '娛樂' => 42,
+            '家庭／親子' => 4,
+            '工作' => 44,
+            '學習' => 11,
+            '遊戲' => 17,
+            '興趣' => 14,
+            '運動／健身' => 16,
+            '寵物' => 27,
+            '公司／企業' => 5,
+            '心情' => 43,
+            '科技' => 34,
+            '健康' => 23,
+            '學校／校友' => 2,
+            '動畫／漫畫' => 22,
+            '其他' => 35,
+        ];
     } elseif (URL_ROOT === '/th') {
         $STORAGE_DIR = __DIR__ . '/../../storage/th';
-        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: th";
+
+        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_th.log';
         AppConfig::$DatabaseConfigClass = DatabaseConfigTh::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTh::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
@@ -67,8 +94,36 @@ use App\Config\OpenChatCrawlerConfig;
             'อื่นๆ' => 35,
             'ทั้งหมด' => 0,
         ];
+
+        OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[] = "x-lal: th";
+        OpenChatCrawlerConfig::$parallelDownloaderCategoryOrder = [
+            'แฟนคลับ' => 10,
+            'ทั้งหมด' => 0,
+            'การศึกษา' => 11,
+            'การเงิน & ธุรกิจ' => 40,
+            'งานอดิเรก' => 14,
+            'ท่องเที่ยว' => 18,
+            'เทคโนโลยี' => 34,
+            'เกม' => 17,
+            'ท้องถิ่น' => 8,
+            'สัตว์เลี้ยง' => 27,
+            'รถยนต์' => 19,
+            'เพลง' => 33,
+            'แฟชั่น & บิวตี้' => 20,
+            'กีฬา' => 16,
+            'อาหาร' => 12,
+            'อนิเมะ & การ์ตูน' => 22,
+            'ภาพยนตร์' => 30,
+            'โรงเรียน' => 2,
+            'การถ่ายภาพ' => 37,
+            'รายการทีวี' => 24,
+            'เด็ก' => 28,
+            'อื่นๆ' => 35,
+        ];
     } else {
         $STORAGE_DIR = __DIR__ . '/../../storage';
+
+        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron.log';
         AppConfig::$DatabaseConfigClass = DatabaseConfig::class;
         AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfig::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
@@ -97,6 +152,34 @@ use App\Config\OpenChatCrawlerConfig;
             '本' => 29,
             '映画・舞台' => 30,
             'すべて' => 0,
+        ];
+
+        OpenChatCrawlerConfig::$parallelDownloaderCategoryOrder = [
+            'ゲーム' => 17,
+            'すべて' => 0,
+            '芸能人・有名人' => 26,
+            'アニメ・漫画' => 22,
+            'スポーツ' => 16,
+            '働き方・仕事' => 5,
+            '音楽' => 33,
+            '地域・暮らし' => 8,
+            '同世代' => 7,
+            '乗り物' => 19,
+            '金融・ビジネス' => 40,
+            '研究・学習' => 11,
+            'ファッション・美容' => 20,
+            '健康' => 23,
+            'イラスト' => 41,
+            '学校・同窓会' => 2,
+            '団体' => 6,
+            '料理・グルメ' => 12,
+            '妊活・子育て' => 28,
+            '写真' => 37,
+            '旅行' => 18,
+            '映画・舞台' => 30,
+            '動物・ペット' => 27,
+            'TV・VOD' => 24,
+            '本' => 29,
         ];
     }
 
