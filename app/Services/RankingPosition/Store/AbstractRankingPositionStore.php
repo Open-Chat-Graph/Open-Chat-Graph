@@ -38,7 +38,7 @@ abstract class AbstractRankingPositionStore
     {
         $file = $this->filePath . "/{$category}.dat";
         $data = getUnserializedFile($file, true);
-        if (!$data) {
+        if (!is_array($data)) {
             throw new \RuntimeException('invalid ranking data file: ' . $file);
         }
 
