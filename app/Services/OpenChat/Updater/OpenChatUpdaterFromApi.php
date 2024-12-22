@@ -77,6 +77,7 @@ class OpenChatUpdaterFromApi
             || $repoDto->invitationTicket !== $ocDto->invitationTicket
             || $repoDto->memberCount !== $ocDto->memberCount
             || $repoDto->joinMethodType !== $ocDto->joinMethodType
+            // || $repoDto->createdAt !== $ocDto->createdAt
         ) {
             $updaterDto = !!$this->openChatMargeUpdateProcess->mergeUpdateOpenChat($repoDto, $ocDto);
         }
