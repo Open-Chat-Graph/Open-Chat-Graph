@@ -50,33 +50,7 @@ class AppConfig
 
     const ROOT_PATH = __DIR__ . '/../../';
 
-    public static $OPEN_CHAT_CATEGORY = [
-        'ゲーム' => 17,
-        'スポーツ' => 16,
-        '芸能人・有名人' => 26,
-        '同世代' => 7,
-        'アニメ・漫画' => 22,
-        '金融・ビジネス' => 40,
-        '音楽' => 33,
-        '地域・暮らし' => 8,
-        'ファッション・美容' => 20,
-        'イラスト' => 41,
-        '研究・学習' => 11,
-        '働き方・仕事' => 5,
-        '学校・同窓会' => 2,
-        '料理・グルメ' => 12,
-        '健康' => 23,
-        '団体' => 6,
-        '妊活・子育て' => 28,
-        '乗り物' => 19,
-        '写真' => 37,
-        '旅行' => 18,
-        '動物・ペット' => 27,
-        'TV・VOD' => 24,
-        '本' => 29,
-        '映画・舞台' => 30,
-        'すべて' => 0,
-    ];
+    public static array $OPEN_CHAT_CATEGORY = [];
 
     const DEFAULT_OPENCHAT_IMG_URL = [
         '0h6tJf0hQsaVt3H0eLAsAWDFheczgHd3wTCTx2eApNKSoefHNVGRdwfgxbdgUMLi8MSngnPFMeNmpbLi8MSngnPFMeNmpbLi8MSngnOA',
@@ -97,6 +71,8 @@ class AppConfig
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
+
+    public static string $addCronLogDestination = '';
 
     public static string $DAILY_CRON_UPDATED_AT_DATE = '';
     public static string $HOURLY_CRON_UPDATED_AT_DATETIME = '';

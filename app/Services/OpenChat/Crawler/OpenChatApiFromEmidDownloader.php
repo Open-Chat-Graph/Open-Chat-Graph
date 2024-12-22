@@ -25,7 +25,7 @@ class OpenChatApiFromEmidDownloader
     private function fetchFromEmid(string $emid): array|false
     {
         $url = OpenChatCrawlerConfig::generateOpenChatApiOcDataFromEmidUrl($emid);
-        $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER;
+        $headers = OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER;
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
         $response = $this->crawlerFactory->createCrawler($url, $ua, customHeaders: $headers, getCrawler: false);

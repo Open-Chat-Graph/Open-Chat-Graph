@@ -1,23 +1,23 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\Services\OpenChat\Crawler\FiberOpenChatApiRankingDownloader;
+use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
 
-class FiberOpenChatApiRankingDownloaderTest extends TestCase
+class OpenChatApiRankingDownloaderTest extends TestCase
 {
     public function testfetchSaveOpenChatRankingApiData()
     {
         /**
-         * @var FiberOpenChatApiRankingDownloader $openChatApiRankingDataDownloader
+         * @var OpenChatApiRankingDownloaderProcess $openChatApiRankingDataDownloader
          */
-        $openChatApiRankingDataDownloader = app(FiberOpenChatApiRankingDownloader::class);
+        $openChatApiRankingDataDownloader = app(OpenChatApiRankingDownloaderProcess::class);
 
-        $res = $openChatApiRankingDataDownloader->fetchOpenChatApiRankingAllConcurrently(1, 21, function ($apiData) {
-            var_dump($apiData);
+        $res = $openChatApiRankingDataDownloader->fetchOpenChatApiRankingProcess(2, '3', function ($apiData) {
+            debug($apiData);
         });
 
-        var_dump($res);
+        debug($res);
 
-        $this->assertTrue($res > 0);
+        $this->assertTrue(!!$res);
     }
 }

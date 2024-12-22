@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat;
 
 use App\Config\AppConfig;
+use App\Config\OpenChatCrawlerConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\ParallelDownloadOpenChatStateRepositoryInterface;
@@ -24,41 +25,12 @@ class OpenChatApiDbMergerWithParallelDownloader
         private OpenChatApiDbMergerProcess $process,
         private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
     ) {}
-
-    private const OPEN_CHAT_CATEGORY = [
-        'ゲーム' => 17,
-        'すべて' => 0,
-        '芸能人・有名人' => 26,
-        'アニメ・漫画' => 22,
-        'スポーツ' => 16,
-        '働き方・仕事' => 5,
-        '音楽' => 33,
-        '地域・暮らし' => 8,
-        '同世代' => 7,
-        '乗り物' => 19,
-        '金融・ビジネス' => 40,
-        '研究・学習' => 11,
-        'ファッション・美容' => 20,
-        '健康' => 23,
-        'イラスト' => 41,
-        '学校・同窓会' => 2,
-        '団体' => 6,
-        '料理・グルメ' => 12,
-        '妊活・子育て' => 28,
-        '写真' => 37,
-        '旅行' => 18,
-        '映画・舞台' => 30,
-        '動物・ペット' => 27,
-        'TV・VOD' => 24,
-        '本' => 29,
-    ];
-
     function fetchOpenChatApiRankingAll()
     {
         $this->setKillFlagFalse();
         $this->stateRepository->cleanUpAll();
 
-        $categoryArray = array_values(self::OPEN_CHAT_CATEGORY);
+        $categoryArray = array_values(OpenChatCrawlerConfig::$parallelDownloaderCategoryOrder);
         $categoryReverse = array_reverse($categoryArray);
         foreach ($categoryArray as $key => $category) {
             $this->download([[RankingType::Ranking, $category], [RankingType::Rising, $categoryReverse[$key]]]);

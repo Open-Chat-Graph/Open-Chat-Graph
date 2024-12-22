@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Cron;
+namespace App\Services\Cron\Provisional;
 
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Accreditation\Recommend\StaticData\AccreditationStaticDataGenerator;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
-use App\Services\DailyUpdateCronService;
+use App\Services\Cron\Provisional\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
@@ -19,7 +19,7 @@ use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastH
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberColumnService;
-use App\Services\UpdateHourlyMemberRankingService;
+use App\Services\Cron\Provisional\UpdateHourlyMemberRankingService;
 
 class SyncOpenChat
 {
@@ -62,7 +62,7 @@ class SyncOpenChat
             $this->hourlyTask();
         }
 
-        $this->sitemap->generate();
+        //$this->sitemap->generate();
     }
 
     private function init()
@@ -115,13 +115,13 @@ class SyncOpenChat
                 fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
                 'rankingPositionHourPersistence'
             ] : null,
-            [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
+            //[fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
-            [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
-            [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
+            //[fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            //[fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
             //[fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
-            [function () {
+            /* [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
                     addCronLog('Skip hourlyTask because dailyTask is active');
                     AdminTool::sendLineNofity('Skip hourlyTask because dailyTask is active');
@@ -129,7 +129,7 @@ class SyncOpenChat
                 }
 
                 $this->recommendUpdater->updateRecommendTables();
-            }, 'updateRecommendTables'],
+            }, 'updateRecommendTables'], */
         );
     }
 
@@ -159,10 +159,10 @@ class SyncOpenChat
         $updater = app(DailyUpdateCronService::class);
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
-        $this->executeAndCronLog(
+        /* $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
-        );
+        ); */
     }
 
     private function retryDailyTask()
