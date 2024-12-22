@@ -46,7 +46,6 @@ class OpenChatUpdaterDtoFactory
             || $updaterDto->emblem !== null
         ) {
             $updaterDto->rewriteUpdateAtTime($this->dateTime);
-            $updaterDto->setUpdateItems();
         }
 
         return $updaterDto;
