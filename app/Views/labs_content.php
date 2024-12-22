@@ -21,20 +21,6 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 <p>試験運用版の分析機能をお試しいただけます。</p>
                 <?php viewComponent('update_news', ['_news' => array_reverse(LabsNews::getNews())]) ?>
 
-
-                <h2>オプチャ公式ランキング掲載の分析</h2>
-                <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析">
-                    <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
-                </a>
-                <p>この分析機能は、ルームの集客にとって重要な公式ランキングの可視性の傾向を分析することができます。</p>
-                <p>全オープンチャットの状況を追跡し、ランキングへの掲載状態（掲載・未掲載）、および内容変更の履歴を記録しています。
-                    <br>特定のルームがいつからランキングに未掲載となり、またいつ再掲載されたかを一目で確認できます。
-                    <br>これにより、ルーム内容の変更後に生じる掲載状態の変動（例えば、検索からの除外など）を把握することができます
-                </p>
-                <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/publication-analytics') ?>">
-                    <span class="ranking-readMore">オプチャ公式ランキング掲載の分析を開く
-                </a>
-
                 <h2>タグで見るトレンド動向</h2>
                 <a href="<?php echo url('labs/tags') ?>" aria-label="タグで見るトレンド動向">
                     <img src="/labs-img/tags.webp" alt="タグで見るトレンド動向" />
@@ -43,6 +29,20 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/tags') ?>">
                     <span class="ranking-readMore">タグで見るトレンド動向を開く<span class="small"></span>
                 </a>
+
+                <h2>(公開停止中)オプチャ公式ランキング掲載の分析</h2>
+                <!-- <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析"> -->
+                    <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
+                <!-- </a> -->
+                <p>この分析機能は、ルームの集客にとって重要な公式ランキングの可視性の傾向を分析することができます。</p>
+                <p>全オープンチャットの状況を追跡し、ランキングへの掲載状態（掲載・未掲載）、および内容変更の履歴を記録しています。
+                    <br>特定のルームがいつからランキングに未掲載となり、またいつ再掲載されたかを一目で確認できます。
+                    <br>これにより、ルーム内容の変更後に生じる掲載状態の変動（例えば、検索からの除外など）を把握することができます
+                </p>
+                <!-- <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/publication-analytics') ?>">
+                    <span class="ranking-readMore">オプチャ公式ランキング掲載の分析を開く</span>
+                </a> -->
+
             </article>
         </main>
         <footer class="footer-elem-outer">

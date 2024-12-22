@@ -120,7 +120,7 @@ class SyncOpenChat
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
             //[fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             //[fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
-            [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
+            //[fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             /* [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
                     addCronLog('Skip hourlyTask because dailyTask is active');
