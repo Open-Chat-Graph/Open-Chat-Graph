@@ -49,7 +49,7 @@ class OpenChatApiRankingDownloader
     {
         $resultCount = 0;
 
-        $ct = '0';
+        $ct = '';
         while ($ct !== false) {
             $response = $this->openChatApiRankingDownloaderProcess->fetchOpenChatApiRankingProcess($category, $ct, $callback);
 
