@@ -6,5 +6,5 @@ use App\Config\Shadow\DatabaseConfig;
 
 class DatabaseConfigTh extends DatabaseConfig
 {
-    const DB_NAME = 'cf782105_ocreview_th';
+    const DB_NAME = 'cf782105_ocreviewth';
 }
