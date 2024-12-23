@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\RankingPositionDB\Repositories;
 
+use App\Config\AppConfig;
 use App\Models\Importer\SqlInsert;
 use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourInsertDto;
@@ -295,6 +296,8 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
 
     public function getLastHour(): string|false
     {
+        $categoryCount = count(AppConfig::$OPEN_CHAT_CATEGORY);
+
         return RankingPositionDB::fetchColumn(
             "SELECT
                 time
@@ -303,11 +306,12 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
             GROUP BY
                 time
             HAVING
-                count(time) = 25
+                count(time) = :categoryCount
             ORDER BY
                 time DESC
             LIMIT
-                1"
+                1",
+            compact('categoryCount')
         );
     }
 }
