@@ -63,17 +63,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <!-- <aside class="list-aside recommend-ranking-bottom">
-      <?php if (isset($recommend)) : ?>
-        <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
-      <?php endif ?>
-    </aside>
-
-    <hr class="hr-bottom">
-
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
-
-    <hr class="hr-top"> -->
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
@@ -86,12 +75,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <li class="top-ranking" style="padding-top: 4px;">
               <?php if ($key === 0) : ?>
                 <header class="recommend-ranking-section-header">
-                  <!-- <h2 class="list-title oc-list">
-                    <div>「<?php echo $tag ?>」</div>
-                    <div>おすすめランキング</div>
-                    <div><?php echo $countTitle ?></div>
-                    <div>（<?php echo $time ?>）</div>
-                  </h2> -->
                   <aside class="list-aside">
                     <details class="icon-desc">
                       <summary style="font-size: 13px; font-weight: normal;">人数増加アイコンの説明</summary>
@@ -167,16 +150,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <hr class="hr-bottom">
-
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-
-    <hr class="hr-top">
-    <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_recent_comments') ?>
-    </aside>
-    <hr class="hr-bottom">
-
-
+    
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <hr class="hr-top">
@@ -210,15 +184,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
-  <script type="module">
-    import {
-      getComment
-    } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
-
-    getComment(0, '<?php echo URL_ROOT ?>')
-  </script>
-
-  <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
+  <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
 </body>

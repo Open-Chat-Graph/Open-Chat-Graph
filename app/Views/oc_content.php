@@ -145,7 +145,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
             <?php endif ?>
             <?php if (isset($recommend[2]) && $recommend[2]) : ?>
-              <a href="<?php echo url('ranking?keyword=' . urlencode('tag:' . htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
+              <a href="<?php echo url('recommend?tag=' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
             <?php endif ?>
           </div>
         </span>
@@ -228,35 +228,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php endif ?>
 
-    <hr class="hr-top">
-    <section class="comment-section">
-      <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
-        <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-        <div>
-          <h2 class="graph-title">
-            <div>オープンチャットについてのコメント</div>
-          </h2>
-          <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
-            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-            <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top: 13px;">
-        <?php viewComponent('comment_desc') ?>
-      </div>
-      <div id="comment-root"></div>
-    </section>
-
-    <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
-    <aside class="top-ranking-list-aside" style="margin: 0 1rem;">
-      <?php viewComponent('top_ranking_recent_comments') ?>
-    </aside>
-    <hr class="hr-bottom">
-
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[1]) : ?>
@@ -289,6 +260,34 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php endif ?>
+
+    <hr class="hr-top">
+    <section class="comment-section">
+      <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
+        <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+        <div>
+          <h2 class="graph-title">
+            <div>オープンチャットについてのコメント</div>
+          </h2>
+          <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
+            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+            <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 13px;">
+        <?php viewComponent('comment_desc') ?>
+      </div>
+      <div id="comment-root"></div>
+      <aside class="recent-comment-list" style="padding-bottom: 0;">
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('comments-timeline') ?>">
+          <span class="ranking-readMore">コメントのタイムラインを見る</span>
+        </a>
+      </aside>
+    </section>
+
+    <hr class="hr-bottom">
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
@@ -333,13 +332,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </footer>
   </article>
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
-  <script type="module">
-    import {
-      getComment
-    } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
-
-    getComment(<?php echo $oc['id'] ?>, '<?php echo URL_ROOT ?>')
-  </script>
   <script async>
     (function() {
       // 説明文の続きを読むボタン

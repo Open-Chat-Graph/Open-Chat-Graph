@@ -35,7 +35,7 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[$recommend->listName] . '?list=daily') ?>">
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::$OPEN_CHAT_CATEGORY[$recommend->listName] . '?list=daily') ?>">
             <span class="ranking-readMore">「<?php echo $recommend->listName ?>」カテゴリーをもっと見る</span>
         </a>
     <?php elseif ($recommend->type === RecommendListType::Official) : ?>

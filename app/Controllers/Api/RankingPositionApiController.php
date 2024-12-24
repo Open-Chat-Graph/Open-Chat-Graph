@@ -26,7 +26,7 @@ class RankingPositionApiController
         string $start_date,
         string $end_date
     ) {
-        if (strtotime($start_date) > strtotime(file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE))) {
+        if (strtotime($start_date) > strtotime(file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE))) {
             return response(new RankingPositionChartDto);
         }
 

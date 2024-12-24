@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository;
 use App\Services\DailyUpdateCronService;
 use PHPUnit\Framework\TestCase;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class DailyUpdateCronServiceTest extends TestCase
 {

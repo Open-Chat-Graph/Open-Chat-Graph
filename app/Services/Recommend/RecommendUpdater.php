@@ -6,7 +6,7 @@ namespace App\Services\Recommend;
 
 use App\Config\AppConfig;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class RecommendUpdater
 {
@@ -63,6 +63,7 @@ class RecommendUpdater
     ];
 
     const NAME_STRONG_TAG = [
+        "カブアンド",
         ["パソコン・ガジェット", ["自作PC_OR_ゲーミングPC_OR_デジタルガジェット", "スマホ_AND_ガジェット", "イヤホン_AND_ガジェット"]],
         ["かまいたち", ["MUSiC_AND_KAMMER", "かまいたち"]],
         "下ネタ_OR_下あり_OR_下○タ_OR_下系",
@@ -233,6 +234,7 @@ class RecommendUpdater
     ];
 
     const DESC_STRONG_TAG = [
+        "カブアンド",
         ["パソコン・ガジェット", ["自作PC_OR_ゲーミングPC_OR_デジタルガジェット", "スマホ_AND_ガジェット", "イヤホン_AND_ガジェット"]],
         ["生成AI・ChatGPT", ["ChatGPT_OR_チャットGPT_OR_LLM_OR_Claude_OR_Copilot", "Gemini_AND_AI"]],
         ["画像生成AI・AIイラスト", ["AIイラスト_OR_ばりぐっどくん_OR_AI絵画_OR_AI絵師", "画像_AND_生成_AND_AI"]],
@@ -294,7 +296,7 @@ class RecommendUpdater
 
     function __construct()
     {
-        $this->start = file_get_contents(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME) ?: '';
+        $this->start = file_get_contents(AppConfig::TAG_UPDATED_AT_DATETIME) ?: '';
     }
 
     function replace(string|array $word, string $column): string
@@ -629,6 +631,8 @@ class RecommendUpdater
             $this->updateName2();
             $this->updateName2('oc.description');
         });
+
+        safeFileRewrite(AppConfig::TAG_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
     }
 
     private function modifyRecommendTags()

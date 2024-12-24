@@ -65,8 +65,10 @@ class OpenChatApiDtoFactory
             $dto->emblem = Validator::num($square['square']['emblems'][0] ?? null, emptyAble: true, default: 0, e: $exceptionClass);
             $dto->joinMethodType = Validator::num($square['square']['joinMethodType'], e: $exceptionClass);
 
-            $createdAt = Validator::num($square['createdAt'], e: $exceptionClass);
-            $dto->createdAt = (int)floor($createdAt / 1000);
+            if (isset($square['createdAt'])) {
+                $createdAt = Validator::num($square['createdAt'], e: $exceptionClass);
+                $dto->createdAt = (int)floor($createdAt / 1000);
+            }
         } catch (\Throwable $e) {
             $jsonString = json_encode($square, JSON_UNESCAPED_UNICODE);
             throw new $exceptionClass($e->__toString() . ": {$jsonString}");

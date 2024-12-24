@@ -33,7 +33,7 @@ Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking']
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("ranking/{$category}");
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
     });
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
@@ -46,7 +46,7 @@ Route::path('official-ranking/{category}', [ReactRankingPageController::class, '
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("official-ranking/{$category}");
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
     });
 
 Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])

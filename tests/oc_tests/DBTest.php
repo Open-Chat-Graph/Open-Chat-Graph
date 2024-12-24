@@ -10,7 +10,7 @@ use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\StaticData\StaticTopPageDataGenerator;
 use PHPUnit\Framework\TestCase;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class DBTest extends TestCase
 {
@@ -23,7 +23,7 @@ class DBTest extends TestCase
         $dateTime = new \DateTime('now');
 
         saveSerializedFile(
-            AppConfig::OPEN_CHAT_HOUR_FILTER_ID_DIR,
+            AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR,
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray($dateTime->format('Y-m-d')),
             true
         );

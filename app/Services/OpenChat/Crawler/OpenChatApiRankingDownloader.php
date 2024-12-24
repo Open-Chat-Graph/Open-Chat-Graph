@@ -25,7 +25,7 @@ class OpenChatApiRankingDownloader
     function fetchOpenChatApiRankingAll(\Closure $callback, ?\Closure $callbackByCategoryBefore, ?\Closure $callbackByCategoryAfter): array
     {
         $result = [];
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $key => $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $key => $category) {
             if ($callbackByCategoryBefore && $callbackByCategoryBefore((string)$category)) {
                 continue;
             }
@@ -48,8 +48,8 @@ class OpenChatApiRankingDownloader
     function fetchOpenChatApiRanking(string $category, \Closure $callback): int
     {
         $resultCount = 0;
+        $ct = '';
 
-        $ct = '0';
         while ($ct !== false) {
             $response = $this->openChatApiRankingDownloaderProcess->fetchOpenChatApiRankingProcess($category, $ct, $callback);
 

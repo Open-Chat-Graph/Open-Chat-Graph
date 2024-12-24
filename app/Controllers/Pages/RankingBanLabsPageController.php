@@ -36,8 +36,8 @@ class RankingBanLabsPageController
 
         $_css = ['room_list', 'site_header', 'site_footer'];
 
-        $_updatedAt = new \DateTime(file_get_contents(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME));
-        $_now = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+        $_updatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME));
+        $_now = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 
         $limit = 50;
 

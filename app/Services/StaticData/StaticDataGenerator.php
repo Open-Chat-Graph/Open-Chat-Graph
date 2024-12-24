@@ -32,9 +32,9 @@ class StaticDataGenerator
         $dto->recentCommentList = [];
         $dto->recommendList = $this->topPageRecommendList->getList(30);
 
-        $dto->hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME));
-        $dto->dailyUpdatedAt = new \DateTime(file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE));
-        $dto->rankingUpdatedAt = new \DateTime(file_get_contents(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME));
+        $dto->hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME));
+        $dto->dailyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE));
+        $dto->rankingUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME));
 
         $tagList = getUnserializedFile('static_data_top/tag_list.dat');
         if (!$tagList)
@@ -48,9 +48,9 @@ class StaticDataGenerator
     function getRankingArgDto(): RankingArgDto
     {
         $_argDto = new RankingArgDto;
-        $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME), true);
-        $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
-        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);;
+        $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME), true);
+        $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
+        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);;
         $_argDto->subCategories = json_decode(file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
 
         if (isset($_argDto->subCategories[6])) {
@@ -77,7 +77,7 @@ class StaticDataGenerator
             $tagList = $this->getTagList();
 
         $dto = new StaticRecommendPageDto;
-        $dto->hourlyUpdatedAt = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+        $dto->hourlyUpdatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
         $dto->tagCount = array_sum(array_map(fn ($el) => count($el), $tagList));
 
         $dto->tagRecordCounts = [];
@@ -96,7 +96,7 @@ class StaticDataGenerator
 
     function updateStaticData()
     {
-        safeFileRewrite(AppConfig::HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
+        safeFileRewrite(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
         saveSerializedFile('static_data_top/tag_list.dat', $this->getTagList());
         saveSerializedFile('static_data_top/ranking_list.dat', $this->getTopPageDataFromDB());
         saveSerializedFile('static_data_top/ranking_arg_dto.dat', $this->getRankingArgDto());

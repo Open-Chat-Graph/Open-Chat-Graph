@@ -1,7 +1,6 @@
 <?php
 
 use App\Services\OpenChat\Enum\RankingType;
-use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use PHPUnit\Framework\TestCase;
 
@@ -14,11 +13,9 @@ class OpenChatApiDbMergerWithParallelDownloaderTest extends TestCase
          */
         $inst = app(OpenChatApiDbMergerWithParallelDownloader::class);
 
-        OpenChatApiDataParallelDownloader::disableKillFlag();
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagFalse();
         //$result = $inst->fetchOpenChatApiRankingAll();
-        $result = $inst->mergeProcess(RankingType::Ranking, 6);
-
-        var_dump($result);
+        $inst->mergeProcess(RankingType::Ranking, 6);
 
         $this->assertIsInt(0);
     }

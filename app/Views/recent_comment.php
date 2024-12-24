@@ -136,15 +136,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_recent_comments') ?>
-        </aside>
-        <hr class="hr-bottom">
-
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-
-        <hr class="hr-top">
-        <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
         <hr class="hr-bottom">
@@ -178,10 +169,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
     <script type="module">
         import {
-            getComment
-        } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
+            applyTimeElapsedString
+        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
 
-        getComment(0, '<?php echo URL_ROOT ?>')
+        applyTimeElapsedString()
     </script>
 
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>

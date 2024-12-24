@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatStatsRankingApiRepository
 {

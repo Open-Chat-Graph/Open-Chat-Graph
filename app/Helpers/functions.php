@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Config\AdminConfig;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
@@ -165,7 +166,7 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5($content . filemtime(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+        $etag = '"' . md5($content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
     } else {
         $etag = '"' . md5($content) . '"';
     }
@@ -186,8 +187,15 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
     header("ETag: $etag");
 }
 
-function purgeCacheCloudFlare(string $zoneID, string $apiKey, ?array $files = null): string
-{
+function purgeCacheCloudFlare(
+    string $zoneID = AdminConfig::CloudFlareZoneID,
+    string $apiKey = AdminConfig::CloudFlareApiKey,
+    ?array $files = null
+): string {
+    if(AdminConfig::IS_DEVELOPMENT ?? false) {
+        return 'is Development';
+    }
+
     // cURLセッションを初期化
     $ch = curl_init();
 
@@ -230,12 +238,12 @@ function purgeCacheCloudFlare(string $zoneID, string $apiKey, ?array $files = nu
 
 function getHouryUpdateTime()
 {
-    return file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+    return file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 }
 
 function getDailyUpdateTime()
 {
-    return file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);
+    return file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
 }
 
 /* function imgUrl(int $id, string $img_url): string
@@ -297,7 +305,7 @@ function filePathNumById(int $id): string
 
 function getCategoryName(int $category): string
 {
-    return array_flip(AppConfig::OPEN_CHAT_CATEGORY)[$category] ?? '';
+    return array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? '';
 }
 
 function addCronLog(string|array $log)
@@ -307,7 +315,7 @@ function addCronLog(string|array $log)
     }
 
     foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, __DIR__ . '/../../logs/cron.log');
+        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::$addCronLogDestination);
     }
 }
 

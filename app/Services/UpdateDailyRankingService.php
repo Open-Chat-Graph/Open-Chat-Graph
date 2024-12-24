@@ -9,7 +9,7 @@ use App\Services\StaticData\StaticDataGenerator;
 use App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 
-class UpdateRankingService
+class UpdateDailyRankingService
 {
     function __construct(
         private StaticDataGenerator $staticDataGenerator,
@@ -30,7 +30,7 @@ class UpdateRankingService
 
     private function updateStaticData(string $date)
     {
-        safeFileRewrite(AppConfig::DAILY_CRON_UPDATED_AT_DATE, $date);
+        safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $date);
         $this->staticDataGenerator->updateStaticData();
     }
 }

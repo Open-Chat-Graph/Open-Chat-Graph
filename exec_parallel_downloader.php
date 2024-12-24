@@ -1,10 +1,14 @@
 <?php
 
+if (isset($argv[2]) && $argv[2]) {
+    define('URL_ROOT', $argv[2]);
+}
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\ParallelDownloadOpenChat;
-use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
+use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 
 try {
     /**
@@ -20,7 +24,7 @@ try {
     $inst->handle($args);
 } catch (\Throwable $e) {
     // 全てのダウンロードプロセスを強制終了する
-    OpenChatApiDataParallelDownloader::enableKillFlag();
+    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
     AdminTool::sendLineNofity($e->__toString());
     addCronLog($e->__toString());
 }

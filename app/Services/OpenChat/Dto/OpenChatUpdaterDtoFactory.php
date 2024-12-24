@@ -44,9 +44,9 @@ class OpenChatUpdaterDtoFactory
             || $updaterDto->joinMethodType !== null
             || $updaterDto->category !== null
             || $updaterDto->emblem !== null
+            //|| $updaterDto->createdAt !== null
         ) {
             $updaterDto->rewriteUpdateAtTime($this->dateTime);
-            $updaterDto->setUpdateItems();
         }
 
         return $updaterDto;

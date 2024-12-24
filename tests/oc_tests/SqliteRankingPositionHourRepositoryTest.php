@@ -19,7 +19,7 @@ class SqliteRankingPositionHourRepositoryTest extends TestCase
          */
         $repo = app(SqliteRankingPositionHourRepository::class);
 
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
             $result = $repo->insertRisingHourFromDtoArray(...$test->getStorageData((string)$category));
             debug($result);
         }

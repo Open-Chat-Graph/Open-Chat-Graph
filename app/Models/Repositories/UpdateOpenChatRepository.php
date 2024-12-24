@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 use App\Services\OpenChat\Dto\OpenChatUpdaterDto;
 
@@ -60,7 +60,7 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
             'category' => $dto->category ?? null,
             'emblem' => $dto->emblem ?? null,
             'join_method_type' => $dto->joinMethodType ?? null,
-            'update_items' => $dto->getUpdateItems(),
+            // 'update_items' => $dto->getUpdateItems(),
         ];
 
         $columnsToUpdate = array_filter($columnsToSet, fn ($value) => $value !== null);

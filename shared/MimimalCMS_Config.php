@@ -31,7 +31,7 @@ date_default_timezone_set('Asia/Tokyo');
 
 if (
     ($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me'
-    || ($_SERVER['HTTP_HOST'] ?? '') === 'on'
+    || ($_SERVER['HTTPS'] ?? '') === 'on'
 ) {
     $_SERVER['HTTPS'] = 'on';
     define('SESSION_COOKIE_PARAMS', [
@@ -51,7 +51,7 @@ if (
     define('COOKIE_DEFAULT_SECURE', false);
 }
 
-(function () {
+!defined('URL_ROOT') && (function () {
     $requestUri = $_SERVER['REQUEST_URI'] ?? '';
     if (preg_match("{^/th/.*}", $requestUri) || preg_match("{^/th$}", $requestUri)) {
         define('URL_ROOT', '/th');

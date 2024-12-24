@@ -11,12 +11,12 @@ use Shadow\Kernel\Validator;
 abstract class AbstractOpenChatApiRankingDownloaderProcess
 {
     /**
-     * @var string $callableGenerateUrl `$callableGenerateUrl(string $category, string $ct)`
+     * @var \Closure $callableGenerateUrl `$callableGenerateUrl(string $category, string $ct)`
      */
-    protected string $callableGenerateUrl;
+    protected \Closure $callableGenerateUrl;
 
     function __construct(
-        private CrawlerFactory $crawlerFactory
+        protected CrawlerFactory $crawlerFactory
     ) {
     }
 
@@ -27,9 +27,10 @@ abstract class AbstractOpenChatApiRankingDownloaderProcess
     {
         $generateUrl = $this->callableGenerateUrl;
         $url = $generateUrl($category, $ct);
+        $headers = OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER;
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
-        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false);
+        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
         if (!$response) {
             return false;
         }

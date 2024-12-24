@@ -7,18 +7,24 @@ Thumbs.db
 /logs
 
 /public/oc-img**
+/public/quiz-img**
 
 /storage/ranking_position/**
 /storage/static_data_recommend/**
 /storage/json/**
+/storage/zip-backup-temp/**
 public/sitemaps/**
 app/Services/Admin/**
 app/Config/AdminConfig.php
+app/Services/Admin/FTPHandler.php
 app/Config/Shadow/DatabaseConfig.php
 app/Config/Shadow/StringCryptorConfig.php
 app/Config/RankingPositionDBConfig.php
 app/Config/UserLogDBConfig.php
 app/Config/CommentDBConfig.php
+app/Config/AccreditationDBConfig.php
+app/Config/LineLoginConfig.php
+app/Config/Shadow/GceDatabaseConfig.php
 /node_modules
 /package-lock.json
 /package.json
@@ -26,3 +32,19 @@ app/Config/CommentDBConfig.php
 vendor/bin/.phpunit.result.cache
 storage/SQLite
 *.Identifier
+public/sitemap.xml
+storage/static_data_top
+
+storage/th/ranking_position/ranking/*
+!storage/th/ranking_position/ranking/0.dat
+storage/th/ranking_position/rising/*
+!storage/th/ranking_position/rising/0.dat
+storage/th/SQLite/ranking_position/ranking_position.db
+storage/th/SQLite/statistics/statistics.db
+
+storage/tw/ranking_position/ranking/*
+!storage/tw/ranking_position/ranking/0.dat
+storage/tw/ranking_position/rising/*
+!storage/tw/ranking_position/rising/0.dat
+storage/tw/SQLite/ranking_position/ranking_position.db
+storage/tw/SQLite/statistics/statistics.db

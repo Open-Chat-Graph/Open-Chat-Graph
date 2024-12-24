@@ -8,9 +8,6 @@ use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
 class OpenChatUpdaterDto
 {
-    /** @var ?array{ name:bool,description:bool,img_url:bool,join_method_type:bool,category:bool } */
-    private ?array $updateItems = null;
-
     public int $open_chat_id;
     public bool $delete_flag = false;
     public ?string $updated_at = null;
@@ -36,9 +33,10 @@ class OpenChatUpdaterDto
         $this->updated_at = $dateTime;
     }
 
-    function setUpdateItems()
+    function getUpdateItems(): ?string
     {
-        $this->updateItems = [
+        /** @var array{ name:bool,description:bool,img_url:bool,join_method_type:bool,category:bool } */
+        $updateItems = [
             'name' => $this->name !== null,
             'description' => $this->desc !== null,
             'img_url' => $this->profileImageObsHash !== null,
@@ -46,10 +44,7 @@ class OpenChatUpdaterDto
             'category' => $this->category !== null,
             'emblem' => $this->emblem !== null,
         ];
-    }
 
-    function getUpdateItems(): ?string
-    {
-        return $this->updateItems ? json_encode($this->updateItems) : null;
+        return array_filter($updateItems, fn($item) => $item) ? json_encode($updateItems) : null;
     }
 }

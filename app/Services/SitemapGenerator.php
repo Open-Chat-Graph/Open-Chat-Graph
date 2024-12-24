@@ -10,7 +10,7 @@ use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class SitemapGenerator
 {
@@ -43,8 +43,8 @@ class SitemapGenerator
 
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(AppConfig::DAILY_CRON_UPDATED_AT_DATE);
-        $datetime = file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME);
+        $date = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
+        $datetime = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim(self::SITE_URL, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
@@ -55,7 +55,7 @@ class SitemapGenerator
         $sitemap->addItem(self::SITE_URL . 'ranking?keyword=' . urlencode('badge:公式認証オープンチャット'), lastmod: $datetime);
 
 
-        foreach (AppConfig::OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
             $category && $sitemap->addItem(self::SITE_URL . 'ranking/' . $category, lastmod: $datetime);
         }
 

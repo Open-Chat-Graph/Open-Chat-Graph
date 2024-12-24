@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 use RuntimeException;
 
@@ -55,7 +55,10 @@ class OpenChatDataForUpdaterWithCacheRepository implements OpenChatDataForUpdate
          */
         $dataArray = DB::fetchAll($query);
         if (!$dataArray) {
-            throw new RuntimeException('DBが空です');
+            self::$openChatDataCache = [];
+            self::$openChatIdCache = [];
+            self::$openChatEmidCache = [];
+            return;
         }
 
         self::$openChatIdCache = array_column($dataArray, 'id');

@@ -2,6 +2,7 @@
 
 namespace App\Views\Meta;
 
+use App\Config\AppConfig;
 use Spatie\SchemaOrg\Schema;
 
 class Metadata
@@ -30,7 +31,7 @@ class Metadata
         }
 
         $this->site_url = url();
-        $this->image_url = fileUrl(\App\Config\AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
+        $this->image_url = url(AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
     }
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static

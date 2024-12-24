@@ -35,7 +35,7 @@ class MyListApiController
                 $myListIdArray
             );
 
-        $hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::HOURLY_CRON_UPDATED_AT_DATETIME));
+        $hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME));
 
         return view('components/myList', compact('myList', 'hourlyUpdatedAt'));
     }

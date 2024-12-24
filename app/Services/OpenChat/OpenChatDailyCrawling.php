@@ -4,22 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Utility\ErrorCounter;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\Crawler\CrawlerFactory;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 
 class OpenChatDailyCrawling
 {
+    // interval for checking kill flag
+    const CHECK_KILL_FLAG_INTERVAL = 3;
+
     function __construct(
 
         private OpenChatUpdaterFromApi $openChatUpdater,
         private LogRepositoryInterface $logRepository,
         private ErrorCounter $errorCounter,
-    ) {
-    }
+        private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
+    ) {}
 
     /**
      * @param int[] $openChatIdArray
@@ -27,8 +31,13 @@ class OpenChatDailyCrawling
      */
     function crawling(array $openChatIdArray, ?int $intervalSecond = null): int
     {
-        foreach ($openChatIdArray as $id) {
-            $this->checkKillFlag();
+        $this->setKillFlagFalse();
+
+        foreach ($openChatIdArray as $key => $id) {
+            if ($key % self::CHECK_KILL_FLAG_INTERVAL === 0) {
+                $this->checkKillFlag();
+            }
+
             $result = $this->openChatUpdater->fetchUpdateOpenChat($id);
 
             if ($result === false) {
@@ -52,19 +61,21 @@ class OpenChatDailyCrawling
 
     private function checkKillFlag()
     {
-        clearstatcache(true, AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH);
-        if (file_get_contents(AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH) === '1') {
-            throw new ApplicationException('OpenChatDailyCrawling: 強制終了しました');
-        }
+        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatDailyCrawlingKillFlag)
+            && throw new ApplicationException('OpenChatDailyCrawling: 強制終了しました');
     }
 
-    static function disableKillFlag()
+    static function setKillFlagTrue()
     {
-        file_put_contents(AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH, '0');
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatDailyCrawlingKillFlag);
     }
 
-    static function enableKillFlag()
+    static function setKillFlagFalse()
     {
-        file_put_contents(AppConfig::OPEN_CHAT_API_CRAWLING_KILL_FLAG_PATH, '1');
+        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $syncOpenChatStateRepository->setFalse(SyncOpenChatStateType::openChatDailyCrawlingKillFlag);
     }
 }

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
+use App\Config\AdminConfig;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatHourlyInvitationTicketUpdater
 {
@@ -15,12 +16,20 @@ class OpenChatHourlyInvitationTicketUpdater
         private OpenChatApiFromEmidDownloader $openChatApiFromEmidDownloader,
         private UpdateOpenChatRepositoryInterface $updateOpenChatRepository,
         private LogRepositoryInterface $logRepository,
-    ) {
-    }
+    ) {}
 
     function updateInvitationTicketAll()
     {
         $ocArray = $this->updateOpenChatRepository->getEmptyUrlOpenChatId();
+
+        // 開発環境の場合、更新制限をかける
+        if (AdminConfig::IS_DEVELOPMENT ?? false) {
+            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['OpenChatHourlyInvitationTicketUpdater'] ?? 1;
+            $ocArrayCount = count($ocArray);
+            $ocArray = array_slice($ocArray, 0, $limit);
+            addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
+        }
+
         foreach ($ocArray as $oc) {
             $this->updateInvitationTicket($oc['id'], $oc['emid']);
         }

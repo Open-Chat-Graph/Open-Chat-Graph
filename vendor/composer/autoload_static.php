@@ -19,6 +19,7 @@ class ComposerStaticInit2d6c7d483b3048a057ab2dcbdd658745
         'c855a0512e67c28b49c6128ad77e1863' => __DIR__ . '/../..' . '/shared/MimimalCMS_ExceptionHandler.php',
         '5f7bfa9cae57467db83be145516aa1f7' => __DIR__ . '/../..' . '/shared/MimimalCMS_HelperFunctions.php',
         'f7fa97712214d071ef2f311c97587004' => __DIR__ . '/../..' . '/app/Helpers/functions.php',
+        'ea6794f6e2c0a5dca1a3a94647db27e9' => __DIR__ . '/../..' . '/app/Config/AppDynamicConfig.php',
     );
 
     public static $prefixLengthsPsr4 = array (

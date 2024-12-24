@@ -19,12 +19,14 @@ export function timeElapsedString(datetime, thresholdMinutes = 15) {
     const minutes = diffDate.getUTCMinutes();
     const seconds = diffDate.getUTCSeconds();
 
+    const formattedTime = `${targetDatetime.getHours()}:${String(targetDatetime.getMinutes()).padStart(2, '0')}`;
+
     if (years > 0) {
-        return `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
+        return `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
     } else if (months > 0) {
-        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
+        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
     } else if (days > 0) {
-        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日`;
+        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
     } else if (hours > 0) {
         return hours + '時間前';
     } else if (minutes > 0) {

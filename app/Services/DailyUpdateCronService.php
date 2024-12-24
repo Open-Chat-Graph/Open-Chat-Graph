@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Config\AdminConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -22,7 +23,7 @@ class DailyUpdateCronService
         private OpenChatDailyCrawling $openChatDailyCrawling,
         private OpenChatRepositoryInterface $openChatRepository,
         private StatisticsRepositoryInterface $statisticsRepository,
-        private UpdateRankingService $updateRankingService,
+        private UpdateDailyRankingService $updateRankingService,
         private MemberColumnUpdater $memberColumnUpdater,
         private OpenChatSubCategorySynchronizer $openChatSubCategorySynchronizer,
     ) {
@@ -44,7 +45,7 @@ class DailyUpdateCronService
         return array_filter($filteredIdArray, fn (int $id) => in_array($id, $memberChangeWithinLastWeekIdArray));
     }
 
-    function update(): void
+    function update(?\Closure $crawlingEndFlag = null): void
     {
         $this->rankingPositionDailyUpdater->updateYesterdayDailyDb();
 
@@ -52,12 +53,22 @@ class DailyUpdateCronService
 
         addCronLog('openChatCrawling start: ' . count($outOfRankId));
         
-        OpenChatDailyCrawling::disableKillFlag();
+        // 開発環境の場合、更新制限をかける
+        if (AdminConfig::IS_DEVELOPMENT ?? false) {
+            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['DailyUpdateCronService'] ?? 1;
+            $outOfRankIdCount = count($outOfRankId);
+            $outOfRankId = array_slice($outOfRankId, 0, $limit);
+            addCronLog("Development environment. Update limit: {$limit} / {$outOfRankIdCount}");
+        }
+
         $result = $this->openChatDailyCrawling->crawling($outOfRankId);
 
         addCronLog('openChatCrawling done: ' . $result);
         unset($outOfRankId);
         OpenChatDataForUpdaterWithCacheRepository::clearCache();
+
+        if ($crawlingEndFlag)
+            $crawlingEndFlag();
 
         addCronLog('syncSubCategoriesAll start');
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();

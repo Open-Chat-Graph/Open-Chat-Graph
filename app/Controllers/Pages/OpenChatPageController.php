@@ -21,7 +21,7 @@ use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 
 class OpenChatPageController
 {
@@ -107,7 +107,7 @@ class OpenChatPageController
             return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
 
         $tag = $oc['tag1'];
-        $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY) : null;
+        $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::$OPEN_CHAT_CATEGORY) : null;
         $category = $categoryValue ?? 'その他';
         $recommend = $recommendGenarator->getRecommend($tag, $oc['tag2'], $oc['tag3'], $oc['category']);
 
