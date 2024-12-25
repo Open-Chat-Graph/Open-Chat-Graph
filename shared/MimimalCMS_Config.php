@@ -31,7 +31,7 @@ date_default_timezone_set('Asia/Tokyo');
 
 if (
     ($_SERVER['HTTP_HOST'] ?? '') === 'openchat-review.me'
-    || ($_SERVER['HTTP_HOST'] ?? '') === 'on'
+    || ($_SERVER['HTTPS'] ?? '') === 'on'
 ) {
     $_SERVER['HTTPS'] = 'on';
     define('SESSION_COOKIE_PARAMS', [
