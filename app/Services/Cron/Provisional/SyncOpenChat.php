@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Cron\Provisional;
 
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Accreditation\Recommend\StaticData\AccreditationStaticDataGenerator;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
@@ -34,7 +33,6 @@ class SyncOpenChat
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
         private RecommendUpdater $recommendUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
-        private AccreditationStaticDataGenerator $acrreditationCacheUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
         ini_set('memory_limit', '2G');

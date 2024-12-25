@@ -9,7 +9,7 @@ class SyncOpenChatTest extends TestCase
 {
     public function test()
     {
-        $arg = escapeshellarg('/tw');
+        $arg = escapeshellarg('');
 
         $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
         exec(PHP_BINARY . " {$path} {$arg}");
