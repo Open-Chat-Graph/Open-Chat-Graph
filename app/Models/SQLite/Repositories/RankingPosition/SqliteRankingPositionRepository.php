@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite\Repositories\RankingPosition;
 
+use App\Config\AppConfig;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\SQLite\SQLiteInsertImporter;
 use App\Models\SQLite\SQLiteRankingPosition;
@@ -55,6 +56,8 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
 
     public function getLastDate(): string|false
     {
+        $categoryCount = count(AppConfig::$OPEN_CHAT_CATEGORY);
+
         return SQLiteRankingPosition::fetchColumn(
             "SELECT
                 DATE(time)
@@ -63,11 +66,12 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
             GROUP BY
                 time
             HAVING
-                count(time) = 25
+                count(time) = :categoryCount
             ORDER BY
                 time DESC
             LIMIT
-                1"
+                1",
+            compact('categoryCount')
         );
     }
 }
