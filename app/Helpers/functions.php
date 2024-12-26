@@ -166,9 +166,9 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5($content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+        $etag = '"' . md5(URL_ROOT . $content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
     } else {
-        $etag = '"' . md5($content) . '"';
+        $etag = '"' . md5(URL_ROOT . $content) . '"';
     }
 
     // max-ageと共にCache-Controlヘッダーを設定
@@ -192,7 +192,7 @@ function purgeCacheCloudFlare(
     string $apiKey = AdminConfig::CloudFlareApiKey,
     ?array $files = null
 ): string {
-    if(AdminConfig::IS_DEVELOPMENT ?? false) {
+    if (AdminConfig::IS_DEVELOPMENT ?? false) {
         return 'is Development';
     }
 
