@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron\Provisional;
 
 use App\Config\AdminConfig;
+use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -43,7 +44,7 @@ class DailyUpdateCronService
 
         $memberChangeWithinLastWeekIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
 
-        return array_filter($filteredIdArray, fn (int $id) => in_array($id, $memberChangeWithinLastWeekIdArray));
+        return array_filter($filteredIdArray, fn(int $id) => in_array($id, $memberChangeWithinLastWeekIdArray));
     }
 
     function update(?\Closure $crawlingEndFlag = null): void
@@ -53,7 +54,7 @@ class DailyUpdateCronService
         $outOfRankId = $this->getTargetOpenChatIdArray();
 
         addCronLog('openChatCrawling start: ' . count($outOfRankId));
-        
+
         // 開発環境の場合、更新制限をかける
         if (AdminConfig::IS_DEVELOPMENT ?? false) {
             $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['DailyUpdateCronService'] ?? 1;
@@ -76,5 +77,8 @@ class DailyUpdateCronService
         addCronLog('syncSubCategoriesAll done: ' . count($categoryResult));
 
         $this->updateRankingService->update($this->date); */
+
+        // 暫定での静的データ生成の実装
+        safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $this->date);
     }
 }
