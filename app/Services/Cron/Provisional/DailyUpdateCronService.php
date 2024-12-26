@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron\Provisional;
 
 use App\Config\AdminConfig;
+use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -71,10 +72,14 @@ class DailyUpdateCronService
         if ($crawlingEndFlag)
             $crawlingEndFlag();
 
+        // TODO: 日次処理での静的データ生成の実装
         /* addCronLog('syncSubCategoriesAll start');
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
         addCronLog('syncSubCategoriesAll done: ' . count($categoryResult));
 
         $this->updateRankingService->update($this->date); */
+
+        // 暫定での静的データ生成の実装
+        safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $this->date);
     }
 }

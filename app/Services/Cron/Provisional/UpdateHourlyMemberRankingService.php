@@ -57,6 +57,8 @@ class UpdateHourlyMemberRankingService
     {
         safeFileRewrite(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME, $time);
 
+        // TODO: 毎時処理での静的データ生成の実装
+        
         //$this->staticDataGenerator->updateStaticData();
         safeFileRewrite(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
         //$this->recommendStaticDataGenerator->updateStaticData();
