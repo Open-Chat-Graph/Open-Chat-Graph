@@ -84,7 +84,8 @@ Route::path(
     ->matchStr('end_date')
     ->match(function (string $start_date, string $end_date, Reception $reception) {
         $isValid = $start_date === date("Y-m-d", strtotime($start_date))
-            && $end_date === date("Y-m-d", strtotime($end_date));
+            && $end_date === date("Y-m-d", strtotime($end_date))
+            && strtotime($start_date) <= strtotime($end_date);
         if (!$isValid)
             return false;
 
