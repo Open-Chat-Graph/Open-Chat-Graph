@@ -27,10 +27,10 @@ class KernelUtility
             return $requestUri;
         }
 
-        if (preg_match("{^{$urlRoot}$}", $requestUri)) {
+        if ($urlRoot === $requestUri || "{$urlRoot}/" === $requestUri) {
             return '/';
         }
-        
+
         $replaced = preg_replace("{^{$urlRoot}(/.*)}", '$1', $requestUri);
         return $replaced;
     }
