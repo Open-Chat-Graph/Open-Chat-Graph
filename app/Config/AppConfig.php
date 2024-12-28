@@ -83,9 +83,6 @@ class AppConfig
     public static string $OPEN_CHAT_RISING_POSITION_DIR = '';
     public static string $OPEN_CHAT_HOUR_FILTER_ID_DIR = '';
 
-    const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
-    const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
-
     public static string $DatabaseConfigClass = '';
     public static string $RankingPositionDBConfigClass = '';
 
