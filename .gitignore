@@ -23,7 +23,6 @@ app/Config/Shadow/StringCryptorConfig.php
 app/Config/RankingPositionDBConfig.php
 app/Config/UserLogDBConfig.php
 app/Config/CommentDBConfig.php
-app/Config/AccreditationDBConfig.php
 app/Config/LineLoginConfig.php
 app/Config/Shadow/GceDatabaseConfig.php
 /node_modules

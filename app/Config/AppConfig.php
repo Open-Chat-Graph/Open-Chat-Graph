@@ -85,7 +85,6 @@ class AppConfig
 
     const OPEN_CHAT_ID_DATA_FILE_PATH = __DIR__ . '/../../storage/OpenChatBackupData';
     const COMMENT_DATA_FILE_PATH = __DIR__ . '/../../storage/CommentBackupData';
-    const ACCREDITATION_DATA_FILE_PATH = __DIR__ . '/../../storage/AccreditationBackupData';
 
     public static string $DatabaseConfigClass = '';
     public static string $RankingPositionDBConfigClass = '';
