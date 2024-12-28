@@ -9,13 +9,13 @@ use App\Services\Recommend\Dto\RecommendListDto;
 //TODO: リコメンドの言語対応
 class RecommendStaticDataFile
 {
-    private function checkUpdatedAt(RecommendListDto|false $data)
+    private function checkUpdatedAt(RecommendListDto $data)
     {
-        if (!$data || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME))
+        if (!$data->getCount() || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME))
             noStore();
     }
 
-    function getCategoryRanking(int $category): RecommendListDto|false
+    function getCategoryRanking(int $category): RecommendListDto
     {
         $data = getUnserializedFile("static_data_recommend/category/{$category}.dat");
 
@@ -29,7 +29,7 @@ class RecommendStaticDataFile
         return $data;
     }
 
-    function getRecomendRanking(string $tag): RecommendListDto|false
+    function getRecomendRanking(string $tag): RecommendListDto
     {
         $fileName = hash('crc32', $tag);
         $data = getUnserializedFile("static_data_recommend/tag/{$fileName}.dat");
@@ -45,7 +45,7 @@ class RecommendStaticDataFile
         return $data;
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto|false
+    function getOfficialRanking(int $emblem): RecommendListDto
     {
         $data = getUnserializedFile("static_data_recommend/official/{$emblem}.dat");
 

@@ -16,7 +16,7 @@ class RecommendRankingBuilder
         string $entity,
         string $listName,
         RecommendRankingRepositoryInterface $repository
-    ): RecommendListDto|false {
+    ): RecommendListDto {
         $limit = AppConfig::RECOMMEND_LIST_LIMIT;
 
         $ranking = $repository->getRanking(
@@ -63,6 +63,6 @@ class RecommendRankingBuilder
             file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)
         );
 
-        return $dto->maxMemberCount ? $dto : false;
+        return $dto;
     }
 }

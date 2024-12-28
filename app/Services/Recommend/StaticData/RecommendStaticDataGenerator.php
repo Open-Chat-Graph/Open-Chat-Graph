@@ -24,7 +24,7 @@ class RecommendStaticDataGenerator
     ) {
     }
 
-    function getRecomendRanking(string $tag): RecommendListDto|false
+    function getRecomendRanking(string $tag): RecommendListDto
     {
         return $this->recommendRankingBuilder->getRanking(
             RecommendListType::Tag,
@@ -34,7 +34,7 @@ class RecommendStaticDataGenerator
         );
     }
 
-    function getCategoryRanking(int $category): RecommendListDto|false
+    function getCategoryRanking(int $category): RecommendListDto
     {
         return $this->recommendRankingBuilder->getRanking(
             RecommendListType::Category,
@@ -44,7 +44,7 @@ class RecommendStaticDataGenerator
         );
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto|false
+    function getOfficialRanking(int $emblem): RecommendListDto
     {
         $listName = match ($emblem) {
             1 => 'スペシャルオープンチャット',
