@@ -14,19 +14,17 @@ class RecommendListDto
     public int $maxMemberCount;
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
-    public string $_listName;
 
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
         public RecommendListType $type,
-        public string $listName, // 既存静的データの$listNameを$_listNameに置き換える // TODO: 次のリリースで削除
+        public string $listName,
         public array $hour,
         public array $day,
         public array $week,
         public array $member,
         public string $hourlyUpdatedAt
     ) {
-        $this->_listName = $listName;
         $this->mergedElements = array_merge($hour, $day, $week, $member);
 
         $elements = array_column($this->mergedElements, 'member');
@@ -84,8 +82,8 @@ class RecommendListDto
     /** @return string[] */
     private function buildFilterdTags(array $mergedElements, bool $shuffle): array
     {
-        $tag = $this->type === RecommendListType::Tag ? $this->_listName : '';
-        $tagName = $this->type === RecommendListType::Tag ? $this->_listName : '';
+        $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
+        $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagStr = RecommendUtility::extractTag($tag);
 
         $tags = sortAndUniqueArray(

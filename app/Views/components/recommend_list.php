@@ -12,19 +12,19 @@ use App\Services\Recommend\Enum\RecommendListType;
             <div class="inner">
                 <?php if ($recommend->type === RecommendListType::Category) : ?>
                     <h3>
-                        <div style="text-wrap: wrap;">「<?php echo $recommend->_listName ?>」カテゴリーの</div>
+                        <div style="text-wrap: wrap;">「<?php echo $recommend->listName ?>」カテゴリーの</div>
                         <div>おすすめ</div>
                     </h3>
                 <?php elseif ($recommend->type === RecommendListType::Official) : ?>
-                    <?php if ($recommend->_listName) : ?>
+                    <?php if ($recommend->listName) : ?>
                         <h3>
-                            <div style="text-wrap: wrap;"><?php echo $recommend->_listName ?></div>
+                            <div style="text-wrap: wrap;"><?php echo $recommend->listName ?></div>
                         </h3>
                     <?php endif ?>
                 <?php else : ?>
-                    <a class="unset" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->_listName))) ?>">
+                    <a class="unset" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
                         <h3>
-                            <div style="text-wrap: wrap;">「<?php echo $recommend->_listName ?>」の</div>
+                            <div style="text-wrap: wrap;">「<?php echo $recommend->listName ?>」の</div>
                             <div>おすすめ</div>
                         </h3>
                         <small style="font-size: 14px; font-weight:bold; color:#4d73ff; margin: auto 0; margin-left: 4px; text-wrap: nowrap; word-break: keep-all;" aria-hidden="true">すべて見る</small>
@@ -43,7 +43,7 @@ use App\Services\Recommend\Enum\RecommendListType;
                         </h4>
                         <div class="recommend-member">
                             <span>
-                                <?php if ($roc['member'] === $recommend->maxMemberCount && (($tag ?? '') !== $recommend->_listName || $recommend->maxMemberCount >= $member)) : ?>
+                                <?php if ($roc['member'] === $recommend->maxMemberCount && (($tag ?? '') !== $recommend->listName || $recommend->maxMemberCount >= $member)) : ?>
                                     <span aria-hidden="true" style="margin: 0 -2px; font-size: 9px; user-select: none;">🏆</span>
                                     <span style="font-weight: bold;">メンバー <?php echo formatMember($roc['member']) ?>人</span>
                                 <?php else : ?>

@@ -7,11 +7,11 @@ use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendUtility;
 
 if ($recommend->type === RecommendListType::Category) {
-    $title = "「{$recommend->_listName}」カテゴリー";
+    $title = "「{$recommend->listName}」カテゴリー";
 } elseif ($recommend->type === RecommendListType::Official) {
-    $title = "{$recommend->_listName}";
+    $title = "{$recommend->listName}";
 } else {
-    $title = "「{$recommend->_listName}」";
+    $title = "「{$recommend->listName}」";
 }
 
 ?>
@@ -35,16 +35,16 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::$OPEN_CHAT_CATEGORY[$recommend->_listName] . '?list=daily') ?>">
-            <span class="ranking-readMore">「<?php echo $recommend->_listName ?>」カテゴリーをもっと見る</span>
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::$OPEN_CHAT_CATEGORY[$recommend->listName] . '?list=daily') ?>">
+            <span class="ranking-readMore">「<?php echo $recommend->listName ?>」カテゴリーをもっと見る</span>
         </a>
     <?php elseif ($recommend->type === RecommendListType::Official) : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('badge:' . htmlspecialchars_decode($recommend->_listName))) ?>">
-            <span class="ranking-readMore"><?php echo $recommend->_listName ?>をもっと見る</span>
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('badge:' . htmlspecialchars_decode($recommend->listName))) ?>">
+            <span class="ranking-readMore"><?php echo $recommend->listName ?>をもっと見る</span>
         </a>
     <?php else : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->_listName))) ?>">
-            <span class="ranking-readMore">「<?php echo RecommendUtility::extractTag($recommend->_listName) ?>」をもっと見る</span>
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
+            <span class="ranking-readMore">「<?php echo RecommendUtility::extractTag($recommend->listName) ?>」をもっと見る</span>
         </a>
     <?php endif ?>
 

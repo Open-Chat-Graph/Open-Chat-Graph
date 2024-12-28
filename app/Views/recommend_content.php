@@ -96,7 +96,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php else : ?>
                 <header class="recommend-ranking-section-header">
                   <h2 style="all: unset; font-size: 14px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap;">
-                    <div>「<?php echo $recommend->_listName ?>」</div>
+                    <div>「<?php echo $recommend->listName ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?? '' ?></div>
                     <div>（<?php echo $time ?>）<?php echo $key * $chunkLen + 1 ?>位〜</div>

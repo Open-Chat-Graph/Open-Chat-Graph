@@ -61,10 +61,10 @@ class OcPageSchema
 
         $tags = array_filter(
             $recommend,
-            fn ($r) => $r instanceof RecommendListDto ? ($r->type === RecommendListType::Tag ? $r->_listName : false) : false,
+            fn ($r) => $r instanceof RecommendListDto ? ($r->type === RecommendListType::Tag ? $r->listName : false) : false,
         );
 
-        $recommendSection = array_map(fn (RecommendListDto $r) => "「{$r->_listName}」のおすすめ", $tags);
+        $recommendSection = array_map(fn (RecommendListDto $r) => "「{$r->listName}」のおすすめ", $tags);
 
         // WebPageの構築
         $webPage = Schema::article()
