@@ -50,8 +50,8 @@ class IndexPageController
             $newComment = false;
         }
 
-        $officialDto = $officialPageList->getListDto(1)[0];
-        $officialDto2 = $officialPageList->getListDto(2)[0];
+        $officialDto = $officialPageList->getListDto(1);
+        $officialDto2 = $officialPageList->getListDto(2);
 
         return view('top_content', compact(
             '_meta',

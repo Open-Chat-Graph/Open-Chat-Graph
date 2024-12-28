@@ -6,7 +6,7 @@ namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Dto\RecommendListDto;
-//TODO: リコメンドの多言語対応
+//TODO: リコメンドの言語対応
 class RecommendStaticDataFile
 {
     private function checkUpdatedAt(RecommendListDto|false $data)

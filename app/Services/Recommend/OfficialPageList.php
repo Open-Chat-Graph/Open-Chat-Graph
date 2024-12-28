@@ -14,13 +14,9 @@ class OfficialPageList
     ) {
     }
 
-    /** @return array{ 0:RecommendListDto,1:array{ hour:?int,hour24:?int,week:?int } }|false */
-    function getListDto(int $emblem): array|false
+    function getListDto(int $emblem): RecommendListDto|false
     {
-        $dto = $this->recommendStaticDataGenerator->getOfficialRanking($emblem);
-
-        //return $dto ? [$dto, $this->recommendPageRepository->getTagDiffMember($tag)] : false;
-        return $dto ? [$dto, []] : false;
+        return $this->recommendStaticDataGenerator->getOfficialRanking($emblem);
     }
 
     /** @return string[] */

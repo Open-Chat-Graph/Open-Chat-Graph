@@ -85,7 +85,7 @@ class OpenChatPageController
     {
         /** @var OfficialPageList $officialPageList */
         $officialPageList = app(OfficialPageList::class);
-        return $officialPageList->getListDto($emblem)[0];
+        return $officialPageList->getListDto($emblem);
     }
 
     function index(

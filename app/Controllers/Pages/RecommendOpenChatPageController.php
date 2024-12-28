@@ -62,8 +62,8 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
-        $recommendArray = $recommendPageList->getListDto($tag);
-        if (!$recommendArray) {
+        $recommend = $recommendPageList->getListDto($tag);
+        if (!$recommend) {
             $time = '';
             $_schema = '';
             $_meta->setTitle("【最新】「{$tag}」おすすめオープンチャットランキング");
@@ -83,7 +83,6 @@ class RecommendOpenChatPageController
             ));
         }
 
-        [$recommend, $diffMember] = $recommendArray;
         $recommendList = $recommend->getList(false);
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 

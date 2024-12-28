@@ -9,7 +9,7 @@ class OfficialPageListTest extends TestCase
 {
     public function test()
     {
-        $res = app(OfficialPageList::class)->getListDto();
+        $res = app(OfficialPageList::class)->getListDto(1);
         debug($res);
         $this->assertTrue(true);
     }
