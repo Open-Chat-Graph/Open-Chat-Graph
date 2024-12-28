@@ -105,7 +105,7 @@ class SyncOpenChat
             !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
         );
     }
-
+// TODO:SyncOpenChatの多言語対応
     private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
     {
         $this->executeAndCronLog(

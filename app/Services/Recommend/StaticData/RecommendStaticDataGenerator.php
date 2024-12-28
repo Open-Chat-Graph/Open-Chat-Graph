@@ -67,7 +67,7 @@ class RecommendStaticDataGenerator
     {
         return $this->recommendUpdater->getAllTagNames();
     }
-
+//TODO: リコメンドの多言語対応
     private function updateRecommendStaticData()
     {
         foreach ($this->getAllTagNames() as $tag) {

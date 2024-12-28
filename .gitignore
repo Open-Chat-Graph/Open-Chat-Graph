@@ -13,6 +13,7 @@ Thumbs.db
 /storage/static_data_recommend/**
 /storage/json/**
 /storage/zip-backup-temp/**
+/storage/furigana/**
 public/sitemaps/**
 app/Services/Admin/**
 app/Config/AdminConfig.php

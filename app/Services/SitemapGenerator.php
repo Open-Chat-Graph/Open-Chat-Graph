@@ -40,7 +40,7 @@ class SitemapGenerator
 
         safeFileRewrite(self::INDEX_SITEMAP, $index->render(), 0755);
     }
-
+    // TODO: 多言語でのサイトマップ生成に対応させる
     private function generateSitemap1(): string
     {
         $date = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);

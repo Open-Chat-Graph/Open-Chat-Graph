@@ -93,7 +93,7 @@ class StaticDataGenerator
     {
         return $this->recommendPageRepository->getRecommendTagAndCategoryAll();
     }
-
+// static_data_topのキャッシュファイルの多言語対応
     function updateStaticData()
     {
         safeFileRewrite(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
