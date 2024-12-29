@@ -2,19 +2,22 @@
 Thumbs.db
 /.vscode
 /.git
-/composer.lock
 
-/logs
+/logs/*
 
-/public/oc-img**
-/public/quiz-img**
+/public/oc-img/*
+!/public/oc-img/preview
+/public/oc-img/preview/*
+!/public/oc-img/default
 
-/storage/ranking_position/**
-/storage/static_data_recommend/**
-/storage/json/**
-/storage/zip-backup-temp/**
+/storage/ranking_position/*/*
+storage/ranking_position/filter.dat
+/storage/static_data_recommend/*/*
+storage/open_chat_sub_categories/subcategories.json
 /storage/furigana/**
+/storage/bot/**
 public/sitemaps/**
+public/sitemap.xml
 app/Services/Admin/**
 app/Config/AdminConfig.php
 app/Services/Admin/FTPHandler.php
@@ -30,14 +33,13 @@ app/Config/Shadow/GceDatabaseConfig.php
 /package.json
 /tsconfig.json
 vendor/bin/.phpunit.result.cache
-storage/SQLite
+storage/SQLite/ranking_position/ranking_position.db
+storage/SQLite/statistics/statistics.db
 *.Identifier
-public/sitemap.xml
 storage/static_data_top/*
 !storage/static_data_top/template
 
-storage/th/ranking_position/ranking/*
-storage/th/ranking_position/rising/*
+storage/th/ranking_position/*/*
 storage/th/ranking_position/filter.dat
 storage/th/SQLite/ranking_position/ranking_position.db
 storage/th/SQLite/statistics/statistics.db
@@ -46,8 +48,7 @@ storage/th/static_data_top/*
 storage/th/open_chat_sub_categories/*
 !storage/th/open_chat_sub_categories/template
 
-storage/tw/ranking_position/ranking/*
-storage/tw/ranking_position/rising/*
+storage/tw/ranking_position/*/*
 storage/tw/ranking_position/filter.dat
 storage/tw/SQLite/ranking_position/ranking_position.db
 storage/tw/SQLite/statistics/statistics.db
@@ -55,3 +56,5 @@ storage/tw/static_data_top/*
 !storage/tw/static_data_top/template
 storage/tw/open_chat_sub_categories/*
 !storage/tw/open_chat_sub_categories/template
+
+!*.gitkeep

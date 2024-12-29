@@ -76,7 +76,7 @@ class AppConfig
     const COMMENT_UPDATED_AT_MICROTIME = __DIR__ . '/../../storage/static_data_top/comment_updated_at.dat';
     const TAG_UPDATED_AT_DATETIME = __DIR__ . '/../../storage/static_data_top/tag_updated_at.dat';
 
-    const OPEN_CHAT_SUB_CATEGORIES_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories.json';
+    public static string $OPEN_CHAT_SUB_CATEGORIES_FILE_PATH = '';
     const OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH = __DIR__ . '/../../storage/open_chat_sub_categories/subcategories_tag.json';
 
     public static string $OPEN_CHAT_RANKING_POSITION_DIR = '';
