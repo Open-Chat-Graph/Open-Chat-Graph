@@ -33,18 +33,25 @@ vendor/bin/.phpunit.result.cache
 storage/SQLite
 *.Identifier
 public/sitemap.xml
-storage/static_data_top
+storage/static_data_top/*
+!storage/static_data_top/template
 
 storage/th/ranking_position/ranking/*
-!storage/th/ranking_position/ranking/0.dat
 storage/th/ranking_position/rising/*
-!storage/th/ranking_position/rising/0.dat
+storage/th/ranking_position/filter.dat
 storage/th/SQLite/ranking_position/ranking_position.db
 storage/th/SQLite/statistics/statistics.db
+storage/th/static_data_top/*
+!storage/th/static_data_top/template
+storage/th/open_chat_sub_categories/*
+!storage/th/open_chat_sub_categories/template
 
 storage/tw/ranking_position/ranking/*
-!storage/tw/ranking_position/ranking/0.dat
 storage/tw/ranking_position/rising/*
-!storage/tw/ranking_position/rising/0.dat
+storage/tw/ranking_position/filter.dat
 storage/tw/SQLite/ranking_position/ranking_position.db
 storage/tw/SQLite/statistics/statistics.db
+storage/tw/static_data_top/*
+!storage/tw/static_data_top/template
+storage/tw/open_chat_sub_categories/*
+!storage/tw/open_chat_sub_categories/template
