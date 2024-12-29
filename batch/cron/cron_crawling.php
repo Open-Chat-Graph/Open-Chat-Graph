@@ -4,9 +4,9 @@ if (isset($argv[1]) && $argv[1]) {
     define('URL_ROOT', $argv[1]);
 }
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Services\Cron\Provisional\SyncOpenChat;
+use App\Services\Cron\SyncOpenChat;
 use App\Services\Admin\AdminTool;
 
 /**
@@ -14,7 +14,8 @@ use App\Services\Admin\AdminTool;
  */
 $syncOpenChat = app(SyncOpenChat::class);
 try {
-    $syncOpenChat->handleHalfHourCheck();
+    $syncOpenChat->handle();
+    addCronLog('End');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendLineNofity($e->__toString());

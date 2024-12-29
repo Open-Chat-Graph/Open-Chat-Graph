@@ -4,7 +4,7 @@ if (isset($argv[2]) && $argv[2]) {
     define('URL_ROOT', $argv[2]);
 }
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\ParallelDownloadOpenChat;
