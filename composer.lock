@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "09c62c0651f609fcf5975e1136083ea7",
+    "content-hash": "2d6c7d483b3048a057ab2dcbdd658745",
     "packages": [
         {
             "name": "asika/sitemap",
