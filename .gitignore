@@ -1,8 +1,10 @@
+*.Identifier
 .DS_Store
 Thumbs.db
 /.vscode
 /.git
 /vendor
+/node_modules
 
 /logs/*
 
@@ -16,27 +18,18 @@ storage/ranking_position/filter.dat
 /storage/static_data_recommend/*/*
 storage/open_chat_sub_categories/subcategories.json
 /storage/furigana/**
-/storage/bot/**
 public/sitemaps/**
 public/sitemap.xml
-app/Services/Admin/**
+
 app/Config/AdminConfig.php
-app/Services/Admin/FTPHandler.php
 app/Config/Shadow/DatabaseConfig.php
 app/Config/Shadow/StringCryptorConfig.php
 app/Config/RankingPositionDBConfig.php
 app/Config/UserLogDBConfig.php
 app/Config/CommentDBConfig.php
-app/Config/LineLoginConfig.php
-app/Config/Shadow/GceDatabaseConfig.php
-/node_modules
-/package-lock.json
-/package.json
-/tsconfig.json
-vendor/bin/.phpunit.result.cache
+
 storage/SQLite/ranking_position/ranking_position.db
 storage/SQLite/statistics/statistics.db
-*.Identifier
 storage/static_data_top/*
 !storage/static_data_top/template
 
