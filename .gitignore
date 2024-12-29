@@ -1,7 +1,8 @@
 *.Identifier
 .DS_Store
 Thumbs.db
-/.vscode
+/.vscode/sftp.json
+
 /.git
 /vendor
 /node_modules
