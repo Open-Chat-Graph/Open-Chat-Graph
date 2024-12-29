@@ -11,7 +11,7 @@ class SyncOpenChatTest extends TestCase
     {
         $arg = escapeshellarg('');
 
-        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+        $path = AppConfig::ROOT_PATH . '/cron/cron_crawling.php';
         exec(PHP_BINARY . " {$path} {$arg}");
         
         $this->assertTrue(true);

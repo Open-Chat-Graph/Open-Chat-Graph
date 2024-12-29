@@ -37,8 +37,8 @@ class AdminPageController
 
     function test()
     {
-        $path = AppConfig::ROOT_PATH . 'test_exec.php';
-        $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
+        $path = AppConfig::ROOT_PATH . '/batch/test_exec.php';
+        $path = AppConfig::ROOT_PATH . '/batch/genetop_exec.php';
 
         exec("php {$path} >/dev/null 2>&1 &");
 
@@ -52,7 +52,7 @@ class AdminPageController
 
     private function halfcheck()
     {
-        $path = AppConfig::ROOT_PATH . 'cron_half_check.php';
+        $path = AppConfig::ROOT_PATH . '/cron/cron_half_check.php';
 
         exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
 
@@ -114,7 +114,7 @@ class AdminPageController
 
     function genetop()
     {
-        $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
+        $path = AppConfig::ROOT_PATH . '/batch/genetop_exec.php';
 
         exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
 
