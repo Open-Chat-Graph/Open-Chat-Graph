@@ -22,7 +22,7 @@ class OpenChatApiSubCategoryDownloader
      */
     function fetchOpenChatApiSubCategory(string $category): array|false
     {
-        $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '0');
+        $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '');
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
         $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false);
