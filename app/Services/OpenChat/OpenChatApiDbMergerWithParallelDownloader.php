@@ -60,7 +60,7 @@ class OpenChatApiDbMergerWithParallelDownloader
 
         $arg2 = escapeshellarg(URL_ROOT);
 
-        $path = AppConfig::ROOT_PATH . 'exec_parallel_downloader.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/exec_parallel_downloader.php';
         exec(PHP_BINARY . " {$path} {$arg} {$arg2} >/dev/null 2>&1 &");
     }
 

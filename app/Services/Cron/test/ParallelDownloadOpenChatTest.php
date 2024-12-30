@@ -1,7 +1,7 @@
 <?php
 
 use App\Services\Cron\ParallelDownloadOpenChat;
-use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
+use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use PHPUnit\Framework\TestCase;
 
 class ParallelDownloadOpenChatTest extends TestCase
@@ -15,11 +15,16 @@ class ParallelDownloadOpenChatTest extends TestCase
          */
         $inst = app(ParallelDownloadOpenChat::class);
 
-        OpenChatApiDataParallelDownloader::disableKillFlag();
-        $result = $inst->handle([['type' => 'rising', 'category' => 6], ['type' => 'ranking', 'category' => 6]]);
+        try {
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagFalse();
+            $inst->handle([['type' => 'rising', 'category' => 6], ['type' => 'ranking', 'category' => 6]]);
+        } catch (\Throwable $e) {
+            // 全てのダウンロードプロセスを強制終了する
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+            addCronLog($e->__toString());
+            $this->assertTrue(false);
+        }
 
-        var_dump($result);
-
-        $this->assertIsInt(0);
+        $this->assertTrue(true);
     }
 }

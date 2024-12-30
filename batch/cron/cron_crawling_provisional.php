@@ -14,7 +14,10 @@ try {
      * @var SyncOpenChat $syncOpenChat
      */
     $syncOpenChat = app(SyncOpenChat::class);
-    $syncOpenChat->handle();
+    $syncOpenChat->handle(
+        isset($argv[2]) && $argv[2] === 'dailyTest',
+        isset($argv[3]) && $argv[3] === 'retryDailyTest'
+    );
     addCronLog('End');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
