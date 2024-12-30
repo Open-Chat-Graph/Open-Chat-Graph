@@ -32,6 +32,9 @@ interface RecommendRankingRepositoryInterface
         int $limit,
     ): array;
 
+    /**
+     * @param array $idArray 結果から除外するID
+     */
     function getRankingByExceptId(
         string $entity,
         string $table,
@@ -40,6 +43,9 @@ interface RecommendRankingRepositoryInterface
         int $limit,
     ): array;
 
+    /**
+     * @param array $idArray 結果から除外するID
+     */
     function getListOrderByMemberDesc(
         string $entity,
         array $idArray,
