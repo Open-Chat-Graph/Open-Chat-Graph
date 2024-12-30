@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 use App\Config\AppConfig;
 use PHPUnit\Framework\TestCase;
-
+use App\Config\OpenChatCrawlerConfig;
 use App\Services\OpenChat\SubCategory\OpenChatSubCategorySynchronizer;
 
 class OpenChatSubCategorySynchronizerTest extends TestCase
 {
     public function test()
     {
+        overwriteUrlRoot('/th');
+
         /**
          * @var OpenChatSubCategorySynchronizer $test
          */

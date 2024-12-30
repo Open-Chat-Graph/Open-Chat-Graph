@@ -9,8 +9,8 @@ use App\Config\RankingPositionDBConfigTh;
 use App\Config\RankingPositionDBConfigTw;
 use App\Config\OpenChatCrawlerConfig;
 
-(function () {
-    if (URL_ROOT === '/tw') {
+(function (string $overwriteUrlRoot) {
+    if (URL_ROOT === '/tw' || $overwriteUrlRoot === '/tw') {
         $STORAGE_DIR = __DIR__ . '/../../storage/tw';
 
         AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_tw.log';
@@ -64,7 +64,7 @@ use App\Config\OpenChatCrawlerConfig;
             '動畫／漫畫' => 22,
             '其他' => 35,
         ];
-    } elseif (URL_ROOT === '/th') {
+    } elseif (URL_ROOT === '/th' || $overwriteUrlRoot === '/th') {
         $STORAGE_DIR = __DIR__ . '/../../storage/th';
 
         AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_th.log';
@@ -195,4 +195,4 @@ use App\Config\OpenChatCrawlerConfig;
     AppConfig::$SQLiteRankingPositionDbfile =           $STORAGE_DIR . '/SQLite/ranking_position/ranking_position.db';
 
     AppConfig::$OPEN_CHAT_SUB_CATEGORIES_FILE_PATH =    $STORAGE_DIR . '/open_chat_sub_categories/subcategories.json';
-})();
+})($overwriteUrlRoot ?? '');

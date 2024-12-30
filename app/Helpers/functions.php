@@ -596,3 +596,8 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 
     return filemtime($path);
 }
+
+function overwriteUrlRoot(string $overwriteUrlRoot)
+{
+    include __DIR__ . '/../Config/AppDynamicConfig.php';
+}
