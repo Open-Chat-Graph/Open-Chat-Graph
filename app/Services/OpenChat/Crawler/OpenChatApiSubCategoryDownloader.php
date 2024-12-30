@@ -23,9 +23,10 @@ class OpenChatApiSubCategoryDownloader
     function fetchOpenChatApiSubCategory(string $category): array|false
     {
         $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '');
+        $headers = OpenChatCrawlerConfig::$OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER;
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
-        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false);
+        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
         if (!$response) {
             throw new \RuntimeException("データ取得エラー: {$url}");
         }

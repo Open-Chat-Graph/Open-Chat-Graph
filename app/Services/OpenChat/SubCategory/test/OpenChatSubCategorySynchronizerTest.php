@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Config\AppConfig;
 use PHPUnit\Framework\TestCase;
 
 use App\Services\OpenChat\SubCategory\OpenChatSubCategorySynchronizer;
@@ -16,6 +17,9 @@ class OpenChatSubCategorySynchronizerTest extends TestCase
         $test = app(OpenChatSubCategorySynchronizer::class);
         $test->syncSubCategoriesAll();
 
-        $this->assertTrue(true);
+        $file = json_decode(file_get_contents(AppConfig::$OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
+        debug($file);
+
+        $this->assertTrue(is_array($file) && !empty($file));
     }
 }

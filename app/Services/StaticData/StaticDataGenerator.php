@@ -51,7 +51,7 @@ class StaticDataGenerator
         $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME), true);
         $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
         $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);;
-        $_argDto->subCategories = json_decode(file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
+        $_argDto->subCategories = json_decode(file_get_contents(AppConfig::$OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
 
         if (isset($_argDto->subCategories[6])) {
             $key = array_search('オプチャ宣伝', $_argDto->subCategories[6]);

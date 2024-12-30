@@ -80,6 +80,10 @@ class DailyUpdateCronService
         $this->updateRankingService->update($this->date); */
 
         // 暫定での静的データ生成の実装
+        addCronLog('syncSubCategoriesAll start');
+        $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
+        addCronLog('syncSubCategoriesAll done: ' . count($categoryResult));
+        
         safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $this->date);
     }
 }
