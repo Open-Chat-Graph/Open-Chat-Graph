@@ -30,7 +30,7 @@ class UpdateDailyRankingService
 
     private function updateStaticData(string $date)
     {
-        safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $date);
+        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']), $date);
         $this->staticDataGenerator->updateStaticData();
     }
 }

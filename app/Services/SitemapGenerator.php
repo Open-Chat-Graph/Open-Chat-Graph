@@ -43,8 +43,8 @@ class SitemapGenerator
     // TODO: 多言語でのサイトマップ生成に対応させる
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
-        $datetime = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
+        $date = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']));
+        $datetime = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']));
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim(self::SITE_URL, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);

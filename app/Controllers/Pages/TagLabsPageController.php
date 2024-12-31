@@ -36,7 +36,7 @@ class TagLabsPageController
         })($staticDataGeneration->getTagList());
 
         $categories = array_flip(AppConfig::$OPEN_CHAT_CATEGORY);
-        $_updatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME));
+        $_updatedAt = new \DateTime(file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyRealUpdatedAtDatetime'])));
 
         if (isset($isAdminPage) && adminMode()) {
             /** @var AdsRepository $adsRepo */

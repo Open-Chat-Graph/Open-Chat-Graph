@@ -17,7 +17,7 @@ class RecentCommentApiController
     function index(int $open_chat_id)
     {
         if (!$open_chat_id) {
-            $updatedAt = file_get_contents(AppConfig::COMMENT_UPDATED_AT_MICROTIME);
+            $updatedAt = file_get_contents(AppConfig::STORAGE_FILES['commentUpdatedAtMicrotime']);
             handleRequestWithETagAndCache(
                 "recent-comment-api{$updatedAt}",
                 hourly: false

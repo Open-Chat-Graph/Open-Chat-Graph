@@ -25,7 +25,6 @@ abstract class AbstractRankingPositionStore
         saveSerializedFile(
             $this->filePath . "/{$category}.dat",
             $this->apiDtoCache,
-            true
         );
 
         $this->apiDtoCache = [];
@@ -37,7 +36,7 @@ abstract class AbstractRankingPositionStore
     function getStorageData(string $category): array
     {
         $file = $this->filePath . "/{$category}.dat";
-        $data = getUnserializedFile($file, true);
+        $data = getUnserializedFile($file);
         if (!is_array($data)) {
             throw new \RuntimeException('invalid ranking data file: ' . $file);
         }

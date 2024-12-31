@@ -660,29 +660,24 @@ function stringToView(string $str): Shadow\Kernel\View
 /**
  * Save serialized value to a file.
  *
- * @param string $filename The name of the file to save the serialized array to.
+ * @param string $path The name of the file to save the serialized array to.
  * @param mixed $value The value to be serialized and saved.
- * @param bool $fullPath [optional] Whether $filename is a full path. Default is false.
  * @throws \RuntimeException If there is an issue with file writing.
  */
-function saveSerializedFile(string $filename, mixed $value, bool $fullPath = false): void
+function saveSerializedFile(string $path, mixed $value): void
 {
     $data = gzencode(serialize($value));
-    $path = $fullPath === false ? (__DIR__ . '/../storage/' . $filename) : $filename;
     safeFileRewrite($path, $data);
 }
 
 /**
  * Retrieve and unserialize value from a file.
  *
- * @param string $filename The name of the file to retrieve the array from.
- * @param bool $fullPath [optional] Whether $filename is a full path. Default is false.
+ * @param string $path The name of the file.
  * @return mixed The unserialized value, or false if an invalid file or error occurs.
  */
-function getUnserializedFile(string $filename, bool $fullPath = false): mixed
+function getUnserializedFile(string $path): mixed
 {
-    $path = $fullPath === false ? (__DIR__ . '/../storage/' . $filename) : $filename;
-
     if (!file_exists($path)) {
         return false;
     }

@@ -38,7 +38,7 @@ class UpdateHourlyMemberRankingService
 
     private function getCachedFilters(string $time)
     {
-        $filters = getUnserializedFile(AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR, true);
+        $filters = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['openChatHourFilterId']));
         return $filters
             ? $filters
             : $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
@@ -47,20 +47,19 @@ class UpdateHourlyMemberRankingService
     private function saveNextFiltersCache(string $time)
     {
         saveSerializedFile(
-            AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR,
+            getStorageFilePath(AppConfig::STORAGE_FILES['openChatHourFilterId']),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d')),
-            true
         );
     }
 
     private function updateStaticData(string $time)
     {
-        safeFileRewrite(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME, $time);
+        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']), $time);
 
         // TODO: 毎時処理での静的データ生成の実装
         
         //$this->staticDataGenerator->updateStaticData();
-        safeFileRewrite(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
+        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyRealUpdatedAtDatetime']), (new \DateTime)->format('Y-m-d H:i:s'));
         //$this->recommendStaticDataGenerator->updateStaticData();
     }
 }

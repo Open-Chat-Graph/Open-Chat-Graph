@@ -162,11 +162,16 @@ function noStore()
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
+function getStorageFilePath(string $storageFile): string
+{
+    return AppConfig::STORAGE_DIR[URL_ROOT] . $storageFile;
+}
+
 function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5(URL_ROOT . $content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+        $etag = '"' . md5(URL_ROOT . $content . filemtime(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']))) . '"';
     } else {
         $etag = '"' . md5(URL_ROOT . $content) . '"';
     }
@@ -238,12 +243,12 @@ function purgeCacheCloudFlare(
 
 function getHouryUpdateTime()
 {
-    return file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
+    return file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']));
 }
 
 function getDailyUpdateTime()
 {
-    return file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
+    return file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']));
 }
 
 /* function imgUrl(int $id, string $img_url): string
@@ -306,17 +311,6 @@ function filePathNumById(int $id): string
 function getCategoryName(int $category): string
 {
     return array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? '';
-}
-
-function addCronLog(string|array $log)
-{
-    if (is_string($log)) {
-        $log = [$log];
-    }
-
-    foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::$addCronLogDestination);
-    }
 }
 
 function isDailyUpdateTime(
@@ -600,4 +594,15 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 function overwriteUrlRoot(string $overwriteUrlRoot)
 {
     include __DIR__ . '/../Config/AppDynamicConfig.php';
+}
+
+function addCronLog(string|array $log)
+{
+    if (is_string($log)) {
+        $log = [$log];
+    }
+
+    foreach ($log as $string) {
+        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, getStorageFilePath(AppConfig::STORAGE_FILES['addCronLogDest']));
+    }
 }

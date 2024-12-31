@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\StaticData;
 
+use App\Config\AppConfig;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Views\Dto\RankingArgDto;
@@ -18,7 +19,7 @@ class StaticDataFile
 
     function getTopPageData(): StaticTopPageDto
     {
-        $data = getUnserializedFile('static_data_top/ranking_list.dat');
+        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['topPageRankingData']));
 
         /** @var StaticTopPageDto $data */
         if (!$data) {
@@ -34,7 +35,7 @@ class StaticDataFile
     function getRankingArgDto(): RankingArgDto
     {
         /** @var RankingArgDto $data */
-        $data = getUnserializedFile('static_data_top/ranking_arg_dto.dat');
+        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['rankingArgDto']));
         //$data = null;
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -51,7 +52,7 @@ class StaticDataFile
     function getRecommendPageDto(): StaticRecommendPageDto
     {
         /** @var StaticRecommendPageDto $data */
-        $data = getUnserializedFile('static_data_top/recommend_page_dto.dat');
+        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['recommendPageDto']));
         //$data = null;
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -67,15 +68,14 @@ class StaticDataFile
     function getTagList(): array
     {
         /** @var array $data */
-        $data = getUnserializedFile('static_data_top/tag_list.dat');
-
+        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['tagList']));
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getTagList();
         }
 
-        $time = getStorageFileTime('static_data_top/tag_list.dat');
+        $time = getStorageFileTime(getStorageFilePath(AppConfig::STORAGE_FILES['tagList']));
         if (!$time || new \DateTime('@' . $time) < new \DateTime(getHouryUpdateTime()))
             noStore();
 

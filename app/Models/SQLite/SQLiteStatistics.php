@@ -17,7 +17,7 @@ class SQLiteStatistics extends AbstractSQLite implements DBInterface
      */
     public static function connect(string $mode = '?mode=rwc'): \PDO
     {
-        self::$dbfile = AppConfig::$SQLiteStatisticsDbfile;
+        self::$dbfile = getStorageFilePath(AppConfig::STORAGE_FILES['sqliteStatisticsDb']);
         return parent::connect($mode);
     }
 }

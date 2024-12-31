@@ -47,7 +47,7 @@ class RankingPositionStoreTest extends TestCase
 
     private function testShowPositionData(string $fileName)
     {
-        $data = getUnserializedFile($fileName, true);
+        $data = getUnserializedFile($fileName);
         var_dump($data);
         $this->assertIsArray($data);
     }

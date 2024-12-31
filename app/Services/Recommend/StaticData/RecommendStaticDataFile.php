@@ -11,13 +11,20 @@ class RecommendStaticDataFile
 {
     private function checkUpdatedAt(RecommendListDto $data)
     {
-        if (!$data->getCount() || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME))
+        if (
+            !$data->getCount()
+            || !$data->hourlyUpdatedAt === file_get_contents(
+                getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime'])
+            )
+        )
             noStore();
     }
 
     function getCategoryRanking(int $category): RecommendListDto
     {
-        $data = getUnserializedFile("static_data_recommend/category/{$category}.dat");
+        $data = getUnserializedFile(
+            getStorageFilePath(AppConfig::STORAGE_FILES['categoryStaticDataDir']) . "/{$category}.dat"
+        );
 
         if (!$data || true) { // キャッシュ無効化中
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
@@ -32,7 +39,9 @@ class RecommendStaticDataFile
     function getRecomendRanking(string $tag): RecommendListDto
     {
         $fileName = hash('crc32', $tag);
-        $data = getUnserializedFile("static_data_recommend/tag/{$fileName}.dat");
+        $data = getUnserializedFile(
+            getStorageFilePath(AppConfig::STORAGE_FILES['recommendStaticDataDir']) . "/{$fileName}.dat"
+        );
 
         if (!$data || true) { // キャッシュ無効化中
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
@@ -47,7 +56,9 @@ class RecommendStaticDataFile
 
     function getOfficialRanking(int $emblem): RecommendListDto
     {
-        $data = getUnserializedFile("static_data_recommend/official/{$emblem}.dat");
+        $data = getUnserializedFile(
+            getStorageFilePath(AppConfig::STORAGE_FILES['officialStaticDataDir']) . "/{$emblem}.dat"
+        );
 
         if (!$data || true) { // キャッシュ無効化中
             /** @var RecommendStaticDataGenerator $staticDataGenerator */

@@ -84,6 +84,6 @@ class DailyUpdateCronService
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
         addCronLog('syncSubCategoriesAll done: ' . count($categoryResult));
         
-        safeFileRewrite(AppConfig::$DAILY_CRON_UPDATED_AT_DATE, $this->date);
+        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']), $this->date);
     }
 }

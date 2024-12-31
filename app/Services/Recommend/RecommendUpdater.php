@@ -289,14 +289,13 @@ class RecommendUpdater
         ["あんスタなりきり", ["あんスタ_AND_なりきり", "あんスタ_AND_也", "enst_AND_なりきり", "enst_AND_也", "あんスタ_AND_nrkr", "あんスタ_AND_ゆるなり", "あんすた_AND_ゆるなり", "あんスタ_AND_固定"]],
     ];
 
-    /** @var string[] $tags */
     public array $tags;
     protected string $start;
     protected string $end;
 
     function __construct()
     {
-        $this->start = file_get_contents(AppConfig::TAG_UPDATED_AT_DATETIME) ?: '';
+        $this->start = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['tagUpdatedAtDatetime'])) ?: '';
     }
 
     function replace(string|array $word, string $column): string
@@ -325,7 +324,7 @@ class RecommendUpdater
         $tags = array_merge(
             self::NAME_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH),
+                file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag'])),
                 true
             ))
         );
@@ -377,7 +376,7 @@ class RecommendUpdater
     /** @return array{ string:string[] }  */
     protected function getReplacedTagsDesc(string $column): array
     {
-        $this->tags = json_decode((file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH)), true);
+        $this->tags = json_decode((file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag']))), true);
 
         return [
             array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
@@ -632,7 +631,7 @@ class RecommendUpdater
             $this->updateName2('oc.description');
         });
 
-        safeFileRewrite(AppConfig::TAG_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
+        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['tagUpdatedAtDatetime']), (new \DateTime)->format('Y-m-d H:i:s'));
     }
 
     private function modifyRecommendTags()
@@ -648,7 +647,7 @@ class RecommendUpdater
             self::DESC_STRONG_TAG,
             self::AFTER_DESC_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH),
+                file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag'])),
                 true
             ))
         );

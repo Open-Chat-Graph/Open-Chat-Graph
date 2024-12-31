@@ -13,6 +13,6 @@ class DB extends \Shadow\DB implements DBInterface
 
     public static function connect(string $class = ''): \PDO
     {
-        return parent::connect($class ?: AppConfig::$DatabaseConfigClass);
+        return parent::connect($class ?: AppConfig::DB_CONFIG_CLASS[URL_ROOT]);
     }
 }

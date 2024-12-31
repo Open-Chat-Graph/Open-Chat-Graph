@@ -64,7 +64,7 @@ class CommentPostApiController
                 ]
             );
 
-            safeFileRewrite(AppConfig::COMMENT_UPDATED_AT_MICROTIME, (string)microtime(true));
+            safeFileRewrite(AppConfig::STORAGE_FILES['commentUpdatedAtMicrotime'], (string)microtime(true));
         } else {
             cookie(['comment_flag' => (string)$flag]);
         }

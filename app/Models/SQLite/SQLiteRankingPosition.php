@@ -17,7 +17,7 @@ class SQLiteRankingPosition extends AbstractSQLite implements DBInterface
      */
     public static function connect(string $mode = '?mode=rwc'): \PDO
     {
-        self::$dbfile = AppConfig::$SQLiteRankingPositionDbfile;
+        self::$dbfile = getStorageFilePath(AppConfig::STORAGE_FILES['sqliteRankingPositionDb']);
         return parent::connect($mode);
     }
 }

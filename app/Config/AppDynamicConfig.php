@@ -1,21 +1,10 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Config\Shadow\DatabaseConfig;
-use App\Config\DatabaseConfigTh;
-use App\Config\DatabaseConfigTw;
-use App\Config\RankingPositionDBConfig;
-use App\Config\RankingPositionDBConfigTh;
-use App\Config\RankingPositionDBConfigTw;
 use App\Config\OpenChatCrawlerConfig;
 
-(function (string $overwriteUrlRoot) {
-    if (URL_ROOT === '/tw' || $overwriteUrlRoot === '/tw') {
-        $STORAGE_DIR = __DIR__ . '/../../storage/tw';
-
-        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_tw.log';
-        AppConfig::$DatabaseConfigClass = DatabaseConfigTw::class;
-        AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTw::class;
+(function () {
+    if (URL_ROOT === '/tw') {
         AppConfig::$OPEN_CHAT_CATEGORY = [
             '流行／美妝' => 20,
             '金融／商業' => 40,
@@ -64,12 +53,7 @@ use App\Config\OpenChatCrawlerConfig;
             '動畫／漫畫' => 22,
             '其他' => 35,
         ];
-    } elseif (URL_ROOT === '/th' || $overwriteUrlRoot === '/th') {
-        $STORAGE_DIR = __DIR__ . '/../../storage/th';
-
-        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron_th.log';
-        AppConfig::$DatabaseConfigClass = DatabaseConfigTh::class;
-        AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfigTh::class;
+    } elseif (URL_ROOT === '/th') {
         AppConfig::$OPEN_CHAT_CATEGORY = [
             'แฟนคลับ' => 10,
             'การศึกษา' => 11,
@@ -121,11 +105,6 @@ use App\Config\OpenChatCrawlerConfig;
             'อื่นๆ' => 35,
         ];
     } else {
-        $STORAGE_DIR = __DIR__ . '/../../storage';
-
-        AppConfig::$addCronLogDestination = __DIR__ . '/../../logs/cron.log';
-        AppConfig::$DatabaseConfigClass = DatabaseConfig::class;
-        AppConfig::$RankingPositionDBConfigClass = RankingPositionDBConfig::class;
         AppConfig::$OPEN_CHAT_CATEGORY = [
             'ゲーム' => 17,
             'スポーツ' => 16,
@@ -182,17 +161,4 @@ use App\Config\OpenChatCrawlerConfig;
             '本' => 29,
         ];
     }
-
-    AppConfig::$DAILY_CRON_UPDATED_AT_DATE =            $STORAGE_DIR . '/static_data_top/daily_updated_at.dat';
-    AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME =       $STORAGE_DIR . '/static_data_top/hourly_updated_at.dat';
-    AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME =       $STORAGE_DIR . '/static_data_top/real_updated_at.dat';
-
-    AppConfig::$OPEN_CHAT_RANKING_POSITION_DIR =        $STORAGE_DIR . '/ranking_position/ranking';
-    AppConfig::$OPEN_CHAT_RISING_POSITION_DIR =         $STORAGE_DIR . '/ranking_position/rising';
-    AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR =          $STORAGE_DIR . '/ranking_position/filter.dat';
-
-    AppConfig::$SQLiteStatisticsDbfile =                $STORAGE_DIR . '/SQLite/statistics/statistics.db';
-    AppConfig::$SQLiteRankingPositionDbfile =           $STORAGE_DIR . '/SQLite/ranking_position/ranking_position.db';
-
-    AppConfig::$OPEN_CHAT_SUB_CATEGORIES_FILE_PATH =    $STORAGE_DIR . '/open_chat_sub_categories/subcategories.json';
-})($overwriteUrlRoot ?? '');
+})();

@@ -25,7 +25,7 @@ class RankingPositionApiController
         string $start_date,
         string $end_date
     ) {
-        if (strtotime($start_date) > strtotime(file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE))) {
+        if (strtotime($start_date) > strtotime(file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate'])))) {
             return response(
                 get_object_vars(new RankingPositionChartDto) + [
                     'error' => 'Last Cron execution date is before start_date'

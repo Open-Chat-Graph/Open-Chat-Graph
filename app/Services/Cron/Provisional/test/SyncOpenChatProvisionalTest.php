@@ -18,20 +18,4 @@ class SyncOpenChatProvisionalTest extends TestCase
         
         $this->assertTrue(true);
     }
-
-    public function daily_test()
-    {
-        try {
-            /**
-             * @var SyncOpenChat $syncOpenChat
-             */
-            $syncOpenChat = app(SyncOpenChat::class);
-            $syncOpenChat->handle(true);
-            addCronLog('End');
-            $this->assertTrue(true);
-        } catch (\Throwable $e) {
-            addCronLog($e->__toString());
-            $this->assertTrue(false);
-        }
-    }
 }

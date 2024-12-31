@@ -21,8 +21,7 @@ class RecommendStaticDataGenerator
         private OfficialRoomRankingRepository $officialRoomRankingRepository,
         private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
-    ) {
-    }
+    ) {}
 
     function getRecomendRanking(string $tag): RecommendListDto
     {
@@ -67,13 +66,13 @@ class RecommendStaticDataGenerator
     {
         return $this->recommendUpdater->getAllTagNames();
     }
-//TODO: リコメンドの多言語対応
+
     private function updateRecommendStaticData()
     {
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
             saveSerializedFile(
-                "static_data_recommend/tag/{$fileName}.dat",
+                getStorageFilePath(AppConfig::STORAGE_FILES['recommendStaticDataDir']) . "/{$fileName}.dat",
                 $this->getRecomendRanking($tag)
             );
         }
@@ -83,7 +82,7 @@ class RecommendStaticDataGenerator
     {
         foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
             saveSerializedFile(
-                "static_data_recommend/category/{$category}.dat",
+                getStorageFilePath(AppConfig::STORAGE_FILES['categoryStaticDataDir']) . "/{$category}.dat",
                 $this->getCategoryRanking($category)
             );
         }
@@ -93,7 +92,7 @@ class RecommendStaticDataGenerator
     {
         foreach ([1, 2] as $emblem) {
             saveSerializedFile(
-                "static_data_recommend/official/{$emblem}.dat",
+                getStorageFilePath(AppConfig::STORAGE_FILES['officialStaticDataDir']) . "/{$emblem}.dat",
                 $this->getOfficialRanking($emblem)
             );
         }

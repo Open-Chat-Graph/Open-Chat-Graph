@@ -14,6 +14,6 @@ class RankingPositionDB extends DB implements DBInterface
 
     public static function connect(string $class = ''): \PDO
     {
-        return parent::connect($class ?: AppConfig::$RankingPositionDBConfigClass);
+        return parent::connect($class ?: AppConfig::RANKING_POSITION_DB_CONFIG_CLASS[URL_ROOT]);
     }
 }

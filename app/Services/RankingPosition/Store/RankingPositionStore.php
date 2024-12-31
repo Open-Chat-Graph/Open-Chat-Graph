@@ -10,6 +10,6 @@ class RankingPositionStore extends AbstractRankingPositionStore
 {
     function __construct()
     {
-        $this->filePath = AppConfig::$OPEN_CHAT_RANKING_POSITION_DIR;
+        $this->filePath = getStorageFilePath(AppConfig::STORAGE_FILES['openChatRankingPositionDir']);
     }
 }
