@@ -196,7 +196,7 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (SecretsConfig::$isDevlopment ?? false) {
+    if (AppConfig::$isDevlopment ?? false) {
         return 'is Development';
     }
 

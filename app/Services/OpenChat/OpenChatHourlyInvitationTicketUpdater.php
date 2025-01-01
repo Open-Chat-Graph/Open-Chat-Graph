@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\SecretsConfig;
+use App\Config\AppConfig;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
@@ -23,8 +23,8 @@ class OpenChatHourlyInvitationTicketUpdater
         $ocArray = $this->updateOpenChatRepository->getEmptyUrlOpenChatId();
 
         // 開発環境の場合、更新制限をかける
-        if (SecretsConfig::$isDevlopment ?? false) {
-            $limit = SecretsConfig::$developmentEnvUpdateLimit['OpenChatHourlyInvitationTicketUpdater'] ?? 1;
+        if (AppConfig::$isDevlopment ?? false) {
+            $limit = AppConfig::$developmentEnvUpdateLimit['OpenChatHourlyInvitationTicketUpdater'] ?? 1;
             $ocArrayCount = count($ocArray);
             $ocArray = array_slice($ocArray, 0, $limit);
             addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");

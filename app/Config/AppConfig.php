@@ -206,4 +206,14 @@ class AppConfig
             'ทั้งหมด' => 0,
         ]
     ];
+
+    static bool $isDevlopment = false;
+
+    /** @var array<string, int> */
+    static array $developmentEnvUpdateLimit = [
+        'OpenChatImageUpdater' => 10,
+        'OpenChatHourlyInvitationTicketUpdater' => 10,
+        'DailyUpdateCronService' => 10,
+        'RankingBanTableUpdater' => 10,
+    ];
 }
