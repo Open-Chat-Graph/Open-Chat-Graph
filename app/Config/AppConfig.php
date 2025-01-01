@@ -57,8 +57,11 @@ class AppConfig
     ];
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 
-    // TODO:多言語対応
-    const LINE_OPEN_URL = 'https://openchat.line.me/jp/cover/';
+    const LINE_OPEN_URL = [
+        '' =>    'https://openchat.line.me/jp/cover/',
+        '/tw' => 'https://openchat.line.me/tw/cover/',
+        '/th' => 'https://openchat.line.me/th/cover/',
+    ];
     const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
     const ROOT_PATH =   __DIR__ . '/../../';

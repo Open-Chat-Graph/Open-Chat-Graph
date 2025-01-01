@@ -4,6 +4,7 @@ namespace App\Views\Schema;
 
 use App\Config\AppConfig;
 use App\Views\Meta\Metadata;
+use Shared\MimimalCmsConfig;
 use Spatie\SchemaOrg\DiscussionForumPosting;
 use Spatie\SchemaOrg\Schema;
 
@@ -120,7 +121,7 @@ class PageBreadcrumbsListSchema
         return Schema::discussionForumPosting()
             ->headline($room['name'])
             ->description($room['description'])
-            ->url(AppConfig::LINE_OPEN_URL . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+            ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
             ->sameAs($room['url'] ? AppConfig::LINE_APP_URL . $room['url'] . AppConfig::LINE_APP_SUFFIX : '')
             ->interactionStatistic(
                 Schema::interactionCounter()
@@ -138,7 +139,7 @@ class PageBreadcrumbsListSchema
             ->author(
                 Schema::person()
                     ->name($room['name'])
-                    ->url(AppConfig::LINE_OPEN_URL . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                    ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
             );
     }
 
