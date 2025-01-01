@@ -295,7 +295,7 @@ class RecommendUpdater
 
     function __construct()
     {
-        $this->start = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['tagUpdatedAtDatetime'])) ?: '';
+        $this->start = file_get_contents(AppConfig::getStorageFilePath('tagUpdatedAtDatetime')) ?: '';
     }
 
     function replace(string|array $word, string $column): string
@@ -324,7 +324,7 @@ class RecommendUpdater
         $tags = array_merge(
             self::NAME_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag'])),
+                file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag')),
                 true
             ))
         );
@@ -376,7 +376,7 @@ class RecommendUpdater
     /** @return array{ string:string[] }  */
     protected function getReplacedTagsDesc(string $column): array
     {
-        $this->tags = json_decode((file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag']))), true);
+        $this->tags = json_decode((file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag'))), true);
 
         return [
             array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
@@ -631,7 +631,7 @@ class RecommendUpdater
             $this->updateName2('oc.description');
         });
 
-        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['tagUpdatedAtDatetime']), (new \DateTime)->format('Y-m-d H:i:s'));
+        safeFileRewrite(AppConfig::getStorageFilePath('tagUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
     }
 
     private function modifyRecommendTags()
@@ -647,7 +647,7 @@ class RecommendUpdater
             self::DESC_STRONG_TAG,
             self::AFTER_DESC_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategoriesTag'])),
+                file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag')),
                 true
             ))
         );

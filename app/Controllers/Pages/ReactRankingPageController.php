@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shadow\Kernel\Reception;
+use Shared\MimimalCmsConfig;
 
 class ReactRankingPageController
 {
@@ -29,7 +30,7 @@ class ReactRankingPageController
         $title1 = '';
         switch (!!$category) {
             case true:
-                $title1 = array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] . '｜';
+                $title1 = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] . '｜';
                 break;
             default:
                 $title1 = $title0 ? '' : '【最新】';
@@ -92,7 +93,7 @@ class ReactRankingPageController
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             'ランキング',
             'ranking',
-            $category ? array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] : '',
+            $category ? array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] : '',
             $category ? (string)$category : ''
         );
 

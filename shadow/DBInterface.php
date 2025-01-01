@@ -14,8 +14,11 @@ interface DBInterface
      * @return \PDO
      * 
      * @throws PDOException — if the attempt to connect to the requested database fails.
+     * @throws InvalidArgumentException — if database configuration is invalid.
+     * 
+     * @param ?array{host?: string, dbName?: string, userName?: string, password?: string, charset?: string, attrPersistent?: bool, spliteFilePath?: bool} $config
      */
-    public static function connect(): \PDO;
+    public static function connect(?array $config = null): \PDO;
 
     /**
      * @param string $query

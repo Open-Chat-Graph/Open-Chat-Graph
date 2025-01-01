@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shadow\Kernel;
 
+use Shared\MimimalCmsConfig;
+
 /**
  * View class for rendering and displaying templates.
  * 
@@ -35,7 +37,7 @@ class View implements ViewInterface
         }
 
         $viewTemplateFile = "/" . ltrim($viewTemplateFile, "/");
-        $filePath = VIEWS_DIR . $viewTemplateFile;
+        $filePath = MimimalCmsConfig::$viewsDir . $viewTemplateFile;
         if (file_exists($filePath . '.php')) {
             $filePath .= '.php';
         } elseif (file_exists($filePath . '.html')) {
@@ -60,7 +62,7 @@ class View implements ViewInterface
     public function exists(string $viewTemplateFile): bool
     {
         $viewTemplateFile = "/" . ltrim($viewTemplateFile, "/");
-        $filePath = VIEWS_DIR . $viewTemplateFile;
+        $filePath = MimimalCmsConfig::$viewsDir . $viewTemplateFile;
         if (file_exists($filePath . '.php')) {
             return true;
         } elseif (file_exists($filePath . '.html')) {

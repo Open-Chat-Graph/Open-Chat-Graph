@@ -2,7 +2,8 @@
 
 namespace App\Services\Admin;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
+use Shared\MimimalCmsConfig;
 use Symfony\Component\HttpClient\HttpClient;
 
 class AdminTool
@@ -13,7 +14,7 @@ class AdminTool
             define('CURL_SSLVERSION_TLSv1_2', 6);
         }
 
-        $json['key'] = AdminConfig::ADMIN_API_KEY;
+        $json['key'] = SecretsConfig::$adminApiKey;
         $options =  compact('json');
 
         $httpClient = HttpClient::create();
@@ -73,8 +74,10 @@ class AdminTool
         return (string)$response;
     }
 
-    static function sendLineNofity(string $message, string $token = AdminConfig::LINE_NOTIFY_TOKEN): string
+    static function sendLineNofity(string $message, ?string $token = null): string
     {
+        $token = $token ?? SecretsConfig::$lineNotifyToken;
+
         $curl = function ($message) use ($token) {
             $query = http_build_query(['message' => $message]);
             $header = ['Authorization: Bearer ' . $token];
@@ -94,8 +97,9 @@ class AdminTool
         };
 
         $responses = [];
-        foreach (mb_str_split($message, 1000) as $el) {
-            $responses[] = $curl($el);
+        $urlRoot = '[' . (str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja') . '] ';
+        foreach (mb_str_split($message, 1000 - mb_strlen($urlRoot)) as $el) {
+            $responses[] = $curl($urlRoot . $el);
         }
 
         return implode("\n", $responses);

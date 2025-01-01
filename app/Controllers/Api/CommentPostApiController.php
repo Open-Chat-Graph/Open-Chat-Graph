@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
@@ -64,14 +64,14 @@ class CommentPostApiController
                 ]
             );
 
-            safeFileRewrite(AppConfig::STORAGE_FILES['commentUpdatedAtMicrotime'], (string)microtime(true));
+            safeFileRewrite(AppConfig::getStorageFilePath('commentUpdatedAtMicrotime'), (string)microtime(true));
         } else {
             cookie(['comment_flag' => (string)$flag]);
         }
 
         return response([
             'commentId' => $commentId,
-            'userId' => $args->user_id === AdminConfig::ADMIN_API_KEY ? '管理者' : base62Hash($args->user_id, 'fnv132')
+            'userId' => $args->user_id === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($args->user_id, 'fnv132')
         ]);
     }
 }

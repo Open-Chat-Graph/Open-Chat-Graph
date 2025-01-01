@@ -23,7 +23,7 @@ class DBTest extends TestCase
         $dateTime = new \DateTime('now');
 
         saveSerializedFile(
-            getStorageFilePath(AppConfig::STORAGE_FILES['openChatHourFilterId']),
+            AppConfig::getStorageFilePath('openChatHourFilterId'),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray($dateTime->format('Y-m-d'))
         );
     } 

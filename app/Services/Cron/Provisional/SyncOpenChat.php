@@ -8,7 +8,7 @@ use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
-use App\Services\Cron\Provisional\DailyUpdateCronService;
+use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
@@ -18,7 +18,7 @@ use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastH
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberColumnService;
-use App\Services\Cron\Provisional\UpdateHourlyMemberRankingService;
+use App\Services\UpdateHourlyMemberRankingService;
 
 class SyncOpenChat
 {

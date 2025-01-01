@@ -11,6 +11,7 @@ use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class SitemapGenerator
 {
@@ -43,8 +44,8 @@ class SitemapGenerator
     // TODO: 多言語でのサイトマップ生成に対応させる
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']));
-        $datetime = file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']));
+        $date = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
+        $datetime = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim(self::SITE_URL, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
@@ -55,7 +56,7 @@ class SitemapGenerator
         $sitemap->addItem(self::SITE_URL . 'ranking?keyword=' . urlencode('badge:公式認証オープンチャット'), lastmod: $datetime);
 
 
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $category && $sitemap->addItem(self::SITE_URL . 'ranking/' . $category, lastmod: $datetime);
         }
 

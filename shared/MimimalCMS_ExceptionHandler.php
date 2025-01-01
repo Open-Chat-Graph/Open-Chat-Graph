@@ -2,10 +2,11 @@
 
 namespace ExceptionHandler;
 
-use Throwable;
+use App\Exceptions\Handlers\ApplicationExceptionHandler;
+use Shared\MimimalCmsConfig;
 
 /**
- * MimimalCMS0.1
+ * MimimalCMS v1
  * 
  * @author mimimiku778 <0203.sub@gmail.com>
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
@@ -61,18 +62,18 @@ class ExceptionHandler
      */
     public static function handleException(\Throwable $e)
     {
-        $flagName = 'App\Exceptions\Handlers\ApplicationExceptionHandler::EXCEPTION_MAP';
-        if (defined($flagName) && is_array($list = constant($flagName))) {
+        $appHandlerClass = ApplicationExceptionHandler::class;
+        if (class_exists($appHandlerClass) && isset($appHandlerClass::$exceptionMap)) {
             $className = get_class($e);
-            if (array_key_exists($className, $list)) {
+            if (array_key_exists($className, $appHandlerClass::$exceptionMap)) {
                 \App\Exceptions\Handlers\ApplicationExceptionHandler::handleException($e, $className);
                 return;
             }
         }
 
         // Determine whether to show detailed error information
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::EXCEPTION_HANDLER_DISPLAY_BEFORE_OB_CLEAN';
-        $bool = defined($flagName) && constant($flagName);
+        $configClass = MimimalCmsConfig::class;
+        $bool = class_exists($configClass) && ($configClass::$exceptionHandlerDisplayBeforeObClean ?? false);
         if ($bool && ob_get_length() !== false && ob_get_length() > 0) {
             ob_clean();
         }
@@ -83,20 +84,12 @@ class ExceptionHandler
             return;
         }
 
-        $flagName = 'App\Config\Shadow\HttpExceptionMapper::HTTP_ERRORS';
-        if (!defined($flagName) || !is_array($exceptionMapper = constant($flagName))) {
+        if (!class_exists($configClass) || !$error = ($configClass::$httpErrors[get_class($e)] ?? [])) {
             // Handle an unhandled exception
             self::response500($e);
             return;
         }
 
-        if (!array_key_exists(get_class($e), $exceptionMapper)) {
-            // Handle an unhandled exception
-            self::response500($e);
-            return;
-        }
-
-        $error = $exceptionMapper[get_class($e)];
         self::errorResponse($e, mb_convert_encoding($e->getMessage(), 'UTF-8'), ...$error);
     }
 
@@ -104,10 +97,13 @@ class ExceptionHandler
     {
         self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::EXCEPTION_HANDLER_DISPLAY_ERROR_TRACE_DETAILS';
-        $showErrorTraceFlag = defined($flagName) && constant($flagName);
+        $configClass = MimimalCmsConfig::class;
         $adminToolClass = \App\Services\Admin\AdminTool::class;
-        if (!$showErrorTraceFlag && class_exists($adminToolClass)) {
+        if (
+            class_exists($configClass)
+            && ($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false)
+            && class_exists($adminToolClass)
+        ) {
             try {
                 $adminToolClass::sendLineNofity($e->__toString() . "\nIP: " . getIp() . "\nUA: " . getUA());
             } catch (\Throwable $exception) {
@@ -150,8 +146,8 @@ class ExceptionHandler
         http_response_code($httpCode);
 
         // Determine whether to show detailed error information
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::EXCEPTION_HANDLER_DISPLAY_ERROR_TRACE_DETAILS';
-        $showErrorTraceFlag = defined($flagName) && constant($flagName);
+        $className = MimimalCmsConfig::class;
+        $showErrorTraceFlag = class_exists($className) && ($className::$exceptionHandlerDisplayErrorTraceDetails ?? false);
 
         // If the request is JSON, return a JSON response
         if (self::isJsonRequest()) {
@@ -204,12 +200,11 @@ class ExceptionHandler
      */
     private static function showErrorPage(int $httpCode, string $httpStatusMessage, string $detailsMessage): bool
     {
-        $flagName = 'VIEWS_DIR';
-        if (!defined($flagName) || !constant($flagName)) {
+        if (!class_exists(\Shared\MimimalCmsConfig::class) || !isset(\Shared\MimimalCmsConfig::$viewsDir)) {
             return false;
         }
 
-        $viewsDir = VIEWS_DIR;
+        $viewsDir = \Shared\MimimalCmsConfig::$viewsDir;
 
         $filePath = $viewsDir . '/errors/' . $httpCode . '.php';
         if (file_exists($filePath)) {
@@ -253,13 +248,18 @@ class ExceptionHandler
             return "{$key}: {$val}";
         }, array_keys($_SERVER), $_SERVER));
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::EXCEPTION_LOG_DIRECTORY';
-        if (!defined($flagName) || !is_writable($dir = constant($flagName))) {
+
+        $className = MimimalCmsConfig::class;
+        if (!class_exists($className) || !isset($className::$exceptionLogDirectory)) {
             return;
         }
 
         // Write error log with timestamp, error message and request headers
-        error_log("\n" . $time . "\n" . $message . $headerString . "\n", 3, $dir);
+        try {
+            error_log("\n" . $time . "\n" . $message . $headerString . "\n", 3, $className::$exceptionLogDirectory);
+        } catch (\Throwable $e) {
+            return;
+        }
     }
 
     private static function jsonResponse(array $data)

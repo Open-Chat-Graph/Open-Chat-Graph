@@ -13,12 +13,12 @@ interface ValidatorInterface
     /**
      * Validates a stirng and returns true if it meets the given criteria.
      * 
-     * @param mixed $string        The input value to validate.function
-     * @param int|null $maxLen     [optional] The maximum length of the string.
-     * @param string|array|null $regex [optional] If specified, the input string must match this regex pattern.
-     * @param bool|null $emptyAble [optional] If the string can be empty or not.
-     * @param string|null $e       [optional] An Exception name to be thrown if validation fails.
-     * @param ?string $default     [optional] The value to return when the input is empty (applies when $emptyAble is true).
+     * @param mixed $string             The input value to validate.function
+     * @param int|null $maxLen          [optional] The maximum length of the string.
+     * @param string|array|null $regex  [optional] If specified, the input string must match this regex pattern.
+     * @param bool|null $emptyAble      [optional] If the string can be empty or not.
+     * @param string|null $e            [optional] An Exception name to be thrown if validation fails.
+     * @param ?string $default          [optional] The value to return when the input is empty (applies when $emptyAble is true).
      * 
      * @return string|false        True if the input is valid, otherwise false.
      * 
@@ -140,7 +140,7 @@ interface ValidatorInterface
      * 
      * @param array  $file             Array of the file input element.
      * @param array  $allowedMimeTypes Array of allowed mime types for the file.
-     * @param int    $maxFileSize      Maximum allowed file size in kilobytes (KB).
+     * @param ?int   $maxFileSize      Maximum allowed file size in kilobytes (KB).
      * 
      * @return array Returns an array containing information about the uploaded file if it passes validation.
      * 
@@ -152,5 +152,5 @@ interface ValidatorInterface
      *                             3002 - File extension not allowed.  
      *                             3003 - File type does not match.  
      */
-    public static function uploadedFile(array $file, array $allowedMimeTypes, int $maxFileSize = DEFAULT_MAX_FILE_SIZE): array;
+    public static function uploadedFile(array $file, array $allowedMimeTypes, ?int $maxFileSize = null): array;
 }

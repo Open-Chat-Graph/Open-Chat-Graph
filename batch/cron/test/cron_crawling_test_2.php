@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Config\AppConfig;
 use PHPUnit\Framework\TestCase;
 
-class SyncOpenChatTest extends TestCase
+class cron_crawling_test_2 extends TestCase
 {
     public function test()
     {

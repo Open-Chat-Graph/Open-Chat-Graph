@@ -8,6 +8,7 @@ use Shared\Exceptions\UploadException;
 use Shadow\Kernel\Reception;
 use Shadow\Kernel\RouteClasses\RouteDTO;
 use Shared\Exceptions\ValidationException;
+use Shared\MimimalCmsConfig;
 
 /**
  * @author mimimiku778 <0203.sub@gmail.com>
@@ -31,10 +32,10 @@ class ReceptionInitializer implements ReceptionInitializerInterface
         Reception::$inputData =           $this->parseRequestBody($this->routeDto->paramArray);
     }
 
-    public static function getDomainAndHttpHost(string $urlRoot = URL_ROOT): string
+    public static function getDomainAndHttpHost(?string $urlRoot = null): string
     {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $urlRoot;
+        return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($urlRoot ?? MimimalCmsConfig::$urlRoot);
     }
 
     /**
@@ -44,9 +45,9 @@ class ReceptionInitializer implements ReceptionInitializerInterface
      */
     protected function getFlashSession(): array
     {
-        if (isset($_SESSION[FLASH_SESSION_KEY_NAME])) {
-            $session = $_SESSION[FLASH_SESSION_KEY_NAME];
-            unset($_SESSION[FLASH_SESSION_KEY_NAME]);
+        if (isset($_SESSION[MimimalCmsConfig::$flashSessionKeyName])) {
+            $session = $_SESSION[MimimalCmsConfig::$flashSessionKeyName];
+            unset($_SESSION[MimimalCmsConfig::$flashSessionKeyName]);
         } else {
             $session = [];
         }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatImageStoreUpdater;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
@@ -38,8 +38,8 @@ class OpenChatImageUpdater
     private function update(array $ocArray)
     {
         // 開発環境の場合、更新制限をかける
-        if (AdminConfig::IS_DEVELOPMENT ?? false) {
-            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['OpenChatImageUpdater'] ?? 1;
+        if (SecretsConfig::$isDevlopment ?? false) {
+            $limit = SecretsConfig::$developmentEnvUpdateLimit['OpenChatImageUpdater'] ?? 1;
             $ocArrayCount = count($ocArray);
             $ocArray = array_slice($ocArray, 0, $limit);
             addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");

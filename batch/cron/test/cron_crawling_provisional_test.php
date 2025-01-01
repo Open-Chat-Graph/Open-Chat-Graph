@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 use App\Config\AppConfig;
 use PHPUnit\Framework\TestCase;
-use App\Services\Cron\Provisional\SyncOpenChat;
 
-class SyncOpenChatProvisionalTest extends TestCase
+class cron_crawling_provisional_test extends TestCase
 {
     public function test()
     {

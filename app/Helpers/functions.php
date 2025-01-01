@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\Exceptions\NotFoundException;
+use Shared\MimimalCmsConfig;
 
 /**
  * Inserts HTML line breaks before all newlines in a string.
@@ -162,18 +163,13 @@ function noStore()
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
-function getStorageFilePath(string $storageFile): string
-{
-    return AppConfig::STORAGE_DIR[URL_ROOT] . $storageFile;
-}
-
 function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5(URL_ROOT . $content . filemtime(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']))) . '"';
+        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content . filemtime(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))) . '"';
     } else {
-        $etag = '"' . md5(URL_ROOT . $content) . '"';
+        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content) . '"';
     }
 
     // max-ageと共にCache-Controlヘッダーを設定
@@ -193,11 +189,14 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 }
 
 function purgeCacheCloudFlare(
-    string $zoneID = AdminConfig::CloudFlareZoneID,
-    string $apiKey = AdminConfig::CloudFlareApiKey,
+    ?string $zoneID = null,
+    ?string $apiKey = null,
     ?array $files = null
 ): string {
-    if (AdminConfig::IS_DEVELOPMENT ?? false) {
+    $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
+    $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
+
+    if (SecretsConfig::$isDevlopment ?? false) {
         return 'is Development';
     }
 
@@ -243,23 +242,13 @@ function purgeCacheCloudFlare(
 
 function getHouryUpdateTime()
 {
-    return file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']));
+    return file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 }
 
 function getDailyUpdateTime()
 {
-    return file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['dailyCronUpdatedAtDate']));
+    return file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
 }
-
-/* function imgUrl(int $id, string $img_url): string
-{
-    return "https://obs.line-scdn.net/{$img_url}";
-}
-
-function imgPreviewUrl(int $id, string $img_url): string
-{
-    return "https://obs.line-scdn.net/{$img_url}/preview";
-} */
 
 function imgUrl(int $id, string $local_img_url): string
 {
@@ -310,7 +299,7 @@ function filePathNumById(int $id): string
 
 function getCategoryName(int $category): string
 {
-    return array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? '';
+    return array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? '';
 }
 
 function isDailyUpdateTime(
@@ -364,7 +353,7 @@ function getImgSetErrorTag(): string
 
 function getFilePath($path, $pattern): string
 {
-    $file = glob(PUBLIC_DIR . "/{$path}/{$pattern}");
+    $file = glob(MimimalCmsConfig::$publicDir . "/{$path}/{$pattern}");
     if ($file) {
         $fileName = basename($file[0]);
         return "{$path}/{$fileName}";
@@ -558,7 +547,11 @@ function isMobile(): bool
 function sessionStart(): bool
 {
     if (isset($_SERVER['HTTP_HOST'])) {
-        session_set_cookie_params(SESSION_COOKIE_PARAMS);
+        session_set_cookie_params([
+            'secure' => MimimalCmsConfig::$cookieDefaultSecure,
+            'httponly' => MimimalCmsConfig::$cookieDefaultHttpOnly,
+            'samesite' => MimimalCmsConfig::$cookieDefaultSameSite,
+        ]);
         session_name("session");
     }
 
@@ -591,11 +584,6 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
     return filemtime($path);
 }
 
-function overwriteUrlRoot(string $overwriteUrlRoot)
-{
-    include __DIR__ . '/../Config/AppDynamicConfig.php';
-}
-
 function addCronLog(string|array $log)
 {
     if (is_string($log)) {
@@ -603,6 +591,6 @@ function addCronLog(string|array $log)
     }
 
     foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, getStorageFilePath(AppConfig::STORAGE_FILES['addCronLogDest']));
+        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::getStorageFilePath('addCronLogDest'));
     }
 }

@@ -27,13 +27,14 @@ use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
 use Shadow\Kernel\Reception;
+use Shared\MimimalCmsConfig;
 
 Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("ranking/{$category}");
-        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
     });
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
@@ -46,7 +47,7 @@ Route::path('official-ranking/{category}', [ReactRankingPageController::class, '
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("official-ranking/{$category}");
-        return isset(array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category]);
+        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
     });
 
 Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
@@ -124,7 +125,7 @@ Route::path(
     [RegisterOpenChatPageController::class, 'index', 'get'],
 )
     ->middleware([VerifyCsrfToken::class])
-    ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN);
+    ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot]);
 
 Route::path(
     'recently-registered/{page}@get',

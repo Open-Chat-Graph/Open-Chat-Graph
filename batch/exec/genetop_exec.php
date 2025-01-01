@@ -24,7 +24,7 @@ try {
     $recommendStaticDataGenerator->updateStaticData();
     AdminTool::sendLineNofity('recommendStaticDataGenerator done');
     
-    touch(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']));
+    touch(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendLineNofity($e->__toString());

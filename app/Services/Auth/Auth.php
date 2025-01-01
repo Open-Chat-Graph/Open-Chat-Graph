@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Services\Admin\AdminAuthService;
 
 class Auth implements AuthInterface
@@ -22,7 +22,7 @@ class Auth implements AuthInterface
      */
     function loginCookieUserId(): string
     {
-        return $this->adminAuthService->auth() ? AdminConfig::ADMIN_API_KEY : $this->cookieUserLogin->login();
+        return $this->adminAuthService->auth() ? SecretsConfig::$adminApiKey : $this->cookieUserLogin->login();
     }
 
     /**
@@ -33,6 +33,6 @@ class Auth implements AuthInterface
      */
     function verifyCookieUserId(): string
     {
-        return $this->adminAuthService->auth() ? AdminConfig::ADMIN_API_KEY : $this->cookieUserLogin->verifyLogin();
+        return $this->adminAuthService->auth() ? SecretsConfig::$adminApiKey : $this->cookieUserLogin->verifyLogin();
     }
 }

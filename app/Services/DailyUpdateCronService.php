@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -54,8 +54,8 @@ class DailyUpdateCronService
         addCronLog('openChatCrawling start: ' . count($outOfRankId));
         
         // 開発環境の場合、更新制限をかける
-        if (AdminConfig::IS_DEVELOPMENT ?? false) {
-            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['DailyUpdateCronService'] ?? 1;
+        if (SecretsConfig::$isDevlopment ?? false) {
+            $limit = SecretsConfig::$developmentEnvUpdateLimit['DailyUpdateCronService'] ?? 1;
             $outOfRankIdCount = count($outOfRankId);
             $outOfRankId = array_slice($outOfRankId, 0, $limit);
             addCronLog("Development environment. Update limit: {$limit} / {$outOfRankIdCount}");

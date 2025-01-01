@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\SQLite\SQLiteInsertImporter;
 use App\Models\SQLite\SQLiteRankingPosition;
+use Shared\MimimalCmsConfig;
 
 class SqliteRankingPositionRepository implements RankingPositionRepositoryInterface
 {
@@ -56,7 +57,7 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
 
     public function getLastDate(): string|false
     {
-        $categoryCount = count(AppConfig::$OPEN_CHAT_CATEGORY);
+        $categoryCount = count(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
 
         return SQLiteRankingPosition::fetchColumn(
             "SELECT

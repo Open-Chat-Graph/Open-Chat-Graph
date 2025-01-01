@@ -9,7 +9,7 @@ namespace Shadow;
 interface StringCryptorInterface
 {
     /**
-     * Set a protected key. If this method is not used, the key set in `StringCryptorConfig` will be used.
+     * Set a protected key. If this method is not used, the key set in `MimimalCmsConfig` will be used.
      * 
      * **Example of key generation**
      * 

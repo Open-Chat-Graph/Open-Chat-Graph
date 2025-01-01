@@ -35,6 +35,7 @@ class SchemaMarkupTest extends TestCase
         $jsonLd = $dataset->toScript();
 
         var_dump("\n" . $jsonLd);
+
         $this->assertIsString($jsonLd);
     }
 }

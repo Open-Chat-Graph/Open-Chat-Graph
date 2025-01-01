@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shadow\Kernel\Dispatcher;
 
-use App\Config\Shadow\ConstructorInjectionMapper;
+use Shared\MimimalCmsConfig;
 
 /**
  * @author mimimiku778 <0203.sub@gmail.com>
@@ -19,7 +19,7 @@ class ConstructorInjection implements ConstructorInjectionInterface
 
     public function __construct(array $injectionParameters = [])
     {
-        $this->classMap = ConstructorInjectionMapper::$map;
+        $this->classMap = MimimalCmsConfig::$constructorInjectionMap;
         $this->injectionParameters = $injectionParameters;
     }
 

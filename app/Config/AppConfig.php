@@ -2,15 +2,10 @@
 
 namespace App\Config;
 
-use App\Config\Shadow\DatabaseConfig;
+use Shared\MimimalCmsConfig;
 
 class AppConfig
 {
-    const RankingHourTable = 'statistics_ranking_hour';
-    const RankingDayTable =  'statistics_ranking_hour24';
-    const RankingWeekTable = 'statistics_ranking_week';
-    const OpenChatTable =    'open_chat';
-
     const RECOMMEND_LIST_LIMIT =    50;
     const MIN_MEMBER_DIFF_HOUR =    3;
     const MIN_MEMBER_DIFF_H24 =     8;
@@ -28,7 +23,9 @@ class AppConfig
     const LINE_APP_URL = 'line://ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
+    // TODO:多言語対応
     const OPENCHAT_IMG_PATH = 'oc-img';
+
     const OPENCHAT_IMG_PREVIEW_PATH = 'preview';
     const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p';
 
@@ -61,12 +58,12 @@ class AppConfig
     const LINE_OPEN_URL = 'https://openchat.line.me/jp/cover/';
     const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
-    public static array $OPEN_CHAT_CATEGORY = [];
-
     const ROOT_PATH =   __DIR__ . '/../../';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
 
-    const STORAGE_DIR = [
+    const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
+
+    private const STORAGE_DIR = [
         '' =>    __DIR__ . '/../../storage/ja',
         '/tw' => __DIR__ . '/../../storage/tw',
         '/th' => __DIR__ . '/../../storage/th',
@@ -94,16 +91,116 @@ class AppConfig
         'officialStaticDataDir' =>        '/static_data_recommend/official',
     ];
 
-    const DB_CONFIG_CLASS = [
-        '' =>    DatabaseConfig::class,
-        '/tw' => DatabaseConfigTw::class,
-        '/th' => DatabaseConfigTh::class,
+    /**
+     * @param string $storageFileName
+     */
+    static function getStorageFilePath(string $storageFileName): string
+    {
+        return self::STORAGE_DIR[MimimalCmsConfig::$urlRoot] . self::STORAGE_FILES[$storageFileName];
+    }
+
+    const DB_NAME = [
+        '' =>    'cf782105_ocreview',
+        '/tw' => 'cf782105_ocreviewtw',
+        '/th' => 'cf782105_ocreviewth',
     ];
-    const RANKING_POSITION_DB_CONFIG_CLASS = [
-        '' =>    RankingPositionDBConfig::class,
-        '/tw' => RankingPositionDBConfigTw::class,
-        '/th' => RankingPositionDBConfigTh::class,
+    const OpenChatTable =    'open_chat';
+    const RankingHourTable = 'statistics_ranking_hour';
+    const RankingDayTable =  'statistics_ranking_hour24';
+    const RankingWeekTable = 'statistics_ranking_week';
+
+    const RANKING_POSITION_DB_NAME = [
+        '' =>    'cf782105_ranking',
+        '/tw' => 'cf782105_rankingtw',
+        '/th' => 'cf782105_rankingth',
     ];
-    
-    const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
+    // TODO:多言語対応
+    const USER_LOG_DB_NAME = [
+        '' =>    'cf782105_userlog',
+        '/tw' => 'cf782105_userlog',
+        '/th' => 'cf782105_userlog',
+    ];
+    // TODO:多言語対応
+    const COMMENT_DB_NAME = [
+        '' =>    'cf782105_comment',
+        '/tw' => 'cf782105_comment',
+        '/th' => 'cf782105_comment',
+    ];
+
+    const OPEN_CHAT_CATEGORY = [
+        '' => [
+            'ゲーム' => 17,
+            'スポーツ' => 16,
+            '芸能人・有名人' => 26,
+            '同世代' => 7,
+            'アニメ・漫画' => 22,
+            '金融・ビジネス' => 40,
+            '音楽' => 33,
+            '地域・暮らし' => 8,
+            'ファッション・美容' => 20,
+            'イラスト' => 41,
+            '研究・学習' => 11,
+            '働き方・仕事' => 5,
+            '学校・同窓会' => 2,
+            '料理・グルメ' => 12,
+            '健康' => 23,
+            '団体' => 6,
+            '妊活・子育て' => 28,
+            '乗り物' => 19,
+            '写真' => 37,
+            '旅行' => 18,
+            '動物・ペット' => 27,
+            'TV・VOD' => 24,
+            '本' => 29,
+            '映画・舞台' => 30,
+            'すべて' => 0,
+        ],
+        '/tw' => [
+            '流行／美妝' => 20,
+            '金融／商業' => 40,
+            '美食' => 12,
+            '團體／組織' => 6,
+            '旅遊' => 18,
+            '娛樂' => 42,
+            '家庭／親子' => 4,
+            '工作' => 44,
+            '學習' => 11,
+            '遊戲' => 17,
+            '興趣' => 14,
+            '運動／健身' => 16,
+            '寵物' => 27,
+            '公司／企業' => 5,
+            '心情' => 43,
+            '科技' => 34,
+            '健康' => 23,
+            '學校／校友' => 2,
+            '動畫／漫畫' => 22,
+            '其他' => 35,
+            '全部' => 0,
+        ],
+        '/th' => [
+            'แฟนคลับ' => 10,
+            'การศึกษา' => 11,
+            'การเงิน & ธุรกิจ' => 40,
+            'งานอดิเรก' => 14,
+            'ท่องเที่ยว' => 18,
+            'เทคโนโลยี' => 34,
+            'เกม' => 17,
+            'ท้องถิ่น' => 8,
+            'สัตว์เลี้ยง' => 27,
+            'รถยนต์' => 19,
+            'เพลง' => 33,
+            'แฟชั่น & บิวตี้' => 20,
+            'กีฬา' => 16,
+            'อาหาร' => 12,
+            'อนิเมะ & การ์ตูน' => 22,
+            'ภาพยนตร์' => 30,
+            'โรงเรียน' => 2,
+            'การถ่ายภาพ' => 37,
+            'รายการทีวี' => 24,
+            'เด็ก' => 28,
+            'อื่นๆ' => 35,
+            'ทั้งหมด' => 0,
+        ]
+    ];
 }

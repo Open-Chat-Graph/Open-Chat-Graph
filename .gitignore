@@ -7,6 +7,8 @@ Thumbs.db
 /node_modules
 /vendor
 
+/shared/secrets.php
+
 /logs/*
 
 /public/oc-img/*
@@ -17,15 +19,7 @@ Thumbs.db
 public/sitemaps/**
 public/sitemap.xml
 
-app/Config/AdminConfig.php
-app/Config/Shadow/DatabaseConfig.php
-app/Config/Shadow/StringCryptorConfig.php
-app/Config/RankingPositionDBConfig.php
-app/Config/UserLogDBConfig.php
-app/Config/CommentDBConfig.php
-
 storage/furigana/**
-
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
 storage/*/SQLite/ranking_position/ranking_position.db

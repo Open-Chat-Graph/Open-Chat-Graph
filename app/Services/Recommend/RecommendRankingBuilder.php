@@ -60,7 +60,7 @@ class RecommendRankingBuilder
             $ranking2,
             $ranking3,
             $ranking4,
-            file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']))
+            file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))
         );
 
         return $dto;

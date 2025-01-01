@@ -10,6 +10,7 @@ use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourInsertDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionHourRepository implements RankingPositionHourRepositoryInterface
 {
@@ -296,7 +297,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
 
     public function getLastHour(): string|false
     {
-        $categoryCount = count(AppConfig::$OPEN_CHAT_CATEGORY);
+        $categoryCount = count(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
 
         return RankingPositionDB::fetchColumn(
             "SELECT

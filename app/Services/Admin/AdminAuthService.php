@@ -6,7 +6,7 @@ namespace App\Services\Admin;
 
 use Shadow\StringCryptorInterface as StringCryptor;
 use Shared\Exceptions\UnauthorizedException;
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 
 class AdminAuthService
 {
@@ -30,7 +30,7 @@ class AdminAuthService
         }
 
         try {
-            $result = $this->cryptor->hkdfEquals(AdminConfig::ADMIN_API_KEY, cookie('admin'));
+            $result = $this->cryptor->hkdfEquals(SecretsConfig::$adminApiKey, cookie('admin'));
             if (!$result) {
                 cookie()->remove('admin');
                 cookie()->remove('admin-enable');
@@ -47,14 +47,14 @@ class AdminAuthService
 
     function registerAdminCookie(mixed $key): bool
     {
-        if ($key !== AdminConfig::ADMIN_API_KEY) {
+        if ($key !== SecretsConfig::$adminApiKey) {
             return false;
         }
 
         $expires = time() + 3600 * 24 * 365;
 
         cookie(
-            ['admin' => $this->cryptor->hashHkdf(AdminConfig::ADMIN_API_KEY)],
+            ['admin' => $this->cryptor->hashHkdf(SecretsConfig::$adminApiKey)],
             $expires
         );
 

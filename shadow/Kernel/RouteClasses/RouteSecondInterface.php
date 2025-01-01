@@ -94,7 +94,7 @@ interface RouteSecondInterface
      * @param array       $allowedMimeTypes Array of allowed mime types for the file.
      *                                      * **Example:** `['image/jpeg', 'image/png', 'image/gif', 'image/webp']`
      * 
-     * @param int         $maxFileSize      Maximum allowed file size in kilobytes (KB).
+     * @param ?int        $maxFileSize      Maximum allowed file size in kilobytes (KB).
      * @param bool        $emptyAble        Whether an empty file is allowed or not. Defaults to true.
      * @param string|null $requestMethod    The HTTP request method. If null, applies to all HTTP methods.
      *
@@ -112,7 +112,7 @@ interface RouteSecondInterface
     public function matchFile(
         string $parametaName,
         array $allowedMimeTypes,
-        int $maxFileSize = DEFAULT_MAX_FILE_SIZE,
+        ?int $maxFileSize = null,
         bool $emptyAble = true,
         ?string $requestMethod = null,
     ): static;

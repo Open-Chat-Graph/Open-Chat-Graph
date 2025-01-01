@@ -29,7 +29,7 @@ class OpenChatSubCategorySynchronizer
         );
 
         $result && safeFileRewrite(
-            getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategories']),
+            AppConfig::getStorageFilePath('openChatSubCategories'),
             json_encode($this->fetchedSubcategories, JSON_UNESCAPED_UNICODE)
         );
 

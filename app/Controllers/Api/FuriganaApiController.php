@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Furigana\YahooFuriganaService;
 use Shadow\Kernel\Reception;
@@ -30,7 +30,7 @@ class FuriganaApiController
         $data = getUnserializedFile($fileName);
 
         if (!$data) {
-            $data = $yahooFuriganaService->getFuriganaFromArray($strings, AdminConfig::YahooClientID, 2);
+            $data = $yahooFuriganaService->getFuriganaFromArray($strings, SecretsConfig::$yahooClientId, 2);
             saveSerializedFile($fileName, $data);
         }
 

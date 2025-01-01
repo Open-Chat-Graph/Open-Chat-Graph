@@ -11,15 +11,13 @@ class OpenChatSubCategorySynchronizerTest extends TestCase
 {
     public function test()
     {
-        overwriteUrlRoot('/th');
-
         /**
          * @var OpenChatSubCategorySynchronizer $test
          */
         $test = app(OpenChatSubCategorySynchronizer::class);
         $test->syncSubCategoriesAll();
 
-        $file = json_decode(file_get_contents(getStorageFilePath(AppConfig::STORAGE_FILES['openChatSubCategories'])), true);
+        $file = json_decode(file_get_contents(AppConfig::getStorageFilePath('openChatSubCategories')), true);
         debug($file);
 
         $this->assertTrue(is_array($file) && !empty($file));

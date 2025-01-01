@@ -6,6 +6,7 @@ use App\Config\AppConfig;
 use App\Models\RankingPositionDB\Repositories\RankingPositionHourRepository;
 use App\Services\RankingPosition\Store\RisingPositionStore;
 use PHPUnit\Framework\TestCase;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionHourRepositoryTest extends TestCase
 {
@@ -52,7 +53,7 @@ class RankingPositionHourRepositoryTest extends TestCase
          */
         $repo = app(RankingPositionHourRepository::class);
 
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $result = $repo->insertHourMemberFromDtoArray(...$test->getStorageData((string)$category));
             debug($result);
         }

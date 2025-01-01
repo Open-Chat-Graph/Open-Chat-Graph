@@ -8,8 +8,8 @@ use App\Config\AppConfig;
 
 class RankingPositionStore extends AbstractRankingPositionStore
 {
-    function __construct()
+    function filePath(): string
     {
-        $this->filePath = getStorageFilePath(AppConfig::STORAGE_FILES['openChatRankingPositionDir']);
+        return AppConfig::getStorageFilePath('openChatRankingPositionDir');
     }
 }

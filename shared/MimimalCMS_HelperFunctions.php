@@ -1,13 +1,15 @@
 <?php
 
 /**
- * MimimalCMS0.1 Helper functions test
+ * MimimalCMS v1 Helper functions test
  * 
  * @author mimimiku778 <0203.sub@gmail.com>
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
 
 declare(strict_types=1);
+
+use Shared\MimimalCmsConfig;
 
 /**
  * @return object|\Shadow\Kernel\Application
@@ -61,11 +63,13 @@ function response(mixed $data, int $responseCode = 200): \Shadow\Kernel\Response
  *
  * @param ?string $url      The url of path to be redirect.
  * @param int $responseCode [optional] HTTP status code
- * @param string $urlRoot   [optional] The root of the url. Default is the constant URL_ROOT.
+ * @param ?string $urlRoot   [optional] The root of the url. Default is `MimimalCmsConfig::$urlRoot`
  * @return \Shadow\Kernel\Response
  */
-function redirect(?string $url = null, int $responseCode = 302, string $urlRoot = URL_ROOT): \Shadow\Kernel\Response
+function redirect(?string $url = null, int $responseCode = 302, ?string $urlRoot = null): \Shadow\Kernel\Response
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     if ($url === null) {
         $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot);
     } elseif (!preg_match("~^(?:f|ht)tps?://~i", $url)) {
@@ -135,9 +139,9 @@ function cookie(
     null|string|array $value = null,
     int $expires = 0,
     string $path = '/',
-    string $samesite = COOKIE_DEFAULT_SAMESITE,
-    bool $secure = COOKIE_DEFAULT_SECURE,
-    bool $httpOnly = COOKIE_DEFAULT_HTTPONLY,
+    ?string $samesite = null,
+    ?bool $secure = null,
+    ?bool $httpOnly = null,
     string $domain = ''
 ): mixed {
     if ($value === null) {
@@ -145,7 +149,16 @@ function cookie(
     }
 
     if (is_array($value)) {
-        \Shadow\Kernel\Cookie::push($value, null, $expires, $path, $samesite, $secure, $httpOnly, $domain);
+        \Shadow\Kernel\Cookie::push(
+            $value,
+            null,
+            $expires,
+            $path,
+            $samesite,
+            $secure,
+            $httpOnly,
+            $domain
+        );
         return null;
     }
 
@@ -156,8 +169,8 @@ function cookie(
  * 
  * Returns the absolute path to the public directory, optionally with a subdirectory appended.
  * 
- * @param string $path [optional] The path to a subdirectory within the public directory. Default is the constant URL_ROOT.
- * @param string $publicDir [optional] The public directory path. Default is the constant PUBLIC_DIR.
+ * @param string $path [optional] The path to a subdirectory within the public directory.
+ * @param ?string $publicDir [optional] The public directory path. Default is the constant MimimalCmsConfig::$publicDir.
  * 
  * @return string      The absolute path to the public directory with the specified subdirectory appended (if provided).
  * 
@@ -165,8 +178,10 @@ function cookie(
  * * **Example :** Input: `publicDir("css/styles.css")`  Output: `/var/www/public/css/styles.css`
  * * **Example :** Input: `publicDir("/css/styles.css")`  Output: `/var/www/public/css/styles.css`
  */
-function publicDir(string $path = '', string $publicDir = PUBLIC_DIR): string
+function publicDir(string $path = '', ?string $publicDir = null): string
 {
+    $publicDir = $publicDir ?? MimimalCmsConfig::$publicDir;
+
     if ($path !== '') {
         $path = "/" . ltrim($path, "/");
     }
@@ -194,7 +209,7 @@ function url(string|array ...$paths): string
         $urlRoot = $paths[0]['urlRoot'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
         $paths = $paths[0]['paths'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
     } else {
-        $urlRoot = URL_ROOT;
+        $urlRoot = MimimalCmsConfig::$urlRoot;
     }
 
     $uri = '';
@@ -210,15 +225,17 @@ function url(string|array ...$paths): string
  * 
  * @param string $path       The path to use.
  * @param int    $pageNumber The page number to generate the URL for. If 1, the page number is omitted.
- * @param string $urlRoot    [optional] The root of the URL. Default is the constant URL_ROOT.
+ * @param ?string $urlRoot    [optional] The root of the URL. Default is `MimimalCmsConfig::$urlRoot`.
  * @return string The URL for the given page number.
  * 
  * * **Example :** Input: `pagerUrl("home", 5)`  Output: `https://exmaple.com/home/5`
  * * **Example :** Input: `pagerUrl("/home/", 5)`  Output: `https://exmaple.com/home/5`
  * * **Example :** Input: `pagerUrl("home", 1)`  Output: `https://exmaple.com/home`
  */
-function pagerUrl(string $path, int $pageNumber, string $urlRoot = URL_ROOT): string
+function pagerUrl(string $path, int $pageNumber, ?string $urlRoot = null): string
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     if ($path !== '') {
         $path = "/" . ltrim(rtrim($path, "/"), "/");
     }
@@ -230,14 +247,16 @@ function pagerUrl(string $path, int $pageNumber, string $urlRoot = URL_ROOT): st
 /**
  * Returns the current request path.
  *
- * @param string $urlRoot [optional] The root of the URL. Default is the constant URL_ROOT.
+ * @param ?string $urlRoot [optional] The root of the URL. Default is `MimimalCmsConfig::$urlRoot`.
  * 
  * @return string The current request path.
  *
  * * **Example :** Output: `/home`
  */
-function path(string $urlRoot = URL_ROOT): string
+function path(?string $urlRoot = null): string
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     return \Shadow\Kernel\Utility\KernelUtility::getCurrentUri($urlRoot);
 }
 
@@ -534,49 +553,6 @@ function isWithinHalfExpires(int $futureUnixTime, int $expirationTimeInSeconds):
 }
 
 /**
- * Read or write to a text file with exclusive lock and optional new content.
- *
- * @param string $filePath The path of the file to read or write.
- * @param string|null $newContent The new content to write (null for read-only).
- * @return string|null The file's content if reading, null if writing.
- * @throws \RuntimeException If there is an error opening the file or acquiring an exclusive lock.
- */
-function readWriteTextFileWithExclusiveLock(string $filePath, ?string $newContent = null): ?string
-{
-    $mode = $newContent === null ? 'r' : 'w'; // Use 'r' for reading, 'w' for writing
-
-    // Open the file for reading or writing
-    $fileHandle = fopen($filePath, $mode);
-
-    if (!$fileHandle) {
-        throw new \RuntimeException("Failed to open the file: $filePath");
-    }
-
-    try {
-        if (flock($fileHandle, LOCK_EX)) {
-            if ($newContent !== null) {
-                // If new content is provided, write it and return null
-                ftruncate($fileHandle, 0); // Clear the file
-                fwrite($fileHandle, $newContent);
-                fflush($fileHandle);
-                return null;
-            } else {
-                // If no new content is provided, read and return the file's content
-                $content = '';
-                while (!feof($fileHandle)) {
-                    $content .= fread($fileHandle, 8192); // Read in chunks
-                }
-                return $content;
-            }
-        } else {
-            throw new \RuntimeException('Failed to acquire an exclusive lock.');
-        }
-    } finally {
-        fclose($fileHandle); // Always close the file handle, even on exceptions
-    }
-}
-
-/**
  * Safely rewrites the content of the specified file by first writing to a temporary file
  * and then renaming it to the target file. It ensures that the target file always
  * contains complete and uncorrupted data.
@@ -605,8 +581,8 @@ function safeFileRewrite(string $targetFile, string $content, int $permissions =
  * Generates a versioned file URL based on the provided file path. If the file exists, a URL with a version query parameter is returned.
  *
  * @param string $filePath The path to the file, relative to the public directory.
- * @param string $publicDir [optional] The public directory path. Default is the constant PUBLIC_DIR.
- * @param string $urlRoot   [optional] The root of the url. Default is the constant URL_ROOT.
+ * @param ?string $publicDir [optional] The public directory path. Default is the constant MimimalCmsConfig::$publicDir.
+ * @param ?string $urlRoot   [optional] The root of the url. Default is `MimimalCmsConfig::$urlRoot`.
  * 
  * @return string The versioned file URL.
  * 
@@ -623,8 +599,11 @@ function safeFileRewrite(string $targetFile, string $content, int $permissions =
  * If the file "images/logo.png" doesn't exist in the public directory, the output will be: 
  * `"http://example.com/images/logo.png"`
  */
-function fileUrl(string $filePath, string $publicDir = PUBLIC_DIR, string $urlRoot = URL_ROOT): string
+function fileUrl(string $filePath, ?string $publicDir = null, ?string $urlRoot = null): string
 {
+    $publicDir = $publicDir ?? MimimalCmsConfig::$publicDir;
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     $filePath = "/" . ltrim($filePath, "/");
     $fullFilePath = $publicDir . $filePath;
 

@@ -8,13 +8,13 @@ use Shadow\ApplicationExceptionHandlerInterface;
 
 class ApplicationExceptionHandler implements ApplicationExceptionHandlerInterface
 {
-    const EXCEPTION_MAP = [
+    public static array $exceptionMap = [
         \App\Exceptions\ApplicationException::class => 'app',
     ];
 
     public static function handleException(\Throwable $e, string $className)
     {
-        echo self::EXCEPTION_MAP[$className] . ': ';
+        echo static::$exceptionMap[$className] . ': ';
         echo $e->getMessage();
     }
 }

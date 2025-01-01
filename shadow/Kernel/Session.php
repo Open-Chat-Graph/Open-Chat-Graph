@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shadow\Kernel;
 
+use Shared\MimimalCmsConfig;
+
 /**
  * Handle sessions and flash messages.
  * 
@@ -15,35 +17,35 @@ class Session implements SessionInterface
     public static function push(string|array $key, mixed $value = null)
     {
         if (is_array($key)) {
-            if (!isset($_SESSION[SESSION_KEY_NAME]) || !is_array($_SESSION[SESSION_KEY_NAME])) {
-                $_SESSION[SESSION_KEY_NAME] = [];
+            if (!isset($_SESSION[MimimalCmsConfig::$sessionKeyName]) || !is_array($_SESSION[MimimalCmsConfig::$sessionKeyName])) {
+                $_SESSION[MimimalCmsConfig::$sessionKeyName] = [];
             }
 
-            $_SESSION[SESSION_KEY_NAME] = array_merge($_SESSION[SESSION_KEY_NAME], $key);
+            $_SESSION[MimimalCmsConfig::$sessionKeyName] = array_merge($_SESSION[MimimalCmsConfig::$sessionKeyName], $key);
             return;
         }
 
-        $_SESSION[SESSION_KEY_NAME][$key] = $value;
+        $_SESSION[MimimalCmsConfig::$sessionKeyName][$key] = $value;
     }
 
     public static function flash(string|array $key, mixed $value = null)
     {
         if (is_array($key)) {
-            if (!isset($_SESSION[FLASH_SESSION_KEY_NAME]) || !is_array($_SESSION[FLASH_SESSION_KEY_NAME])) {
-                $_SESSION[FLASH_SESSION_KEY_NAME] = [];
+            if (!isset($_SESSION[MimimalCmsConfig::$flashSessionKeyName]) || !is_array($_SESSION[MimimalCmsConfig::$flashSessionKeyName])) {
+                $_SESSION[MimimalCmsConfig::$flashSessionKeyName] = [];
             }
 
-            $_SESSION[FLASH_SESSION_KEY_NAME] = array_merge($_SESSION[FLASH_SESSION_KEY_NAME], $key);
+            $_SESSION[MimimalCmsConfig::$flashSessionKeyName] = array_merge($_SESSION[MimimalCmsConfig::$flashSessionKeyName], $key);
             return;
         }
 
-        $_SESSION[FLASH_SESSION_KEY_NAME][$key] = $value;
+        $_SESSION[MimimalCmsConfig::$flashSessionKeyName][$key] = $value;
     }
 
     public static function remove(string $key): bool
     {
-        if (isset($_SESSION[SESSION_KEY_NAME][$key])) {
-            unset($_SESSION[SESSION_KEY_NAME][$key]);
+        if (isset($_SESSION[MimimalCmsConfig::$sessionKeyName][$key])) {
+            unset($_SESSION[MimimalCmsConfig::$sessionKeyName][$key]);
             return true;
         }
 
@@ -53,7 +55,7 @@ class Session implements SessionInterface
     public static function flush()
     {
         Reception::$flashSession = [];
-        $_SESSION[SESSION_KEY_NAME] = [];
+        $_SESSION[MimimalCmsConfig::$sessionKeyName] = [];
     }
 
     public static function get(string $key, mixed $default = null): mixed
@@ -62,8 +64,8 @@ class Session implements SessionInterface
             return Reception::$flashSession[$key];
         }
 
-        if (isset($_SESSION[SESSION_KEY_NAME][$key])) {
-            return $_SESSION[SESSION_KEY_NAME][$key];
+        if (isset($_SESSION[MimimalCmsConfig::$sessionKeyName][$key])) {
+            return $_SESSION[MimimalCmsConfig::$sessionKeyName][$key];
         }
 
         return $default;
@@ -75,7 +77,7 @@ class Session implements SessionInterface
             return true;
         }
 
-        if (isset($_SESSION[SESSION_KEY_NAME][$key])) {
+        if (isset($_SESSION[MimimalCmsConfig::$sessionKeyName][$key])) {
             return true;
         }
 
@@ -84,7 +86,7 @@ class Session implements SessionInterface
 
     public static function addError(string $key, int $code = 0, string $message = '')
     {
-        $_SESSION[FLASH_SESSION_KEY_NAME]['ERRORS_ARRAY'][$key] = ['code' => $code, 'message' => $message];
+        $_SESSION[MimimalCmsConfig::$flashSessionKeyName]['ERRORS_ARRAY'][$key] = ['code' => $code, 'message' => $message];
     }
 
     public static function getError(?string $key = null): array
@@ -126,6 +128,6 @@ class Session implements SessionInterface
             }
         }
 
-        $_SESSION[FLASH_SESSION_KEY_NAME]['OLD_ARRAY'] = $input;
+        $_SESSION[MimimalCmsConfig::$flashSessionKeyName]['OLD_ARRAY'] = $input;
     }
 }

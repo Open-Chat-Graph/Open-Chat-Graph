@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\CommentRepositories\Dto;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 
 class CommentListApi
 {
@@ -30,7 +30,7 @@ class CommentListApi
                 'text' => $this->text,
                 'time' => $this->time,
                 'userId' => match ($this->flag) {
-                    0 => $this->userId === AdminConfig::ADMIN_API_KEY ? '管理者' : base62Hash($this->userId, 'fnv132'),
+                    0 => $this->userId === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($this->userId, 'fnv132'),
                     1 => '削除済',
                     2 => '通報により削除済',
                 }

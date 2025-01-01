@@ -3,6 +3,7 @@
 namespace Shared\Exceptions;
 
 use App\Controllers\Pages\NotFoundPageController;
+use Shared\MimimalCmsConfig;
 
 /**
  * ErrorPage class to handle displaying error message and generating Github URLs for error lines
@@ -69,24 +70,23 @@ class ErrorPage
      */
     public function __construct()
     {
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_GITHUB_URL';
-        if (defined($flagName) && is_string($url = constant($flagName))) {
-            $this->githubUrl = $url;
+        $config = MimimalCmsConfig::class;
+        if (class_exists($config) && isset($config::$errorPageGitHubUrl)) {
+            $this->githubUrl = $config::$errorPageGitHubUrl;
         } else {
             return;
         }
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_DOCUMENT_ROOT_NAME';
-        if (defined($flagName) && is_string($dir = constant($flagName))) {
+        if (isset($config::$errorPageDocumentRootName)) {
+            $dir = $config::$errorPageDocumentRootName;
             $this->THROW_LINE_PATTERN = "/in.+{$dir}\/(.+)\(\d+\)/";
             $this->PHP_ERROR_LINE_PATTERN = "/\/{$dir}\/(.*) on line (\d+)/";
             $this->STACKTRACE_FILE_PATH_PATTERN = "/(#\d+) .+{$dir}\/(.+)\(\d+\)/";
             $this->LINE_NUMBER_PATTERN = "/\.php\((\d+)\)/";
         }
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_HIDE_DRECTORY';
-        if (defined($flagName) && is_string($dir = constant($flagName))) {
-            $this->hiddenDir = $dir;
+        if (isset($config::$errorPageHideDirectory)) {
+            $this->hiddenDir = $config::$errorPageHideDirectory;
         }
     }
 
@@ -335,6 +335,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
             $c->index()->render();
         } catch (\Throwable $e) {
             echo 'データ取得エラー';
+            pre_var_dump($e->__toString());
         }
         ?>
     <?php endif ?>

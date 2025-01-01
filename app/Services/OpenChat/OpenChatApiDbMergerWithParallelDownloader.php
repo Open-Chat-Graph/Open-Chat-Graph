@@ -15,6 +15,7 @@ use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
 use App\Services\RankingPosition\Store\RankingPositionStore;
 use App\Services\RankingPosition\Store\RisingPositionStore;
+use Shared\MimimalCmsConfig;
 
 class OpenChatApiDbMergerWithParallelDownloader
 {
@@ -30,7 +31,7 @@ class OpenChatApiDbMergerWithParallelDownloader
         $this->setKillFlagFalse();
         $this->stateRepository->cleanUpAll();
 
-        $categoryArray = array_values(OpenChatCrawlerConfig::$parallelDownloaderCategoryOrder);
+        $categoryArray = array_values(OpenChatCrawlerConfig::PARALLEL_DOWNLOADER_CATEGORY_ORDER[MimimalCmsConfig::$urlRoot]);
         $categoryReverse = array_reverse($categoryArray);
         foreach ($categoryArray as $key => $category) {
             $this->download([[RankingType::Ranking, $category], [RankingType::Rising, $categoryReverse[$key]]]);
@@ -58,7 +59,7 @@ class OpenChatApiDbMergerWithParallelDownloader
             array_map(fn($arg) => ['type' => $arg[0]->value, 'category' => $arg[1]], $args)
         ));
 
-        $arg2 = escapeshellarg(URL_ROOT);
+        $arg2 = escapeshellarg(MimimalCmsConfig::$urlRoot);
 
         $path = AppConfig::ROOT_PATH . 'batch/exec/exec_parallel_downloader.php';
         exec(PHP_BINARY . " {$path} {$arg} {$arg2} >/dev/null 2>&1 &");
@@ -75,7 +76,7 @@ class OpenChatApiDbMergerWithParallelDownloader
             RankingType::Ranking => $this->rankingStore->getStorageData((string)$category)[1],
         };
 
-        $log = $type->value . " " . array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category];
+        $log = $type->value . " " . array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category];
         addCronLog("merge start: {$log}");
 
         foreach ($dtos as $dto)

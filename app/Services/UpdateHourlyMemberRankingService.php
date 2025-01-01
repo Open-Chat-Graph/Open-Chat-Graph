@@ -38,7 +38,7 @@ class UpdateHourlyMemberRankingService
 
     private function getCachedFilters(string $time)
     {
-        $filters = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['openChatHourFilterId']));
+        $filters = getUnserializedFile(AppConfig::getStorageFilePath('openChatHourFilterId'));
         return $filters
             ? $filters
             : $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
@@ -47,14 +47,14 @@ class UpdateHourlyMemberRankingService
     private function saveNextFiltersCache(string $time)
     {
         saveSerializedFile(
-            getStorageFilePath(AppConfig::STORAGE_FILES['openChatHourFilterId']),
+            AppConfig::getStorageFilePath('openChatHourFilterId'),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d')),
         );
     }
 
     private function updateStaticData(string $time)
     {
-        safeFileRewrite(getStorageFilePath(AppConfig::STORAGE_FILES['hourlyCronUpdatedAtDatetime']), $time);
+        safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
         $this->staticDataGenerator->updateStaticData();
         $this->recommendStaticDataGenerator->updateStaticData();
     }

@@ -19,7 +19,7 @@ class StaticDataFile
 
     function getTopPageData(): StaticTopPageDto
     {
-        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['topPageRankingData']));
+        $data = getUnserializedFile(AppConfig::getStorageFilePath('topPageRankingData'));
 
         /** @var StaticTopPageDto $data */
         if (!$data) {
@@ -35,7 +35,7 @@ class StaticDataFile
     function getRankingArgDto(): RankingArgDto
     {
         /** @var RankingArgDto $data */
-        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['rankingArgDto']));
+        $data = getUnserializedFile(AppConfig::getStorageFilePath('rankingArgDto'));
         //$data = null;
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -52,7 +52,7 @@ class StaticDataFile
     function getRecommendPageDto(): StaticRecommendPageDto
     {
         /** @var StaticRecommendPageDto $data */
-        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['recommendPageDto']));
+        $data = getUnserializedFile(AppConfig::getStorageFilePath('recommendPageDto'));
         //$data = null;
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -68,14 +68,14 @@ class StaticDataFile
     function getTagList(): array
     {
         /** @var array $data */
-        $data = getUnserializedFile(getStorageFilePath(AppConfig::STORAGE_FILES['tagList']));
+        $data = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
         if (!$data) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getTagList();
         }
 
-        $time = getStorageFileTime(getStorageFilePath(AppConfig::STORAGE_FILES['tagList']));
+        $time = getStorageFileTime(AppConfig::getStorageFilePath('tagList'));
         if (!$time || new \DateTime('@' . $time) < new \DateTime(getHouryUpdateTime()))
             noStore();
 

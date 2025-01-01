@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\RankingBan;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Models\Importer\SqlInsert;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface;
@@ -191,8 +191,8 @@ class RankingBanTableUpdater
         );
 
         // 開発環境の場合、更新制限をかける
-        if (AdminConfig::IS_DEVELOPMENT ?? false) {
-            $limit = AdminConfig::DEVELOPMENT_ENV_UPDATE_LIMIT['RankingBanTableUpdater'] ?? 1;
+        if (SecretsConfig::$isDevlopment ?? false) {
+            $limit = SecretsConfig::$developmentEnvUpdateLimit['RankingBanTableUpdater'] ?? 1;
             $openChatArrayCount = count($openChatArray);
             $openChatArray = array_slice($openChatArray, 0, $limit);
             $existsListArray = array_slice($existsListArray, 0, $limit);

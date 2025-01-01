@@ -5,6 +5,7 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendUtility;
+use Shared\MimimalCmsConfig;
 
 if ($recommend->type === RecommendListType::Category) {
     $title = "「{$recommend->listName}」カテゴリー";
@@ -35,7 +36,7 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::$OPEN_CHAT_CATEGORY[htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot][htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">
             <span class="ranking-readMore">「<?php echo $recommend->listName ?>」カテゴリーをもっと見る</span>
         </a>
     <?php elseif ($recommend->type === RecommendListType::Official) : ?>

@@ -13,7 +13,8 @@ abstract class AbstractRankingPositionStore
      * @var OpenChatDto[] $apiDtoCache
      */
     protected array $apiDtoCache = [];
-    protected string $filePath;
+
+    abstract function filePath(): string;
 
     function addApiDto(OpenChatDto $apiDto)
     {
@@ -23,7 +24,7 @@ abstract class AbstractRankingPositionStore
     function clearAllCacheDataAndSaveCurrentCategoryApiDataCache(string $category): void
     {
         saveSerializedFile(
-            $this->filePath . "/{$category}.dat",
+            $this->filePath() . "/{$category}.dat",
             $this->apiDtoCache,
         );
 
@@ -35,7 +36,7 @@ abstract class AbstractRankingPositionStore
      */
     function getStorageData(string $category): array
     {
-        $file = $this->filePath . "/{$category}.dat";
+        $file = $this->filePath() . "/{$category}.dat";
         $data = getUnserializedFile($file);
         if (!is_array($data)) {
             throw new \RuntimeException('invalid ranking data file: ' . $file);
@@ -47,16 +48,16 @@ abstract class AbstractRankingPositionStore
 
     function deleteApiDtoStorageAll(): void
     {
-        deleteStorageFileAll($this->filePath, true);
+        deleteStorageFileAll($this->filePath(), true);
     }
 
     function getFileDateTime(string $category = '0'): \DateTime
     {
-        if (!file_exists($this->filePath . "/{$category}.dat")) {
+        if (!file_exists($this->filePath() . "/{$category}.dat")) {
             return new \DateTime('2024-02-17 00:00:00');
         }
 
-        return $this->getModifiedFileTime($this->filePath . "/{$category}.dat");
+        return $this->getModifiedFileTime($this->filePath() . "/{$category}.dat");
     }
 
     protected function getModifiedFileTime(string $fileName): \DateTime

@@ -3,6 +3,7 @@
 <?php
 
 use App\Views\Ads\GoogleAdsence as GAd;
+use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
@@ -148,7 +149,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 return
             }
 
-            fetch('<?php echo URL_ROOT ?>/mylist-api')
+            fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api')
                 .then((res) => {
                     if (res.status === 200)
                         return res.text();
@@ -177,7 +178,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             getComment
         } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-        getComment(0, '<?php echo URL_ROOT ?>')
+        getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
     </script>
 
     <?php echo $_meta->generateTopPageSchema() ?>
