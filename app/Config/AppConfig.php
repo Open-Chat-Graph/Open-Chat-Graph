@@ -23,8 +23,11 @@ class AppConfig
     const LINE_APP_URL = 'line://ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
-    // TODO:多言語対応
-    const OPENCHAT_IMG_PATH = 'oc-img';
+    const OPENCHAT_IMG_PATH = [
+        '' =>    'oc-img',
+        '/tw' => 'oc-img-tw',
+        '/th' => 'oc-img-th',
+    ];
 
     const OPENCHAT_IMG_PREVIEW_PATH = 'preview';
     const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p';
