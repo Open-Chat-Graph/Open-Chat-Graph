@@ -252,19 +252,19 @@ function getDailyUpdateTime()
 
 function imgUrl(int $id, string $local_img_url): string
 {
-    return url((in_array(
+    return url(["urlRoot" => '', "paths" => [(in_array(
         $local_img_url,
         AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH
-    ) ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/default/{$local_img_url}.webp?id={$id}" : getImgPath($id, $local_img_url)));
+    ) ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/default/{$local_img_url}.webp?id={$id}" : getImgPath($id, $local_img_url))]]);
 }
 
 function imgPreviewUrl(int $id, string $local_img_url): string
 {
-    return url((
+    return url(["urlRoot" => '', "paths" => [(
         in_array($local_img_url, AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH)
         ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/default/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp?id={$id}"
         : getImgPreviewPath($id, $local_img_url)
-    ));
+    )]]);
 }
 
 function apiImgUrl(int $id, string $local_img_url): string

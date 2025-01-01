@@ -11,11 +11,16 @@ Thumbs.db
 
 /logs/*
 
-/public/oc-img*/*
-!/public/oc-img*/default
-!/public/oc-img*/preview
-/public/oc-img*/preview/*
-!/public/oc-img*/preview/default
+/public/oc-img/*
+/public/*/oc-img/*
+!/public/oc-img/default
+!/public/*/oc-img/default
+!/public/oc-img/preview
+!/public/*/oc-img/preview
+/public/oc-img/preview/*
+/public/*/oc-img/preview/*
+!/public/oc-img/preview/default
+!/public/*/oc-img/preview/default
 
 public/sitemaps/**
 public/sitemap.xml
