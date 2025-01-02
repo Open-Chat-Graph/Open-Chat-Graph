@@ -198,6 +198,6 @@ class OpenChatListRepository implements OpenChatListRepositoryInterface
      */
     public function getOpenChatSiteMapData(): array
     {
-        return DB::fetchAll("SELECT id, updated_at FROM open_chat");
+        return DB::fetchAll("SELECT id, updated_at FROM open_chat ORDER BY id ASC");
     }
 }
