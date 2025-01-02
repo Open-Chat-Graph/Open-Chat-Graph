@@ -11,6 +11,7 @@ use App\Services\Recommend\TopPageRecommendList;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Views\Dto\RankingArgDto;
+use Shared\MimimalCmsConfig;
 
 class StaticDataGenerator
 {
@@ -50,28 +51,41 @@ class StaticDataGenerator
         $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')), true);
         $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
         $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));;
-        $_argDto->subCategories = json_decode(
+
+        $subCategories = json_decode(
             file_exists(AppConfig::getStorageFilePath('openChatSubCategories'))
                 ? file_get_contents(AppConfig::getStorageFilePath('openChatSubCategories'))
                 : '{}',
             true
         );
-
-        if (isset($_argDto->subCategories[6])) {
-            $key = array_search('オプチャ宣伝', $_argDto->subCategories[6]);
-            if ($key !== false) {
-                $_argDto->subCategories[6][$key] = 'オプチャ 宣伝';
-            }
-
-            $key = array_search('悩み相談', $_argDto->subCategories[6]);
-            if ($key !== false) {
-                $_argDto->subCategories[6][$key] = '悩み 相談';
-            }
-
-            $_argDto->subCategories[6] = array_values($_argDto->subCategories[6]);
-        }
+        $_argDto->subCategories = $this->replaceSubcategoryName($subCategories);
 
         return $_argDto;
+    }
+
+    private function replaceSubcategoryName(array $subCategories): array
+    {
+        switch (MimimalCmsConfig::$urlRoot) {
+            case '':
+                if (isset($subCategories[6])) {
+                    $key = array_search('オプチャ宣伝', $subCategories[6]);
+                    if ($key !== false) {
+                        $subCategories[6][$key] = 'オプチャ 宣伝';
+                    }
+
+                    $key = array_search('悩み相談', $subCategories[6]);
+                    if ($key !== false) {
+                        $subCategories[6][$key] = '悩み 相談';
+                    }
+                }
+                break;
+            case '/tw':
+                break;
+            case '/th':
+                break;
+        }
+
+        return $subCategories;
     }
 
     function getRecommendPageDto(): StaticRecommendPageDto
