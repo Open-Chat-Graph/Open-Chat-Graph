@@ -65,7 +65,7 @@ class OpenChatPageController
 
     private function buildHourlyRange(array $oc): ?string
     {
-        if (!isset($oc['rh_diff_member']) || $oc['rh_diff_member'] < AppConfig::MIN_MEMBER_DIFF_HOUR)
+        if (!isset($oc['rh_diff_member']) || $oc['rh_diff_member'] < AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR)
             return null;
 
         $hourlyUpdatedAt =  new \DateTime(getHouryUpdateTime());

@@ -14,7 +14,7 @@ class CookieListService
     private array $myListArray = [];
     private int $expires;
 
-    function init(string $cookieName = 'myList', $myListLimit = AppConfig::MY_LIST_LIMIT): bool
+    function init(string $cookieName = 'myList', $myListLimit = AppConfig::LIST_LIMIT_MY_LIST): bool
     {
         if (!cookie()->has($cookieName)) {
             return false;

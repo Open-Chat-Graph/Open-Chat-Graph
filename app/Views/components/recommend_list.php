@@ -36,7 +36,7 @@ use App\Services\Recommend\Enum\RecommendListType;
         <ul class="recommend-list">
             <?php foreach ($recommend->getList(false) as $roc) : ?>
                 <li class="<?php if ($roc['id'] === $id) echo 'selected' ?>">
-                    <a class="rectangle" <?php if ($roc['id'] !== $id) echo 'href="' . url('/oc/' . $roc['id']) . ($roc['table_name'] === AppConfig::RankingHourTable || $roc['table_name'] === AppConfig::RankingDayTable ? '?limit=hour' : '') . '"' ?>>
+                    <a class="rectangle" <?php if ($roc['id'] !== $id) echo 'href="' . url('/oc/' . $roc['id']) . ($roc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $roc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME ? '?limit=hour' : '') . '"' ?>>
                         <img loading="lazy" alt="<?php echo $roc['name'] ?>" src="<?php echo imgPreviewUrl($roc['id'], $roc['img_url']) ?>" />
                         <h4>
                             <?php if (($roc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp" style="margin: 0; margin-right: -2px; margin-top: -3px; scale: 0.65;"></span><?php elseif (($roc['emblem'] ?? 0) === 2) : ?><span class="super-icon official" style="margin: 0; margin-right: -2px; margin-top: -3px; scale: 0.65;"></span><?php endif ?><?php if (($roc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><?php echo $roc['name'] ?>
@@ -49,13 +49,13 @@ use App\Services\Recommend\Enum\RecommendListType;
                                 <?php else : ?>
                                     <span>メンバー <?php echo formatMember($roc['member']) ?>人</span>
                                 <?php endif ?>
-                                <?php if ($roc['table_name'] === AppConfig::RankingHourTable) : ?>
+                                <?php if ($roc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME) : ?>
                                     <span aria-hidden="true" style="margin: 0 -3px; font-size: 9px; user-select: none;">🔥</span>
                                 <?php endif ?>
-                                <?php if ($roc['table_name'] === AppConfig::RankingDayTable) : ?>
+                                <?php if ($roc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME) : ?>
                                     <span aria-hidden="true" style="margin: 0 -2px; font-size: 9px; user-select: none;">🚀</span>
                                 <?php endif ?>
-                                <?php if ($roc['table_name'] === AppConfig::RankingWeekTable) : ?>
+                                <?php if ($roc['table_name'] === AppConfig::RANKING_WEEK_TABLE_NAME) : ?>
                                     <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
                                         <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
                                     </svg>

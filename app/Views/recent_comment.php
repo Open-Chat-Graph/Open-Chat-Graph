@@ -111,7 +111,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent(
                 'open_chat_list_ranking_comment2',
                 compact('openChatList') + [
-                    'listLen' => AppConfig::RECENT_COMMENT_LIST_LIMIT,
+                    'listLen' => AppConfig::LIST_LIMIT_RECENT_COMMENT,
                     'omitDeleted' => false,
                     'showAds' => true
                 ]

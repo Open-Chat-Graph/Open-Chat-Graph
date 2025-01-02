@@ -41,14 +41,14 @@ class OpenChatRankingPageApiController
         if ($keyword && str_starts_with($keyword, 'tag:')) {
             $this->args->tag = str_replace('tag:', '', $keyword);
         } elseif ($keyword && str_starts_with($keyword, 'badge:')) {
-            $this->args->badge = $this->velidateBadge(str_replace('badge:', '', $keyword));
+            $this->args->badge = $this->validateBadge(str_replace('badge:', '', $keyword));
             $this->args->keyword = $keyword;
         } elseif ($keyword) {
             $this->args->keyword = $keyword;
         }
     }
 
-    private function velidateBadge(string $word)
+    private function validateBadge(string $word)
     {
         if ($word === 'スペシャルオープンチャット') {
             return 1;

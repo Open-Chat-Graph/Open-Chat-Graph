@@ -33,7 +33,7 @@ class RecommendListDto
 
     private function getSliceLength(int $count)
     {
-        $count = AppConfig::RECOMMEND_LIST_LIMIT - $count;
+        $count = AppConfig::LIST_LIMIT_RECOMMEND - $count;
         return max($count, 0);
     }
 
@@ -121,7 +121,7 @@ class RecommendListDto
         return $tags;
     }
 
-    function getList(bool $shuffle = true, ?int $limit = AppConfig::TOP_RANKING_LIST_LIMIT, int $excludeId = 0): array
+    function getList(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING, int $excludeId = 0): array
     {
         $elements = $shuffle ? $this->buildShuffledList() : $this->mergedElements;
         if ($excludeId) $elements = array_filter($elements, fn ($el) => $el['id'] !== $excludeId);
@@ -142,7 +142,7 @@ class RecommendListDto
     }
 
     /** @return string[] */
-    function getFilterdTags(bool $shuffle = true, ?int $limit = AppConfig::TOP_RANKING_LIST_LIMIT): array
+    function getFilterdTags(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING): array
     {
         return $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
     }

@@ -18,13 +18,13 @@ class RecentOpenChatPageController
         private SelectElementPagination $pagination,
         private PageBreadcrumbsListSchema $breadcrumbsShema
     ) {}
-
+    
     function index(AdminAuthService $adminAuthService)
     {
         $recentPage = Reception::input('page');
         $rankingList = $this->openChatStatsRecent->getAllOrderByRegistrationDate(
             $recentPage,
-            AppConfig::OPEN_CHAT_LIST_LIMIT
+            AppConfig::LIST_LIMIT_RECENTLY_REGISTERED
         );
 
         if (!$rankingList) {
@@ -44,7 +44,7 @@ class RecentOpenChatPageController
             '',
             $rankingList['pageNumber'],
             $rankingList['totalRecords'],
-            AppConfig::OPEN_CHAT_LIST_LIMIT,
+            AppConfig::LIST_LIMIT_RECENTLY_REGISTERED,
             $rankingList['maxPageNumber'],
             $rankingList['labelArray']
         );

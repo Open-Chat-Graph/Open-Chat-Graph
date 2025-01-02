@@ -59,7 +59,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
         <div class="talkroom_number_of_stats">
 
-          <?php if (isset($oc['rh24_diff_member']) && $oc['rh24_diff_member'] >= AppConfig::MIN_MEMBER_DIFF_H24) : ?>
+          <?php if (isset($oc['rh24_diff_member']) && $oc['rh24_diff_member'] >= AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) : ?>
             <div class="number-box " style="margin-right: 6px;">
               <span aria-hidden="true" style="margin-right: 1px; font-size: 9px; user-select: none;">🚀</span>
               <span class="openchat-itme-stats-title">24時間</span>
@@ -80,7 +80,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
             </div>
           <?php endif ?>
 
-          <?php if (isset($oc['diff_member2']) && $oc['diff_member2'] >= AppConfig::MIN_MEMBER_DIFF_H24) : ?>
+          <?php if (isset($oc['diff_member2']) && $oc['diff_member2'] >= AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) : ?>
             <div class="number-box " style="margin-right: 6px;">
               <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
                 <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
@@ -370,7 +370,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     } from '<?php echo fileUrl('/js/JsonCookie.js', urlRoot: '') ?>'
 
     const OPEN_CHAT_ID = <?php echo $oc['id'] ?>;
-    const MY_LIST_LIMIT = <?php echo AppConfig::MY_LIST_LIMIT ?>;
+    const LIST_LIMIT_MY_LIST = <?php echo AppConfig::LIST_LIMIT_MY_LIST ?>;
 
     const myListCheckbox = document.getElementById('my-list-checkbox')
     const myListJsonCookie = new JsonCookie('myList')
@@ -392,7 +392,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         return
       }
 
-      if (listLen > MY_LIST_LIMIT) {
+      if (listLen > LIST_LIMIT_MY_LIST) {
         // リストの上限数を超えている場合
         const label = document.querySelector('.my-list-form label span')
         label.textContent = 'ピン留めの最大数を超えました。'
