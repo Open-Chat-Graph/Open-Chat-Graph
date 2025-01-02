@@ -63,8 +63,8 @@ class SitemapGenerator
         $sitemap->addItem($this->currentUrl . 'oc');
         $sitemap->addItem($this->currentUrl . 'policy');
         $sitemap->addItem($this->currentUrl . 'ranking', lastmod: $datetime);
-        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:スペシャルオープンチャット'), lastmod: $datetime);
-        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:公式認証オープンチャット'), lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]), lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2]), lastmod: $datetime);
 
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $category && $sitemap->addItem($this->currentUrl . 'ranking/' . $category, lastmod: $datetime);

@@ -50,11 +50,11 @@ class OpenChatRankingPageApiController
 
     private function validateBadge(string $word)
     {
-        if ($word === 'スペシャルオープンチャット') {
+        if ($word === AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]) {
             return 1;
-        } elseif ($word === '公式認証オープンチャット') {
+        } elseif ($word === AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2]) {
             return 2;
-        } elseif ($word === 'すべて') {
+        } elseif ($word === AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][3]) {
             return 3;
         } else {
             return 0;

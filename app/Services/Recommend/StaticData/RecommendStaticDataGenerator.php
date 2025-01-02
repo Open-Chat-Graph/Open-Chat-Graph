@@ -47,8 +47,8 @@ class RecommendStaticDataGenerator
     function getOfficialRanking(int $emblem): RecommendListDto
     {
         $listName = match ($emblem) {
-            1 => 'スペシャルオープンチャット',
-            2 => '公式認証オープンチャット',
+            1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
+            2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
             default => ''
         };
 

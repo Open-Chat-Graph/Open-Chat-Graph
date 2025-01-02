@@ -37,6 +37,24 @@ class AppConfig
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;
 
+    const OFFICIAL_EMBLEMS = [
+        '' => [
+            1 => 'スペシャルオープンチャット',
+            2 => '公式認証バッジ',
+            3 => 'すべて',
+        ],
+        '/tw' => [
+            1 => 'Special Open Chat',
+            2 => 'Official certification badge',
+            3 => 'All',
+        ],
+        '/th' => [
+            1 => 'Special Open Chat',
+            2 => 'Official certification badge',
+            3 => 'All',
+        ],
+    ];
+
     const OPEN_CHAT_CATEGORY = [
         '' => [
             'ゲーム' => 17,
