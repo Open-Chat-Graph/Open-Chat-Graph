@@ -24,7 +24,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
         <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php if ($newComment) : ?>
@@ -32,7 +32,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
