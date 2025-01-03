@@ -1,6 +1,6 @@
 <div class="list-aside">
     <h3 class="list-title">
-        <span>関連のテーマ</span>
+        <span>「<?php echo $tag ?>」に関連するテーマ</span>
     </h3>
     <?php if (isset($desc)) : ?>
         <?php viewComponent('recommend_tag_desc') ?>
