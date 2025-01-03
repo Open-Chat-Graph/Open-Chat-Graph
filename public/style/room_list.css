@@ -464,13 +464,13 @@
 
 .top-ranking:not(.not-rank) .openchat-item {
   min-height: 56px;
-  margin: 13px 1.5rem 13px 30px;
+  margin: 13px 0rem 13px 30px;
   margin-left: 1.5rem;
 }
 
 .top-ranking.not-rank .openchat-item {
   min-height: 56px;
-  margin: 13px 1.5rem 13px 0;
+  margin: 13px 0rem 13px 0;
 }
 
 .recommend-ranking-section .top-ranking:not(.not-rank) .openchat-item {
@@ -499,7 +499,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item-desc {
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   font-size: 13px;
   margin-top: 2px;
 }
@@ -981,7 +981,7 @@
 
 .top-ranking.not-rank .openchat-item-desc,
 .mylist .openchat-item-desc {
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   font-size: 13px;
   margin-top: 3px;
 }
