@@ -53,7 +53,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
       <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc" style="color: #111;">
+        <p class="recommend-header-desc" style="color: #111; font-size: 16px;">
           「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！
         </p>
         <p class="recommend-header-desc desc-bottom">
