@@ -124,7 +124,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
     <section class="unset" style="display: block; margin: 1rem 0">
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
@@ -132,7 +132,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </aside>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
@@ -140,7 +140,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </aside>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
@@ -148,7 +148,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </aside>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">

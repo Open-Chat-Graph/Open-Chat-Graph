@@ -53,7 +53,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
       <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc" style="color: #111;">
+        <p class="recommend-header-desc" style="color: #111; font-size: 16px;">
           「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！
         </p>
         <p class="recommend-header-desc desc-bottom">
@@ -114,7 +114,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <li>
                 <hr class="hr-bottom">
 
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
                 <hr class="hr-top" style="margin-bottom: 4px;">
               </li>
@@ -129,37 +129,21 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0;">
-        <?php if (isset($recommend)) : ?>
-          <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
-          <hr class="hr-bottom" style="width: 100%;">
-        <?php endif ?>
-        <a style="margin: 1rem 0 0 0;" class="readMore-btn top-ranking-readMore unset white-btn" href="<?php echo url('ranking') ?>">
-          <span class="ranking-readMore" style="font-size: 11.5px;">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
-        </a>
-      </aside>
-
     </section>
 
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <hr class="hr-bottom">
     
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="top-ranking-list-aside">
@@ -167,7 +151,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="top-ranking-list-aside">
