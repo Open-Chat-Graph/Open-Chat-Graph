@@ -129,27 +129,15 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0;">
-        <?php if (isset($recommend)) : ?>
-          <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null)]) ?>
-          <hr class="hr-bottom" style="width: 100%;">
-        <?php endif ?>
-        <a style="margin: 1rem 0 0 0;" class="readMore-btn top-ranking-readMore unset white-btn" href="<?php echo url('ranking') ?>">
-          <span class="ranking-readMore" style="font-size: 11.5px;">カテゴリーからオプチャを探す<span class="small" style="font-size: 11.5px;">24カテゴリー</span></span>
-        </a>
-      </aside>
-
     </section>
 
     <hr class="hr-bottom">
 
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <hr class="hr-bottom">
     
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>

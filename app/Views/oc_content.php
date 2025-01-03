@@ -129,7 +129,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-bottom">
 
-    <nav style="margin: 0 1rem; padding: 0 0 1rem 0; border: unset;" class="oc-desc-nav">
+    <nav style="margin: 0 1rem; padding: 0 0 0rem 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
@@ -159,14 +159,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+    <hr class="hr-top">
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
 
-    <hr class="hr-top">
     <section class="openchat-graph-section">
 
       <div class="title-bar">
@@ -293,7 +291,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>

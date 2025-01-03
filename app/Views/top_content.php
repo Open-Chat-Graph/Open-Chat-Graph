@@ -9,26 +9,15 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 8px;">
-
-        <section class="top-ranking top-btns top">
-            <a style="margin-bottom: 0;" class="white-btn top-ranking-readMore unset ranking-url" href="<?php echo url('ranking?list=daily') ?>">
-                <span class="ranking-readMore">過去24時間の人数増加を見る<span class="small">24カテゴリー</span></span>
-            </a>
-        </section>
-        <hr class="hr-bottom">
+    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
 
         <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
-
         <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
-
         <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php if ($newComment) : ?>
-            <hr class="hr-top">
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
             <hr class="hr-bottom">
 
@@ -67,7 +56,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
         <?php else : ?>
-            <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
             <hr class="hr-bottom">
 
