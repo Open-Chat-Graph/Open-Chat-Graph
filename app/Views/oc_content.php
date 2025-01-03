@@ -160,7 +160,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </nav>
 
     <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
@@ -214,7 +214,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </section>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <hr class="hr-top">
@@ -224,11 +224,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php if ($recommend[1]) : ?>
       <hr class="hr-top">
@@ -237,7 +235,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
@@ -247,7 +245,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
@@ -257,7 +255,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
 
@@ -287,7 +285,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </section>
 
     <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
@@ -295,7 +293,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
@@ -303,7 +301,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
@@ -311,7 +309,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="recommend-list-aside">
@@ -319,7 +317,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">
