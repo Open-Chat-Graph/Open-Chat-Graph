@@ -104,6 +104,7 @@ html {
   display: flex;
   flex-direction: column;
   letter-spacing: -0.1px;
+  gap: 4px;
 }
 
 .h1-link {
@@ -619,7 +620,7 @@ html {
   }
 
   .openchat-header-right {
-    gap: 1px;
+    gap: 4px;
   }
 
   .pc-hr {
