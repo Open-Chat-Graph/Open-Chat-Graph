@@ -43,8 +43,6 @@ class StaticDataFile
             $data = $staticDataGenerator->getRankingArgDto();
         }
 
-        $data->baseUrl = url();
-
         $this->checkUpdatedAt($data->hourlyUpdatedAt);
         return $data;
     }
