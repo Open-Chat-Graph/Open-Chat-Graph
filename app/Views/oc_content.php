@@ -152,7 +152,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </span>
       </aside>
 
-      <nav class="my-list-form">
+      <nav class="my-list-form" style="visibility: <?php // TODO:日本以外ではマイリストが無効
+                                                    echo MimimalCmsConfig::$urlRoot === ''
+                                                      ? 'visible'
+                                                      : 'hidden'
+                                                    ?>;">
         <label class="checkbox-label" for="my-list-checkbox">
           <input type="checkbox" id="my-list-checkbox">
           <span>トップにピン留め</span>
@@ -358,41 +362,48 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       JsonCookie
     } from '<?php echo fileUrl('/js/JsonCookie.js', urlRoot: '') ?>'
 
-    const OPEN_CHAT_ID = <?php echo $oc['id'] ?>;
-    const LIST_LIMIT_MY_LIST = <?php echo AppConfig::LIST_LIMIT_MY_LIST ?>;
+    (() => {
+      // TODO:日本以外ではマイリストが無効
+      if (document.querySelector('.my-list-form').style.visibility === 'hidden') {
+        return
+      }
 
-    const myListCheckbox = document.getElementById('my-list-checkbox')
-    const myListJsonCookie = new JsonCookie('myList')
+      const OPEN_CHAT_ID = <?php echo $oc['id'] ?>;
+      const LIST_LIMIT_MY_LIST = <?php echo AppConfig::LIST_LIMIT_MY_LIST ?>;
 
-    if (myListCheckbox && myListJsonCookie.get(OPEN_CHAT_ID))
-      myListCheckbox.checked = true
+      const myListCheckbox = document.getElementById('my-list-checkbox')
+      const myListJsonCookie = new JsonCookie('myList')
 
-    myListCheckbox && myListCheckbox.addEventListener('change', () => {
-      const listLen = (Object.keys(myListJsonCookie.get() || {}).length)
+      if (myListCheckbox && myListJsonCookie.get(OPEN_CHAT_ID))
+        myListCheckbox.checked = true
 
-      if (!myListCheckbox.checked) {
-        // チェック解除で削除する場合
-        if (listLen <= 2) {
-          myListJsonCookie.remove()
-        } else {
-          const expiresTimestamp = myListJsonCookie.remove(OPEN_CHAT_ID)
-          myListJsonCookie.set('expires', expiresTimestamp)
+      myListCheckbox && myListCheckbox.addEventListener('change', () => {
+        const listLen = (Object.keys(myListJsonCookie.get() || {}).length)
+
+        if (!myListCheckbox.checked) {
+          // チェック解除で削除する場合
+          if (listLen <= 2) {
+            myListJsonCookie.remove()
+          } else {
+            const expiresTimestamp = myListJsonCookie.remove(OPEN_CHAT_ID)
+            myListJsonCookie.set('expires', expiresTimestamp)
+          }
+          return
         }
-        return
-      }
 
-      if (listLen > LIST_LIMIT_MY_LIST) {
-        // リストの上限数を超えている場合
-        const label = document.querySelector('.my-list-form label span')
-        label.textContent = 'ピン留めの最大数を超えました。'
-        label.style.color = 'Red'
-        return
-      }
+        if (listLen > LIST_LIMIT_MY_LIST) {
+          // リストの上限数を超えている場合
+          const label = document.querySelector('.my-list-form label span')
+          label.textContent = 'ピン留めの最大数を超えました。'
+          label.style.color = 'Red'
+          return
+        }
 
-      // リストに追加する場合
-      const expiresTimestamp = myListJsonCookie.set(OPEN_CHAT_ID, 1)
-      myListJsonCookie.set('expires', expiresTimestamp)
-    })
+        // リストに追加する場合
+        const expiresTimestamp = myListJsonCookie.set(OPEN_CHAT_ID, 1)
+        myListJsonCookie.set('expires', expiresTimestamp)
+      })
+    })()
   </script>
 
   <?php echo $_breadcrumbsShema ?>

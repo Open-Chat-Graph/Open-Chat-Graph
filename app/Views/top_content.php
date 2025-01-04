@@ -125,6 +125,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
+        const urlRoot = '<?php echo MimimalCmsConfig::$urlRoot ?>'
         let lastList = ''
 
         function fetchMyList(name) {
@@ -155,9 +156,12 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 .catch(error => console.error('エラー', error))
         }
 
+        // TODO: 日本以外ではマイリストが無効
+        if (urlRoot === '') {
         window.addEventListener("pageshow", function(event) {
             fetchMyList('myList')
         });
+        }
     </script>
 
     <script type="module">
