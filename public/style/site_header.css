@@ -66,6 +66,8 @@ body::before {
   -webkit-backdrop-filter: blur(12px);
   width: 100%;
   max-width: var(--width);
+  transition: transform 0.3s;
+  transform: translate(0px, 0px);
 }
 
 .site_header {
@@ -74,9 +76,6 @@ body::before {
   width: 100%;
   justify-content: space-between;
 }
-
-/* .is-search-form-open .site_header {
-} */
 
 /* タイトルテキストエリア */
 .header_title {
