@@ -3,13 +3,13 @@
         <ul class="footer-link-inner">
             <li><a class="unset" href="<?php echo url('') ?>">トップ</a></il>
             <li><a class="unset" href="<?php echo url('policy') ?>">オプチャグラフについて</a></il>
-            <li><a class="unset" href="<?php echo url('policy/privacy') ?>">プライバシーポリシー</a></il>
-            <li><a class="unset" style="margin-bottom: 0;" href="<?php echo url('policy/term') ?>">利用規約</a></il>
+            <li><a class="unset" style="margin-bottom: 0;" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
         </ul>
         <ul class="footer-link-inner">
-            <li><a class="unset" href="<?php echo url('ranking') ?>">カテゴリから探す</a></li>
-            <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li>
-            <li><a class="unset" style="margin-bottom: 0;" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
+            <li><a class="unset" href="<?php echo url('policy/privacy') ?>">プライバシーポリシー</a></il>
+            <li><a class="unset" style="margin-bottom: 0;" href="<?php echo url('policy/term') ?>">利用規約</a></il>
+            <!-- <li><a class="unset" href="<?php echo url('ranking') ?>">カテゴリから探す</a></li> -->
+            <!-- <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li> -->
         </ul>
     </section>
     <!-- <aside class="open-btn2">

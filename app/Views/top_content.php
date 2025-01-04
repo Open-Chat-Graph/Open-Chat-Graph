@@ -99,7 +99,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
-        <section class="top-ranking top-btns" style="padding-top: 1rem;">
+        <!-- <section class="top-ranking top-btns" style="padding-top: 1rem;">
             <a style="margin-bottom: 0;" class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('official-ranking') ?>">
                 <span class="ranking-readMore">前回(1時間前)の公式急上昇と人数推移</span>
             </a>
@@ -112,7 +112,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 </span>
             </a>
         </section>
-        <hr class="hr-bottom">
+        <hr class="hr-bottom"> -->
 
         <footer class="footer-elem-outer">
             <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
