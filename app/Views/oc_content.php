@@ -214,18 +214,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
-    <?php if ($recommend[0] || $recommend[3]) : ?>
-      <hr class="hr-top">
-      <aside class="recommend-list-aside">
-        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
-      </aside>
-      <hr class="hr-bottom">
-
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <?php endif ?>
-
     <hr class="hr-top">
     <section class="comment-section">
       <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
@@ -251,8 +239,17 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
     </section>
 
-    <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php if ($recommend[0] || $recommend[3]) : ?>
+      <hr class="hr-top">
+      <aside class="recommend-list-aside">
+        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+      </aside>
+      <hr class="hr-bottom">
+
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+
+    <?php endif ?>
 
     <?php if ($recommend[1]) : ?>
       <hr class="hr-top">
