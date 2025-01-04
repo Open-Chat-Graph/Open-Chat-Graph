@@ -132,9 +132,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </aside>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
