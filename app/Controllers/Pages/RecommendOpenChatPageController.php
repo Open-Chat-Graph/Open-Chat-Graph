@@ -62,9 +62,8 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
-        $recommend = $recommendPageList->getListDto($tag);
-        if (!$recommend) {
-            $time = '';
+        $recommendArray = $recommendPageList->getListDto($tag);
+        if (!$recommendArray) {
             $_schema = '';
             $_meta->setTitle("【最新】「{$tag}」おすすめオープンチャットランキング");
             noStore();
@@ -79,10 +78,10 @@ class RecommendOpenChatPageController
                 '_dto',
                 'topPageDto',
                 'canonical',
-                'time',
             ));
         }
 
+        [$recommend, $diffMember] = $recommendArray;
         $recommendList = $recommend->getList(false);
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
@@ -102,8 +101,6 @@ class RecommendOpenChatPageController
             $recommendList
         );
 
-        $time = $hourlyUpdatedAt->format('G:i');
-
         return view('recommend_content', compact(
             '_meta',
             '_css',
@@ -116,7 +113,6 @@ class RecommendOpenChatPageController
             '_dto',
             'topPageDto',
             'canonical',
-            'time',
             'hourlyUpdatedAt',
         ));
     }

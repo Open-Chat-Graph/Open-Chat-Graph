@@ -53,8 +53,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
       <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc" style="color: #111; font-size: 16px;">
-          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！
+        <p class="recommend-header-desc talkroom_link_h1" style="color: #111; font-size: 16px; font-weight: bold; white-space: unset;">
+        「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）
         </p>
         <p class="recommend-header-desc desc-bottom">
           ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
@@ -67,7 +67,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
           <?php
-          $chunkLen = 5;
+          $chunkLen = 10;
           $lists = array_chunk($recommend->getList(false, null), $chunkLen);
           $listsLastKey = count($lists) - 1;
           ?>
@@ -95,11 +95,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 </header>
               <?php else : ?>
                 <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 14px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap;">
+                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap;">
                     <div>「<?php echo $recommend->listName ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?? '' ?></div>
-                    <div>（<?php echo $time ?>）<?php echo $key * $chunkLen + 1 ?>位〜</div>
+                    <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）<?php echo $key * $chunkLen + 1 ?>位〜</div>
                   </h2>
                 </header>
               <?php endif ?>
@@ -139,7 +139,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="top-ranking-list-aside">

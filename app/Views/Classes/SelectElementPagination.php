@@ -8,8 +8,8 @@ class SelectElementPagination
 {
     static function pagerUrl(string $pagePath, int $pageNumber, int $maxPage): string
     {
-        $secondPath = $pageNumber === $maxPage ? "/{$pagePath}" : "/{$pagePath}/" . $pageNumber;
-        return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost() . $secondPath;
+        $secondPath = "/{$pagePath}/" . $pageNumber;
+        return url() . $secondPath;
     }
 
     // ページ番号の表示に必要な要素を取得する
@@ -21,13 +21,19 @@ class SelectElementPagination
         return "<option value='{$url}' {$selected}>{$startLabel} ~ {$endLabel} ({$start} ~ {$end})</option>";
     }
 
+    // ページ番号の表示に必要な要素を取得する
+    protected function getOptionFirstElement($url, $selected, $itemsPerPage): string
+    {
+        return "<option value='{$url}' {$selected}>最新{$itemsPerPage}件</option>";
+    }
+
     // select要素のラベルを生成する
-    protected function getLabel(array $labelArray, int $labelStartNum, int $labelEndNum, int $pageNumber): string
+    protected function getLabel(array $labelArray, int $labelStartNum, int $labelEndNum, int $pageNumber, int $itemsPerPage): string
     {
         $labelStart = $labelArray[$labelStartNum - 1] ?? '';
         $labelEnd = $labelArray[$labelEndNum - 1] ?? '';
 
-        return "{$labelStart} ~ {$labelEnd}<br>({$labelStartNum} ~ {$labelEndNum})";
+        return $pageNumber === 0 ? "最新{$itemsPerPage}件" : "{$labelStart} ~ {$labelEnd}<br>({$labelStartNum} ~ {$labelEndNum})";
     }
 
     /**
@@ -42,7 +48,8 @@ class SelectElementPagination
         int $totalRecords,
         int $itemsPerPage,
         int $maxPage,
-        array $labelArray = []
+        array $labelArray = [],
+        bool $showLatest = false
     ): array {
         // 選択されたページに対して"selected"属性を返す
         $selected = fn($i) => ($i === $pageNumber) ? "selected='selected'" : '';
@@ -65,6 +72,14 @@ class SelectElementPagination
                 $endNum($i),
                 $i
             ) . "\n";
+
+            if ($i === $maxPage && $showLatest) {
+                $selectElement[] = $this->getOptionFirstElement(
+                    url() . "/{$pagePath}" . $queryString,
+                    $pageNumber === 0 ? "selected='selected'" : '',
+                    $itemsPerPage
+                ) . "\n";
+            }
         }
 
         // ラベルの番号を取得する
@@ -72,7 +87,7 @@ class SelectElementPagination
         $labelEndNum = $endNum($pageNumber);
 
         // select要素のラベルを生成する
-        $_label = $this->getLabel($labelArray, $labelStartNum, $labelEndNum, $pageNumber);
+        $_label = $this->getLabel($labelArray, $labelStartNum, $labelEndNum, $pageNumber, $itemsPerPage);
 
         // タイトル用の文字列
         $title = "{$labelStartNum} ~ {$labelEndNum}";

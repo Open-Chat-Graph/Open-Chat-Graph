@@ -23,13 +23,13 @@ body {
   width: 100%;
 }
 
-/* body::before {
+body::before {
   width: 100%;
   max-width: var(--width);
   height: 48px;
   display: block;
   content: '';
-} */
+}
 
 .pad-side {
   margin-left: 1rem;
@@ -52,44 +52,22 @@ body {
   margin: 0 auto;
 }
 
-/* @media screen and (max-width: 999px) {
-  body {
-    margin: 0;
-    transition: transform 1s;
-    padding: 110px 0px 0px;
-  }
-
-  .body::after {
-    width: 100%;
-    max-width: var(--width);
-    height: 94px;
-    display: block;
-    content: '';
-    background: rgb(250, 250, 250);
-    position: absolute;
-    top: 48px;
-    box-sizing: border-box;
-  }
-} */
-
 .site_header_outer {
   all: unset;
-  /* position: absolute; */
-  position: relative;
+  position: fixed;
   display: block;
-/*   z-index: 30;
+  z-index: 30;
   top: 0;
   left: 0;
-  right: 0; */
+  right: 0;
   margin: 0 auto;
-/*   background-color: rgba(255, 255, 255, 0.85);
+  background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px); */
+  -webkit-backdrop-filter: blur(12px);
   width: 100%;
   max-width: var(--width);
-/*   max-width: var(--width);
   transition: transform 0.3s;
-  transform: translate(0px, 0px); */
+  transform: translate(0px, 0px);
 }
 
 .site_header {
@@ -98,9 +76,6 @@ body {
   width: 100%;
   justify-content: space-between;
 }
-
-/* .is-search-form-open .site_header {
-} */
 
 /* タイトルテキストエリア */
 .header_title {

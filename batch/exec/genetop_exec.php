@@ -20,7 +20,7 @@ try {
 
     AdminTool::sendLineNofity('staticDataGenerator start');
     $staticDataGenerator->updateStaticData();
-    AdminTool::sendLineNofity('staticDataGenerator done\nrecommendStaticDataGenerator start');
+    AdminTool::sendLineNofity("staticDataGenerator done\nrecommendStaticDataGenerator start");
     $recommendStaticDataGenerator->updateStaticData();
     AdminTool::sendLineNofity('recommendStaticDataGenerator done');
     
