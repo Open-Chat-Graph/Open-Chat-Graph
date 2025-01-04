@@ -48,9 +48,21 @@ class StaticDataGenerator
     function getRankingArgDto(): RankingArgDto
     {
         $_argDto = new RankingArgDto;
+        $_argDto->urlRoot = MimimalCmsConfig::$urlRoot;
+        $_argDto->baseUrl = url();
         $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')), true);
         $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));;
+        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
+
+        $_argDto->openChatCategory = [];
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $number) {
+            if ($number === 0)
+                $_argDto->openChatCategory[] = [$name, $number];
+        }
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $number) {
+            if ($number !== 0)
+                $_argDto->openChatCategory[] = [$name, $number];
+        }
 
         $subCategories = json_decode(
             file_exists(AppConfig::getStorageFilePath('openChatSubCategories'))

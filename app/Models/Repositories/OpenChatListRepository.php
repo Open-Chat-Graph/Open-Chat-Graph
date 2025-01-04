@@ -160,7 +160,7 @@ class OpenChatListRepository implements OpenChatListRepositoryInterface
                         AND id <= :endId
                 ) AS ranking ON oc.id = ranking.open_chat_id
             ORDER BY
-                ranking.id ASC";
+                ranking.diff_member DESC";
 
         return DB::fetchAll($query, compact('startId', 'endId'));
     }
