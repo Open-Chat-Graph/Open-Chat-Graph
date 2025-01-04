@@ -25,9 +25,9 @@ class RecentCommentPageController
         AdminAuthService $adminAuthService,
         StaticDataFile $staticDataGeneration,
     ) {
-        $recentPage = Reception::input('page');
+        $unmodifeidPageNumber = Reception::input('page');
         $rankingList = $this->recentComment->getAllOrderByRegistrationDate(
-            $recentPage,
+            $unmodifeidPageNumber,
             AppConfig::RECENT_COMMENT_LIST_LIMIT
         );
 
@@ -46,21 +46,22 @@ class RecentCommentPageController
         [$title, $_select, $_label] = $this->pagination->geneSelectElementPagerAsc(
             $path,
             '',
-            $rankingList['pageNumber'],
+            $unmodifeidPageNumber,
             $rankingList['totalRecords'],
             AppConfig::RECENT_COMMENT_LIST_LIMIT,
             $rankingList['maxPageNumber'],
-            $rankingList['labelArray']
+            $rankingList['labelArray'],
+            true
         );
 
-        $subTitle = $recentPage === 0 ? '' : "({$recentPage}ページ目)";
+        $subTitle = $unmodifeidPageNumber === 0 ? ' - 最新50件' : " - {$unmodifeidPageNumber}ページ目";
         $_meta = meta()->setTitle($pageTitle . $subTitle);
 
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema(
             'コメント',
             'comments-timeline',
             $subTitle,
-            $subTitle ? ((string)$recentPage) : ''
+            $subTitle ? ((string)$unmodifeidPageNumber) : ''
         );
 
         $topPageDto = $staticDataGeneration->getTopPageData();
@@ -75,7 +76,8 @@ class RecentCommentPageController
                 'path',
                 'isAdmin',
                 '_breadcrumbsShema',
-                'topPageDto'
+                'topPageDto',
+                'unmodifeidPageNumber',
             ) + $rankingList
         );
     }
