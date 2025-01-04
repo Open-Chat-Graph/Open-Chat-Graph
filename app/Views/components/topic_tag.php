@@ -3,14 +3,11 @@
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
 use App\Services\Recommend\RecommendUtility;
-use Shared\MimimalCmsConfig;
 
-// TODO:日本以外ではタグ機能が無効
-if (MimimalCmsConfig::$urlRoot !== '') {
+// 空の配列では無効
+if (empty($tags['hour']) && empty($tags['hour24'])) {
     return;
 }
-
-$tags = $topPageDto->recommendList ?? [];
 
 function greenTag($word)
 {
@@ -63,4 +60,4 @@ function greenTag($word)
         </ul>
     </div>
 </article>
-<hr class="hr-bottom">
+<hr class="hr-bottom" style="width: 100%;">
