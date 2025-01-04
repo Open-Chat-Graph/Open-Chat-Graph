@@ -7,6 +7,7 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class RecommendUpdater
 {
@@ -566,6 +567,12 @@ class RecommendUpdater
 
     function updateRecommendTables(bool $betweenUpdateTime = true)
     {
+        // TODO:日本以外ではタグ機能が無効
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            safeFileRewrite(AppConfig::getStorageFilePath('tagUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
+            return;
+        }
+
         $this->start = $betweenUpdateTime ? $this->start : '2023-10-16 00:00:00';
         $this->end = $betweenUpdateTime ? OpenChatServicesUtility::getModifiedCronTime(strtotime('+1hour'))->format('Y-m-d H:i:s') : '2033-10-16 00:00:00';
 
@@ -641,6 +648,11 @@ class RecommendUpdater
 
     function getAllTagNames(): array
     {
+        // TODO:日本以外ではタグ機能が無効
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return [];
+        }
+
         $tags = array_merge(
             array_merge(...self::BEFORE_CATEGORY_NAME),
             self::NAME_STRONG_TAG,
