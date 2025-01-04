@@ -42,12 +42,8 @@ class IndexPageController
         if (isset($dto->recentCommentList[0]['time'])) {
             $updatedAtComments = new \DateTime($dto->recentCommentList[0]['time']);
             $_updatedAt = $updatedAtHouryCron > $updatedAtComments ? $updatedAtHouryCron : $updatedAtComments;
-
-            $updatedAtComments->modify('+ 168hour');
-            $newComment = new \DateTime() < $updatedAtComments;
         } else {
             $_updatedAt = $updatedAtHouryCron;
-            $newComment = false;
         }
 
         $officialDto = $officialPageList->getListDto(1);
@@ -61,7 +57,6 @@ class IndexPageController
             'dto',
             'officialDto',
             'officialDto2',
-            'newComment',
         ));
     }
 }
