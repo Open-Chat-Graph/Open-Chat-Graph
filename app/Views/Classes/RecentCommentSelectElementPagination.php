@@ -13,8 +13,8 @@ class RecentCommentSelectElementPagination extends SelectElementPagination
     }
 
     // select要素のラベルを生成する
-    protected function getLabel(array $labelArray, int $labelStartNum, int $labelEndNum, int $pageNumber): string
+    protected function getLabel(array $labelArray, int $labelStartNum, int $labelEndNum, int $pageNumber, int $itemsPerPage): string
     {
-        return "{$pageNumber}ページ({$labelStartNum}-{$labelEndNum}コメント)";
+        return $pageNumber === 0 ? "最新{$itemsPerPage}件" : "{$pageNumber}ページ({$labelStartNum}-{$labelEndNum}コメント)";
     }
 }
