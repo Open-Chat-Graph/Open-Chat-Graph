@@ -139,7 +139,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <hr class="hr-top">
     <aside class="top-ranking-list-aside">

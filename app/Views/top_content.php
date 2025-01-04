@@ -21,7 +21,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
             <hr class="hr-bottom">
 
-            <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
             <hr class="hr-top">
             <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>

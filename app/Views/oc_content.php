@@ -222,7 +222,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
 
@@ -252,7 +252,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </section>
 
     <hr class="hr-bottom">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php if ($recommend[1]) : ?>
       <hr class="hr-top">
@@ -261,7 +261,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
@@ -271,7 +271,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
@@ -281,7 +281,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
       <hr class="hr-bottom">
 
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php endif ?>
 
