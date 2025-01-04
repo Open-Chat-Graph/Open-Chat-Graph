@@ -212,8 +212,8 @@ class AppConfig
     // TODO:多言語対応
     const COMMENT_DB_NAME = [
         '' =>    'cf782105_comment',
-        '/tw' => 'cf782105_comment',
-        '/th' => 'cf782105_comment',
+        '/tw' => 'cf782105_commenttw',
+        '/th' => 'cf782105_commentth',
     ];
 
     const DEFAULT_OPENCHAT_IMG_URL = [
