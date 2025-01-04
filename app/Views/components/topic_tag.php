@@ -3,6 +3,12 @@
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
 use App\Services\Recommend\RecommendUtility;
+use Shared\MimimalCmsConfig;
+
+// TODO:日本以外ではタグ機能が無効
+if (MimimalCmsConfig::$urlRoot !== '') {
+    return;
+}
 
 $tags = $topPageDto->recommendList ?? [];
 
@@ -21,6 +27,7 @@ function greenTag($word)
 }
 
 ?>
+
 <article class="top-ranking">
     <div>
         <header class="openchat-list-title-area unset" style="margin-bottom: 10px;">
@@ -56,3 +63,4 @@ function greenTag($word)
         </ul>
     </div>
 </article>
+<hr class="hr-bottom">

@@ -15,7 +15,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
-        <hr class="hr-bottom">
 
         <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php if ($newComment) : ?>

@@ -145,7 +145,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
-    <hr class="hr-bottom">
     
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
