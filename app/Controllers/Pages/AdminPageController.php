@@ -40,7 +40,7 @@ class AdminPageController
         $path = AppConfig::ROOT_PATH . 'batch/exec/test_exec.php';
         $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
 
-        exec("php {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -116,7 +116,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
