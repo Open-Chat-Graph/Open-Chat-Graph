@@ -14,9 +14,8 @@ class OpenChatSubCategorySynchronizer
 
     function __construct(
         private OpenChatApiSubCategoryDownloader $openChatApiSubCategoryDownloader,
-    ) {
-    }
-// TODO: OpenChatSubCategorySynchronizerのAPI・保存先の多言語対応
+    ) {}
+
     /**
      * @return array [CategoryName => int] サブカテゴリが存在するカテゴリ名 => サブカテゴリ数
      *
