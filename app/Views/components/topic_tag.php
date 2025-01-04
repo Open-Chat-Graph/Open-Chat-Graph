@@ -4,6 +4,9 @@
 
 use App\Services\Recommend\RecommendUtility;
 
+
+$tags = $topPageDto->recommendList;
+
 // 空の配列では無効
 if (empty($tags['hour']) && empty($tags['hour24'])) {
     return;

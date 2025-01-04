@@ -11,18 +11,18 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
-
         <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
 
-        <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
-        <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
-        <hr class="hr-bottom">
+        <?php if ($dto->recentCommentList): ?>
+            <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
+            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
+            <hr class="hr-bottom">
+            <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+            <hr class="hr-top">
+        <?php endif ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <hr class="hr-bottom">
 
