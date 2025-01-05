@@ -191,30 +191,37 @@ class AppConfig
         return self::STORAGE_DIR[MimimalCmsConfig::$urlRoot] . self::STORAGE_FILES[$storageFileName];
     }
 
-    const DB_NAME = [
-        '' =>    'cf782105_ocreview',
-        '/tw' => 'cf782105_ocreviewtw',
-        '/th' => 'cf782105_ocreviewth',
+    /** @var array<string,string> */
+    static array $dbName = [
+        '' =>    'ocreview',
+        '/tw' => 'ocreviewtw',
+        '/th' => 'ocreviewth',
     ];
     const RANKING_HOUR_TABLE_NAME = 'statistics_ranking_hour';
     const RANKING_DAY_TABLE_NAME =  'statistics_ranking_hour24';
     const RANKING_WEEK_TABLE_NAME = 'statistics_ranking_week';
-    const RANKING_POSITION_DB_NAME = [
-        '' =>    'cf782105_ranking',
-        '/tw' => 'cf782105_rankingtw',
-        '/th' => 'cf782105_rankingth',
+
+    /** @var array<string,string> */
+    static array $rankingPositionDbName = [
+        '' =>    'ranking',
+        '/tw' => 'rankingtw',
+        '/th' => 'rankingth',
     ];
+
     // TODO:多言語対応
-    const USER_LOG_DB_NAME = [
-        '' =>    'cf782105_userlog',
-        '/tw' => 'cf782105_userlog',
-        '/th' => 'cf782105_userlog',
+    /** @var array<string,string> */
+    static array $userLogDbName = [
+        '' =>    'userlog',
+        '/tw' => 'userlog',
+        '/th' => 'userlog',
     ];
+
     // TODO:多言語対応
-    const COMMENT_DB_NAME = [
-        '' =>    'cf782105_comment',
-        '/tw' => 'cf782105_commenttw',
-        '/th' => 'cf782105_commentth',
+    /** @var array<string,string> */
+    static array $commentDbName = [
+        '' =>    'comment',
+        '/tw' => 'commenttw',
+        '/th' => 'commentth',
     ];
 
     const DEFAULT_OPENCHAT_IMG_URL = [

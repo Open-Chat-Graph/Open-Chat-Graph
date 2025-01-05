@@ -16,7 +16,7 @@ class RankingPositionDB extends DB implements DBInterface
     public static function connect(?array $config = null): \PDO
     {
         return parent::connect($config ?? [
-            'dbName' => AppConfig::RANKING_POSITION_DB_NAME[MimimalCmsConfig::$urlRoot]
+            'dbName' => AppConfig::$rankingPositionDbName[MimimalCmsConfig::$urlRoot]
         ]);
     }
 }

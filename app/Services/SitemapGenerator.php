@@ -31,7 +31,7 @@ class SitemapGenerator
     {
         $ccurrentUrlRoot = MimimalCmsConfig::$urlRoot;
         $index = new SitemapIndex();
-        foreach (array_keys(AppConfig::DB_NAME) as $lang) {
+        foreach (array_keys(AppConfig::$dbName) as $lang) {
             MimimalCmsConfig::$urlRoot = $lang;
             $this->currentUrl = self::SITE_URL . $lang . '/';
             DB::$pdo = null;

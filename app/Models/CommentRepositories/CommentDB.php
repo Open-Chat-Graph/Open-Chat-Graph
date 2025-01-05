@@ -16,7 +16,7 @@ class CommentDB extends DB implements DBInterface
     public static function connect(?array $config = null): \PDO
     {
         return parent::connect($config ?? [
-            'dbName' => AppConfig::COMMENT_DB_NAME[MimimalCmsConfig::$urlRoot]
+            'dbName' => AppConfig::$commentDbName[MimimalCmsConfig::$urlRoot]
         ]);
     }
 }

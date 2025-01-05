@@ -15,7 +15,7 @@ class DB extends \Shadow\DB implements DBInterface
     public static function connect(?array $config = null): \PDO
     {
         return parent::connect($config ?? [
-            'dbName' => AppConfig::DB_NAME[MimimalCmsConfig::$urlRoot]
+            'dbName' => AppConfig::$dbName[MimimalCmsConfig::$urlRoot]
         ]);
     }
 }

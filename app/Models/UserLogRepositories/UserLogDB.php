@@ -16,7 +16,7 @@ class UserLogDB extends DB implements DBInterface
     public static function connect(?array $config = null): \PDO
     {
         return parent::connect($config ?? [
-            'dbName' => AppConfig::USER_LOG_DB_NAME[MimimalCmsConfig::$urlRoot]
+            'dbName' => AppConfig::$userLogDbName[MimimalCmsConfig::$urlRoot]
         ]);
     }
 }
