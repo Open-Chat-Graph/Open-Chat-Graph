@@ -14,8 +14,10 @@ use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
+use App\Services\UpdateDailyRankingService;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shadow\Kernel\Validator;
 use Shared\Exceptions\NotFoundException;
@@ -119,6 +121,13 @@ class AdminPageController
         exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
+    function updatedailyranking(UpdateDailyRankingService $updateRankingService,)
+    {
+        $updateRankingService->update(OpenChatServicesUtility::getCronModifiedStatsMemberDate());
+
+        return view('admin/admin_message_page', ['title' => 'updateRankingService', 'message' => 'updateRankingServiceを実行しました。']);
     }
 
     function killmerge(SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository)
