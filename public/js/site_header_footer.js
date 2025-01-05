@@ -253,4 +253,4 @@ async function blockblock() {
     })
 }
 
-if(typeof admin === 'undefined' || !admin) blockblock()
+if(typeof admin === 'undefined' || !admin || location.host !== 'ocgraph.wpx.jp') blockblock()
