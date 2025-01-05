@@ -69,6 +69,8 @@ class GoogleAdsence
 
     private static function rectangle(int $adSlot, string $cssClass)
     {
+        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="horizontal"></ins>
@@ -77,6 +79,8 @@ class GoogleAdsence
 
     private static function responsive(int $adSlot, string $cssClass)
     {
+        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -85,6 +89,8 @@ class GoogleAdsence
 
     static function loadAdsTag()
     {
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
