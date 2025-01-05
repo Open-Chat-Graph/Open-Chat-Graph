@@ -1,3 +1,7 @@
-User-agent: *
-Disallow: /auth/
-Sitemap: https://openchat-review.me/sitemap.xml
+# TODO: 試験運用サーバーのためクローラーのアクセスを全て拒否
+User-Agent: *
+Disallow: /
+
+# User-agent: *
+# Disallow:
+# Sitemap: https://openchat-review.me/sitemap.xml
