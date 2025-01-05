@@ -34,5 +34,6 @@ storage/*/ranking_position/filter.dat
 storage/*/static_data_top/*
 !storage/*/static_data_top/template
 storage/*/static_data_recommend/*/*
+storage/*/open_chat_sub_categories/subcategories.json
 
 !*.gitkeep
