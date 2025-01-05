@@ -142,6 +142,8 @@ class AppConfig
         'RankingBanTableUpdater' => 10,
     ];
 
+    static bool $isStaging = false;
+
     const CRON_START_MINUTE = 30;
     const CRON_MERGER_HOUR_RANGE_START = 23;
     const CRON_MERGER_HOUR_RANGE_END = 0;

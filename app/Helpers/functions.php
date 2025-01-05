@@ -24,6 +24,10 @@ function nl2brReplace(string $string): string
 
 function gTag(string $id): string
 {
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+        return '';
+    }
+
     return
         <<<HTML
         <!-- Google Tag Manager -->
@@ -196,7 +200,7 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (AppConfig::$isDevlopment ?? false) {
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
         return 'is Development';
     }
 
@@ -360,17 +364,6 @@ function getFilePath($path, $pattern): string
     } else {
         return '';
     }
-}
-
-function isLocalHost(): bool
-{
-    $ip = $_SERVER['HTTP_HOST'] ?? '::1';
-
-    return
-        strstr($ip, 'localhost') !== false
-        || strstr($ip, '::1') !== false
-        || strstr($ip, '192.168') !== false
-        || strstr($ip, '172.18.0.1') !== false;
 }
 
 function allowCORS()

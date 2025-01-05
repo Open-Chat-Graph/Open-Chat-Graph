@@ -2,6 +2,8 @@
 
 namespace App\Views\Ads;
 
+use App\Config\AppConfig;
+
 class GoogleAdsence
 {
     const AD_CLIENT = 'ca-pub-2330982526015125';
@@ -97,7 +99,7 @@ class GoogleAdsence
 
     static function gTag(?string $dataOverlays = null)
     {
-        if (isLocalHost()) return;
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = self::AD_CLIENT;

@@ -57,7 +57,7 @@ class CommentPostApiController
         );
 
         if (!$flag) {
-            !isLocalHost() && purgeCacheCloudFlare(
+            purgeCacheCloudFlare(
                 files: [
                     url('recent-comment-api'),
                     url('comments-timeline')
