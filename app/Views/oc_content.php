@@ -219,7 +219,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
-    <?php if ($topPageDto->recentCommentList): ?>
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    ?>
       <hr class="hr-top">
       <section class="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
@@ -357,7 +358,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     const admin = <?php echo isset($_adminDto) ? 1 : 0 ?>
   </script>
-  <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
+  <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+  ?>
+    <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
+  <?php endif ?>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script type="module">
     import {
