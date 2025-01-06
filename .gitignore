@@ -37,3 +37,4 @@ storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 
 !*.gitkeep
+.htaccess
