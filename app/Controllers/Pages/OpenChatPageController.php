@@ -46,7 +46,7 @@ class OpenChatPageController
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
-        return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', '_deleted', 'topPageDto'));
+        return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }
 
     private function buildChartDto(array $oc, string $categoryName): RankingPositionChartArgDto
