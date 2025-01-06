@@ -43,10 +43,6 @@ class OpenChatPageController
             ->setOgpDescription("「{$tag}」タグのオープンチャット ID:{$open_chat_id} （オプチャグラフから削除済み）");
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_list'];
 
-        $_deleted = DB::fetch("SELECT * FROM open_chat_deleted WHERE id = :open_chat_id", compact('open_chat_id'));
-        if (!$_deleted)
-            return false;
-
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
