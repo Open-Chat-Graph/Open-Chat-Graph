@@ -117,12 +117,22 @@ class SyncOpenChat
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
-            [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
+            [fn() => function () {
+                if ($this->state->getBool(StateType::isHourlyTaskActive)) {
+                    addCronLog('Skip updateInvitationTicketAll because it is active');
+                    AdminTool::sendLineNofity('Skip hourlyTask because it is active');
+                    return;
+                }
+
+                $this->state->setTrue(StateType::isUpdateInvitationTicketActive);
+                $this->invitationTicketUpdater->updateInvitationTicketAll();
+                $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
+            }, 'updateInvitationTicketAll'],
             //[fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
-                    addCronLog('Skip hourlyTask because dailyTask is active');
-                    AdminTool::sendLineNofity('Skip hourlyTask because dailyTask is active');
+                    addCronLog('Skip updateRecommendTables because dailyTask is active');
+                    AdminTool::sendLineNofity('Skip updateRecommendTables because dailyTask is active');
                     return;
                 }
 
