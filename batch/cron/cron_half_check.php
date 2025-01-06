@@ -6,14 +6,15 @@ use App\Services\Cron\SyncOpenChat;
 use App\Services\Admin\AdminTool;
 use Shared\MimimalCmsConfig;
 
-/**
- * @var SyncOpenChat $syncOpenChat
- */
-$syncOpenChat = app(SyncOpenChat::class);
 try {
     if (isset($argv[1]) && $argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
     }
+
+    /**
+     * @var SyncOpenChat $syncOpenChat
+     */
+    $syncOpenChat = app(SyncOpenChat::class);
 
     $syncOpenChat->handleHalfHourCheck();
 } catch (\Throwable $e) {
