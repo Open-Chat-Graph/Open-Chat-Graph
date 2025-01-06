@@ -47,3 +47,5 @@ storage/tw/ranking_position/rising/*
 !storage/tw/ranking_position/rising/0.dat
 storage/tw/SQLite/ranking_position/ranking_position.db
 storage/tw/SQLite/statistics/statistics.db
+
+.htaccess
