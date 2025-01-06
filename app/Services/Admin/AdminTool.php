@@ -104,7 +104,7 @@ class AdminTool
 
         $responses = [];
         foreach (mb_str_split($message, 1000 - mb_strlen($prefix)) as $el) {
-            $responses[] = $curl($urlRoot . $el);
+            $responses[] = $curl($prefix . $el);
         }
 
         return implode("\n", $responses);
