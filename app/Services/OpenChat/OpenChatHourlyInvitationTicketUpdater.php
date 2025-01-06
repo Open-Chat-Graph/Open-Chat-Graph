@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat;
 
 use App\Config\AppConfig;
+use App\Exceptions\InvalidMemberCountException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
@@ -40,7 +41,7 @@ class OpenChatHourlyInvitationTicketUpdater
         try {
             $dto = $this->openChatApiFromEmidDownloader->fetchOpenChatDto($emid);
             if (!$dto) return false;
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException | InvalidMemberCountException $e) {
             // 再接続
             DB::$pdo = null;
             $this->logRepository->logUpdateOpenChatError($open_chat_id, $e->getMessage());
