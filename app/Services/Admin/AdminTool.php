@@ -97,14 +97,14 @@ class AdminTool
             return (string)$response;
         };
 
-        $urlRoot = '[' . (str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja') . ']';
-        $isStaging = AppConfig::$isStaging ? '[STG]' : '';
-        $isDev = AppConfig::$isDevlopment && !AppConfig::$isStaging ? '[DEV]' : '';
-        $prefix =  $isStaging . $isDev . $urlRoot;
-        
+        $urlRoot = '[' . strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'JA') . '] ';
+        $isStaging = AppConfig::$isStaging ? '[STG] ' : '';
+        $isDev = AppConfig::$isDevlopment && !AppConfig::$isStaging ? '[DEV] ' : '';
+        $prefix =  $isStaging . $isDev . $urlRoot . "\n";
+
         $responses = [];
         foreach (mb_str_split($message, 1000 - mb_strlen($prefix)) as $el) {
-            $responses[] = $curl($prefix . $el);
+            $responses[] = $curl($urlRoot . $el);
         }
 
         return implode("\n", $responses);
