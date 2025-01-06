@@ -105,7 +105,6 @@
                 </a>
             </article>
         </aside>
-        <p style="width: fit-content; margin: 1rem auto;"><a style="color: #777; font-size: 11px;" href="<?php echo AppConfig::LINE_OPEN_URL . $_deleted['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX; ?>">オープンチャットのURL（LINEオープンチャット公式サイト）</a></p>
     </main>
     <footer>
         <?php viewComponent('footer_inner') ?>
