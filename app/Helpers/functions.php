@@ -169,6 +169,10 @@ function noStore()
 
 function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
+    if (AppConfig::$isStaging) {
+        cache();
+    }
+
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
         $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content . filemtime(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))) . '"';
