@@ -76,48 +76,45 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     </div>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-    <script>
-        const urlRoot = '<?php echo MimimalCmsConfig::$urlRoot ?>'
-        let lastList = ''
 
-        function fetchMyList(name) {
-            const cookieRegex = new RegExp(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`)
-            const cookieMatch = document.cookie.match(cookieRegex)
-            const myListDiv = document.getElementById('myListDiv')
-            if (!cookieMatch) {
-                myListDiv.textContent && (myListDiv.textContent = '')
-                return
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 // TODO: 日本以外ではマイリストが無効
+    ?>
+        <script>
+            const urlRoot = '<?php echo MimimalCmsConfig::$urlRoot ?>'
+            let lastList = ''
+
+            function fetchMyList(name) {
+                const cookieRegex = new RegExp(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`)
+                const cookieMatch = document.cookie.match(cookieRegex)
+                const myListDiv = document.getElementById('myListDiv')
+                if (!cookieMatch) {
+                    myListDiv.textContent && (myListDiv.textContent = '')
+                    return
+                }
+
+                fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api')
+                    .then((res) => {
+                        if (res.status === 200)
+                            return res.text();
+                        else
+                            throw new Error()
+                    })
+                    .then((data) => {
+                        if (lastList === data)
+                            return
+
+                        lastList = data
+                        myListDiv.textContent = ''
+                        myListDiv.insertAdjacentHTML('afterbegin', data)
+                        myListDiv.style.opacity = '1'
+                    })
+                    .catch(error => console.error('エラー', error))
             }
 
-            fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api')
-                .then((res) => {
-                    if (res.status === 200)
-                        return res.text();
-                    else
-                        throw new Error()
-                })
-                .then((data) => {
-                    if (lastList === data)
-                        return
-
-                    lastList = data
-                    myListDiv.textContent = ''
-                    myListDiv.insertAdjacentHTML('afterbegin', data)
-                    myListDiv.style.opacity = '1'
-                })
-                .catch(error => console.error('エラー', error))
-        }
-
-        // TODO: 日本以外ではマイリストが無効
-        if (urlRoot === '') {
             window.addEventListener("pageshow", function(event) {
                 fetchMyList('myList')
             });
-        }
-    </script>
-
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
-    ?>
+        </script>
         <script type="module">
             import {
                 getComment
@@ -126,6 +123,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
         </script>
     <?php endif ?>
+
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>
 

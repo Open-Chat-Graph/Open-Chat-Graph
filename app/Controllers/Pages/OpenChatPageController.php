@@ -21,7 +21,6 @@ use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
-use App\Models\Repositories\DB;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use Shared\MimimalCmsConfig;
 

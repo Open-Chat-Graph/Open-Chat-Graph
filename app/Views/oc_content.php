@@ -339,21 +339,20 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     const admin = <?php echo isset($_adminDto) ? 1 : 0 ?>
   </script>
+
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
   ?>
     <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
   <?php endif ?>
-  <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-  <script type="module">
-    import {
-      JsonCookie
-    } from '<?php echo fileUrl('/js/JsonCookie.js', urlRoot: '') ?>'
 
-    (() => {
-      // TODO:日本以外ではマイリストが無効
-      if (document.querySelector('.my-list-form').style.visibility === 'hidden') {
-        return
-      }
+  <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
+
+  <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではマイリストが無効
+  ?>
+    <script type="module">
+      import {
+        JsonCookie
+      } from '<?php echo fileUrl('/js/JsonCookie.js', urlRoot: '') ?>'
 
       const OPEN_CHAT_ID = <?php echo $oc['id'] ?>;
       const LIST_LIMIT_MY_LIST = <?php echo AppConfig::LIST_LIMIT_MY_LIST ?>;
@@ -390,8 +389,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         const expiresTimestamp = myListJsonCookie.set(OPEN_CHAT_ID, 1)
         myListJsonCookie.set('expires', expiresTimestamp)
       })
-    })()
-  </script>
+    </script>
+  <?php endif ?>
 
   <?php echo $_breadcrumbsShema ?>
 </body>
