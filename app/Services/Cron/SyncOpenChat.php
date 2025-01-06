@@ -120,7 +120,7 @@ class SyncOpenChat
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     addCronLog('Skip updateInvitationTicketAll because it is active');
-                    AdminTool::sendLineNofity('Skip hourlyTask because it is active');
+                    AdminTool::sendLineNofity('Skip updateInvitationTicketAll because it is active');
                     return;
                 }
 

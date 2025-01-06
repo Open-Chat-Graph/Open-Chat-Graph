@@ -592,3 +592,11 @@ function addCronLog(string|array $log)
         error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::getStorageFilePath('addCronLogDest'));
     }
 }
+
+function t(string $text): string
+{
+    static $data = json_decode(file_get_contents(AppConfig::TRANSLATION_FILE), true);
+    static $lang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
+
+    return $data[$text][$lang] ?? $text;
+}

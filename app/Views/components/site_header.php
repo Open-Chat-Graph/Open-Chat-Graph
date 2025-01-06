@@ -6,13 +6,13 @@
         <a class="header_site_title unset" href="<?php echo url() ?>">
             <img src="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>" alt="">
             <?php if (strpos(path(), '/oc') === false || isset($titleP)) : ?>
-                <h1>オプチャグラフ</h1>
+                <h1><?php echo t('オプチャグラフ') ?></h1>
             <?php else : ?>
-                <p>オプチャグラフ</p>
+                <p><?php echo t('オプチャグラフ') ?></p>
             <?php endif ?>
         </a>
         <a class="category-button" href="<?php echo url('ranking') ?>">
-            <span>カテゴリーから探す</span>
+            <span><?php echo t('カテゴリーから探す') ?></span>
         </a>
         <nav class="header-nav unset" style="height: 48px;">
             <button class="header-button unset" id="search_button" aria-label="検索">
