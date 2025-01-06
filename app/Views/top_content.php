@@ -116,14 +116,16 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         }
     </script>
 
-    <script type="module">
-        import {
-            getComment
-        } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    ?>
+        <script type="module">
+            import {
+                getComment
+            } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-        getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
-    </script>
-
+            getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
+        </script>
+    <?php endif ?>
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>
 
