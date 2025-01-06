@@ -45,6 +45,14 @@ html {
   padding: 0 1rem;
 }
 
+.recommend-list-aside:has(.top-ranking.not-rank) {
+  padding: 0;
+}
+
+.recommend-list-aside:has(.top-ranking.not-rank) .top-ranking.not-rank {
+  padding: 1rem;
+}
+
 .oc-page-footer {
   padding: 1rem;
 }

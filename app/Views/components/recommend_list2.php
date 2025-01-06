@@ -5,7 +5,12 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendUtility;
+use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
+
+if (!$recommend->getCount()) {
+    return;
+}
 
 if ($recommend->type === RecommendListType::Category) {
     $title = "「{$recommend->listName}」カテゴリー";
@@ -16,6 +21,9 @@ if ($recommend->type === RecommendListType::Category) {
 }
 
 ?>
+
+<?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+<hr class="hr-top">
 
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">
     <header class="openchat-list-title-area unset">
@@ -50,3 +58,5 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
 </article>
+
+<hr class="hr-bottom">

@@ -32,17 +32,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
-        <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
-        <hr class="hr-bottom">
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
