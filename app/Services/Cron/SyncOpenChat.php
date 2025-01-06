@@ -118,7 +118,7 @@ class SyncOpenChat
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             [fn() => function () {
-                if ($this->state->getBool(StateType::isHourlyTaskActive)) {
+                if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     addCronLog('Skip updateInvitationTicketAll because it is active');
                     AdminTool::sendLineNofity('Skip hourlyTask because it is active');
                     return;
