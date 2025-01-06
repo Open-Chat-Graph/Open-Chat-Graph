@@ -147,10 +147,10 @@ const setHeaderShow2 = (header, hidden, show) => {
   })
 }
 
-;(() => {
-  const header = document.querySelector('.site_header_outer')
-  setHeaderShow(header, -48, 0)
-})()
+  ; (() => {
+    const header = document.querySelector('.site_header_outer')
+    setHeaderShow(header, -48, 0)
+  })()
 
 const setAnchorPosition = () => {
   let count = 0
@@ -253,4 +253,4 @@ async function blockblock() {
     })
 }
 
-if(typeof admin === 'undefined' || !admin || location.host !== 'ocgraph.wpx.jp') blockblock()
+// if(typeof admin === 'undefined' || !admin) blockblock()
