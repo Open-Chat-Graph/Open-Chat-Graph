@@ -26,13 +26,19 @@ class OpenChatImageUpdater
         $this->update($updated);
     }
 
-    function imageUpdateAll(bool $forToday = true)
+    function imageUpdateAll(bool $forToday = true): int
     {
-        if (!$forToday)  $this->update($this->updateOpenChatRepository->getOpenChatImgAll());
+        if (!$forToday) {
+            $ocArray = $this->updateOpenChatRepository->getOpenChatImgAll();
+            $this->update($this->updateOpenChatRepository->getOpenChatImgAll());
+        } else {
+            $date = new \DateTime(OpenChatServicesUtility::getCronModifiedStatsMemberDate());
+            $date->modify('- 1day');
+            $ocArray = $this->updateOpenChatRepository->getOpenChatImgAll($date->format('Y-m-d'));
+        }
 
-        $date = new \DateTime(OpenChatServicesUtility::getCronModifiedStatsMemberDate());
-        $date->modify('- 1day');
-        $this->update($this->updateOpenChatRepository->getOpenChatImgAll($date->format('Y-m-d')));
+        $this->update($ocArray);
+        return count($ocArray);
     }
 
     private function update(array $ocArray)

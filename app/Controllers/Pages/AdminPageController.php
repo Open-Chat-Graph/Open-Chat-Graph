@@ -14,6 +14,7 @@ use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
@@ -47,9 +48,31 @@ class AdminPageController
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
-    function testpage()
+    function updateimgeall(?string $lang)
     {
-        return view('admin/admin_message_page', ['title' => 'test', 'message' => 'testを実行しました。']);
+        $urlRoot = null;
+        switch ($lang) {
+            case 'ja':
+                $urlRoot = '';
+                break;
+            case 'tw':
+                $urlRoot = '/tw';
+                break;
+            case 'th':
+                $urlRoot = '/th';
+                break;
+        }
+
+        if (is_null($urlRoot)) {
+            return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。']);
+        }
+
+        $path = AppConfig::ROOT_PATH . 'batch/exec/imageupdater_exec.php';
+        $arg = escapeshellarg($urlRoot);
+
+        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
     private function halfcheck()
