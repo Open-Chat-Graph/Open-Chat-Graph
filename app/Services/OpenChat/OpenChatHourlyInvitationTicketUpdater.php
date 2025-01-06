@@ -21,6 +21,7 @@ class OpenChatHourlyInvitationTicketUpdater
 
     function updateInvitationTicketAll()
     {
+        DB::$pdo = null;
         $ocArray = $this->updateOpenChatRepository->getEmptyUrlOpenChatId();
 
         // 開発環境の場合、更新制限をかける
