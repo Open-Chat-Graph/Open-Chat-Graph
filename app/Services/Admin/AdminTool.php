@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Config\AppConfig;
 use App\Config\SecretsConfig;
 use Shared\MimimalCmsConfig;
 use Symfony\Component\HttpClient\HttpClient;
@@ -96,10 +97,14 @@ class AdminTool
             return (string)$response;
         };
 
+        $urlRoot = '[' . (str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja') . ']';
+        $isStaging = AppConfig::$isStaging ? '[STG]' : '';
+        $isDev = AppConfig::$isDevlopment && !AppConfig::$isStaging ? '[DEV]' : '';
+        $prefix =  $isStaging . $isDev . $urlRoot;
+        
         $responses = [];
-        $urlRoot = '[' . (str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja') . '] ';
-        foreach (mb_str_split($message, 1000 - mb_strlen($urlRoot)) as $el) {
-            $responses[] = $curl($urlRoot . $el);
+        foreach (mb_str_split($message, 1000 - mb_strlen($prefix)) as $el) {
+            $responses[] = $curl($prefix . $el);
         }
 
         return implode("\n", $responses);
