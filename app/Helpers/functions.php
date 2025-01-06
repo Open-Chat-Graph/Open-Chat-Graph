@@ -171,6 +171,7 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 {
     if (AppConfig::$isStaging) {
         cache();
+        return;
     }
 
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
