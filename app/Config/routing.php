@@ -79,7 +79,7 @@ Route::path(
     [RankingPositionApiController::class, 'rankingPosition']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0, max: 41)
+    ->matchNum('category', min: 0)
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->matchStr('start_date')
     ->matchStr('end_date')
@@ -99,7 +99,7 @@ Route::path(
     [RankingPositionApiController::class, 'rankingPositionHour']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0, max: 41)
+    ->matchNum('category', min: 0)
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->match(function (Reception $reception) {
         handleRequestWithETagAndCache(json_encode($reception->input()));
