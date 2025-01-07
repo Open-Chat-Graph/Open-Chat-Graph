@@ -24,9 +24,9 @@
               <span>
                 <?php if ($oc['member'] === $recommend->maxMemberCount) : ?>
                   <span aria-hidden="true" style="font-size: 9px; user-select: none;">🏆</span>
-                  <span style="font-weight: bold;">メンバー <?php echo formatMember($oc['member']) ?>人</span>
+                  <span style="font-weight: bold;"><?php echo sprintfT('メンバー %s人', formatMember($oc['member'])) ?></span>
                 <?php else : ?>
-                  <span>メンバー <?php echo formatMember($oc['member']) ?>人</span>
+                  <span><?php echo sprintfT('メンバー %s人', formatMember($oc['member'])) ?></span>
                 <?php endif ?>
                 <?php if ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME) : ?>
                   <span aria-hidden="true" style="font-size: 9px; user-select: none;">🔥</span>

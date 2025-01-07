@@ -383,6 +383,10 @@ function allowCORS()
 
 function formatMember(int $n)
 {
+    if (MimimalCmsConfig::$urlRoot !== '') {
+        return number_format($n);
+    }
+
     return $n < 1000 ? $n : ($n >= 10000 ? (floor($n / 1000) / 10 . '万') : number_format($n));
 }
 
@@ -606,4 +610,10 @@ function t(string $text): string
     static $lang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
 
     return $data[$text][$lang] ?? $text;
+}
+
+function sprintfT(string $format, string|int ...$values): string
+{
+    $text = t($format);
+    return sprintf($text, ...$values);
 }

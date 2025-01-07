@@ -34,15 +34,15 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <p class="talkroom_description" id="talkroom-description">
             <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
           </p>
-          <button id="talkroom-description-close-btn" class="close-btn" title="一部を表示">一部を表示</button>
+          <button id="talkroom-description-close-btn" class="close-btn" title="<?php echo t('一部を表示') ?>"><?php echo t('一部を表示') ?></button>
           <div class="more" id="read_more_btn">
             <div class="more-separater">&nbsp;</div>
-            <button class="unset more-text" style="font-weight: bold; color: #111;" title="もっと見る">…もっと見る</button>
+            <button class="unset more-text" style="font-weight: bold; color: #111;" title="<?php echo t('もっと見る') ?>">…<?php echo t('もっと見る') ?></button>
           </div>
         </div>
 
         <div class="talkroom_number_of_members">
-          <span class="number_of_members">メンバー <?php echo number_format($oc['member']) ?>人</span>
+          <span class="number_of_members"><?php echo sprintfT('メンバー %s人', number_format($oc['member'])) ?></span>
         </div>
 
         <?php if (isset($_hourlyRange)) : ?>
@@ -135,7 +135,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
             <?php if (is_int($oc['api_created_at'])) : ?>
-              <div>カテゴリー&nbsp;</div>
+              <div><?php echo t('カテゴリー') ?>&nbsp;</div>
             <?php endif ?>
             <?php if (isset($recommend[2]) && $recommend[2]) : ?>
               <div>タグ&nbsp;</div>
@@ -184,7 +184,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           </div>
         </div>
         <span class="number-box created-at">
-          <div class="openchat-itme-stats-title">登録</div>
+          <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
           <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at']) ?></div>
         </span>
       </div>

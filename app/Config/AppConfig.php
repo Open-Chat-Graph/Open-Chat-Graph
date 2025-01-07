@@ -45,12 +45,12 @@ class AppConfig
         ],
         '/tw' => [
             1 => 'Special Open Chat',
-            2 => 'Official certification badge',
+            2 => '官方認證徽章',
             3 => 'All',
         ],
         '/th' => [
-            1 => 'Special Open Chat',
-            2 => 'Official certification badge',
+            1 => 'Super OpenChat',
+            2 => 'Official Badge',
             3 => 'All',
         ],
     ];
