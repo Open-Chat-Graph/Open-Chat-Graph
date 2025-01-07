@@ -54,7 +54,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <p class="recommend-header-desc talkroom_link_h1" style="color: #111; font-size: 16px; font-weight: bold; white-space: unset;">
-        「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）
+          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
         </p>
         <p class="recommend-header-desc desc-bottom">
           ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
@@ -146,7 +146,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <hr class="hr-bottom">
-    
+
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
