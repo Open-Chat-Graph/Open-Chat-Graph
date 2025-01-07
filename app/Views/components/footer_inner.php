@@ -1,7 +1,7 @@
 <nav class="footer-link-box-outer">
     <section class="unset footer-link-box">
         <ul class="footer-link-inner">
-            <li><a class="unset" href="<?php echo url('') ?>">トップ</a></il>
+            <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></il>
             <li><a class="unset" href="<?php echo url('policy') ?>">オプチャグラフについて</a></il>
             <li><a class="unset" style="margin-bottom: 0;" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
         </ul>
