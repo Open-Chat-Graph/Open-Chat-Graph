@@ -593,7 +593,7 @@ function addCronLog(string|array $log)
     }
 }
 
-function AddVerboseCronLog(string|array $log)
+function addVerboseCronLog(string|array $log)
 {
     if (AppConfig::$verboseCronLog) {
         addCronLog($log);
