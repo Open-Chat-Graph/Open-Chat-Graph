@@ -582,18 +582,21 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
     return filemtime($path);
 }
 
-function addCronLog(string|array $log, bool $verbose = false)
+function addCronLog(string|array $log)
 {
-    if ($verbose && !AppConfig::$verboseCronLog) {
-        return;
-    }
-
     if (is_string($log)) {
         $log = [$log];
     }
 
     foreach ($log as $string) {
         error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::getStorageFilePath('addCronLogDest'));
+    }
+}
+
+function AddVerboseCronLog(string|array $log)
+{
+    if (AppConfig::$verboseCronLog) {
+        addCronLog($log);
     }
 }
 
