@@ -105,7 +105,7 @@ class OpenChatPageController
 
         $tag = $oc['tag1'];
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
-        $category = $categoryValue ?? t('カテゴリー未指定');
+        $category = $categoryValue ?? t('未指定');
         $recommend = $recommendGenarator->getRecommend($tag, $oc['tag2'], $oc['tag3'], $oc['category']);
 
         $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
