@@ -93,7 +93,7 @@
     },
     "LINEオープンチャット": {
         "tw": "LINE社群",
-        "th": "LINE OPENCHAT"
+        "th": "LINE OpenChat"
     },
     "LINEで開く": {
         "tw": "以LINE開啟",
@@ -130,5 +130,49 @@
     "未指定": {
         "tw": "未指定",
         "th": "ไม่ระบุ"
+    },
+    "このページをシェアする": {
+        "tw": "分享此頁面",
+        "th": "แชร์หน้านี้"
+    },
+    "このページのタイトルとURLをコピーする": {
+        "tw": "複製此頁面的標題和URL",
+        "th": "คัดลอกชื่อและ URL ของหน้านี้"
+    },
+    "コピーしました": {
+        "tw": "已複製",
+        "th": "คัดลอกแล้ว"
+    },
+    "Facebookでシェア": {
+        "tw": "在Facebook上分享",
+        "th": "แชร์ใน Facebook"
+    },
+    "LINEでシェア": {
+        "tw": "在LINE上分享",
+        "th": "แชร์ใน LINE"
+    },
+    "ポストする": {
+        "tw": "發布",
+        "th": "โพสต์"
+    },
+    "https://openchat.line.me/jp": {
+        "tw": "https://openchat.line.me/tw",
+        "th": "https://openchat.line.me/th"
+    },
+    "【公式】LINEオープンチャット": {
+        "tw": "【官方】 LINE社群",
+        "th": "【เว็บทางการ】 LINE OpenChat"
+    },
+    "https://openchat-jp.line.me/other/beginners_guide": {
+        "tw": "https://line-tw-official.weblog.to/archives/82859412.html",
+        "th": "https://notice2.line.me/SQUARE/web/document/notice?documentId=20162555&lang=th"
+    },
+    "はじめてのLINEオープンチャットガイド（LINE公式）": {
+        "tw": "【LINE社群】維持安心安全的使用環境！請詳閱社群守則（官方）",
+        "th": "ประกาศ | OpenChat (เว็บทางการ)"
+    },
+    "LINEアプリをダウンロード（LINE公式）": {
+        "tw": "下載LINE應用程式（官方）",
+        "th": "ดาวน์โหลดแอป LINE (เว็บทางการ)"
     }
 }
