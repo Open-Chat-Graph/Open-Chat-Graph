@@ -67,7 +67,7 @@ class OpenChatPageController
         $hourlyTime = $hourlyUpdatedAt->format(\DateTime::ATOM);
         $hourlyUpdatedAt->modify('-1hour');
 
-        return '<time datetime="' . $hourlyTime . '">' . '1時間' . '</time>';
+        return '<time datetime="' . $hourlyTime . '">' . t('1時間') . '</time>';
     }
 
     private function getAdminDto(int $open_chat_id)
