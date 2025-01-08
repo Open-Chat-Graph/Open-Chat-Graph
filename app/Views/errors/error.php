@@ -232,9 +232,29 @@ try {
     $errorMessage = $e->getMessage();
 }
 
+$config = MimimalCmsConfig::class;
+if (class_exists($config) && isset($config::$urlRoot)) {
+    switch (MimimalCmsConfig::$urlRoot) {
+        case '':
+            $message = 'お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。';
+            $message2 = 'このオープンチャットは登録されていないか、削除されました';
+            break;
+        case '/th':
+            $message = 'หน้าที่คุณกำลังมองหาอยู่อาจไม่สามารถเข้าถึงได้ชั่วคราว หรืออาจถูกย้ายหรือลบไปแล้ว';
+            $message2 = 'ห้องสนทนานี้ไม่ได้ลงทะเบียนหรือถูกลบ';
+            break;
+        case '/tw':
+            $message = '您正在查找的页面可能暂时无法访问，或者可能已移动或删除';
+            $message2 = '此聊天室未注册或已删除';
+    }
+} else {
+    $message = 'The page you are looking for is temporarily inaccessible and may be moved or deleted.';
+}
+
+
 $_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
-    ->setDescription('お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。')
-    ->setOgpDescription('お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。');
+    ->setDescription($message)
+    ->setOgpDescription($message);
 
 $_css = ['room_list', 'site_header', 'site_footer'];
 
@@ -283,10 +303,10 @@ $_css = ['room_list', 'site_header', 'site_footer'];
                 <h1><?php echo $httpCode ?? '' ?></h1>
                 <h2><?php echo $httpStatusMessage ?? '' ?></h2>
                 <br>
-                <p>お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。</p>
+                <p><?php echo $message ?></p>
             <?php else : ?>
                 <br>
-                <p>このオープンチャットは登録されていないか、削除されました🙀</p>
+                <p><?php echo $message2 ?>🙀</p>
             <?php endif ?>
         </header>
         <?php if ($detailsMessage) : ?>
@@ -334,7 +354,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
             $c = app(NotFoundPageController::class);
             $c->index()->render();
         } catch (\Throwable $e) {
-            echo 'データ取得エラー';
+            echo 'error';
             pre_var_dump($e->__toString());
         }
         ?>

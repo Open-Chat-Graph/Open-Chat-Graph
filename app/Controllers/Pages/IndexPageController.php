@@ -22,10 +22,10 @@ class IndexPageController
 
         $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list'];
         $_meta = meta();
-        $_meta->title = "{$_meta->title}｜オープンチャットの統計情報";
+        $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 
         $_schema = $pageBreadcrumbsListSchema->generateStructuredDataWebSite(
-            'オプチャグラフ',
+            t('オプチャグラフ'),
             $_meta->description,
             url(),
             url('assets/ogp.png'),
