@@ -132,7 +132,7 @@ class OpenChatPageController
         $_meta->thumbnail = imgPreviewUrl($oc['id'], $oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
-            'オプチャ',
+            t('オプチャ'),
             'oc',
             $tag ?: $category,
             (string)$open_chat_id
@@ -149,7 +149,7 @@ class OpenChatPageController
 
         $_hourlyRange = $this->buildHourlyRange($oc);
 
-        $_chartArgDto = $this->buildChartDto($oc, $categoryValue ?? 'すべて');
+        $_chartArgDto = $this->buildChartDto($oc, $categoryValue ?? t('すべて'));
         $_commentArgDto = [
             'baseUrl' => url(),
             'openChatId' => $oc['id']
