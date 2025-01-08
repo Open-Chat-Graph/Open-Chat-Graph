@@ -15,8 +15,7 @@ use Shared\MimimalCmsConfig;
 
 class SitemapGenerator
 {
-    const SITE_URL = 'https://openchat-review.me';
-    const SITEMAP_PATH = 'https://openchat-review.me/sitemaps/';
+    const SITEMAP_PATH = '/sitemaps/';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemaps/';
     const INDEX_SITEMAP = __DIR__ . '/../../public/sitemap.xml';
     private string $currentUrl = '';
@@ -33,7 +32,7 @@ class SitemapGenerator
         $index = new SitemapIndex();
         foreach (array_keys(AppConfig::$dbName) as $lang) {
             MimimalCmsConfig::$urlRoot = $lang;
-            $this->currentUrl = self::SITE_URL . $lang . '/';
+            $this->currentUrl = AppConfig::$siteUrl . $lang . '/';
             DB::$pdo = null;
             $this->generateEachLanguage($index);
         }
@@ -108,7 +107,7 @@ class SitemapGenerator
         $fileName = "sitemap{$n}.xml";
         safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render(), 0755);
 
-        return self::SITEMAP_PATH . $fileName;
+        return AppConfig::$siteUrl . self::SITEMAP_PATH . $fileName;
     }
 
     /**

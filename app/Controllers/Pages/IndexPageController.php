@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\StaticData\StaticDataFile;
@@ -27,7 +28,7 @@ class IndexPageController
         $_schema = $pageBreadcrumbsListSchema->generateStructuredDataWebSite(
             'オプチャグラフ',
             $_meta->description,
-            url(),
+            AppConfig::$siteUrl,
             url('assets/ogp.png'),
             new DateTime('2023-05-06 00:00:00'),
             $dto->hourlyUpdatedAt

@@ -6,6 +6,8 @@ use Shared\MimimalCmsConfig;
 
 class AppConfig
 {
+    static string $siteUrl = 'https://openchat-review.me';
+
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
     const DEFAULT_OGP_IMAGE_FILE_PATH = 'assets/ogp.png';
 

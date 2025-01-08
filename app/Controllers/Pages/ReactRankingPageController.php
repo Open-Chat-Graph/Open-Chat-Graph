@@ -89,7 +89,9 @@ class ReactRankingPageController
             ->generateTags();
 
         $_argDto = $staticDataFile->getRankingArgDto();
-        $_argDto->baseUrl = url();
+        
+        // TODO:React側を修正する
+        $_argDto->baseUrl = getDomainAndHttpHost(generateUrlWithRelativePath: false);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             'ランキング',

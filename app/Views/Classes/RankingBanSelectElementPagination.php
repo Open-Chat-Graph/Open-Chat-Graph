@@ -10,7 +10,7 @@ class RankingBanSelectElementPagination
     {
         if ($pageNumber > 1) $params['page'] = $pageNumber;
 
-        return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost()
+        return getDomainAndHttpHost()
             . '/' . $path . '?' . http_build_query($params);
     }
 
