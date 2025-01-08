@@ -125,7 +125,9 @@ Route::path(
     [RegisterOpenChatPageController::class, 'index', 'get'],
 )
     ->middleware([VerifyCsrfToken::class])
-    ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot]);
+    ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
+    // TODO: 日本語以外では手動で登録ページが無効
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
     'recently-registered/{page}@get',
