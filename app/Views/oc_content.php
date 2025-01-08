@@ -87,7 +87,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               </svg>
               <span class="openchat-itme-stats-title"><?php echo t('1週間') ?></span>
               <div>
-                <span class="openchat-item-stats"><?php echo signedNumF($oc['diff_member2']) ?>人</span><span class="openchat-item-stats percent">(<?php echo signedNum(signedCeil($oc['percent_increase2'] * 10) / 10) ?>%)</span>
+                <span class="openchat-item-stats"><?php echo sprintfT('%s人', signedNumF($oc['diff_member2'])) ?></span><span class="openchat-item-stats percent">(<?php echo signedNum(signedCeil($oc['percent_increase2'] * 10) / 10) ?>%)</span>
               </div>
             </div>
           <?php elseif (isset($oc['diff_member2'])) : ?>
@@ -95,7 +95,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               <span class="openchat-itme-stats-title"><?php echo t('1週間') ?></span>
               <?php if (($oc['diff_member2'] ?? 0) !== 0) : ?>
                 <div>
-                  <span class="openchat-item-stats"><?php echo signedNumF($oc['diff_member2']) ?>人</span><span class="openchat-item-stats percent">(<?php echo signedNum(signedCeil($oc['percent_increase2'] * 10) / 10) ?>%)</span>
+                  <span class="openchat-item-stats"><?php echo sprintfT('%s人', signedNumF($oc['diff_member2'])) ?></span><span class="openchat-item-stats percent">(<?php echo signedNum(signedCeil($oc['percent_increase2'] * 10) / 10) ?>%)</span>
                 </div>
               <?php elseif ($oc['diff_member2'] === 0) : ?>
                 <span class="zero-stats">±0</span>
