@@ -54,9 +54,6 @@ class MimimalCmsConfig
     // URL root
     public static string $urlRoot = '';
 
-    // URL
-    public static bool $generateUrlWithRelativePath = true;
-
     // Directories
     public static string $publicDir = __DIR__ . '/../public';
     public static string $viewsDir = __DIR__ . '/../app/Views';

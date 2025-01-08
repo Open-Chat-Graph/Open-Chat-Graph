@@ -23,16 +23,6 @@ function app(?string $abstract = null, array $parameters = []): object
     return new \Shadow\Kernel\Application;
 }
 
-function getDomainAndHttpHost(?string $urlRoot = null): string
-{
-    if (MimimalCmsConfig::$generateUrlWithRelativePath) {
-        return ($urlRoot ?? MimimalCmsConfig::$urlRoot);
-    }
-
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($urlRoot ?? MimimalCmsConfig::$urlRoot);
-}
-
 /**
  * Render a template file with optional values.
  *
@@ -78,11 +68,13 @@ function response(mixed $data, int $responseCode = 200): \Shadow\Kernel\Response
  */
 function redirect(?string $url = null, int $responseCode = 302, ?string $urlRoot = null): \Shadow\Kernel\Response
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     if ($url === null) {
-        $url = getDomainAndHttpHost($urlRoot);
+        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot);
     } elseif (!preg_match("~^(?:f|ht)tps?://~i", $url)) {
         $path = ltrim($url, "/");
-        $url = getDomainAndHttpHost($urlRoot) . "/" . $path;
+        $url = \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . "/" . $path;
     }
 
     return new \Shadow\Kernel\Response($responseCode, $url);
@@ -204,9 +196,9 @@ function publicDir(string $path = '', ?string $publicDir = null): string
  * 
  * @return string      The full URL of the current website domain.
  * 
- * * **Example :** Input: `url("home", "article")`  Output: `/home/article`
- * * **Example :** Input: `url("/home", "/article")`  Output: `/home/article`
- * * **Example :** Input: `url("home/", "article/")`  Output: `/home//article/`
+ * * **Example :** Input: `url("home", "article")`  Output: `https://exmaple.com/home/article`
+ * * **Example :** Input: `url("/home", "/article")`  Output: `https://exmaple.com/home/article`
+ * * **Example :** Input: `url("home/", "article/")`  Output: `https://exmaple.com/home//article/`
  * * **Example :** Input: `url(["urlRoot" => "/en", "paths" => ["home", "article"]])`  Output: `https://example.com/en/home/article`
  * 
  * @throws \InvalidArgumentException If the argument passed is an array and does not contain the required keys.
@@ -217,7 +209,7 @@ function url(string|array ...$paths): string
         $urlRoot = $paths[0]['urlRoot'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
         $paths = $paths[0]['paths'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
     } else {
-        $urlRoot = null;
+        $urlRoot = MimimalCmsConfig::$urlRoot;
     }
 
     $uri = '';
@@ -225,7 +217,7 @@ function url(string|array ...$paths): string
         $uri .= "/" . ltrim($path, "/");
     }
 
-    return getDomainAndHttpHost($urlRoot) . $uri;
+    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $uri;
 }
 
 /**
@@ -236,18 +228,20 @@ function url(string|array ...$paths): string
  * @param ?string $urlRoot    [optional] The root of the URL. Default is `MimimalCmsConfig::$urlRoot`.
  * @return string The URL for the given page number.
  * 
- * * **Example :** Input: `pagerUrl("home", 5)`  Output: `/home/5`
- * * **Example :** Input: `pagerUrl("/home/", 5)`  Output: `/home/5`
- * * **Example :** Input: `pagerUrl("home", 1)`  Output: `/home`
+ * * **Example :** Input: `pagerUrl("home", 5)`  Output: `https://exmaple.com/home/5`
+ * * **Example :** Input: `pagerUrl("/home/", 5)`  Output: `https://exmaple.com/home/5`
+ * * **Example :** Input: `pagerUrl("home", 1)`  Output: `https://exmaple.com/home`
  */
 function pagerUrl(string $path, int $pageNumber, ?string $urlRoot = null): string
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     if ($path !== '') {
         $path = "/" . ltrim(rtrim($path, "/"), "/");
     }
 
     $secondPath = ($pageNumber > 1) ? "/" . (string) $pageNumber : '';
-    return getDomainAndHttpHost($urlRoot) . $path . $secondPath;
+    return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $path . $secondPath;
 }
 
 /**
@@ -261,6 +255,8 @@ function pagerUrl(string $path, int $pageNumber, ?string $urlRoot = null): strin
  */
 function path(?string $urlRoot = null): string
 {
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+
     return \Shadow\Kernel\Utility\KernelUtility::getCurrentUri($urlRoot);
 }
 
@@ -606,15 +602,16 @@ function safeFileRewrite(string $targetFile, string $content, int $permissions =
 function fileUrl(string $filePath, ?string $publicDir = null, ?string $urlRoot = null): string
 {
     $publicDir = $publicDir ?? MimimalCmsConfig::$publicDir;
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
 
     $filePath = "/" . ltrim($filePath, "/");
     $fullFilePath = $publicDir . $filePath;
 
     if (!file_exists($fullFilePath)) {
-        return getDomainAndHttpHost($urlRoot) . $filePath;
+        return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $filePath;
     }
 
-    return getDomainAndHttpHost($urlRoot) . $filePath . '?v=' . filemtime($fullFilePath);
+    return Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost($urlRoot) . $filePath . '?v=' . filemtime($fullFilePath);
 }
 
 /**
