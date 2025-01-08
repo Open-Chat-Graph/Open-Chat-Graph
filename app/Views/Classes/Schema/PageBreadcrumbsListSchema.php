@@ -108,7 +108,7 @@ class PageBreadcrumbsListSchema
         return Schema::organization()
             ->name(t('LINEオープンチャット'))
             ->alternateName(t('オプチャ'))
-            ->url('https://openchat-jp.line.me/other/beginners_guide');
+            ->url(t('https://openchat.line.me/jp'));
     }
 
     function lineOrganization()
