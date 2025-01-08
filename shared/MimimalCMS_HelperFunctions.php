@@ -23,12 +23,9 @@ function app(?string $abstract = null, array $parameters = []): object
     return new \Shadow\Kernel\Application;
 }
 
-function getDomainAndHttpHost(?string $urlRoot = null, ?bool $generateUrlWithRelativePath = null): string
+function getDomainAndHttpHost(?string $urlRoot = null): string
 {
-    if (isset($generateUrlWithRelativePath)
-        ? $generateUrlWithRelativePath
-        : MimimalCmsConfig::$generateUrlWithRelativePath
-    ) {
+    if (MimimalCmsConfig::$generateUrlWithRelativePath) {
         return ($urlRoot ?? MimimalCmsConfig::$urlRoot);
     }
 
