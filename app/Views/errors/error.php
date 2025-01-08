@@ -258,9 +258,15 @@ $_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
 
 $_css = ['room_list', 'site_header', 'site_footer'];
 
+try {
+    $langCode = t('ja_JP');
+} catch (\Throwable $e) {
+    $langCode = 'ja_JP';
+}
+
 ?>
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo $langCode ?>">
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">

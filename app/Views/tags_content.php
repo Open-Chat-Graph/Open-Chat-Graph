@@ -16,7 +16,7 @@ function memberCount(int $count)
 ?>
 
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="body">

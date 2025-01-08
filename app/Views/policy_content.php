@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php viewComponent('policy_head', compact('_css', '_meta')) ?>
 
 <body>

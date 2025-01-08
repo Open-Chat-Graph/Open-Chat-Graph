@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 
 <head>
     <meta charset="UTF-8" />

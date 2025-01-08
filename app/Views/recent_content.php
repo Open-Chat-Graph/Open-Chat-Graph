@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php viewComponent('head', compact('_css', '_meta') + ['noindex' => true]) ?>
 
 <body class="body">

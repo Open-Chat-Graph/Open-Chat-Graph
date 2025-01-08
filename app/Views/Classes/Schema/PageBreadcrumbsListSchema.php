@@ -12,15 +12,16 @@ class PageBreadcrumbsListSchema
 {
     const AuthorName = 'pika-0203';
     const AuthorUrl = 'https://github.com/pika-0203';
-    const PublisherName = 'オプチャグラフ';
+    public string $publisherName;
     public string $publisherLogo;
     public string $siteImg;
 
     function __construct(
         private Metadata $metadata
     ) {
-        $this->publisherLogo = url('assets/icon-192x192.png');
-        $this->siteImg = url('assets/ogp.png');
+        $this->publisherName = t('オプチャグラフ');
+        $this->publisherLogo = url(['urlRoot' => '', 'paths' => ['assets/icon-192x192.png']]);
+        $this->siteImg = url(['urlRoot' => '', 'paths' => ['assets/ogp.png']]);
     }
 
     // パンくずリスト
@@ -31,7 +32,7 @@ class PageBreadcrumbsListSchema
         $itemListElement = [
             Schema::listItem()
                 ->position(1)
-                ->name('トップ')
+                ->name(t('トップ'))
                 ->item(rtrim(url(), '/')),
             Schema::listItem()
                 ->position(2)
@@ -54,7 +55,7 @@ class PageBreadcrumbsListSchema
     // organization
     function publisher()
     {
-        $publisherName = self::PublisherName;
+        $publisherName = $this->publisherName;
         $publisherLogo = $this->publisherLogo;
         return Schema::organization()
             ->name($publisherName)
@@ -105,8 +106,8 @@ class PageBreadcrumbsListSchema
     function lineOcOrganization()
     {
         return Schema::organization()
-            ->name('LINEオープンチャット')
-            ->alternateName('オプチャ')
+            ->name(t('LINEオープンチャット'))
+            ->alternateName(t('オプチャ'))
             ->url('https://openchat-jp.line.me/other/beginners_guide');
     }
 
@@ -161,7 +162,7 @@ class PageBreadcrumbsListSchema
                     ->actionApplication($this->actionApplication())
             )
             ->additionalType('https://schema.org/FollowAction')
-            ->name('LINEで開く');
+            ->name(t('LINEで開く'));
     }
 
     function generateRecommend(
