@@ -3,7 +3,7 @@
 <!-- End Google Tag Manager (noscript) -->
 <header class="site_header_outer" id="site_header">
     <div class="site_header">
-        <a class="header_site_title unset" href="<?php echo url('/') ?>">
+        <a class="header_site_title unset" href="<?php echo url() ?>">
             <img src="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>" alt="">
             <?php if (strpos(path(), '/oc') === false || isset($titleP)) : ?>
                 <h1><?php echo t('オプチャグラフ') ?></h1>

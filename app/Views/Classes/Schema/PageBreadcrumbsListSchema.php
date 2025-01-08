@@ -32,7 +32,7 @@ class PageBreadcrumbsListSchema
             Schema::listItem()
                 ->position(1)
                 ->name('トップ')
-                ->item(url('/')),
+                ->item(rtrim(url(), '/')),
             Schema::listItem()
                 ->position(2)
                 ->name($listItemName)
@@ -61,8 +61,8 @@ class PageBreadcrumbsListSchema
             ->logo($publisherLogo)
             ->description($this->metadata->description)
             ->email('support@openchat-review.me')
-            ->url(AppConfig::$siteUrl)
-            ->sameAs(AppConfig::$siteUrl . '/policy');
+            ->url(url())
+            ->sameAs(url('policy'));
     }
 
     function person()

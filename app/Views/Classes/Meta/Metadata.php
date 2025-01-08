@@ -30,7 +30,7 @@ class Metadata
             $this->og_type = 'article';
         }
 
-        $this->site_url = AppConfig::$siteUrl;
+        $this->site_url = url();
         $this->image_url = url(AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
 
         $this->title = t($this->title);
