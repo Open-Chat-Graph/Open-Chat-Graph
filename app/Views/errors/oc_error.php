@@ -4,9 +4,6 @@
 <head prefix="og: http://ogp.me/ns#">
     <?php
 
-    use App\Config\AppConfig;
-use Shared\MimimalCmsConfig;
-
     echo gTag(\App\Config\AppConfig::GTM_ID) ?>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
