@@ -15,17 +15,17 @@
             <span><?php echo t('カテゴリーから探す') ?></span>
         </a>
         <nav class="header-nav unset" style="height: 48px;">
-            <button class="header-button unset" id="search_button" aria-label="検索">
+            <button class="header-button unset" id="search_button" aria-label="><?php echo t('検索') ?>">
                 <span class="search-button-icon"></span>
             </button>
         </nav>
     </div>
-    <div class="backdrop" id="backdrop" role="button" aria-label="閉じる"></div>
+    <div class="backdrop" id="backdrop" role="button" aria-label="<?php echo t('閉じる') ?>"></div>
     <div class="search-form site_header">
         <form class="search-form-inner" method="GET" action="<?php echo url('ranking') ?>">
             <label for="q">
             </label>
-            <input type="text" id="q" name="keyword" placeholder="オープンチャットを検索" maxlength="1000" autocomplete="off" required>
+            <input type="text" id="q" name="keyword" placeholder="<?php echo t('オープンチャットを検索') ?>" maxlength="1000" autocomplete="off" required>
             <input type="hidden" name="list" value="all">
             <input type="hidden" name="sort" value="member">
             <input type="hidden" name="order" value="desc">
