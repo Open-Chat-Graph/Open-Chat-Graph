@@ -63,9 +63,9 @@ class RankingPositionHourChartArrayService
 
         foreach ($timeArray as $key => $time) {
             $dateTime = new \DateTime($time);
-            if (MimimalCmsConfig::$urlRoot !== '') {
+/*             if (MimimalCmsConfig::$urlRoot !== '') {
                 $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-            }
+            } */
 
             $timeStr = $dateTime->format('m/d H:i');
 
