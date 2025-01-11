@@ -23,17 +23,12 @@ class RankingPositionHourChartArrayService
     {
         $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 
-        $endTime = new \DateTime($updatedAt, new \DateTimeZone('Asia/Tokyo'));
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $endTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-        }
-
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,
             $open_chat_id,
             $category,
             self::INTERVAL_HOUR,
-            $endTime,
+            new \DateTime($updatedAt)
         );
 
         return $this->generateChartArray($this->generateTimeArray($repoDto->firstTime), $repoDto);
@@ -72,7 +67,7 @@ class RankingPositionHourChartArrayService
         foreach ($timeArray as $key => $time) {
             $dateTime = new \DateTime($time, new \DateTimeZone('Asia/Tokyo'));
             if (MimimalCmsConfig::$urlRoot !== '') {
-                $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
+                $dateTime = $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
             }
 
             $timeStr = $dateTime->format('m/d H:i');
