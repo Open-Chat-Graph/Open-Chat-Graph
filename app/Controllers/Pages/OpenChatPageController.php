@@ -55,6 +55,7 @@ class OpenChatPageController
         $_chartArgDto->categoryKey = $oc['category'] ?? (is_int($oc['api_created_at']) ? 0 : null);
         $_chartArgDto->categoryName = $categoryName;
         $_chartArgDto->baseUrl = url();
+        $_chartArgDto->urlRoot = MimimalCmsConfig::$urlRoot;
         return $_chartArgDto;
     }
 
