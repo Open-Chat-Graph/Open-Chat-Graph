@@ -4,7 +4,7 @@ use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
 
 $hourlyTime = $dto->hourlyUpdatedAt->format(\DateTime::ATOM);
-$dto->hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZOON[MimimalCmsConfig::$urlRoot]));
+$dto->hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 $hourlyEnd = $dto->hourlyUpdatedAt->format('G:i');
 $dto->hourlyUpdatedAt->modify('-1hour');
 $hourlyStart = $dto->hourlyUpdatedAt->format('G:i');
