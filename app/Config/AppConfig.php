@@ -158,6 +158,12 @@ class AppConfig
         '/th' => 1,
     ];
 
+    const DATE_TIME_ZOON = [
+        '' =>   'Asia/Tokyo',
+        '/tw' => 'Asia/Taipei',
+        '/th' => 'Asia/Bangkok',
+    ];
+
     const OPENCHAT_IMG_PATH = [
         '' =>    'oc-img',
         '/tw' => 'oc-img-tw',
