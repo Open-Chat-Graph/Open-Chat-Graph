@@ -146,7 +146,11 @@ class AppConfig
 
     static bool $verboseCronLog = false;
 
-    const CRON_START_MINUTE = 30;
+    const CRON_START_MINUTE = [
+        '' =>    30,
+        '/tw' => 35,
+        '/th' => 40,
+    ];
 
     const CRON_MERGER_HOUR_RANGE_START = [
         '' =>    23,

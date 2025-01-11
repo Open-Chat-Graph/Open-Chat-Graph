@@ -53,11 +53,11 @@ class OpenChatServicesUtility
         $fileTime = new \DateTime(is_int($time) ? '@' . $time : $time);
         $fileTime->setTimeZone(new \DateTimeZone('Asia/Tokyo'));
 
-        if ((int)$fileTime->format('i') < AppConfig::CRON_START_MINUTE) {
+        if ((int)$fileTime->format('i') < AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]) {
             $fileTime->modify('-1 hour');
         }
 
-        $fileTime->setTime((int)$fileTime->format('H'), AppConfig::CRON_START_MINUTE);
+        $fileTime->setTime((int)$fileTime->format('H'), AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]);
 
         return $fileTime;
     }

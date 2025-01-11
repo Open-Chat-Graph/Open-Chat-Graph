@@ -317,7 +317,7 @@ function isDailyUpdateTime(
 ): bool {
     $start = [
         AppConfig::CRON_MERGER_HOUR_RANGE_START[MimimalCmsConfig::$urlRoot],
-        AppConfig::CRON_START_MINUTE
+        AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]
     ];
 
     $startTime = $nowStart->setTime(...$start);
