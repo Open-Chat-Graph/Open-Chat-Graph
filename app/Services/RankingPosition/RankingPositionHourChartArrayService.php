@@ -9,7 +9,6 @@ use App\Services\RankingPosition\Dto\RankingPositionHourChartDto;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourPageRepoDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
-use Shared\MimimalCmsConfig;
 
 class RankingPositionHourChartArrayService
 {
@@ -17,12 +16,13 @@ class RankingPositionHourChartArrayService
 
     function __construct(
         private RankingPositionHourPageRepositoryInterface $rankingPositionHourPageRepository,
-    ) {}
+    ) {
+    }
 
     function getPositionHourChartArray(RankingType $type, int $open_chat_id, int $category): RankingPositionHourChartDto
     {
         $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-
+        
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,
             $open_chat_id,
@@ -56,13 +56,13 @@ class RankingPositionHourChartArrayService
     {
         $dto = new RankingPositionHourChartDto;
 
-        $getRepoDtoCurTime = fn(int $key): string => isset($repoDto->time[$key]) ? $repoDto->time[$key] : '';
+        $getRepoDtoCurTime = fn (int $key): string => isset($repoDto->time[$key]) ? $repoDto->time[$key] : '';
 
         $curKeyRepoDto = 0;
         $repoDtoCurTime = $getRepoDtoCurTime(0);
 
         foreach ($timeArray as $key => $time) {
-            $dateTime = new \DateTime($time);
+            $dateTime = new \DateTime($time, new \DateTimeZone('Asia/Tokyo'));
             if (MimimalCmsConfig::$urlRoot !== '') {
                 $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
             }

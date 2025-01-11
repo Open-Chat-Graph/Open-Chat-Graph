@@ -158,7 +158,7 @@ class AppConfig
         '/th' => 1,
     ];
 
-    const DATE_TIME_ZONE = [
+    const DATE_TIME_ZOON = [
         '' =>   'Asia/Tokyo',
         '/tw' => 'Asia/Taipei',
         '/th' => 'Asia/Bangkok',
