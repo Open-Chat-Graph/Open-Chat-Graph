@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\RankingPosition;
 
+use App\Config\AppConfig;
 use App\Services\RankingPosition\Dto\RankingPositionChartDto;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionPageRepoDto;
 use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionChartArrayService
 {
@@ -18,8 +20,7 @@ class RankingPositionChartArrayService
 
     function __construct(
         private RankingPositionPageRepositoryInterface $rankingPositionPageRepository,
-    ) {
-    }
+    ) {}
 
     function getRankingPositionChartArray(
         RankingType $type,
@@ -65,8 +66,8 @@ class RankingPositionChartArrayService
         $dto = new RankingPositionChartDto;
         $startTime = strtotime($startDate->format('Y-m-d'));
 
-        $getRepoDtoCurDate = fn (int $key): string => isset($repoDto->time[$key]) ? substr($repoDto->time[$key], 0, self::SUBSTR_YMD_LEN) : '';
-        $getIsBeforeStartDate = fn (string $date) => strtotime($date) < strtotime(self::START_DATE) || strtotime($date) < $startTime;
+        $getRepoDtoCurDate = fn(int $key): string => isset($repoDto->time[$key]) ? substr($repoDto->time[$key], 0, self::SUBSTR_YMD_LEN) : '';
+        $getIsBeforeStartDate = fn(string $date) => strtotime($date) < strtotime(self::START_DATE) || strtotime($date) < $startTime;
 
         $curKeyRepoDto = 0;
         $repoDtoCurDate = $getRepoDtoCurDate(0);
@@ -82,7 +83,15 @@ class RankingPositionChartArrayService
             $dto->addValue(
                 false,
                 false,
-                $matchRepoDto && $includeTime ? substr($repoDto->time[$curKeyRepoDto], self::SUBSTR_HI_OFFSET, self::SUBSTR_HI_LEN) : null,
+                $matchRepoDto && $includeTime ? substr(
+                    MimimalCmsConfig::$urlRoot === ''
+                        ? $repoDto->time[$curKeyRepoDto]
+                        : (new \DateTime($repoDto->time[$curKeyRepoDto], new \DateTimeZone('Asia/Tokyo')))
+                        ->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]))
+                        ->format('Y-m-d H:i:s'),
+                    self::SUBSTR_HI_OFFSET,
+                    self::SUBSTR_HI_LEN
+                ) : null,
                 $matchRepoDto ? $repoDto->position[$curKeyRepoDto] : ($isBeforeStartDate ? null : 0),
                 $matchRepoDto ? $repoDto->totalCount[$curKeyRepoDto] : null,
             );
