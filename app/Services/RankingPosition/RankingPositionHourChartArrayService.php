@@ -9,6 +9,7 @@ use App\Services\RankingPosition\Dto\RankingPositionHourChartDto;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourPageRepoDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionHourChartArrayService
 {
@@ -22,7 +23,7 @@ class RankingPositionHourChartArrayService
     {
         $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
         $endTime = new \DateTime($updatedAt);
-        
+
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,
             $open_chat_id,
@@ -62,8 +63,12 @@ class RankingPositionHourChartArrayService
         $repoDtoCurTime = $getRepoDtoCurTime(0);
 
         foreach ($timeArray as $key => $time) {
-            $timeStr = (new \DateTime($time))->format('m/d H:i');
+            $dateTime = new \DateTime($time, new \DateTimeZone('Asia/Tokyo'));
+            if (MimimalCmsConfig::$urlRoot !== '') {
+                $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
+            }
 
+            $timeStr = $dateTime->format('m/d H:i');
             if ($repoDtoCurTime !== $time) {
                 $dto->addValue(
                     $timeStr,
