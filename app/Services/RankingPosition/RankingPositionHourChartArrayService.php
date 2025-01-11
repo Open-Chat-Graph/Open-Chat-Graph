@@ -22,13 +22,18 @@ class RankingPositionHourChartArrayService
     function getPositionHourChartArray(RankingType $type, int $open_chat_id, int $category): RankingPositionHourChartDto
     {
         $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-        
+
+        $endTime = new \DateTime($updatedAt, new \DateTimeZone('Asia/Tokyo'));
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            $endTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
+        }
+
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,
             $open_chat_id,
             $category,
             self::INTERVAL_HOUR,
-            new \DateTime($updatedAt)
+            $endTime,
         );
 
         return $this->generateChartArray($this->generateTimeArray($repoDto->firstTime), $repoDto);
