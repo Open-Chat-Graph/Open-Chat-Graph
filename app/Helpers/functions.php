@@ -313,16 +313,17 @@ function getCategoryName(int $category): string
 
 function isDailyUpdateTime(
     DateTime $currentTime = new DateTime,
-    array $start = [23, AppConfig::CRON_START_MINUTE],
-    array $end = [0, AppConfig::CRON_START_MINUTE],
     DateTime $nowStart = new DateTime,
-    DateTime $nowEnd = new DateTime,
 ): bool {
-    $startTime = $nowStart->setTime(...$start);
-    $endTime = $nowEnd->setTime(...$end);
+    $start = [
+        AppConfig::CRON_MERGER_HOUR_RANGE_START[MimimalCmsConfig::$urlRoot],
+        AppConfig::CRON_START_MINUTE
+    ];
 
-    if ($currentTime > $startTime) return true;
-    if ($currentTime < $endTime) return true;
+    $startTime = $nowStart->setTime(...$start);
+    $endTime = (new DateTime($startTime->format('Y-m-d H:i:s')))->modify('+1 hour');
+
+    if ($currentTime >= $startTime && $currentTime < $endTime) return true;
     return false;
 }
 

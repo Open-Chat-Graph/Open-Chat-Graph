@@ -147,8 +147,12 @@ class AppConfig
     static bool $verboseCronLog = false;
 
     const CRON_START_MINUTE = 30;
-    const CRON_MERGER_HOUR_RANGE_START = 23;
-    const CRON_MERGER_HOUR_RANGE_END = 0;
+
+    const CRON_MERGER_HOUR_RANGE_START = [
+        '' =>    23,
+        '/tw' => 0,
+        '/th' => 1,
+    ];
 
     const OPENCHAT_IMG_PATH = [
         '' =>    'oc-img',
