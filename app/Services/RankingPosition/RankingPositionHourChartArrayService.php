@@ -39,10 +39,7 @@ class RankingPositionHourChartArrayService
      */
     private function generateTimeArray(string $firstTime): array
     {
-        $first = new \DateTime($firstTime, new \DateTimeZone('Asia/Tokyo'));
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $first->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-        }
+        $first = new \DateTime($firstTime);
 
         for ($i = 0; $i <= self::INTERVAL_HOUR; $i++) {
             $timeArray[] = $first->format('Y-m-d H:i:s');
@@ -65,9 +62,9 @@ class RankingPositionHourChartArrayService
         $repoDtoCurTime = $getRepoDtoCurTime(0);
 
         foreach ($timeArray as $key => $time) {
-            $dateTime = new \DateTime($time, new \DateTimeZone('Asia/Tokyo'));
+            $dateTime = new \DateTime($time);
             if (MimimalCmsConfig::$urlRoot !== '') {
-                $dateTime = $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
+                $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
             }
 
             $timeStr = $dateTime->format('m/d H:i');
