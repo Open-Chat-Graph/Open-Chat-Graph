@@ -16,18 +16,13 @@ class RankingPositionHourChartArrayService
 
     function __construct(
         private RankingPositionHourPageRepositoryInterface $rankingPositionHourPageRepository,
-    ) {
-    }
+    ) {}
 
     function getPositionHourChartArray(RankingType $type, int $open_chat_id, int $category): RankingPositionHourChartDto
     {
         $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-
-        $endTime = new \DateTime($updatedAt, new \DateTimeZone('Asia/Tokyo'));
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $endTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-        }
-
+        $endTime = new \DateTime($updatedAt);
+        
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(
             $type,
             $open_chat_id,
@@ -61,18 +56,13 @@ class RankingPositionHourChartArrayService
     {
         $dto = new RankingPositionHourChartDto;
 
-        $getRepoDtoCurTime = fn (int $key): string => isset($repoDto->time[$key]) ? $repoDto->time[$key] : '';
+        $getRepoDtoCurTime = fn(int $key): string => isset($repoDto->time[$key]) ? $repoDto->time[$key] : '';
 
         $curKeyRepoDto = 0;
         $repoDtoCurTime = $getRepoDtoCurTime(0);
 
         foreach ($timeArray as $key => $time) {
-            $dateTime = new \DateTime($time, new \DateTimeZone('Asia/Tokyo'));
-            if (MimimalCmsConfig::$urlRoot !== '') {
-                $dateTime->setTimezone(new \DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-            }
-
-            $timeStr = $dateTime->format('m/d H:i');
+            $timeStr = (new \DateTime($time))->format('m/d H:i');
 
             if ($repoDtoCurTime !== $time) {
                 $dto->addValue(
