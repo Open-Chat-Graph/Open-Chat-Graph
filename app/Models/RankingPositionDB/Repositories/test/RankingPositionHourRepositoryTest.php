@@ -34,7 +34,7 @@ class RankingPositionHourRepositoryTest extends TestCase
         $repo = app(RankingPositionHourRepository::class);
 
         // 指定の日時より以前のデータを削除
-        $result = $repo->dalete(new DateTime('2024-02-17 07:30:00'));
+        $result = $repo->delete(new DateTime('2024-02-17 07:30:00'));
 
         debug($result);
 

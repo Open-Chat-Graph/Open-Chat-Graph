@@ -32,7 +32,7 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
         SQLiteStatistics::execute($query, compact('open_chat_id', 'member', 'date'));
     }
 
-    public function daleteDailyStatistics(int $open_chat_id): void
+    public function deleteDailyStatistics(int $open_chat_id): void
     {
         SQLiteStatistics::execute(
             'DELETE FROM statistics WHERE open_chat_id = :open_chat_id',

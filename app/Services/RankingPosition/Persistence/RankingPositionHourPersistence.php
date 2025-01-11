@@ -32,7 +32,7 @@ class RankingPositionHourPersistence
 
         $deleteTime = new \DateTime($fileTime);
         $deleteTime->modify('- 1day');
-        $this->rankingPositionHourRepository->dalete($deleteTime);
+        $this->rankingPositionHourRepository->delete($deleteTime);
 
         $deleteTimeStr = $deleteTime->format('Y-m-d H:i:s');
         addCronLog("HourPersistence Delete: {$deleteTimeStr}");

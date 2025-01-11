@@ -15,7 +15,7 @@ interface StatisticsRepositoryInterface
      */
     public function insertDailyStatistics(int $open_chat_id, int $member, string $date): void;
 
-    public function daleteDailyStatistics(int $open_chat_id): void;
+    public function deleteDailyStatistics(int $open_chat_id): void;
 
     /**
      * @return int[] open_chat_id

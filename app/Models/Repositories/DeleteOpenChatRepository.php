@@ -28,8 +28,8 @@ class DeleteOpenChatRepository implements DeleteOpenChatRepositoryInterface
             compact('open_chat_id')
         );
 
-        $this->statisticsRepository->daleteDailyStatistics($open_chat_id);
-        $this->rankingPositionRepository->daleteDailyPosition($open_chat_id);
+        $this->statisticsRepository->deleteDailyStatistics($open_chat_id);
+        $this->rankingPositionRepository->deleteDailyPosition($open_chat_id);
 
         $this->deleteCommentRepository->deleteCommentsAll($open_chat_id);
 

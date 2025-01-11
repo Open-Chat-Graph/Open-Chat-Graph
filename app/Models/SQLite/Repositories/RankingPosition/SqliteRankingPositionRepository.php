@@ -36,7 +36,7 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
         return $this->inserter->import(SQLiteRankingPosition::connect(), 'total_count', $totalCount, 500);
     }
 
-    public function daleteDailyPosition(int $open_chat_id): void
+    public function deleteDailyPosition(int $open_chat_id): void
     {
         SQLiteRankingPosition::execute(
             "DELETE FROM

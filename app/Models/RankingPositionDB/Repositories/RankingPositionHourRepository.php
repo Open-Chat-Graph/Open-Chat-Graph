@@ -271,7 +271,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         return RankingPositionDB::fetchAll($query);
     }
 
-    public function dalete(\DateTime $dateTime): void
+    public function delete(\DateTime $dateTime): void
     {
         // 指定の日時より以前
         $time = new \DateTime($dateTime->format('Y-m-d H:i:s'));
