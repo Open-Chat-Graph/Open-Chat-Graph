@@ -26,7 +26,7 @@ class FuriganaApiController
 
 
         $hash = base62Hash(hash('md5', $json));
-        $fileName = AppConfig::FURIGANA_CACHE_DIR . "/furigana/{$hash}.dat";
+        $fileName = AppConfig::FURIGANA_CACHE_DIR . "/{$hash}.dat";
         $data = getUnserializedFile($fileName);
 
         if (!$data) {

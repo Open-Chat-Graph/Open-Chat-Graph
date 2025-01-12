@@ -101,7 +101,7 @@ class ExceptionHandler
         $adminToolClass = \App\Services\Admin\AdminTool::class;
         if (
             class_exists($configClass)
-            && ($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false)
+            && !($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false)
             && class_exists($adminToolClass)
         ) {
             try {
