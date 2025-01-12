@@ -253,4 +253,6 @@ async function blockblock() {
     })
 }
 
-if (typeof admin === 'undefined' || !admin) blockblock()
+if (!(/\/(tw|th)(\/|$)/.test(window.location.pathname))) {
+  if (typeof admin === 'undefined' || !admin) blockblock()
+}
