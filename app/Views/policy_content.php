@@ -144,8 +144,8 @@
                 <h2>メールでのお問い合わせ先</h2>
                 <p>オプチャグラフお問い合わせ窓口: <a href="mailto:support@openchat-review.me">support@openchat-review.me</a></p>
             <?php elseif (\Shared\MimimalCmsConfig::$urlRoot === '/tw') : ?>
-                <h1 style="letter-spacing: 0px;">關於LINE社群圖表</h1>
-                <p>LINE社群圖表是一個幫助使用者發現開放聊天室，並透過圖表和排名比較成長趨勢的網站。</p>
+                <h1 style="letter-spacing: 0px;">關於LINE社群流量統計</h1>
+                <p>LINE社群流量統計是一個幫助使用者發現開放聊天室，並透過圖表和排名比較成長趨勢的網站。</p>
                 <p>這是一個由 <a href="https://github.com/pika-0203/Open-Chat-Graph" target="_blank">開源專案</a> （LINE非官方）營運。</p>
                 <h2>網站的目標</h2>
                 <p>・為使用者提供機會找到並加入開放聊天室</p>
@@ -153,33 +153,33 @@
 
                 <h2>開放聊天室資訊的收錄機制</h2>
                 <p>
-                    LINE社群圖表根據「<a href="https://openchat.line.me/jp" rel="external" target="_blank">LINE 開放聊天室官方網站</a>」的數據，製作圖表和排名並展示於網站上。
+                    LINE社群流量統計根據「<a href="https://openchat.line.me/jp" rel="external" target="_blank">LINE 開放聊天室官方網站</a>」的數據，製作圖表和排名並展示於網站上。
                 </p>
                 <p>
-                    為了顯示最新數據，LINE社群圖表的<a href="https://webtan.impress.co.jp/g/%E3%82%AF%E3%83%AD%E3%83%BC%E3%83%A9%E3%83%BC" target="_blank">爬蟲程式</a>定期巡覽官方網站並將開放聊天室的數據進行索引。
+                    為了顯示最新數據，LINE社群流量統計的<a href="https://webtan.impress.co.jp/g/%E3%82%AF%E3%83%AD%E3%83%BC%E3%83%A9%E3%83%BC" target="_blank">爬蟲程式</a>定期巡覽官方網站並將開放聊天室的數據進行索引。
                 </p>
                 <p>
                     <b>數據僅從官方網站獲取，不會取得與 LINE 應用程式本體相關的數據。</b>
                 </p>
                 <section style="margin: 2rem 0;">
-                    <h3 style="font-size: 14px;">LINE社群圖表收錄的條件</h3>
+                    <h3 style="font-size: 14px;">LINE社群流量統計收錄的條件</h3>
                     <p>
-                        LINE社群圖表的爬蟲程式從<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">官方網站排名</a>中找到新的聊天室並進行登記。<b>未列入排名的聊天室不會被登記。</b>
+                        LINE社群流量統計的爬蟲程式從<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">官方網站排名</a>中找到新的聊天室並進行登記。<b>未列入排名的聊天室不會被登記。</b>
                     </p>
                     <p>
-                        一旦登記到LINE社群圖表的聊天室，無論是否列入官方排名，仍會繼續在LINE社群圖表中展示。
+                        一旦登記到LINE社群流量統計的聊天室，無論是否列入官方排名，仍會繼續在LINE社群流量統計中展示。
                     </p>
                     <p>
-                        如果官方網站中聊天室的展示已結束或被刪除，該聊天室也會從LINE社群圖表中刪除。
+                        如果官方網站中聊天室的展示已結束或被刪除，該聊天室也會從LINE社群流量統計中刪除。
                     </p>
                     <p>
-                        未列入排名（例如剛建立）的聊天室，只要出現在官方網站中，也可以手動登記到LINE社群圖表。
+                        未列入排名（例如剛建立）的聊天室，只要出現在官方網站中，也可以手動登記到LINE社群流量統計。
                     </p>
                 </section>
                 <section style="margin: 2rem 0;">
                     <h3 style="font-size: 14px;">資訊更新的排程</h3>
                     <p>
-                        LINE社群圖表的爬蟲程式定期巡覽官方網站，更新聊天室的標題、說明、圖片、人數統計及排名歷史等資訊。
+                        LINE社群流量統計的爬蟲程式定期巡覽官方網站，更新聊天室的標題、說明、圖片、人數統計及排名歷史等資訊。
                     </p>
                     <ul style="font-size: 14px; line-height: 2;">
                         <li>排名中的聊天室：每小時更新</li>
@@ -190,7 +190,7 @@
                 <section style="margin: 2rem 0;">
                     <h3 style="font-size: 14px;">關於排名的趨勢圖</h3>
                     <p>
-                        LINE社群圖表的爬蟲程式每小時記錄官方網站中的排名位置，透過聊天室的排列順序計算排名。
+                        LINE社群流量統計的爬蟲程式每小時記錄官方網站中的排名位置，透過聊天室的排列順序計算排名。
                     </p>
                     <p>
                         未列入排名的聊天室會記錄為「圏外」。聊天室管理員更新聊天室資訊（標題、說明、圖片）後，或因伺服器錯誤等原因，也可能出現「圏外」的情況。
