@@ -60,7 +60,11 @@ class SitemapGenerator
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim($this->currentUrl, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
-        $sitemap->addItem($this->currentUrl . 'oc');
+
+        if (MimimalCmsConfig::$urlRoot === '') {
+            $sitemap->addItem($this->currentUrl . 'oc');
+        }
+        
         $sitemap->addItem($this->currentUrl . 'policy');
         $sitemap->addItem($this->currentUrl . 'ranking', lastmod: $datetime);
         $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]), lastmod: $datetime);
