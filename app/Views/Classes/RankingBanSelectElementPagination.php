@@ -9,6 +9,7 @@ class RankingBanSelectElementPagination
     static function pagerUrl(string $path, int $pageNumber, array $params): string
     {
         if ($pageNumber > 1) $params['page'] = $pageNumber;
+
         return \Shadow\Kernel\Dispatcher\ReceptionInitializer::getDomainAndHttpHost()
             . '/' . $path . '?' . http_build_query($params);
     }
@@ -50,13 +51,13 @@ class RankingBanSelectElementPagination
         };
 
         // 選択されたページに対して"selected"属性を返す
-        $selected = fn ($i) => ($i === $pageNumber) ? "selected='selected'" : '';
+        $selected = fn($i) => ($i === $pageNumber) ? "selected='selected'" : '';
 
         // ページ番号に応じて、そのページの最初のインデックスを計算する
-        $startNum = fn ($i) => ($i === 1) ? $totalRecords : $totalRecords - (($i - 1) * $itemsPerPage);
+        $startNum = fn($i) => ($i === 1) ? $totalRecords : $totalRecords - (($i - 1) * $itemsPerPage);
 
         // ページ番号に応じて、そのページの最後のインデックスを計算する
-        $endNum = fn ($i) => ($i === $maxPage) ? 1 : $totalRecords - ($i * $itemsPerPage) + 1;
+        $endNum = fn($i) => ($i === $maxPage) ? 1 : $totalRecords - ($i * $itemsPerPage) + 1;
 
         // 各ページ番号の要素を生成する
         $_selectElement = '';

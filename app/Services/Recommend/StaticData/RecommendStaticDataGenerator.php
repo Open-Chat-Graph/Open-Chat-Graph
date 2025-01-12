@@ -12,6 +12,7 @@ use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
+use Shared\MimimalCmsConfig;
 
 class RecommendStaticDataGenerator
 {
@@ -21,10 +22,9 @@ class RecommendStaticDataGenerator
         private OfficialRoomRankingRepository $officialRoomRankingRepository,
         private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
-    ) {
-    }
+    ) {}
 
-    function getRecomendRanking(string $tag): RecommendListDto|false
+    function getRecomendRanking(string $tag): RecommendListDto
     {
         return $this->recommendRankingBuilder->getRanking(
             RecommendListType::Tag,
@@ -34,7 +34,7 @@ class RecommendStaticDataGenerator
         );
     }
 
-    function getCategoryRanking(int $category): RecommendListDto|false
+    function getCategoryRanking(int $category): RecommendListDto
     {
         return $this->recommendRankingBuilder->getRanking(
             RecommendListType::Category,
@@ -44,11 +44,11 @@ class RecommendStaticDataGenerator
         );
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto|false
+    function getOfficialRanking(int $emblem): RecommendListDto
     {
         $listName = match ($emblem) {
-            1 => 'スペシャルオープンチャット',
-            2 => '公式認証オープンチャット',
+            1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
+            2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
             default => ''
         };
 
@@ -73,7 +73,7 @@ class RecommendStaticDataGenerator
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
             saveSerializedFile(
-                "static_data_recommend/tag/{$fileName}.dat",
+                AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
                 $this->getRecomendRanking($tag)
             );
         }
@@ -81,9 +81,9 @@ class RecommendStaticDataGenerator
 
     private function updateCategoryStaticData()
     {
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             saveSerializedFile(
-                "static_data_recommend/category/{$category}.dat",
+                AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
                 $this->getCategoryRanking($category)
             );
         }
@@ -93,7 +93,7 @@ class RecommendStaticDataGenerator
     {
         foreach ([1, 2] as $emblem) {
             saveSerializedFile(
-                "static_data_recommend/official/{$emblem}.dat",
+                AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
                 $this->getOfficialRanking($emblem)
             );
         }

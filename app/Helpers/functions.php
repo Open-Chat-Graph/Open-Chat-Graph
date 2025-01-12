@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\Exceptions\NotFoundException;
+use Shared\MimimalCmsConfig;
 
 /**
  * Inserts HTML line breaks before all newlines in a string.
@@ -23,6 +24,10 @@ function nl2brReplace(string $string): string
 
 function gTag(string $id): string
 {
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+        return '';
+    }
+
     return
         <<<HTML
         <!-- Google Tag Manager -->
@@ -164,11 +169,16 @@ function noStore()
 
 function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
+    if (AppConfig::$isStaging) {
+        cache();
+        return;
+    }
+
     // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
     if ($hourly) {
-        $etag = '"' . md5($content . filemtime(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME)) . '"';
+        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content . filemtime(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))) . '"';
     } else {
-        $etag = '"' . md5($content) . '"';
+        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content) . '"';
     }
 
     // max-ageと共にCache-Controlヘッダーを設定
@@ -188,11 +198,14 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 }
 
 function purgeCacheCloudFlare(
-    string $zoneID = AdminConfig::CloudFlareZoneID,
-    string $apiKey = AdminConfig::CloudFlareApiKey,
+    ?string $zoneID = null,
+    ?string $apiKey = null,
     ?array $files = null
 ): string {
-    if(AdminConfig::IS_DEVELOPMENT ?? false) {
+    $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
+    $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
+
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
         return 'is Development';
     }
 
@@ -238,39 +251,29 @@ function purgeCacheCloudFlare(
 
 function getHouryUpdateTime()
 {
-    return file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
+    return file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 }
 
 function getDailyUpdateTime()
 {
-    return file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
+    return file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
 }
-
-/* function imgUrl(int $id, string $img_url): string
-{
-    return "https://obs.line-scdn.net/{$img_url}";
-}
-
-function imgPreviewUrl(int $id, string $img_url): string
-{
-    return "https://obs.line-scdn.net/{$img_url}/preview";
-} */
 
 function imgUrl(int $id, string $local_img_url): string
 {
-    return url((in_array(
+    return url(["urlRoot" => '', "paths" => [(in_array(
         $local_img_url,
         AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH
-    ) ? AppConfig::OPENCHAT_IMG_PATH . "/default/{$local_img_url}.webp?id={$id}" : getImgPath($id, $local_img_url)));
+    ) ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/default/{$local_img_url}.webp?id={$id}" : getImgPath($id, $local_img_url))]]);
 }
 
 function imgPreviewUrl(int $id, string $local_img_url): string
 {
-    return url((
+    return url(["urlRoot" => '', "paths" => [(
         in_array($local_img_url, AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH)
-        ? AppConfig::OPENCHAT_IMG_PATH . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/default/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp?id={$id}"
+        ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/default/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp?id={$id}"
         : getImgPreviewPath($id, $local_img_url)
-    ));
+    )]]);
 }
 
 function apiImgUrl(int $id, string $local_img_url): string
@@ -286,7 +289,7 @@ function apiImgUrl(int $id, string $local_img_url): string
 function getImgPath(int $open_chat_id, string $imgUrl): string
 {
     $subDir = filePathNumById($open_chat_id);
-    return AppConfig::OPENCHAT_IMG_PATH . "/{$subDir}/{$imgUrl}.webp";
+    return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/{$subDir}/{$imgUrl}.webp";
 }
 
 /**
@@ -295,7 +298,7 @@ function getImgPath(int $open_chat_id, string $imgUrl): string
 function getImgPreviewPath(int $open_chat_id, string $imgUrl): string
 {
     $subDir = filePathNumById($open_chat_id);
-    return AppConfig::OPENCHAT_IMG_PATH . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/{$subDir}/{$imgUrl}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp";
+    return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/{$subDir}/{$imgUrl}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp";
 }
 
 function filePathNumById(int $id): string
@@ -305,32 +308,22 @@ function filePathNumById(int $id): string
 
 function getCategoryName(int $category): string
 {
-    return array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] ?? '';
-}
-
-function addCronLog(string|array $log)
-{
-    if (is_string($log)) {
-        $log = [$log];
-    }
-
-    foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::$addCronLogDestination);
-    }
+    return array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? '';
 }
 
 function isDailyUpdateTime(
     DateTime $currentTime = new DateTime,
-    array $start = [23, AppConfig::CRON_START_MINUTE],
-    array $end = [0, AppConfig::CRON_START_MINUTE],
     DateTime $nowStart = new DateTime,
-    DateTime $nowEnd = new DateTime,
 ): bool {
-    $startTime = $nowStart->setTime(...$start);
-    $endTime = $nowEnd->setTime(...$end);
+    $start = [
+        AppConfig::CRON_MERGER_HOUR_RANGE_START[MimimalCmsConfig::$urlRoot],
+        AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]
+    ];
 
-    if ($currentTime > $startTime) return true;
-    if ($currentTime < $endTime) return true;
+    $startTime = $nowStart->setTime(...$start);
+    $endTime = (new DateTime($startTime->format('Y-m-d H:i:s')))->modify('+1 hour');
+
+    if ($currentTime >= $startTime && $currentTime < $endTime) return true;
     return false;
 }
 
@@ -370,24 +363,13 @@ function getImgSetErrorTag(): string
 
 function getFilePath($path, $pattern): string
 {
-    $file = glob(PUBLIC_DIR . "/{$path}/{$pattern}");
+    $file = glob(MimimalCmsConfig::$publicDir . "/{$path}/{$pattern}");
     if ($file) {
         $fileName = basename($file[0]);
         return "{$path}/{$fileName}";
     } else {
         return '';
     }
-}
-
-function isLocalHost(): bool
-{
-    $ip = $_SERVER['HTTP_HOST'] ?? '::1';
-
-    return
-        strstr($ip, 'localhost') !== false
-        || strstr($ip, '::1') !== false
-        || strstr($ip, '192.168') !== false
-        || strstr($ip, '172.18.0.1') !== false;
 }
 
 function allowCORS()
@@ -402,6 +384,10 @@ function allowCORS()
 
 function formatMember(int $n)
 {
+    if (MimimalCmsConfig::$urlRoot !== '') {
+        return number_format($n);
+    }
+
     return $n < 1000 ? $n : ($n >= 10000 ? (floor($n / 1000) / 10 . '万') : number_format($n));
 }
 
@@ -564,7 +550,11 @@ function isMobile(): bool
 function sessionStart(): bool
 {
     if (isset($_SERVER['HTTP_HOST'])) {
-        session_set_cookie_params(SESSION_COOKIE_PARAMS);
+        session_set_cookie_params([
+            'secure' => MimimalCmsConfig::$cookieDefaultSecure,
+            'httponly' => MimimalCmsConfig::$cookieDefaultHttpOnly,
+            'samesite' => MimimalCmsConfig::$cookieDefaultSameSite,
+        ]);
         session_name("session");
     }
 
@@ -595,4 +585,36 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
     }
 
     return filemtime($path);
+}
+
+function addCronLog(string|array $log)
+{
+    if (is_string($log)) {
+        $log = [$log];
+    }
+
+    foreach ($log as $string) {
+        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::getStorageFilePath('addCronLogDest'));
+    }
+}
+
+function addVerboseCronLog(string|array $log)
+{
+    if (AppConfig::$verboseCronLog) {
+        addCronLog($log);
+    }
+}
+
+function t(string $text): string
+{
+    static $data = json_decode(file_get_contents(AppConfig::TRANSLATION_FILE), true);
+    static $lang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
+
+    return $data[$text][$lang] ?? $text;
+}
+
+function sprintfT(string $format, string|int ...$values): string
+{
+    $text = t($format);
+    return sprintf($text, ...$values);
 }

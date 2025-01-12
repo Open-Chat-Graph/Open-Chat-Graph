@@ -11,6 +11,7 @@ use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterfa
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\Store\RankingPositionStore;
 use App\Services\RankingPosition\Store\RisingPositionStore;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionHourPersistence
 {
@@ -31,7 +32,7 @@ class RankingPositionHourPersistence
 
         $deleteTime = new \DateTime($fileTime);
         $deleteTime->modify('- 1day');
-        $this->rankingPositionHourRepository->dalete($deleteTime);
+        $this->rankingPositionHourRepository->delete($deleteTime);
 
         $deleteTimeStr = $deleteTime->format('Y-m-d H:i:s');
         addCronLog("HourPersistence Delete: {$deleteTimeStr}");
@@ -43,7 +44,7 @@ class RankingPositionHourPersistence
         $this->openChatDataWithCache->cacheOpenChatData(true);
 
         $fileTime = '';
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $key => $category) {
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $key => $category) {
             [$risingFileTime, $risingOcDtoArray] = $this->risingPositionStore->getStorageData((string)$category);
             $risingInsertDtoArray = $this->createInsertDtoArray($risingOcDtoArray);
             unset($risingOcDtoArray);

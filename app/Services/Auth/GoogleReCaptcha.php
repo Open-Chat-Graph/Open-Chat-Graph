@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use Shared\Exceptions\UnauthorizedException;
 use Shared\Exceptions\ValidationException;
 
@@ -16,7 +16,7 @@ class GoogleReCaptcha
     function validate(string $token, float $maxScore): float
     {
         $data = [
-            "secret" => AdminConfig::GOOGLE_RECAPTCHA_SECRET_KEY,
+            "secret" => SecretsConfig::$googleRecaptchaSecretKey,
             "response" => $token,
         ];
 

@@ -21,7 +21,8 @@ use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
-use App\Models\Repositories\DB;
+use App\Services\Statistics\Dto\StatisticsChartDto;
+use Shared\MimimalCmsConfig;
 
 class OpenChatPageController
 {
@@ -54,19 +55,20 @@ class OpenChatPageController
         $_chartArgDto->categoryKey = $oc['category'] ?? (is_int($oc['api_created_at']) ? 0 : null);
         $_chartArgDto->categoryName = $categoryName;
         $_chartArgDto->baseUrl = url();
+        $_chartArgDto->urlRoot = MimimalCmsConfig::$urlRoot;
         return $_chartArgDto;
     }
 
     private function buildHourlyRange(array $oc): ?string
     {
-        if (!isset($oc['rh_diff_member']) || $oc['rh_diff_member'] < AppConfig::MIN_MEMBER_DIFF_HOUR)
+        if (!isset($oc['rh_diff_member']) || $oc['rh_diff_member'] < AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR)
             return null;
 
         $hourlyUpdatedAt =  new \DateTime(getHouryUpdateTime());
         $hourlyTime = $hourlyUpdatedAt->format(\DateTime::ATOM);
         $hourlyUpdatedAt->modify('-1hour');
 
-        return '<time datetime="' . $hourlyTime . '">' . '1時間' . '</time>';
+        return '<time datetime="' . $hourlyTime . '">' . t('1時間') . '</time>';
     }
 
     private function getAdminDto(int $open_chat_id)
@@ -80,7 +82,7 @@ class OpenChatPageController
     {
         /** @var OfficialPageList $officialPageList */
         $officialPageList = app(OfficialPageList::class);
-        return $officialPageList->getListDto($emblem)[0];
+        return $officialPageList->getListDto($emblem);
     }
 
     function index(
@@ -103,15 +105,16 @@ class OpenChatPageController
             return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
 
         $tag = $oc['tag1'];
-        $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::$OPEN_CHAT_CATEGORY) : null;
-        $category = $categoryValue ?? 'その他';
+        $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
+        $category = $categoryValue ?? t('未指定');
         $recommend = $recommendGenarator->getRecommend($tag, $oc['tag2'], $oc['tag3'], $oc['category']);
 
         $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
         if (!$_statsDto) {
-            http_response_code(503);
-            echo 'メンテナンス中';
-            exit;
+            //http_response_code(503);
+            //echo 'メンテナンス中';
+            //exit;
+            $_statsDto = new StatisticsChartDto((new \DateTime('-1day'))->format('Y-m-d'), (new \DateTime('now'))->format('Y-m-d'));
         }
 
         $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto);
@@ -130,7 +133,7 @@ class OpenChatPageController
         $_meta->thumbnail = imgPreviewUrl($oc['id'], $oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
-            'オプチャ',
+            t('オプチャ'),
             'oc',
             $tag ?: $category,
             (string)$open_chat_id
@@ -147,7 +150,7 @@ class OpenChatPageController
 
         $_hourlyRange = $this->buildHourlyRange($oc);
 
-        $_chartArgDto = $this->buildChartDto($oc, $categoryValue ?? 'すべて');
+        $_chartArgDto = $this->buildChartDto($oc, $categoryValue ?? t('すべて'));
         $_commentArgDto = [
             'baseUrl' => url(),
             'openChatId' => $oc['id']

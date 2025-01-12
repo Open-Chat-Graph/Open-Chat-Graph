@@ -4,24 +4,31 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
+use App\Config\AppConfig;
 use Shadow\DBInterface;
 use App\Models\Repositories\DB;
 
 abstract class AbstractSQLite extends DB implements DBInterface
 {
-    public static string $dbfile = __DIR__ . '/../../../storage/SQLite/statistics/statistics.db';
     public static ?\PDO $pdo = null;
 
     /**
-     * @throws \PDOException
+     * @param ?array{storageFileKey: string, mode?: ?string} $config mode default is '?mode=rwc'
      */
-    public static function connect(string $mode = '?mode=rwc'): \PDO
+    public static function connect(?array $config = null): \PDO
     {
         if (static::$pdo !== null) {
             return static::$pdo;
         }
 
-        static::$pdo = new \PDO('sqlite:file:' . static::$dbfile . $mode);
+        if(empty($config['storageFileKey'])) {
+            throw new \InvalidArgumentException('storageFileKey is required');
+        }
+
+        $spliteFilePath = AppConfig::getStorageFilePath($config['storageFileKey']);
+        $mode = $config['mode'] ?? '?mode=rwc';
+
+        static::$pdo = new \PDO('sqlite:file:' . $spliteFilePath . $mode);
 
         return static::$pdo;
     }

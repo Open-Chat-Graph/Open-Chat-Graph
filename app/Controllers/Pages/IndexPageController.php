@@ -22,10 +22,10 @@ class IndexPageController
 
         $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list'];
         $_meta = meta();
-        $_meta->title = "{$_meta->title}｜オープンチャットの統計情報";
+        $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 
         $_schema = $pageBreadcrumbsListSchema->generateStructuredDataWebSite(
-            'オプチャグラフ',
+            t('オプチャグラフ'),
             $_meta->description,
             url(),
             url('assets/ogp.png'),
@@ -42,16 +42,12 @@ class IndexPageController
         if (isset($dto->recentCommentList[0]['time'])) {
             $updatedAtComments = new \DateTime($dto->recentCommentList[0]['time']);
             $_updatedAt = $updatedAtHouryCron > $updatedAtComments ? $updatedAtHouryCron : $updatedAtComments;
-
-            $updatedAtComments->modify('+ 168hour');
-            $newComment = new \DateTime() < $updatedAtComments;
         } else {
             $_updatedAt = $updatedAtHouryCron;
-            $newComment = false;
         }
 
-        $officialDto = $officialPageList->getListDto(1)[0];
-        $officialDto2 = $officialPageList->getListDto(2)[0];
+        $officialDto = $officialPageList->getListDto(1);
+        $officialDto2 = $officialPageList->getListDto(2);
 
         return view('top_content', compact(
             '_meta',
@@ -61,7 +57,6 @@ class IndexPageController
             'dto',
             'officialDto',
             'officialDto2',
-            'newComment',
         ));
     }
 }

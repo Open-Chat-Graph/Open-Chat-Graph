@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\AdsRepositories\AdsRepository;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
+use Shared\MimimalCmsConfig;
 
 class TagLabsPageController
 {
@@ -35,8 +36,8 @@ class TagLabsPageController
             }, $tagsGroup);
         })($staticDataGeneration->getTagList());
 
-        $categories = array_flip(AppConfig::$OPEN_CHAT_CATEGORY);
-        $_updatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME));
+        $categories = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
+        $_updatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')));
 
         if (isset($isAdminPage) && adminMode()) {
             /** @var AdsRepository $adsRepo */

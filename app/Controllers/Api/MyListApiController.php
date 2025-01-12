@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\AdminConfig;
+use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Auth\AuthInterface;
 use App\Services\User\MyOpenChatList;
@@ -28,14 +28,14 @@ class MyListApiController
 
         $userId = $auth->loginCookieUserId();
 
-        if ($userId !== AdminConfig::ADMIN_API_KEY)
+        if ($userId !== SecretsConfig::$adminApiKey)
             $myOpenChatListUserLogger->userMyListLog(
                 $userId,
                 $expires,
                 $myListIdArray
             );
 
-        $hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME));
+        $hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')));
 
         return view('components/myList', compact('myList', 'hourlyUpdatedAt'));
     }

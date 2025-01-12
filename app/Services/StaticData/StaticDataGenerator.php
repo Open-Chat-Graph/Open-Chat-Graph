@@ -11,6 +11,7 @@ use App\Services\Recommend\TopPageRecommendList;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Views\Dto\RankingArgDto;
+use Shared\MimimalCmsConfig;
 
 class StaticDataGenerator
 {
@@ -18,29 +19,28 @@ class StaticDataGenerator
         private OpenChatListRepositoryInterface $openChatListRepository,
         private TopPageRecommendList $topPageRecommendList,
         private RecommendRankingRepository $recommendPageRepository,
-    ) {
-    }
+    ) {}
 
     function getTopPageDataFromDB(): StaticTopPageDto
     {
         // トップページのキャッシュファイルを生成する
         $dto = new StaticTopPageDto;
-        $dto->hourlyList = $this->openChatListRepository->findMemberStatsHourlyRanking(0, AppConfig::TOP_RANKING_LIST_LIMIT);
-        $dto->dailyList = $this->openChatListRepository->findMemberStatsDailyRanking(0, AppConfig::TOP_RANKING_LIST_LIMIT);
-        $dto->weeklyList = $this->openChatListRepository->findMemberStatsPastWeekRanking(0, AppConfig::TOP_RANKING_LIST_LIMIT);
-        $dto->popularList = $this->openChatListRepository->findMemberCountRanking(AppConfig::TOP_RANKING_LIST_LIMIT, []);
+        $dto->hourlyList = $this->openChatListRepository->findMemberStatsHourlyRanking(0, AppConfig::LIST_LIMIT_TOP_RANKING);
+        $dto->dailyList = $this->openChatListRepository->findMemberStatsDailyRanking(0, AppConfig::LIST_LIMIT_TOP_RANKING);
+        $dto->weeklyList = $this->openChatListRepository->findMemberStatsPastWeekRanking(0, AppConfig::LIST_LIMIT_TOP_RANKING);
+        $dto->popularList = $this->openChatListRepository->findMemberCountRanking(AppConfig::LIST_LIMIT_TOP_RANKING, []);
         $dto->recentCommentList = [];
         $dto->recommendList = $this->topPageRecommendList->getList(30);
 
-        $dto->hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME));
-        $dto->dailyUpdatedAt = new \DateTime(file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE));
-        $dto->rankingUpdatedAt = new \DateTime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME));
+        $dto->hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')));
+        $dto->dailyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate')));
+        $dto->rankingUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')));
 
-        $tagList = getUnserializedFile('static_data_top/tag_list.dat');
+        $tagList = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
         if (!$tagList)
             $tagList = $this->getTagList();
 
-        $dto->tagCount = array_sum(array_map(fn ($el) => count($el), $tagList));
+        $dto->tagCount = array_sum(array_map(fn($el) => count($el), $tagList));
 
         return $dto;
     }
@@ -48,41 +48,71 @@ class StaticDataGenerator
     function getRankingArgDto(): RankingArgDto
     {
         $_argDto = new RankingArgDto;
-        $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME), true);
-        $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
-        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);;
-        $_argDto->subCategories = json_decode(file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_FILE_PATH), true);
+        $_argDto->urlRoot = MimimalCmsConfig::$urlRoot;
+        $_argDto->baseUrl = url();
+        $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')), true);
+        $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
 
-        if (isset($_argDto->subCategories[6])) {
-            $key = array_search('オプチャ宣伝', $_argDto->subCategories[6]);
-            if ($key !== false) {
-                $_argDto->subCategories[6][$key] = 'オプチャ 宣伝';
-            }
-
-            $key = array_search('悩み相談', $_argDto->subCategories[6]);
-            if ($key !== false) {
-                $_argDto->subCategories[6][$key] = '悩み 相談';
-            }
-
-            $_argDto->subCategories[6] = array_values($_argDto->subCategories[6]);
+        $_argDto->openChatCategory = [];
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $number) {
+            if ($number === 0)
+                $_argDto->openChatCategory[] = [$name, $number];
         }
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $number) {
+            if ($number !== 0)
+                $_argDto->openChatCategory[] = [$name, $number];
+        }
+
+        $subCategories = json_decode(
+            file_exists(AppConfig::getStorageFilePath('openChatSubCategories'))
+                ? file_get_contents(AppConfig::getStorageFilePath('openChatSubCategories'))
+                : '{}',
+            true
+        );
+        $_argDto->subCategories = $this->replaceSubcategoryName($subCategories);
 
         return $_argDto;
     }
 
+    private function replaceSubcategoryName(array $subCategories): array
+    {
+        switch (MimimalCmsConfig::$urlRoot) {
+            case '':
+                if (isset($subCategories[6])) {
+                    $key = array_search('オプチャ宣伝', $subCategories[6]);
+                    if ($key !== false) {
+                        $subCategories[6][$key] = 'オプチャ 宣伝';
+                    }
+
+                    $key = array_search('悩み相談', $subCategories[6]);
+                    if ($key !== false) {
+                        $subCategories[6][$key] = '悩み 相談';
+                    }
+                }
+                break;
+            case '/tw':
+                break;
+            case '/th':
+                break;
+        }
+
+        return $subCategories;
+    }
+
     function getRecommendPageDto(): StaticRecommendPageDto
     {
-        $tagList = getUnserializedFile('static_data_top/tag_list.dat');
+        $tagList = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
         if (!$tagList)
             $tagList = $this->getTagList();
 
         $dto = new StaticRecommendPageDto;
-        $dto->hourlyUpdatedAt = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
-        $dto->tagCount = array_sum(array_map(fn ($el) => count($el), $tagList));
+        $dto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+        $dto->tagCount = array_sum(array_map(fn($el) => count($el), $tagList));
 
         $dto->tagRecordCounts = [];
         array_map(
-            fn ($row) => $dto->tagRecordCounts[$row['tag']] = $row['record_count'],
+            fn($row) => $dto->tagRecordCounts[$row['tag']] = $row['record_count'],
             $this->recommendPageRepository->getRecommendTagRecordCountAllRoom()
         );
 
@@ -96,10 +126,10 @@ class StaticDataGenerator
 
     function updateStaticData()
     {
-        safeFileRewrite(AppConfig::$HOURLY_REAL_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
-        saveSerializedFile('static_data_top/tag_list.dat', $this->getTagList());
-        saveSerializedFile('static_data_top/ranking_list.dat', $this->getTopPageDataFromDB());
-        saveSerializedFile('static_data_top/ranking_arg_dto.dat', $this->getRankingArgDto());
-        saveSerializedFile('static_data_top/recommend_page_dto.dat', $this->getRecommendPageDto());
+        safeFileRewrite(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
+        saveSerializedFile(AppConfig::getStorageFilePath('tagList'), $this->getTagList());
+        saveSerializedFile(AppConfig::getStorageFilePath('topPageRankingData'), $this->getTopPageDataFromDB());
+        saveSerializedFile(AppConfig::getStorageFilePath('rankingArgDto'), $this->getRankingArgDto());
+        saveSerializedFile(AppConfig::getStorageFilePath('recommendPageDto'), $this->getRecommendPageDto());
     }
 }

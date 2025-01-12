@@ -6,13 +6,16 @@ namespace App\Models\Repositories;
 
 use App\Config\AppConfig;
 use Shadow\DBInterface;
+use Shared\MimimalCmsConfig;
 
 class DB extends \Shadow\DB implements DBInterface
 {
     public static ?\PDO $pdo = null;
 
-    public static function connect(string $class = ''): \PDO
+    public static function connect(?array $config = null): \PDO
     {
-        return parent::connect($class ?: AppConfig::$DatabaseConfigClass);
+        return parent::connect($config ?? [
+            'dbName' => AppConfig::$dbName[MimimalCmsConfig::$urlRoot]
+        ]);
     }
 }

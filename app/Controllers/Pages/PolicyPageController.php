@@ -13,11 +13,11 @@ class PolicyPageController
     function index(PageBreadcrumbsListSchema $breadcrumbsShema)
     {
         $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
-        $_meta = meta()->setTitle('オプチャグラフについて');
+        $_meta = meta()->setTitle(t('オプチャグラフについて'));
         $_meta->image_url = '';
-        $desc = 'オプチャグラフはユーザーがオプチャの成長傾向を比較できます。オープンソースのLINE非公式サイトです。';
+        $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
         $_meta->setDescription($desc)->setOgpDescription($desc);
-        $_breadcrumbsShema = $breadcrumbsShema->generateSchema('オプチャグラフについて', 'policy');
+        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフについて'), 'policy');
 
         $_news = array_reverse(TopPageNews::getTopPageNews());
 
@@ -29,18 +29,18 @@ class PolicyPageController
     function privacy(PageBreadcrumbsListSchema $breadcrumbsShema)
     {
         $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
-        $_meta = meta()->setTitle('プライバシーポリシー');
+        $_meta = meta()->setTitle(t('プライバシーポリシー'));
         $_meta->image_url = '';
-        $desc = 'オプチャグラフはユーザーがオプチャの成長傾向を比較できます。オープンソースのLINE非公式サイトです。';
+        $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
         $_meta->setDescription($desc)->setOgpDescription($desc);
-        $_breadcrumbsShema = $breadcrumbsShema->generateSchema('オプチャグラフについて', 'policy', 'プライバシーポリシー', 'privacy');
+        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフについて'), 'policy', t('プライバシーポリシー'), 'privacy');
 
         $view = view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema'));
         handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
         return $view;
     }
 
-    function term(PageBreadcrumbsListSchema $breadcrumbsShema)
+    function term()
     {
         $view = view('term_content');
         handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);

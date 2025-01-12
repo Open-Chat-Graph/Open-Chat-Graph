@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shadow\Kernel;
 
 use Shared\Exceptions\ValidationException;
+use Shared\MimimalCmsConfig;
 
 /**
  * @author mimimiku778 <0203.sub@gmail.com>
@@ -173,7 +174,7 @@ class Validator implements ValidatorInterface
         return self::num($array[$key] ?? null, $max, $min, $exactMatch, $emptyAble, $e, $default);
     }
 
-    public static function uploadedFile(array $file, array $allowedMimeTypes, int $maxFileSize = DEFAULT_MAX_FILE_SIZE): array
+    public static function uploadedFile(array $file, array $allowedMimeTypes, ?int $maxFileSize = null): array
     {
         if (
             !isset($file['tmp_name'])
@@ -185,6 +186,7 @@ class Validator implements ValidatorInterface
             throw new ValidationException($errorMessage, $errorCode);
         }
 
+        $maxFileSize = $maxFileSize ?? MimimalCmsConfig::$defaultMaxFileSize;
         if ($file['size'] > $maxFileSize * 1024) {
             $errorCode = 3001;
             $errorMessage = 'File too large.';

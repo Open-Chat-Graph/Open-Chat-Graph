@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php
 
 use App\Config\AppConfig;
@@ -111,7 +111,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent(
                 'open_chat_list_ranking_comment2',
                 compact('openChatList') + [
-                    'listLen' => AppConfig::RECENT_COMMENT_LIST_LIMIT,
+                    'listLen' => AppConfig::LIST_LIMIT_RECENT_COMMENT,
                     'omitDeleted' => false,
                     'showAds' => true
                 ]
@@ -130,7 +130,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <aside class="top-ranking-list-aside">
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
         </aside>
-        <hr class="hr-bottom">
 
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
@@ -172,7 +171,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         applyTimeElapsedString()
     </script>
 
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
         ;
         (function(el) {

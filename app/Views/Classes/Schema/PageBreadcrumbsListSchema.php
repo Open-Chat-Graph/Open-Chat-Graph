@@ -4,6 +4,7 @@ namespace App\Views\Schema;
 
 use App\Config\AppConfig;
 use App\Views\Meta\Metadata;
+use Shared\MimimalCmsConfig;
 use Spatie\SchemaOrg\DiscussionForumPosting;
 use Spatie\SchemaOrg\Schema;
 
@@ -11,15 +12,16 @@ class PageBreadcrumbsListSchema
 {
     const AuthorName = 'pika-0203';
     const AuthorUrl = 'https://github.com/pika-0203';
-    const PublisherName = 'オプチャグラフ';
+    public string $publisherName;
     public string $publisherLogo;
     public string $siteImg;
 
     function __construct(
         private Metadata $metadata
     ) {
-        $this->publisherLogo = url('assets/icon-192x192.png');
-        $this->siteImg = url('assets/ogp.png');
+        $this->publisherName = t('オプチャグラフ');
+        $this->publisherLogo = url(['urlRoot' => '', 'paths' => ['assets/icon-192x192.png']]);
+        $this->siteImg = url(['urlRoot' => '', 'paths' => ['assets/ogp.png']]);
     }
 
     // パンくずリスト
@@ -30,7 +32,7 @@ class PageBreadcrumbsListSchema
         $itemListElement = [
             Schema::listItem()
                 ->position(1)
-                ->name('トップ')
+                ->name(t('トップ'))
                 ->item(rtrim(url(), '/')),
             Schema::listItem()
                 ->position(2)
@@ -53,7 +55,7 @@ class PageBreadcrumbsListSchema
     // organization
     function publisher()
     {
-        $publisherName = self::PublisherName;
+        $publisherName = $this->publisherName;
         $publisherLogo = $this->publisherLogo;
         return Schema::organization()
             ->name($publisherName)
@@ -104,9 +106,9 @@ class PageBreadcrumbsListSchema
     function lineOcOrganization()
     {
         return Schema::organization()
-            ->name('LINEオープンチャット')
-            ->alternateName('オプチャ')
-            ->url('https://openchat-jp.line.me/other/beginners_guide');
+            ->name(t('LINEオープンチャット'))
+            ->alternateName(t('オプチャ'))
+            ->url(t('https://openchat.line.me/jp'));
     }
 
     function lineOrganization()
@@ -120,7 +122,7 @@ class PageBreadcrumbsListSchema
         return Schema::discussionForumPosting()
             ->headline($room['name'])
             ->description($room['description'])
-            ->url(AppConfig::LINE_OPEN_URL . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+            ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
             ->sameAs($room['url'] ? AppConfig::LINE_APP_URL . $room['url'] . AppConfig::LINE_APP_SUFFIX : '')
             ->interactionStatistic(
                 Schema::interactionCounter()
@@ -138,7 +140,7 @@ class PageBreadcrumbsListSchema
             ->author(
                 Schema::person()
                     ->name($room['name'])
-                    ->url(AppConfig::LINE_OPEN_URL . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                    ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
             );
     }
 
@@ -160,7 +162,7 @@ class PageBreadcrumbsListSchema
                     ->actionApplication($this->actionApplication())
             )
             ->additionalType('https://schema.org/FollowAction')
-            ->name('LINEで開く');
+            ->name(t('LINEで開く'));
     }
 
     function generateRecommend(

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Accreditation\Recommend\StaticData\AccreditationStaticDataGenerator;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
@@ -34,7 +33,6 @@ class SyncOpenChat
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
         private RecommendUpdater $recommendUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
-        private AccreditationStaticDataGenerator $acrreditationCacheUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
         ini_set('memory_limit', '2G');
@@ -81,7 +79,7 @@ class SyncOpenChat
 
     private function isFailedDailyUpdate(): bool
     {
-        return isDailyUpdateTime(new \DateTime('-2 hour'), nowStart: new \DateTime('-1day'), nowEnd: new \DateTime('-1day'))
+        return isDailyUpdateTime(new \DateTime('-2 hour'))
             && $this->state->getBool(StateType::isDailyTaskActive);
     }
 
@@ -119,12 +117,22 @@ class SyncOpenChat
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
-            [fn() => $this->invitationTicketUpdater->updateInvitationTicketAll(), 'updateInvitationTicketAll'],
+            [function () {
+                if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
+                    addCronLog('Skip updateInvitationTicketAll because it is active');
+                    AdminTool::sendLineNofity('Skip updateInvitationTicketAll because it is active');
+                    return;
+                }
+
+                $this->state->setTrue(StateType::isUpdateInvitationTicketActive);
+                $this->invitationTicketUpdater->updateInvitationTicketAll();
+                $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
+            }, 'updateInvitationTicketAll'],
             //[fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
-                    addCronLog('Skip hourlyTask because dailyTask is active');
-                    AdminTool::sendLineNofity('Skip hourlyTask because dailyTask is active');
+                    addCronLog('Skip updateRecommendTables because dailyTask is active');
+                    AdminTool::sendLineNofity('Skip updateRecommendTables because dailyTask is active');
                     return;
                 }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shadow;
 
-use App\Config\Shadow\StringCryptorConfig;
+use Shared\MimimalCmsConfig;
 
 /**
  * Encrypt and decrypt strings using AES-CBC and obtain hashes of encrypted strings using HKDF.
@@ -14,8 +14,16 @@ use App\Config\Shadow\StringCryptorConfig;
  */
 class StringCryptor implements StringCryptorInterface
 {
-    public string $hkdfKey = StringCryptorConfig::HKDF_KEY;
-    public string $opensslKey = StringCryptorConfig::OPENSSL_KEY;
+    public string $hkdfKey;
+    public string $opensslKey;
+
+    public function __construct()
+    {
+        $this->setSeacretKey(
+            MimimalCmsConfig::$stringCryptorHkdfKey,
+            MimimalCmsConfig::$stringCryptorOpensslKey
+        );
+    }
 
     public function setSeacretKey(string $hkdfKey, string $opensslKey)
     {

@@ -10,4 +10,5 @@ class RankingPositionChartArgDto
     public int|null $categoryKey;
     public string $categoryName;
     public string $baseUrl;
+    public string $urlRoot;
 }

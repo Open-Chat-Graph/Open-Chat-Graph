@@ -20,9 +20,9 @@ interface CookieInterface
         mixed $value = null,
         int $expires = 0,
         string $path = '/',
-        string $samesite = COOKIE_DEFAULT_SAMESITE,
-        bool $secure = COOKIE_DEFAULT_SECURE,
-        bool $httpOnly = COOKIE_DEFAULT_HTTPONLY,
+        ?string $samesite = null,
+        ?bool $secure = null,
+        ?bool $httpOnly = null,
         string $domain = ''
     );
 

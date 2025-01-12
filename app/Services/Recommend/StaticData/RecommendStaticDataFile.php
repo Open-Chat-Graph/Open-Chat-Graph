@@ -9,15 +9,22 @@ use App\Services\Recommend\Dto\RecommendListDto;
 
 class RecommendStaticDataFile
 {
-    private function checkUpdatedAt(RecommendListDto|false $data)
+    private function checkUpdatedAt(RecommendListDto $data)
     {
-        if (!$data || !$data->hourlyUpdatedAt === file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME))
+        if (
+            !$data->getCount()
+            || !$data->hourlyUpdatedAt === file_get_contents(
+                AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')
+            )
+        )
             noStore();
     }
 
-    function getCategoryRanking(int $category): RecommendListDto|false
+    function getCategoryRanking(int $category): RecommendListDto
     {
-        $data = getUnserializedFile("static_data_recommend/category/{$category}.dat");
+        $data = getUnserializedFile(
+            AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
+        );
 
         if (!$data) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
@@ -29,10 +36,12 @@ class RecommendStaticDataFile
         return $data;
     }
 
-    function getRecomendRanking(string $tag): RecommendListDto|false
+    function getRecomendRanking(string $tag): RecommendListDto
     {
         $fileName = hash('crc32', $tag);
-        $data = getUnserializedFile("static_data_recommend/tag/{$fileName}.dat");
+        $data = getUnserializedFile(
+            AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
+        );
 
         if (!$data) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
@@ -40,14 +49,15 @@ class RecommendStaticDataFile
             return $staticDataGenerator->getRecomendRanking($tag);
         }
 
-
         $this->checkUpdatedAt($data);
         return $data;
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto|false
+    function getOfficialRanking(int $emblem): RecommendListDto
     {
-        $data = getUnserializedFile("static_data_recommend/official/{$emblem}.dat");
+        $data = getUnserializedFile(
+            AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
+        );
 
         if (!$data) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */

@@ -7,6 +7,7 @@ namespace App\Services\OpenChat\Crawler;
 use App\Services\Crawler\CrawlerFactory;
 use App\Config\OpenChatCrawlerConfig;
 use App\Config\AppConfig;
+use Shared\MimimalCmsConfig;
 
 class OpenChatApiSubCategoryDownloader
 {
@@ -22,10 +23,11 @@ class OpenChatApiSubCategoryDownloader
      */
     function fetchOpenChatApiSubCategory(string $category): array|false
     {
-        $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '0');
+        $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '');
+        $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[MimimalCmsConfig::$urlRoot];
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
-        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false);
+        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
         if (!$response) {
             throw new \RuntimeException("データ取得エラー: {$url}");
         }
@@ -56,7 +58,7 @@ class OpenChatApiSubCategoryDownloader
     function fetchOpenChatApiSubCategoriesAll(\Closure $callback): array
     {
         $result = [];
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $name => $category) {
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $category) {
             if ($category === 0) {
                 continue;
             }

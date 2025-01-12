@@ -5,22 +5,31 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendUtility;
+use App\Views\Ads\GoogleAdsence as GAd;
+use Shared\MimimalCmsConfig;
+
+if (!$recommend->getCount()) {
+    return;
+}
 
 if ($recommend->type === RecommendListType::Category) {
-    $title = "「{$recommend->listName}」カテゴリー";
+    $title = sprintfT('「%s」カテゴリーのおすすめ', $recommend->listName);
 } elseif ($recommend->type === RecommendListType::Official) {
-    $title = "{$recommend->listName}";
+    $title = sprintfT('%sのおすすめ', $recommend->listName);
 } else {
-    $title = "「{$recommend->listName}」";
+    $title = "「{$recommend->listName}」のおすすめ";
 }
 
 ?>
+
+<?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+<hr class="hr-top">
 
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
             <h2 class="unset">
-                <span style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;"><?php echo $title ?>のおすすめ</span>
+                <span style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;"><?php echo $title ?></span>
             </h2>
         </div>
     </header>
@@ -35,12 +44,12 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::$OPEN_CHAT_CATEGORY[$recommend->listName] . '?list=daily') ?>">
-            <span class="ranking-readMore">「<?php echo $recommend->listName ?>」カテゴリーをもっと見る</span>
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot][htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">
+            <span class="ranking-readMore"><?php echo sprintfT('「%s」カテゴリーをもっと見る', $recommend->listName) ?></span>
         </a>
     <?php elseif ($recommend->type === RecommendListType::Official) : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('badge:' . htmlspecialchars_decode($recommend->listName))) ?>">
-            <span class="ranking-readMore"><?php echo $recommend->listName ?>をもっと見る</span>
+            <span class="ranking-readMore"><?php echo sprintfT('%sをもっと見る', $recommend->listName) ?></span>
         </a>
     <?php else : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
@@ -49,3 +58,5 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
 </article>
+
+<hr class="hr-bottom">

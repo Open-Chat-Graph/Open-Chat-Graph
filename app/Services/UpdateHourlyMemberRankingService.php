@@ -19,18 +19,19 @@ class UpdateHourlyMemberRankingService
         private HourMemberRankingUpdaterRepositoryInterface $hourMemberRankingUpdaterRepository,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private StatisticsRepositoryInterface $statisticsRepository,
-    ) {
-    }
+    ) {}
 
     function update()
     {
         $time = $this->rankingPositionHourRepository->getLastHour();
         if (!$time) return;
 
+        addVerboseCronLog(__METHOD__ . ' Start ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
         $this->hourMemberRankingUpdaterRepository->updateHourRankingTable(
             new \DateTime($time),
             $this->getCachedFilters($time)
         );
+        addVerboseCronLog(__METHOD__ . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
 
         $this->updateStaticData($time);
         $this->saveNextFiltersCache($time);
@@ -38,7 +39,7 @@ class UpdateHourlyMemberRankingService
 
     private function getCachedFilters(string $time)
     {
-        $filters = getUnserializedFile(AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR, true);
+        $filters = getUnserializedFile(AppConfig::getStorageFilePath('openChatHourFilterId'));
         return $filters
             ? $filters
             : $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
@@ -46,17 +47,24 @@ class UpdateHourlyMemberRankingService
 
     private function saveNextFiltersCache(string $time)
     {
+        addVerboseCronLog(__METHOD__ . ' Start ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
         saveSerializedFile(
-            AppConfig::$OPEN_CHAT_HOUR_FILTER_ID_DIR,
+            AppConfig::getStorageFilePath('openChatHourFilterId'),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d')),
-            true
         );
+        addVerboseCronLog(__METHOD__ . ' Done ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
     }
 
     private function updateStaticData(string $time)
     {
-        safeFileRewrite(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME, $time);
+        safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
+
+        addVerboseCronLog(__METHOD__ . ' Start ' . 'StaticDataGenerator::updateStaticData');
         $this->staticDataGenerator->updateStaticData();
+        addVerboseCronLog(__METHOD__ . ' Done ' . 'StaticDataGenerator::updateStaticData');
+
+        addVerboseCronLog(__METHOD__ . ' Start ' . 'RecommendStaticDataGenerator::updateStaticData');
         $this->recommendStaticDataGenerator->updateStaticData();
+        addVerboseCronLog(__METHOD__ . ' Done ' . 'RecommendStaticDataGenerator::updateStaticData');
     }
 }

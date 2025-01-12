@@ -40,7 +40,7 @@ interface RankingPositionHourRepositoryInterface
      */
     public function getTotalCount(\DateTime $date, bool $isDate = true): array;
 
-    public function dalete(\DateTime $dateTime): void;
+    public function delete(\DateTime $dateTime): void;
 
     public function insertTotalCount(string $fileTime): int;
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * MimimalCMS0.1 APIs
+ * MimimalCMS v1 APIs
  * 
  * @author mimimiku778 <0203.sub@gmail.com>
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md

@@ -8,6 +8,7 @@ use Shared\Exceptions\UploadException;
 use Shadow\Kernel\Reception;
 use Shadow\Kernel\RouteClasses\RouteDTO;
 use Shared\Exceptions\ValidationException;
+use Shared\MimimalCmsConfig;
 
 /**
  * @author mimimiku778 <0203.sub@gmail.com>
@@ -24,7 +25,6 @@ class ReceptionInitializer implements ReceptionInitializerInterface
         $this->routeDto = $routeDto;
         $this->routeFails = $routeDto->getFailsResponse();
 
-        $this->getDomainAndHttpHost();
         Reception::$requestMethod =       $this->routeDto->requestMethod;
         Reception::$isJson =              $this->routeDto->isJson;
 
@@ -32,16 +32,10 @@ class ReceptionInitializer implements ReceptionInitializerInterface
         Reception::$inputData =           $this->parseRequestBody($this->routeDto->paramArray);
     }
 
-    public static function getDomainAndHttpHost(): string
+    public static function getDomainAndHttpHost(?string $urlRoot = null): string
     {
-        if (isset(Reception::$domain)) {
-            return Reception::$domain;
-        }
-
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        Reception::$domain = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . URL_ROOT;
-
-        return Reception::$domain;
+        return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($urlRoot ?? MimimalCmsConfig::$urlRoot);
     }
 
     /**
@@ -51,9 +45,9 @@ class ReceptionInitializer implements ReceptionInitializerInterface
      */
     protected function getFlashSession(): array
     {
-        if (isset($_SESSION[FLASH_SESSION_KEY_NAME])) {
-            $session = $_SESSION[FLASH_SESSION_KEY_NAME];
-            unset($_SESSION[FLASH_SESSION_KEY_NAME]);
+        if (isset($_SESSION[MimimalCmsConfig::$flashSessionKeyName])) {
+            $session = $_SESSION[MimimalCmsConfig::$flashSessionKeyName];
+            unset($_SESSION[MimimalCmsConfig::$flashSessionKeyName]);
         } else {
             $session = [];
         }

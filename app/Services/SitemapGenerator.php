@@ -5,93 +5,83 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Config\AppConfig;
-use App\Models\Accreditation\AccreditationDB;
-use App\Models\Accreditation\AccreditationUserModel;
 use Asika\Sitemap\Sitemap;
 use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class SitemapGenerator
 {
-    const SITE_URL = 'https://openchat-review.me/';
-    const SITEMAP_URL = 'https://openchat-review.me/sitemaps/';
+    const SITE_URL = 'https://openchat-review.me';
+    const SITEMAP_PATH = 'https://openchat-review.me/sitemaps/';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemaps/';
     const INDEX_SITEMAP = __DIR__ . '/../../public/sitemap.xml';
+    private string $currentUrl = '';
+    private int $currentNum = 0;
 
     function __construct(
         private OpenChatListRepositoryInterface $ocRepo,
         private RecommendUpdater $recommendUpdater,
-        private AccreditationUserModel $accreditationUserModel,
-    ) {
-    }
+    ) {}
 
     function generate()
     {
-        DB::$pdo = null;
-        AccreditationDB::$pdo = null;
-
+        $ccurrentUrlRoot = MimimalCmsConfig::$urlRoot;
         $index = new SitemapIndex();
-        $index->addItem($this->generateSitemap1(), new \DateTime);
-
-        $currentNum = 1;
-        foreach (array_chunk($this->ocRepo->getOpenChatSiteMapData(), 25000) as $i => $openChat) {
-            $index->addItem($this->genarateOpenChatSitemap($openChat, $i + 2), new \DateTime);
-            $currentNum++;
-        }
-
-        foreach (array_chunk($this->accreditationUserModel->getSiteMapData(), 25000) as $i => $question) {
-            $index->addItem($this->genarateAccreditationSitemap($question, $i + $currentNum + 1), new \DateTime);
+        foreach (array_keys(AppConfig::$dbName) as $lang) {
+            MimimalCmsConfig::$urlRoot = $lang;
+            $this->currentUrl = self::SITE_URL . $lang . '/';
+            DB::$pdo = null;
+            $this->generateEachLanguage($index);
         }
 
         safeFileRewrite(self::INDEX_SITEMAP, $index->render(), 0755);
+        DB::$pdo = null;
+        MimimalCmsConfig::$urlRoot = $ccurrentUrlRoot;
+        $this->cleanSitemapFiles(self::SITEMAP_DIR, $this->currentNum);
+    }
+
+    private function generateEachLanguage(SitemapIndex $index)
+    {
+        $index->addItem($this->generateSitemap1(), new \DateTime);
+
+        foreach (array_chunk($this->ocRepo->getOpenChatSiteMapData(), 25000) as $openChat) {
+            $index->addItem($this->genarateOpenChatSitemap($openChat), new \DateTime);
+        }
     }
 
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(AppConfig::$DAILY_CRON_UPDATED_AT_DATE);
-        $datetime = file_get_contents(AppConfig::$HOURLY_CRON_UPDATED_AT_DATETIME);
+        $date = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
+        $datetime = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 
         $sitemap = new Sitemap();
-        $sitemap->addItem(rtrim(self::SITE_URL, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
-        $sitemap->addItem(self::SITE_URL . 'oc');
-        $sitemap->addItem(self::SITE_URL . 'policy');
-        $sitemap->addItem(self::SITE_URL . 'ranking', lastmod: $datetime);
-        $sitemap->addItem(self::SITE_URL . 'ranking?keyword=' . urlencode('badge:スペシャルオープンチャット'), lastmod: $datetime);
-        $sitemap->addItem(self::SITE_URL . 'ranking?keyword=' . urlencode('badge:公式認証オープンチャット'), lastmod: $datetime);
+        $sitemap->addItem(rtrim($this->currentUrl, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
+        $sitemap->addItem($this->currentUrl . 'oc');
+        $sitemap->addItem($this->currentUrl . 'policy');
+        $sitemap->addItem($this->currentUrl . 'ranking', lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]), lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2]), lastmod: $datetime);
 
-        $accreditationLoginView = VIEWS_DIR . "/accreditation/home_login.php";
-        if (file_exists($accreditationLoginView))
-            $sitemap->addItem(
-                self::SITE_URL . 'accreditation/login',
-                lastmod: '@' . filemtime($accreditationLoginView)
-            );
-
-        $accreditationJs = getFilePath('js/quiz', 'main.*.js');
-        if ($accreditationJs)
-            $sitemap->addItem(
-                self::SITE_URL . 'accreditation',
-                lastmod: '@' . filemtime(PUBLIC_DIR . "/" . $accreditationJs)
-            );
-
-        foreach (AppConfig::$OPEN_CHAT_CATEGORY as $category) {
-            $category && $sitemap->addItem(self::SITE_URL . 'ranking/' . $category, lastmod: $datetime);
+        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
+            $category && $sitemap->addItem($this->currentUrl . 'ranking/' . $category, lastmod: $datetime);
         }
 
         foreach ($this->recommendUpdater->getAllTagNames() as $tag) {
-            $sitemap->addItem(self::SITE_URL . 'recommend?tag=' . urlencode($tag), lastmod: $datetime);
+            $sitemap->addItem($this->currentUrl . 'recommend?tag=' . urlencode($tag), lastmod: $datetime);
         }
 
         foreach ($this->recommendUpdater->getAllTagNames() as $tag) {
-            $sitemap->addItem(self::SITE_URL . 'ranking?keyword=' . urlencode('tag:' . $tag), lastmod: $datetime);
+            $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('tag:' . $tag), lastmod: $datetime);
         }
 
-        return $this->saveXml($sitemap, 1);
+        return $this->saveXml($sitemap);
     }
 
-    private function genarateOpenChatSitemap(array $openChat, int $n): string
+    private function genarateOpenChatSitemap(array $openChat): string
     {
         $sitemap = new Sitemap();
         foreach ($openChat as $oc) {
@@ -99,33 +89,47 @@ class SitemapGenerator
             $this->addItem($sitemap, "oc/{$id}", $updated_at);
         }
 
-        return $this->saveXml($sitemap, $n);
-    }
-
-    private function genarateAccreditationSitemap(array $question, int $n): string
-    {
-        $sitemap = new Sitemap();
-        foreach ($question as $q) {
-            ['id' => $id, 'edited_at' => $edited_at] = $q;
-            $this->addItem($sitemap, "accreditation?id={$id}", $edited_at);
-        }
-
-        return $this->saveXml($sitemap, $n);
+        return $this->saveXml($sitemap);
     }
 
     private function addItem(Sitemap $sitemap, string $uri, string $datetime = 'now'): Sitemap
     {
-        return $sitemap->addItem(self::SITE_URL . $uri, lastmod: new \DateTime($datetime));
+        return $sitemap->addItem($this->currentUrl . $uri, lastmod: new \DateTime($datetime));
     }
 
     /**
      * @return string XML URL
      */
-    private function saveXml(Sitemap $sitemap, int $n): string
+    private function saveXml(Sitemap $sitemap): string
     {
+        $this->currentNum++;
+        $n = $this->currentNum;
+
         $fileName = "sitemap{$n}.xml";
         safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render(), 0755);
 
-        return self::SITEMAP_URL . $fileName;
+        return self::SITEMAP_PATH . $fileName;
+    }
+
+    /**
+     * 指定ディレクトリのsitemapファイルを削除
+     *
+     * @param string $directory 対象ディレクトリ
+     * @param int $maxNumber 削除しない最大番号
+     */
+    private function cleanSitemapFiles(string $directory, int $maxNumber): void
+    {
+        // ディレクトリ内のファイルを取得
+        $files = scandir($directory);
+
+        foreach ($files as $file) {
+            // ファイル名が 'sitemap' で始まり '.xml' で終わるかを確認
+            if (
+                preg_match('/^sitemap(\d+)\.xml$/', $file, $matches)
+                && (int)$matches[1] > $maxNumber
+            ) {
+                unlink("{$directory}/{$file}");
+            }
+        }
     }
 }

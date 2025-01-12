@@ -1,6 +1,5 @@
 User-agent: *
-Disallow: /auth/
-Disallow: /accreditation/bronze/
-Disallow: /accreditation/silver/
-Disallow: /accreditation/gold/
+Disallow: /tw/recently-registered
+Disallow: /th/recently-registered
+Disallow: /recently-registered
 Sitemap: https://openchat-review.me/sitemap.xml

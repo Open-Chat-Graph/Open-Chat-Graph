@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php
 
 use App\Views\Ads\GoogleAdsence as GAd;
+use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
@@ -10,90 +11,41 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
-
         <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
+
+        <?php if ($dto->recentCommentList): ?>
+            <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
+            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
+            <hr class="hr-bottom">
+            <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+            <hr class="hr-top">
+        <?php endif ?>
+
+        <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <hr class="hr-bottom">
 
-        <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
-        <?php if ($newComment) : ?>
-            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
-            <hr class="hr-bottom">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
-            <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+        <hr class="hr-top">
+        <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
+        <hr class="hr-bottom">
 
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-            <hr class="hr-bottom">
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
 
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
 
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <hr class="hr-bottom">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <hr class="hr-top">
+        <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
+        <hr class="hr-bottom">
 
-            <hr class="hr-top">
-            <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
-            <hr class="hr-bottom">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-        <?php else : ?>
-            <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true]) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true]) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
-            <hr class="hr-bottom">
-
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-            <hr class="hr-top">
-            <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-        <?php endif ?>
+        <hr class="hr-top">
+        <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
         <hr class="hr-bottom">
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
@@ -122,51 +74,55 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div class="refresh-icon"></div><time style="font-size: 11px; color: #777; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
-    <script>
-        let lastList = ''
+    <?php GAd::loadAdsTag() ?>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
-        function fetchMyList(name) {
-            const cookieRegex = new RegExp(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`)
-            const cookieMatch = document.cookie.match(cookieRegex)
-            const myListDiv = document.getElementById('myListDiv')
-            if (!cookieMatch) {
-                myListDiv.textContent && (myListDiv.textContent = '')
-                return
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 // TODO: 日本以外ではマイリストが無効
+    ?>
+        <script>
+            const urlRoot = '<?php echo MimimalCmsConfig::$urlRoot ?>'
+            let lastList = ''
+
+            function fetchMyList(name) {
+                const cookieRegex = new RegExp(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`)
+                const cookieMatch = document.cookie.match(cookieRegex)
+                const myListDiv = document.getElementById('myListDiv')
+                if (!cookieMatch) {
+                    myListDiv.textContent && (myListDiv.textContent = '')
+                    return
+                }
+
+                fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api')
+                    .then((res) => {
+                        if (res.status === 200)
+                            return res.text();
+                        else
+                            throw new Error()
+                    })
+                    .then((data) => {
+                        if (lastList === data)
+                            return
+
+                        lastList = data
+                        myListDiv.textContent = ''
+                        myListDiv.insertAdjacentHTML('afterbegin', data)
+                        myListDiv.style.opacity = '1'
+                    })
+                    .catch(error => console.error('エラー', error))
             }
 
-            fetch('mylist-api')
-                .then((res) => {
-                    if (res.status === 200)
-                        return res.text();
-                    else
-                        throw new Error()
-                })
-                .then((data) => {
-                    if (lastList === data)
-                        return
+            window.addEventListener("pageshow", function(event) {
+                fetchMyList('myList')
+            });
+        </script>
+        <script type="module">
+            import {
+                getComment
+            } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-                    lastList = data
-                    myListDiv.textContent = ''
-                    myListDiv.insertAdjacentHTML('afterbegin', data)
-                    myListDiv.style.opacity = '1'
-                })
-                .catch(error => console.error('エラー', error))
-        }
-
-        window.addEventListener("pageshow", function(event) {
-            fetchMyList('myList')
-        });
-    </script>
-
-    <script type="module">
-        import {
-            getComment
-        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-        getComment()
-    </script>
+            getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
+        </script>
+    <?php endif ?>
 
     <?php echo $_meta->generateTopPageSchema() ?>
 </body>

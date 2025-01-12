@@ -10,6 +10,7 @@ use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourInsertDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
+use Shared\MimimalCmsConfig;
 
 class RankingPositionHourRepository implements RankingPositionHourRepositoryInterface
 {
@@ -270,7 +271,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         return RankingPositionDB::fetchAll($query);
     }
 
-    public function dalete(\DateTime $dateTime): void
+    public function delete(\DateTime $dateTime): void
     {
         // 指定の日時より以前
         $time = new \DateTime($dateTime->format('Y-m-d H:i:s'));
@@ -296,7 +297,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
 
     public function getLastHour(): string|false
     {
-        $categoryCount = count(AppConfig::$OPEN_CHAT_CATEGORY);
+        $categoryCount = count(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
 
         return RankingPositionDB::fetchColumn(
             "SELECT

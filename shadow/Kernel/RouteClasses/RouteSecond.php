@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Shadow\Kernel\RouteClasses;
 
 use Shadow\Kernel\ResponseInterface;
+use Shared\Exceptions\ValidationException;
+use Shared\MimimalCmsConfig;
 
 /**
  * @author mimimiku778 <0203.sub@gmail.com>
@@ -35,7 +37,7 @@ class RouteSecond extends AbstractRoute implements RouteSecondInterface
     ): static {
         [$key, $requestMethod] = $this->createArrayKey($requestMethod);
 
-        $validator = $this->createValidationObject($maxLen, $regex, $emptyAble, \Shared\Exceptions\ValidationException::class, $default);
+        $validator = $this->createValidationObject($maxLen, $regex, $emptyAble, ValidationException::class, $default);
 
         $this->routeDto->routeValidatorArray[$key][$requestMethod][$parametaName] = $validator->str(...);
 
@@ -53,7 +55,7 @@ class RouteSecond extends AbstractRoute implements RouteSecondInterface
     ): static {
         [$key, $requestMethod] = $this->createArrayKey($requestMethod);
 
-        $validator = $this->createValidationObject($max, $min, $exactMatch, $emptyAble, \Shared\Exceptions\ValidationException::class, $default);
+        $validator = $this->createValidationObject($max, $min, $exactMatch, $emptyAble, ValidationException::class, $default);
 
         $this->routeDto->routeValidatorArray[$key][$requestMethod][$parametaName] = $validator->num(...);
 
@@ -63,12 +65,12 @@ class RouteSecond extends AbstractRoute implements RouteSecondInterface
     public function matchFile(
         string $parametaName,
         array $allowedMimeTypes,
-        int $maxFileSize = DEFAULT_MAX_FILE_SIZE,
+        ?int $maxFileSize = null,
         bool $emptyAble = false,
         ?string $requestMethod = null,
     ): static {
         [$key, $requestMethod] = $this->createArrayKey($requestMethod);
-        $validator = $this->createValidationObject($emptyAble, $allowedMimeTypes, $maxFileSize);
+        $validator = $this->createValidationObject($emptyAble, $allowedMimeTypes, $maxFileSize ?? MimimalCmsConfig::$defaultMaxFileSize);
         $this->routeDto->paramArray[$parametaName] = [];
         $this->routeDto->routeValidatorArray[$key][$requestMethod][$parametaName] = $validator->file(...);
 

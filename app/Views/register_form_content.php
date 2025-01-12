@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
@@ -79,7 +79,7 @@
     <script type="module">
         import {
             OpenChatUrlValidator
-        } from '<?php echo fileUrl('/js/OpenChatUrlValidator.js') ?>';
+        } from '<?php echo fileUrl('/js/OpenChatUrlValidator.js', urlRoot: '') ?>';
 
         const addOpenChatForm = document.getElementById('add-openchat-form')
         const inputValidator = new OpenChatUrlValidator(addOpenChatForm)
@@ -88,7 +88,7 @@
         // 古いSafariの対策
         addOpenChatForm.addEventListener('submit', e => e.target.elements['submit'].disabled && e.preventDefault())
     </script>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 </body>
 
 </html>

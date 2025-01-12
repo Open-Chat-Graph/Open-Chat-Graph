@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shadow;
 
+use Shared\MimimalCmsConfig;
+
 /**
  * \PDO wrapper class for SQL databases
  * 
@@ -15,19 +17,26 @@ class DB implements DBInterface
     public static ?\PDO $pdo = null;
 
     /**
-     * @throws \PDOException
+     * @param ?array{dbHost?: string, dbName?: string, dbUserName?: string, dbPassword?: string, charset?: string, attrPersistent?: bool} $config
      */
-    public static function connect(string $configClass = \App\Config\Shadow\DatabaseConfig::class): \PDO
+    public static function connect(?array $config = null): \PDO
     {
         if (static::$pdo !== null) {
             return static::$pdo;
         }
 
+        $host = $config['dbHost'] ?? MimimalCmsConfig::$dbHost;
+        $dbName = $config['dbName'] ?? MimimalCmsConfig::$dbName;
+        $userName = $config['dbUserName'] ?? MimimalCmsConfig::$dbUserName;
+        $password = $config['dbPassword'] ?? MimimalCmsConfig::$dbPassword;
+        $attrPersistent = $config['attrPersistent'] ?? (MimimalCmsConfig::$dbAttrPersistent ?? false);
+        $charset = $config['charset']  ?? (MimimalCmsConfig::$dbCharset ?? 'utf8mb4');
+
         static::$pdo = new \PDO(
-            'mysql:host=' . $configClass::HOST . ';dbname=' . $configClass::DB_NAME . ';charset=utf8mb4',
-            $configClass::USER_NAME,
-            $configClass::PASSWORD,
-            [\PDO::ATTR_PERSISTENT => $configClass::ATTR_PERSISTENT]
+            'mysql:host=' . $host . ';dbname=' .$dbName . ';charset=' . $charset,
+            $userName,
+            $password,
+            [\PDO::ATTR_PERSISTENT => $attrPersistent]
         );
 
         // Enable \PDO to throw exceptions on error.

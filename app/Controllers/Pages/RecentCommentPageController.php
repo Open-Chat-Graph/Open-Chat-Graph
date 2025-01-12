@@ -28,7 +28,7 @@ class RecentCommentPageController
         $unmodifeidPageNumber = Reception::input('page');
         $rankingList = $this->recentComment->getAllOrderByRegistrationDate(
             $unmodifeidPageNumber,
-            AppConfig::RECENT_COMMENT_LIST_LIMIT
+            AppConfig::LIST_LIMIT_RECENT_COMMENT
         );
 
         if (!$rankingList) {
@@ -48,7 +48,7 @@ class RecentCommentPageController
             '',
             $unmodifeidPageNumber,
             $rankingList['totalRecords'],
-            AppConfig::RECENT_COMMENT_LIST_LIMIT,
+            AppConfig::LIST_LIMIT_RECENT_COMMENT,
             $rankingList['maxPageNumber'],
             $rankingList['labelArray'],
             true

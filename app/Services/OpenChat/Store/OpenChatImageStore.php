@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Services\OpenChat\Crawler\OpenChatImgDownloader;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class OpenChatImageStore
 {
@@ -35,8 +36,8 @@ class OpenChatImageStore
     private function mkDir($open_chat_id): void
     {
         $subDir = '/' . filePathNumById($open_chat_id);
-        mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH . $subDir));
-        mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . $subDir));
+        mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . $subDir));
+        mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . $subDir));
     }
 
     /** @return string|false imgUrlHash */

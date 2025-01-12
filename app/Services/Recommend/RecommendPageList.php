@@ -15,13 +15,9 @@ class RecommendPageList
     ) {
     }
 
-    /** @return array{ 0:RecommendListDto,1:array{ hour:?int,hour24:?int,week:?int } }|false */
-    function getListDto(string $tag): array|false
+    function getListDto(string $tag): RecommendListDto|false
     {
-        $dto = $this->recommendStaticDataGenerator->getRecomendRanking($tag);
-
-        //return $dto ? [$dto, $this->recommendPageRepository->getTagDiffMember($tag)] : false;
-        return $dto ? [$dto, []] : false;
+        return $this->recommendStaticDataGenerator->getRecomendRanking($tag);
     }
 
     function isValidTag(string $tag): bool

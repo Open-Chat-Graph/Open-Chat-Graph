@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shadow\Kernel\Reception;
+use Shared\MimimalCmsConfig;
 
 class ReactRankingPageController
 {
@@ -20,7 +21,7 @@ class ReactRankingPageController
         $title0 = '';
         switch (!!$keyword) {
             case true:
-                $title0 = "「{$keyword}」の検索結果｜";
+                $title0 = sprintfT('「%s」の検索結果', $keyword) . "｜";
                 break;
             default:
                 $title0 = '';
@@ -29,10 +30,10 @@ class ReactRankingPageController
         $title1 = '';
         switch (!!$category) {
             case true:
-                $title1 = array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] . '｜';
+                $title1 = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] . '｜';
                 break;
             default:
-                $title1 = $title0 ? '' : '【最新】';
+                $title1 = $title0 ? '' : t('【最新】');
         }
 
         $title3 = '';
@@ -47,16 +48,16 @@ class ReactRankingPageController
         $title2 = '';
         switch ($reception->input('list')) {
             case 'weekly':
-                $title2 = '人数増加・1週間';
+                $title2 = t('人数増加・1週間');
                 break;
             case 'daily':
-                $title2 = '人数増加・24時間';
+                $title2 = t('人数増加・24時間');
                 break;
             case 'hourly':
-                $title2 = '人数増加・1時間';
+                $title2 = t('人数増加・1時間');
                 break;
             case 'all':
-                $title2 = '参加人数のランキング';
+                $title2 = t('参加人数のランキング');
                 break;
             case 'ranking':
                 $title2 = '公式ランキング(1時間前)';
@@ -88,11 +89,12 @@ class ReactRankingPageController
             ->generateTags();
 
         $_argDto = $staticDataFile->getRankingArgDto();
+        $_argDto->baseUrl = url();
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
-            'ランキング',
+            t('ランキング'),
             'ranking',
-            $category ? array_flip(AppConfig::$OPEN_CHAT_CATEGORY)[$category] : '',
+            $category ? array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] : '',
             $category ? (string)$category : ''
         );
 

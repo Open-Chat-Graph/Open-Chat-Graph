@@ -14,8 +14,7 @@ class OpenChatSubCategorySynchronizer
 
     function __construct(
         private OpenChatApiSubCategoryDownloader $openChatApiSubCategoryDownloader,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array [CategoryName => int] サブカテゴリが存在するカテゴリ名 => サブカテゴリ数
@@ -29,7 +28,7 @@ class OpenChatSubCategorySynchronizer
         );
 
         $result && safeFileRewrite(
-            AppConfig::OPEN_CHAT_SUB_CATEGORIES_FILE_PATH,
+            AppConfig::getStorageFilePath('openChatSubCategories'),
             json_encode($this->fetchedSubcategories, JSON_UNESCAPED_UNICODE)
         );
 

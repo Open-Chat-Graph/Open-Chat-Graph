@@ -2,6 +2,8 @@
 
 namespace App\Views\Ads;
 
+use App\Config\AppConfig;
+
 class GoogleAdsence
 {
     const AD_CLIENT = 'ca-pub-2330982526015125';
@@ -67,6 +69,8 @@ class GoogleAdsence
 
     private static function rectangle(int $adSlot, string $cssClass)
     {
+        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="horizontal"></ins>
@@ -75,6 +79,8 @@ class GoogleAdsence
 
     private static function responsive(int $adSlot, string $cssClass)
     {
+        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -83,6 +89,8 @@ class GoogleAdsence
 
     static function loadAdsTag()
     {
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -97,7 +105,7 @@ class GoogleAdsence
 
     static function gTag(?string $dataOverlays = null)
     {
-        if (isLocalHost()) return;
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = self::AD_CLIENT;

@@ -7,7 +7,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
 ?>
 
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 <style>
     /* Increase size of the main heading */
@@ -48,7 +48,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
     <footer style="margin-top: 3rem;">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 </body>
 
 </html>

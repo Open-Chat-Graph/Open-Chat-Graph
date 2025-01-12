@@ -4,7 +4,13 @@
 
 use App\Services\Recommend\RecommendUtility;
 
-$tags = $topPageDto->recommendList ?? [];
+
+$tags = $topPageDto->recommendList;
+
+// 空の配列では無効
+if (empty($tags['hour']) && empty($tags['hour24'])) {
+    return;
+}
 
 function greenTag($word)
 {
@@ -21,6 +27,7 @@ function greenTag($word)
 }
 
 ?>
+
 <article class="top-ranking">
     <div>
         <header class="openchat-list-title-area unset" style="margin-bottom: 10px;">
@@ -56,3 +63,4 @@ function greenTag($word)
         </ul>
     </div>
 </article>
+<hr class="hr-bottom" style="width: 100%;">

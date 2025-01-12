@@ -10,4 +10,5 @@ enum SyncOpenChatStateType: string
     case isHourlyTaskActive = 'isHourlyTaskActive';
     case openChatApiDbMergerKillFlag = 'openChatApiDbMergerKillFlag';
     case openChatDailyCrawlingKillFlag = 'openChatDailyCrawlingKillFlag';
+    case isUpdateInvitationTicketActive = 'isUpdateInvitationTicketActive';
 }

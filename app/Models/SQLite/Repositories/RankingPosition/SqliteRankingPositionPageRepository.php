@@ -39,7 +39,7 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
 
         $dto = new RankingPositionPageRepoDto;
 
-        SQLiteRankingPosition::connect('?mode=ro&nolock=1');
+        SQLiteRankingPosition::connect(['mode' => '?mode=ro&nolock=1']);
         $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
         SQLiteRankingPosition::$pdo = null;
 

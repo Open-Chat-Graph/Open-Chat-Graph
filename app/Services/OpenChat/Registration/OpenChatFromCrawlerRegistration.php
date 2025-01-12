@@ -14,6 +14,7 @@ use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Services\OpenChat\Updater\OpenChatImageStoreUpdater;
 use Shared\Exceptions\ThrottleRequestsException;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use Shared\MimimalCmsConfig;
 
 class OpenChatFromCrawlerRegistration
 {
@@ -118,7 +119,7 @@ class OpenChatFromCrawlerRegistration
 
     private function parseEmidFromUrl(string $url): string
     {
-        if (!preg_match(OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN, $url, $match)) {
+        if (!preg_match(OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot], $url, $match)) {
             throw new \LogicException('URLのパターンがマッチしませんでした');
         }
 

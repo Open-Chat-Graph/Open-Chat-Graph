@@ -11,4 +11,9 @@ class RankingArgDto
     public string $modifiedUpdatedAtDate;
     public string $hourlyUpdatedAt;
     public array $subCategories;
+    public string $urlRoot;
+    /**
+     * @var array{0:string,1:int}[]
+     */
+    public array $openChatCategory;
 }

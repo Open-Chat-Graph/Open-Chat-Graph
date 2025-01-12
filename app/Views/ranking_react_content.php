@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo t('ja_JP') ?>">
 
 <head prefix="og: http://ogp.me/ns#">
     <?php echo gTag(\App\Config\AppConfig::GTM_ID) ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <?php echo $_meta ?>
-    <link rel="icon" type="image/png" href="<?php echo url(\App\Config\AppConfig::SITE_ICON_FILE_PATH) ?>">
+    <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
     <?php foreach ($_css as $css) : ?>
-        <link rel="stylesheet" href="<?php echo fileUrl($css) ?>">
+        <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
     <?php endforeach ?>
-    <script defer="defer" src="<?php echo fileUrl($_js) ?>"></script>
+    <script defer="defer" src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
     <?php // \App\Views\Ads\GoogleAdsence::gTag("bottom") ?>
 </head>

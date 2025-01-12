@@ -42,6 +42,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                 :offset, :limit;";
 
         $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId', 'user_id', 'open_chat_id'));
+        if (empty($comments)) return [];
 
         $ids = array_unique(array_column($comments, 'open_chat_id'));
         $ids = implode(',', $ids);

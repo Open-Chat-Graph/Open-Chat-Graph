@@ -3,6 +3,7 @@
 namespace Shared\Exceptions;
 
 use App\Controllers\Pages\NotFoundPageController;
+use Shared\MimimalCmsConfig;
 
 /**
  * ErrorPage class to handle displaying error message and generating Github URLs for error lines
@@ -69,24 +70,23 @@ class ErrorPage
      */
     public function __construct()
     {
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_GITHUB_URL';
-        if (defined($flagName) && is_string($url = constant($flagName))) {
-            $this->githubUrl = $url;
+        $config = MimimalCmsConfig::class;
+        if (class_exists($config) && isset($config::$errorPageGitHubUrl)) {
+            $this->githubUrl = $config::$errorPageGitHubUrl;
         } else {
             return;
         }
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_DOCUMENT_ROOT_NAME';
-        if (defined($flagName) && is_string($dir = constant($flagName))) {
+        if (isset($config::$errorPageDocumentRootName)) {
+            $dir = $config::$errorPageDocumentRootName;
             $this->THROW_LINE_PATTERN = "/in.+{$dir}\/(.+)\(\d+\)/";
             $this->PHP_ERROR_LINE_PATTERN = "/\/{$dir}\/(.*) on line (\d+)/";
             $this->STACKTRACE_FILE_PATH_PATTERN = "/(#\d+) .+{$dir}\/(.+)\(\d+\)/";
             $this->LINE_NUMBER_PATTERN = "/\.php\((\d+)\)/";
         }
 
-        $flagName = 'App\Config\Shadow\ExceptionHandlerConfig::ERROR_PAGE_HIDE_DRECTORY';
-        if (defined($flagName) && is_string($dir = constant($flagName))) {
-            $this->hiddenDir = $dir;
+        if (isset($config::$errorPageHideDirectory)) {
+            $this->hiddenDir = $config::$errorPageHideDirectory;
         }
     }
 
@@ -207,34 +207,6 @@ class ErrorPage
         preg_match_all($this->STACKTRACE_FILE_PATH_PATTERN, $this->detailsMessage, $matches);
         return $matches[2] ?? [];
     }
-
-    public static function getDomainAndHttpHost(): string
-    {
-        $flagName = 'URL_ROOT';
-        if (defined($flagName) && is_string($url = constant($flagName))) {
-            $urlRoot = $url;
-        }
-
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        return $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($urlRoot ?? '');
-    }
-
-    public static function fileUrl(string $filePath): string
-    {
-        $flagName = 'PUBLIC_DIR';
-        if (!defined($flagName) || !is_string($publicDir = constant($flagName))) {
-            return self::getDomainAndHttpHost() . $filePath;
-        }
-
-        $filePath = "/" . ltrim($filePath, "/");
-        $fullFilePath = $publicDir . $filePath;
-
-        if (!file_exists($fullFilePath)) {
-            return self::getDomainAndHttpHost() . $filePath;
-        }
-
-        return self::getDomainAndHttpHost() . $filePath . '?v=' . filemtime($fullFilePath);
-    }
 }
 
 noStore();
@@ -260,24 +232,41 @@ try {
     $errorMessage = $e->getMessage();
 }
 
-// Get the domain and http host of the current page using the static method getDomainAndHttpHost() of ErrorPage class.
-$siteUrl = ErrorPage::getDomainAndHttpHost();
-
-$iconUrl = '';
-$flagName = '\App\Config\AppConfig::SITE_ICON_FILE_PATH';
-if (defined($flagName) && is_string($siteIconFilePath = constant($flagName))) {
-    $iconUrl = ErrorPage::fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH);
+$config = MimimalCmsConfig::class;
+if (class_exists($config) && isset($config::$urlRoot)) {
+    switch (MimimalCmsConfig::$urlRoot) {
+        case '':
+            $message = 'お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。';
+            $message2 = 'このオープンチャットは登録されていないか、削除されました';
+            break;
+        case '/th':
+            $message = 'หน้าที่คุณกำลังมองหาอยู่อาจไม่สามารถเข้าถึงได้ชั่วคราว หรืออาจถูกย้ายหรือลบไปแล้ว';
+            $message2 = 'ห้องสนทนานี้ไม่ได้ลงทะเบียนหรือถูกลบ';
+            break;
+        case '/tw':
+            $message = '您正在查找的页面可能暂时无法访问，或者可能已移动或删除';
+            $message2 = '此聊天室未注册或已删除';
+    }
+} else {
+    $message = 'The page you are looking for is temporarily inaccessible and may be moved or deleted.';
 }
 
+
 $_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
-    ->setDescription('お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。')
-    ->setOgpDescription('お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。');
+    ->setDescription($message)
+    ->setOgpDescription($message);
 
 $_css = ['room_list', 'site_header', 'site_footer'];
 
+try {
+    $langCode = t('ja_JP');
+} catch (\Throwable $e) {
+    $langCode = 'ja_JP';
+}
+
 ?>
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo $langCode ?>">
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
@@ -320,10 +309,10 @@ $_css = ['room_list', 'site_header', 'site_footer'];
                 <h1><?php echo $httpCode ?? '' ?></h1>
                 <h2><?php echo $httpStatusMessage ?? '' ?></h2>
                 <br>
-                <p>お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。</p>
+                <p><?php echo $message ?></p>
             <?php else : ?>
                 <br>
-                <p>このオープンチャットは登録されていないか、削除されました🙀</p>
+                <p><?php echo $message2 ?>🙀</p>
             <?php endif ?>
         </header>
         <?php if ($detailsMessage) : ?>
@@ -371,14 +360,15 @@ $_css = ['room_list', 'site_header', 'site_footer'];
             $c = app(NotFoundPageController::class);
             $c->index()->render();
         } catch (\Throwable $e) {
-            echo 'データ取得エラー';
+            echo 'error';
+            pre_var_dump($e->__toString());
         }
         ?>
     <?php endif ?>
     <footer style="padding: 1rem;">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+    <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: "") ?>"></script>
 </body>
 
 </html>

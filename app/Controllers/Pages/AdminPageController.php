@@ -5,24 +5,20 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\Accreditation\AccreditationDB;
-use App\Models\Accreditation\AccreditationUserModel;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
-use App\Models\Repositories\DB;
-use App\Services\Admin\AdminTool;
+use Shadow\DB;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
-use App\Services\Accreditation\Enum\ExamType;
-use App\Services\Accreditation\QuizApi\QuizApiService;
-use App\Services\Accreditation\QuizOgpGenerator;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
-use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\SitemapGenerator;
+use App\Services\UpdateDailyRankingService;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shadow\Kernel\Validator;
 use Shared\Exceptions\NotFoundException;
@@ -44,45 +40,44 @@ class AdminPageController
 
     function test()
     {
-        $path = AppConfig::ROOT_PATH . 'test_exec.php';
-        $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/test_exec.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
 
-        exec("php {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
-    function testpage()
+    function updateimgeall(?string $lang)
     {
-        return view('admin/admin_message_page', ['title' => 'test', 'message' => 'testを実行しました。']);
-    }
-
-    private function genequizogp(QuizOgpGenerator $quizOgpGenerator, AccreditationUserModel $accreditationUserModel)
-    {
-
-        foreach (ExamType::cases() as $type) {
-            $dtos = $accreditationUserModel->getQuestionList(1, $type);
-            foreach ($dtos as $dto) {
-                $quizOgpGenerator->generateTextOgp(
-                    $dto->question,
-                    'quiz_img_' . $dto->id,
-                );
-            }
+        $urlRoot = null;
+        switch ($lang) {
+            case 'ja':
+                $urlRoot = '';
+                break;
+            case 'tw':
+                $urlRoot = '/tw';
+                break;
+            case 'th':
+                $urlRoot = '/th';
+                break;
         }
-    }
 
-    function cron_crawling()
-    {
-        $path = AppConfig::ROOT_PATH . 'cron_crawling.php';
+        if (is_null($urlRoot)) {
+            return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。']);
+        }
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        $path = AppConfig::ROOT_PATH . 'batch/exec/imageupdater_exec.php';
+        $arg = escapeshellarg($urlRoot);
+
+        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
     private function halfcheck()
     {
-        $path = AppConfig::ROOT_PATH . 'cron_half_check.php';
+        $path = AppConfig::ROOT_PATH . 'batch/cron/cron_half_check.php';
 
         exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
 
@@ -144,11 +139,18 @@ class AdminPageController
 
     function genetop()
     {
-        $path = AppConfig::ROOT_PATH . 'genetop_exec.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
 
-        exec("php {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
+    function updatedailyranking(UpdateDailyRankingService $updateRankingService,)
+    {
+        $updateRankingService->update(OpenChatServicesUtility::getCronModifiedStatsMemberDate());
+
+        return view('admin/admin_message_page', ['title' => 'updateRankingService', 'message' => 'updateRankingServiceを実行しました。']);
     }
 
     function killmerge(SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository)

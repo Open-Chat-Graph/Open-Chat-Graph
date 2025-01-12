@@ -7,6 +7,7 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class RecommendUpdater
 {
@@ -289,14 +290,13 @@ class RecommendUpdater
         ["あんスタなりきり", ["あんスタ_AND_なりきり", "あんスタ_AND_也", "enst_AND_なりきり", "enst_AND_也", "あんスタ_AND_nrkr", "あんスタ_AND_ゆるなり", "あんすた_AND_ゆるなり", "あんスタ_AND_固定"]],
     ];
 
-    /** @var string[] $tags */
     public array $tags;
     protected string $start;
     protected string $end;
 
     function __construct()
     {
-        $this->start = file_get_contents(AppConfig::TAG_UPDATED_AT_DATETIME) ?: '';
+        $this->start = file_get_contents(AppConfig::getStorageFilePath('tagUpdatedAtDatetime')) ?: '';
     }
 
     function replace(string|array $word, string $column): string
@@ -325,7 +325,7 @@ class RecommendUpdater
         $tags = array_merge(
             self::NAME_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH),
+                file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag')),
                 true
             ))
         );
@@ -377,7 +377,7 @@ class RecommendUpdater
     /** @return array{ string:string[] }  */
     protected function getReplacedTagsDesc(string $column): array
     {
-        $this->tags = json_decode((file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH)), true);
+        $this->tags = json_decode((file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag'))), true);
 
         return [
             array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
@@ -567,6 +567,12 @@ class RecommendUpdater
 
     function updateRecommendTables(bool $betweenUpdateTime = true)
     {
+        // TODO:日本以外ではタグ機能が無効
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            safeFileRewrite(AppConfig::getStorageFilePath('tagUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
+            return;
+        }
+
         $this->start = $betweenUpdateTime ? $this->start : '2023-10-16 00:00:00';
         $this->end = $betweenUpdateTime ? OpenChatServicesUtility::getModifiedCronTime(strtotime('+1hour'))->format('Y-m-d H:i:s') : '2033-10-16 00:00:00';
 
@@ -632,7 +638,7 @@ class RecommendUpdater
             $this->updateName2('oc.description');
         });
 
-        safeFileRewrite(AppConfig::TAG_UPDATED_AT_DATETIME, (new \DateTime)->format('Y-m-d H:i:s'));
+        safeFileRewrite(AppConfig::getStorageFilePath('tagUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
     }
 
     private function modifyRecommendTags()
@@ -642,13 +648,18 @@ class RecommendUpdater
 
     function getAllTagNames(): array
     {
+        // TODO:日本以外ではタグ機能が無効
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return [];
+        }
+
         $tags = array_merge(
             array_merge(...self::BEFORE_CATEGORY_NAME),
             self::NAME_STRONG_TAG,
             self::DESC_STRONG_TAG,
             self::AFTER_DESC_STRONG_TAG,
             array_merge(...json_decode(
-                file_get_contents(AppConfig::OPEN_CHAT_SUB_CATEGORIES_TAG_FILE_PATH),
+                file_get_contents(AppConfig::getStorageFilePath('openChatSubCategoriesTag')),
                 true
             ))
         );

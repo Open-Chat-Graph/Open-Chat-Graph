@@ -5,13 +5,13 @@ namespace App\Views\Schema;
 use Spatie\SchemaOrg\Schema;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
+use Shared\MimimalCmsConfig;
 
 class OcPageSchema
 {
     function __construct(
         private PageBreadcrumbsListSchema $schema
-    ) {
-    }
+    ) {}
 
     /**
      * @param array{0: RecommendListDto|false, 1: RecommendListDto|false, 2: string|false} $recommend
@@ -26,9 +26,9 @@ class OcPageSchema
     ): string {
         $name = $oc['name'];
         $dataset = Schema::dataset()
-            ->name("LINEオープンチャット「{$name}」のメンバー数推移")
+            ->name("LINE Open Chat '{$name}' Member Count Trend")
             ->description(
-                "オープンチャット「{$name}」のメンバー数推移を日毎に記録しています。URLにアクセスするとグラフで表示されます。CSV形式でダウンロード可能です。CSVファイルは日付、メンバー数からなる全期間のデータになっています。"
+                "The member count trend of the Open Chat '{$name}' is recorded daily. By accessing the URL, you can view it in a graph. The data is available for download in CSV format, containing the member count and dates for the entire period."
             )
             ->publisher(
                 $this->schema->publisher()
@@ -37,9 +37,8 @@ class OcPageSchema
                 $this->schema->person()
             )
             ->keywords([
-                "LINEオープンチャット",
-                "参加者数",
-                "統計",
+                "LINE Open Chat",
+                "Member Count",
             ])
             ->provider(
                 $this->schema->lineOcOrganization()
@@ -57,14 +56,14 @@ class OcPageSchema
                     ->contentUrl(url('oc/' . $oc['id'] . '/csv'))
             )
             ->variableMeasured('http://schema.org/FollowAction')
-            ->measurementTechnique('LINEオープンチャットの公式サイトからメンバー数データを記録');
+            ->measurementTechnique('Recording member count data from the official LINE Open Chat website.');
 
         $tags = array_filter(
             $recommend,
-            fn ($r) => $r instanceof RecommendListDto ? ($r->type === RecommendListType::Tag ? $r->listName : false) : false,
+            fn($r) => $r instanceof RecommendListDto ? ($r->type === RecommendListType::Tag ? $r->listName : false) : false,
         );
 
-        $recommendSection = array_map(fn (RecommendListDto $r) => "「{$r->listName}」のおすすめ", $tags);
+        $recommendSection = array_map(fn(RecommendListDto $r) => "「{$r->listName}」のおすすめ", $tags);
 
         // WebPageの構築
         $webPage = Schema::article()
@@ -78,12 +77,18 @@ class OcPageSchema
             ->articleSection(
                 [
                     $name,
-                    'メンバー数の推移グラフ',
-                    'ランキングの順位表示',
+                    t('メンバー数の推移グラフ'),
+                    t('ランキングの順位表示'),
                     ...$recommendSection,
-                    'オープンチャットについてのコメント',
-                    'コメントする',
-                ]
+                ] + (
+                    // TODO: 日本語以外ではコメントが無効
+                    MimimalCmsConfig::$urlRoot === ''
+                    ? [
+                        'オープンチャットについてのコメント',
+                        'コメントする',
+                    ]
+                    : []
+                )
             )
             ->mainEntity($this->schema->room($oc))
             ->mainEntityOfPage($dataset)

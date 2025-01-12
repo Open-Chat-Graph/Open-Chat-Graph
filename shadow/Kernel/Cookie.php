@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shadow\Kernel;
 
+use Shared\MimimalCmsConfig;
+
 /**
  * Cookie class for handling HTTP cookies.
  * 
@@ -22,17 +24,17 @@ class Cookie implements CookieInterface
         mixed $value = null,
         int $expires = 0,
         string $path = '/',
-        string $samesite = COOKIE_DEFAULT_SAMESITE,
-        bool $secure = COOKIE_DEFAULT_SECURE,
-        bool $httpOnly = COOKIE_DEFAULT_HTTPONLY,
+        ?string $samesite = null,
+        ?bool $secure = null,
+        ?bool $httpOnly = null,
         string $domain = ''
     ) {
         $options = [
             'expires' => $expires,
             'path' => $path,
-            'samesite' => $samesite,
-            'secure' => $secure,
-            'httponly' => $httpOnly,
+            'samesite' => $samesite ?? MimimalCmsConfig::$cookieDefaultSameSite,
+            'secure' => $secure ?? MimimalCmsConfig::$cookieDefaultSecure,
+            'httponly' => $httpOnly ?? MimimalCmsConfig::$cookieDefaultHttpOnly,
             'domain' => $domain
         ];
 

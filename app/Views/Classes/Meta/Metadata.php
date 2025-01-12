@@ -7,16 +7,11 @@ use Spatie\SchemaOrg\Schema;
 
 class Metadata
 {
-    public string $title = 'オプチャグラフ';
-
-    public string $description =
-    'オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。';
-
-    public string $ogpDescription =
-    'オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。';
-
-    public string $site_name = 'オプチャグラフ';
-    public string $locale = 'ja_JP';
+    public string $title;
+    public string $description;
+    public string $ogpDescription;
+    public string $site_name;
+    public string $locale;
     public string $image_url;
     public string $site_url;
     public string $og_type;
@@ -24,14 +19,23 @@ class Metadata
 
     public function __construct()
     {
-        if ($_SERVER["REQUEST_URI"] ?? '/' === '/') {
+        if (path() ?? '/' === '/') {
             $this->og_type = 'website';
         } else {
             $this->og_type = 'article';
         }
 
         $this->site_url = url();
-        $this->image_url = url(AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH);
+        $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
+
+        $this->title = t('オプチャグラフ');
+        $this->site_name = t('オプチャグラフ');
+
+        $this->locale = t('ja_JP');
+
+        $description = t('オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。');
+        $this->description = $description;
+        $this->ogpDescription = $description;
     }
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static

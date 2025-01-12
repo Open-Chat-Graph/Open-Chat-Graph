@@ -4,6 +4,7 @@ namespace App\Services\OpenChat\Utility;
 
 use App\Config\AppConfig;
 use App\Services\OpenChat\Dto\OpenChatDto;
+use Shared\MimimalCmsConfig;
 
 class OpenChatServicesUtility
 {
@@ -34,9 +35,13 @@ class OpenChatServicesUtility
     {
         $date->setTimeZone(new \DateTimeZone('Asia/Tokyo'));
 
-        if ((int)$date->format('H') < AppConfig::CRON_MERGER_HOUR_RANGE_START) {
-            $date->modify('-1 day');
-        } else if ((int)$date->format('i') < AppConfig::CRON_START_MINUTE) {
+        if (MimimalCmsConfig::$urlRoot === '') {
+            if ((int)$date->format('H') < AppConfig::CRON_MERGER_HOUR_RANGE_START['']) {
+                $date->modify('-1 day');
+            } else if ((int)$date->format('i') < AppConfig::CRON_START_MINUTE['']) {
+                $date->modify('-1 day');
+            }
+        } else {
             $date->modify('-1 day');
         }
 
@@ -48,11 +53,11 @@ class OpenChatServicesUtility
         $fileTime = new \DateTime(is_int($time) ? '@' . $time : $time);
         $fileTime->setTimeZone(new \DateTimeZone('Asia/Tokyo'));
 
-        if ((int)$fileTime->format('i') < AppConfig::CRON_START_MINUTE) {
+        if ((int)$fileTime->format('i') < AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]) {
             $fileTime->modify('-1 hour');
         }
 
-        $fileTime->setTime((int)$fileTime->format('H'), AppConfig::CRON_START_MINUTE);
+        $fileTime->setTime((int)$fileTime->format('H'), AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]);
 
         return $fileTime;
     }

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
-use App\Config\AppConfig;
 use Shadow\DBInterface;
 
 class SQLiteRankingPosition extends AbstractSQLite implements DBInterface
 {
-    public static string $dbfile = '';
     public static ?\PDO $pdo = null;
 
     /**
-     * @throws \PDOException
+     * @param ?array $config array{mode?: ?string} $config mode default is '?mode=rwc'
      */
-    public static function connect(string $mode = '?mode=rwc'): \PDO
+    public static function connect(?array $config = null): \PDO
     {
-        self::$dbfile = AppConfig::$SQLiteRankingPositionDbfile;
-        return parent::connect($mode);
+        return parent::connect([
+            'storageFileKey' => 'sqliteRankingPositionDb',
+            'mode' => $config['mode'] ?? null
+        ]);
     }
 }
