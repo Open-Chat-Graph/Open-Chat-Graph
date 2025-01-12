@@ -1,10 +1,5 @@
-# TODO: 試験運用サーバーのためクローラーのアクセスを全て拒否
-User-Agent: *
-Disallow: /
-
-# User-agent: *
-# Disallow:
-# Disallow: /tw/recently-registered
-# Disallow: /th/recently-registered
-# Disallow: /recently-registered
-# Sitemap: https://openchat-review.me/sitemap.xml
+User-agent: *
+Disallow: /tw/recently-registered
+Disallow: /th/recently-registered
+Disallow: /recently-registered
+Sitemap: https://openchat-review.me/sitemap.xml
