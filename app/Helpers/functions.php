@@ -169,7 +169,7 @@ function noStore()
 
 function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
 {
-    if (AppConfig::$isStaging) {
+    if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
         cache();
         return;
     }
@@ -205,7 +205,7 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment || !AppConfig::$enableCloudflare) {
         return 'is Development';
     }
 

@@ -133,6 +133,9 @@ class AppConfig
     ];
 
     static bool $isDevlopment = false;
+    static bool $isStaging = false;
+    static bool $verboseCronLog = false;
+    static bool $enableCloudflare = false;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [
@@ -142,9 +145,7 @@ class AppConfig
         'RankingBanTableUpdater' => 10,
     ];
 
-    static bool $isStaging = false;
 
-    static bool $verboseCronLog = false;
 
     const CRON_START_MINUTE = [
         '' =>    30,
