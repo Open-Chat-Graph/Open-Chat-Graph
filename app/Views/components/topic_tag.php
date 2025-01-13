@@ -28,7 +28,7 @@ function greenTag($word)
 
 ?>
 
-<article class="top-ranking">
+<article class="top-ranking topic-tag">
     <div>
         <header class="openchat-list-title-area unset" style="margin-bottom: 10px;">
             <div class="openchat-list-date unset ranking-url">

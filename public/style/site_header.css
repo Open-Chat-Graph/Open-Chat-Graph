@@ -46,6 +46,10 @@ body::before {
   margin-right: 1rem;
 }
 
+.modify-top-padding .topic-tag {
+  margin-top: 4px;
+}
+
 /* ヘッダー */
 .body {
   max-width: var(--width);

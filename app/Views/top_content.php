@@ -12,7 +12,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
-        <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
+        <div class="modify-top-padding">
+            <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
+        </div>
         <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
         <?php if ($dto->recentCommentList): ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
