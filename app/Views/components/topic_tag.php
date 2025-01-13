@@ -63,4 +63,3 @@ function greenTag($word)
         </ul>
     </div>
 </article>
-<hr class="hr-bottom" style="width: 100%;">
