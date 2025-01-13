@@ -73,7 +73,7 @@ class GoogleAdsence
         
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="horizontal"></ins>
+        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle"></ins>
         EOT;
     }
 
