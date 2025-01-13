@@ -47,7 +47,7 @@ body::before {
 }
 
 .modify-top-padding .topic-tag {
-  margin-top: 4px;
+  padding-top: 4px;
 }
 
 /* ヘッダー */
