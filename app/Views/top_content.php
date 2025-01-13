@@ -14,15 +14,11 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
         <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
-        <hr class="hr-bottom">
         <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
-        <hr class="hr-top">
         <?php if ($dto->recentCommentList): ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
-            <hr class="hr-bottom">
             <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-            <hr class="hr-top">
         <?php endif ?>
 
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
