@@ -2,6 +2,7 @@
 <html lang="<?php echo t('ja_JP') ?>">
 <?php
 
+use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -115,13 +116,23 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 fetchMyList('myList')
             });
         </script>
-        <script type="module">
-            import {
-                getComment
-            } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
+        <?php if (AppConfig::$enableCloudflare): ?>
+            <script type="module">
+                import {
+                    getComment
+                } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-            getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
-        </script>
+                getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
+            </script>
+        <?php else: ?>
+            <script type="module">
+                import {
+                    applyTimeElapsedString
+                } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+                applyTimeElapsedString()
+            </script>
+        <?php endif ?>
     <?php endif ?>
 
     <?php echo $_meta->generateTopPageSchema() ?>
