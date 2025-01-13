@@ -64,7 +64,18 @@ class ConstructorInjection implements ConstructorInjectionInterface
         foreach ($constructor->getParameters() as $param) {
             $paramType = $param->getType();
 
-            if (isset($this->injectionParameters[$param->name]) || $paramType === null || $paramType->isBuiltin()) {
+            if (
+                isset($this->injectionParameters[$param->name])
+                || $paramType === null
+                || $paramType->isBuiltin()
+                || ($paramType instanceof \ReflectionNamedType && $paramType->allowsNull())
+                || ($paramType instanceof \ReflectionUnionType
+                    && array_reduce(
+                        $paramType->getTypes(),
+                        fn(bool $carry, \ReflectionType $type): bool => $carry || ($type instanceof \ReflectionNamedType && $type->allowsNull()),
+                        false
+                    ))
+            ) {
                 $methodArgs[] = $this->injectionParameters[$param->name] ?? null;
                 continue;
             }
@@ -75,7 +86,7 @@ class ConstructorInjection implements ConstructorInjectionInterface
                 $methodArgs[] = $this->getInstance($paramClassName);
                 continue;
             }
-            
+
             if (!class_exists($paramClassName)) {
                 $paramClassName = $this->resolveInterfaceToClass($paramClassName);
             }
