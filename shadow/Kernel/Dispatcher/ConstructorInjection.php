@@ -23,14 +23,10 @@ class ConstructorInjection implements ConstructorInjectionInterface
         $this->injectionParameters = $injectionParameters;
     }
 
-    public function constructorInjection(string $className, array &$resolvedInstances = [], $container = true): object
+    public function constructorInjection(string $className, bool $container = true): object
     {
         if ($container && isset(self::$container[$className])) {
             return $this->getInstance($className);
-        }
-
-        if (isset($resolvedInstances[$className])) {
-            return $resolvedInstances[$className];
         }
 
         if (!class_exists($className)) {
@@ -46,7 +42,7 @@ class ConstructorInjection implements ConstructorInjectionInterface
             return new $concreteName();
         }
 
-        $methodArgs = $this->getMethodArgs($constructor, $resolvedInstances);
+        $methodArgs = $this->getMethodArgs($constructor);
         $resolvedInstances[$className] = $reflectionClass->newInstanceArgs($methodArgs);
 
         return $resolvedInstances[$className];
@@ -56,13 +52,12 @@ class ConstructorInjection implements ConstructorInjectionInterface
      * Gets the resolved arguments for a given constructor.
      *
      * @param \ReflectionMethod $constructor The constructor to resolve dependencies for
-     * @param array             &$resolvedInstances Instances that have already been resolved
      * 
      * @return array            An array of resolved dependencies for the constructor
      * 
      * @throws \ReflectionException
      */
-    protected function getMethodArgs(\ReflectionMethod $constructor, array &$resolvedInstances = []): array
+    protected function getMethodArgs(\ReflectionMethod $constructor): array
     {
         $methodArgs = [];
 
@@ -80,17 +75,12 @@ class ConstructorInjection implements ConstructorInjectionInterface
                 $methodArgs[] = $this->getInstance($paramClassName);
                 continue;
             }
-
-            if (isset($resolvedInstances[$paramClassName])) {
-                $methodArgs[] = $resolvedInstances[$paramClassName];
-                continue;
-            }
             
             if (!class_exists($paramClassName)) {
                 $paramClassName = $this->resolveInterfaceToClass($paramClassName);
             }
 
-            $methodArgs[] = $this->constructorInjection($paramClassName, $resolvedInstances);
+            $methodArgs[] = $this->constructorInjection($paramClassName);
         }
 
         return $methodArgs;
