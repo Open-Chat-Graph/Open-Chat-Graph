@@ -10,7 +10,6 @@
     <?php viewComponent('site_header') ?>
     <main style="overflow: hidden;">
         <article class="terms">
-            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteTopRectangle']) ?>
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <h1 style="letter-spacing: 0px;">オプチャグラフについて</h1>
                 <p>オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。</p>
@@ -250,6 +249,7 @@
                     </p>
                 </section>
             <?php endif ?>
+            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteSeparatorRectangle']) ?>
         </article>
     </main>
     <footer class="footer-elem-outer">
