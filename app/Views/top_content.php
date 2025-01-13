@@ -12,7 +12,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
-        <hr class="hr-top">
         <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
         <?php if ($dto->recentCommentList): ?>
