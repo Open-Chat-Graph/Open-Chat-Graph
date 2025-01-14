@@ -62,11 +62,11 @@ use App\Views\Ads\GoogleAdsence as GAd;
 
       </li>
 
-      <?php if ($ads && $count1 % 10 !== 0) : ?>
+      <?php if ($ads && $count1 % 5 !== 0) : ?>
         <hr class="hr-bottom" style="margin: 4px -1rem; padding: 0; width: calc(100% + 2rem);">
       <?php endif ?>
 
-      <?php if ($ads && $count1 < $listCount && $count1 % 10 === 0) : ?>
+      <?php if ($ads && $count1 < $listCount && $count1 % 5 === 0) : ?>
         <li class="unset" style="margin: 0 -1rem; display: block;">
           <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>

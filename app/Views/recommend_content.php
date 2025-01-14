@@ -21,7 +21,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -57,13 +57,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
     </p>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
           <?php
-          $chunkLen = 10;
+          $chunkLen = 5;
           $lists = array_chunk($recommend->getList(false, null), $chunkLen);
           $listsLastKey = count($lists) - 1;
           ?>

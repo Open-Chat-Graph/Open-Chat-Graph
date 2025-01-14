@@ -79,7 +79,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
-    <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
     <hr class="hr-top">
     <article style="margin: 0 1rem;">
         <header class="openchat-list-title-area unset" style="margin: 1rem 0;">
@@ -122,11 +122,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
     </article>
 
     <section class="unset" style="display: block; margin: 1rem 0">
-        <hr class="hr-bottom">
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
         </aside>
@@ -136,15 +131,11 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </aside>
         <hr class="hr-bottom">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
         </aside>
         <hr class="hr-bottom">
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
         <hr class="hr-top">
         <aside class="top-ranking-list-aside">
