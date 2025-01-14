@@ -589,7 +589,8 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
 
 @media screen and (min-width: 512px) {
   .rectangle2-ads {
-    aspect-ratio: 21 / 9;
+    height: 280px;
+    width: 100%;
   }
 }
 
