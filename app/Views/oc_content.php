@@ -6,7 +6,7 @@ use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
-viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlay' => 'bottom']); ?>
+viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
   <!-- 固定ヘッダー -->

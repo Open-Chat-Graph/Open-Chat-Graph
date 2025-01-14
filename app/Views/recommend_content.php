@@ -14,7 +14,7 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
   $countTitle = '';
 }
 
-viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlay' => 'bottom']) ?>
+viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
 <body>
   <!-- 固定ヘッダー -->
