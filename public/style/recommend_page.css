@@ -6,30 +6,17 @@ li {
   all: unset;
   display: flex;
   flex-direction: column;
+  padding-top: 8px;
 }
 
 @media screen and (min-width: 512px) {
-  .recommend-header-wrapper {
-    padding-top: 1rem;
-  }
+  .recommend-header-wrapper {}
 }
 
 .recommend-header {
   padding: 1rem;
   padding-top: 20px;
   text-align: start;
-}
-
-@media screen and (min-width: 512px) {
-  .recommend-header {
-    order: 1;
-  }
-}
-
-@media screen and (min-width: 512px) {
-  .recommend-header-desc-wrapper {
-    order: 2;
-  }
 }
 
 .recommend-header-time {
@@ -46,12 +33,6 @@ li {
 .ranking-page-main .talkroom_banner_img_figure {
   padding: 0;
   width: 100%;
-}
-
-@media screen and (min-width: 512px) {
-  .ranking-page-main .talkroom_banner_img_figure {
-    order: 0;
-  }
 }
 
 .ranking-page-main .talkroom_banner_img_figure figcaption {
@@ -93,6 +74,7 @@ li {
   margin: 0;
   display: flex;
   justify-content: space-between;
+  padding: 0 1rem;
 }
 
 .recommend-data-desc {
@@ -110,10 +92,10 @@ li {
 }
 
 .recommend-header-desc.desc-bottom {
-  font-size: 11px;
-  color: #b7b7b7;
-  line-height: 1.25;
-  margin: 0;
+  font-size: 16px;
+  color: #555;
+  line-height: 1.5;
+  margin: 12px 0;
 }
 
 .top-ranking-list-aside {
@@ -355,10 +337,27 @@ section aside:hover {
   color: #777;
 }
 
+.recommend-header-desc-text {
+  color: #111;
+  font-size: 16px;
+  white-space: unset;
+  font-weight: normal;
+  font-family: '游ゴシック体', 'Yu Gothic', YuGothic, Meiryo, 'メイリオ', ArialMT, Hiragino Kaku Gothic Pro, 'ヒラギノ角ゴ Pro W3', Osaka;
+  line-height: 1.7;
+  padding: 0 1rem;
+  font-size: 20px;
+}
+
 @media screen and (min-width: 512px) {
   .ranking-page-main .share-nav {
     margin: 11px 0;
     margin-bottom: -5px;
+  }
+
+  .recommend-header-desc-text {
+    font-size: 1.5rem;
+    line-height: 1.6;
+    font-weight: bold;
   }
 
   .ranking-page-main .share-nav-inner {
@@ -390,7 +389,7 @@ section aside:hover {
   }
 
   .recommend-header-desc.desc-bottom {
-    font-size: 13px;
+    font-size: 18px;
   }
 
   .ranking-desc .recommend-desc {
@@ -401,6 +400,7 @@ section aside:hover {
     margin-top: 1rem;
     font-size: 17px;
   }
+
   .list-aside .tag-list li {
     margin: 8px 0 0 4px;
   }

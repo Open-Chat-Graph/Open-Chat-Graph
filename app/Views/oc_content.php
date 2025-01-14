@@ -6,15 +6,13 @@ use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
-viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto')); ?>
+viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlay' => 'bottom']); ?>
 
 <body>
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-
-    <hr class="hr-top">
 
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 16px;">
@@ -130,7 +128,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-bottom">
 
-    <nav style="margin: 0 1rem; padding: 4px 0; border: unset;" class="oc-desc-nav">
+    <nav style="margin: 0 1rem; padding: 4px 0 8px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
@@ -169,7 +167,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
     <section class="openchat-graph-section">
 
       <div class="title-bar">
@@ -215,13 +213,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </a>
       <?php endif ?>
     </section>
-    <hr class="hr-bottom">
-
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-      <hr class="hr-top">
       <section class="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -250,7 +245,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
 
     <?php endif ?>
@@ -271,7 +266,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
     <?php endif ?>
 
-    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
@@ -279,23 +273,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 

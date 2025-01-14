@@ -22,8 +22,9 @@ if ($recommend->type === RecommendListType::Category) {
 
 ?>
 
-<?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-<hr class="hr-top">
+<?php if (!isset($disableGAd) || !$disableGAd): ?>
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+<?php endif ?>
 
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">
     <header class="openchat-list-title-area unset">
@@ -58,5 +59,3 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
 </article>
-
-<hr class="hr-bottom">

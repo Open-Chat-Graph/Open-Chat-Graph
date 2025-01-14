@@ -26,5 +26,5 @@
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
     <?php endif ?>
-    <?php \App\Views\Ads\GoogleAdsence::gTag() ?>
+    <?php \App\Views\Ads\GoogleAdsence::gTag($dataOverlays ?? null) ?>
 </head>

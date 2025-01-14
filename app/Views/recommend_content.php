@@ -14,7 +14,7 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
   $countTitle = '';
 }
 
-viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true]) ?>
+viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlay' => 'bottom']) ?>
 
 <body>
   <!-- 固定ヘッダー -->
@@ -23,24 +23,23 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
-    <hr class="hr-top">
     <section class="recommend-header-wrapper">
 
-      <header class="recommend-header" style="padding-top: 1rem;">
-        <?php if ($count) : ?>
-          <h1 class="talkroom_link_h1 unset">【最新】「<?php echo $tag ?>」おすすめオープンチャットランキングTOP<?php echo $count ?></h1>
-        <?php else : ?>
-          <h1 class="talkroom_link_h1 unset">【最新】「<?php echo $tag ?>」おすすめオープンチャットランキング</h1>
+      <div class="recommend-header-bottom">
+        <div class="recommend-data-desc">統計に基づくランキング</div>
+        <?php if (isset($hourlyUpdatedAt)) : ?>
+          <div class="recommend-header-time">
+            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
+          </div>
         <?php endif ?>
-        <div class="recommend-header-bottom">
-          <div class="recommend-data-desc">統計に基づくランキング</div>
-          <?php if (isset($hourlyUpdatedAt)) : ?>
-            <div class="recommend-header-time">
-              <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
-            </div>
-          <?php endif ?>
-        </div>
-      </header>
+      </div>
+      <hr class="hr-top">
+
+      <div class="recommend-header-desc-wrapper">
+        <p class="recommend-header-desc-text">
+          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
+        </p>
+      </div>
 
       <?php if (isset($recommend)) : ?>
         <figure class="talkroom_banner_img_figure">
@@ -52,16 +51,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </figure>
       <?php endif ?>
 
-      <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc talkroom_link_h1" style="color: #111; font-size: 16px; font-weight: bold; white-space: unset;">
-          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
-        </p>
-        <p class="recommend-header-desc desc-bottom">
-          ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
-        </p>
-      </div>
-
     </section>
+
+    <p class="recommend-header-desc desc-bottom">
+      ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
+    </p>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
@@ -95,7 +91,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 </header>
               <?php else : ?>
                 <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap;">
+                  <h2 style="all: unset; font-size: 18px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
                     <div>「<?php echo $recommend->listName ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?? '' ?></div>
@@ -113,11 +109,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </li>
             <?php if ($listsLastKey !== $key) : ?>
               <li>
-                <hr class="hr-bottom">
 
                 <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
-                <hr class="hr-top" style="margin-bottom: 4px;">
               </li>
             <?php endif ?>
           <?php endforeach ?>
@@ -139,33 +133,23 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
-    
+
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <footer class="footer-elem-outer">
       <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
