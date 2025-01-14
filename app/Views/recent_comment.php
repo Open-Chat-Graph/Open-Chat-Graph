@@ -79,7 +79,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
     <hr class="hr-top">
     <article style="margin: 0 1rem;">
         <header class="openchat-list-title-area unset" style="margin: 1rem 0;">

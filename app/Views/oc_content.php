@@ -12,8 +12,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
-
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 16px;">
       <div class="talkroom_banner_img_area">
@@ -167,7 +165,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
     <section class="openchat-graph-section">
 
       <div class="title-bar">
@@ -225,7 +222,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <section class="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -252,19 +248,16 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php endif ?>
 
     <?php if ($recommend[1]) : ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
