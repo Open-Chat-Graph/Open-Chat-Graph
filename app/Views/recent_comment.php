@@ -144,6 +144,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
 
+        <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+
         <footer class="footer-elem-outer">
             <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
             <?php viewComponent('footer_inner') ?>
