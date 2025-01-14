@@ -24,7 +24,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
 
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
 
@@ -34,7 +34,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
 
         <footer class="footer-elem-outer">
             <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>

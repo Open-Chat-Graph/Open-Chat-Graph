@@ -263,7 +263,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </aside>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
     
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
@@ -281,7 +281,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">
