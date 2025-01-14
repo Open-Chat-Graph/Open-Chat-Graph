@@ -266,7 +266,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($officialDto) && $officialDto) : ?>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
 
