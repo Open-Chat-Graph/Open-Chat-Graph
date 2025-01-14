@@ -30,7 +30,7 @@ if ($recommend->type === RecommendListType::Category) {
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
             <h2 class="unset">
-                <span style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;"><?php echo $title ?></span>
+                <span style="line-height: 1.5; font-size: 18px; color: #111; font-weight: bold;"><?php echo $title ?></span>
             </h2>
         </div>
     </header>
@@ -39,7 +39,7 @@ if ($recommend->type === RecommendListType::Category) {
 
     <?php if (isset($showTags) && $tags = $recommend->getFilterdTags(true)) : ?>
         <div>
-            <div style="line-height: 1.5; font-size: 14px; color: #111; font-weight: bold;">関連のテーマ</div>
+            <div style="line-height: 1.5; font-size: 18px; color: #111; font-weight: bold;">関連のテーマ</div>
             <?php viewComponent('tag_list_section', compact('tags')) ?>
         </div>
     <?php endif ?>

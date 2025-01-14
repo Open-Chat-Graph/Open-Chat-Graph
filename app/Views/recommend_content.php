@@ -68,9 +68,17 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           $listsLastKey = count($lists) - 1;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
-            <li class="top-ranking" style="padding-top: 4px;">
+            <li class="top-ranking" style="padding-top: 8px; <?php if (!$key) echo 'gap: 0;' ?>">
               <?php if ($key === 0) : ?>
                 <header class="recommend-ranking-section-header">
+                  <h2 style="all: unset; font-size: 18px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
+                    <div>「<?php echo $recommend->listName ?>」</div>
+                    <div>おすすめランキング</div>
+                    <div><?php echo $countTitle ?? '' ?></div>
+                    <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）</div>
+                  </h2>
+                </header>
+                <header class="recommend-ranking-section-header" style="padding: 5px 0 16px 0;">
                   <aside class="list-aside">
                     <details class="icon-desc">
                       <summary style="font-size: 13px; font-weight: normal;">人数増加アイコンの説明</summary>

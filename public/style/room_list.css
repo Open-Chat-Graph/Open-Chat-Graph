@@ -184,7 +184,7 @@
 
 .openchat-list-title {
   all: unset;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   background: -webkit-linear-gradient(45deg, rgb(253, 18, 226) 20%, rgb(164, 67, 221), rgb(84, 126, 255) 90%);
   background-clip: text;

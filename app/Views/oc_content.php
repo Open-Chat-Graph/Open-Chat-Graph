@@ -167,7 +167,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
     <section class="openchat-graph-section">
 
       <div class="title-bar">
@@ -214,6 +214,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php endif ?>
     </section>
 
+    <?php if ($recommend[0] || $recommend[3]) : ?>
+      <aside class="recommend-list-aside">
+        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+      </aside>
+
+    <?php endif ?>
+
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
@@ -242,22 +250,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
-    <?php if ($recommend[0] || $recommend[3]) : ?>
-      <aside class="recommend-list-aside">
-        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-      </aside>
-
-    <?php endif ?>
-
     <?php if ($recommend[1]) : ?>
       <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
     <?php if ($recommend[0] && $recommend[3]) : ?>
       <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
     <?php if (isset($officialDto) && $officialDto) : ?>
