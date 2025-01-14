@@ -238,6 +238,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
@@ -262,6 +264,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php endif ?>
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
