@@ -23,22 +23,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <section class="recommend-header-wrapper">
 
-      <div class="recommend-header-bottom">
-        <div class="recommend-data-desc">統計に基づくランキング</div>
-        <?php if (isset($hourlyUpdatedAt)) : ?>
-          <div class="recommend-header-time">
-            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
-          </div>
-        <?php endif ?>
-      </div>
-      <hr class="hr-top">
-
-      <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc-text">
-          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
-        </p>
-      </div>
-
       <?php if (isset($recommend)) : ?>
         <figure class="talkroom_banner_img_figure">
           <?php $oc = $recommend->getPreviewList(1)[0] ?>
@@ -48,6 +32,23 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
         </figure>
       <?php endif ?>
+
+      <div class="recommend-header-bottom">
+        <div class="recommend-data-desc">統計に基づくランキング</div>
+        <?php if (isset($hourlyUpdatedAt)) : ?>
+          <div class="recommend-header-time">
+            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
+          </div>
+        <?php endif ?>
+      </div>
+
+      <hr class="hr-top">
+
+      <div class="recommend-header-desc-wrapper">
+        <p class="recommend-header-desc-text">
+          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
+        </p>
+      </div>
 
     </section>
 
@@ -66,14 +67,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php if (!$key) echo 'gap: 0;' ?>">
               <?php if ($key === 0) : ?>
-                <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 18px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
-                    <div>「<?php echo $recommend->listName ?>」</div>
-                    <div>おすすめランキング</div>
-                    <div><?php echo $countTitle ?? '' ?></div>
-                    <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）</div>
-                  </h2>
-                </header>
                 <header class="recommend-ranking-section-header" style="padding: 5px 0 16px 0;">
                   <aside class="list-aside">
                     <details class="icon-desc">
