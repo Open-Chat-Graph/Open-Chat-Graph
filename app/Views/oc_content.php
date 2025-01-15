@@ -193,9 +193,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
 
-    <section class="open-btn sp-btn" style="padding: 1rem 1rem 0 1rem;">
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php endif ?>
+
+    <section class="open-btn sp-btn" style="padding: 1rem 1rem 0 1rem; <?php if (MimimalCmsConfig::$urlRoot !== '') echo 'padding-bottom: 1rem' ?>">
       <?php if ($oc['url']) : ?>
         <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
           <?php if ($oc['join_method_type'] !== 0) : ?>
@@ -293,9 +297,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <div style="margin: 0 1rem;">
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    </div>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">
