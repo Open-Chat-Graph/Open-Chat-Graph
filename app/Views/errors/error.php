@@ -259,7 +259,7 @@ $_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
 $_css = ['room_list', 'site_header', 'site_footer'];
 
 try {
-    $langCode = t('ja_JP');
+    $langCode = t('ja');
 } catch (\Throwable $e) {
     $langCode = 'ja_JP';
 }

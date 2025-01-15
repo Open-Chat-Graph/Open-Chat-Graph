@@ -7,7 +7,7 @@ $_css = ['room_list', 'site_header', 'site_footer'];
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 <style>
     /* Increase size of the main heading */

@@ -31,7 +31,7 @@ class Metadata
         $this->title = t('オプチャグラフ');
         $this->site_name = t('オプチャグラフ');
 
-        $this->locale = t('ja_JP');
+        $this->locale = t('ja');
 
         $description = t('オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。');
         $this->description = $description;

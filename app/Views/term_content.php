@@ -5,7 +5,7 @@ use App\Config\AppConfig;
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 
 <head prefix="og: http://ogp.me/ns#">
     <?php echo gTag(AppConfig::GTM_ID) ?>
