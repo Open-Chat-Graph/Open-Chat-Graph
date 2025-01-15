@@ -555,8 +555,7 @@ body::before {
 
 .rectangle-ads {
   width: auto;
-  max-width: calc(100vw - 32px);
-  margin: 0 auto 0;
+  margin: 0 1rem;
   text-align: center;
   box-sizing: border-box;
   height: 280px;
@@ -590,8 +589,7 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
 
 .rectangle2-ads {
   width: auto;
-  max-width: calc(100vw - 32px);
-  margin: 0 auto 0;
+  margin: 0 1rem;
   text-align: center;
   box-sizing: border-box;
   aspect-ratio: 16 / 9;
