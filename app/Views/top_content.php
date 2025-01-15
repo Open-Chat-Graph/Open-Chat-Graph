@@ -7,7 +7,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema')) ?>
+viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => true]) ?>
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
