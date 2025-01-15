@@ -118,13 +118,14 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
+    
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
     <section class="unset" style="display: block; margin: 1rem 0">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
         </aside>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
