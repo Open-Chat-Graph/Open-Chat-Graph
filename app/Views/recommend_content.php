@@ -110,7 +110,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
 
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
               </li>
             <?php endif ?>
@@ -130,7 +130,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <hr class="hr-bottom" style="width: 100%;">
         <?php endif ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     </section>
 
@@ -142,19 +142,19 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
     <footer class="footer-elem-outer">
       <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>

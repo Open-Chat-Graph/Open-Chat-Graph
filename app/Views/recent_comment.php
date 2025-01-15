@@ -5,7 +5,7 @@
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
-viewComponent('head', compact('_css', '_meta')) ?>
+viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
 
 <body class="body">
     <style>
@@ -119,8 +119,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
     
-    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-
     <section class="unset" style="display: block; margin: 1rem 0">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
@@ -131,19 +129,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
         </aside>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
         </aside>
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
 
@@ -153,8 +145,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </footer>
 
     </section>
-
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
     <script type="module">
         import {
