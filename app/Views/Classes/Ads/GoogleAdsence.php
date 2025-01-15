@@ -10,64 +10,49 @@ class GoogleAdsence
 
     const AD_SLOTS = [
         // OCトップ-rectangle
-        'ocTopRectangle' => ['8037531176', 'rectangle-ads manual'],
-
-        // OCトップ-rectangle
-        'ocTopRectanglePreload' => ['8037531176', 'rectangle-ads preload'],
+        'ocTopRectangle' => ['8037531176', 'rectangle-ads'],
 
         // OCトップ2-横長
-        'ocTopWide2' => ['6469006397', 'rectangle2-ads manual'],
-
-        // OCトップ2-横長
-        'ocTopWide2Preload' => ['6469006397', 'rectangle2-ads preload'],
+        'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
 
         // OCセパレーター-レスポンシブ
         'ocSeparatorResponsive' => ['2542775305'],
 
         // OCセパレーター-rectangle
-        'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads manual'],
-
-        // OCセパレーター-rectangle
-        'ocSeparatorRectanglePreload' => ['2078443048', 'rectangle-ads preload'],
+        'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
 
         // OCセパレーター-横長
-        'ocSeparatorWide' => ['1847273098', 'rectangle2-ads manual'],
+        'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
 
         // サイトトップ-rectangle
-        'siteTopRectangle' => ['4122044659', 'rectangle-ads manual'],
+        'siteTopRectangle' => ['4122044659', 'rectangle-ads'],
 
         // サイトトップ2-横長
-        'siteTopWide' => ['4015067592', 'rectangle2-ads manual'],
+        'siteTopWide' => ['4015067592', 'rectangle2-ads'],
 
         // サイトセパレーター-レスポンシブ
         'siteSeparatorResponsive' => ['4243068812'],
 
         // サイトセパレーター-rectangle
-        'siteSeparatorRectangle' => ['9793281538', 'rectangle-ads manual'],
+        'siteSeparatorRectangle' => ['9793281538', 'rectangle-ads'],
 
         // サイトセパレーター-横長
-        'siteSeparatorWide' => ['7150203685', 'rectangle2-ads manual'],
+        'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
 
         // おすすめトップ-rectangle
-        'recommendTopRectangle' => ['3109180036', 'rectangle-ads manual'],
-
-        // おすすめトップ-rectangle
-        'recommendTopRectanglePreload' => ['3109180036', 'rectangle-ads preload'],
+        'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
         // おすすめトップ2-横長
-        'recommendTopWide2' => ['1796098364', 'rectangle2-ads manual'],
+        'recommendTopWide2' => ['1796098364', 'rectangle2-ads'],
 
         // おすすめセパレーター-横長
-        'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads manual'],
+        'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads'],
 
         // おすすめセパレーター-レスポンシブ
         'recommendSeparatorResponsive' => ['7064673271'],
 
         // おすすめセパレーター-Rectangle
-        'recommendSeparatorRectangle' => ['8031174545', 'rectangle-ads manual'],
-
-        // おすすめセパレーター-Rectangle
-        'recommendSeparatorRectanglePreload' => ['8031174545', 'rectangle-ads preload'],
+        'recommendSeparatorRectangle' => ['8031174545', 'rectangle-ads'],
     ];
 
     /**
@@ -76,7 +61,7 @@ class GoogleAdsence
     static function output(array $adElement)
     {
         if (count($adElement) === 1) {
-            self::responsive($adElement[0], 'responsive-google manual');
+            self::responsive($adElement[0], 'responsive-google');
         } else {
             self::rectangle($adElement[0], $adElement[1]);
         }
@@ -85,20 +70,20 @@ class GoogleAdsence
     private static function rectangle(int $adSlot, string $cssClass)
     {
         if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
-
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle"></ins>
+        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle"></ins>
         EOT;
     }
 
     private static function responsive(int $adSlot, string $cssClass)
     {
         if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
-
+        
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
         EOT;
     }
 
@@ -110,22 +95,6 @@ class GoogleAdsence
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const num = document.querySelectorAll('ins.manual').length;
-                for (let i = 0; i < num; i++) {
-                    (adsbygoogle = window.adsbygoogle || []).push({});
-                }
-            });
-        </script>
-        EOT;
-    }
-
-    static function preloadAdsTag()
-    {
-        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
-
-        echo <<<EOT
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const num = document.querySelectorAll('ins.preload').length;
                 for (let i = 0; i < num; i++) {
                     (adsbygoogle = window.adsbygoogle || []).push({});
                 }
