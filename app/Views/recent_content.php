@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="<?php echo t('ja_JP') ?>">
-<?php viewComponent('head', compact('_css', '_meta') + ['noindex' => true]) ?>
+<?php viewComponent('head', compact('_css', '_meta') + ['noindex' => true] + ['disableGAd' => false]) ?>
 
 <body class="body">
     <style>

@@ -19,21 +19,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 <body>
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
+  <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
     <section class="recommend-header-wrapper">
 
-      <?php if (isset($recommend)) : ?>
-        <figure class="talkroom_banner_img_figure">
-          <?php $oc = $recommend->getPreviewList(1)[0] ?>
-          <div class="talkroom_banner_img_area">
-            <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
-          </div>
-          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
-        </figure>
-      <?php endif ?>
-
-      <div class="recommend-header-bottom">
+      <div class="recommend-header-bottom" style="padding-top: 8px;">
         <div class="recommend-data-desc">統計に基づくランキング</div>
         <?php if (isset($hourlyUpdatedAt)) : ?>
           <div class="recommend-header-time">
@@ -50,6 +41,16 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </p>
       </div>
 
+      <?php if (isset($recommend)) : ?>
+        <figure class="talkroom_banner_img_figure">
+          <?php $oc = $recommend->getPreviewList(1)[0] ?>
+          <div class="talkroom_banner_img_area">
+            <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+          </div>
+          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
+        </figure>
+      <?php endif ?>
+
     </section>
 
     <p class="recommend-header-desc desc-bottom">
@@ -60,7 +61,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
           <?php
-          $chunkLen = 10;
+          $chunkLen = 5;
           $lists = array_chunk($recommend->getList(false, null), $chunkLen);
           $listsLastKey = count($lists) - 1;
           ?>
@@ -107,7 +108,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
 
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
               </li>
             <?php endif ?>
@@ -125,6 +126,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php if (isset($recommend)) : ?>
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
           <hr class="hr-bottom" style="width: 100%;">
+          <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
         <?php endif ?>
       </aside>
 
@@ -134,24 +136,32 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
 
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
 
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <footer class="footer-elem-outer">
       <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
       <?php viewComponent('footer_inner') ?>
     </footer>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
   </article>
 

@@ -17,7 +17,7 @@ function memberCount(int $count)
 
 <!DOCTYPE html>
 <html lang="<?php echo t('ja_JP') ?>">
-<?php viewComponent('head', compact('_css', '_meta', '_schema')) ?>
+<?php viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => false]) ?>
 
 <body class="body">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>

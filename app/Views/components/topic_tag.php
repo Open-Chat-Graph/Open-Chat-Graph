@@ -3,7 +3,7 @@
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
 use App\Services\Recommend\RecommendUtility;
-
+use App\Views\Ads\GoogleAdsence as GAd;
 
 $tags = $topPageDto->recommendList;
 
@@ -55,7 +55,7 @@ function greenTag($word)
                 </li>
             <?php endforeach ?>
 
-            <?php if (count($tags['hour']) + count($tags['hour24']) > 41) : ?>
+            <?php if (count($tags['hour']) + count($tags['hour24']) > 21) : ?>
                 <li id="open-btn-li">
                     <button class="unset tag-btn open-btn" onclick="this.parentElement.parentElement.classList.toggle('open')"></button>
                 </li>

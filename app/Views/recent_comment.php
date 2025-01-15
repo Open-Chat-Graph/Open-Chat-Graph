@@ -79,11 +79,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
-    <hr class="hr-top">
     <article style="margin: 0 1rem;">
-        <header class="openchat-list-title-area unset" style="margin: 1rem 0;">
+        <header class="openchat-list-title-area unset" style="margin: 0 0 1rem 0;">
             <div style="flex-direction: column;">
-                <h2 class="list-title">
+                <h2 class="openchat-list-title" style="font-size: 24px;">
                     コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
@@ -125,35 +124,36 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
         </aside>
 
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
-        <hr class="hr-bottom">
 
-        <hr class="hr-top">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
         </aside>
-        <hr class="hr-bottom">
 
-        <hr class="hr-top">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
         </aside>
-        <hr class="hr-bottom">
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
 
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
 
         <footer class="footer-elem-outer">
             <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
             <?php viewComponent('footer_inner') ?>
         </footer>
 
-    </section>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    </section>
 
     <script type="module">
         import {

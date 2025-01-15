@@ -11,7 +11,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0px;">
+    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 6px;">
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
@@ -24,8 +24,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
-
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
 
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
@@ -33,8 +31,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
 
         <footer class="footer-elem-outer">
             <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
