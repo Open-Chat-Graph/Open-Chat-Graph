@@ -126,9 +126,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php if (isset($recommend)) : ?>
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
           <hr class="hr-bottom" style="width: 100%;">
-          <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
         <?php endif ?>
       </aside>
+      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     </section>
 
