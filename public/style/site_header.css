@@ -568,6 +568,7 @@ body::before {
   .rectangle-ads {
     height: 280px;
     width: 100%;
+    margin: auto;
   }
 }
 
