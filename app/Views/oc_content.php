@@ -310,7 +310,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
   </article>
-  <?php  //\App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
   <script async>
     (function() {
       // 説明文の続きを読むボタン
