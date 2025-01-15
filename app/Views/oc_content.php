@@ -12,7 +12,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectanglePreload']) ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 16px;">
       <div class="talkroom_banner_img_area">
@@ -161,7 +161,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2Preload']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
@@ -193,7 +193,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectanglePreload']) ?>
+    <?php \App\Views\Ads\GoogleAdsence::preloadAdsTag() ?>
 
     <section class="open-btn sp-btn" style="padding: 1rem 1rem 0 1rem;">
       <?php if ($oc['url']) : ?>
