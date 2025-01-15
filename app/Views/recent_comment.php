@@ -155,6 +155,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
     </section>
 
+    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+
     <script type="module">
         import {
             applyTimeElapsedString
