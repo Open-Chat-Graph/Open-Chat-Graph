@@ -11,10 +11,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 <body>
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
-  <div style="margin: 0 auto;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-  </div>
   <article class="unset openchat body" style="overflow: hidden;">
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 16px;">
       <div class="talkroom_banner_img_area">
