@@ -70,7 +70,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php if (!$key) echo 'gap: 0;' ?>">
               <header class="recommend-ranking-section-header">
-                <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.5;">
+                <h2 style="all: unset; font-size: 18px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.5;">
                   <div>「<?php echo $recommend->listName ?>」</div>
                   <div>のおすすめランキング</div>
                   <div><?php echo $countTitle ?? '' ?></div>
