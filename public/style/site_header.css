@@ -554,7 +554,8 @@ body::before {
 } */
 
 .rectangle-ads {
-  aspect-ratio: 1.2;
+  width: auto;
+  height: 280px;
 }
 
 .openchat-item-list .google-auto-placed {
