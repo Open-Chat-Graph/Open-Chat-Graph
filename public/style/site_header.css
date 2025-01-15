@@ -567,7 +567,7 @@ body::before {
 @media screen and (min-width: 512px) {
   .rectangle-ads {
     height: 280px;
-    width: 100%;
+    width: auto;
     margin: auto;
   }
 }
