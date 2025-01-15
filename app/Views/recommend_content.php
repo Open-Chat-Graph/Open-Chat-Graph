@@ -53,9 +53,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <p class="recommend-header-desc desc-bottom">
+    <p class="recommend-header-desc desc-bottom" style="padding-bottom: 1rem;">
       ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
     </p>
+
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
@@ -158,8 +160,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
       <?php viewComponent('footer_inner') ?>
     </footer>
-
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
 
   </article>
 

@@ -152,8 +152,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent('footer_inner') ?>
         </footer>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
     </section>
 
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
