@@ -89,7 +89,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 </header>
               <?php else : ?>
                 <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 18px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
+                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
                     <div>「<?php echo $recommend->listName ?>」</div>
                     <div>おすすめランキング</div>
                     <div><?php echo $countTitle ?? '' ?></div>
