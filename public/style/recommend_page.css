@@ -114,7 +114,7 @@ li {
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item::before {
   content: counter(openchat-counter2);
-  counter-increment: openchat-counter2;
+  counter-increment: openchat-counter2 -1;
 }
 
 .openchat-item-list.parent .ranking-page-main .openchat-item-lower-outer {

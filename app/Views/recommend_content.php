@@ -36,9 +36,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <hr class="hr-top">
 
       <div class="recommend-header-desc-wrapper">
-        <p class="recommend-header-desc-text">
+        <h1 class="recommend-header-desc-text">
           「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
-        </p>
+        </h1>
       </div>
 
       <?php if (isset($recommend)) : ?>
@@ -59,14 +59,22 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
-        <ol class="openchat-item-list parent unset">
+        <ol class="openchat-item-list parent unset" style="counter-reset: openchat-counter2 <?php echo $count + 1 ?>;">
           <?php
           $chunkLen = 5;
-          $lists = array_chunk($recommend->getList(false, null), $chunkLen);
+          $lists = array_chunk(array_reverse($recommend->getList(false, null)), $chunkLen);
           $listsLastKey = count($lists) - 1;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php if (!$key) echo 'gap: 0;' ?>">
+              <header class="recommend-ranking-section-header">
+                <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.5;">
+                  <div>「<?php echo $recommend->listName ?>」</div>
+                  <div>のおすすめランキング</div>
+                  <div><?php echo $countTitle ?? '' ?></div>
+                  <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）<?php echo $count - $key * $chunkLen ?>位〜</div>
+                </h2>
+              </header>
               <?php if ($key === 0) : ?>
                 <header class="recommend-ranking-section-header" style="padding: 5px 0 16px 0;">
                   <aside class="list-aside">
@@ -88,14 +96,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                   </aside>
                 </header>
               <?php else : ?>
-                <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.7;">
-                    <div>「<?php echo $recommend->listName ?>」</div>
-                    <div>おすすめランキング</div>
-                    <div><?php echo $countTitle ?? '' ?></div>
-                    <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）<?php echo $key * $chunkLen + 1 ?>位〜</div>
-                  </h2>
-                </header>
               <?php endif ?>
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray')) ?>
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
