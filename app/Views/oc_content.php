@@ -11,6 +11,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 <body>
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
+  <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
   <article class="unset openchat body" style="overflow: hidden;">
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding-top: 16px;">
@@ -126,7 +127,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <hr class="hr-bottom">
 
-    <nav style="margin: 0 1rem; padding: 4px 0 8px 0; border: unset;" class="oc-desc-nav">
+    <nav style="margin: 0 1rem; padding: 4px 0 12px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
           <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
@@ -160,12 +161,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </nav>
     </nav>
 
-    <hr class="hr-top">
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <section class="openchat-graph-section">
+    <section class="openchat-graph-section" style="padding-bottom: 0.5rem;">
 
       <div class="title-bar">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -192,7 +193,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <section class="open-btn sp-btn" style="padding: 0 1rem 1rem 1rem;">
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+
+    <section class="open-btn sp-btn" style="padding: 1rem 1rem 0 1rem;">
       <?php if ($oc['url']) : ?>
         <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
           <?php if ($oc['join_method_type'] !== 0) : ?>
@@ -238,7 +241,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
@@ -251,23 +254,34 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
+      <?php if ($recommend[0] || $recommend[3]) : ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+      <?php endif ?>
     <?php endif ?>
+
     <?php if ($recommend[0] && $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
     <?php endif ?>
+
     <?php if (isset($officialDto) && $officialDto) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
+      </aside>
+      <?php if ($recommend[0] && $recommend[3]) : ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+      <?php endif ?>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
-    
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
+
+    <div style="margin: 0 1rem;">
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    </div>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
@@ -281,7 +295,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) ?>
+    <div style="margin: 0 1rem;">
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    </div>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">
