@@ -19,7 +19,7 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
         .page-select {
             /* margin-top: 1.75rem;
             padding-bottom: 0.85rem; */
-            margin: 1rem 0;
+            margin: .5rem 0 18px 0;
         }
 
         .page-select form,
@@ -41,16 +41,18 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
             background: rgb(250, 250, 250);
             width: 100%;
             justify-content: space-evenly;
-            padding: 1.5rem 2rem;
+            padding: 4px 2rem;
         }
 
         article .search-pager {
             margin: 0 -1rem;
             width: calc(100% + 2rem);
+            border-bottom: 1px solid #efefef;
+            border-top: 1px solid #efefef;
         }
 
         .head-pager .search-pager {
-            padding: 8px 0rem;
+            padding: 4px 0rem;
         }
 
         .head-pager .button01 a {
@@ -80,9 +82,9 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
     <article style="margin: 0 1rem;">
-        <header class="openchat-list-title-area unset" style="margin: 0 0 1rem 0;">
+        <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
-                <h2 class="openchat-list-title" style="font-size: 24px;">
+                <h2 class="openchat-list-title" style="font-size: 18px;">
                     コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
@@ -118,8 +120,8 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
-    
-    <section class="unset" style="display: block; margin: 1rem 0">
+
+    <section class="unset" style="display: block; margin: .5rem 0">
         <aside class="top-ranking-list-aside">
             <?php viewComponent('topic_tag', compact('topPageDto')) ?>
         </aside>
