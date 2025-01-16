@@ -68,7 +68,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           $listsLastKey = count($lists) - 1;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
-            <li class="top-ranking" style="padding-top: 8px; <?php if (!$key) echo 'gap: 0;' ?>">
+            <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 0;' ?>">
               <header class="recommend-ranking-section-header">
                 <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.5;">
                   <div>「<?php echo $recommend->listName ?>」</div>
@@ -104,7 +104,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;">「<?php echo $tag ?>」をすべて見る<span class="small" style="font-size: 11.5px;"><?php echo $_dto->tagRecordCounts[$_tagIndex] ?>件</span></span>
                 </a>
-                <hr class="hr-bottom" style="width: 100%;">
               <?php endif ?>
             </li>
             <?php if ($listsLastKey !== $key) : ?>
@@ -127,7 +126,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: 0;">
         <?php if (isset($recommend)) : ?>
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
-          <hr class="hr-bottom" style="width: 100%;">
         <?php endif ?>
       </aside>
       <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>

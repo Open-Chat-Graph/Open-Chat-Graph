@@ -14,7 +14,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <article class="unset openchat body" style="overflow: hidden;">
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
     <!-- オープンチャット表示ヘッダー -->
-    <section class="openchat-header unset" style="padding-top: 16px;">
+    <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
       </div>
@@ -125,12 +125,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <hr class="hr-bottom">
-
-    <nav style="margin: 0 1rem; padding: 4px 0 12px 0; border: unset;" class="oc-desc-nav">
+    <nav style="margin: 0 1rem; padding: 4px 0 10px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
-          <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
+          <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
             <?php if (is_int($oc['api_created_at'])) : ?>
               <div><?php echo t('カテゴリー') ?>&nbsp;</div>
             <?php endif ?>
@@ -138,7 +136,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               <div>タグ&nbsp;</div>
             <?php endif ?>
           </div>
-          <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; line-height: 1.5; height: 100%">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 8px; line-height: 1.5; height: 100%">
             <?php if (is_int($oc['api_created_at'])) : ?>
               <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
             <?php endif ?>
@@ -166,7 +164,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <section class="openchat-graph-section" style="padding-bottom: 0.5rem;">
+    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem; margin-bottom: -4px;">
 
       <div class="title-bar">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -199,7 +197,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
     <?php endif ?>
 
-    <section class="open-btn sp-btn" style="padding: 1rem 1rem 0 1rem; <?php if (MimimalCmsConfig::$urlRoot !== '') echo 'padding-bottom: 1rem' ?>">
+    <section class="open-btn sp-btn" style="padding: 12px 1rem 0 1rem; <?php if (MimimalCmsConfig::$urlRoot !== '') echo 'padding-bottom: 1rem' ?>">
       <?php if ($oc['url']) : ?>
         <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
           <?php if ($oc['join_method_type'] !== 0) : ?>
@@ -220,7 +218,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <section class="comment-section">
+      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
           <div>
@@ -237,7 +235,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <?php viewComponent('comment_desc') ?>
         </div>
         <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0;">
+        <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
           <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
             <span class="ranking-readMore">他のルームのコメントを見る（タイムライン）</span>
           </a>

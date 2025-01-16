@@ -50,7 +50,7 @@ html {
 }
 
 .recommend-list-aside:has(.top-ranking.not-rank) .top-ranking.not-rank {
-  padding: 1rem;
+  padding: .5rem 1rem;
 }
 
 .oc-page-footer {
