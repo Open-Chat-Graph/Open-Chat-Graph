@@ -194,7 +194,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocThirdRectangle']) ?>
     <?php endif ?>
 
     <section class="open-btn sp-btn" style="padding: 12px 1rem 0 1rem; <?php if (MimimalCmsConfig::$urlRoot !== '') echo 'padding-bottom: 1rem' ?>">
@@ -272,7 +272,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
     <?php endif ?>
 
     <aside class="recommend-list-aside">
@@ -283,19 +283,19 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">

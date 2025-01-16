@@ -12,14 +12,23 @@ class GoogleAdsence
         // OCトップ-rectangle
         'ocTopRectangle' => ['8037531176', 'rectangle-ads'],
 
+        // OC-third-rectangle
+        'ocThirdRectangle' => ['8325497013', 'rectangle-ads'],
+
         // OCトップ2-横長
         'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
+
+        // OC-third-横長
+        'ocThirdWide2' => ['4386252007', 'rectangle2-ads'],
 
         // OCセパレーター-レスポンシブ
         'ocSeparatorResponsive' => ['2542775305'],
 
         // OCセパレーター-rectangle
         'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
+
+        // OC-footer-rectangle
+        'ocFooterRectangle' => ['2217617182', 'rectangle-ads'],
 
         // OCセパレーター-横長
         'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
@@ -42,8 +51,14 @@ class GoogleAdsence
         // おすすめトップ-rectangle
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
+        // おすすめ-third-rectangle
+        'recommendThirdRectangle' => ['3035874831', 'rectangle-ads'],
+
         // おすすめトップ2-横長
         'recommendTopWide2' => ['1796098364', 'rectangle2-ads'],
+
+        // おすすめ-third-横長
+        'recommendThirdWide2' => ['4136934018', 'rectangle2-ads'],
 
         // おすすめセパレーター-横長
         'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads'],
@@ -53,6 +68,9 @@ class GoogleAdsence
 
         // おすすめセパレーター-Rectangle
         'recommendSeparatorRectangle' => ['8031174545', 'rectangle-ads'],
+
+        // おすすめ-footer-rectangle
+        'recommendFooterRectangle' => ['1260592882', 'rectangle-ads'],
     ];
 
     /**

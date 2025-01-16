@@ -110,7 +110,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
 
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+                <?php GAd::output(GAd::AD_SLOTS[$key ? 'recommendSeparatorRectangle' : 'recommendThirdRectangle']) ?>
 
               </li>
             <?php endif ?>
@@ -141,19 +141,19 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendFooterRectangle']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendFooterRectangle']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendFooterRectangle']) ?>
 
     <footer class="footer-elem-outer">
       <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
