@@ -480,7 +480,7 @@
 .recent-comment-list .openchat-item {
   min-height: 40px;
   margin: 0;
-  padding: 8px 0;
+  padding: 2px 0;
   padding-left: 50px;
 }
 
@@ -505,13 +505,9 @@
 }
 
 .recent-comment-list .openchat-item-desc {
-  font-size: 15px;
-  margin-top: 3px;
-  color: #111;
-  font-weight: normal;
-  line-height: 150%;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  margin-top: 2px;
 }
 
 .top-ranking .openchat-item h3 {
@@ -1144,12 +1140,6 @@
   .top-ranking:not(.not-rank) .openchat-item-desc {
     margin-top: 2px;
     font-size: 13px;
-  }
-
-  .recent-comment-list .openchat-item-desc {
-    margin-top: 3px;
-    font-size: 15px;
-    font-weight: normal;
   }
 
   .recent-comment-list .openchat-item-lower,
