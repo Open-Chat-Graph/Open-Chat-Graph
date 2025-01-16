@@ -20,11 +20,11 @@
             <?php endif ?>
             <?php if (($oc['diff_member'] ?? 0) > 0) : ?>
               <span>
-                <span class="openchat-item-stats">↑ <?php echo sprintfT('%s人増加', $oc['diff_member']) ?></span>
+                <span class="openchat-item-stats">・ <?php echo sprintfT('%s人増加', $oc['diff_member']) ?></span>
               </span>
             <?php elseif (($oc['diff_member'] ?? 1) < 0) : ?>
               <span>
-                <span class="openchat-item-stats">↓ <?php echo abs($oc['diff_member']) ?></span>
+                <span class="openchat-item-stats">・ <?php echo abs($oc['diff_member']) ?></span>
               </span>
             <?php elseif (($oc['diff_member'] ?? 1) === 0) : ?>
               <span>±0</span>
