@@ -33,29 +33,49 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </div>
 
-      <hr class="hr-top">
+      <hr class="hr-top recommend">
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          「<?php echo $tag ?>」のおすすめオープンチャットランキングを発表！<?php if (isset($hourlyUpdatedAt)) echo '（' . $hourlyUpdatedAt->format('n/j G:i') . '時点）' ?>
+          【最新】「<?php echo $tag ?>」のおすすめオープンチャットランキング<?php echo $countTitle ?? '' ?>
         </h1>
       </div>
 
       <?php if (isset($recommend)) : ?>
         <figure class="talkroom_banner_img_figure">
           <?php $oc = $recommend->getPreviewList(1)[0] ?>
+          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
           <div class="talkroom_banner_img_area">
             <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
           </div>
-          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
         </figure>
       <?php endif ?>
 
     </section>
 
-    <p class="recommend-header-desc desc-bottom" style="padding-bottom: 1rem;">
+    <p class="recommend-header-desc desc-bottom">
       ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
     </p>
+
+    <header class="recommend-ranking-section-header" style="padding: 0 0 10px 16px;">
+      <aside class="list-aside">
+        <details class="icon-desc">
+          <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7">人数増加アイコンの説明</summary>
+          <div class="list-aside-details">
+            <small class="list-aside-desc">🔥：過去1時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR ?>人以上増加<?php if (count($recommend->hour) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
+            <small class="list-aside-desc">🚀：過去24時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24 ?>人以上増加<?php if (count($recommend->day) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
+            <small class="list-aside-desc">
+              <span style="margin: 0 4px;">
+                <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
+                  <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
+                </svg>
+              </span>：過去1週間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK ?>人以上増加<?php if (count($recommend->week) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (上位<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?>
+            </small>
+            <small class="list-aside-desc">🏆：リスト内で最も人数が多いトークルーム</small>
+          </div>
+        </details>
+      </aside>
+    </header>
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
@@ -68,9 +88,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           $listsLastKey = count($lists) - 1;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
-            <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 0;' ?>">
+            <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
               <header class="recommend-ranking-section-header">
-                <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.5;">
+                <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
                   <div>「<?php echo $recommend->listName ?>」</div>
                   <div>のおすすめランキング</div>
                   <div><?php echo $countTitle ?? '' ?></div>
@@ -78,25 +98,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 </h2>
               </header>
               <?php if ($key === 0) : ?>
-                <header class="recommend-ranking-section-header" style="padding: 5px 0 16px 0;">
-                  <aside class="list-aside">
-                    <details class="icon-desc">
-                      <summary style="font-size: 13px; font-weight: normal;">人数増加アイコンの説明</summary>
-                      <div class="list-aside-details">
-                        <small class="list-aside-desc">🔥：過去1時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR ?>人以上増加<?php if (count($recommend->hour) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
-                        <small class="list-aside-desc">🚀：過去24時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24 ?>人以上増加<?php if (count($recommend->day) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
-                        <small class="list-aside-desc">
-                          <span style="margin: 0 4px;">
-                            <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
-                              <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
-                            </svg>
-                          </span>：過去1週間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK ?>人以上増加<?php if (count($recommend->week) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (上位<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?>
-                        </small>
-                        <small class="list-aside-desc">🏆：リスト内で最も人数が多いトークルーム</small>
-                      </div>
-                    </details>
-                  </aside>
-                </header>
               <?php else : ?>
               <?php endif ?>
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray')) ?>
