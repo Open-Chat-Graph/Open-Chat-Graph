@@ -30,7 +30,7 @@ function greenTag($word)
 
 <article class="top-ranking topic-tag">
     <div>
-        <header class="openchat-list-title-area unset" style="margin-bottom: 10px;">
+        <header class="openchat-list-title-area unset" style="margin-bottom: 0px;">
             <div class="openchat-list-date unset ranking-url">
                 <h2 class="unset">
                     <span class="openchat-list-title">いま人数急増中のテーマ</span>

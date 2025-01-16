@@ -11,7 +11,7 @@ viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => tru
 
 <body>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 6px;">
+    <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
