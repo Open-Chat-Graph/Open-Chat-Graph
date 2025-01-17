@@ -349,7 +349,6 @@ html {
   justify-content: center;
   margin-top: 6px;
   width: 100%;
-  height: -webkit-fill-available;
 }
 
 .my-list-form .checkbox-label {
