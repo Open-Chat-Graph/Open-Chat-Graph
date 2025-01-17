@@ -101,13 +101,11 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 <h2>การเปลี่ยนแปลงนโยบายความเป็นส่วนตัว</h2>
                 <p>เราขอสงวนสิทธิ์ในการปรับเปลี่ยนนโยบายความเป็นส่วนตัวนี้โดยไม่ต้องแจ้งให้ทราบล่วงหน้า โดยนโยบายที่ปรับปรุงแล้วจะถูกเผยแพร่บนหน้านี้ กรุณาตรวจสอบเป็นระยะเพื่อรับข้อมูลล่าสุด</p>
             <?php endif ?>
-            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteSeparatorRectangle']) ?>
         </article>
     </main>
     <footer class="footer-elem-outer">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

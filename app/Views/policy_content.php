@@ -249,13 +249,11 @@
                     </p>
                 </section>
             <?php endif ?>
-            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteSeparatorRectangle']) ?>
         </article>
     </main>
     <footer class="footer-elem-outer">
         <?php viewComponent('footer_inner') ?>
     </footer>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 
