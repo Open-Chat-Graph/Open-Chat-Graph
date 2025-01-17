@@ -15,17 +15,17 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
-      <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
-        <div class="talkroom_banner_img_area">
-          <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+      <div class="talkroom_banner_img_area">
+        <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
           <nav class="my-list-form">
             <label class="checkbox-label" for="my-list-checkbox">
               <input type="checkbox" id="my-list-checkbox">
               <span>トップにピン留め</span>
             </label>
           </nav>
-        </div>
-      <?php endif ?>
+        <?php endif ?>
+      </div>
 
       <div class="openchat-header-right">
         <div>
