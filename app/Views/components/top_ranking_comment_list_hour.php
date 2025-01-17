@@ -22,7 +22,7 @@ $_hourlyRange = $hourlyStart . '〜<time datetime="' . $hourlyTime . '">' . $hou
             </span>
         </div>
     </header>
-    <?php viewComponent('open_chat_list_ranking', ['openChatList' => $dto->hourlyList, 'isHourly' => true]) ?>
+    <?php viewComponent('open_chat_list_ranking', ['openChatList' => $dto->hourlyList, 'isHourly' => true, 'noReverse' => true]) ?>
     <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?list=hourly') ?>">
         <span class="ranking-readMore"><?php echo t('1時間の人数増加ランキングをもっと見る') ?></span>
     </a>

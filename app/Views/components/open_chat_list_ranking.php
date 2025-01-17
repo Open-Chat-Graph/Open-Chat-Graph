@@ -1,8 +1,8 @@
 <!-- @param array $openChatList -->
 <!-- @param bool $isHourly -->
-<ol class="openchat-item-list unset" style="counter-reset: openchat-counter <?php echo count($openChatList) + 1 ?>;">
+<ol class="openchat-item-list unset" style="counter-reset: openchat-counter <?php echo isset($noReverse) && $noReverse ? 0 : count($openChatList) + 1 ?>;">
   <?php foreach (isset($noReverse) && $noReverse ? $openChatList : array_reverse($openChatList) as $oc) : ?>
-    <li class="openchat-item unset">
+    <li class="openchat-item unset <?php echo isset($noReverse) && $noReverse ? '' : 'reverse' ?>">
       <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id'] . (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null ? '?limit=hour' : '')) ?>" tabindex="-1" aria-hidden="true">
         <span class="visually-hidden"><?php echo $oc['name'] ?></span>
       </a>

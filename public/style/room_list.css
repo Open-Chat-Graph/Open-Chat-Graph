@@ -492,7 +492,7 @@
 .top-ranking:not(.not-rank) .openchat-item::before {
   width: 1rem;
   content: counter(openchat-counter);
-  counter-increment: openchat-counter -1;
+  counter-increment: openchat-counter;
   position: absolute;
   left: -1.6rem;
   top: 25px;
@@ -501,6 +501,10 @@
   font-weight: bold;
   font-style: italic;
   text-align: center;
+}
+
+.top-ranking:not(.not-rank) .openchat-item.reverse::before {
+  counter-increment: openchat-counter -1;
 }
 
 .top-ranking:not(.not-rank) .openchat-item-desc {
