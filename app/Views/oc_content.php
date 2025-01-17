@@ -17,6 +17,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+        <nav class="my-list-form">
+          <label class="checkbox-label" for="my-list-checkbox">
+            <input type="checkbox" id="my-list-checkbox">
+            <span>トップにピン留め</span>
+          </label>
+        </nav>
       </div>
 
       <div class="openchat-header-right">
@@ -101,26 +107,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <?php endif ?>
 
         </div>
-
-        <?php if ($oc['url']) : ?>
-          <section class="open-btn pc-btn">
-            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
-              <?php if ($oc['join_method_type'] !== 0) : ?>
-                <svg style="height: 13px; fill: #fff; margin-right: 6px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
-                  <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
-                </svg>
-              <?php endif ?>
-              <span class="text"><?php echo t('LINEで開く') ?></span>
-              <?php if ($oc['join_method_type'] === 1) : ?>
-                <span style="font-size: 12px; margin-left: 4px; font-weight: normal; line-height: 2;" class="text"><?php echo t('承認制') ?></span>
-              <?php endif ?>
-              <?php if ($oc['join_method_type'] === 2) : ?>
-                <span style="font-size: 12px; margin-left: 4px; font-weight: normal; line-height: 2;" class="text"><?php echo t('参加コード入力制') ?></span>
-              <?php endif ?>
-            </a>
-          </section>
-        <?php endif ?>
-
       </div>
 
     </section>
@@ -149,16 +135,28 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </span>
       </aside>
 
-      <nav class="my-list-form" style="visibility: <?php // TODO:日本以外ではマイリストが無効
-                                                    echo MimimalCmsConfig::$urlRoot === ''
-                                                      ? 'visible'
-                                                      : 'hidden'
-                                                    ?>;">
-        <label class="checkbox-label" for="my-list-checkbox">
-          <input type="checkbox" id="my-list-checkbox">
-          <span>トップにピン留め</span>
-        </label>
-      </nav>
+      <div style="display: flex; flex-direction: column">
+        <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
+          <?php if ($oc['url']) : ?>
+            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
+              <div style="display: flex; align-items: center; justify-content: center;">
+                <?php if ($oc['join_method_type'] !== 0) : ?>
+                  <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
+                    <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
+                  </svg>
+                <?php endif ?>
+                <span class="text"><?php echo t('LINEで開く') ?></span>
+              </div>
+              <?php if ($oc['join_method_type'] === 1) : ?>
+                <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('承認制') ?></span>
+              <?php endif ?>
+              <?php if ($oc['join_method_type'] === 2) : ?>
+                <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('参加コード入力制') ?></span>
+              <?php endif ?>
+            </a>
+          <?php endif ?>
+        </section>
+      </div>
     </nav>
 
     <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
@@ -166,7 +164,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem; margin-bottom: -4px;">
+    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
 
       <div class="title-bar">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -193,30 +191,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
       <?php GAd::output(GAd::AD_SLOTS['ocThirdRectangle']) ?>
     <?php endif ?>
-
-    <section class="open-btn sp-btn" style="padding: 12px 1rem 0 1rem; <?php if (MimimalCmsConfig::$urlRoot !== '') echo 'padding-bottom: 1rem' ?>">
-      <?php if ($oc['url']) : ?>
-        <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
-          <?php if ($oc['join_method_type'] !== 0) : ?>
-            <svg style="height: 12px; fill: white; margin-right: 6px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
-              <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
-            </svg>
-          <?php endif ?>
-          <span class="text"><?php echo t('LINEで開く') ?></span>
-          <?php if ($oc['join_method_type'] === 1) : ?>
-            <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('承認制') ?></span>
-          <?php endif ?>
-          <?php if ($oc['join_method_type'] === 2) : ?>
-            <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('参加コード入力制') ?></span>
-          <?php endif ?>
-        </a>
-      <?php endif ?>
-    </section>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>

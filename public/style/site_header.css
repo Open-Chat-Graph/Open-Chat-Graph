@@ -339,7 +339,7 @@ body::before {
   user-select: none;
   box-sizing: border-box;
   color: #303030;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .checkbox-label input {
