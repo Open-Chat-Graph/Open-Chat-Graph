@@ -341,11 +341,11 @@ section aside:hover {
 
 .recommend-header-desc-text {
   color: #111;
-  font-size: 18px;
+  font-size: 20px;
   white-space: unset;
   font-weight: bold;
   font-family: '游ゴシック体', 'Yu Gothic', YuGothic, Meiryo, 'メイリオ', ArialMT, Hiragino Kaku Gothic Pro, 'ヒラギノ角ゴ Pro W3', Osaka;
-  line-height: 1.4;
+  line-height: 1.3;
   padding: 0 1rem;
   margin: 6px 0 2px 0;
 }
