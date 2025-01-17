@@ -13,7 +13,7 @@ class RankingPositionChartArrayServiceTest extends TestCase
     {
         $this->instance = app(RankingPositionChartArrayService::class);
 
-        $result = $this->instance->getRisingPositionChartArray(192, 8);
+        $result = $this->instance->getRankingPositionChartArray(192, 8);
         debug(json_encode($result));
         $this->assertTrue(true);
     }

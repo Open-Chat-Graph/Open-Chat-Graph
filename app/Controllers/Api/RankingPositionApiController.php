@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\AppConfig;
-use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\Dto\RankingPositionChartDto;
 use App\Services\RankingPosition\RankingPositionChartArrayService;
@@ -13,10 +12,6 @@ use App\Services\RankingPosition\RankingPositionHourChartArrayService;
 
 class RankingPositionApiController
 {
-    function __construct(
-        private OpenChatPageRepositoryInterface $openChatPageRepository
-    ) {}
-
     function rankingPosition(
         RankingPositionChartArrayService $chart,
         int $open_chat_id,
