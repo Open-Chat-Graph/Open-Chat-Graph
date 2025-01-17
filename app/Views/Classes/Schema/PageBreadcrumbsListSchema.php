@@ -75,34 +75,6 @@ class PageBreadcrumbsListSchema
             ->url($authorUrl);
     }
 
-    function generateStructuredDataWebSite(
-        string $siteName,
-        string $description,
-        string $url,
-        string $image,
-        \DateTimeInterface $datePublished,
-        \DateTimeInterface $dateModified
-    ): string {
-        $webSite = Schema::webSite()
-            ->name($siteName)
-            ->description($description)
-            ->image($image)
-            ->author($this->publisher())
-            ->url($url)
-            ->datePublished($datePublished)
-            ->dateModified($dateModified)
-            ->potentialAction(
-                Schema::searchAction()
-                    ->target(
-                        Schema::entryPoint()
-                            ->urlTemplate(url('ranking?keyword={search_term_string}'))
-                    )
-                    ->{'query-input'}('required name=search_term_string')
-            );
-
-        return $webSite->toScript();
-    }
-
     function lineOcOrganization()
     {
         return Schema::organization()
@@ -195,7 +167,7 @@ class PageBreadcrumbsListSchema
         $itemList->itemListElement($listArray);
 
         $time = $dateModified->format('G:i');
-        // WebPageの構築
+        
         $webSite = Schema::article()
             ->headline($title)
             ->description($description)

@@ -99,8 +99,6 @@ viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => tru
             </script>
         <?php endif ?>
     <?php endif ?>
-
-    <?php echo $_meta->generateTopPageSchema() ?>
 </body>
 
 </html>

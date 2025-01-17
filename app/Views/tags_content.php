@@ -140,7 +140,6 @@ function memberCount(int $count)
     </footer>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-    <?php echo $_meta->generateTopPageSchema() ?>
     <?php if ($isAdminPage && isset($adsList)) : ?>
         <script>
             document.querySelectorAll('.updateTagsMapForms').forEach(el => {
