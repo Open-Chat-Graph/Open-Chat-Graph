@@ -196,6 +196,11 @@
   line-height: 125%;
 }
 
+.top-page .openchat-list-title {
+  font-size: 18px;
+  line-height: 1.7;
+}
+
 .openchat-list-title-result {
   all: unset;
   font-size: 15px;
@@ -553,7 +558,7 @@
   overflow: hidden;
   color: #111;
   font-weight: 500;
-  max-width: 70%; 
+  max-width: 70%;
 }
 
 .openchat-item-title .comment-member-count {
@@ -682,8 +687,9 @@
 .white-btn .ranking-readMore {
   color: #111;
   font-size: 13px;
-  
+
 }
+
 .white-btn .ranking-readMore::after {
   display: inline-block;
   content: '';
@@ -1176,6 +1182,12 @@
 
   .openchat-list-title {
     font-size: 19px;
+    line-height: 2;
+  }
+
+
+  .top-page .openchat-list-title {
+    font-size: 20px;
   }
 
   .mylist .super-icon,
