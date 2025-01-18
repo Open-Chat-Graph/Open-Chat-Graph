@@ -100,7 +100,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php if ($key === 0) : ?>
               <?php else : ?>
               <?php endif ?>
-              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray')) ?>
+              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showReverseListMedal' => $listsLastKey === $key]) ?>
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;">「<?php echo $tag ?>」をすべて見る<span class="small" style="font-size: 11.5px;"><?php echo $_dto->tagRecordCounts[$_tagIndex] ?>件</span></span>

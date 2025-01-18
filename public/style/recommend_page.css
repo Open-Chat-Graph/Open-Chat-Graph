@@ -119,6 +119,36 @@ li {
   counter-increment: openchat-counter2 -1;
 }
 
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
+  content: "🥇";
+  font-style: normal;
+  font-size: 24px;
+  left: -31px;
+  top: 23px;
+  line-height: 1;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
+  content: "🥈";
+  font-style: normal;
+  font-size: 22px;
+  left: -30px;
+  top: 23px;
+  line-height: 1;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
+  content: "🥉";
+  font-style: normal;
+  font-size: 20px;
+  left: -29px;
+  top: 23px;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal {
+  margin-bottom: 1.5rem;
+}
+
 .openchat-item-list.parent .ranking-page-main .openchat-item-lower-outer {
   flex-direction: row;
   gap: 8px;
