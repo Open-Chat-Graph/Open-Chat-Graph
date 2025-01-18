@@ -195,7 +195,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['recommendThirdWide2']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocThirdWide2']) ?>
     <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
