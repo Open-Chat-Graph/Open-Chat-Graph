@@ -558,6 +558,11 @@ body::before {
   height: 280px;
 }
 
+.rectangle3-ads {
+  width: auto;
+  aspect-ratio: 1.2;
+}
+
 .openchat-item-list .google-auto-placed {
   margin: 0 -1rem;
   width: 100vw !important;

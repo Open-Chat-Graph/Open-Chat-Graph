@@ -20,7 +20,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-header-wrapper">
 

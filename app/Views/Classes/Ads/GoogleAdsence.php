@@ -10,7 +10,7 @@ class GoogleAdsence
 
     const AD_SLOTS = [
         // OCトップ-rectangle
-        'ocTopRectangle' => ['8037531176', 'rectangle-ads'],
+        'ocTopRectangle' => ['8037531176', 'rectangle3-ads'],
 
         // OC-third-rectangle
         'ocThirdRectangle' => ['8325497013', 'rectangle-ads'],
@@ -25,7 +25,7 @@ class GoogleAdsence
         'ocSeparatorResponsive' => ['2542775305'],
 
         // OCセパレーター-rectangle
-        'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
+        'ocSeparatorRectangle' => ['2078443048', 'rectangle2-ads'],
 
         // OC-footer-rectangle
         'ocFooterRectangle' => ['2217617182', 'rectangle-ads'],
@@ -49,7 +49,7 @@ class GoogleAdsence
         'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
 
         // おすすめトップ-rectangle
-        'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
+        'recommendTopRectangle' => ['3109180036', 'rectangle3-ads'],
 
         // おすすめ-third-rectangle
         'recommendThirdRectangle' => ['3035874831', 'rectangle-ads'],
