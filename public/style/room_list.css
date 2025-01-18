@@ -1283,8 +1283,11 @@
   border-top: 2px solid #06c755;
   border-right: 2px solid #06c755;
   transform: rotate(135deg);
-  left: 13px;
-  top: 11px;
+  top: -2px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
 }
 
 .open #open-btn-li {
@@ -1297,8 +1300,11 @@
 
 .open .tag-btn.open-btn::after {
   transform: rotate(315deg);
-  left: 13px;
-  top: 14px;
+  top: 2px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
 }
 
 @media screen and (min-width: 512px) {
