@@ -25,7 +25,7 @@ class GoogleAdsence
         'ocSeparatorResponsive' => ['2542775305'],
 
         // OCセパレーター-rectangle
-        'ocSeparatorRectangle' => ['2078443048', 'rectangle2-ads'],
+        'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
 
         // OC-footer-rectangle
         'ocFooterRectangle' => ['2217617182', 'rectangle-ads'],
@@ -52,7 +52,7 @@ class GoogleAdsence
         'recommendTopRectangle' => ['3109180036', 'rectangle3-ads'],
 
         // おすすめ-third-rectangle
-        'recommendThirdRectangle' => ['3035874831', 'rectangle-ads'],
+        'recommendThirdRectangle' => ['3035874831', 'rectangle3-ads'],
 
         // おすすめトップ-横長
         'recommendTopWide' => ['9253567316', 'rectangle2-ads'],
@@ -70,7 +70,7 @@ class GoogleAdsence
         'recommendSeparatorResponsive' => ['7064673271'],
 
         // おすすめセパレーター-Rectangle
-        'recommendSeparatorRectangle' => ['8031174545', 'rectangle-ads'],
+        'recommendSeparatorRectangle' => ['8031174545', 'rectangle3-ads'],
 
         // おすすめ-footer-rectangle
         'recommendFooterRectangle' => ['1260592882', 'rectangle-ads'],
