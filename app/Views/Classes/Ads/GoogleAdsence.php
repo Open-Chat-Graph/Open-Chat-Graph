@@ -19,7 +19,7 @@ class GoogleAdsence
         'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
 
         // OC-third-横長
-        'ocThirdWide2' => ['4386252007', 'rectangle2-ads'],
+        'ocThirdWide' => ['4386252007', 'rectangle2-ads'],
 
         // OCセパレーター-レスポンシブ
         'ocSeparatorResponsive' => ['2542775305'],
@@ -54,11 +54,14 @@ class GoogleAdsence
         // おすすめ-third-rectangle
         'recommendThirdRectangle' => ['3035874831', 'rectangle-ads'],
 
+        // おすすめトップ-横長
+        'recommendTopWide' => ['9253567316', 'rectangle2-ads'],
+
         // おすすめトップ2-横長
         'recommendTopWide2' => ['1796098364', 'rectangle2-ads'],
 
         // おすすめ-third-横長
-        'recommendThirdWide2' => ['4136934018', 'rectangle2-ads'],
+        'recommendThirdWide' => ['4136934018', 'rectangle2-ads'],
 
         // おすすめセパレーター-横長
         'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads'],
