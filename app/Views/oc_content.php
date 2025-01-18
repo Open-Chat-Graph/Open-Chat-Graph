@@ -201,7 +201,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
-        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
+        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
           <div>
             <h2 class="graph-title">
@@ -212,9 +212,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
             </div>
           </div>
-        </div>
-        <div style="margin-top: 13px;">
-          <?php viewComponent('comment_desc') ?>
         </div>
         <div id="comment-root"></div>
         <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
