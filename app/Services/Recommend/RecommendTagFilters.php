@@ -7,8 +7,8 @@ namespace App\Services\Recommend;
 class RecommendTagFilters
 {
     const RecommendPageTagFilter = [
-        "unistyle",
-        "jobhunt",
+        "unistyle", // TODO: 削除済み
+        "jobhunt", // TODO: 削除済み
     ];
 
     const FilteredTagSort = [
