@@ -570,10 +570,13 @@ body::before {
 }
 
 @media screen and (min-width: 512px) {
+
+  .rectangle3-ads,
   .rectangle-ads {
     height: 280px;
     width: auto;
     margin: auto;
+    aspect-ratio: unset;
   }
 }
 

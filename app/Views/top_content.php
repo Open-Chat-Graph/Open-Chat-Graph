@@ -7,11 +7,12 @@ use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => true]) ?>
+viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
+        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>

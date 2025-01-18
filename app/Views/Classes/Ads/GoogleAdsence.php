@@ -34,7 +34,7 @@ class GoogleAdsence
         'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
 
         // サイトトップ-rectangle
-        'siteTopRectangle' => ['4122044659', 'rectangle-ads'],
+        'siteTopRectangle' => ['4122044659', 'rectangle3-ads'],
 
         // サイトトップ2-横長
         'siteTopWide' => ['4015067592', 'rectangle2-ads'],
@@ -74,6 +74,9 @@ class GoogleAdsence
 
         // おすすめ-footer-rectangle
         'recommendFooterRectangle' => ['1260592882', 'rectangle-ads'],
+
+        // コメントタイムライントップ-rectangle
+        'recentCommentTopRectangle' => ['4440788981', 'rectangle3-ads'],
     ];
 
     /**
@@ -91,7 +94,7 @@ class GoogleAdsence
     private static function rectangle(int $adSlot, string $cssClass)
     {
         if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
-        
+
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle"></ins>
@@ -101,7 +104,7 @@ class GoogleAdsence
     private static function responsive(int $adSlot, string $cssClass)
     {
         if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
-        
+
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
