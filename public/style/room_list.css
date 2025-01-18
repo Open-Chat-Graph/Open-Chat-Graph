@@ -1288,6 +1288,7 @@
   bottom: 0;
   left: 0;
   margin: auto;
+  box-sizing: content-box;
 }
 
 .open #open-btn-li {
@@ -1305,6 +1306,7 @@
   bottom: 0;
   left: 0;
   margin: auto;
+  box-sizing: content-box;
 }
 
 @media screen and (min-width: 512px) {
