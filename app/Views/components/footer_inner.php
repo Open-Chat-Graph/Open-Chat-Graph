@@ -1,6 +1,6 @@
 <?php if (isset($adSlot) && $adSlot) \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS[$adSlot]) ?>
 <footer class="footer-elem-outer" style="padding: 0;">
-    <hr class="hr-top" style="margin-bottom: 8px;">
+    <hr class="hr-top" style="margin-bottom: 11px;">
     <nav class="footer-link-box-outer">
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
