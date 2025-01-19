@@ -12,14 +12,16 @@
                 <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
             <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></il>
             <? endif ?>
-            <li><a class="unset" style="margin-bottom: 0;" href="<?php echo t('https://openchat.line.me/jp') ?>" target="_blank"><?php echo t('【公式】LINEオープンチャット') ?><span class="line-link-icon777"></span></a></li>
         </ul>
     </section>
     <aside class="open-btn2">
-        <a href="<?php echo t('https://openchat-jp.line.me/other/beginners_guide') ?>" class="app_link app-dl">
+        <a href="<?php echo t('https://openchat.line.me/jp') ?>" class="app_link app-dl" target="_blank">
+            <span class="text"><?php echo t('【公式】LINEオープンチャット') ?></span>
+        </a>
+        <a href="<?php echo t('https://openchat-jp.line.me/other/beginners_guide') ?>" class="app_link app-dl" target="_blank">
             <span class="text"><?php echo t('はじめてのLINEオープンチャットガイド（LINE公式）') ?></span>
         </a>
-        <a href="https://line.me/download" class="app_link app-dl">
+        <a href="https://line.me/download" class="app_link app-dl" target="_blank">
             <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?></span>
         </a>
     </aside>
