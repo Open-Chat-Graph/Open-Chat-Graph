@@ -146,7 +146,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner', ['adSlot' => 'recommendBottomWide']) ?>
+    <?php viewComponent('footer_inner', /* ['adSlot' => 'recommendBottomWide'] */) ?>
 
   </article>
 
