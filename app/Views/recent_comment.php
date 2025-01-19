@@ -131,22 +131,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <aside class="top-ranking-list-aside">
             <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
         </aside>
-
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-        </aside>
-
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-        </aside>
-
-        <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
-
-        <footer class="footer-elem-outer">
-            <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-            <?php viewComponent('footer_inner') ?>
-        </footer>
-
+        
     </section>
 
     <?php GAd::loadAdsTag() ?>

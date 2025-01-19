@@ -262,20 +262,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php //GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
-
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-    </aside>
-
-    <?php //GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
-
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-    </aside>
-
-    <?php //GAd::output(GAd::AD_SLOTS['ocFooterRectangle']) ?>
-
     <footer class="oc-page-footer" style="padding-top: 0;">
       <aside class="open-btn2">
         <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl">
