@@ -55,7 +55,7 @@ class GoogleAdsence
         'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
 
         // サイト-bottom-rectangle
-        'siteBottomRectangle' => ['8637392164', 'rectangle3-ads'],
+        'siteBottomRectangle' => ['8637392164', 'rectangle-ads'],
 
         // おすすめトップ-rectangle
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
