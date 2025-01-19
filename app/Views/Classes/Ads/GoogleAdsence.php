@@ -27,6 +27,12 @@ class GoogleAdsence
         // OCセパレーター-rectangle
         'ocSeparatorRectangle' => ['2078443048', 'rectangle-ads'],
 
+        // OC-リスト-bottom-横長
+        'ocListBottomWide' => ['9996104663', 'rectangle2-ads'],
+
+        // OC-bottom-rectangle
+        'ocBottomRectangle' => ['9240027393', 'rectangle-ads'],
+
         // OC-footer-rectangle
         'ocFooterRectangle' => ['2217617182', 'rectangle-ads'],
 
@@ -48,6 +54,9 @@ class GoogleAdsence
         // サイトセパレーター-横長
         'siteSeparatorWide' => ['7150203685', 'rectangle2-ads'],
 
+        // サイト-bottom-rectangle
+        'siteBottomRectangle' => ['8637392164', 'rectangle3-ads'],
+
         // おすすめトップ-rectangle
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
@@ -66,6 +75,9 @@ class GoogleAdsence
         // おすすめセパレーター-横長
         'recommendSeparatorWide' => ['7670645105', 'rectangle2-ads'],
 
+        // おすすめ-リスト-bottom-横長
+        'recommendListBottomWide' => ['3676170522', 'rectangle2-ads'],
+
         // おすすめセパレーター-レスポンシブ
         'recommendSeparatorResponsive' => ['7064673271'],
 
@@ -75,8 +87,14 @@ class GoogleAdsence
         // おすすめ-footer-rectangle
         'recommendFooterRectangle' => ['1260592882', 'rectangle-ads'],
 
+        // おすすめ-bottom-rectangle
+        'recommendBottomRectangle' => ['7561513017', 'rectangle-ads'],
+
         // コメントタイムライントップ-rectangle
         'recentCommentTopRectangle' => ['4440788981', 'rectangle3-ads'],
+
+        // コメントタイムライン-bottom-横長
+        'recentCommentBottomWide' => ['4852423347', 'rectangle2-ads'],
     ];
 
     /**

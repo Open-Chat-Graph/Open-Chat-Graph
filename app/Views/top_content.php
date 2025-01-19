@@ -33,11 +33,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
-        <footer class="footer-elem-outer">
-            <?php viewComponent('footer_inner') ?>
-        </footer>
-        <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem;">
-            <div class="refresh-icon"></div><time style="font-size: 11px; color: #777; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
+        <?php viewComponent('footer_inner', ['adSlot' => 'siteBottomRectangle']) ?>
+        
+        <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
+            <div class="refresh-icon"></div><time style="font-size: 11px; color: #b7b7b7; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
     <?php GAd::loadAdsTag() ?>

@@ -62,9 +62,7 @@
             <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
         </article>
     </main>
-    <footer>
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>

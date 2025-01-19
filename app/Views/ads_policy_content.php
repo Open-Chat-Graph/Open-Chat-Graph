@@ -11,9 +11,7 @@
             <p>サイト内のコンテンツに関連する広告を表示しています。</p>
         </article>
     </main>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
 </body>
 
 </html>

@@ -72,9 +72,7 @@
             公式サイトに掲載されていないオープンチャットや、そのURLがわからない場合は登録ができません。
         </p>
     </main>
-    <footer style="all: unset; display:block; padding:1rem;">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script type="module">
         import {

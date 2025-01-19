@@ -59,7 +59,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
             </div>
           <?php endif ?> -->
         </footer>
-
+        <div class="link-overlay hover"></div>
       </li>
 
       <?php if ($key < $len - 1) : ?>

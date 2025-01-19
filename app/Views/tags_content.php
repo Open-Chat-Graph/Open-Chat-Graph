@@ -134,10 +134,7 @@ function memberCount(int $count)
             </article>
         <?php endforeach ?>
     </main>
-    <footer>
-        <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <?php if ($isAdminPage && isset($adsList)) : ?>

@@ -251,9 +251,7 @@
             <?php endif ?>
         </article>
     </main>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

@@ -136,6 +136,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
+    <?php GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) ?>
+
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
@@ -144,9 +146,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <footer class="footer-elem-outer">
-      <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner', ['adSlot' => 'recommendBottomRectangle']) ?>
 
   </article>
 

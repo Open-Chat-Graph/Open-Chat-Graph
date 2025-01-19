@@ -76,7 +76,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         }
 
         section aside:hover {
-            all: unset;
+            box-shadow: unset;
         }
     </style>
     <!-- 固定ヘッダー -->
@@ -122,11 +122,9 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
 
-    <section class="unset" style="display: block; margin-top: 1rem">
+    <section class="unset" style="display: block; margin-top: .5rem">
 
-        <footer class="footer-elem-outer">
-            <?php viewComponent('footer_inner') ?>
-        </footer>
+        <?php viewComponent('footer_inner', ['adSlot' => 'recentCommentBottomWide']) ?>
 
     </section>
 

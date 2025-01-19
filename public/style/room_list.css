@@ -487,6 +487,11 @@
   margin: 0;
   padding: 8px 0;
   padding-left: 50px;
+  cursor: unset;
+}
+
+.recent-comment-list .openchat-item .link-overlay {
+  margin: -4px -1rem;
 }
 
 .top-ranking:not(.not-rank) .openchat-item::before {
@@ -1043,6 +1048,10 @@
   }
 }
 
+.link-overlay.hover {
+  z-index: -1;
+}
+
 @media screen and (min-width: 512px) {
   .top-ranking.top-btns.top {
     padding-top: 1rem;
@@ -1089,7 +1098,7 @@
     text-decoration: unset;
   }
 
-  .recent-comment-list .openchat-item:hover {
+  .recent-comment-list .openchat-item:hover > .link-overlay.hover {
     background: var(--hover);
   }
 
