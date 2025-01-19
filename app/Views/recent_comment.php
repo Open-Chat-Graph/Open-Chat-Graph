@@ -19,7 +19,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         .page-select {
             /* margin-top: 1.75rem;
             padding-bottom: 0.85rem; */
-            margin: .5rem 0 18px 0;
+            margin: 12px 0 18px 0;
         }
 
         .page-select form,
@@ -85,7 +85,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
     <article style="margin: 0 1rem; margin-top: .5rem;">
         <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
-                <h2 class="openchat-list-title" style="font-size: 18px;">
+                <h2 class="openchat-list-title" style="font-size: 20px;">
                     コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
@@ -122,16 +122,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
 
-    <section class="unset" style="display: block; margin: .5rem 0">
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('topic_tag', compact('topPageDto')) ?>
-        </aside>
+    <section class="unset" style="display: block; margin-top: 1rem">
 
+        <footer class="footer-elem-outer">
+            <?php viewComponent('footer_inner') ?>
+        </footer>
 
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
-        </aside>
-        
     </section>
 
     <?php GAd::loadAdsTag() ?>
