@@ -271,8 +271,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php viewComponent('footer_inner',/*  ['adSlot' => 'ocBottomWide'] */) ?>
 
-    <aside class="open-btn2 csv-dl" style="margin: 0 0 2rem 0;">
-      <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl">
+    <aside class="open-btn2 csv-dl" style="margin: -9px 0 .5rem 0;">
+      <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl" style="font-size: 11px;">
         <span class="text"><?php echo t('人数統計CSVをダウンロード') ?></span>
       </a>
     </aside>
