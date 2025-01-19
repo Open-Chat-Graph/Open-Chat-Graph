@@ -536,7 +536,7 @@
 }
 
 .recent-comment-list .openchat-item-title {
-  font-size: 15px;
+  font-size: 16px;
   display: flex;
 }
 
@@ -562,7 +562,7 @@
   white-space: nowrap;
   overflow: hidden;
   color: #111;
-  font-weight: 500;
+  font-weight: bold;
   max-width: 70%;
 }
 
