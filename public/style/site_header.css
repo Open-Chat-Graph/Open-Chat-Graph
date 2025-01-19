@@ -329,6 +329,11 @@ body::before {
   margin: 0 1px;
 }
 
+.app_link .line-link-icon777 {
+  width: 12px;
+  height: 12px;
+}
+
 /* チェックボックス */
 .checkbox-label {
   all: unset;

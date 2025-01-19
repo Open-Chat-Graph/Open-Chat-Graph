@@ -16,13 +16,13 @@
     </section>
     <aside class="open-btn2">
         <a href="<?php echo t('https://openchat.line.me/jp') ?>" class="app_link app-dl" target="_blank">
-            <span class="text"><?php echo t('【公式】LINEオープンチャット') ?></span>
+            <span class="text"><?php echo t('【公式】LINEオープンチャット') ?><span class="line-link-icon777"></span></span>
         </a>
         <a href="<?php echo t('https://openchat-jp.line.me/other/beginners_guide') ?>" class="app_link app-dl" target="_blank">
-            <span class="text"><?php echo t('はじめてのLINEオープンチャットガイド（LINE公式）') ?></span>
+            <span class="text"><?php echo t('はじめてのLINEオープンチャットガイド（LINE公式）') ?><span class="line-link-icon777"></span></span>
         </a>
         <a href="https://line.me/download" class="app_link app-dl" target="_blank">
-            <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?></span>
+            <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?><span class="line-link-icon777"></span></span>
         </a>
     </aside>
     <div class="copyright">© OpenChat Graph<span><a class="unset" style="text-decoration: underline; cursor: pointer;" href="https://github.com/pika-0203" target="_blank">Project on GitHub @pika-0203</a></span></div>
