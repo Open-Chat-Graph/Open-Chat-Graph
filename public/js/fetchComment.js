@@ -24,17 +24,17 @@ export function timeElapsedString(datetime, thresholdMinutes = 15) {
     if (now.getFullYear() > targetDatetime.getFullYear()) {
         return [
             `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-            '#aaa'
+            '#777'
         ]
     } else if (months > 0) {
         return [
             `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-            '#aaa'
+            '#777'
         ]
     } else if (days > 0) {
         return [
             `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-            '#aaa'
+            '#777'
         ]
     } else if (hours > 0) {
         return [
