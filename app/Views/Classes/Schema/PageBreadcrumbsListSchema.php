@@ -19,7 +19,7 @@ class PageBreadcrumbsListSchema
     function __construct(
         private Metadata $metadata
     ) {
-        $this->publisherName = t('オプチャグラフ');
+        $this->publisherName = 'OpenChat Graph';
         $this->publisherLogo = url(['urlRoot' => '', 'paths' => ['assets/icon-192x192.png']]);
         $this->siteImg = url(['urlRoot' => '', 'paths' => ['assets/ogp.png']]);
     }
@@ -60,10 +60,9 @@ class PageBreadcrumbsListSchema
         return Schema::organization()
             ->name($publisherName)
             ->logo($publisherLogo)
-            ->description($this->metadata->description)
             ->email('support@openchat-review.me')
-            ->url(url())
-            ->sameAs(url('policy'));
+            ->url(url(["urlRoot" => "", "paths" => []]))
+            ->sameAs(['https://x.com/openchat_graph']);
     }
 
     function person()
@@ -167,7 +166,7 @@ class PageBreadcrumbsListSchema
         $itemList->itemListElement($listArray);
 
         $time = $dateModified->format('G:i');
-        
+
         $webSite = Schema::article()
             ->headline($title)
             ->description($description)
