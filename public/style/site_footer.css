@@ -13,6 +13,7 @@
   all: unset;
   display: block;
   font-family: var(--font-family);
+  margin-top: 6px;
 }
 
 .footer-link-box {
@@ -34,8 +35,8 @@
   cursor: pointer;
   text-decoration: none;
   text-underline-offset: 0.15em;
-  margin-bottom: 2px;
-  font-size: 13px;
+  margin-bottom: 4px;
+  font-size: 14px;
   line-height: 2.3;
   display: block;
   width: fit-content;
@@ -80,7 +81,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* シェアボタン */
