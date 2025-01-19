@@ -23,5 +23,5 @@
             <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?></span>
         </a>
     </aside>
-    <div class="copyright"><?php echo t('オプチャグラフ') ?><span><a class="unset" style="text-decoration: underline; cursor: pointer;" href="https://github.com/pika-0203" target="_blank">Project on GitHub @pika-0203</a></span></div>
+    <div class="copyright">© OpenChat Graph<span><a class="unset" style="text-decoration: underline; cursor: pointer;" href="https://github.com/pika-0203" target="_blank">Project on GitHub @pika-0203</a></span></div>
 </nav>

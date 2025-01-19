@@ -145,7 +145,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </aside>
 
     <footer class="footer-elem-outer">
-      <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
       <?php viewComponent('footer_inner') ?>
     </footer>
 

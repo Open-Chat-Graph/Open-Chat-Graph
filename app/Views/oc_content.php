@@ -22,7 +22,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
             <label class="checkbox-label" for="my-list-checkbox">
               <input type="checkbox" id="my-list-checkbox">
               <span>トップにピン留め</span>
-            </label>
+            </label>  
           </nav>
         <?php endif ?>
       </div>
@@ -263,12 +263,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
 
     <footer class="oc-page-footer" style="padding-top: 0;">
-      <aside class="open-btn2">
+      <aside class="open-btn2" style="margin-top: 0;">
         <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl">
           <span class="text"><?php echo t('人数統計CSVをダウンロード') ?></span>
         </a>
       </aside>
-      <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
       <?php viewComponent('footer_inner') ?>
     </footer>
 
