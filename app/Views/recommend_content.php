@@ -136,7 +136,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) ?>
+    <?php //GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
