@@ -269,7 +269,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner',/*  ['adSlot' => 'ocBottomWide'] */) ?>
+    <?php viewComponent('footer_inner') ?>
 
     <aside class="open-btn2 csv-dl" style="margin: -9px 0 .5rem 0;">
       <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl" style="font-size: 11px;">

@@ -7,12 +7,11 @@ use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema')) ?>
+viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => true]) ?>
 
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
@@ -33,7 +32,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
-        <?php viewComponent('footer_inner', ['adSlot' => 'siteBottomWide']) ?>
+        <?php viewComponent('footer_inner') ?>
         
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
             <div class="refresh-icon"></div><time style="font-size: 11px; color: #b7b7b7; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
