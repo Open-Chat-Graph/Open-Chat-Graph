@@ -20,9 +20,20 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-header-wrapper">
+
+      <div class="recommend-header-bottom" style="padding-top: 8px;">
+        <div class="recommend-data-desc">統計に基づくランキング</div>
+        <?php if (isset($hourlyUpdatedAt)) : ?>
+          <div class="recommend-header-time">
+            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
+          </div>
+        <?php endif ?>
+      </div>
+
+      <hr class="hr-top recommend">
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
@@ -33,49 +44,40 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php if (isset($recommend)) : ?>
         <figure class="talkroom_banner_img_figure">
           <?php $oc = $recommend->getPreviewList(1)[0] ?>
+          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
           <div class="talkroom_banner_img_area">
             <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
           </div>
-          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
         </figure>
       <?php endif ?>
 
-      <?php if (isset($recommend)) : ?>
-        <header class="recommend-ranking-section-header" style="padding: 0 0 6px 16px;">
-          <aside class="list-aside">
-            <details class="icon-desc">
-              <summary style="font-size: 12px; font-weight: normal; color: #b7b7b7; text-decoration: underline;">人数増加アイコンの説明</summary>
-              <div class="list-aside-details">
-                <small class="list-aside-desc">🔥：過去1時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR ?>人以上増加<?php if (count($recommend->hour) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
-                <small class="list-aside-desc">🚀：過去24時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24 ?>人以上増加<?php if (count($recommend->day) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
-                <small class="list-aside-desc">
-                  <span style="margin: 0 4px;">
-                    <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
-                      <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
-                    </svg>
-                  </span>：過去1週間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK ?>人以上増加<?php if (count($recommend->week) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (上位<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?>
-                </small>
-                <small class="list-aside-desc">🏆：リスト内で最も人数が多いトークルーム</small>
-              </div>
-            </details>
-          </aside>
-        </header>
-      <?php endif ?>
-
-      <p class="recommend-header-desc desc-bottom">
-        ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
-      </p>
-
-      <div class="recommend-header-bottom" style="padding-bottom: 8px;">
-        <div class="recommend-data-desc">統計に基づくランキング</div>
-        <?php if (isset($hourlyUpdatedAt)) : ?>
-          <div class="recommend-header-time">
-            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
-          </div>
-        <?php endif ?>
-      </div>
-
     </section>
+
+    <p class="recommend-header-desc desc-bottom">
+      ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
+    </p>
+
+    <?php if (isset($recommend)) : ?>
+      <header class="recommend-ranking-section-header" style="padding: 0 0 10px 16px;">
+        <aside class="list-aside">
+          <details class="icon-desc">
+            <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7">人数増加アイコンの説明</summary>
+            <div class="list-aside-details">
+              <small class="list-aside-desc">🔥：過去1時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR ?>人以上増加<?php if (count($recommend->hour) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
+              <small class="list-aside-desc">🚀：過去24時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24 ?>人以上増加<?php if (count($recommend->day) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
+              <small class="list-aside-desc">
+                <span style="margin: 0 4px;">
+                  <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
+                    <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
+                  </svg>
+                </span>：過去1週間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK ?>人以上増加<?php if (count($recommend->week) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (上位<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?>
+              </small>
+              <small class="list-aside-desc">🏆：リスト内で最も人数が多いトークルーム</small>
+            </div>
+          </details>
+        </aside>
+      </header>
+    <?php endif ?>
 
     <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
 
@@ -134,8 +136,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php //GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) 
-    ?>
+    <?php //GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
@@ -145,7 +146,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner') ?>
+    <?php viewComponent('footer_inner', /* ['adSlot' => 'recommendBottomWide'] */) ?>
 
   </article>
 

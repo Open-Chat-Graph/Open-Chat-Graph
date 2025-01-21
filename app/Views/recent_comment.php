@@ -5,7 +5,7 @@
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
-viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
+viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
     <style>
@@ -81,6 +81,7 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
     <article style="margin: 0 1rem; margin-top: .5rem;">
         <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
@@ -123,7 +124,7 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
 
     <section class="unset" style="display: block; margin-top: .5rem">
 
-        <?php viewComponent('footer_inner') ?>
+        <?php viewComponent('footer_inner', ['adSlot' => 'recentCommentBottomWide']) ?>
 
     </section>
 

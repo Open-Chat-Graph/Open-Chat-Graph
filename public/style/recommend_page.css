@@ -19,7 +19,7 @@ li {
 }
 
 .recommend-header-time {
-  font-size: 12px;
+  font-size: 13px;
   color: #777;
 }
 
@@ -32,8 +32,7 @@ li {
 .ranking-page-main .talkroom_banner_img_figure {
   padding: 0;
   width: 100%;
-  margin-bottom: 3px;
-  margin-top: 8px;
+  margin-bottom: 6px;
 }
 
 .ranking-page-main .talkroom_banner_img_figure figcaption {
@@ -45,7 +44,7 @@ li {
   overflow: hidden; */
   margin: 0 1rem;
   line-height: 120%;
-  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 .ranking-page-main .talkroom_banner_img_area {
@@ -59,7 +58,7 @@ li {
   display: block;
   width: 100%;
   aspect-ratio: 1.4 / 1;
-  filter: drop-shadow(1px 1px 3px rgba(160, 160, 160, 0.8));
+  filter: drop-shadow(2px 2px 2px rgba(160, 160, 160, 0.8));
 }
 
 .ranking-page-main .talkroom_link_h1 {
@@ -81,7 +80,7 @@ li {
 }
 
 .recommend-data-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: #06c755;
 }
 
@@ -95,11 +94,10 @@ li {
 }
 
 .recommend-header-desc.desc-bottom {
-  font-size: 13px;
+  font-size: 14px;
   color: #555;
   line-height: 1.5;
   margin: 0;
-  margin-bottom: 6px;
 }
 
 .top-ranking-list-aside {
@@ -169,7 +167,7 @@ li {
 
 .recommend-ranking-section-header .list-aside {
   margin: 0;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .recommend-ranking-bottom.list-aside {
@@ -296,7 +294,7 @@ section aside:hover {
 
 .list-aside details {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #777;
   font-weight: normal;
 }
@@ -307,14 +305,14 @@ section aside:hover {
 
 .list-aside-details {
   padding-left: 0.5rem;
-  margin-top: 4px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .list-aside-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: #555;
   display: block;
 }
@@ -373,13 +371,13 @@ section aside:hover {
 
 .recommend-header-desc-text {
   color: #111;
-  font-size: 18px;
+  font-size: 20px;
   white-space: unset;
   font-weight: bold;
   font-family: '游ゴシック体', 'Yu Gothic', YuGothic, Meiryo, 'メイリオ', ArialMT, Hiragino Kaku Gothic Pro, 'ヒラギノ角ゴ Pro W3', Osaka;
   line-height: 1.3;
   padding: 0 1rem;
-  margin: 8px 0 0 0;
+  margin: 6px 0 2px 0;
 }
 
 .hr-top.recommend {
@@ -433,7 +431,7 @@ section aside:hover {
   }
 
   .recommend-header-desc.desc-bottom {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .ranking-desc .recommend-desc {
