@@ -79,7 +79,8 @@ class SyncOpenChat
 
     private function isFailedDailyUpdate(): bool
     {
-        return isDailyUpdateTime(new \DateTime('-2 hour'))
+        return !isDailyUpdateTime()
+            && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
             && $this->state->getBool(StateType::isDailyTaskActive);
     }
 
