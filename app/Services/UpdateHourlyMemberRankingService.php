@@ -34,7 +34,6 @@ class UpdateHourlyMemberRankingService
         addVerboseCronLog(__METHOD__ . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
 
         $this->updateStaticData($time);
-        $this->saveNextFiltersCache($time);
     }
 
     private function getCachedFilters(string $time)
@@ -45,8 +44,11 @@ class UpdateHourlyMemberRankingService
             : $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
     }
 
-    private function saveNextFiltersCache(string $time)
+    function saveNextFiltersCache()
     {
+        $time = $this->rankingPositionHourRepository->getLastHour();
+        if (!$time) return;
+
         addVerboseCronLog(__METHOD__ . ' Start ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
         saveSerializedFile(
             AppConfig::getStorageFilePath('openChatHourFilterId'),
