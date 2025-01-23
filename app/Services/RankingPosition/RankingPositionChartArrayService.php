@@ -17,7 +17,6 @@ class RankingPositionChartArrayService
     private const SUBSTR_HI_OFFSET = 11;
     private const SUBSTR_HI_LEN = 5;
     private const START_DATE = '2024-01-19';
-    private const MAX_RETRIES = 5;
 
     function __construct(
         private RankingPositionPageRepositoryInterface $rankingPositionPageRepository,
@@ -33,33 +32,9 @@ class RankingPositionChartArrayService
         return $this->generateChartArray(
             $this->generateDateArray($startDate, $endDate),
             $startDate,
-            $this->getDailyPositionWithRetry($type, $open_chat_id, $category),
+            $this->rankingPositionPageRepository->getDailyPosition($type, $open_chat_id, $category),
             $type === RankingType::Rising
         );
-    }
-
-    private function getDailyPositionWithRetry(
-        RankingType $type,
-        int $open_chat_id,
-        int $category,
-        int $maxRetries = self::MAX_RETRIES
-    ): RankingPositionPageRepoDto {
-        $attempts = 0;
-
-        while ($attempts < $maxRetries) {
-            try {
-                return $this->rankingPositionPageRepository->getDailyPosition($type, $open_chat_id, $category);
-            } catch (\PDOException $e) {
-                if (strpos($e->getMessage(), 'database disk image is malformed') === false) {
-                    throw $e;
-                }
-
-                usleep(100000); // Wait for 0.1 seconds
-                $attempts++;
-            }
-        }
-
-        throw new \RuntimeException("Failed to get daily position after {$maxRetries} attempts.");
     }
 
     /**
