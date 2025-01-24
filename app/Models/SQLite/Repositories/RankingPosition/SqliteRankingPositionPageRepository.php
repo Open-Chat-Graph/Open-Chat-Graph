@@ -46,7 +46,7 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
 
         $attempts = 0;
         $result = null;
-        while ($attempts < self::MAX_RETRIES || !is_null($result)) {
+        while ($attempts < self::MAX_RETRIES && is_null($result)) {
             try {
                 $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
             } catch (\PDOException $e) {
