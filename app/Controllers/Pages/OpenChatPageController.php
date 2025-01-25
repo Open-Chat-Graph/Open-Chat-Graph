@@ -45,6 +45,7 @@ class OpenChatPageController
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
+        http_response_code(404);
         return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }
 
