@@ -102,6 +102,8 @@ class GoogleAdsence
      */
     static function output(array $adElement)
     {
+        if (AppConfig::$isStaging || AppConfig::$disableAds) return;
+
         if (count($adElement) === 1) {
             self::responsive($adElement[0], 'responsive-google');
         } else {
@@ -111,7 +113,6 @@ class GoogleAdsence
 
     private static function rectangle(int $adSlot, string $cssClass)
     {
-        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
 
         $adClient = self::AD_CLIENT;
         echo <<<EOT
@@ -121,8 +122,6 @@ class GoogleAdsence
 
     private static function responsive(int $adSlot, string $cssClass)
     {
-        if (AppConfig::$isStaging && !AppConfig::$isDevlopment) return;
-
         $adClient = self::AD_CLIENT;
         echo <<<EOT
         <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -147,7 +146,7 @@ class GoogleAdsence
 
     static function gTag(?string $dataOverlays = null)
     {
-        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment || AppConfig::$disableAds) return;
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = self::AD_CLIENT;
