@@ -134,6 +134,7 @@ class AppConfig
 
     static bool $isDevlopment = false;
     static bool $isStaging = false;
+    static bool $disableStaticDataFile = false;
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
 
