@@ -9,27 +9,13 @@ li {
 }
 
 @media screen and (min-width: 512px) {
-  .recommend-header-wrapper {
-    padding-top: 1rem;
-  }
+  .recommend-header-wrapper {}
 }
 
 .recommend-header {
   padding: 1rem;
   padding-top: 20px;
   text-align: start;
-}
-
-@media screen and (min-width: 512px) {
-  .recommend-header {
-    order: 1;
-  }
-}
-
-@media screen and (min-width: 512px) {
-  .recommend-header-desc-wrapper {
-    order: 2;
-  }
 }
 
 .recommend-header-time {
@@ -46,12 +32,7 @@ li {
 .ranking-page-main .talkroom_banner_img_figure {
   padding: 0;
   width: 100%;
-}
-
-@media screen and (min-width: 512px) {
-  .ranking-page-main .talkroom_banner_img_figure {
-    order: 0;
-  }
+  margin-bottom: 6px;
 }
 
 .ranking-page-main .talkroom_banner_img_figure figcaption {
@@ -63,12 +44,13 @@ li {
   overflow: hidden; */
   margin: 0 1rem;
   line-height: 120%;
-  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 .ranking-page-main .talkroom_banner_img_area {
   aspect-ratio: 1.4 / 1;
-  width: 100%;
+  width: calc(100% - 2rem);
+  margin: auto;
 }
 
 .ranking-page-main .talkroom_banner_img {
@@ -76,6 +58,7 @@ li {
   display: block;
   width: 100%;
   aspect-ratio: 1.4 / 1;
+  filter: drop-shadow(2px 2px 2px rgba(160, 160, 160, 0.8));
 }
 
 .ranking-page-main .talkroom_link_h1 {
@@ -93,6 +76,7 @@ li {
   margin: 0;
   display: flex;
   justify-content: space-between;
+  padding: 0 1rem;
 }
 
 .recommend-data-desc {
@@ -110,9 +94,9 @@ li {
 }
 
 .recommend-header-desc.desc-bottom {
-  font-size: 11px;
-  color: #b7b7b7;
-  line-height: 1.25;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -132,7 +116,37 @@ li {
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item::before {
   content: counter(openchat-counter2);
-  counter-increment: openchat-counter2;
+  counter-increment: openchat-counter2 -1;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
+  content: "🥇";
+  font-style: normal;
+  font-size: 24px;
+  left: -31px;
+  top: 23px;
+  line-height: 1;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
+  content: "🥈";
+  font-style: normal;
+  font-size: 22px;
+  left: -30px;
+  top: 23px;
+  line-height: 1;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
+  content: "🥉";
+  font-style: normal;
+  font-size: 20px;
+  left: -29px;
+  top: 23px;
+}
+
+.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal {
+  margin-bottom: 1.5rem;
 }
 
 .openchat-item-list.parent .ranking-page-main .openchat-item-lower-outer {
@@ -355,10 +369,37 @@ section aside:hover {
   color: #777;
 }
 
+.recommend-header-desc-text {
+  color: #111;
+  font-size: 20px;
+  white-space: unset;
+  font-weight: bold;
+  font-family: '游ゴシック体', 'Yu Gothic', YuGothic, Meiryo, 'メイリオ', ArialMT, Hiragino Kaku Gothic Pro, 'ヒラギノ角ゴ Pro W3', Osaka;
+  line-height: 1.3;
+  padding: 0 1rem;
+  margin: 6px 0 2px 0;
+}
+
+.hr-top.recommend {
+  all: unset;
+  display: block;
+  border-bottom: 1px solid #efefef;
+  margin: 0 auto;
+  margin-bottom: 1px;
+  padding: 1px 0;
+  width: calc(100% - 2rem);
+}
+
 @media screen and (min-width: 512px) {
   .ranking-page-main .share-nav {
     margin: 11px 0;
     margin-bottom: -5px;
+  }
+
+  .recommend-header-desc-text {
+    font-size: 1.5rem;
+    line-height: 1.6;
+    font-weight: bold;
   }
 
   .ranking-page-main .share-nav-inner {
@@ -390,7 +431,7 @@ section aside:hover {
   }
 
   .recommend-header-desc.desc-bottom {
-    font-size: 13px;
+    font-size: 18px;
   }
 
   .ranking-desc .recommend-desc {
@@ -401,6 +442,7 @@ section aside:hover {
     margin-top: 1rem;
     font-size: 17px;
   }
+
   .list-aside .tag-list li {
     margin: 8px 0 0 4px;
   }

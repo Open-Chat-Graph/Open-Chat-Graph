@@ -21,7 +21,7 @@ class UpdateHourlyMemberRankingService
         private StatisticsRepositoryInterface $statisticsRepository,
     ) {}
 
-    function update()
+    function update(bool $saveNextFiltersCache = true)
     {
         $time = $this->rankingPositionHourRepository->getLastHour();
         if (!$time) return;
@@ -34,7 +34,9 @@ class UpdateHourlyMemberRankingService
         addVerboseCronLog(__METHOD__ . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
 
         $this->updateStaticData($time);
-        $this->saveNextFiltersCache($time);
+        
+        if ($saveNextFiltersCache)
+            $this->saveNextFiltersCache($time);
     }
 
     private function getCachedFilters(string $time)

@@ -31,6 +31,7 @@ html {
 .open-btn.sp-btn {
   margin: 0;
   padding-top: 1rem;
+  white-space: nowrap;
 }
 
 .comment-section {
@@ -50,7 +51,7 @@ html {
 }
 
 .recommend-list-aside:has(.top-ranking.not-rank) .top-ranking.not-rank {
-  padding: 1rem;
+  padding: .5rem 1rem;
 }
 
 .oc-page-footer {
@@ -93,18 +94,18 @@ html {
 
 .talkroom_banner_img_area {
   min-width: 30.44316%;
-  height: 30.44316%;
   max-width: 30.44316%;
-  max-height: 30.44316%;
-  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
 }
+
 
 .talkroom_banner_img {
   object-fit: cover;
   display: flex;
   border-radius: 7px;
   aspect-ratio: 1;
-  height: 100%;
+  width: 100%;
 }
 
 .openchat-header-right {
@@ -347,14 +348,12 @@ html {
   align-items: flex-start;
   flex-direction: column;
   justify-content: center;
+  margin-top: 6px;
+  width: 100%;
 }
 
 .my-list-form .checkbox-label {
-  margin-top: 0px;
   height: fit-content;
-  border: 1px solid #efefef;
-  height: 42px;
-  padding: 0 6px;
   border-radius: 7px;
   word-break: keep-all;
   color: #111;
@@ -362,9 +361,7 @@ html {
   font-weight: bold;
 }
 
-.open-btn {
-  margin: 19px 0 19px 0;
-}
+.open-btn {}
 
 .open-btn.pc-btn {
   display: none;
@@ -372,17 +369,21 @@ html {
 
 .openchat_link {
   background: linear-gradient(-156deg, #0dc95a, #11d871 23.96%, #11d593 55.46%, #12cfcd 83.85%, #16c2c1);
-  border-radius: 7px;
+  border-radius: 5rem;
   box-sizing: border-box;
   color: #fff;
   font-weight: 700;
-  height: 42px;
+  /* height: 24px; */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 12px;
   text-decoration: none;
   width: 100%;
+  padding: 8px 14px;
+  line-height: 1;
+  gap: 6px;
+  flex-direction: column;
 }
 
 .openchat_link .text {
@@ -529,20 +530,9 @@ html {
     margin: 2rem 0;
   }
 
-  .open-btn.sp-btn {
-    display: none;
-  }
-
-  .open-btn.pc-btn {
-    display: block;
-    margin-top: 9px;
-    margin-bottom: 0;
-  }
-
   .openchat_link {
-    height: 38px;
     width: fit-content;
-    padding: 0 2rem;
+    padding: 8px 1rem;
   }
 
   .openchat_link .text {
@@ -713,4 +703,10 @@ html {
 
 .MuiToggleButton-sizeSmall.MuiToggleButton-standard {
   border-radius: 7px;
+}
+
+.MuiTypography-root.MuiTypography-h3 {
+  font-size: 16px;
+  color: #111;
+  font-family: var(--font-family);
 }

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php
 
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
-viewComponent('head', compact('_css', '_meta')) ?>
+viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
 
 <body class="body">
     <style>
@@ -19,7 +19,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         .page-select {
             /* margin-top: 1.75rem;
             padding-bottom: 0.85rem; */
-            margin: 1rem 0;
+            margin: 12px 0 18px 0;
         }
 
         .page-select form,
@@ -41,16 +41,18 @@ viewComponent('head', compact('_css', '_meta')) ?>
             background: rgb(250, 250, 250);
             width: 100%;
             justify-content: space-evenly;
-            padding: 1.5rem 2rem;
+            padding: 4px 2rem;
         }
 
         article .search-pager {
             margin: 0 -1rem;
             width: calc(100% + 2rem);
+            border-bottom: 1px solid #efefef;
+            border-top: 1px solid #efefef;
         }
 
         .head-pager .search-pager {
-            padding: 8px 0rem;
+            padding: 4px 0rem;
         }
 
         .head-pager .button01 a {
@@ -74,17 +76,15 @@ viewComponent('head', compact('_css', '_meta')) ?>
         }
 
         section aside:hover {
-            all: unset;
+            box-shadow: unset;
         }
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
-    <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
-    <hr class="hr-top">
-    <article style="margin: 0 1rem;">
-        <header class="openchat-list-title-area unset" style="margin: 1rem 0;">
+    <article style="margin: 0 1rem; margin-top: .5rem;">
+        <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
-                <h2 class="list-title">
+                <h2 class="openchat-list-title" style="font-size: 20px;">
                     コメントのタイムライン
                 </h2>
                 <p style="margin: 0;">
@@ -121,47 +121,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
 
-    <section class="unset" style="display: block; margin: 1rem 0">
-        <hr class="hr-bottom">
+    <section class="unset" style="display: block; margin-top: .5rem">
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('topic_tag', compact('topPageDto')) ?>
-        </aside>
-
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
-        </aside>
-        <hr class="hr-bottom">
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-        </aside>
-        <hr class="hr-bottom">
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
-        <hr class="hr-top">
-        <aside class="top-ranking-list-aside">
-            <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-        </aside>
-        <hr class="hr-bottom">
-
-        <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
-
-        <footer class="footer-elem-outer">
-            <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-            <?php viewComponent('footer_inner') ?>
-        </footer>
+        <?php viewComponent('footer_inner') ?>
 
     </section>
 
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php GAd::loadAdsTag() ?>
 
     <script type="module">
         import {

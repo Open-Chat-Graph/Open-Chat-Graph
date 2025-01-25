@@ -8,7 +8,7 @@ export function timeElapsedString(datetime, thresholdMinutes = 15) {
     const totalMinutes = diffMs / 1000 / 60;  // ミリ秒を分に変換
 
     if (totalMinutes <= thresholdMinutes) {
-        return 'たった今';
+        return ['たった今', '#4d73ff'];
     }
 
     const diffDate = new Date(diffMs);
@@ -21,25 +21,45 @@ export function timeElapsedString(datetime, thresholdMinutes = 15) {
 
     const formattedTime = `${targetDatetime.getHours()}:${String(targetDatetime.getMinutes()).padStart(2, '0')}`;
 
-    if (years > 0) {
-        return `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
+    if (now.getFullYear() > targetDatetime.getFullYear()) {
+        return [
+            `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
+            '#777'
+        ]
     } else if (months > 0) {
-        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
+        return [
+            `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
+            '#777'
+        ]
     } else if (days > 0) {
-        return `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`;
+        return [
+            `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
+            '#777'
+        ]
     } else if (hours > 0) {
-        return hours + '時間前';
+        return [
+            hours + '時間前',
+            '#4d73ff'
+        ]
     } else if (minutes > 0) {
-        return minutes + '分前';
+        return [
+            minutes + '分前',
+            '#4d73ff'
+        ]
     } else {
-        return seconds + '秒前';
+        return [
+            seconds + '秒前',
+            '#4d73ff'
+        ]
     }
 }
 
 export function applyTimeElapsedString() {
     const commentTime = document.querySelectorAll('.comment-time span')
     commentTime.forEach((time) => {
-        time.textContent = timeElapsedString(time.textContent)
+        const [formattedTime, color] = timeElapsedString(time.textContent)
+        time.textContent = formattedTime
+        time.style.color = color
     })
 }
 

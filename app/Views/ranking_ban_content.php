@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php
 
 use Shadow\Kernel\Reception as R;
@@ -232,9 +232,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <?php viewComponent('pager_nav_ranking_ban', $_pagerNavArg) ?>
         <?php endif ?>
     </main>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>

@@ -14,7 +14,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
 ?>
 
 <ol class="openchat-item-list unset" style="margin-bottom: -0.5rem;">
-  <?php foreach ($openChatList as $oc) : ?>
+  <?php foreach ($openChatList as $key => $oc) : ?>
     <?php if ($count1 >= $len) break; ?>
     <?php if (mb_strlen($oc['description']) > 0 || !$omit) : ?>
       <?php $count1++ ?>
@@ -59,19 +59,11 @@ use App\Views\Ads\GoogleAdsence as GAd;
             </div>
           <?php endif ?> -->
         </footer>
-
+        <div class="link-overlay hover"></div>
       </li>
 
-      <?php if ($ads && $count1 % 10 !== 0) : ?>
+      <?php if ($key < $len - 1) : ?>
         <hr class="hr-bottom" style="margin: 4px -1rem; padding: 0; width: calc(100% + 2rem);">
-      <?php endif ?>
-
-      <?php if ($ads && $count1 < $listCount && $count1 % 10 === 0) : ?>
-        <li class="unset" style="margin: 0 -1rem; display: block;">
-          <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
-          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-          <hr class="hr-top" style="margin: 8px 0 4px 0; padding: 0; width: 100%;">
-        </li>
       <?php endif ?>
 
     <?php else: ?>

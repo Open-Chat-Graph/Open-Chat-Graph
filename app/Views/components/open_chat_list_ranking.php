@@ -1,8 +1,8 @@
 <!-- @param array $openChatList -->
 <!-- @param bool $isHourly -->
-<ol class="openchat-item-list unset">
-  <?php foreach ($openChatList as $oc) : ?>
-    <li class="openchat-item unset">
+<ol class="openchat-item-list unset" style="counter-reset: openchat-counter <?php echo isset($noReverse) && $noReverse ? 0 : count($openChatList) + 1 ?>;">
+  <?php foreach (isset($noReverse) && $noReverse ? $openChatList : array_reverse($openChatList) as $oc) : ?>
+    <li class="openchat-item unset <?php echo isset($noReverse) && $noReverse ? '' : 'reverse' ?>">
       <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id'] . (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null ? '?limit=hour' : '')) ?>" tabindex="-1" aria-hidden="true">
         <span class="visually-hidden"><?php echo $oc['name'] ?></span>
       </a>
@@ -14,29 +14,26 @@
       <footer class="openchat-item-lower-outer">
         <div class="openchat-item-lower unset">
           <span><?php echo sprintfT('メンバー %s人', formatMember($oc['member'])) ?></span>
-          <?php if (isset($oc['category']) && $oc['category']) : ?>
-            <div class="openchat-item-mui-chip-outer">
-              <span class="openchat-item-mui-chip-inner" aria-label="<?php echo t('カテゴリー') ?>: <?php echo getCategoryName($oc['category']) ?>"><?php echo getCategoryName($oc['category']) ?></span>
-            </div>
-          <?php endif ?>
-        </div>
-        <div class="openchat-item-lower unset <?php echo ($oc['diff_member'] ?? 1) > 0 ? 'positive' : 'negative' ?>">
-          <?php if (isset($oc['member'])) : ?>
-          <?php endif ?>
-          <?php if (($oc['diff_member'] ?? 0) > 0) : ?>
-            <span>
-              <span class="openchat-item-stats">↑ <?php echo sprintfT('%s人増加', $oc['diff_member']) ?></span>
-            </span>
-          <?php elseif (($oc['diff_member'] ?? 1) < 0) : ?>
-            <span>
-              <span class="openchat-item-stats">↓ <?php echo abs($oc['diff_member']) ?></span>
-            </span>
-          <?php elseif (($oc['diff_member'] ?? 1) === 0) : ?>
-            <span>±0</span>
-          <?php endif ?>
-          <?php if (isset($oc['time'])) : ?>
-            <span class="registration-date blue"><?php echo timeElapsedString($oc['time']) ?></span>
-          <?php endif ?>
+
+          <div class="openchat-item-lower unset <?php echo ($oc['diff_member'] ?? 1) > 0 ? 'positive' : 'negative' ?>">
+            <?php if (isset($oc['member'])) : ?>
+            <?php endif ?>
+            <?php if (($oc['diff_member'] ?? 0) > 0) : ?>
+              <span>
+                <span class="openchat-item-stats">・ <?php echo sprintfT('%s人増加', $oc['diff_member']) ?></span>
+              </span>
+            <?php elseif (($oc['diff_member'] ?? 1) < 0) : ?>
+              <span>
+                <span class="openchat-item-stats">・ <?php echo abs($oc['diff_member']) ?></span>
+              </span>
+            <?php elseif (($oc['diff_member'] ?? 1) === 0) : ?>
+              <span>±0</span>
+            <?php endif ?>
+            <?php if (isset($oc['time'])) : ?>
+              <span class="registration-date blue"><?php echo timeElapsedString($oc['time']) ?></span>
+            <?php endif ?>
+          </div>
+
         </div>
       </footer>
     </li>

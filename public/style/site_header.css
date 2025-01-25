@@ -46,6 +46,10 @@ body::before {
   margin-right: 1rem;
 }
 
+.modify-top-padding .topic-tag {
+  padding-top: 4px;
+}
+
 /* ヘッダー */
 .body {
   max-width: var(--width);
@@ -325,6 +329,12 @@ body::before {
   margin: 0 1px;
 }
 
+.copyright .line-link-icon777,
+.app_link .line-link-icon777 {
+  width: 12px;
+  height: 12px;
+}
+
 /* チェックボックス */
 .checkbox-label {
   all: unset;
@@ -335,7 +345,7 @@ body::before {
   user-select: none;
   box-sizing: border-box;
   color: #303030;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .checkbox-label input {
@@ -550,6 +560,12 @@ body::before {
 } */
 
 .rectangle-ads {
+  width: auto;
+  height: 280px;
+}
+
+.rectangle3-ads {
+  width: auto;
   aspect-ratio: 1.2;
 }
 
@@ -560,8 +576,13 @@ body::before {
 }
 
 @media screen and (min-width: 512px) {
+
+  .rectangle3-ads,
   .rectangle-ads {
-    aspect-ratio: 2 / 1;
+    height: 280px;
+    width: auto;
+    margin: auto;
+    aspect-ratio: unset;
   }
 }
 
@@ -570,21 +591,23 @@ body::before {
   background: rgb(250, 250, 250);
 }
 
-ins.adsbygoogle[data-ad-status='unfilled'] {
+/* ins.adsbygoogle[data-ad-status='unfilled'] {
   display: none !important;
 }
 
 ins.adsbygoogle[data-anchor-status='dismissed'] {
   display: none !important;
-}
+} */
 
 .rectangle2-ads {
+  width: auto;
   aspect-ratio: 16 / 9;
 }
 
 @media screen and (min-width: 512px) {
   .rectangle2-ads {
-    aspect-ratio: 21 / 9;
+    height: 280px;
+    width: 100%;
   }
 }
 

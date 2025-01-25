@@ -7,9 +7,14 @@
     $listArray = $recommend->getList($shuffle ?? false, ($limit ?? null) ? AppConfig::LIST_LIMIT_TOP_RANKING : null, $id ?? 0);
   }
 
-  foreach ($listArray as $oc) : ?>
+  $listLen = count($listArray);
+  $showReverseListMedal = $showReverseListMedal ?? false;
+
+  foreach ($listArray as $key => $oc) : ?>
     <li class="unset">
-      <div class="openchat-item">
+      <div class="openchat-item <?php if ($showReverseListMedal && $listLen === $key + 1) echo 'goldmedal';
+                                elseif ($showReverseListMedal && $listLen - 1 === $key + 1) echo 'silvermedal';
+                                elseif ($showReverseListMedal && $listLen - 2 === $key + 1) echo 'blonzemedal' ?>">
         <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id']) . ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME ? '?limit=hour' : '') ?>" tabindex="-1" aria-hidden="true">
           <span class="visually-hidden"><?php echo $oc['name'] ?></span>
         </a>

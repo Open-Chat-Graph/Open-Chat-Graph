@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php viewComponent('policy_head', compact('_css', '_meta') + ['noindex' => true]) ?>
 
 <body>
@@ -11,9 +11,7 @@
             <p>サイト内のコンテンツに関連する広告を表示しています。</p>
         </article>
     </main>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
 </body>
 
 </html>

@@ -3,7 +3,7 @@
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
 use App\Services\Recommend\RecommendUtility;
-
+use App\Views\Ads\GoogleAdsence as GAd;
 
 $tags = $topPageDto->recommendList;
 
@@ -28,9 +28,9 @@ function greenTag($word)
 
 ?>
 
-<article class="top-ranking">
+<article class="top-ranking topic-tag">
     <div>
-        <header class="openchat-list-title-area unset" style="margin-bottom: 10px;">
+        <header class="openchat-list-title-area unset" style="margin-bottom: 0px;">
             <div class="openchat-list-date unset ranking-url">
                 <h2 class="unset">
                     <span class="openchat-list-title">いま人数急増中のテーマ</span>
@@ -55,7 +55,7 @@ function greenTag($word)
                 </li>
             <?php endforeach ?>
 
-            <?php if (count($tags['hour']) + count($tags['hour24']) > 41) : ?>
+            <?php if (count($tags['hour']) + count($tags['hour24']) > 21) : ?>
                 <li id="open-btn-li">
                     <button class="unset tag-btn open-btn" onclick="this.parentElement.parentElement.classList.toggle('open')"></button>
                 </li>
@@ -63,4 +63,3 @@ function greenTag($word)
         </ul>
     </div>
 </article>
-<hr class="hr-bottom" style="width: 100%;">

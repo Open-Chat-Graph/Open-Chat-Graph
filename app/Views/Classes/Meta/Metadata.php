@@ -19,7 +19,7 @@ class Metadata
 
     public function __construct()
     {
-        if (path() ?? '/' === '/') {
+        if (path('') ?? '/' === '/') {
             $this->og_type = 'website';
         } else {
             $this->og_type = 'article';
@@ -29,9 +29,9 @@ class Metadata
         $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
 
         $this->title = t('オプチャグラフ');
-        $this->site_name = t('オプチャグラフ');
+        $this->site_name = 'OpenChat Graph';
 
-        $this->locale = t('ja_JP');
+        $this->locale = t('ja');
 
         $description = t('オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。');
         $this->description = $description;
@@ -89,8 +89,8 @@ class Metadata
     {
         return Schema::webSite()
             ->name($this->site_name)
-            ->url($this->site_url)
-            ->description($this->description)
+            ->url(url(['urlRoot' => '', 'paths' => []]))
+            ->alternateName(['LINE OpenChat Graph', 'OC Graph', 'オプチャグラフ'])
             ->image($this->image_url)
             ->toScript();
     }

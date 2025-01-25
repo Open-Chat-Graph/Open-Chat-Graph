@@ -63,7 +63,7 @@ class RecommendOpenChatPageController
         $topPageDto = $staticDataGeneration->getTopPageData();
 
         $recommend = $recommendPageList->getListDto($tag);
-        if (!$recommend) {
+        if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
             $_meta->setTitle("【最新】「{$tag}」おすすめオープンチャットランキング");
             noStore();

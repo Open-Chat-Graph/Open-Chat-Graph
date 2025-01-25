@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php
 
 use App\Views\Content\LabsNews;
@@ -32,7 +32,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
 
                 <h2>(公開停止中)オプチャ公式ランキング掲載の分析</h2>
                 <!-- <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析"> -->
-                    <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
+                <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
                 <!-- </a> -->
                 <p>この分析機能は、ルームの集客にとって重要な公式ランキングの可視性の傾向を分析することができます。</p>
                 <p>全オープンチャットの状況を追跡し、ランキングへの掲載状態（掲載・未掲載）、および内容変更の履歴を記録しています。
@@ -45,10 +45,8 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
 
             </article>
         </main>
-        <footer class="footer-elem-outer">
-            <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-            <?php viewComponent('footer_inner') ?>
-        </footer>
+
+        <?php viewComponent('footer_inner') ?>
     </div>
 
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>

@@ -79,7 +79,8 @@ class SyncOpenChat
 
     private function isFailedDailyUpdate(): bool
     {
-        return isDailyUpdateTime(new \DateTime('-2 hour'))
+        return !isDailyUpdateTime()
+            && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
             && $this->state->getBool(StateType::isDailyTaskActive);
     }
 
@@ -115,12 +116,18 @@ class SyncOpenChat
             ] : null,
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
-            [fn() => $this->hourlyMemberRanking->update(), 'hourlyMemberRankingUpdate'],
+            [function () {
+                $saveNextFiltersCache  = !$this->state->getBool(StateType::isDailyTaskActive);
+                if (!$saveNextFiltersCache) {
+                    addCronLog('Skip saveNextFiltersCache because dailyTask is active');
+                }
+
+                $this->hourlyMemberRanking->update($saveNextFiltersCache);
+            }, 'hourlyMemberRankingUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     addCronLog('Skip updateInvitationTicketAll because it is active');
-                    AdminTool::sendLineNofity('Skip updateInvitationTicketAll because it is active');
                     return;
                 }
 
@@ -132,7 +139,6 @@ class SyncOpenChat
             [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
                     addCronLog('Skip updateRecommendTables because dailyTask is active');
-                    AdminTool::sendLineNofity('Skip updateRecommendTables because dailyTask is active');
                     return;
                 }
 

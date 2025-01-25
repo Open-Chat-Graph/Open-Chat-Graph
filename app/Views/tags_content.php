@@ -16,8 +16,8 @@ function memberCount(int $count)
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
-<?php viewComponent('head', compact('_css', '_meta', '_schema')) ?>
+<html lang="<?php echo t('ja') ?>">
+<?php viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => false]) ?>
 
 <body class="body">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
@@ -134,13 +134,9 @@ function memberCount(int $count)
             </article>
         <?php endforeach ?>
     </main>
-    <footer>
-        <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-    <?php echo $_meta->generateTopPageSchema() ?>
     <?php if ($isAdminPage && isset($adsList)) : ?>
         <script>
             document.querySelectorAll('.updateTagsMapForms').forEach(el => {

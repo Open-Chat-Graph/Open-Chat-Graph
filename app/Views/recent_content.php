@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
-<?php viewComponent('head', compact('_css', '_meta') + ['noindex' => true]) ?>
+<html lang="<?php echo t('ja') ?>">
+<?php viewComponent('head', compact('_css', '_meta') + ['noindex' => true] + ['disableGAd' => false]) ?>
 
 <body class="body">
     <style>
@@ -62,9 +62,7 @@
             <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
         </article>
     </main>
-    <footer>
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>

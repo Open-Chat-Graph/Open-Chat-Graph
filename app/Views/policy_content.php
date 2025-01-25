@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php viewComponent('policy_head', compact('_css', '_meta')) ?>
 
 <body>
@@ -249,13 +249,9 @@
                     </p>
                 </section>
             <?php endif ?>
-            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteSeparatorRectangle']) ?>
         </article>
     </main>
-    <footer class="footer-elem-outer">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php viewComponent('footer_inner') ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

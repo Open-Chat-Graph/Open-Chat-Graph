@@ -19,7 +19,7 @@ class PageBreadcrumbsListSchema
     function __construct(
         private Metadata $metadata
     ) {
-        $this->publisherName = t('オプチャグラフ');
+        $this->publisherName = 'OpenChat Graph';
         $this->publisherLogo = url(['urlRoot' => '', 'paths' => ['assets/icon-192x192.png']]);
         $this->siteImg = url(['urlRoot' => '', 'paths' => ['assets/ogp.png']]);
     }
@@ -60,10 +60,9 @@ class PageBreadcrumbsListSchema
         return Schema::organization()
             ->name($publisherName)
             ->logo($publisherLogo)
-            ->description($this->metadata->description)
             ->email('support@openchat-review.me')
-            ->url(url())
-            ->sameAs(url('policy'));
+            ->url(url(["urlRoot" => "", "paths" => []]))
+            ->sameAs(['https://x.com/openchat_graph']);
     }
 
     function person()
@@ -73,34 +72,6 @@ class PageBreadcrumbsListSchema
         return Schema::person()
             ->name($authorName)
             ->url($authorUrl);
-    }
-
-    function generateStructuredDataWebSite(
-        string $siteName,
-        string $description,
-        string $url,
-        string $image,
-        \DateTimeInterface $datePublished,
-        \DateTimeInterface $dateModified
-    ): string {
-        $webSite = Schema::webSite()
-            ->name($siteName)
-            ->description($description)
-            ->image($image)
-            ->author($this->publisher())
-            ->url($url)
-            ->datePublished($datePublished)
-            ->dateModified($dateModified)
-            ->potentialAction(
-                Schema::searchAction()
-                    ->target(
-                        Schema::entryPoint()
-                            ->urlTemplate(url('ranking?keyword={search_term_string}'))
-                    )
-                    ->{'query-input'}('required name=search_term_string')
-            );
-
-        return $webSite->toScript();
     }
 
     function lineOcOrganization()
@@ -195,7 +166,7 @@ class PageBreadcrumbsListSchema
         $itemList->itemListElement($listArray);
 
         $time = $dateModified->format('G:i');
-        // WebPageの構築
+
         $webSite = Schema::article()
             ->headline($title)
             ->description($description)

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
-<?php viewComponent('head', compact('_css', '_meta')) ?>
+<html lang="<?php echo t('ja') ?>">
+<?php viewComponent('head', compact('_css', '_meta') + ['disableGAd' => false]) ?>
 
 <body class="body">
     <style>
@@ -72,9 +72,7 @@
             公式サイトに掲載されていないオープンチャットや、そのURLがわからない場合は登録ができません。
         </p>
     </main>
-    <footer style="all: unset; display:block; padding:1rem;">
-        <?php viewComponent('footer_inner') ?>
-    </footer>
+    <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <script type="module">
         import {

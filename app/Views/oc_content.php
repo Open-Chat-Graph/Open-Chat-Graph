@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo t('ja_JP') ?>">
+<html lang="<?php echo t('ja') ?>">
 <?php
 
 use App\Config\AppConfig;
@@ -13,13 +13,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-
-    <hr class="hr-top">
-
     <!-- オープンチャット表示ヘッダー -->
-    <section class="openchat-header unset" style="padding-top: 16px;">
+    <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
+          <nav class="my-list-form">
+            <label class="checkbox-label" for="my-list-checkbox">
+              <input type="checkbox" id="my-list-checkbox">
+              <span>トップにピン留め</span>
+            </label>
+          </nav>
+        <?php endif ?>
       </div>
 
       <div class="openchat-header-right">
@@ -104,36 +109,16 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <?php endif ?>
 
         </div>
-
-        <?php if ($oc['url']) : ?>
-          <section class="open-btn pc-btn">
-            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
-              <?php if ($oc['join_method_type'] !== 0) : ?>
-                <svg style="height: 13px; fill: #fff; margin-right: 6px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
-                  <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
-                </svg>
-              <?php endif ?>
-              <span class="text"><?php echo t('LINEで開く') ?></span>
-              <?php if ($oc['join_method_type'] === 1) : ?>
-                <span style="font-size: 12px; margin-left: 4px; font-weight: normal; line-height: 2;" class="text"><?php echo t('承認制') ?></span>
-              <?php endif ?>
-              <?php if ($oc['join_method_type'] === 2) : ?>
-                <span style="font-size: 12px; margin-left: 4px; font-weight: normal; line-height: 2;" class="text"><?php echo t('参加コード入力制') ?></span>
-              <?php endif ?>
-            </a>
-          </section>
-        <?php endif ?>
-
       </div>
 
     </section>
 
-    <hr class="hr-bottom">
+    <hr class="hr-top" style="margin-bottom: 0;">
 
-    <nav style="margin: 0 1rem; padding: 4px 0; border: unset;" class="oc-desc-nav">
+    <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
-          <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 1rem; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
+          <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
             <?php if (is_int($oc['api_created_at'])) : ?>
               <div><?php echo t('カテゴリー') ?>&nbsp;</div>
             <?php endif ?>
@@ -141,7 +126,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               <div>タグ&nbsp;</div>
             <?php endif ?>
           </div>
-          <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; line-height: 1.5; height: 100%">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 8px; line-height: 1.5; height: 100%">
             <?php if (is_int($oc['api_created_at'])) : ?>
               <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
             <?php endif ?>
@@ -152,25 +137,36 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </span>
       </aside>
 
-      <nav class="my-list-form" style="visibility: <?php // TODO:日本以外ではマイリストが無効
-                                                    echo MimimalCmsConfig::$urlRoot === ''
-                                                      ? 'visible'
-                                                      : 'hidden'
-                                                    ?>;">
-        <label class="checkbox-label" for="my-list-checkbox">
-          <input type="checkbox" id="my-list-checkbox">
-          <span>トップにピン留め</span>
-        </label>
-      </nav>
+      <div style="display: flex; flex-direction: column">
+        <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
+          <?php if ($oc['url']) : ?>
+            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
+              <div style="display: flex; align-items: center; justify-content: center;">
+                <?php if ($oc['join_method_type'] !== 0) : ?>
+                  <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
+                    <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
+                  </svg>
+                <?php endif ?>
+                <span class="text"><?php echo t('LINEで開く') ?></span>
+              </div>
+              <?php if ($oc['join_method_type'] === 1) : ?>
+                <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('承認制') ?></span>
+              <?php endif ?>
+              <?php if ($oc['join_method_type'] === 2) : ?>
+                <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('参加コード入力制') ?></span>
+              <?php endif ?>
+            </a>
+          <?php endif ?>
+        </section>
+      </div>
     </nav>
 
-    <hr class="hr-top">
+    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-
-    <section class="openchat-graph-section">
+    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
 
       <div class="title-bar">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -197,33 +193,15 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <section class="open-btn sp-btn" style="padding: 0 1rem 1rem 1rem;">
-      <?php if ($oc['url']) : ?>
-        <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
-          <?php if ($oc['join_method_type'] !== 0) : ?>
-            <svg style="height: 12px; fill: white; margin-right: 6px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
-              <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
-            </svg>
-          <?php endif ?>
-          <span class="text"><?php echo t('LINEで開く') ?></span>
-          <?php if ($oc['join_method_type'] === 1) : ?>
-            <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('承認制') ?></span>
-          <?php endif ?>
-          <?php if ($oc['join_method_type'] === 2) : ?>
-            <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('参加コード入力制') ?></span>
-          <?php endif ?>
-        </a>
-      <?php endif ?>
-    </section>
-    <hr class="hr-bottom">
-
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocThirdWide']) ?>
+    <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-      <hr class="hr-top">
-      <section class="comment-section">
-        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px;">
+      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
+        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
           <div>
             <h2 class="graph-title">
@@ -235,11 +213,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
             </div>
           </div>
         </div>
-        <div style="margin-top: 13px;">
-          <?php viewComponent('comment_desc') ?>
-        </div>
         <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0;">
+        <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
           <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
             <span class="ranking-readMore">他のルームのコメントを見る（タイムライン）</span>
           </a>
@@ -247,31 +222,45 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
+    <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+    ?>
+
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-
+      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      ?>
     <?php endif ?>
 
     <?php if ($recommend[1]) : ?>
       <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-    <?php endif ?>
-    <?php if ($recommend[0] && $recommend[3]) : ?>
-      <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true]) ?>
-      </aside>
-    <?php endif ?>
-    <?php if (isset($officialDto) && $officialDto) : ?>
-      <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true]) ?>
-      </aside>
+      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      ?>
     <?php endif ?>
 
-    <hr class="hr-top">
+    <?php if ($recommend[0] && $recommend[3]) : ?>
+      <aside class="recommend-list-aside">
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+      </aside>
+      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      ?>
+    <?php endif ?>
+
+    <?php if (isset($officialDto) && $officialDto) : ?>
+      <aside class="recommend-list-aside">
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+      </aside>
+      </aside>
+      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      ?>
+    <?php endif ?>
+
+    <?php //GAd::output(GAd::AD_SLOTS['ocListBottomWide']) ?>
+
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
@@ -279,35 +268,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <hr class="hr-bottom">
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php viewComponent('footer_inner',/*  ['adSlot' => 'ocBottomWide'] */) ?>
 
-    <hr class="hr-top">
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
+    <aside class="open-btn2 csv-dl" style="margin: -9px 0 .5rem 0;">
+      <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl" style="font-size: 11px;">
+        <span class="text"><?php echo t('人数統計CSVをダウンロード') ?></span>
+      </a>
     </aside>
-    <hr class="hr-bottom">
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <hr class="hr-top">
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-    </aside>
-    <hr class="hr-bottom">
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-
-    <footer class="oc-page-footer" style="padding-top: 0;">
-      <aside class="open-btn2">
-        <a href="<?php echo url('oc/' . $oc['id'] . '/csv') ?>" class="app_link csv-dl">
-          <span class="text"><?php echo t('人数統計CSVをダウンロード') ?></span>
-        </a>
-      </aside>
-      <?php viewComponent('footer_share_nav', ['title' => $_meta->title]) ?>
-      <?php viewComponent('footer_inner') ?>
-    </footer>
   </article>
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
   <script async>

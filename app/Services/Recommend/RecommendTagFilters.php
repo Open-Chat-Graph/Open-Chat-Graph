@@ -7,25 +7,6 @@ namespace App\Services\Recommend;
 class RecommendTagFilters
 {
     const RecommendPageTagFilter = [
-        'Instagram（インスタ）',
-        '著作権（知的財産権）',
-        "東京",
-        "北海道",
-        "神奈川",
-        "愛知",
-        "京都",
-        "大阪",
-        "兵庫",
-        "福岡",
-        "新歓",
-        "関東",
-        "関西",
-        "九州",
-        "大学",
-        "沖縄",
-        "海外",
-        "unistyle",
-        "jobhunt",
     ];
 
     const FilteredTagSort = [
@@ -127,18 +108,6 @@ class RecommendTagFilters
     ];
 
     private const TopPageTagFilter = [
-        '大学新入生同士の情報交換',
-        '大学 新入生',
-        '大学',
-        '就活生情報・選考対策・企業研究',
-        '新入生',
-        '経済',
-        'ヘア',
-        '競馬予想',
-        '競艇予想',
-        'サークル',
-        '新歓',
-        'パチンコ・スロット（パチスロ）',
     ];
 
     static function getTopPageTagFilter(): array

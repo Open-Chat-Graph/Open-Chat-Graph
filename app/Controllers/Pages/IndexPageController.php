@@ -24,8 +24,8 @@ class IndexPageController
         $_meta = meta();
         $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 
-        $_schema = $pageBreadcrumbsListSchema->generateStructuredDataWebSite(
-            t('オプチャグラフ'),
+        $_schema = $_meta->generateTopPageSchema(
+            'OpenChat Graph',
             $_meta->description,
             url(),
             url('assets/ogp.png'),
