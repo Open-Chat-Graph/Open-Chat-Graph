@@ -14,8 +14,8 @@ class TopPageRecommendList
             "SELECT
                 t2.tag
             FROM
-                statistics_ranking_hour AS t1
-                JOIN recommend AS t2 ON t1.open_chat_id = t2.id
+                recommend AS t2
+                JOIN statistics_ranking_hour AS t1 ON t1.open_chat_id = t2.id
                 LEFT JOIN statistics_ranking_hour24 AS t3 ON t3.open_chat_id = t1.open_chat_id
             WHERE
                 t1.diff_member >= 4 AND t3.diff_member >= 4
@@ -28,8 +28,8 @@ class TopPageRecommendList
             "SELECT
                 t2.tag
             FROM
-                statistics_ranking_hour AS t1
-                JOIN recommend AS t2 ON t1.open_chat_id = t2.id
+                recommend AS t2
+                JOIN statistics_ranking_hour AS t1 ON t1.open_chat_id = t2.id
                 LEFT JOIN statistics_ranking_hour24 AS t3 ON t3.open_chat_id = t1.open_chat_id
             WHERE
                 t1.diff_member >= 3
@@ -43,8 +43,8 @@ class TopPageRecommendList
             "SELECT
                 t2.tag
             FROM
-                statistics_ranking_hour24 AS t1
-                JOIN recommend AS t2 ON t1.open_chat_id = t2.id
+                recommend AS t2
+                JOIN statistics_ranking_hour24 AS t1 ON t1.open_chat_id = t2.id
                 LEFT JOIN statistics_ranking_week AS t3 ON t3.open_chat_id = t1.open_chat_id
             WHERE
                 t1.diff_member >= 6
