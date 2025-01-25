@@ -117,13 +117,12 @@ class SyncOpenChat
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [function () {
-                $this->hourlyMemberRanking->update();
-
-                if ($this->state->getBool(StateType::isDailyTaskActive)) {
+                $saveNextFiltersCache  = !$this->state->getBool(StateType::isDailyTaskActive);
+                if (!$saveNextFiltersCache) {
                     addCronLog('Skip saveNextFiltersCache because dailyTask is active');
-                    return;
                 }
-                $this->hourlyMemberRanking->saveNextFiltersCache();
+
+                $this->hourlyMemberRanking->update($saveNextFiltersCache);
             }, 'hourlyMemberRankingUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             [function () {
