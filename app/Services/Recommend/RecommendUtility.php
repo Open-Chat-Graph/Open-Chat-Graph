@@ -32,8 +32,10 @@ class RecommendUtility
         'ルセラ' => 'LE SSERAFIM',
     ];
 
-    static function extractTag(string $str): string
+    static function extractTag(string|int $str): string
     {
+        $str = (string)$str;
+        
         // 文末の括弧内のテキストを抽出する正規表現
         if (preg_match('/（(.*)）$/', $str, $matches)) {
             // 括弧内のテキストが見つかった場合
