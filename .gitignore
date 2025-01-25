@@ -38,3 +38,7 @@ storage/*/open_chat_sub_categories/subcategories.json
 
 !*.gitkeep
 .htaccess
+
+*.env
+batch/sh/*.key
+batch/sh/sqldump
