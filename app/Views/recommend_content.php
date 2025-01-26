@@ -152,7 +152,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
-  <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+  <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
 </body>

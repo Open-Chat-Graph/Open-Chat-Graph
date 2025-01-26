@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Config\AppConfig;
+use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepositoryInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
+use Shared\MimimalCmsConfig;
 
 class RecommendRankingBuilder
 {
@@ -62,6 +64,25 @@ class RecommendRankingBuilder
             $ranking4,
             file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))
         );
+
+        if (
+            (MimimalCmsConfig::$urlRoot === '/tw' || MimimalCmsConfig::$urlRoot === '/th')
+            && $repository instanceof RecommendRankingRepository
+        ) {
+            $dto->sortAndUniqueTags = sortAndUniqueArray(
+                $repository->getRecommendTags(
+                    array_column($dto->getList(false), 'id')
+                ),
+                1
+            );
+
+            $dto->sortAndUniqueShuffledTags = sortAndUniqueArray(
+                $repository->getRecommendTags(
+                    array_column($dto->getList(true), 'id')
+                ),
+                1
+            );
+        }
 
         return $dto;
     }

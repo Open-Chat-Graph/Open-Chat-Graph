@@ -153,6 +153,25 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         );
     }
 
+    /**
+     * @param int[] $idArray
+     * @return string[]
+     */
+    function getRecommendTags(
+        array $idArray
+    ): array {
+        $ids = implode(",", $idArray) ?: 0;
+        return DB::fetchAll(
+            "SELECT
+                tag
+            FROM
+                recommend
+            WHERE
+                id IN ({$ids})",
+            args: [\PDO::FETCH_COLUMN]
+        );
+    }
+
     function getRecommendTag(int $id): string|false
     {
         return DB::fetchColumn("SELECT tag FROM recommend WHERE id = {$id}");
