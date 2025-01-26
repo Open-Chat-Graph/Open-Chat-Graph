@@ -6,6 +6,7 @@ RUN chmod 644 /usr/local/etc/php/php.ini
 RUN cd /usr/bin && curl -s http://getcomposer.org/installer | php && ln -s /usr/bin/composer.phar /usr/bin/composer
 
 RUN apt-get update && apt-get install -y \
+        default-mysql-client \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
