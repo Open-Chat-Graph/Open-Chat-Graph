@@ -3,7 +3,7 @@ services:
     build:
       context: 'docker/app/'
     ports:
-      - 7000:80
+      - "${WEB_PORT:-8000}:80"
     working_dir: /var/www/html
     volumes:
       - './:/var/www/html'
@@ -23,11 +23,11 @@ services:
       - MYSQL_ROOT_PASSWORD=test_root_pass
       - TZ=Asia/Tokyo
     ports:
-      - '3307:3306'
+      - "${MYSQL_PORT:-3306}:3306"
   phpmyadmin:
     image: phpmyadmin:latest
     ports:
-      - 7070:80
+      - "${PHP_MY_ADMIN_PORT:-8080}:80"
     environment:
       - PMA_HOST=mysql
       - PMA_USER=root
