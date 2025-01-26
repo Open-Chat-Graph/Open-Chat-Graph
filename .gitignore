@@ -25,6 +25,7 @@ prod-secrets.php
 public/sitemaps/**
 public/sitemap.xml
 
+storage/exception.log
 storage/furigana/**
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
