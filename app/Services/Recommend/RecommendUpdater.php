@@ -83,14 +83,14 @@ class RecommendUpdater
         } else {
             DB::transaction(function () {
                 $this->deleteRecommendTags('recommend');
-                $this->updateDescription(column: 'oc.name',  allowDuplicateEntries: true);
+                $this->updateDescription(column: 'oc.name', allowDuplicateEntries: true);
                 $this->updateDescription(allowDuplicateEntries: true);
             });
 
             DB::transaction(function () {
                 $this->deleteTags('oc_tag');
-                $this->updateName(table: 'oc_tag');
-                $this->updateName('oc.description', table: 'oc_tag');
+                $this->updateName(table: 'oc_tag', allowDuplicateEntries: true);
+                $this->updateName('oc.description', table: 'oc_tag', allowDuplicateEntries: true);
             });
 
             DB::transaction(function () {
