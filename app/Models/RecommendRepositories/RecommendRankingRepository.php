@@ -6,7 +6,7 @@ namespace App\Models\RecommendRepositories;
 
 use App\Models\Repositories\DB;
 
-class RecommendRankingRepository implements RecommendRankingRepositoryInterface
+class RecommendRankingRepository extends AbstractRecommendRankingRepository
 {
     function getRanking(
         string $tag,
@@ -14,7 +14,7 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $minDiffMember,
         int $limit,
     ): array {
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -58,7 +58,7 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $limit,
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -108,7 +108,7 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $limit,
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 t1.*
@@ -150,25 +150,6 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
             ORDER BY
                 t2.diff_member DESC, t1.member DESC",
             compact('tag', 'limit')
-        );
-    }
-
-    /**
-     * @param int[] $idArray
-     * @return string[]
-     */
-    function getRecommendTags(
-        array $idArray
-    ): array {
-        $ids = implode(",", $idArray) ?: 0;
-        return DB::fetchAll(
-            "SELECT
-                tag
-            FROM
-                recommend
-            WHERE
-                id IN ({$ids})",
-            args: [\PDO::FETCH_COLUMN]
         );
     }
 

@@ -6,7 +6,7 @@ namespace App\Models\RecommendRepositories;
 
 use App\Models\Repositories\DB;
 
-class CategoryRankingRepository implements RecommendRankingRepositoryInterface
+class CategoryRankingRepository extends AbstractRecommendRankingRepository
 {
     function getRanking(
         string $category,
@@ -14,7 +14,7 @@ class CategoryRankingRepository implements RecommendRankingRepositoryInterface
         int $minDiffMember,
         int $limit,
     ): array {
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -57,7 +57,7 @@ class CategoryRankingRepository implements RecommendRankingRepositoryInterface
         int $limit,
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -105,7 +105,7 @@ class CategoryRankingRepository implements RecommendRankingRepositoryInterface
         int $limit
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 t1.*

@@ -6,7 +6,7 @@ namespace App\Models\RecommendRepositories;
 
 use App\Models\Repositories\DB;
 
-class OfficialRoomRankingRepository implements RecommendRankingRepositoryInterface
+class OfficialRoomRankingRepository extends AbstractRecommendRankingRepository
 {
     function getRanking(
         string $emblem,
@@ -20,7 +20,7 @@ class OfficialRoomRankingRepository implements RecommendRankingRepositoryInterfa
             $statement = "oc.emblem = 1 OR emblem = 2";
         }
 
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -69,7 +69,7 @@ class OfficialRoomRankingRepository implements RecommendRankingRepositoryInterfa
         }
 
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
@@ -123,7 +123,7 @@ class OfficialRoomRankingRepository implements RecommendRankingRepositoryInterfa
         }
 
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 t1.*

@@ -15,7 +15,6 @@ class RecommendListDto
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
     public ?array $sortAndUniqueTags = null;
-    public ?array $sortAndUniqueShuffledTags = null;
 
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
@@ -113,10 +112,9 @@ class RecommendListDto
         $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagStr = RecommendUtility::extractTag($tag);
-        $tagsPropName = $shuffle ? 'sortAndUniqueShuffledTags' : 'sortAndUniqueTags';
 
-        if (!is_array($this->$tagsPropName))
-            $this->$tagsPropName = sortAndUniqueArray(
+        if (!is_array($this->sortAndUniqueTags))
+            $this->sortAndUniqueTags = sortAndUniqueArray(
                 array_merge(
                     array_column($mergedElements, 'tag1'),
                     array_column($mergedElements, 'tag2'),
@@ -126,7 +124,7 @@ class RecommendListDto
             );
 
         $tags = array_filter(
-            $this->$tagsPropName,
+            $this->sortAndUniqueTags,
             fn($e) => (
                 !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
                 || (

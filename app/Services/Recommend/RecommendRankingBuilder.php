@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Config\AppConfig;
-use App\Models\RecommendRepositories\RecommendRankingRepository;
-use App\Models\RecommendRepositories\RecommendRankingRepositoryInterface;
+use App\Models\RecommendRepositories\AbstractRecommendRankingRepository;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use Shared\MimimalCmsConfig;
 
 class RecommendRankingBuilder
 {
+    // 関連タグを取得する際のリスト件数上限（台湾・タイのみ）
+    private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = 20;
+
     function getRanking(
         RecommendListType $type,
         string $entity,
         string $listName,
-        RecommendRankingRepositoryInterface $repository
+        AbstractRecommendRankingRepository $repository
     ): RecommendListDto {
         $limit = AppConfig::LIST_LIMIT_RECOMMEND;
 
@@ -65,20 +67,12 @@ class RecommendRankingBuilder
             file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))
         );
 
-        if (
-            (MimimalCmsConfig::$urlRoot === '/tw' || MimimalCmsConfig::$urlRoot === '/th')
-            && $repository instanceof RecommendRankingRepository
-        ) {
+        if (MimimalCmsConfig::$urlRoot === '/tw' || MimimalCmsConfig::$urlRoot === '/th') {
+            $list = $dto->getList(false, self::SORT_AND_UNIQUE_TAGS_LIST_LIMIT);
             $dto->sortAndUniqueTags = sortAndUniqueArray(
-                $repository->getRecommendTags(
-                    array_column($dto->getList(false), 'id')
-                ),
-                1
-            );
-
-            $dto->sortAndUniqueShuffledTags = sortAndUniqueArray(
-                $repository->getRecommendTags(
-                    array_column($dto->getList(true), 'id')
+                array_merge(
+                    $repository->getRecommendTags(array_column($list, 'id')),
+                    $repository->getOcTags(array_column($list, 'id'))
                 ),
                 1
             );
