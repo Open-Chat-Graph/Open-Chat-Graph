@@ -11,8 +11,6 @@ local-secrets.php
 prod-secrets.php
 /shared/secrets.php
 
-/logs/*
-
 /public/oc-img/*
 /public/oc-img-*/*
 !/public/oc-img/default
