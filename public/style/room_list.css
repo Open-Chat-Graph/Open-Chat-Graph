@@ -1249,6 +1249,7 @@
   line-height: 125%;
   padding: 0 12px;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 .top-ranking .tag-list li:nth-child(n + 21) {
