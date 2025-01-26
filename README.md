@@ -1,7 +1,7 @@
 # オプチャグラフ
 https://openchat-review.me
 
-![Image](/image.jpg)
+![Image](/public/assets/image.jpg)
 
 ## プロジェクトの概要
 オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフで比較できるWEBサイトです。  
