@@ -89,6 +89,8 @@ class RecommendUpdater
 
             DB::transaction(function () {
                 $this->deleteTags('oc_tag');
+                $this->updateName(table: 'oc_tag');
+                $this->updateName('oc.description', table: 'oc_tag');
             });
 
             DB::transaction(function () {
@@ -306,12 +308,17 @@ class RecommendUpdater
         }
     }
 
-    protected function updateName2(string $column = 'oc.name', string $table = 'oc_tag2')
-    {
+    protected function updateName2(
+        string $column = 'oc.name',
+        string $table = 'oc_tag2',
+        bool $allowDuplicateEntries = false
+    ) {
         $tags = $this->getReplacedTags($column);
 
         foreach ($tags as $key => $search) {
             $tag = $this->formatTag($this->tags[$key]);
+            $duplicateEntries = $allowDuplicateEntries ? "AND t.tag = '{$tag}'" : '';
+
             DB::execute(
                 "INSERT INTO
                     {$table}
@@ -324,7 +331,7 @@ class RecommendUpdater
                             oc.*
                         FROM
                             open_chat AS oc
-                            LEFT JOIN {$table} AS t ON t.id = oc.id
+                            LEFT JOIN {$table} AS t ON t.id = oc.id = oc.id {$duplicateEntries}
                             LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
                         WHERE
                             t.id IS NULL
