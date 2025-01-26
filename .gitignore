@@ -7,6 +7,8 @@ Thumbs.db
 /node_modules
 /vendor
 
+local-secrets.php
+prod-secrets.php
 /shared/secrets.php
 
 /logs/*
@@ -43,3 +45,5 @@ storage/*/open_chat_sub_categories/subcategories.json
 batch/sh/*.key
 batch/sh/sqldump
 setup.sh
+local-setup.sh
+prid-setup.sh
