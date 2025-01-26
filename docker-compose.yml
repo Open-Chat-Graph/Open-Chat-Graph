@@ -4,7 +4,7 @@ services:
       context: 'docker/app/'
     ports:
       - 7000:80
-    working_dir: /var/www
+    working_dir: /var/www/html
     volumes:
       - './:/var/www/html'
       - './docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf'
