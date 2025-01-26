@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./import-mysql-from-server.sh
+/var/www/html/batch/sh/import-mysql-from-server.sh
 
 # 変数をダミーで連想配列に初期化（後で import-mysql-from-server.env で上書きされる）
 declare -A CONFIG_VARS=(
@@ -13,8 +13,8 @@ declare -A CONFIG_VARS=(
 )
 
 # 外部ファイルを読み込む
-if [ -f ./import-mysql-from-server.env ]; then
-    source ./import-mysql-from-server.env
+if [ -f /var/www/html/batch/sh/import-mysql-from-server.env ]; then
+    source /var/www/html/batch/sh/import-mysql-from-server.env
 else
     echo "Error: import-mysql-from-server.env ファイルが見つかりません。" >&2
     exit 1

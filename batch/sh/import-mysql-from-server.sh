@@ -16,8 +16,8 @@ declare -A CONFIG_VARS=(
 )
 
 # 外部ファイルを読み込む
-if [ -f ./import-mysql-from-server.env ]; then
-  source ./import-mysql-from-server.env
+if [ -f /var/www/html/batch/sh/import-mysql-from-server.env ]; then
+  source /var/www/html/batch/sh/import-mysql-from-server.env
 else
   echo "Error: import-mysql-from-server.env ファイルが見つかりません。" >&2
   exit 1

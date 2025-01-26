@@ -42,3 +42,4 @@ storage/*/open_chat_sub_categories/subcategories.json
 *.env
 batch/sh/*.key
 batch/sh/sqldump
+setup.sh
