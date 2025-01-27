@@ -1,8 +1,5 @@
 FROM php:8.3-apache
 
-COPY php.ini /usr/local/etc/php/php.ini
-RUN chmod 644 /usr/local/etc/php/php.ini
-
 RUN cd /usr/bin && curl -s http://getcomposer.org/installer | php && ln -s /usr/bin/composer.phar /usr/bin/composer
 
 RUN apt-get update && apt-get install -y \

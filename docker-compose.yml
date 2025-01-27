@@ -9,6 +9,7 @@ services:
       - './:/var/www/html'
       - './docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf'
       - './docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf'
+      - './docker/app/php.ini:/usr/local/etc/php/php.ini'
     depends_on:
       - mysql
   mysql:
@@ -22,6 +23,8 @@ services:
       - MYSQL_PASSWORD=test_pass
       - MYSQL_ROOT_PASSWORD=test_root_pass
       - TZ=Asia/Tokyo
+    volumes:
+      - './docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf'
     ports:
       - "${MYSQL_PORT:-3306}:3306"
   phpmyadmin:
