@@ -23,5 +23,5 @@
     "formulahendry.auto-close-tag",
     "xdebug.php-debug"
   ],
-  "postCreateCommand": "./post-create-command.sh"
+  "postCreateCommand": "/var/www/html/.devcontainer/post-create-command.sh"
 }
