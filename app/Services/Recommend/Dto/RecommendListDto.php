@@ -6,15 +6,16 @@ namespace App\Services\Recommend\Dto;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendTagFilters;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
+use Shared\MimimalCmsConfig;
 
 class RecommendListDto
 {
     public int $maxMemberCount;
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
-    public ?array $sortAndUniqueTags = null;
+    public array $sortAndUniqueTags = [];
 
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
@@ -103,6 +104,13 @@ class RecommendListDto
     /** @return string[] */
     function getFilterdTags(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING): array
     {
+        // 日本以外は取得済みの関連タグを返す
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return $this->type === RecommendListType::Tag
+                ? array_filter($this->sortAndUniqueTags, fn($e) => $e !== $this->listName)
+                : $this->sortAndUniqueTags;
+        }
+
         return $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
     }
 
@@ -113,18 +121,17 @@ class RecommendListDto
         $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagStr = RecommendUtility::extractTag($tag);
 
-        if (!is_array($this->sortAndUniqueTags))
-            $this->sortAndUniqueTags = sortAndUniqueArray(
-                array_merge(
-                    array_column($mergedElements, 'tag1'),
-                    array_column($mergedElements, 'tag2'),
-                    RecommendTagFilters::FilteredTagSort[$tag] ?? []
-                ),
-                1
-            );
+        $sortAndUniqueTags = sortAndUniqueArray(
+            array_merge(
+                array_column($mergedElements, 'tag1'),
+                array_column($mergedElements, 'tag2'),
+                RecommendTagFilters::FilteredTagSort[$tag] ?? []
+            ),
+            1
+        );
 
         $tags = array_filter(
-            $this->sortAndUniqueTags,
+            $sortAndUniqueTags,
             fn($e) => (
                 !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
                 || (

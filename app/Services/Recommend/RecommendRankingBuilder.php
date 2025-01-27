@@ -12,8 +12,9 @@ use Shared\MimimalCmsConfig;
 
 class RecommendRankingBuilder
 {
-    // 関連タグを取得する際のリスト件数上限（台湾・タイのみ）
-    private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = 20;
+    // 関連タグ取得に関する値（台湾・タイのみ）
+    private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = null;
+    private const SORT_AND_UNIQUE_ARRAY_MIN_COUNT = 5;
 
     function getRanking(
         RecommendListType $type,
@@ -67,14 +68,16 @@ class RecommendRankingBuilder
             file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))
         );
 
-        if (MimimalCmsConfig::$urlRoot === '/tw' || MimimalCmsConfig::$urlRoot === '/th') {
-            $list = $dto->getList(false, self::SORT_AND_UNIQUE_TAGS_LIST_LIMIT);
+        // 日本以外では関連タグを事前に取得しておく
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            $list = array_column(
+                $dto->getList(false, self::SORT_AND_UNIQUE_TAGS_LIST_LIMIT),
+                'id'
+            );
+
             $dto->sortAndUniqueTags = sortAndUniqueArray(
-                array_merge(
-                    $repository->getRecommendTags(array_column($list, 'id')),
-                    $repository->getOcTags(array_column($list, 'id'))
-                ),
-                1
+                array_merge($repository->getRecommendTags($list), $repository->getOcTags($list)),
+                self::SORT_AND_UNIQUE_ARRAY_MIN_COUNT
             );
         }
 

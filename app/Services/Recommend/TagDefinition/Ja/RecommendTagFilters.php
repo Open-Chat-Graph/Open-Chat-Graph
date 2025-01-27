@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Recommend;
+namespace App\Services\Recommend\TagDefinition\Ja;
+
+use Shared\MimimalCmsConfig;
 
 class RecommendTagFilters
 {
-    const RecommendPageTagFilter = [
-    ];
+    const RecommendPageTagFilter = [];
 
     const FilteredTagSort = [
         'ガンダム' => ['ガンプラ'],
@@ -107,11 +108,14 @@ class RecommendTagFilters
         'SNS' => ['ITエンジニア', 'プログラミング', 'フリーランス', 'Webエンジニア・プログラミング', 'WEBデザイナー・デザイン', 'Instagram（インスタ）', '生成AI・ChatGPT', 'マーケティング', 'YouTuber'],
     ];
 
-    private const TopPageTagFilter = [
-    ];
+    private const TopPageTagFilter = [];
 
     static function getTopPageTagFilter(): array
     {
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return [];
+        }
+
         return array_merge(self::RecommendPageTagFilter, self::TopPageTagFilter);
     }
 }

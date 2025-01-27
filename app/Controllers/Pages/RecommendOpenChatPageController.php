@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Recommend\RecommendPageList;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 

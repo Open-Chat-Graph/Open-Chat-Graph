@@ -2,7 +2,7 @@
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 
 $tags = $topPageDto->recommendList;

@@ -4,7 +4,7 @@
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 

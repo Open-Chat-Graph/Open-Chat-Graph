@@ -92,7 +92,7 @@ function memberCount(int $count)
                             <li style="flex-direction: column;">
                                 <a class="tag-btn" style="height: unset; padding: 4px 14px;" href="<?php echo url('recommend?tag=' . urlencode(htmlspecialchars_decode($tag['tag']))) ?>">
                                     <div>
-                                        <div style="line-height: 1.3;"><?php echo \App\Services\Recommend\RecommendUtility::extractTag($tag['tag']) ?></div>
+                                        <div style="line-height: 1.3;"><?php echo \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag['tag']) ?></div>
                                         <small style="font-weight: normal; display:block; line-height: 1.3;">合計 <?php echo number_format($tag['total_member']) ?>人</small>
                                         <small style="font-weight: normal; display:block; line-height: 1.5;"><?php echo number_format($tag['record_count']) ?>件・平均 <?php echo number_format(round($tag['total_member'] / $tag['record_count'])) ?>人</small>
                                     </div>
