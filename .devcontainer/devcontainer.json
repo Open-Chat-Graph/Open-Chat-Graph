@@ -7,7 +7,6 @@
     "terminal.integrated.shell.linux": "/bin/bash"
   },
   "extensions": [
-    "esbenp.prettier-vscode",
     "steoates.autoimport",
     "formulahendry.code-runner",
     "mhutchie.git-graph",
@@ -21,7 +20,8 @@
     "GitHub.codespaces",
     "formulahendry.auto-rename-tag",
     "formulahendry.auto-close-tag",
-    "xdebug.php-debug"
+    "xdebug.php-debug",
+    "GitHub.copilot"
   ],
   "postCreateCommand": "/var/www/html/.devcontainer/post-create-command.sh"
 }
