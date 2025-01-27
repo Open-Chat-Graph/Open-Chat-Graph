@@ -22,5 +22,6 @@
     "formulahendry.auto-rename-tag",
     "formulahendry.auto-close-tag",
     "xdebug.php-debug"
-  ]
+  ],
+  "postCreateCommand": "./post-create-command.sh"
 }
