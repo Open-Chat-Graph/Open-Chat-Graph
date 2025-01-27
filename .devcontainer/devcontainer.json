@@ -7,23 +7,18 @@
     "terminal.integrated.shell.linux": "/bin/bash"
   },
   "extensions": [
-    "ms-azuretools.vscode-docker",
     "esbenp.prettier-vscode",
     "steoates.autoimport",
     "formulahendry.code-runner",
     "mhutchie.git-graph",
     "GitHub.vscode-pull-request-github",
     "oderwat.indent-rainbow",
-    "yzhang.markdown-all-in-one",
     "bmewburn.vscode-intelephense-client",
     "emallin.phpunit",
-    "foxundermoon.shell-format",
     "Gruntfuggly.todo-tree",
-    "styled-components.vscode-styled-components",
     "PKief.material-icon-theme",
     "MS-CEINTL.vscode-language-pack-ja",
     "GitHub.codespaces",
-    "bierner.comment-tagged-templates",
     "formulahendry.auto-rename-tag",
     "formulahendry.auto-close-tag",
     "xdebug.php-debug"
