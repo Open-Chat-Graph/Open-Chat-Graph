@@ -25,6 +25,7 @@
     "GitHub.codespaces",
     "bierner.comment-tagged-templates",
     "formulahendry.auto-rename-tag",
-    "formulahendry.auto-close-tag"
+    "formulahendry.auto-close-tag",
+    "xdebug.php-debug"
   ]
 }
