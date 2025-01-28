@@ -28,6 +28,9 @@ class RecommendListDto
         public string $hourlyUpdatedAt
     ) {
         $this->mergedElements = array_merge($hour, $day, $week, $member);
+        if (count($this->mergedElements) > AppConfig::LIST_LIMIT_RECOMMEND) {
+            $this->mergedElements = array_slice($this->mergedElements, 0, AppConfig::LIST_LIMIT_RECOMMEND);
+        }
 
         $elements = array_column($this->mergedElements, 'member');
         $this->maxMemberCount = $elements ? max($elements) : 0;

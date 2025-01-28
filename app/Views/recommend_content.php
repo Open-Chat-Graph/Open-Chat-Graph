@@ -55,7 +55,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <p class="recommend-header-desc desc-bottom">
       「<?php echo $tag ?>」に関する人気のオープンチャットをピックアップ！🙌<br>
-      ランキングは、直近の参加人数増加率を基に決定しています。
+      <span class="desc-aside">ランキングは、直近の人数増加を反映して決定されています。</span>
     </p>
 
     <?php if (isset($recommend)) : ?>
@@ -80,15 +80,17 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       </header>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
-
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset" style="counter-reset: openchat-counter2 <?php echo $count + 1 ?>;">
           <?php
           $chunkLen = 5;
-          $lists = array_chunk(array_reverse($recommend->getList(false, null)), $chunkLen);
+          $reverseList = array_reverse($recommend->getList(false, null));
+          $firstLists = array_slice($reverseList, 0, $chunkLen, true);
+          $secondLists = array_chunk(array_slice($reverseList, $chunkLen, preserve_keys: true), $chunkLen * 2, true);
+          $lists = [$firstLists, ...$secondLists];
           $listsLastKey = count($lists) - 1;
+          $currentCount = 0;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
@@ -96,13 +98,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                 <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
                   <div><?php echo $extractTag ?></div>
                   <div>のおすすめ 人気オプチャ特集<?php echo $countTitle ?? '' ?>&nbsp</div>
-                  <div><?php echo $count - $key * $chunkLen ?>位〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
+                  <div><?php echo $count - $currentCount ?>位〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                 </h2>
               </header>
+              <?php $currentCount += count($listArray) ?>
               <?php if ($key === 0) : ?>
               <?php else : ?>
               <?php endif ?>
-              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showReverseListMedal' => $listsLastKey === $key]) ?>
+              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showReverseListMedal' => !($count - $currentCount)]) ?>
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;">「<?php echo $tag ?>」をすべて見る<span class="small" style="font-size: 11.5px;"><?php echo $_dto->tagRecordCounts[$_tagIndex] ?>件</span></span>

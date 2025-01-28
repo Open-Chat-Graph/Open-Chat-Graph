@@ -44,7 +44,7 @@ li {
   overflow: hidden; */
   margin: 0 1rem;
   line-height: 120%;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .ranking-page-main .talkroom_banner_img_area {
@@ -58,7 +58,6 @@ li {
   display: block;
   width: 100%;
   aspect-ratio: 1.4 / 1;
-  filter: drop-shadow(2px 2px 2px rgba(160, 160, 160, 0.8));
 }
 
 .ranking-page-main .talkroom_link_h1 {
@@ -96,8 +95,14 @@ li {
 .recommend-header-desc.desc-bottom {
   font-size: 14px;
   color: #555;
-  line-height: 1.5;
+  line-height: 2;
   margin: 0;
+  margin-top: 2px;
+}
+
+.recommend-header-desc.desc-bottom .desc-aside {
+  font-size: 13px;
+  color: #777;
 }
 
 .top-ranking-list-aside {
@@ -431,7 +436,9 @@ section aside:hover {
   }
 
   .recommend-header-desc.desc-bottom {
-    font-size: 18px;
+    margin-top: 8px;
+    font-size: 16px;
+    line-height: 2;
   }
 
   .ranking-desc .recommend-desc {
