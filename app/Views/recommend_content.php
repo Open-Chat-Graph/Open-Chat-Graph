@@ -9,7 +9,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
 
 $_tagIndex = htmlspecialchars_decode($tag);
 if (isset($_dto->tagRecordCounts[$_tagIndex])) {
-  $countTitle = ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count ? 'TOP' . $count : '全' . $count . '件';
+  $countTitle = $count . '選';
 } else {
   $countTitle = '';
 }
@@ -37,7 +37,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          【最新】「<?php echo $tag ?>」のおすすめオープンチャットランキング<?php echo $countTitle ?? '' ?>
+          【最新】<?php echo $extractTag ?>のおすすめ 人気オプチャ特集<?php echo $countTitle ?? '' ?>
         </h1>
       </div>
 
@@ -54,7 +54,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </section>
 
     <p class="recommend-header-desc desc-bottom">
-      ランキングの順位は、参加人数がどれぐらい上昇しているかによって決まります。
+      「<?php echo $tag ?>」に関する人気のオープンチャットをピックアップ！🙌<br>
+      ランキングは、直近の参加人数増加率を基に決定しています。
     </p>
 
     <?php if (isset($recommend)) : ?>
@@ -93,10 +94,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
               <header class="recommend-ranking-section-header">
                 <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                  <div>「<?php echo $recommend->listName ?>」</div>
-                  <div>のおすすめランキング</div>
-                  <div><?php echo $countTitle ?? '' ?></div>
-                  <div>（<?php echo $hourlyUpdatedAt->format('n/j G:i') ?>時点）<?php echo $count - $key * $chunkLen ?>位〜</div>
+                  <div><?php echo $extractTag ?></div>
+                  <div>のおすすめ 人気オプチャ特集<?php echo $countTitle ?? '' ?>&nbsp</div>
+                  <div><?php echo $count - $key * $chunkLen ?>位〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                 </h2>
               </header>
               <?php if ($key === 0) : ?>
@@ -136,7 +136,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php //GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) ?>
+    <?php //GAd::output(GAd::AD_SLOTS['recommendListBottomWide']) 
+    ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>

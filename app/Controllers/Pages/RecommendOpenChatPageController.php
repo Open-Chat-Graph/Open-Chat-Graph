@@ -65,12 +65,11 @@ class RecommendOpenChatPageController
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
-            $_meta->setTitle("【最新】「{$tag}」おすすめオープンチャットランキング");
+            $_meta->setTitle("【最新】{$extractTag}のおすすめ 人気オプチャ特集");
             noStore();
             return view('recommend_content', compact(
                 '_meta',
                 '_css',
-                '_breadcrumbsShema',
                 'tag',
                 'extractTag',
                 'count',
@@ -85,7 +84,7 @@ class RecommendOpenChatPageController
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
         $count = $recommend->getCount();
-        $headline = "【最新】「{$tag}」おすすめオープンチャットランキングTOP{$count}";
+        $headline = "【最新】{$extractTag}のおすすめ 人気オプチャ特集{$count}選";
         $_meta->setTitle($headline);
         $_meta->setImageUrl(imgUrl($recommendList[0]['id'], $recommendList[0]['img_url']));
         $_meta->thumbnail = imgPreviewUrl($recommendList[0]['id'], $recommendList[0]['img_url']);
