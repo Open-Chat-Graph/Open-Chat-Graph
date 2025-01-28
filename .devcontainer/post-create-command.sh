@@ -1,4 +1,4 @@
-sed -i -e 's/host\.docker\.internal/172.17.0.1/g' -e 's/xdebug\.discover_client_host=no/xdebug\.discover_client_host=yes/g' /usr/local/etc/php/php.ini
+sed -i -e 's/host\.docker\.internal/172.17.0.1/g' -e 's/xdebug\.discover_client_host=false/xdebug\.discover_client_host=true/g' /usr/local/etc/php/php.ini
 
 service apache2 reload
 
