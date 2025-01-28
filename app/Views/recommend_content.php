@@ -25,7 +25,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <section class="recommend-header-wrapper">
 
       <div class="recommend-header-bottom" style="padding-top: 8px;">
-        <div class="recommend-data-desc">統計に基づくランキング</div>
+        <div class="recommend-data-desc"><?php echo t('統計に基づくランキング') ?></div>
         <?php if (isset($hourlyUpdatedAt)) : ?>
           <div class="recommend-header-time">
             <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
