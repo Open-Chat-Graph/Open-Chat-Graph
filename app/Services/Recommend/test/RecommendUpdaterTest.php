@@ -13,7 +13,7 @@ class RecommendUpdaterTest extends TestCase
 
     public function test2()
     {
-        MimimalCmsConfig::$urlRoot = '/tw';
+        MimimalCmsConfig::$urlRoot = '/th';
 
         safeFileRewrite(
             AppConfig::getStorageFilePath('tagUpdatedAtDatetime'),
