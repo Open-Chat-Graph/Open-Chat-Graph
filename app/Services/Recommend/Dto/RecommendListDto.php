@@ -12,6 +12,8 @@ use Shared\MimimalCmsConfig;
 
 class RecommendListDto
 {
+    const TAG_LIMIT = 20;
+
     public int $maxMemberCount;
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
@@ -109,12 +111,14 @@ class RecommendListDto
     {
         // 日本以外は取得済みの関連タグを返す
         if (MimimalCmsConfig::$urlRoot !== '') {
-            return $this->type === RecommendListType::Tag
+            $result = $this->type === RecommendListType::Tag
                 ? array_filter($this->sortAndUniqueTags, fn($e) => $e !== $this->listName)
                 : $this->sortAndUniqueTags;
+        } else {
+            $result = $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
         }
 
-        return $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
+        return array_slice($result, 0, self::TAG_LIMIT);
     }
 
     /** @return string[] */
