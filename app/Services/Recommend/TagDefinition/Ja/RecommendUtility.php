@@ -37,7 +37,7 @@ class RecommendUtility
     static function extractTag(string|int $str): string
     {
         if (MimimalCmsConfig::$urlRoot !== '') {
-            return $str;
+            return (string)$str;
         }
 
         $str = (string)$str;
