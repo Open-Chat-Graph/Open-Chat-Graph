@@ -22,6 +22,7 @@ use App\Services\UpdateDailyRankingService;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shadow\Kernel\Validator;
 use Shared\Exceptions\NotFoundException;
+use Shared\MimimalCmsConfig;
 
 class AdminPageController
 {
@@ -140,8 +141,9 @@ class AdminPageController
     function genetop()
     {
         $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
+        $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
 
-        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
+        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }

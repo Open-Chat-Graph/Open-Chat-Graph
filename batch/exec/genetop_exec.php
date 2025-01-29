@@ -6,10 +6,14 @@ use App\Config\AppConfig;
 use App\Services\Admin\AdminTool;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\StaticData\StaticDataGenerator;
-
+use Shared\MimimalCmsConfig;
 
 try {
     set_time_limit(3600);
+
+    if (isset($argv[1]) && $argv[1]) {
+        MimimalCmsConfig::$urlRoot = $argv[1];
+    }
 
     /**
      * @var StaticDataGenerator $staticDataGenerator
