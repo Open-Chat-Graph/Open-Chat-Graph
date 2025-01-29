@@ -74,6 +74,7 @@ class RecommendOpenChatPageController
                 '_css',
                 'tag',
                 'extractTag',
+                '_breadcrumbsShema',
                 'count',
                 '_schema',
                 '_dto',
