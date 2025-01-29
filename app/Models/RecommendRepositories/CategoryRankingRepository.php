@@ -36,7 +36,7 @@ class CategoryRankingRepository extends AbstractRecommendRankingRepository
                             WHERE
                                 diff_member >= :minDiffMember
                         ) AS t1
-                        LEFT JOIN recommend AS t2 ON t1.open_chat_id = t2.id
+                        LEFT JOIN (SELECT * FROM recommend GROUP BY id LIMIT 1) AS t2 ON t1.open_chat_id = t2.id
                         LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
                 ) AS ranking ON oc.id = ranking.id
             WHERE
@@ -84,7 +84,7 @@ class CategoryRankingRepository extends AbstractRecommendRankingRepository
                                         diff_member >= :minDiffMember
                                 ) AS sr1
                         ) AS t1
-                        LEFT JOIN recommend AS t2 ON t1.open_chat_id = t2.id
+                        LEFT JOIN (SELECT * FROM recommend GROUP BY id LIMIT 1) AS t2 ON t1.open_chat_id = t2.id
                         LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
                 ) AS ranking ON oc.id = ranking.id
                 LEFT JOIN statistics_ranking_hour AS rh ON rh.open_chat_id = oc.id
@@ -119,11 +119,14 @@ class CategoryRankingRepository extends AbstractRecommendRankingRepository
                         LEFT JOIN (
                             SELECT
                                 r.id,
-                                r.tag AS tag1,
-                                t4.tag AS tag2
+                                MIN(r.tag) AS tag1,
+                                MIN(t4.tag) AS tag2
                             FROM
                                 recommend AS r
-                                LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON r.id = t4.id
+                            LEFT JOIN 
+                                oc_tag2 AS t4 ON r.id = t4.id
+                            GROUP BY 
+                                r.id
                         ) AS ranking ON oc.id = ranking.id
                         LEFT JOIN statistics_ranking_hour24 AS rh ON oc.id = rh.open_chat_id
                         LEFT JOIN statistics_ranking_hour AS rh2 ON oc.id = rh2.open_chat_id
