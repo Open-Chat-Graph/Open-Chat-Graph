@@ -40,20 +40,58 @@ class OpenChatPageController
     ) {
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
         $topPageDto = $staticDataGeneration->getTopPageData();
-        $oc = MimimalCmsConfig::$urlRoot === ''
-            ? $ocRepo->getOpenChatByIdWithTag($open_chat_id)
-            : $ocRepo->getOpenChatById($open_chat_id);
 
-        if (!$oc && MimimalCmsConfig::$urlRoot === '') {
-            return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
-        } elseif (!$oc) {
-            return false;
+        if (MimimalCmsConfig::$urlRoot === '') {
+            $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
+            if (!$oc)
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+
+            $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+        } else {
+            $oc = $ocRepo->getOpenChatById($open_chat_id);
+            if (!$oc)
+                return false;
+
+            /** @var RecommendRankingRepository $recommendRankingRepository */
+            $recommendRankingRepository = app(RecommendRankingRepository::class);
+            $tags1 = $recommendRankingRepository->getRecommendTags([$open_chat_id]);
+            $tags2 = array_filter($recommendRankingRepository->getOcTags([$open_chat_id]), fn($tag) => !in_array($tag, $tags1));
+
+            $tagFirst = null;
+            $tagSecond = null;
+            $tagThird = null;
+
+            switch (count($tags1)) {
+                case 0:
+                    break;
+                case 1:
+                    $tagFirst = $tags1[array_rand($tags1)];
+                    $tagSecond = $tags2 ? $tags2[array_rand($tags2)] : null;
+                    break;
+                case 2:
+                    $tagFirst = $tags1[array_rand($tags1)];
+                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagFirst);
+                    $tagSecond = $tags1[array_rand($tags1)];
+                    $tagThird = $tags2 ? $tags2[array_rand($tags2)] : null;
+                    break;
+                default:
+                    $tagFirst = $tags1[array_rand($tags1)];
+                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagFirst);
+                    $tagSecond = $tags1[array_rand($tags1)];
+                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagSecond);
+                    $tagThird = $tags1[array_rand($tags1)];
+            }
+
+            $recommend = $recommendGenarator->getRecommend(
+                $tags1 ? $tags1[array_rand($tags1)] : null,
+                $tags2 ? $tags2[array_rand($tags2)] : null,
+                $oc['tag3'],
+                $oc['category']
+            );
         }
 
-        $tag = $oc['tag1'];
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
-        $recommend = $recommendGenarator->getRecommend($tag, $oc['tag2'], $oc['tag3'], $oc['category']);
 
         $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
         if (!$_statsDto) {
@@ -81,7 +119,7 @@ class OpenChatPageController
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             t('オプチャ'),
             'oc',
-            $tag ?: $category,
+            $oc['tag1'] ?: $category,
             (string)$open_chat_id
         );
 
