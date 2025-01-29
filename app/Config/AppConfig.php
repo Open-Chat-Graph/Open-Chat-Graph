@@ -31,7 +31,7 @@ class AppConfig
     const LIST_LIMIT_MY_LIST = 50;
     const LIST_LIMIT_RECENT_COMMENT = 50;
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
-    const LIST_LIMIT_RECOMMEND = 50;
+    const LIST_LIMIT_RECOMMEND = 20;
 
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
@@ -134,6 +134,8 @@ class AppConfig
 
     static bool $isDevlopment = false;
     static bool $isStaging = false;
+    static bool $disableStaticDataFile = false;
+    static bool $disableAds = false;
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
 

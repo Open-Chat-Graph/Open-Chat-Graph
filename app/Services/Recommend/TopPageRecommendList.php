@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Models\Repositories\DB;
+use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 
 class TopPageRecommendList
 {

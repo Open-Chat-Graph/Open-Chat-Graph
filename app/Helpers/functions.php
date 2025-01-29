@@ -6,6 +6,8 @@ use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use Shadow\Kernel\Dispatcher\ReceptionInitializer;
+use Shadow\Kernel\Utility\KernelUtility;
 use Shared\Exceptions\NotFoundException;
 use Shared\MimimalCmsConfig;
 
@@ -149,7 +151,7 @@ function getCronModifiedDateTime(string $datetime, string $format = 'Y/n/j G:i')
 
 function getHostAndUri(): string
 {
-    return $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    return ReceptionInitializer::getDomainAndHttpHost('') . KernelUtility::getCurrentUri('');
 }
 
 function getQueryString(string $separater = '?'): string

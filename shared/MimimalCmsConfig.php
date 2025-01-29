@@ -104,10 +104,10 @@ class MimimalCmsConfig
 
     // Display exceptions
     public static bool $exceptionHandlerDisplayBeforeObClean = true;
-    public static bool $exceptionHandlerDisplayErrorTraceDetails = false;
+    public static bool $exceptionHandlerDisplayErrorTraceDetails = true;
 
     // Exceptions Log directory.
-    public static string $exceptionLogDirectory = __DIR__ . '/../logs/exception.log';
+    public static string $exceptionLogDirectory = __DIR__ . '/../storage/exception.log';
 
     /**
      * The path to hide from exception error trace.

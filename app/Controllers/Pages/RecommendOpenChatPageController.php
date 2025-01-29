@@ -5,34 +5,32 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Recommend\RecommendPageList;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
+use Shared\MimimalCmsConfig;
 
 class RecommendOpenChatPageController
 {
     function __construct(
         private PageBreadcrumbsListSchema $breadcrumbsShema
-    ) {
-    }
-
-    const Redirect = [
-        'ChatGPT' => '生成AI・ChatGPT',
-        'AI画像・イラスト生成' => '画像生成AI・AIイラスト',
-        'Produce 101 Japan' => 'PRODUCE 101 JAPAN THE GIRLS（日プ女子）',
-        'なりきり（全也）' => 'なりきり',
-        'クーポン・お得情報' => 'クーポン・無料配布',
-        'ロック' => '邦ロック',
-        '整形' => '美容整形',
-    ];
+    ) {}
 
     function index(
         RecommendPageList $recommendPageList,
         StaticDataFile $staticDataGeneration,
         string $tag
     ) {
-        if (isset(self::Redirect[$tag]))
-            return redirect('recommend?tag=' . urlencode(self::Redirect[$tag]), 301);
+        if (MimimalCmsConfig::$urlRoot === '') {
+            if (isset(RecommendTagFilters::RedirectTags[$tag]))
+                return redirect('recommend?tag=' . urlencode(RecommendTagFilters::RedirectTags[$tag]), 301);
+
+            $extractTag = RecommendUtility::extractTag($tag);
+        } else {
+            $extractTag = $tag;
+        }
+
 
         if (!$recommendPageList->isValidTag($tag))
             return false;
@@ -40,18 +38,22 @@ class RecommendOpenChatPageController
         $_dto = $staticDataGeneration->getRecommendPageDto();
 
         $count = 0;
-        $extractTag = RecommendUtility::extractTag($tag);
-        $pageDesc =
-            "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
 
-        $_meta = meta()
-            ->setDescription($pageDesc)
-            ->setOgpDescription($pageDesc);
+        if (MimimalCmsConfig::$urlRoot === '') {
+            $pageDesc =
+                "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
+
+            $_meta = meta()
+                ->setDescription($pageDesc)
+                ->setOgpDescription($pageDesc);
+        } else {
+            $_meta = meta();
+        }
 
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_page'];
 
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema(
-            'おすすめ',
+            t('おすすめ'),
             'recommend',
             $extractTag,
             'recommend/?tag=' . urlencode($tag),
@@ -65,7 +67,7 @@ class RecommendOpenChatPageController
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
-            $_meta->setTitle("【最新】{$extractTag}のおすすめ 人気オプチャ特集");
+            $_meta->setTitle(t('【最新】') . sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag));
             noStore();
             return view('recommend_content', compact(
                 '_meta',
@@ -84,7 +86,7 @@ class RecommendOpenChatPageController
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
         $count = $recommend->getCount();
-        $headline = "【最新】{$extractTag}のおすすめ 人気オプチャ特集{$count}選";
+        $headline = t('【最新】') . sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag) . sprintfT('%s選', $count);
         $_meta->setTitle($headline);
         $_meta->setImageUrl(imgUrl($recommendList[0]['id'], $recommendList[0]['img_url']));
         $_meta->thumbnail = imgPreviewUrl($recommendList[0]['id'], $recommendList[0]['img_url']);

@@ -4,7 +4,7 @@
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -39,7 +39,7 @@ if ($recommend->type === RecommendListType::Category) {
 
     <?php if (isset($showTags) && $tags = $recommend->getFilterdTags(true)) : ?>
         <div>
-            <div style="line-height: 1.5; font-size: 16px; color: #111; font-weight: bold;">関連のテーマ</div>
+            <div style="line-height: 1.5; font-size: 16px; color: #111; font-weight: bold;"><?php echo t('関連のテーマ') ?></div>
             <?php viewComponent('tag_list_section', compact('tags')) ?>
         </div>
     <?php endif ?>

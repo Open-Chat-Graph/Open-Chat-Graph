@@ -9,7 +9,7 @@ class RecommendRankingRepositoryTest extends TestCase
 {
     private RecommendRankingRepository $inst;
 
-    public function getListOrderByMemberDesc_test()
+    public function test()
     {
         $this->inst = app(RecommendRankingRepository::class);
 

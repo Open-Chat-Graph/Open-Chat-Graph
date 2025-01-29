@@ -22,7 +22,7 @@ class StaticDataFile
         $data = getUnserializedFile(AppConfig::getStorageFilePath('topPageRankingData'));
 
         /** @var StaticTopPageDto $data */
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             return $staticDataGenerator->getTopPageDataFromDB();
@@ -37,7 +37,7 @@ class StaticDataFile
         /** @var RankingArgDto $data */
         $data = getUnserializedFile(AppConfig::getStorageFilePath('rankingArgDto'));
         //$data = null;
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getRankingArgDto();
@@ -52,7 +52,7 @@ class StaticDataFile
         /** @var StaticRecommendPageDto $data */
         $data = getUnserializedFile(AppConfig::getStorageFilePath('recommendPageDto'));
         //$data = null;
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getRecommendPageDto();
@@ -67,7 +67,7 @@ class StaticDataFile
     {
         /** @var array $data */
         $data = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getTagList();

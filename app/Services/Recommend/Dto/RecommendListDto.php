@@ -6,14 +6,16 @@ namespace App\Services\Recommend\Dto;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendTagFilters;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
+use Shared\MimimalCmsConfig;
 
 class RecommendListDto
 {
     public int $maxMemberCount;
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
+    public array $sortAndUniqueTags = [];
 
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
@@ -26,15 +28,21 @@ class RecommendListDto
         public string $hourlyUpdatedAt
     ) {
         $this->mergedElements = array_merge($hour, $day, $week, $member);
+        if (count($this->mergedElements) > AppConfig::LIST_LIMIT_RECOMMEND) {
+            $this->mergedElements = array_slice($this->mergedElements, 0, AppConfig::LIST_LIMIT_RECOMMEND);
+        }
 
         $elements = array_column($this->mergedElements, 'member');
         $this->maxMemberCount = $elements ? max($elements) : 0;
     }
 
-    private function getSliceLength(int $count)
+    function getList(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING, int $excludeId = 0): array
     {
-        $count = AppConfig::LIST_LIMIT_RECOMMEND - $count;
-        return max($count, 0);
+        $elements = $shuffle ? $this->buildShuffledList() : $this->mergedElements;
+        if ($excludeId) $elements = array_filter($elements, fn($el) => $el['id'] !== $excludeId);
+
+        $result = $limit ? array_slice($elements, 0, $limit) : $elements;
+        return $result;
     }
 
     /** @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[] */
@@ -79,55 +87,10 @@ class RecommendListDto
         return $this->shuffledMergedElements;
     }
 
-    /** @return string[] */
-    private function buildFilterdTags(array $mergedElements, bool $shuffle): array
+    private function getSliceLength(int $count)
     {
-        $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
-        $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
-        $tagStr = RecommendUtility::extractTag($tag);
-
-        $tags = sortAndUniqueArray(
-            array_merge(
-                array_column($mergedElements, 'tag1'),
-                array_column($mergedElements, 'tag2'),
-                RecommendTagFilters::FilteredTagSort[$tag] ?? []
-            ),
-            1
-        );
-
-        $tags = array_filter(
-            $tags,
-            fn ($e) => (
-                !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
-                || (
-                    isset(RecommendTagFilters::FilteredTagSort[$tag])
-                    && in_array($e, RecommendTagFilters::FilteredTagSort[$tag])
-                )
-            ) && $e !== $tagName
-        );
-
-        $tagsStr = array_map(fn ($t) => RecommendUtility::extractTag($t), $tags);
-
-        uksort($tags, function ($a) use ($tagStr, $tagsStr, $tag, $tags) {
-            return str_contains(
-                $tagsStr[$a],
-                $tagStr
-            ) || (
-                isset(RecommendTagFilters::FilteredTagSort[$tag])
-                && in_array($tags[$a], RecommendTagFilters::FilteredTagSort[$tag])
-            ) ? -1 : 1;
-        });
-
-        return $tags;
-    }
-
-    function getList(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING, int $excludeId = 0): array
-    {
-        $elements = $shuffle ? $this->buildShuffledList() : $this->mergedElements;
-        if ($excludeId) $elements = array_filter($elements, fn ($el) => $el['id'] !== $excludeId);
-        
-        $result = $limit ? array_slice($elements, 0, $limit) : $elements;
-        return $result;
+        $count = AppConfig::LIST_LIMIT_RECOMMEND - $count;
+        return max($count, 0);
     }
 
     /** @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[] */
@@ -144,6 +107,55 @@ class RecommendListDto
     /** @return string[] */
     function getFilterdTags(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING): array
     {
+        // 日本以外は取得済みの関連タグを返す
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return $this->type === RecommendListType::Tag
+                ? array_filter($this->sortAndUniqueTags, fn($e) => $e !== $this->listName)
+                : $this->sortAndUniqueTags;
+        }
+
         return $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
+    }
+
+    /** @return string[] */
+    private function buildFilterdTags(array $mergedElements, bool $shuffle): array
+    {
+        $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
+        $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
+        $tagStr = RecommendUtility::extractTag($tag);
+
+        $sortAndUniqueTags = sortAndUniqueArray(
+            array_merge(
+                array_column($mergedElements, 'tag1'),
+                array_column($mergedElements, 'tag2'),
+                RecommendTagFilters::FilteredTagSort[$tag] ?? []
+            ),
+            1
+        );
+
+        $tags = array_filter(
+            $sortAndUniqueTags,
+            fn($e) => (
+                !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
+                || (
+                    isset(RecommendTagFilters::FilteredTagSort[$tag])
+                    && in_array($e, RecommendTagFilters::FilteredTagSort[$tag])
+                )
+            ) && $e !== $tagName
+        );
+
+        $tagsStr = array_map(fn($t) => RecommendUtility::extractTag($t), $tags);
+
+        uksort($tags, function ($a) use ($tagStr, $tagsStr, $tag, $tags) {
+            return str_contains(
+                $tagsStr[$a],
+                $tagStr
+            ) || (
+                isset(RecommendTagFilters::FilteredTagSort[$tag])
+                && in_array($tags[$a], RecommendTagFilters::FilteredTagSort[$tag])
+            ) ? -1 : 1;
+        });
+
+        return $tags;
     }
 }

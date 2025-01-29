@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Config\AppConfig;
 use App\Services\Recommend\RecommendUpdater;
 use PHPUnit\Framework\TestCase;
+use Shared\MimimalCmsConfig;
 
 class RecommendUpdaterTest extends TestCase
 {
@@ -11,9 +13,16 @@ class RecommendUpdaterTest extends TestCase
 
     public function test2()
     {
+        MimimalCmsConfig::$urlRoot = '/th';
+
+        safeFileRewrite(
+            AppConfig::getStorageFilePath('tagUpdatedAtDatetime'),
+            (new \DateTime)->modify('-1year')->format('Y-m-d H:i:s')
+        );
+
         $this->inst = app(RecommendUpdater::class);
 
-        $r = $this->inst->getAllTagName();
+        $r = $this->inst->updateRecommendTables();
         debug($r);
 
         $this->assertTrue(true);

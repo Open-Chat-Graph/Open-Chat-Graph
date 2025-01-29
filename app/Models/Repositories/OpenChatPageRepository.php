@@ -39,8 +39,8 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 LEFT JOIN statistics_ranking_hour AS rh ON oc.id = rh.open_chat_id
                 LEFT JOIN statistics_ranking_hour24 AS rh24 ON oc.id = rh24.open_chat_id
                 LEFT JOIN recommend AS tg ON oc.id = tg.id
-                LEFT JOIN oc_tag AS tg2 ON oc.id = tg2.id
-                LEFT JOIN oc_tag2 AS tg3 ON oc.id = tg3.id
+                LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS tg2 ON oc.id = tg2.id
+                LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS tg3 ON oc.id = tg3.id
             WHERE
                 oc.id = :id";
 

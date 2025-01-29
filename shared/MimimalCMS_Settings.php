@@ -13,6 +13,14 @@ if (file_exists(__DIR__ . '/secrets.php')) {
     require_once __DIR__ . '/secrets.php';
 }
 
+if (file_exists(__DIR__ . '/../prod-secrets.php')) {
+    require_once __DIR__ . '/../prod-secrets.php';
+}
+
+if (file_exists(__DIR__ . '/../local-secrets.php')) {
+    require_once __DIR__ . '/../local-secrets.php';
+}
+
 date_default_timezone_set('Asia/Tokyo');
 
 $httpHost = 'openchat-review.me';

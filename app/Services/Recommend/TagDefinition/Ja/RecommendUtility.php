@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Recommend;
+namespace App\Services\Recommend\TagDefinition\Ja;
+
+use Shared\MimimalCmsConfig;
 
 class RecommendUtility
 {
@@ -32,8 +34,14 @@ class RecommendUtility
         'ルセラ' => 'LE SSERAFIM',
     ];
 
-    static function extractTag(string $str): string
+    static function extractTag(string|int $str): string
     {
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return $str;
+        }
+
+        $str = (string)$str;
+
         // 文末の括弧内のテキストを抽出する正規表現
         if (preg_match('/（(.*)）$/', $str, $matches)) {
             // 括弧内のテキストが見つかった場合

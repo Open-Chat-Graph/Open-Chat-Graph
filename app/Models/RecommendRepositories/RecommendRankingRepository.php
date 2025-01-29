@@ -6,7 +6,7 @@ namespace App\Models\RecommendRepositories;
 
 use App\Models\Repositories\DB;
 
-class RecommendRankingRepository implements RecommendRankingRepositoryInterface
+class RecommendRankingRepository extends AbstractRecommendRankingRepository
 {
     function getRanking(
         string $tag,
@@ -14,34 +14,34 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $minDiffMember,
         int $limit,
     ): array {
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
                 '{$table}' AS table_name
             FROM
-                open_chat AS oc
-                JOIN (
+                (
                     SELECT
                         t2.id,
                         t1.diff_member AS diff_member,
                         t3.tag AS tag1,
                         t4.tag AS tag2
                     FROM
-                        (
+                        recommend AS t2
+                        JOIN (
                             SELECT
                                 *
                             FROM
                                 {$table}
                             WHERE
                                 diff_member >= :minDiffMember
-                        ) AS t1
-                        JOIN recommend AS t2 ON t1.open_chat_id = t2.id
-                        LEFT JOIN oc_tag AS t3 ON t1.open_chat_id = t3.id
-                        LEFT JOIN oc_tag2 AS t4 ON t1.open_chat_id = t4.id
+                        ) AS t1 ON t1.open_chat_id = t2.id
+                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t1.open_chat_id = t3.id
+                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
                     WHERE
                         t2.tag = :tag
-                ) AS ranking ON oc.id = ranking.id
+                ) AS ranking
+                JOIN open_chat AS oc ON oc.id = ranking.id
             ORDER BY
                 ranking.diff_member DESC
             LIMIT
@@ -58,21 +58,21 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $limit,
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 {$select},
                 '{$table}' AS table_name
             FROM
-                open_chat AS oc
-                JOIN (
+                (
                     SELECT
                         t2.id,
                         t1.diff_member AS diff_member,
                         t3.tag AS tag1,
                         t4.tag AS tag2
                     FROM
-                        (
+                        recommend AS t2
+                        JOIN (
                             SELECT
                                 sr1.*
                             FROM
@@ -84,13 +84,13 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
                                     WHERE
                                         diff_member >= :minDiffMember
                                 ) AS sr1
-                        ) AS t1
-                        JOIN recommend AS t2 ON t1.open_chat_id = t2.id
-                        LEFT JOIN oc_tag AS t3 ON t1.open_chat_id = t3.id
-                        LEFT JOIN oc_tag2 AS t4 ON t1.open_chat_id = t4.id
+                        ) AS t1 ON t1.open_chat_id = t2.id
+                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t1.open_chat_id = t3.id
+                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
                     WHERE
                         t2.tag = :tag
-                ) AS ranking ON oc.id = ranking.id
+                ) AS ranking
+                JOIN open_chat AS oc ON oc.id = ranking.id
                 LEFT JOIN statistics_ranking_hour AS rh ON rh.open_chat_id = oc.id
             WHERE
                 oc.id NOT IN ({$ids})
@@ -108,7 +108,7 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
         int $limit,
     ): array {
         $ids = implode(",", $idArray) ?: 0;
-        $select = RecommendRankingRepositoryInterface::SelectPage;
+        $select = self::SelectPage;
         return DB::fetchAll(
             "SELECT
                 t1.*
@@ -118,8 +118,7 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
                         {$select},
                         'open_chat' AS table_name
                     FROM
-                        open_chat AS oc
-                        JOIN (
+                        (
                             SELECT
                                 r.*,
                                 t3.tag AS tag1,
@@ -133,9 +132,10 @@ class RecommendRankingRepository implements RecommendRankingRepositoryInterface
                                     WHERE
                                         tag = :tag
                                 ) AS r
-                                LEFT JOIN oc_tag AS t3 ON r.id = t3.id
-                                LEFT JOIN oc_tag2 AS t4 ON r.id = t4.id
-                        ) AS ranking ON oc.id = ranking.id
+                                LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON r.id = t3.id
+                                LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON r.id = t4.id
+                        ) AS ranking
+                        JOIN open_chat AS oc ON oc.id = ranking.id
                         LEFT JOIN statistics_ranking_hour24 AS rh ON oc.id = rh.open_chat_id
                         LEFT JOIN statistics_ranking_hour AS rh2 ON oc.id = rh2.open_chat_id
                     WHERE

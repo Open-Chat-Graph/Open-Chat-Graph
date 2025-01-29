@@ -12,13 +12,12 @@ interface ConstructorInjectionInterface
      * Resolves a class constructor's dependencies recursively through constructor injection.
      *
      * @param string $className          The name of the class to resolve
-     * @param array  &$resolvedInstances Instances that have already been resolved
      * 
      * @return object The resolved instance
      * 
      * @throws \ReflectionException
      */
-    public function constructorInjection(string $className, array &$resolvedInstances = []): object;
+    public function constructorInjection(string $className): object;
 
     /**
      * Resolves an interface name to a concrete class name

@@ -26,7 +26,7 @@ class RecommendStaticDataFile
             AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
         );
 
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(RecommendStaticDataGenerator::class);
             return $staticDataGenerator->getCategoryRanking($category);
@@ -43,7 +43,7 @@ class RecommendStaticDataFile
             AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
         );
 
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(RecommendStaticDataGenerator::class);
             return $staticDataGenerator->getRecomendRanking($tag);
@@ -59,7 +59,7 @@ class RecommendStaticDataFile
             AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
         );
 
-        if (!$data) {
+        if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var RecommendStaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(RecommendStaticDataGenerator::class);
             return $staticDataGenerator->getOfficialRanking($emblem);

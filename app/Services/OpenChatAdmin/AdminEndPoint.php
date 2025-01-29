@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChatAdmin;
 
 use App\Services\Recommend\RecommendUpdater;
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use Shared\Exceptions\BadRequestException as Bad;
 use Shadow\Kernel\Reception as R;
 use App\Models\Repositories\DB;

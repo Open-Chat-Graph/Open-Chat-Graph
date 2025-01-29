@@ -9,7 +9,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
 
 $_tagIndex = htmlspecialchars_decode($tag);
 if (isset($_dto->tagRecordCounts[$_tagIndex])) {
-  $countTitle = $count . '選';
+  $countTitle = sprintfT('%s選', $count);
 } else {
   $countTitle = '';
 }
@@ -25,10 +25,10 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <section class="recommend-header-wrapper">
 
       <div class="recommend-header-bottom" style="padding-top: 8px;">
-        <div class="recommend-data-desc">統計に基づくランキング</div>
+        <div class="recommend-data-desc"><?php echo t('統計に基づくランキング') ?></div>
         <?php if (isset($hourlyUpdatedAt)) : ?>
           <div class="recommend-header-time">
-            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format('Y年n月j日 G:i') ?></time>
+            <time datetime="<?php echo $hourlyUpdatedAt->format(\DateTime::ATOM) ?>"><?php echo $hourlyUpdatedAt->format(t('Y年n月j日 G:i')) ?></time>
           </div>
         <?php endif ?>
       </div>
@@ -37,14 +37,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          【最新】<?php echo $extractTag ?>のおすすめ 人気オプチャ特集<?php echo $countTitle ?? '' ?>
+          <?php echo t('【最新】') . sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag) ?><?php echo $countTitle ?? '' ?>
         </h1>
       </div>
 
       <?php if (isset($recommend)) : ?>
         <figure class="talkroom_banner_img_figure">
           <?php $oc = $recommend->getPreviewList(1)[0] ?>
-          <figcaption>「<?php echo $oc['name'] ?>」のメイン画像</figcaption>
+          <figcaption><?php echo sprintfT('「%s」のメイン画像', $oc['name']) ?></figcaption>
           <div class="talkroom_banner_img_area">
             <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
           </div>
@@ -54,58 +54,61 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </section>
 
     <p class="recommend-header-desc desc-bottom">
-      「<?php echo $tag ?>」に関する人気のオープンチャットをピックアップ！🙌<br>
-      ランキングは、直近の参加人数増加率を基に決定しています。
+      <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $tag) ?><br>
+      <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
     </p>
 
     <?php if (isset($recommend)) : ?>
       <header class="recommend-ranking-section-header" style="padding: 0 0 10px 16px;">
         <aside class="list-aside">
           <details class="icon-desc">
-            <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7">人数増加アイコンの説明</summary>
+            <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7"><?php echo t('人数増加アイコンの説明') ?></summary>
             <div class="list-aside-details">
-              <small class="list-aside-desc">🔥：過去1時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR ?>人以上増加<?php if (count($recommend->hour) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
-              <small class="list-aside-desc">🚀：過去24時間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24 ?>人以上増加<?php if (count($recommend->day) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?></small>
+              <small class="list-aside-desc">🔥：<?php echo sprintfT('過去1時間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR) ?></small>
+              <small class="list-aside-desc">🚀：<?php echo sprintfT('過去24時間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) ?></small>
               <small class="list-aside-desc">
                 <span style="margin: 0 4px;">
                   <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
                     <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
                   </svg>
-                </span>：過去1週間で<?php echo AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK ?>人以上増加<?php if (count($recommend->week) >= AppConfig::LIST_LIMIT_RECOMMEND) : ?> (上位<?php echo AppConfig::LIST_LIMIT_RECOMMEND ?>件まで)<?php endif ?>
+                </span>：<?php echo sprintfT('過去1週間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK) ?>
               </small>
-              <small class="list-aside-desc">🏆：リスト内で最も人数が多いトークルーム</small>
+              <small class="list-aside-desc">🏆：<?php echo t('リスト内で最も人数が多いトークルーム') ?></small>
             </div>
           </details>
         </aside>
       </header>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide2']) ?>
-
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset" style="counter-reset: openchat-counter2 <?php echo $count + 1 ?>;">
           <?php
           $chunkLen = 5;
-          $lists = array_chunk(array_reverse($recommend->getList(false, null)), $chunkLen);
+          $reverseList = array_reverse($recommend->getList(false, null));
+          $firstLists = array_slice($reverseList, 0, $chunkLen);
+          $secondLists = array_chunk(array_slice($reverseList, $chunkLen), $chunkLen * 2);
+          $lists = [$firstLists, ...$secondLists];
           $listsLastKey = count($lists) - 1;
+          $currentCount = 0;
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
               <header class="recommend-ranking-section-header">
                 <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                  <div><?php echo $extractTag ?></div>
-                  <div>のおすすめ 人気オプチャ特集<?php echo $countTitle ?? '' ?>&nbsp</div>
-                  <div><?php echo $count - $key * $chunkLen ?>位〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
+                  <div><?php echo sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag) ?></div>
+                  <div>&nbsp;<?php echo sprintfT('%s位', $count - $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                 </h2>
               </header>
               <?php if ($key === 0) : ?>
               <?php else : ?>
               <?php endif ?>
-              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showReverseListMedal' => $listsLastKey === $key]) ?>
+              <?php $currentCount += count($listArray) ?>
+
+              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showReverseListMedal' => ($count - $currentCount) === 0]) ?>
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
-                  <span class="ranking-readMore" style="font-size: 11.5px;">「<?php echo $tag ?>」をすべて見る<span class="small" style="font-size: 11.5px;"><?php echo $_dto->tagRecordCounts[$_tagIndex] ?>件</span></span>
+                  <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
                 </a>
               <?php endif ?>
             </li>
@@ -153,7 +156,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
-  <script defer src="<?php echo fileurl("/js/site_header_footer.js") ?>"></script>
+  <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php echo $_breadcrumbsShema ?>
 </body>

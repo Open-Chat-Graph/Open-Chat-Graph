@@ -2,7 +2,7 @@
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
-use App\Services\Recommend\RecommendUtility;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 
 $tags = $topPageDto->recommendList;
@@ -33,7 +33,7 @@ function greenTag($word)
         <header class="openchat-list-title-area unset" style="margin-bottom: 0px;">
             <div class="openchat-list-date unset ranking-url">
                 <h2 class="unset">
-                    <span class="openchat-list-title">いま人数急増中のテーマ</span>
+                    <span class="openchat-list-title"><?php echo t('いま人数急増中のテーマ') ?></span>
                     <span aria-hidden="true" style="font-size: 9px; user-select: none; margin-bottom: px;margin-left: -3px;">🚀</span>
                 </h2>
                 <span style="font-weight: normal; color:#aaa; font-size:13px; margin: 0"><?php echo $topPageDto->hourlyUpdatedAt->format('G:i') ?></span>

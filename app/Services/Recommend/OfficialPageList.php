@@ -18,18 +18,4 @@ class OfficialPageList
     {
         return $this->recommendStaticDataGenerator->getOfficialRanking($emblem);
     }
-
-    /** @return string[] */
-    function getFilterdTags(array $recommendList): array
-    {
-        $tags = sortAndUniqueArray(
-            array_merge(
-                array_column($recommendList, 'tag1'),
-                array_column($recommendList, 'tag2'),
-            ),
-            1
-        );
-
-        return $tags;
-    }
 }

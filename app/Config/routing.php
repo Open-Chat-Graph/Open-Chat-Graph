@@ -65,13 +65,6 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache($open_chat_id));
 
-Route::path('oc/{open_chat_id}/csv', [OpenChatPageController::class, 'csv'])
-    ->matchNum('open_chat_id', min: 1)
-    ->match(
-        fn(int $open_chat_id) =>
-        handleRequestWithETagAndCache(getDailyUpdateTime() . $open_chat_id, ...AppConfig::ETAG_ARG)
-    );
-
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     ->match(fn(Reception $reception) => handleRequestWithETagAndCache(json_encode($reception->input())));
 
