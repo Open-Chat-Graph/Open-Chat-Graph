@@ -484,12 +484,6 @@ html {
   }
 }
 
-@media screen and (max-width: 511px) {
-  .csv-dl {
-    display: none;
-  }
-}
-
 @media screen and (min-width: 512px) {
   .openchat-header {
     padding-top: 1rem;
@@ -694,11 +688,6 @@ html {
 .comment-aside {
   margin-top: 0.2rem;
   padding: 0;
-}
-
-.csv-dl {
-  font-size: 12px;
-  color: #aaa;
 }
 
 .MuiToggleButton-sizeSmall.MuiToggleButton-standard {

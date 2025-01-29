@@ -14,7 +14,6 @@ use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
-use App\Services\Statistics\DownloadCsvService;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Dto\RankingPositionChartArgDto;
 use App\Views\Meta\OcPageMeta;
@@ -174,18 +173,5 @@ class OpenChatPageController
             'officialDto',
             'topPageDto',
         ));
-    }
-
-    function csv(
-        OpenChatPageRepositoryInterface $ocRepo,
-        DownloadCsvService $downloadCsvService,
-        int $open_chat_id
-    ) {
-        $oc = $ocRepo->getOpenChatById($open_chat_id);
-        if (!$oc)
-            return false;
-
-        $downloadCsvService->sendCsv($open_chat_id, $oc['name']);
-        exit;
     }
 }

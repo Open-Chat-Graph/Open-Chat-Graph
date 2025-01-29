@@ -25,39 +25,6 @@ class OcPageSchema
         array $oc
     ): string {
         $name = $oc['name'];
-        $dataset = Schema::dataset()
-            ->name("LINE Open Chat '{$name}' Member Count Trend")
-            ->description(
-                "The member count trend of the Open Chat '{$name}' is recorded daily. By accessing the URL, you can view it in a graph. The data is available for download in CSV format, containing the member count and dates for the entire period."
-            )
-            ->publisher(
-                $this->schema->publisher()
-            )
-            ->creator(
-                $this->schema->person()
-            )
-            ->keywords([
-                "LINE Open Chat",
-                "Member Count",
-            ])
-            ->provider(
-                $this->schema->lineOcOrganization()
-            )
-            ->license('https://creativecommons.org/licenses/by/4.0/legalcode')
-            ->url(url('oc/' . $oc['id']))
-            ->datePublished($datePublished)
-            ->dateModified($dateModified)
-            ->image([
-                imgUrl($oc['id'], $oc['img_url']),
-            ])
-            ->distribution(
-                Schema::dataDownload()
-                    ->encodingFormat('CSV')
-                    ->contentUrl(url('oc/' . $oc['id'] . '/csv'))
-            )
-            ->variableMeasured('http://schema.org/FollowAction')
-            ->measurementTechnique('Recording member count data from the official LINE Open Chat website.');
-
         $tags = array_filter(
             $recommend,
             fn($r) => $r instanceof RecommendListDto ? ($r->type === RecommendListType::Tag ? $r->listName : false) : false,
@@ -91,7 +58,6 @@ class OcPageSchema
                 )
             )
             ->mainEntity($this->schema->room($oc))
-            ->mainEntityOfPage($dataset)
             ->potentialAction($this->schema->potentialAction());
 
         // JSON-LDのマークアップを生成
