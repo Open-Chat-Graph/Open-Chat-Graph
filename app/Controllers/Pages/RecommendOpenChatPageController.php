@@ -38,12 +38,17 @@ class RecommendOpenChatPageController
         $_dto = $staticDataGeneration->getRecommendPageDto();
 
         $count = 0;
-        $pageDesc =
-            "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
 
-        $_meta = meta()
-            ->setDescription($pageDesc)
-            ->setOgpDescription($pageDesc);
+        if (MimimalCmsConfig::$urlRoot === '') {
+            $pageDesc =
+                "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
+
+            $_meta = meta()
+                ->setDescription($pageDesc)
+                ->setOgpDescription($pageDesc);
+        } else {
+            $_meta = meta();
+        }
 
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_page'];
 
