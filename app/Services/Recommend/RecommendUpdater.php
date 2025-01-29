@@ -331,7 +331,7 @@ class RecommendUpdater
                             oc.*
                         FROM
                             open_chat AS oc
-                            LEFT JOIN {$table} AS t ON t.id = oc.id = oc.id {$duplicateEntries}
+                            LEFT JOIN {$table} AS t ON t.id = oc.id {$duplicateEntries}
                             LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
                         WHERE
                             t.id IS NULL
