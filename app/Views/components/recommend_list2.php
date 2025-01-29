@@ -15,9 +15,9 @@ if (!$recommend->getCount()) {
 if ($recommend->type === RecommendListType::Category) {
     $title = sprintfT('「%s」カテゴリーのおすすめ', $recommend->listName);
 } elseif ($recommend->type === RecommendListType::Official) {
-    $title = sprintfT('%sのおすすめ', $recommend->listName);
+    $title = sprintfT('「%s」のおすすめ', $recommend->listName);
 } else {
-    $title = "「{$recommend->listName}」のおすすめ";
+    $title = sprintfT('「%s」のおすすめ', $recommend->listName);
 }
 
 ?>
@@ -54,7 +54,7 @@ if ($recommend->type === RecommendListType::Category) {
         </a>
     <?php else : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
-            <span class="ranking-readMore">「<?php echo RecommendUtility::extractTag($recommend->listName) ?>」をもっと見る</span>
+            <span class="ranking-readMore"><?php echo sprintfT('%sをもっと見る', RecommendUtility::extractTag($recommend->listName)) ?></span>
         </a>
     <?php endif ?>
 
