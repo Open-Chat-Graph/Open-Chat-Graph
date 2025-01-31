@@ -42,13 +42,17 @@ class RecommendOpenChatPageController
         if (MimimalCmsConfig::$urlRoot === '') {
             $pageDesc =
                 "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
-
-            $_meta = meta()
-                ->setDescription($pageDesc)
-                ->setOgpDescription($pageDesc);
-        } else {
-            $_meta = meta();
+        } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
+            $pageDesc =
+                "自 2019 年推出以來，LINE OpenChat 已累積超過 3,000 萬名用戶使用。在 這個網站 中，我們根據「{$tag}」主題，統計最近成長最快的聊天室排名。此排名每小時更新，並持續新增新的聊天室。";
+        } elseif (MimimalCmsConfig::$urlRoot === '/th') {
+            $pageDesc =
+                "ตั้งแต่เปิดตัวในปี 2019 LINE OpenChat มีผู้ใช้สะสมมากกว่า 30 ล้านคนแล้ว บน เว็บไซต์นี้ เราจัดอันดับห้องแชทที่เติบโตเร็วที่สุดในหัวข้อ \"{$tag}\" การจัดอันดับนี้อัปเดตทุกชั่วโมง และมีห้องใหม่เพิ่มขึ้นอย่างต่อเนื่อง";
         }
+
+        $_meta = meta()
+            ->setDescription($pageDesc)
+            ->setOgpDescription($pageDesc);
 
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_page'];
 
