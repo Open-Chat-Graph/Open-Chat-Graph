@@ -37,7 +37,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          <?php echo t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?><?php echo $countTitle ?? '' ?>
+          <?php echo t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag) ?><?php echo $countTitle ?? '' ?>
         </h1>
       </div>
 
@@ -54,7 +54,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </section>
 
     <p class="recommend-header-desc desc-bottom">
-      <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $tag) ?><br>
+      <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $extractTag) ?><br>
       <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
     </p>
 
