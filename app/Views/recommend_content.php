@@ -9,7 +9,7 @@ use App\Views\Ads\GoogleAdsence as GAd;
 
 $_tagIndex = htmlspecialchars_decode($tag);
 if (isset($_dto->tagRecordCounts[$_tagIndex])) {
-  $countTitle = sprintfT('%s選', $count);
+  $countTitle = sprintfT('TOP%s', $count);
 } else {
   $countTitle = '';
 }
@@ -37,7 +37,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          <?php echo t('【最新】') . sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag) ?><?php echo $countTitle ?? '' ?>
+          <?php echo t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?><?php echo $countTitle ?? '' ?>
         </h1>
       </div>
 
@@ -96,7 +96,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
               <header class="recommend-ranking-section-header">
                 <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                  <div><?php echo sprintfT("「%s」のおすすめ 人気オプチャまとめ", $extractTag) ?></div>
+                  <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?></div>
                   <div>&nbsp;<?php echo sprintfT('%s位', $count - $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                 </h2>
               </header>

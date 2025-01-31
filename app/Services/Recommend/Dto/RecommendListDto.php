@@ -12,7 +12,7 @@ use Shared\MimimalCmsConfig;
 
 class RecommendListDto
 {
-    const TAG_LIMIT = 20;
+    const TAG_LIMIT = 30;
 
     public int $maxMemberCount;
     public array $mergedElements;
