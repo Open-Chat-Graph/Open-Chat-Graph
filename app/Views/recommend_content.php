@@ -59,7 +59,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </p>
 
     <?php if (isset($recommend)) : ?>
-      <header class="recommend-ranking-section-header" style="padding: 0 0 10px 16px;">
+      <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
         <aside class="list-aside">
           <details class="icon-desc">
             <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7"><?php echo t('人数増加アイコンの説明') ?></summary>
@@ -93,14 +93,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
-              <header class="recommend-ranking-section-header">
-                <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                  <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?></div>
-                  <div>&nbsp;<?php echo sprintfT('%s位', $count - $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
-                </h2>
-              </header>
               <?php if ($key === 0) : ?>
               <?php else : ?>
+                <header class="recommend-ranking-section-header">
+                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
+                    <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?></div>
+                    <div>&nbsp;<?php echo sprintfT('%s位', $count - $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
+                  </h2>
+                </header>
               <?php endif ?>
               <?php $currentCount += count($listArray) ?>
 
