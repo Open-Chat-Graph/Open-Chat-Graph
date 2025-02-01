@@ -566,12 +566,12 @@ body::before {
 
 .rectangle3-ads {
   width: auto;
-  aspect-ratio: 1;
+  aspect-ratio: 1.2;
 }
 
 .rectangle4-ads {
   width: auto;
-  aspect-ratio: 9/16;
+  aspect-ratio: 1;
 }
 
 .horizontal-ads {
