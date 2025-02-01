@@ -121,11 +121,10 @@ class GoogleAdsence
     {
 
         $adClient = self::AD_CLIENT;
-        $dataAdFormat = str_contains($cssClass, 'rectangle') ? 'rectangle' : 'horizontal';
 
         echo <<<EOT
         <div style="margin: 8px 1rem;">
-            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="{$dataAdFormat}"></ins>
+            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle,horizontal"></ins>
         </div>
         EOT;
     }
