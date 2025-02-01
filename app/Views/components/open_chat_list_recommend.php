@@ -9,12 +9,14 @@
 
   $listLen = count($listArray);
   $showReverseListMedal = $showReverseListMedal ?? false;
+  $hundred = $hundred ?? false;
 
   foreach ($listArray as $key => $oc) : ?>
     <li class="unset">
       <div class="openchat-item <?php if ($showReverseListMedal && $listLen === $key + 1) echo 'goldmedal';
                                 elseif ($showReverseListMedal && $listLen - 1 === $key + 1) echo 'silvermedal';
-                                elseif ($showReverseListMedal && $listLen - 2 === $key + 1) echo 'blonzemedal' ?>">
+                                elseif ($showReverseListMedal && $listLen - 2 === $key + 1) echo 'blonzemedal';
+                                elseif ($hundred && $key === 0) echo 'hundred' ?>">
         <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id']) . ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME ? '?limit=hour' : '') ?>" tabindex="-1" aria-hidden="true">
           <span class="visually-hidden"><?php echo $oc['name'] ?></span>
         </a>
