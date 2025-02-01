@@ -81,7 +81,9 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
-    <article style="margin: 0 1rem; margin-top: .5rem;">
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
+    <article style="margin: .5rem 1rem; margin-bottom: .5rem;">
+        
         <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
                 <h2 class="openchat-list-title" style="font-size: 20px;">
@@ -92,11 +94,11 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                 </p>
             </div>
         </header>
-
+        
         <div class="head-pager">
             <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
         </div>
-
+        
         <!-- select要素ページネーション -->
         <nav class="page-select unset">
             <form class="unset">
@@ -106,7 +108,7 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                 <label for="page-selector" class="unset"><span><?php echo $_label ?></span></label>
             </form>
         </nav>
-
+        
         <section class="recent-comment-list unset">
             <?php viewComponent(
                 'open_chat_list_ranking_comment2',
@@ -114,14 +116,14 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                     'listLen' => AppConfig::LIST_LIMIT_RECENT_COMMENT,
                     'omitDeleted' => false,
                     'showAds' => true
-                ]
-            ) ?>
+                    ]
+                    ) ?>
         </section>
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
-
-    <section class="unset" style="display: block; margin-top: .5rem">
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
+    <section class="unset" style="display: block;">
 
         <?php viewComponent('footer_inner') ?>
 

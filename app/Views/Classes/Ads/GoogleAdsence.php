@@ -100,7 +100,7 @@ class GoogleAdsence
         'recommendBottomWide' => ['7561513017', 'rectangle2-ads'],
 
         // コメントタイムライントップ-rectangle
-        'recentCommentTopRectangle' => ['4440788981', 'rectangle3-ads'],
+        'recentCommentTopRectangle' => ['4440788981', 'rectangle2-ads'],
 
         // コメントタイムライン-bottom-横長
         'recentCommentBottomWide' => ['4852423347', 'rectangle2-ads'],
