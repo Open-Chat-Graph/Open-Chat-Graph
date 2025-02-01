@@ -571,8 +571,8 @@ body::before {
 
 .horizontal-ads {
   width: auto;
-  height: 140px;
-  max-height: 140px;
+  height: 100px;
+  max-height: 100px;
 }
 
 .openchat-item-list .google-auto-placed {
