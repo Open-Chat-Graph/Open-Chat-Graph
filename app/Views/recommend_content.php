@@ -137,7 +137,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
         <?php endif ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle'])
+      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide'])
       ?>
 
     </section>
