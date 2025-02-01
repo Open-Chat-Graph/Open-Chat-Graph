@@ -117,7 +117,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
                 <?php GAd::output(GAd::AD_SLOTS[$key
                   ? (
-                    ($listsLastKey - 1 === $key) ? 'recommendSeparatorResponsive' : 'recommendSeparatorWide'
+                    ($listsLastKey - 1 === $key) ? 'recommendSeparatorRectangle' : 'recommendSeparatorWide'
                   )
                   : 'recommendThirdRectangle']) ?>
 
@@ -138,7 +138,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
         <?php endif ?>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) 
+      <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle'])
       ?>
 
     </section>
@@ -154,7 +154,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner', /* ['adSlot' => 'recommendBottomWide'] */) ?>
+    <?php viewComponent('footer_inner',  ['adSlot' => 'recommendBottomWide']) ?>
 
   </article>
 

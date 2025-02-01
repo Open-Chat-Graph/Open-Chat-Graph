@@ -270,7 +270,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner', ['adSlot' => 'ocFooterRectangle']) ?>
+    <?php viewComponent('footer_inner', ['adSlot' => 'ocBottomWide']) ?>
 
   </article>
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
