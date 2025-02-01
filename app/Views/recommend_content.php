@@ -115,7 +115,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
 
-                <?php GAd::output(GAd::AD_SLOTS[$key ? 'recommendSeparatorRectangle' : 'recommendThirdRectangle']) ?>
+                <?php GAd::output(GAd::AD_SLOTS[$key
+                  ? (
+                    ($listsLastKey - 1 === $key) ? 'recommendSeparatorRectangle' : 'recommendSeparatorWide'
+                  )
+                  : 'recommendThirdRectangle']) ?>
 
               </li>
             <?php endif ?>
