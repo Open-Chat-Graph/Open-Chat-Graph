@@ -46,7 +46,7 @@ class GoogleAdsence
         'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
 
         // サイトトップ-rectangle
-        'siteTopRectangle' => ['4122044659', 'rectangle3-ads'],
+        'siteTopRectangle' => ['4122044659', 'rectangle-ads'],
 
         // サイトトップ2-横長
         'siteTopWide' => ['4015067592', 'rectangle2-ads'],
@@ -67,7 +67,7 @@ class GoogleAdsence
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
         // おすすめ-third-rectangle
-        'recommendThirdRectangle' => ['3035874831', 'rectangle3-ads'],
+        'recommendThirdRectangle' => ['3035874831', 'rectangle-ads'],
 
         // おすすめトップ-横長
         'recommendTopWide' => ['9253567316', 'rectangle2-ads'],
