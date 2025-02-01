@@ -170,7 +170,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
       <div class="title-bar">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
           <h2 class="graph-title">
             <div><?php echo t('メンバー数の推移グラフ') ?></div>
           </h2>
@@ -179,10 +179,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
             <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
           </div>
         </div>
-        <span class="number-box created-at">
-          <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
-          <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at']) ?></div>
-        </span>
+        <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
+          <?php if (isset($oc['api_created_at'])) : ?>
+            <span class="number-box created-at">
+              <div class="openchat-itme-stats-title"><?php echo t('ルーム作成') ?></div>
+              <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
+            </span>
+          <?php endif ?>
+          <span class="number-box created-at">
+            <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
+            <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
+          </span>
+        </div>
       </div>
       <!-- グラフセクション -->
       <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
@@ -203,7 +211,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-          <div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
             <h2 class="graph-title">
               <div>オープンチャットについてのコメント</div>
             </h2>
@@ -222,7 +230,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) 
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide'])
     ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>

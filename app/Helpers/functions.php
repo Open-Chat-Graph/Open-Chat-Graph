@@ -97,10 +97,8 @@ function dateTimeAttr(int $timestamp): string
     return date('Y-m-d\TH:i:sO', $timestamp);
 }
 
-function convertDatetime(string|int $datetime, bool $time = false): string
+function convertDatetime(string|int $datetime, bool $time = false, string $format = 'Y/n/j'): string
 {
-    $format = 'Y/n/j';
-
     if (is_int($datetime)) {
         // タイムスタンプが与えられた場合
         if ($time) {

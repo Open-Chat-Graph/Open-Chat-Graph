@@ -10,6 +10,7 @@
   $listLen = count($listArray);
   $showReverseListMedal = $showReverseListMedal ?? false;
   $hundred = $hundred ?? false;
+  $showApiCreatedAt = $showApiCreatedAt ?? false;
 
   foreach ($listArray as $key => $oc) : ?>
     <li class="unset">
@@ -47,6 +48,9 @@
                   </svg>
                 <?php endif ?>
               </span>
+            <?php endif ?>
+            <?php if (isset($oc['api_created_at']) && $showApiCreatedAt) : ?>
+              <span class="registration-date">・ <?php echo t('ルーム作成') . ' ' . convertDatetime($oc['api_created_at'], false) ?></span>
             <?php endif ?>
           </div>
         </footer>
