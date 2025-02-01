@@ -29,7 +29,7 @@ class AppConfig
 
     const LIST_LIMIT_TOP_RANKING = 5;
     const LIST_LIMIT_MY_LIST = 50;
-    const LIST_LIMIT_RECENT_COMMENT = 50;
+    const LIST_LIMIT_RECENT_COMMENT = 30;
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
     const LIST_LIMIT_RECOMMEND = 30;
 
