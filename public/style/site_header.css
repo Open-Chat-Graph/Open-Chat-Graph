@@ -571,7 +571,9 @@ body::before {
 
 .horizontal-ads {
   width: auto;
-  aspect-ratio: 1.9;
+  aspect-ratio: 1.91;
+  max-width: calc(100vw - 2rem);
+  margin: 0 auto;
 }
 
 .openchat-item-list .google-auto-placed {
