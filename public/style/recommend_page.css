@@ -125,7 +125,7 @@ li {
 }
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.hundred::before {
-  left: -1.8rem;
+  left: -2rem;
 }
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
