@@ -566,7 +566,7 @@ body::before {
 
 .rectangle3-ads {
   width: auto;
-  aspect-ratio: 4/5;
+  aspect-ratio: 1.2;
 }
 
 .horizontal-ads {
