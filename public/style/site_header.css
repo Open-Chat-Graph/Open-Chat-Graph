@@ -561,7 +561,7 @@ body::before {
 
 .rectangle-ads {
   width: auto;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1.91;
 }
 
 .rectangle3-ads {
@@ -613,7 +613,7 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
 
 .rectangle2-ads {
   width: auto;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1.91;
 }
 
 @media screen and (min-width: 512px) {
