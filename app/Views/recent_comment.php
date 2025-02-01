@@ -5,7 +5,7 @@
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
-viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
+viewComponent('head', compact('_css', '_meta') + ['disableGAd' => false]) ?>
 
 <body class="body">
     <style>
@@ -124,9 +124,9 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
     </article>
     <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
     <section class="unset" style="display: block;">
-
+        
         <?php viewComponent('footer_inner') ?>
-
+        
     </section>
 
     <?php GAd::loadAdsTag() ?>
