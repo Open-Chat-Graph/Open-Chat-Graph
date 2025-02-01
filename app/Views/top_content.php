@@ -16,8 +16,8 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php if ($dto->recentCommentList): ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
