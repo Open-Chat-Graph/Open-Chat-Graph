@@ -561,17 +561,18 @@ body::before {
 
 .rectangle-ads {
   width: auto;
-  height: 280px;
+  aspect-ratio: 1.91;
 }
 
 .rectangle3-ads {
   width: auto;
-  aspect-ratio: 1;
+  aspect-ratio: 4/5;
 }
 
 .horizontal-ads {
   width: auto;
-  aspect-ratio: 1.91;
+  height: 140px;
+  max-height: 140px;
 }
 
 .openchat-item-list .google-auto-placed {
