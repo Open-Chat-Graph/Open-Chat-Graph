@@ -222,7 +222,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </section>
     <?php endif ?>
 
-    <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide']) 
     ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>

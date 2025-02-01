@@ -16,7 +16,7 @@ class GoogleAdsence
         'ocTop2Rectangle' => ['4585711910', 'rectangle-ads'],
 
         // OC-third-rectangle
-        'ocThirdRectangle' => ['8325497013', 'rectangle-ads'],
+        'ocThirdRectangle' => ['8325497013', 'rectangle3-ads'],
 
         // OCトップ2-横長
         'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
