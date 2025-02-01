@@ -49,7 +49,7 @@ class GoogleAdsence
         'siteTopRectangle' => ['4122044659', 'rectangle-ads'],
 
         // サイトトップ2-横長
-        'siteTopWide' => ['4015067592', 'rectangle2-ads'],
+        'siteTopWide' => ['4015067592', 'horizontal-ads'],
 
         // サイトセパレーター-レスポンシブ
         'siteSeparatorResponsive' => ['4243068812'],

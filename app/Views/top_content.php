@@ -12,7 +12,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
@@ -20,19 +20,19 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
-
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('footer_inner') ?>
         
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
