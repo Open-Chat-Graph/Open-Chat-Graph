@@ -12,7 +12,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopHorizontal']) ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
       <div class="talkroom_banner_img_area">
@@ -161,7 +161,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
     </nav>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopHorizontal']) ?>
 
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
@@ -195,7 +195,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocThirdWide']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocThirdRectangle']) ?>
     <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
@@ -230,7 +230,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide'])
       ?>
     <?php endif ?>
 
@@ -238,7 +238,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide'])
       ?>
     <?php endif ?>
 
@@ -246,7 +246,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide'])
       ?>
     <?php endif ?>
 
@@ -255,7 +255,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) 
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorWide'])
       ?>
     <?php endif ?>
 
@@ -270,7 +270,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php viewComponent('footer_inner',/*  ['adSlot' => 'ocBottomWide'] */) ?>
+    <?php viewComponent('footer_inner', ['adSlot' => 'ocBottomWide']) ?>
 
   </article>
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>

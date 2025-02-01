@@ -9,11 +9,17 @@ class GoogleAdsence
     const AD_CLIENT = 'ca-pub-2330982526015125';
 
     const AD_SLOTS = [
-        // OCトップ-rectangle
-        'ocTopRectangle' => ['8037531176', 'rectangle3-ads'],
+        // OCトップ-horizontal
+        'ocTopHorizontal' => ['9641198670', 'horizontal-ads'],
+
+        // OCトップ2-rectangle
+        'ocTop2Rectangle' => ['4585711910', 'rectangle-ads'],
 
         // OC-third-rectangle
         'ocThirdRectangle' => ['8325497013', 'rectangle-ads'],
+
+        // OCトップ2-横長
+        'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
 
         // OCトップ2-横長
         'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
@@ -115,8 +121,12 @@ class GoogleAdsence
     {
 
         $adClient = self::AD_CLIENT;
+        $dataAdFormat = str_contains($cssClass, 'rectangle') ? 'rectangle' : 'horizontal';
+
         echo <<<EOT
-        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="rectangle"></ins>
+        <div style="margin: 8px 1rem;">
+            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="{$dataAdFormat}"></ins>
+        </div>
         EOT;
     }
 
@@ -124,7 +134,9 @@ class GoogleAdsence
     {
         $adClient = self::AD_CLIENT;
         echo <<<EOT
-        <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <div style="margin: 8px 1rem;">
+            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
         EOT;
     }
 
