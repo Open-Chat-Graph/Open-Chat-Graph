@@ -66,6 +66,9 @@ class GoogleAdsence
         // おすすめトップ-rectangle
         'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
 
+        // おすすめトップ-rectangle
+        'recommendTopHorizontal' => ['5472515659', 'horizontal-ads'],
+
         // おすすめ-third-rectangle
         'recommendThirdRectangle' => ['3035874831', 'rectangle3-ads'],
 

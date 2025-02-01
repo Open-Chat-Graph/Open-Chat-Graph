@@ -20,7 +20,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -79,7 +79,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </aside>
       </header>
     <?php endif ?>
-
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset" style="counter-reset: openchat-counter2 <?php echo $count + 1 ?>;">
@@ -87,7 +86,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           $chunkLen = 5;
           $reverseList = array_reverse($recommend->getList(false, null));
           $firstLists = array_slice($reverseList, 0, $chunkLen);
-          $secondLists = array_chunk(array_slice($reverseList, $chunkLen), $chunkLen * 2);
+          $secondLists = array_chunk(array_slice($reverseList, $chunkLen), $chunkLen);
           $lists = [$firstLists, ...$secondLists];
           $listsLastKey = count($lists) - 1;
           $currentCount = 0;
