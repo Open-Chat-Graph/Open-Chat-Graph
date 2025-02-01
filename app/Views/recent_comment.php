@@ -82,9 +82,9 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => false]) ?>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
     <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
-    <article style="margin: .5rem 1rem; margin-bottom: .5rem;">
+    <article style="margin: .5rem 1rem; margin-bottom: 1rem;">
         
-        <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
+        <header class="openchat-list-title-area unset" style="margin: 0 0 modified:   app/Views/recent_comment.php.5rem 0;">
             <div style="flex-direction: column;">
                 <h2 class="openchat-list-title" style="font-size: 20px;">
                     コメントのタイムライン
