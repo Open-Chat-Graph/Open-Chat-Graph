@@ -17,7 +17,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
                 ["荒野行動", ["荒野"]],
                 ["ハイキュー!!FLY HIGH（ハイキューフライハイ／ハイフラ）", ["ハイフラ_OR_ハイキュー"]],
                 ["ポケットモンスター（ポケモン）", ["ポケモン大好きチャット"]],
-                ["ポケポケ（Pokémon TCG Pocket／ポケモンカード アプリ）", ["ポケポケ"]],
+                ["ポケポケ（Pokémon TCG Pocket／PTCGP）", ["ポケポケ"]],
                 ["スプラトゥーン", ["スプラ"]],
             ],
             "41" => [
