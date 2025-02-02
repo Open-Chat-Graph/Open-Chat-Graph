@@ -17,7 +17,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
                 ["荒野行動", ["荒野"]],
                 ["ハイキュー!!FLY HIGH（ハイキューフライハイ／ハイフラ）", ["ハイフラ_OR_ハイキュー"]],
                 ["ポケットモンスター（ポケモン）", ["ポケモン大好きチャット"]],
-                ["ポケポケ（Pokémon TCG Pocket／PTCGP）", ["ポケポケ"]],
+                ["ポケポケ（Pokémon TCG Pocket）", ["ポケポケ"]],
                 ["スプラトゥーン", ["スプラ"]],
             ],
             "41" => [
@@ -80,7 +80,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
             "IT資格_OR_基本情報技術者_OR_応用情報技術者_OR_ITパスポート_OR_情報処理試験_OR_ITストラテジ",
             ["大学新入生同士の情報交換", ["新入生同士の情報交換_OR_年度入学_OR_度新入生_OR_新入生同士"]],
             ["大学 新入生", ["春から_AND_大学", "新入生_AND_大学"]],
-            ["就活生情報・選考対策・企業研究", ["就活情報_OR_就活生向け情報_OR_就活生情報_OR_選考対策・企業研究_OR_就活選考対策_OR_就活対策グループ_OR_選考対策グループ_OR_就活テスト対策グループ_OR_志望者向けグループ_OR_業界志望者向け_OR_就活の情報_OR_就活会議_OR_就活生向け_OR_就活対策用_OR_就活生の情報交換_OR_unistyle_OR_就活の情報共有", "大学生_AND_就活_AND_卒"]],
+            ["企業研究", ["就活情報_OR_就活生向け情報_OR_就活生情報_OR_選考対策・企業研究_OR_就活選考対策_OR_就活対策グループ_OR_選考対策グループ_OR_就活テスト対策グループ_OR_志望者向けグループ_OR_業界志望者向け_OR_就活の情報_OR_就活会議_OR_就活生向け_OR_就活対策用_OR_就活生の情報交換_OR_unistyle_OR_就活の情報共有", "大学生_AND_就活_AND_卒"]],
             ["生成AI・ChatGPT", ["ChatGPT_OR_チャットGPT_OR_LLM_OR_Claude_OR_Copilot", "Gemini_AND_AI"]],
             ["画像生成AI・AIイラスト", ["AIイラスト_OR_ばりぐっどくん_OR_AI絵画_OR_AI絵師", "画像_AND_生成_AND_AI"]],
             ["ポイ活", ["ポイ活_AND_ポイカツ"]],

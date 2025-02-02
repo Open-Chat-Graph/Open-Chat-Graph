@@ -10,7 +10,7 @@ class RecommendUtility
 {
     const OmitPettern = [
         'ディズニー ツムツム' => 'ツムツム',
-        'ポケモンカード アプリ' => 'ポケポケ',
+        'Pokémon TCG Pocket' => 'ポケポケ',
         '歌リレー' => 'ボイメ 歌',
         '歌い手のトークルーム' => '歌い手',
         'ゼベワン' => 'ZB1',
@@ -32,6 +32,7 @@ class RecommendUtility
         'エンハイプン' => 'ENHYPEN',
         'ブルーム' => '8LOOM',
         'ルセラ' => 'LE SSERAFIM',
+        'ミセスグリーンアップル' => 'ミセス',
     ];
 
     static function extractTag(string|int $str): string
