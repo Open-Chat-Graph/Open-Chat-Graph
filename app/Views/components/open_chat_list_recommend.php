@@ -50,7 +50,7 @@
               </span>
             <?php endif ?>
             <?php if (isset($oc['api_created_at']) && $showApiCreatedAt) : ?>
-              <span class="registration-date">・ <?php echo t('ルーム作成') . ' ' . convertDatetime($oc['api_created_at'], false) ?></span>
+              <span class="registration-date">・ <?php echo t('ルーム作成日') . ' ' . convertDatetime($oc['api_created_at'], false) ?></span>
             <?php endif ?>
           </div>
         </footer>
