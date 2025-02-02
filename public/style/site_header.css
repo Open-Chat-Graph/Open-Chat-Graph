@@ -613,7 +613,7 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
 
 .rectangle2-ads {
   width: auto;
-  aspect-ratio: 1.91;
+  aspect-ratio: 16/9;
 }
 
 @media screen and (min-width: 512px) {
