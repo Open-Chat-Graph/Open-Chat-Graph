@@ -182,12 +182,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
           <?php if (isset($oc['api_created_at'])) : ?>
             <span class="number-box created-at">
-              <div class="openchat-itme-stats-title"><?php echo t('ルーム作成') ?></div>
+              <div class="openchat-itme-stats-title"><?php echo t('ルーム作成日') ?></div>
               <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
             </span>
           <?php endif ?>
-          <span class="number-box created-at">
-            <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
+          <span class="number-box created-at registed">
+            <div class="openchat-itme-stats-title"><?php echo t('登録日') ?></div>
             <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
           </span>
         </div>

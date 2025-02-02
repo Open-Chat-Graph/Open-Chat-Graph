@@ -333,6 +333,11 @@ html {
   margin: 0;
 }
 
+.number-box.created-at.registed .openchat-itme-stats-title {
+  font-size: 12px;
+  color: #777;
+}
+
 .number-box.bold {
   font-weight: bold;
 }
@@ -503,6 +508,11 @@ html {
   }
 
   .number-box.created-at .openchat-itme-stats-title {
+    font-size: 13px;
+    color: #777;
+  }
+
+  .number-box.created-at.registed .openchat-itme-stats-title {
     font-size: 13px;
     color: #777;
   }
