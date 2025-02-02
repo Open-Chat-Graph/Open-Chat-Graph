@@ -51,8 +51,7 @@ class AdminPageController
 
     function tagupdate()
     {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/test_exec.php';
-        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
 
         exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
 
