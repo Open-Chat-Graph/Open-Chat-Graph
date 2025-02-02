@@ -127,6 +127,5 @@ class RecommendTagFilters
         'クーポン・お得情報' => 'クーポン・無料配布',
         'ロック' => '邦ロック',
         '整形' => '美容整形',
-        'ポケポケ（Pokémon TCG Pocket／ポケモンカード アプリ）' => 'ポケポケ（Pokémon TCG Pocket／PTCGP）',
     ];
 }
