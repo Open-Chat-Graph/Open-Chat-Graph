@@ -70,6 +70,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
         $tags = [
             "御朱印",
             "神社",
+            ["ひとり旅", ["一人旅", "ひとり旅", "1人旅"]],
             "カブアンド",
             ["パソコン・ガジェット", ["自作PC_OR_ゲーミングPC_OR_デジタルガジェット", "スマホ_AND_ガジェット", "イヤホン_AND_ガジェット"]],
             ["かまいたち", ["MUSiC_AND_KAMMER", "かまいたち"]],
