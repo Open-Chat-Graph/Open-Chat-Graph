@@ -49,6 +49,16 @@ class AdminPageController
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
+    function tagupdate()
+    {
+        $path = AppConfig::ROOT_PATH . 'batch/exec/test_exec.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
+
+        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
     function updateimgeall(?string $lang)
     {
         $urlRoot = null;
