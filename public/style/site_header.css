@@ -598,12 +598,8 @@ body::before {
   }
 
   .horizontal-ads {
-    display: block;
-    min-width: 400px;
-    max-width: 970px;
-    width: 100%;
-    height: 90px;
-    max-height: unset;
+    height: 140px;
+    max-height: 140px;
   }
 }
 
