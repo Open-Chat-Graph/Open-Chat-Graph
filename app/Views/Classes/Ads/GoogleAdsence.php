@@ -127,7 +127,7 @@ class GoogleAdsence
 
         echo <<<EOT
         <div style="padding: 12px 1rem; box-sizing: border-box;">
-            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="false"></ins>
+            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-full-width-responsive="false"></ins>
         </div>
         EOT;
     }
