@@ -508,6 +508,32 @@
   text-align: center;
 }
 
+.top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
+  content: "🥇";
+  font-style: normal;
+  font-size: 24px;
+  left: -31px;
+  top: 23px;
+  line-height: 1;
+}
+
+.top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
+  content: "🥈";
+  font-style: normal;
+  font-size: 22px;
+  left: -30px;
+  top: 23px;
+  line-height: 1;
+}
+
+.top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
+  content: "🥉";
+  font-style: normal;
+  font-size: 20px;
+  left: -29px;
+  top: 23px;
+}
+
 .top-ranking:not(.not-rank) .openchat-item.reverse::before {
   counter-increment: openchat-counter -1;
 }

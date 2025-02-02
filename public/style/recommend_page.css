@@ -128,7 +128,7 @@ li {
   left: -2rem;
 }
 
-.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
+.openchat-item-list.parent .top-ranking .openchat-item.goldmedal::before {
   content: "🥇";
   font-style: normal;
   font-size: 24px;
@@ -137,7 +137,7 @@ li {
   line-height: 1;
 }
 
-.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
+.openchat-item-list.parent .top-ranking .openchat-item.silvermedal::before {
   content: "🥈";
   font-style: normal;
   font-size: 22px;
@@ -146,7 +146,7 @@ li {
   line-height: 1;
 }
 
-.openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
+.openchat-item-list.parent .top-ranking .openchat-item.blonzemedal::before {
   content: "🥉";
   font-style: normal;
   font-size: 20px;

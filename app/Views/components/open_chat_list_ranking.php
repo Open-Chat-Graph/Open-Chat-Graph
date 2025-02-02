@@ -1,8 +1,15 @@
-<!-- @param array $openChatList -->
-<!-- @param bool $isHourly -->
-<ol class="openchat-item-list unset" style="counter-reset: openchat-counter <?php echo isset($noReverse) && $noReverse ? 0 : count($openChatList) + 1 ?>;">
-  <?php foreach (isset($noReverse) && $noReverse ? $openChatList : array_reverse($openChatList) as $oc) : ?>
-    <li class="openchat-item unset <?php echo isset($noReverse) && $noReverse ? '' : 'reverse' ?>">
+<?php
+/* @param array $openChatList */
+/* @param bool $isHourly */
+$showReverseListMedal = $showReverseListMedal ?? false;
+$listLen = count($openChatList);
+?>
+<ol class="openchat-item-list unset"
+  style="counter-reset: openchat-counter <?php echo isset($noReverse) && $noReverse ? 0 : count($openChatList) + 1 ?>;">
+  <?php foreach (isset($noReverse) && $noReverse ? $openChatList : array_reverse($openChatList) as $key => $oc) : ?>
+    <li class="openchat-item unset <?php echo isset($noReverse) && $noReverse ? '' : 'reverse' ?> <?php if ($showReverseListMedal && ($noReverse ? $key === 0 : $listLen === $key + 1)) echo 'goldmedal';
+                                                                                                  elseif ($showReverseListMedal && ($noReverse ? $key === 1 : $listLen - 1 === $key + 1)) echo 'silvermedal';
+                                                                                                  elseif ($showReverseListMedal && ($noReverse ? $key === 2 : $listLen - 2 === $key + 1)) echo 'blonzemedal'; ?>">
       <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id'] . (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null ? '?limit=hour' : '')) ?>" tabindex="-1" aria-hidden="true">
         <span class="visually-hidden"><?php echo $oc['name'] ?></span>
       </a>
