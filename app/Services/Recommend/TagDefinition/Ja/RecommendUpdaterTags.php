@@ -68,6 +68,8 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getNameStrongTags(): array
     {
         $tags = [
+            "御朱印",
+            "神社",
             "カブアンド",
             ["パソコン・ガジェット", ["自作PC_OR_ゲーミングPC_OR_デジタルガジェット", "スマホ_AND_ガジェット", "イヤホン_AND_ガジェット"]],
             ["かまいたち", ["MUSiC_AND_KAMMER", "かまいたち"]],
@@ -244,6 +246,8 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getDescStrongTags(): array
     {
         $tags = [
+            "御朱印",
+            "神社",
             "カブアンド",
             ["パソコン・ガジェット", ["自作PC_OR_ゲーミングPC_OR_デジタルガジェット", "スマホ_AND_ガジェット", "イヤホン_AND_ガジェット"]],
             ["生成AI・ChatGPT", ["ChatGPT_OR_チャットGPT_OR_LLM_OR_Claude_OR_Copilot", "Gemini_AND_AI"]],
