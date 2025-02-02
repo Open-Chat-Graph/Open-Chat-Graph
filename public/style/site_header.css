@@ -596,6 +596,15 @@ body::before {
     margin: auto;
     aspect-ratio: unset;
   }
+
+  .horizontal-ads {
+    display: block;
+    min-width: 400px;
+    max-width: 970px;
+    width: 100%;
+    height: 90px;
+    max-height: unset;
+  }
 }
 
 .adsbygoogle {
