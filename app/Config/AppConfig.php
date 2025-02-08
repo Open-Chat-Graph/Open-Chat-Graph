@@ -27,11 +27,11 @@ class AppConfig
     ];
     const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
-    const LIST_LIMIT_TOP_RANKING = 5;
+    const LIST_LIMIT_TOP_RANKING = 10;
     const LIST_LIMIT_MY_LIST = 50;
-    const LIST_LIMIT_RECENT_COMMENT = 30;
+    const LIST_LIMIT_RECENT_COMMENT = 100;
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
-    const LIST_LIMIT_RECOMMEND = 30;
+    const LIST_LIMIT_RECOMMEND = 100;
 
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
