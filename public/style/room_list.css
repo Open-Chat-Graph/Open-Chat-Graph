@@ -540,7 +540,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item-desc {
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   font-size: 13px;
   margin-top: 2px;
 }
