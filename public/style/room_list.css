@@ -479,7 +479,7 @@
 }
 
 .recommend-ranking-section .top-ranking:not(.not-rank) .openchat-item {
-  margin: 17px 0rem 17px 30px;
+  margin: 17px 1.5rem 17px 30px;
 }
 
 .recent-comment-list .openchat-item {
