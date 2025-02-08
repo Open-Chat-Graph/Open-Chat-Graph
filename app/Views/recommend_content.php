@@ -20,7 +20,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -114,11 +114,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php if ($listsLastKey !== $key) : ?>
               <li>
 
-                <?php GAd::output(GAd::AD_SLOTS[$key
-                  ? (
-                    ($listsLastKey - 1 === $key) ? 'recommendSeparatorRectangle' : 'recommendSeparatorWide'
-                  )
-                  : 'recommendThirdRectangle']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
               </li>
             <?php endif ?>
@@ -138,7 +134,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </aside>
     </section>
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
 
     <aside class="top-ranking-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
@@ -147,18 +143,16 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide'])
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'])
     ?>
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorWide'])
+    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'])
     ?>
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
-
-    <?php viewComponent('footer_inner',  ['adSlot' => 'recommendBottomWide']) ?>
 
   </article>
 

@@ -12,14 +12,14 @@ class GoogleAdsence
         // OCトップ-horizontal
         'ocTopHorizontal' => ['9641198670', 'horizontal-ads'],
 
+        // OCトップ-rectangle
+        'ocTopRectangle' => ['8037531176', 'rectangle3-ads'],
+
         // OCトップ2-rectangle
         'ocTop2Rectangle' => ['4585711910', 'rectangle-ads'],
 
         // OC-third-rectangle
         'ocThirdRectangle' => ['8325497013', 'rectangle3-ads'],
-
-        // OCトップ2-横長
-        'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
 
         // OCトップ2-横長
         'ocTopWide2' => ['6469006397', 'rectangle2-ads'],
@@ -64,9 +64,9 @@ class GoogleAdsence
         'siteBottomWide' => ['8637392164', 'rectangle2-ads'],
 
         // おすすめトップ-rectangle
-        'recommendTopRectangle' => ['3109180036', 'rectangle-ads'],
+        'recommendTopRectangle' => ['3109180036', 'rectangle3-ads'],
 
-        // おすすめトップ-rectangle
+        // おすすめトップ-recommendTopHorizontal
         'recommendTopHorizontal' => ['5472515659', 'horizontal-ads'],
 
         // おすすめ-third-rectangle
@@ -126,7 +126,7 @@ class GoogleAdsence
         $adClient = self::AD_CLIENT;
 
         echo <<<EOT
-        <div style="padding: 16px 1rem; box-sizing: border-box;" class="{$cssClass}-parent">
+        <div style="padding: 8px 0; box-sizing: border-box;" class="{$cssClass}-parent">
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-full-width-responsive="false"></ins>
         </div>
         EOT;
