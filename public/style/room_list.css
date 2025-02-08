@@ -545,13 +545,11 @@
 }
 
 .recent-comment-list .openchat-item-desc {
-  margin-top: 5px;
   color: #111;
   font-weight: normal;
   line-height: 150%;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2;
   line-clamp: 5;
-  white-space: break-spaces;
 }
 
 .top-ranking .openchat-item h3 {
