@@ -154,6 +154,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
+    <?php viewComponent('footer_inner') ?>
+
   </article>
 
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
