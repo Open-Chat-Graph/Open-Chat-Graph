@@ -194,7 +194,7 @@
 
   .recommend-list h4 {
     font-size: 13px;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
   }
 
   .recommend-list li:nth-child(n + 5) {
