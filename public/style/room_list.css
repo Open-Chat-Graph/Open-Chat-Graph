@@ -545,11 +545,10 @@
 }
 
 .recent-comment-list .openchat-item-desc {
-  font-size: 16px;
   margin-top: 5px;
   color: #111;
   font-weight: normal;
-  line-height: 135%;
+  line-height: 150%;
   -webkit-line-clamp: 4;
   line-clamp: 5;
   white-space: break-spaces;
@@ -567,7 +566,6 @@
 }
 
 .recent-comment-list .openchat-item-title {
-  font-size: 16px;
   display: flex;
 }
 

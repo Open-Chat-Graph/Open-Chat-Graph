@@ -201,35 +201,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
-    ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    <?php endif ?>
-
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
-    ?>
-      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
-        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
-          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <h2 class="graph-title">
-              <div>オープンチャットについてのコメント</div>
-            </h2>
-            <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
-              <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-              <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
-            </div>
-          </div>
-        </div>
-        <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
-          <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
-            <span class="ranking-readMore">他のルームのコメントを見る（タイムライン）</span>
-          </a>
-        </aside>
-      </section>
-    <?php endif ?>
-
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
     ?>
 
@@ -267,8 +238,34 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       ?>
     <?php endif ?>
 
-    <?php //GAd::output(GAd::AD_SLOTS['ocListBottomWide']) 
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php endif ?>
+
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    ?>
+      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
+        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
+          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <h2 class="graph-title">
+              <div>オープンチャットについてのコメント</div>
+            </h2>
+            <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
+              <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+              <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
+            </div>
+          </div>
+        </div>
+        <div id="comment-root"></div>
+        <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
+          <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
+            <span class="ranking-readMore">他のルームのコメントを見る（タイムライン）</span>
+          </a>
+        </aside>
+      </section>
+    <?php endif ?>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
