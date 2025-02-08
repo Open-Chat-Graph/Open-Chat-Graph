@@ -278,15 +278,17 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
+    ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
+    ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
+
+    <?php viewComponent('footer_inner') ?>
 
   </article>
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
