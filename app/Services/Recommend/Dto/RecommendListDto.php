@@ -122,8 +122,11 @@ class RecommendListDto
     }
 
     /** @return string[] */
-    private function buildFilterdTags(array $mergedElements, bool $shuffle): array
-    {
+    function buildFilterdTags(
+        array $mergedElements,
+        bool $shuffle = false,
+        array $filteredTagSort = RecommendTagFilters::FilteredTagSort
+    ): array {
         $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagStr = RecommendUtility::extractTag($tag);
@@ -132,7 +135,7 @@ class RecommendListDto
             array_merge(
                 array_column($mergedElements, 'tag1'),
                 array_column($mergedElements, 'tag2'),
-                RecommendTagFilters::FilteredTagSort[$tag] ?? []
+                $filteredTagSort[$tag] ?? []
             ),
             1
         );
@@ -142,8 +145,8 @@ class RecommendListDto
             fn($e) => (
                 !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
                 || (
-                    isset(RecommendTagFilters::FilteredTagSort[$tag])
-                    && in_array($e, RecommendTagFilters::FilteredTagSort[$tag])
+                    isset($filteredTagSort[$tag])
+                    && in_array($e, $filteredTagSort[$tag])
                 )
             ) && $e !== $tagName
         );
@@ -155,8 +158,8 @@ class RecommendListDto
                 $tagsStr[$a],
                 $tagStr
             ) || (
-                isset(RecommendTagFilters::FilteredTagSort[$tag])
-                && in_array($tags[$a], RecommendTagFilters::FilteredTagSort[$tag])
+                isset($filteredTagSort[$tag])
+                && in_array($tags[$a], $filteredTagSort[$tag])
             ) ? -1 : 1;
         });
 

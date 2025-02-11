@@ -122,17 +122,25 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php $currentCount += $currentListCount ?>
 
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => $currentCount - $currentListCount === 0, 'currentCount' => $currentCount - $currentListCount, 'showApiCreatedAt' => true]) ?>
+
+              <?php if ($listsLastKey !== $key) : ?>
+                <aside class="list-aside recommend-ranking-bottom" style="padding: 0; margin-bottom: -1rem;">
+                  <?php if (isset($recommend)) : ?>
+                    <?php viewComponent('recommend_content_tags', ['tags' => $recommend->buildFilterdTags($listArray, filteredTagSort: []), 'tag' => $tag]) ?>
+                  <?php endif ?>
+                </aside>
+              <?php endif ?>
+
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
                 </a>
               <?php endif ?>
+
             </li>
             <?php if ($listsLastKey !== $key) : ?>
               <li>
-
                 <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-
               </li>
             <?php endif ?>
           <?php endforeach ?>
@@ -147,7 +155,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: 0;">
         <?php if (isset($recommend)) : ?>
-          <?php viewComponent('recommend_content_tags', ['tags' => $recommend->getFilterdTags(false, null), 'tag' => $tag]) ?>
+          <?php viewComponent('recommend_content_tags', ['tags' => $recommend->buildFilterdTags($listArray, filteredTagSort: []), 'tag' => $tag]) ?>
         <?php endif ?>
       </aside>
     </section>
