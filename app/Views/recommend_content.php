@@ -153,7 +153,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: -.5rem;">
+      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: 0;">
         <?php if (isset($recommend)) : ?>
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->buildFilterdTags($listArray, filteredTagSort: []), 'tag' => $tag]) ?>
         <?php endif ?>
