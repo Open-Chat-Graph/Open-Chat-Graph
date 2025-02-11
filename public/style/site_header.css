@@ -9,7 +9,7 @@
   --tertiary: #bae8e8;
   --headline: #111;
   --width: 600px;
-  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family: -apple-system, system-ui, blinkmacsystemfont, Helvetica Neue, helvetica, Hiragino Sans, arial, sans-serif;
 }
 
 * {
@@ -21,6 +21,8 @@ body {
   transition: transform 1s;
   padding: 0;
   width: 100%;
+  font-family: var(--font-family);
+  text-rendering: optimizeSpeed;
 }
 
 body::before {

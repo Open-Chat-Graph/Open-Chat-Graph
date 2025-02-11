@@ -48,16 +48,48 @@ li {
 }
 
 .ranking-page-main .talkroom_banner_img_area {
-  aspect-ratio: 1.4 / 1;
   width: calc(100% - 2rem);
   margin: auto;
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr; 
+  grid-template-areas:
+    "img1 img1 img2 img3"
+    "img1 img1 img4 img5";
+  gap: 4px;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner:nth-child(1) {
+  grid-area: img1;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner:nth-child(2) {
+  grid-area: img2;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner:nth-child(3) {
+  grid-area: img3;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner:nth-child(4) {
+  grid-area: img4;
+}
+
+.ranking-page-main .talkroom_banner_img_area_inner:nth-child(5) {
+  grid-area: img5;
 }
 
 .ranking-page-main .talkroom_banner_img {
   object-fit: cover;
   display: block;
   width: 100%;
-  aspect-ratio: 1.4 / 1;
+  height: 100%;
 }
 
 .ranking-page-main .talkroom_link_h1 {
@@ -93,15 +125,14 @@ li {
 }
 
 .recommend-header-desc.desc-bottom {
-  font-size: 16px;
+  font-size: 15px;
   color: #555;
   line-height: 1.6;
   margin: 0;
-  margin-top: 2px;
 }
 
 .recommend-header-desc.desc-bottom .desc-aside {
-  font-size: 13px;
+  font-size: 12px;
   color: #777;
 }
 
@@ -121,7 +152,7 @@ li {
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item::before {
   content: counter(openchat-counter2);
-  counter-increment: openchat-counter2 -1;
+  counter-increment: openchat-counter2 1;
 }
 
 .openchat-item-list.parent .top-ranking:not(.not-rank) .openchat-item.hundred::before {
@@ -380,10 +411,10 @@ section aside:hover {
 
 .recommend-header-desc-text {
   color: #111;
-  font-size: 20px;
+  font-size: 18px;
   white-space: unset;
   font-weight: bold;
-  font-family: '游ゴシック体', 'Yu Gothic', YuGothic, Meiryo, 'メイリオ', ArialMT, Hiragino Kaku Gothic Pro, 'ヒラギノ角ゴ Pro W3', Osaka;
+  font-family: 'Yu Gothic', -apple-system, system-ui, blinkmacsystemfont, Helvetica Neue, helvetica, Hiragino Sans, arial, sans-serif;
   line-height: 1.3;
   padding: 0 1rem;
   margin: 6px 0 2px 0;
