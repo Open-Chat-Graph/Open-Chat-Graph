@@ -124,7 +124,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => $currentCount - $currentListCount === 0, 'currentCount' => $currentCount - $currentListCount, 'showApiCreatedAt' => true]) ?>
 
               <?php if ($listsLastKey !== $key) : ?>
-                <aside class="list-aside recommend-ranking-bottom" style="padding: 0; margin-bottom: -1rem;">
+                <aside class="list-aside recommend-ranking-bottom" style="padding: 0; margin-bottom: -.5rem;">
                   <?php if (isset($recommend)) : ?>
                     <?php viewComponent('recommend_content_tags', ['tags' => $recommend->buildFilterdTags($listArray, filteredTagSort: []), 'tag' => $tag]) ?>
                   <?php endif ?>
@@ -153,7 +153,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0;">
+      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: 0;">
         <?php if (isset($recommend)) : ?>
           <?php viewComponent('recommend_content_tags', ['tags' => $recommend->buildFilterdTags($listArray, filteredTagSort: []), 'tag' => $tag]) ?>
         <?php endif ?>
