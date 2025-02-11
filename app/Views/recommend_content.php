@@ -110,10 +110,10 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <header class="recommend-ranking-section-header">
                 <h2 style="all: unset; font-size: <?php echo $key > 0 ? '16px' : '15px' ?>; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
                   <?php if ($key > 0) : ?>
-                    <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?><?php echo $countTitle ?? '' ?>&nbsp;</div>
+                    <div><?php echo sprintfT("「%s」のオプチャランキング", $extractTag) ?><?php echo $countTitle ?? '' ?>&nbsp;</div>
                     <div><?php echo sprintfT('%s位', $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                   <?php else : ?>
-                    <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?>&nbsp;</div>
+                    <div><?php echo sprintfT("「%s」のオプチャランキング", $extractTag) ?>&nbsp;</div>
                     <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                   <?php endif ?>
                 </h2>
