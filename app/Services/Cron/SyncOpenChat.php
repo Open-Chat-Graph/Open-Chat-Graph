@@ -127,7 +127,10 @@ class SyncOpenChat
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
+                    // 既に実行中の場合は1回だけスキップする
                     addCronLog('Skip updateInvitationTicketAll because it is active');
+                    // スキップした場合は、次回実行時に実行するようにする
+                    $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
                     return;
                 }
 
