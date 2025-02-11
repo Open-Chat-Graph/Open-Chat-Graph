@@ -107,15 +107,16 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           ?>
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
-              <?php if ($key === 0) : ?>
-              <?php else : ?>
-                <header class="recommend-ranking-section-header">
-                  <h2 style="all: unset; font-size: 16px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                    <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?></div>
+              <header class="recommend-ranking-section-header">
+                <h2 style="all: unset; font-size: <?php echo $key > 0 ? '16px' : '15px' ?>; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
+                  <div><?php echo sprintfT("「%s」おすすめオープンチャットランキング", $extractTag) ?></div>
+                  <?php if ($key > 0) : ?>
                     <div>&nbsp;<?php echo sprintfT('%s位', $currentCount) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
-                  </h2>
-                </header>
-              <?php endif ?>
+                  <?php else : ?>
+                    <div>&nbsp;(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
+                  <?php endif ?>
+                </h2>
+              </header>
               <?php $currentListCount = count($listArray) ?>
               <?php $currentCount += $currentListCount ?>
 
