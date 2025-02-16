@@ -38,8 +38,9 @@ class RecommendListDto
         $this->maxMemberCount = $elements ? max($elements) : 0;
     }
 
-    function getList(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING, int $excludeId = 0): array
+    function getList(bool $shuffle = true, ?int $limit = null, int $excludeId = 0): array
     {
+        $limit = $limit ?? AppConfig::$listLimitTopRanking;
         $elements = $shuffle ? $this->buildShuffledList() : $this->mergedElements;
         if ($excludeId) $elements = array_filter($elements, fn($el) => $el['id'] !== $excludeId);
 
@@ -107,8 +108,10 @@ class RecommendListDto
     }
 
     /** @return string[] */
-    function getFilterdTags(bool $shuffle = true, ?int $limit = AppConfig::LIST_LIMIT_TOP_RANKING): array
+    function getFilterdTags(bool $shuffle = true, ?int $limit = null): array
     {
+        $limit = $limit ?? AppConfig::$listLimitTopRanking;
+
         // 日本以外は取得済みの関連タグを返す
         if (MimimalCmsConfig::$urlRoot !== '') {
             $result = $this->type === RecommendListType::Tag

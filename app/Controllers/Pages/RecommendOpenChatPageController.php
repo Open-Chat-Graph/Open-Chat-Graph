@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Config\AppConfig;
 use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
@@ -22,6 +23,8 @@ class RecommendOpenChatPageController
         StaticDataFile $staticDataGeneration,
         string $tag
     ) {
+        AppConfig::$listLimitTopRanking = 5;
+
         if (MimimalCmsConfig::$urlRoot === '') {
             if (isset(RecommendTagFilters::RedirectTags[$tag]))
                 return redirect('recommend?tag=' . urlencode(RecommendTagFilters::RedirectTags[$tag]), 301);

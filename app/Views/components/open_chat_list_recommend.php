@@ -4,7 +4,7 @@
   use App\Config\AppConfig;
 
   if (!isset($listArray)) {
-    $listArray = $recommend->getList($shuffle ?? false, ($limit ?? null) ? AppConfig::LIST_LIMIT_TOP_RANKING : null, $id ?? 0);
+    $listArray = $recommend->getList($shuffle ?? false, ($limit ?? null) ? AppConfig::$listLimitTopRanking : null, $id ?? 0);
   }
 
   $listLen = count($listArray);
