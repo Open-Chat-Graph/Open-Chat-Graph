@@ -214,7 +214,7 @@ function whiteOut() {
     document.body.style.backgroundColor = 'white' // 更に3秒後に背景色を白に変更
   }, 1000) // 3秒後に実行
 
-  alert('お知らせ: エラーが発生したためページを更新してください。アドブロックが有効な場合は解除してください。')
+  alert('Erorr: アドブロックが有効な場合は解除してください。\n如果啟用了 adblock，請停用它。\nหากเปิดใช้งาน adblock ให้ปิดการใช้งาน\nIf you are using adblock, please disable it.')
 }
 
 async function blockblock() {
