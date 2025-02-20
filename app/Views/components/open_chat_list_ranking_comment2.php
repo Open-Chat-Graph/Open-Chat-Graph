@@ -62,8 +62,16 @@ use App\Views\Ads\GoogleAdsence as GAd;
         <div class="link-overlay hover"></div>
       </li>
 
-      <?php if ($key < $len - 1) : ?>
+      <?php if ($ads && $count1 % 10 !== 0) : ?>
         <hr class="hr-bottom" style="margin: 4px -1rem; padding: 0; width: calc(100% + 2rem);">
+      <?php endif ?>
+
+      <?php if ($ads && $count1 < $listCount && $count1 % 10 === 0) : ?>
+        <li class="unset" style="margin: 0 -1rem; display: block;">
+          <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
+          <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive']) ?>
+          <hr class="hr-top" style="margin: 8px 0 4px 0; padding: 0; width: 100%;">
+        </li>
       <?php endif ?>
 
     <?php else: ?>

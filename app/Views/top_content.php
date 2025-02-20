@@ -7,33 +7,42 @@ use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema') + ['disableGAd' => true]) ?>
+viewComponent('head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']) ?>
 
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
+
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
+        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
+
         <?php if ($dto->recentCommentList): ?>
-            <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
-        <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+        <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
 
+        <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+        <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+        <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
         <?php viewComponent('footer_inner') ?>
 
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
             <div class="refresh-icon"></div><time style="font-size: 11px; color: #b7b7b7; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
-    <?php //GAd::loadAdsTag() 
-    ?>
+    <?php GAd::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 // TODO: 日本以外ではマイリストが無効

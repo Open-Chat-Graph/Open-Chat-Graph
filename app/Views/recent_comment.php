@@ -5,7 +5,7 @@
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
-viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
+viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?>
 
 <body class="body">
     <style>
@@ -82,7 +82,8 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
     <article style="margin: .5rem 1rem; margin-bottom: 1rem;">
-        
+        <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle']) ?>
+
         <header class="openchat-list-title-area unset" style="margin: 0 0 .5rem 0;">
             <div style="flex-direction: column;">
                 <h2 class="openchat-list-title" style="font-size: 20px;">
@@ -93,11 +94,11 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                 </p>
             </div>
         </header>
-        
+
         <div class="head-pager">
             <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
         </div>
-        
+
         <!-- select要素ページネーション -->
         <nav class="page-select unset">
             <form class="unset">
@@ -107,7 +108,7 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                 <label for="page-selector" class="unset"><span><?php echo $_label ?></span></label>
             </form>
         </nav>
-        
+
         <section class="recent-comment-list unset">
             <?php viewComponent(
                 'open_chat_list_ranking_comment2',
@@ -115,16 +116,17 @@ viewComponent('head', compact('_css', '_meta') + ['disableGAd' => true]) ?>
                     'listLen' => AppConfig::LIST_LIMIT_RECENT_COMMENT,
                     'omitDeleted' => false,
                     'showAds' => true
-                    ]
-                    ) ?>
+                ]
+            ) ?>
         </section>
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive']) ?>
     <section class="unset" style="display: block;">
-        
+
         <?php viewComponent('footer_inner') ?>
-        
+
     </section>
 
     <?php GAd::loadAdsTag() ?>

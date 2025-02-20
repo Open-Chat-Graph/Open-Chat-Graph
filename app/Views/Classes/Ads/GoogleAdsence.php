@@ -46,7 +46,7 @@ class GoogleAdsence
         'ocSeparatorWide' => ['1847273098', 'rectangle2-ads'],
 
         // サイトトップ-rectangle
-        'siteTopRectangle' => ['4122044659', 'rectangle-ads'],
+        'siteTopRectangle' => ['4122044659', 'rectangle3-ads'],
 
         // サイトトップ2-横長
         'siteTopWide' => ['4015067592', 'horizontal-ads'],
@@ -100,10 +100,10 @@ class GoogleAdsence
         'recommendBottomWide' => ['7561513017', 'rectangle2-ads'],
 
         // コメントタイムライントップ-rectangle
-        'recentCommentTopRectangle' => ['4440788981', 'rectangle2-ads'],
+        'recentCommentTopRectangle' => ['4440788981', 'rectangle3-ads'],
 
-        // コメントタイムライン-bottom-横長
-        'recentCommentBottomWide' => ['4852423347', 'rectangle2-ads'],
+        // コメントタイムラインセパレーター-レスポンシブ
+        'recentCommentSeparatorResponsive' => ['4852423347'],
     ];
 
     /**
