@@ -285,6 +285,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    
     <?php viewComponent('footer_inner') ?>
 
   </article>
