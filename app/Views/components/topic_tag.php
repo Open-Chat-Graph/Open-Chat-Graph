@@ -2,10 +2,12 @@
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
+use App\Config\AppConfig;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Views\Ads\GoogleAdsence as GAd;
+use Shared\MimimalCmsConfig;
 
 $tags = $topPageDto->recommendList;
+$topPageDto->hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
 // 空の配列では無効
 if (empty($tags['hour']) && empty($tags['hour24'])) {
