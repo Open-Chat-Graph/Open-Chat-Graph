@@ -39,12 +39,29 @@ class AdminPageController
         return view('admin/dash_my_list', ['result' => $result]);
     }
 
-    function test()
+    function cron_test(string $lang)
     {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/test_exec.php';
-        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
+        $urlRoot = null;
+        switch ($lang) {
+            case 'ja':
+                $urlRoot = '';
+                break;
+            case 'tw':
+                $urlRoot = '/tw';
+                break;
+            case 'th':
+                $urlRoot = '/th';
+                break;
+        }
 
-        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
+        if (is_null($urlRoot)) {
+            return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。']);
+        }
+
+        $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
+        $arg = escapeshellarg($urlRoot);
+
+        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }

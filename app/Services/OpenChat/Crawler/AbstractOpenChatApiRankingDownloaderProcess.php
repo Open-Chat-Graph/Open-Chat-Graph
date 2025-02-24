@@ -18,8 +18,7 @@ abstract class AbstractOpenChatApiRankingDownloaderProcess
 
     function __construct(
         protected CrawlerFactory $crawlerFactory
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{ 0: string|false, 1: int }|false
@@ -31,7 +30,17 @@ abstract class AbstractOpenChatApiRankingDownloaderProcess
         $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[MimimalCmsConfig::$urlRoot];
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
-        $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
+        // 暫定的に500に対応
+        try {
+            $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
+        } catch (\RuntimeException $e) {
+            if ($e->getCode() === 500) {
+                return false;
+            }
+
+            throw $e;
+        }
+
         if (!$response) {
             return false;
         }
