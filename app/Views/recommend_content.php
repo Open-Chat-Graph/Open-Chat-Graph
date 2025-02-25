@@ -4,6 +4,7 @@
 
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
+use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticRecommendPageDto $_dto */
 /** @var \App\Services\Recommend\Dto\RecommendListDto $recommend */
@@ -14,6 +15,8 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
 } else {
   $countTitle = '';
 }
+
+$hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
 viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
