@@ -201,7 +201,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
     ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
@@ -209,7 +209,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -217,7 +217,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -225,7 +225,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -234,7 +234,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -264,7 +264,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
     <?php endif ?>
 
     <aside class="recommend-list-aside">
@@ -274,18 +274,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
     ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
     ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
     
     <?php viewComponent('footer_inner') ?>
 
