@@ -15,7 +15,7 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
 } else {
   $countTitle = '';
 }
-
+$hourlyUpdatedAt = $hourlyUpdatedAt ?? new DateTime();
 $hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
 viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>

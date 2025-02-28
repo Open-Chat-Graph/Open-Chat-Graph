@@ -253,8 +253,6 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
             ["画像生成AI・AIイラスト", ["AIイラスト_OR_ばりぐっどくん_OR_AI絵画_OR_AI絵師", "画像_AND_生成_AND_AI"]],
             ["オプチャ サポート", ["LINE株式会社オープンチャット事務局"]],
             ["全国 雑談", ["#都内_AND_#田舎", "000102030405"]],
-            "unistyle",
-            "jobhunt",
             "ポイ活",
             ["LGBT", ["ゲイ_AND_バイ", "同性愛_OR_LGBT_OR_ゲイ学生_OR_Xジェンダー_OR_トランスジェンダー_OR_セクマイ_OR_ノンセク_OR_レズビアン"]],
             ["PRODUCE 101 JAPAN THE GIRLS（日プ女子）", ["日プガールズ_OR_日プ女子_OR_ME:I_OR_日プ3_OR_ME：I", "PRODUCE_AND_101_AND_JAPAN_AND_THE_AND_GIRLS"]],
