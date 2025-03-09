@@ -83,21 +83,36 @@ viewComponent('head', compact('_css', '_meta', '_schema') + ['dataOverlays' => '
 
                 <p>อยากรู้ความเคลื่อนไหวล่าสุดของ LINE OpenChat ต้อง LINE OpenChat สถิติการเข้าชม!</p>
             <?php endif ?>
-            <a href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフについて') ?></a>
         </article>
+        <section class="top-ranking top-btns">
+            <a style="margin: 0;" class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('policy') ?>">
+                <span class="ranking-readMore"><?php echo t('オプチャグラフについて') ?></span>
+            </a>
+        </section>
+        <hr style="margin: 1rem 0;">
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
+            <hr style="margin: 1rem 0;">
         </div>
         <?php if ($dto->recentCommentList): ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
-        <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
-
+        <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
+        ?>
+            <hr style="margin: 1rem 0;">
+            <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
+            <hr style="margin: 1rem 0;">
+        <?php endif ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
+        <hr style="margin: 1rem 0;">
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
+        <hr style="margin: 1rem 0;">
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
+        <hr style="margin: 1rem 0;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <hr style="margin: 1rem 0;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <hr style="margin: 1rem 0;">
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
         <?php viewComponent('footer_inner') ?>
 
@@ -107,7 +122,7 @@ viewComponent('head', compact('_css', '_meta', '_schema') + ['dataOverlays' => '
     </div>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 // TODO: 日本以外ではマイリストが無効
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
     ?>
         <script>
             const urlRoot = '<?php echo MimimalCmsConfig::$urlRoot ?>'
