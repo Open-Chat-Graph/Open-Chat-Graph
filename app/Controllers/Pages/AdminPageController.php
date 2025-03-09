@@ -61,7 +61,7 @@ class AdminPageController
         $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
         $arg = escapeshellarg($urlRoot);
 
-        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -70,7 +70,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
 
-        exec("/usr/bin/php8.3 {$path} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -97,7 +97,7 @@ class AdminPageController
         $path = AppConfig::ROOT_PATH . 'batch/exec/imageupdater_exec.php';
         $arg = escapeshellarg($urlRoot);
 
-        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -169,7 +169,7 @@ class AdminPageController
         $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
         $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
 
-        exec("/usr/bin/php8.3 {$path} {$arg} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
