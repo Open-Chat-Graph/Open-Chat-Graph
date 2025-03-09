@@ -20,7 +20,7 @@ class IndexPageController
     ) {
         $dto = $staticDataGeneration->getTopPageData();
 
-        $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list'];
+        $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list','top'];
         $_meta = meta();
         $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 

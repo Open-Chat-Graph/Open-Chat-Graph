@@ -33,7 +33,7 @@ class Metadata
 
         $this->locale = t('ja');
 
-        $description = t('オプチャグラフはユーザーがオープンチャットを見つけて成長傾向をグラフで比較できる場所です。コメント機能で意見交換ができます。');
+        $description = t('LINEオープンチャットの「今」が一目でわかる人気ランキングサイト。最新の人気チャットルームや成長トレンドをシンプルなグラフで表示。初心者からベテランまで、誰でも簡単に活用できます。');
         $this->description = $description;
         $this->ogpDescription = $description;
     }

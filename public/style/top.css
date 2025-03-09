@@ -1,0 +1,142 @@
+/* opchatgraph-intro クラスに限定したスタイル */
+.opchatgraph-intro {
+  line-height: 1.6;
+  color: #333333;
+  background-color: white;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 1rem;
+}
+
+/* 見出し */
+.opchatgraph-intro h2 {
+  font-size: 1.8rem;
+  color: #4285f4;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #4285f4;
+}
+
+.opchatgraph-intro h3 {
+  font-size: 1.4rem;
+  color: #4285f4;
+  margin: 2rem 0 1rem;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.opchatgraph-intro h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3rem;
+  height: 70%;
+  width: 5px;
+  background-color: #4285f4;
+  border-radius: 2px;
+}
+
+/* 段落 */
+.opchatgraph-intro p {
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+/* リスト */
+.opchatgraph-intro ul {
+  margin: 1.5rem 0;
+  padding-left: 1.5rem;
+  list-style-type: none;
+}
+
+.opchatgraph-intro li {
+  margin-bottom: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.opchatgraph-intro li::before {
+  content: '✓';
+  color: #0f9d58;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+/* 強調テキスト */
+.opchatgraph-intro strong {
+  color: #0f9d58;
+  font-weight: 600;
+}
+
+/* セクション */
+.opchatgraph-intro section {
+  background-color: #f5f5f5;
+  padding: 2rem;
+  border-radius: 8px;
+  margin: 2rem 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 最後の段落（キャッチフレーズ） */
+.opchatgraph-intro p:last-of-type {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  color: #0f9d58;
+  padding: 1rem;
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.opchatgraph-intro a {
+  color: #4285f4;
+  text-decoration: none;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .opchatgraph-intro {
+    padding: 15px;
+  }
+
+  .opchatgraph-intro h2 {
+    font-size: 1.6rem;
+  }
+
+  .opchatgraph-intro h3 {
+    font-size: 1.2rem;
+  }
+
+  .opchatgraph-intro section {
+    padding: 1.5rem;
+  }
+
+  .opchatgraph-intro p:last-of-type {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .opchatgraph-intro {
+    padding: 10px;
+  }
+
+  .opchatgraph-intro h2 {
+    font-size: 1.4rem;
+  }
+
+  .opchatgraph-intro h3 {
+    font-size: 1.1rem;
+  }
+
+  .opchatgraph-intro p,
+  .opchatgraph-intro li {
+    font-size: 0.95rem;
+  }
+
+  .opchatgraph-intro section {
+    padding: 1rem;
+  }
+}
