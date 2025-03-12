@@ -66,6 +66,18 @@ class AdminPageController
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
+    function retry_daily_test()
+    {
+        $urlRoot = MimimalCmsConfig::$urlRoot;
+
+        $path = AppConfig::ROOT_PATH . 'batch/exec/retry_daily_tast.php';
+        $arg = escapeshellarg($urlRoot);
+
+        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
     function tagupdate()
     {
         $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';

@@ -155,7 +155,6 @@ class SyncOpenChat
         addCronLog('Retry hourlyTask');
         AdminTool::sendLineNofity('Retry hourlyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-        OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->handle();

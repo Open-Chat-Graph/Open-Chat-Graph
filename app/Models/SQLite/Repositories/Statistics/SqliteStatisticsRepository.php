@@ -11,15 +11,36 @@ use App\Services\OpenChat\Dto\OpenChatDto;
 
 class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 {
+    private const MAX_RETRIES = 5;
+    private const GET_DAILY_POSITION_USLEEP_TIME = 100000; // 0.1 seconds
+
     public function addNewOpenChatStatisticsFromDto(OpenChatDto $dto): void
     {
-        SQLiteStatistics::execute(
-            "INSERT INTO
-                statistics (open_chat_id, member, date)
-            VALUES
-                (:open_chat_id, :member, :date)",
-            $dto->getStatisticsParams()
-        );
+        $attempts = 0;
+        $result = false;
+        while ($attempts < self::MAX_RETRIES && !$result) {
+            try {
+                SQLiteStatistics::execute(
+                    "INSERT INTO
+                        statistics (open_chat_id, member, date)
+                    VALUES
+                        (:open_chat_id, :member, :date)",
+                    $dto->getStatisticsParams()
+                );
+                $result = true;
+            } catch (\PDOException $e) {
+                if (strpos($e->getMessage(), 'database is locked') === false) {
+                    throw $e;
+                }
+
+                usleep(self::GET_DAILY_POSITION_USLEEP_TIME); // Wait for 0.1 seconds
+                $attempts++;
+            }
+        }
+
+        if (!$result) {
+            throw $e ?? new \RuntimeException('Failed to insert statistics due to unknown error');
+        }
     }
 
     public function insertDailyStatistics(int $open_chat_id, int $member, string $date): void

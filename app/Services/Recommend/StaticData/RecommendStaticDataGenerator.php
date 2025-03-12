@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\RecommendRepositories\CategoryRankingRepository;
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
+use App\Models\Repositories\DB;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
@@ -71,6 +72,7 @@ class RecommendStaticDataGenerator
     private function updateRecommendStaticData()
     {
         foreach ($this->getAllTagNames() as $tag) {
+            DB::$pdo = null;
             $fileName = hash('crc32', $tag);
             saveSerializedFile(
                 AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
@@ -82,6 +84,7 @@ class RecommendStaticDataGenerator
     private function updateCategoryStaticData()
     {
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
+            DB::$pdo = null;
             saveSerializedFile(
                 AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
                 $this->getCategoryRanking($category)
@@ -92,6 +95,7 @@ class RecommendStaticDataGenerator
     private function updateOfficialStaticData()
     {
         foreach ([1, 2] as $emblem) {
+            DB::$pdo = null;
             saveSerializedFile(
                 AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
                 $this->getOfficialRanking($emblem)
