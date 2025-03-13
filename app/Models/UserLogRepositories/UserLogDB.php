@@ -6,7 +6,7 @@ namespace App\Models\UserLogRepositories;
 
 use App\Config\AppConfig;
 use Shadow\DBInterface;
-use Shadow\DB;
+use App\Models\Repositories\DB;
 use Shared\MimimalCmsConfig;
 
 class UserLogDB extends DB implements DBInterface

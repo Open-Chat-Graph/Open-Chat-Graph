@@ -39,8 +39,6 @@ class OpenChatImageStore
             mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . $subDir));
             mkdirIfNotExists(publicDir(AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . $subDir));
         } catch (\RuntimeException $e) {
-            // 再接続
-            DB::$pdo = null;
             $this->logRepository->logOpenChatImageStoreError($open_chat_id, $e->getMessage());
 
             return;
@@ -64,8 +62,6 @@ class OpenChatImageStore
 
             return $imgUrlHash;
         } catch (\RuntimeException $e) {
-            // 再接続
-            DB::$pdo = null;
             $this->logRepository->logOpenChatImageStoreError($imgUrl, $e->getMessage());
 
             return false;
@@ -79,7 +75,6 @@ class OpenChatImageStore
         try {
             $path && array_map(fn(string $p) => file_exists($p) && unlink($p), $path);
         } catch (\ErrorException $e) {
-            DB::$pdo = null;
             $this->logRepository->logOpenChatImageStoreError($imgUrl, $e->getMessage());
 
             return;

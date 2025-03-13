@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\RankingPosition;
 
 use App\Models\RankingPositionDB\RankingPositionDB;
+use App\Models\Repositories\DB;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Services\RankingPosition\Persistence\RankingPositionDailyPersistence;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
@@ -32,10 +33,8 @@ class RankingPositionDailyUpdater
 
     private function persistMemberStatsFromRankingPositionDb(): void
     {
-        RankingPositionDB::$pdo = null;
         $data = $this->rankingPositionHourRepository->getDailyMemberStats(new \DateTime($this->date));
 
-        RankingPositionDB::$pdo = null;
         $ocDbIdArray = $this->openChatRepository->getOpenChatIdAll();
 
         $filteredData = array_filter($data, fn ($stats) => in_array($stats['open_chat_id'], $ocDbIdArray));

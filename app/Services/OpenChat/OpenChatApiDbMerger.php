@@ -60,8 +60,6 @@ class OpenChatApiDbMerger
             $result2 = $this->fetchOpenChatApiRankingAllProcess($this->rankingStore, $this->rankingDownloader);
             return [...$result1, ...$result2];
         } catch (\RuntimeException $e) {
-            // 再接続
-            DB::$pdo = null;
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
         }
@@ -84,8 +82,6 @@ class OpenChatApiDbMerger
             $errors = $this->openChatApiDtoFactory->validateAndMapToOpenChatDto($apiData, $processCallback);
 
             foreach ($errors as $error) {
-                // 再接続
-                DB::$pdo = null;
                 $this->logRepository->logUpdateOpenChatError(0, $error);
             }
         };

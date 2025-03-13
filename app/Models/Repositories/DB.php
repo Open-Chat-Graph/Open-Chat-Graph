@@ -18,4 +18,18 @@ class DB extends \Shadow\DB implements DBInterface
             'dbName' => AppConfig::$dbName[MimimalCmsConfig::$urlRoot]
         ]);
     }
+
+    public static function execute(string $query, ?array $params = null): \PDOStatement
+    {
+        try {
+            return parent::execute($query, $params);
+        } catch (\PDOException $e) {
+            if ($e->errorInfo[1] === 2006) {
+                DB::$pdo = null;
+                return parent::execute($query, $params);
+            }
+            
+            throw $e;
+        }
+    }
 }

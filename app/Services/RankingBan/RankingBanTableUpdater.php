@@ -136,8 +136,6 @@ class RankingBanTableUpdater
         }
 
         foreach ($latestOcIdArray as $key => $id) {
-            if ($key % 10 === 0) DB::$pdo = null;
-
             $this->openChatUpdaterFromApi->fetchUpdateOpenChat($id, false);
 
             $oc = DB::fetch(
@@ -162,9 +160,6 @@ class RankingBanTableUpdater
 
     function updateRankingBanTable()
     {
-        DB::$pdo = null;
-        DB::connect();
-
         $openChatArray = DB::fetchAll(
             "SELECT
                 oc.id,

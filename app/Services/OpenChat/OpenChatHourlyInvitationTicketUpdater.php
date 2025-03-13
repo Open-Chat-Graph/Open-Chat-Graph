@@ -21,7 +21,6 @@ class OpenChatHourlyInvitationTicketUpdater
 
     function updateInvitationTicketAll()
     {
-        DB::$pdo = null;
         $ocArray = $this->updateOpenChatRepository->getEmptyUrlOpenChatId();
 
         // 開発環境の場合、更新制限をかける
@@ -43,8 +42,6 @@ class OpenChatHourlyInvitationTicketUpdater
             $dto = $this->openChatApiFromEmidDownloader->fetchOpenChatDto($emid);
             if (!$dto) return false;
         } catch (\RuntimeException | InvalidMemberCountException $e) {
-            // 再接続
-            DB::$pdo = null;
             $this->logRepository->logUpdateOpenChatError($open_chat_id, $e->getMessage());
             return false;
         }

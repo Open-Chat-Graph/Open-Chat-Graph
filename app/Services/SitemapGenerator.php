@@ -34,12 +34,10 @@ class SitemapGenerator
         foreach (array_keys(AppConfig::$dbName) as $lang) {
             MimimalCmsConfig::$urlRoot = $lang;
             $this->currentUrl = self::SITE_URL . $lang . '/';
-            DB::$pdo = null;
             $this->generateEachLanguage($index);
         }
 
         safeFileRewrite(self::INDEX_SITEMAP, $index->render(), 0755);
-        DB::$pdo = null;
         MimimalCmsConfig::$urlRoot = $ccurrentUrlRoot;
         $this->cleanSitemapFiles(self::SITEMAP_DIR, $this->currentNum);
     }

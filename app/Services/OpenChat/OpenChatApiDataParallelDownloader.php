@@ -59,8 +59,6 @@ class OpenChatApiDataParallelDownloader
         try {
             $result = $this->process((string)$category, ...$args);
         } catch (\RuntimeException $e) {
-            // 再接続
-            DB::$pdo = null;
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
         }
@@ -94,8 +92,6 @@ class OpenChatApiDataParallelDownloader
             $errors = $this->openChatApiDtoFactory->validateAndMapToOpenChatDto($apiData, $processCallback);
 
             foreach ($errors as $error) {
-                // 再接続
-                DB::$pdo = null;
                 $this->logRepository->logUpdateOpenChatError(0, $error);
             }
 

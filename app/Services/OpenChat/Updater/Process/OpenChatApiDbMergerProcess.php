@@ -28,8 +28,6 @@ class OpenChatApiDbMergerProcess
 
         // 一致するものがない場合は追加
         if (!$repoDto) {
-            // 再接続して追加
-            DB::$pdo = null;
             $this->add($apiDto);
             return null;
         }
@@ -46,8 +44,6 @@ class OpenChatApiDbMergerProcess
             return null;
         }
 
-        // 再接続して更新
-        DB::$pdo = null;
         $this->openChatMargeUpdateProcess->mergeUpdateOpenChat($repoDto, $apiDto, false);
 
         return null;
