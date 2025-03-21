@@ -11,7 +11,6 @@ use Shared\MimimalCmsConfig;
 class DB extends \Shadow\DB implements DBInterface
 {
     public static ?\PDO $pdo = null;
-    private const GET_DAILY_POSITION_USLEEP_TIME = 1000000; // 1 seconds
 
     public static function connect(?array $config = null): \PDO
     {
@@ -27,20 +26,9 @@ class DB extends \Shadow\DB implements DBInterface
         } catch (\PDOException $e) {
             if ($e->errorInfo[1] === 2006) {
                 static::$pdo = null;
-
-                try {
-                    return parent::execute($query, $params);
-                } catch (\PDOException $e) {
-                    if ($e->errorInfo[1] === 2006) {
-                        static::$pdo = null;
-                        usleep(DB::GET_DAILY_POSITION_USLEEP_TIME);
-                        return parent::execute($query, $params);
-                    }
-
-                    throw $e;
-                }
+                return parent::execute($query, $params);
             }
-
+            
             throw $e;
         }
     }
