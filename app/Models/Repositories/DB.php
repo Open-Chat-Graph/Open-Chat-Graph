@@ -26,14 +26,14 @@ class DB extends \Shadow\DB implements DBInterface
             return parent::execute($query, $params);
         } catch (\PDOException $e) {
             if ($e->errorInfo[1] === 2006) {
-                self::$pdo = null;
+                static::$pdo = null;
 
                 try {
                     return parent::execute($query, $params);
                 } catch (\PDOException $e) {
                     if ($e->errorInfo[1] === 2006) {
-                        self::$pdo = null;
-                        usleep(self::GET_DAILY_POSITION_USLEEP_TIME);
+                        static::$pdo = null;
+                        usleep(DB::GET_DAILY_POSITION_USLEEP_TIME);
                         return parent::execute($query, $params);
                     }
 
