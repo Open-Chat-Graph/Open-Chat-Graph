@@ -100,16 +100,13 @@ Route::path(
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
-    // TODO: 日本語以外ではルーティングを無効化
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
-    // TODO: 日本語以外ではルーティングを無効化
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
 Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'nocache'])
-    // TODO: 日本語以外ではルーティングを無効化
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
@@ -126,7 +123,7 @@ Route::path(
 )
     ->middleware([VerifyCsrfToken::class])
     ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
-    // TODO: 日本語以外ではルーティングを無効化
+    
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
@@ -153,7 +150,6 @@ Route::path(
 )
     ->matchNum('page')
     ->match(function (int $page) {
-        // TODO: 日本語以外ではルーティングを無効化
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
 
@@ -166,7 +162,6 @@ Route::path(
 )
     ->matchNum('page', emptyAble: true)
     ->match(function () {
-        // TODO: 日本語以外ではルーティングを無効化
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
 
@@ -179,8 +174,7 @@ Route::path(
 )
     ->matchStr('ads', emptyAble: true)
     ->match(function () {
-        // TODO: 日本語以外ではルーティングを無効化
-        if (MimimalCmsConfig::$urlRoot !== '')
+                if (MimimalCmsConfig::$urlRoot !== '')
             return false;
 
         handleRequestWithETagAndCache("labs/tags");
@@ -196,8 +190,7 @@ Route::path(
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
     ->match(function (Reception $reception) {
-        // TODO: 日本語以外ではルーティングを無効化
-        if (MimimalCmsConfig::$urlRoot !== '')
+                if (MimimalCmsConfig::$urlRoot !== '')
             return false;
 
         handleRequestWithETagAndCache(json_encode($reception->input()));
@@ -217,8 +210,7 @@ Route::path(
     ->matchStr('text', 'post', maxLen: 1000)
     ->match(
         function (string $text, string $name) {
-            // TODO: 日本語以外ではルーティングを無効化
-            if (MimimalCmsConfig::$urlRoot !== '')
+                        if (MimimalCmsConfig::$urlRoot !== '')
                 return false;
 
             return removeAllZeroWidthCharacters($text)
@@ -237,8 +229,7 @@ Route::path(
 )
     ->matchNum('comment_id', min: 1)
     ->matchStr('type', 'post', regex: ['empathy', 'insights', 'negative'])
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->middleware([VerifyCsrfToken::class]);
 
 // 通報API
@@ -247,8 +238,7 @@ Route::path(
     [CommentReportApiController::class, 'index']
 )
     ->matchNum('comment_id', min: 1)
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
 
 Route::path('admin/cookie')
@@ -271,8 +261,7 @@ Route::path(
 )
     ->matchNum('id')
     ->matchNum('commentId')
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('flag', min: 0, max: 3);
 
 Route::path(
@@ -280,16 +269,14 @@ Route::path(
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('commentId');
 
 Route::path(
     'admin-api/commentbanroom@post',
     [AdminEndPointController::class, 'commentbanroom']
 )
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
@@ -359,16 +346,14 @@ Route::path(
     }); */
 
 Route::path('furigana@POST')
-    // TODO: 日本語以外ではルーティングを無効化
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('json');
 
 Route::path('furigana/guideline')
     ->match(function () {
         handleRequestWithETagAndCache('guideline');
 
-        // TODO: 日本語以外ではルーティングを無効化
-        return MimimalCmsConfig::$urlRoot === '';
+                return MimimalCmsConfig::$urlRoot === '';
     });
 
 Route::path(
@@ -378,8 +363,7 @@ Route::path(
     ->match(function () {
         handleRequestWithETagAndCache('defamationGuideline');
 
-        // TODO: 日本語以外ではルーティングを無効化
-        return MimimalCmsConfig::$urlRoot === '';
+                return MimimalCmsConfig::$urlRoot === '';
     });
 
 cache();
