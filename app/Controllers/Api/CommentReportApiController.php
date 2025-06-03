@@ -69,7 +69,7 @@ class CommentReportApiController
         );
         $roomUrl = url("oc/{$ocId}/admin?openExternalBrowser=1");
 
-        AdminTool::sendLineNofity(
+        AdminTool::sendDiscordNotify(
             "通報: " . json_encode($comment, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n削除: {$deleteUrl}\n部屋: {$roomUrl}"
         );
 

@@ -14,12 +14,12 @@ $oc = app(RecommendUpdater::class);
 
 
 try {
-    AdminTool::sendLineNofity('oc start');
+    AdminTool::sendDiscordNotify('oc start');
 
     $oc->updateRecommendTables(false);
 
-    AdminTool::sendLineNofity('oc done');
+    AdminTool::sendDiscordNotify('oc done');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
-    AdminTool::sendLineNofity($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
 }

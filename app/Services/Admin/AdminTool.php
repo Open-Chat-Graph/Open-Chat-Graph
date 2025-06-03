@@ -75,19 +75,19 @@ class AdminTool
         return (string)$response;
     }
 
-    static function sendLineNofity(string $message, ?string $token = null): string
+    static function sendDiscordNotify(string $message, ?string $webhookUrl = null): string
     {
-        $token = $token ?? SecretsConfig::$lineNotifyToken;
+        $webhookUrl = $webhookUrl ?? SecretsConfig::$discordWebhookUrl;
 
-        $curl = function ($message) use ($token) {
-            $query = http_build_query(['message' => $message]);
-            $header = ['Authorization: Bearer ' . $token];
-            $ch = curl_init('https://notify-api.line.me/api/notify');
+        $curl = function ($message) use ($webhookUrl) {
+            $payload = json_encode(['content' => $message]);
+            $header = ['Content-Type: application/json'];
+            $ch = curl_init($webhookUrl);
             $options = [
                 CURLOPT_RETURNTRANSFER  => true,
                 CURLOPT_POST            => true,
                 CURLOPT_HTTPHEADER      => $header,
-                CURLOPT_POSTFIELDS      => $query
+                CURLOPT_POSTFIELDS      => $payload
             ];
 
             curl_setopt_array($ch, $options);
@@ -103,7 +103,7 @@ class AdminTool
         $prefix =  $isStaging . $isDev . $urlRoot . "\n";
 
         $responses = [];
-        foreach (mb_str_split($message, 1000 - mb_strlen($prefix)) as $el) {
+        foreach (mb_str_split($message, 2000 - mb_strlen($prefix)) as $el) {
             $responses[] = $curl($prefix . $el);
         }
 

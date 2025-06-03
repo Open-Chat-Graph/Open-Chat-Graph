@@ -19,5 +19,5 @@ try {
     $syncOpenChat->handleHalfHourCheck();
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
-    AdminTool::sendLineNofity($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
 }

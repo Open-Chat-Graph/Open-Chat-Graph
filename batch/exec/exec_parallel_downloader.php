@@ -26,6 +26,6 @@ try {
 } catch (\Throwable $e) {
     // 全てのダウンロードプロセスを強制終了する
     OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-    AdminTool::sendLineNofity($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
     addCronLog($e->__toString());
 }

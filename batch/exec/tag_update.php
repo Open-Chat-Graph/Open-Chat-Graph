@@ -17,10 +17,10 @@ try {
      * @var RecommendUpdater $recommendUpdater
      */
     $recommendUpdater = app(RecommendUpdater::class);
-    AdminTool::sendLineNofity('updateRecommendTables start');
+    AdminTool::sendDiscordNotify('updateRecommendTables start');
     $recommendUpdater->updateRecommendTables(false);
-    AdminTool::sendLineNofity('updateRecommendTables done');
+    AdminTool::sendDiscordNotify('updateRecommendTables done');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
-    AdminTool::sendLineNofity($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
 }

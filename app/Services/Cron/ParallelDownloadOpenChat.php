@@ -71,7 +71,7 @@ class ParallelDownloadOpenChat
         $typeStr = $type ?? 'null';
         $error = "ParallelDownloadOpenChat {$typeStr} {$categoryStr}: " . $e->__toString();
 
-        AdminTool::sendLineNofity($error);
+        AdminTool::sendDiscordNotify($error);
         addCronLog($error);
     }
 }

@@ -18,12 +18,12 @@ try {
      */
     $img = app(OpenChatImageUpdater::class);
 
-    AdminTool::sendLineNofity('imageUpdateAll start');
+    AdminTool::sendDiscordNotify('imageUpdateAll start');
 
     $result = $img->imageUpdateAll(false);
 
-    AdminTool::sendLineNofity('imageUpdateAll done: ' . $result);
+    AdminTool::sendDiscordNotify('imageUpdateAll done: ' . $result);
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
-    AdminTool::sendLineNofity($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
 }

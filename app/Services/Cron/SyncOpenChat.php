@@ -39,7 +39,7 @@ class SyncOpenChat
 
         set_exception_handler(function (\Throwable $e) {
             OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            AdminTool::sendLineNofity($e->__toString());
+            AdminTool::sendDiscordNotify($e->__toString());
             addCronLog($e->__toString());
         });
     }
@@ -68,7 +68,7 @@ class SyncOpenChat
         checkLineSiteRobots();
 
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            AdminTool::sendLineNofity('SyncOpenChat: hourlyTask is active');
+            AdminTool::sendDiscordNotify('SyncOpenChat: hourlyTask is active');
             addCronLog('SyncOpenChat: hourlyTask is active');
         }
 
@@ -153,13 +153,13 @@ class SyncOpenChat
     private function retryHourlyTask()
     {
         addCronLog('Retry hourlyTask');
-        AdminTool::sendLineNofity('Retry hourlyTask');
+        AdminTool::sendDiscordNotify('Retry hourlyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
         addCronLog('Done retrying hourlyTask');
-        AdminTool::sendLineNofity('Done retrying hourlyTask');
+        AdminTool::sendDiscordNotify('Done retrying hourlyTask');
     }
 
     private function dailyTask()
@@ -184,14 +184,14 @@ class SyncOpenChat
     private function retryDailyTask()
     {
         addCronLog('Retry dailyTask');
-        AdminTool::sendLineNofity('Retry dailyTask');
+        AdminTool::sendDiscordNotify('Retry dailyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
         addCronLog('Done retrying dailyTask');
-        AdminTool::sendLineNofity('Done retrying dailyTask');
+        AdminTool::sendDiscordNotify('Done retrying dailyTask');
     }
 
     /**

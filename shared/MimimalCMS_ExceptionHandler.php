@@ -105,7 +105,7 @@ class ExceptionHandler
             && class_exists($adminToolClass)
         ) {
             try {
-                $adminToolClass::sendLineNofity($e->__toString() . "\nIP: " . getIp() . "\nUA: " . getUA());
+                $adminToolClass::sendDiscordNotify($e->__toString() . "\nIP: " . getIp() . "\nUA: " . getUA());
             } catch (\Throwable $exception) {
                 self::errorLog($exception);
             }
