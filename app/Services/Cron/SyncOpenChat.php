@@ -53,7 +53,7 @@ class SyncOpenChat
             // 毎日23:30に実行
             $this->dailyTask();
         } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
-            // 毎日1:30にdailyTaskが実行中の場合は、前日のdailyTaskが失敗したとみなす
+            // 毎日1:30以降にdailyTaskが実行中の場合は、前日のdailyTaskが失敗したとみなす
             $this->retryDailyTask();
         } else {
             // 23:30を除く毎時30分に実行
@@ -183,15 +183,31 @@ class SyncOpenChat
 
     private function retryDailyTask()
     {
+        // 6:30以降にリトライした場合は通知
+        if ($this->isAfterRetryNotificationTime()) {
+            AdminTool::sendDiscordNotify('Retrying dailyTask');
+        }
+
         addCronLog('Retry dailyTask');
-        AdminTool::sendDiscordNotify('Retry dailyTask');
         OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
-        addCronLog('Done retrying dailyTask');
-        AdminTool::sendDiscordNotify('Done retrying dailyTask');
+        addCronLog('Done Retry dailyTask');
+
+        if ($this->isAfterRetryNotificationTime()) {
+            AdminTool::sendDiscordNotify('Done retrying dailyTask');
+        }
+    }
+
+    private function isAfterRetryNotificationTime(): bool
+    {
+        return !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
+            && !isDailyUpdateTime(new \DateTime('-3 hour'), new \DateTime('-3 hour'))
+            && !isDailyUpdateTime(new \DateTime('-4 hour'), new \DateTime('-4 hour'))
+            && !isDailyUpdateTime(new \DateTime('-5 hour'), new \DateTime('-5 hour'))
+            && !isDailyUpdateTime(new \DateTime('-6 hour'), new \DateTime('-6 hour'));
     }
 
     /**
