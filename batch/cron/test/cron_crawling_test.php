@@ -9,7 +9,7 @@ class cron_crawling_test extends TestCase
 {
     public function test()
     {
-        $arg = escapeshellarg('/tw');
+        $arg = escapeshellarg('');
         $arg2 = escapeshellarg('dailyTest');
 
         $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';

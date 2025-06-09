@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
+use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -62,7 +63,7 @@ class OpenChatDailyCrawling
     private function checkKillFlag()
     {
         $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatDailyCrawlingKillFlag)
-            && throw new ApplicationException('OpenChatDailyCrawling: 強制終了しました');
+            && throw new ApplicationException('OpenChatDailyCrawling: 強制終了しました', AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
     }
 
     static function setKillFlagTrue()
