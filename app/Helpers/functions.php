@@ -352,6 +352,8 @@ function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): strin
         $retryCount++;
         sleep($retryInterval);
     }
+
+    throw new \RuntimeException('Line site robots.txt not found or invalid');
 }
 
 function getImgSetErrorTag(): string

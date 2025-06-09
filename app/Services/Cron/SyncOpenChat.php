@@ -53,7 +53,6 @@ class SyncOpenChat
             // 毎日23:30に実行
             $this->dailyTask();
         } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
-            // 毎日1:30以降にdailyTaskが実行中の場合は、前日のdailyTaskが失敗したとみなす
             $this->retryDailyTask();
         } else {
             // 23:30を除く毎時30分に実行
@@ -79,9 +78,7 @@ class SyncOpenChat
 
     private function isFailedDailyUpdate(): bool
     {
-        return !isDailyUpdateTime()
-            && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
-            && $this->state->getBool(StateType::isDailyTaskActive);
+        return $this->state->getBool(StateType::isDailyTaskActive);
     }
 
     // 毎時0分に実行
