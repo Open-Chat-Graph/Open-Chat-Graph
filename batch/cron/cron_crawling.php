@@ -28,7 +28,7 @@ try {
     // 6:30以降にリトライした場合は通知
     if (
         $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE
-        && $syncOpenChat->isAfterRetryNotificationTime()
+        && !$syncOpenChat->isAfterRetryNotificationTime()
     ) {
         return;
     }
