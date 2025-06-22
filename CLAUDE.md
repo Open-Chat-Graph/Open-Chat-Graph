@@ -75,6 +75,33 @@ composer install
 - Dependency injection via `/shared/MimimalCmsConfig.php`
 - Raw SQL for complex queries and performance
 
+### Database Access in Controllers
+
+When you need to access the database in controllers, use the `Shadow\DB` class:
+
+```php
+use Shadow\DB;
+
+// In your controller method:
+DB::connect(); // Always connect first
+
+// For SELECT queries that return multiple rows:
+$stmt = DB::$pdo->prepare("SELECT * FROM table WHERE condition = ?");
+$stmt->execute([$value]);
+$results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+// For SELECT queries that return a single row:
+$stmt = DB::$pdo->prepare("SELECT * FROM table WHERE id = ?");
+$stmt->execute([$id]);
+$result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+// For INSERT/UPDATE/DELETE:
+$stmt = DB::$pdo->prepare("INSERT INTO table (column1, column2) VALUES (?, ?)");
+$stmt->execute([$value1, $value2]);
+```
+
+Note: The database configuration is automatically loaded from `local-secrets.php` for development environment.
+
 ## Testing
 
 ### PHPUnit
@@ -167,3 +194,62 @@ Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) 
 - Japanese (primary), Thai, Traditional Chinese
 - Separate data directories per language
 - Internationalized content in `/storage/` subdirectories
+
+## Creating New Pages (MVC Pattern)
+
+### 1. Add Route
+In `/app/Config/routing.php`:
+```php
+Route::path('your-path', [\App\Controllers\Pages\YourController::class, 'method']);
+```
+
+### 2. Create Controller
+Controllers go in `/app/Controllers/Pages/`:
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Controllers\Pages;
+
+use Shadow\Kernel\Reception;
+use App\Models\Repositories\DB;
+
+class YourController
+{
+    public function index(Reception $reception)
+    {
+        // Database access if needed
+        DB::connect();
+        $stmt = DB::$pdo->prepare("SELECT ...");
+        $stmt->execute();
+        $data = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        
+        // Set meta data
+        $_meta = meta();
+        $_meta->title = 'Page Title';
+        $_meta->description = 'Page description';
+        
+        // Return view
+        return view('view_name', [
+            'data' => $data,
+            '_meta' => $_meta,
+        ]);
+    }
+}
+```
+
+### 3. Create View
+Views go in `/app/Views/`:
+- Use `.php` extension
+- Access variables directly (e.g., `$data`, `$_meta`)
+- Use `viewComponent()` for reusable components
+- Use `url()` for generating URLs
+- Use `t()` for translations
+- Use `fileUrl()` for asset URLs
+
+### Important Notes
+- Controllers don't use return type hints for view-returning methods
+- Use `App\Models\Repositories\DB` (not `Shadow\DB`) for database access
+- The DB class automatically selects the correct database based on `MimimalCmsConfig::$urlRoot`
+- Meta data is accessed via `meta()` helper function, not a service class
+- Views are returned directly with `view()`, not wrapped in Response object
