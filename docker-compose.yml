@@ -1,19 +1,20 @@
 services:
   app:
     build:
-      context: 'docker/app/'
+      context: "docker/app/"
     ports:
       - "${WEB_PORT:-8000}:80"
     working_dir: /var/www/html
+    user: "1000:1000"
     volumes:
-      - './:/var/www/html'
-      - './docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf'
-      - './docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf'
+      - "./:/var/www/html"
+      - "./docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf"
+      - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf"
     depends_on:
       - mysql
   mysql:
     build:
-      context: 'docker/mysql/'
+      context: "docker/mysql/"
     command: --default-authentication-plugin=mysql_native_password
     environment:
       - MYSQL_DATABASE=test_db_name
@@ -23,7 +24,7 @@ services:
       - MYSQL_ROOT_PASSWORD=test_root_pass
       - TZ=Asia/Tokyo
     volumes:
-      - './docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf'
+      - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
     ports:
       - "${MYSQL_PORT:-3306}:3306"
   phpmyadmin:
