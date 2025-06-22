@@ -1,27 +1,98 @@
 {
-  "name": "My Project",
+  "name": "OpenChat Graph Dev Environment",
   "dockerComposeFile": "../docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/var/www/html",
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "php.suggest.basic": false,
+        "php.validate.enable": false,
+        "intelephense.telemetry.enabled": false,
+        "intelephense.format.enable": true,
+        "intelephense.completion.triggerParameterHints": true,
+        "intelephense.completion.insertUseDeclaration": true,
+        "intelephense.completion.fullyQualifyGlobalConstantsAndFunctions": false,
+        "intelephense.files.maxSize": 5000000,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "files.associations": {
+          "*.php": "php"
+        },
+        "emmet.includeLanguages": {
+          "php": "html"
+        },
+        "git.autofetch": true,
+        "git.enableSmartCommit": true,
+        "workbench.iconTheme": "vscode-icons",
+        "workbench.colorTheme": "Default Dark+",
+        "explorer.confirmDragAndDrop": false,
+        "explorer.confirmDelete": false
+      },
+      "extensions": [
+        "steoates.autoimport",
+        "formulahendry.code-runner",
+        "mhutchie.git-graph",
+        "GitHub.vscode-pull-request-github",
+        "oderwat.indent-rainbow",
+        "bmewburn.vscode-intelephense-client",
+        "emallin.phpunit",
+        "Gruntfuggly.todo-tree",
+        "PKief.material-icon-theme",
+        "MS-CEINTL.vscode-language-pack-ja",
+        "GitHub.codespaces",
+        "formulahendry.auto-rename-tag",
+        "formulahendry.auto-close-tag",
+        "xdebug.php-debug",
+        "GitHub.copilot",
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-css-peek",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.sublime-keybindings",
+        "alefragnani.Bookmarks",
+        "ms-vscode.references-view",
+        "streetsidesoftware.code-spell-checker",
+        "usernamehw.errorlens",
+        "ms-vscode.wordcount",
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint",
+        "formulahendry.docker-extension-pack",
+        "ms-vscode-remote.remote-containers",
+        "GitLab.gitlab-workflow",
+        "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "ms-vscode.live-server",
+        "ritwickdey.LiveServer",
+        "christian-kohler.path-intellisense",
+        "vscode-icons-team.vscode-icons",
+        "ms-vscode.hexeditor",
+        "ms-vscode.powershell",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
   },
-  "extensions": [
-    "steoates.autoimport",
-    "formulahendry.code-runner",
-    "mhutchie.git-graph",
-    "GitHub.vscode-pull-request-github",
-    "oderwat.indent-rainbow",
-    "bmewburn.vscode-intelephense-client",
-    "emallin.phpunit",
-    "Gruntfuggly.todo-tree",
-    "PKief.material-icon-theme",
-    "MS-CEINTL.vscode-language-pack-ja",
-    "GitHub.codespaces",
-    "formulahendry.auto-rename-tag",
-    "formulahendry.auto-close-tag",
-    "xdebug.php-debug",
-    "GitHub.copilot"
-  ],
+  "forwardPorts": [80, 3306, 8080],
+  "portsAttributes": {
+    "80": {
+      "label": "Web Server",
+      "onAutoForward": "notify"
+    },
+    "3306": {
+      "label": "MySQL",
+      "onAutoForward": "silent"
+    },
+    "8080": {
+      "label": "phpMyAdmin",
+      "onAutoForward": "notify"
+    }
+  },
   "postCreateCommand": "/var/www/html/.devcontainer/post-create-command.sh"
 }
