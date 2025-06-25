@@ -59,10 +59,4 @@ RUN /bin/sh -c a2enmod rewrite
 
 RUN ln -sf  /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
-# Create user with ID 1000 for VSCode compatibility
-RUN groupadd -g 1000 vscode && \
-    useradd -u 1000 -g 1000 -m -s /bin/bash vscode && \
-    mkdir -p /home/vscode/.vscode-server && \
-    chown -R vscode:vscode /home/vscode
-
 CMD ["apache2-foreground"]
