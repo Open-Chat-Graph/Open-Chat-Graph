@@ -161,8 +161,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
     </nav>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
-
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
