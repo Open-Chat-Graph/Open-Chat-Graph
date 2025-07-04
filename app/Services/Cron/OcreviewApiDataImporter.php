@@ -1,0 +1,424 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Cron;
+
+use App\Models\Importer\SqlInsert;
+use App\Models\Importer\SqlInsertUpdateWithBindValue;
+use App\Models\Repositories\DB;
+use App\Models\SQLite\SQLiteStatistics;
+use App\Models\SQLite\SQLiteRankingPosition;
+use PDO;
+use Shared\MimimalCmsConfig;
+
+class OcreviewApiDataImporter
+{
+    private PDO $targetPdo;
+    private PDO $sourcePdo;
+
+    // Target database configuration
+    private const TARGET_DB_NAME = 'ocreview_api';
+
+    // Chunk size for bulk operations
+    private const CHUNK_SIZE = 2000;
+    private const CHUNK_SIZE_SQLITE = 10000;
+
+    public function __construct(
+        private SqlInsertUpdateWithBindValue $sqlImportUpdater,
+        private SqlInsert $sqlImporter,
+    ) {}
+
+    /**
+     * Execute all import operations
+     */
+    public function execute(): void
+    {
+        $this->initializeConnections();
+
+        // Import OpenChat master data
+        $this->importOpenChatMaster();
+
+        // Import growth rankings (full refresh)
+        $this->importGrowthRankings();
+
+        // Import daily member statistics (incremental)
+        $this->importDailyMemberStatistics();
+
+        // Import LINE official activity history
+        $this->importLineOfficialActivityHistory();
+
+        $this->importTotalCount();
+    }
+
+    /**
+     * Initialize database connections
+     */
+    private function initializeConnections(): void
+    {
+        // Connect to source database (ocgraph_ocreview)
+        $this->sourcePdo = DB::connect();
+
+        // Connect to target database (ocreview_api)
+        $this->targetPdo = new PDO(
+            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, self::TARGET_DB_NAME),
+            MimimalCmsConfig::$dbUserName,
+            MimimalCmsConfig::$dbPassword,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]
+        );
+    }
+
+    /**
+     * Import/Update openchat_master table
+     */
+    private function importOpenChatMaster(): void
+    {
+        // Get the last update timestamp from target
+        $stmt = $this->targetPdo->query("SELECT MAX(last_updated_at) as max_updated FROM openchat_master");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $lastUpdated = $result['max_updated'] ?? '1970-01-01 00:00:00';
+
+        // Get total count
+        $countQuery = "SELECT COUNT(*) FROM open_chat WHERE updated_at > ?";
+        $countStmt = $this->sourcePdo->prepare($countQuery);
+        $countStmt->execute([$lastUpdated]);
+        $totalCount = $countStmt->fetchColumn();
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        // Select only updated records from source
+        $query = "
+            SELECT 
+                id,
+                emid,
+                name,
+                url,
+                description,
+                img_url,
+                member,
+                emblem,
+                category,
+                join_method_type,
+                api_created_at,
+                created_at,
+                updated_at
+            FROM open_chat
+            WHERE updated_at > ?
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->sourcePdo->prepare($query);
+        $processedCount = 0;
+
+        for ($offset = 0; $offset < $totalCount; $offset += self::CHUNK_SIZE) {
+            $stmt->bindValue(1, $lastUpdated, PDO::PARAM_STR);
+            $stmt->bindValue(2, self::CHUNK_SIZE, PDO::PARAM_INT);
+            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $data = [];
+            foreach ($rows as $row) {
+                $data[] = $this->transformOpenChatRow($row);
+            }
+
+            if (!empty($data)) {
+                $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
+                $processedCount += count($data);
+                echo "Processed $processedCount / $totalCount records\n";
+            }
+        }
+    }
+
+    /**
+     * Transform open_chat row to openchat_master format
+     */
+    private function transformOpenChatRow(array $row): array
+    {
+        return [
+            'openchat_id' => $row['id'],
+            'line_internal_id' => $row['emid'],
+            'display_name' => $row['name'],
+            'invitation_url' => $row['url'],
+            'description' => $row['description'],
+            'profile_image_url' => $row['img_url'],
+            'current_member_count' => $row['member'],
+            'verification_badge' => $this->convertEmblem($row['emblem']),
+            'category_id' => $row['category'],
+            'join_method' => $this->convertJoinMethod($row['join_method_type']),
+            'established_at' => $this->convertUnixTimeToDatetime($row['api_created_at']),
+            'first_seen_at' => $row['created_at'],
+            'last_updated_at' => $row['updated_at'],
+        ];
+    }
+
+    /**
+     * Convert emblem value to verification badge
+     */
+    private function convertEmblem(?int $emblem): ?string
+    {
+        return match ($emblem) {
+            1 => 'スペシャル',
+            2 => '公式認証',
+            default => null,
+        };
+    }
+
+    /**
+     * Convert join method type to text
+     */
+    private function convertJoinMethod(int $joinMethodType): string
+    {
+        return match ($joinMethodType) {
+            0 => '全体公開',
+            1 => '参加承認制',
+            2 => '参加コード入力制',
+            default => '全体公開',
+        };
+    }
+
+    /**
+     * Convert Unix timestamp to datetime
+     */
+    private function convertUnixTimeToDatetime(?int $unixTime): ?string
+    {
+        if ($unixTime === null || $unixTime === 0) {
+            return null;
+        }
+        return date('Y-m-d H:i:s', $unixTime);
+    }
+
+    /**
+     * Import growth rankings (hourly, daily, weekly)
+     */
+    private function importGrowthRankings(): void
+    {
+        $rankings = [
+            'statistics_ranking_hour' => 'growth_ranking_past_hour',
+            'statistics_ranking_hour24' => 'growth_ranking_past_24_hours',
+            'statistics_ranking_week' => 'growth_ranking_past_week',
+        ];
+
+        foreach ($rankings as $sourceTable => $targetTable) {
+            // Get total count
+            $countQuery = "SELECT COUNT(*) FROM $sourceTable";
+            $totalCount = $this->sourcePdo->query($countQuery)->fetchColumn();
+
+            if ($totalCount === 0) {
+                continue;
+            }
+
+            // Truncate target table
+            $this->targetPdo->exec("TRUNCATE TABLE $targetTable");
+
+            // Select all data from source
+            $query = "
+                SELECT 
+                    id as ranking_position,
+                    open_chat_id as openchat_id,
+                    diff_member as member_increase_count,
+                    percent_increase as growth_rate_percent
+                FROM 
+                    $sourceTable
+                ORDER BY id
+                LIMIT ? OFFSET ?
+            ";
+
+            $stmt = $this->sourcePdo->prepare($query);
+            $processedCount = 0;
+
+            for ($offset = 0; $offset < $totalCount; $offset += self::CHUNK_SIZE) {
+                $stmt->bindValue(1, self::CHUNK_SIZE, PDO::PARAM_INT);
+                $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
+                    $processedCount += count($data);
+                    echo "Processed $processedCount / $totalCount records for $targetTable\n";
+                }
+            }
+        }
+    }
+
+    /**
+     * Import daily member statistics (incremental)
+     */
+    private function importDailyMemberStatistics(): void
+    {
+        // Get the maximum record_id from target
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM daily_member_statistics");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+
+        // Initialize SQLite connection
+        $sqliteStatistics = SQLiteStatistics::connect([
+            'mode' => '?mode=ro'
+        ]);
+
+        $stmt = $sqliteStatistics->prepare("SELECT count(*) FROM statistics WHERE id > ?");
+        $stmt->execute([$maxId]);
+        $count = $stmt->fetchColumn();
+
+        if ($count === 0) {
+            return;
+        }
+
+        // Query for records after maxId
+        $query = "
+            SELECT 
+                id as record_id,
+                open_chat_id as openchat_id,
+                member as member_count,
+                date as statistics_date
+            FROM 
+                statistics
+            WHERE id > ?
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $sqliteStatistics->prepare($query);
+        $processedCount = 0;
+
+        for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
+            $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
+            $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
+            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
+                $processedCount += count($data);
+                echo "Processed $processedCount / $count records\n daily_member_statistics\n";
+            }
+        }
+    }
+
+    private function importTotalCount(): void
+    {
+        // Get the maximum record_id from target
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM line_official_ranking_total_count");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+
+        // Initialize SQLite connection
+        $sqliteStatistics = SQLiteRankingPosition::connect([
+            'mode' => '?mode=ro'
+        ]);
+
+        $stmt = $sqliteStatistics->prepare("SELECT count(*) FROM total_count WHERE id > ?");
+        $stmt->execute([$maxId]);
+        $count = $stmt->fetchColumn();
+
+        if ($count === 0) {
+            return;
+        }
+
+        // Query for records after maxId
+        $query = "
+            SELECT 
+                id as record_id,
+                total_count_rising as activity_trending_total_count,
+                total_count_ranking as activity_ranking_total_count,
+                time as recorded_at,
+                category as category_id
+            FROM 
+                total_count
+            WHERE id > ?
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $sqliteStatistics->prepare($query);
+        $processedCount = 0;
+
+        for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
+            $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
+            $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
+            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
+                $processedCount += count($data);
+                echo "Processed $processedCount / $count records\n daily_member_statistics\n";
+            }
+        }
+    }
+
+    /**
+     * Import LINE official activity history
+     */
+    private function importLineOfficialActivityHistory(): void
+    {
+        // Initialize SQLite connection for ranking position
+        $sqliteRankingPosition = SQLiteRankingPosition::connect([
+            'mode' => '?mode=ro'
+        ]);
+
+        $tables = [
+            'ranking' => 'line_official_activity_ranking_history',
+            'rising' => 'line_official_activity_trending_history',
+        ];
+
+        foreach ($tables as $sourceTable => $targetTable) {
+            // Get the maximum ID from target to do incremental import
+            $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM $targetTable");
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $maxId = (int)$result['max_id'];
+
+            $stmt = $sqliteRankingPosition->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
+            $stmt->execute([$maxId]);
+            $count = $stmt->fetchColumn();
+
+            if ($count === 0) {
+                continue;
+            }
+
+            $positionColumn = $sourceTable === 'ranking' ? 'activity_ranking_position' : 'activity_trending_position';
+
+            // Query for records after maxId
+            $query = "
+                SELECT 
+                    id as record_id,
+                    open_chat_id as openchat_id,
+                    category as category_id,
+                    position as {$positionColumn},
+                    strftime('%Y-%m-%d %H:%M:%S', time) as recorded_at,
+                    strftime('%Y-%m-%d', date) as record_date
+                FROM
+                    {$sourceTable}
+                WHERE id > ?
+                ORDER BY id
+                LIMIT ? OFFSET ?
+            ";
+
+            $stmt = $sqliteRankingPosition->prepare($query);
+            $processedCount = 0;
+
+            for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
+                $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
+                $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
+                $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
+                    $processedCount += count($data);
+                    echo "Processed $processedCount / $count records for $targetTable\n";
+                }
+            }
+        }
+    }
+}
