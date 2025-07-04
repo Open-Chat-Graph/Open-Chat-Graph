@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
+use App\Config\AppConfig;
 use App\Models\Importer\SqlInsert;
 use App\Models\Importer\SqlInsertUpdateWithBindValue;
 use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
 use PDO;
+use PDOStatement;
 use Shared\MimimalCmsConfig;
 
 class OcreviewApiDataImporter
@@ -114,26 +116,24 @@ class OcreviewApiDataImporter
         ";
 
         $stmt = $this->sourcePdo->prepare($query);
-        $processedCount = 0;
 
-        for ($offset = 0; $offset < $totalCount; $offset += self::CHUNK_SIZE) {
-            $stmt->bindValue(1, $lastUpdated, PDO::PARAM_STR);
-            $stmt->bindValue(2, self::CHUNK_SIZE, PDO::PARAM_INT);
-            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $data = [];
-            foreach ($rows as $row) {
-                $data[] = $this->transformOpenChatRow($row);
-            }
-
-            if (!empty($data)) {
-                $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
-                $processedCount += count($data);
-                echo "Processed $processedCount / $totalCount records\n";
-            }
-        }
+        $this->processInChunks(
+            $stmt,
+            [1 => [$lastUpdated, PDO::PARAM_STR]],
+            $totalCount,
+            self::CHUNK_SIZE,
+            function (array $rows) {
+                $data = [];
+                foreach ($rows as $row) {
+                    $data[] = $this->transformOpenChatRow($row);
+                }
+                
+                if (!empty($data)) {
+                    $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
+                }
+            },
+            'Processed %d / %d records'
+        );
     }
 
     /**
@@ -195,6 +195,63 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * Process data in chunks with a prepared statement
+     * 
+     * @param PDOStatement $stmt The prepared statement to execute
+     * @param array $bindParams Array of parameters to bind [position => [value, type]]
+     * @param int $totalCount Total number of records to process
+     * @param int $chunkSize Size of each chunk
+     * @param callable $processCallback Callback to process fetched data
+     * @param string|null $progressMessage Optional progress message format (use %d for counts)
+     */
+    private function processInChunks(
+        PDOStatement $stmt,
+        array $bindParams,
+        int $totalCount,
+        int $chunkSize,
+        callable $processCallback,
+        ?string $progressMessage = null
+    ): void {
+        $processedCount = 0;
+
+        for ($offset = 0; $offset < $totalCount; $offset += $chunkSize) {
+            // Bind static parameters
+            foreach ($bindParams as $position => [$value, $type]) {
+                $stmt->bindValue($position, $value, $type);
+            }
+            
+            // Bind dynamic parameters (limit and offset)
+            $nextPosition = count($bindParams) + 1;
+            $stmt->bindValue($nextPosition, $chunkSize, PDO::PARAM_INT);
+            $stmt->bindValue($nextPosition + 1, $offset, PDO::PARAM_INT);
+            
+            $stmt->execute();
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($data)) {
+                $processCallback($data);
+                $processedCount += count($data);
+                
+                if ($progressMessage !== null) {
+                    $this->log(sprintf($progressMessage, $processedCount, $totalCount));
+                }
+            }
+        }
+    }
+
+    /**
+     * Log message only in development mode
+     * 
+     * @param string $message The message to log
+     */
+    private function log(string $message): void
+    {
+        if (AppConfig::$isDevlopment) {
+            echo $message . "\n";
+        }
+    }
+
+    /**
      * Import growth rankings (hourly, daily, weekly)
      */
     private function importGrowthRankings(): void
@@ -231,20 +288,19 @@ class OcreviewApiDataImporter
             ";
 
             $stmt = $this->sourcePdo->prepare($query);
-            $processedCount = 0;
 
-            for ($offset = 0; $offset < $totalCount; $offset += self::CHUNK_SIZE) {
-                $stmt->bindValue(1, self::CHUNK_SIZE, PDO::PARAM_INT);
-                $stmt->bindValue(2, $offset, PDO::PARAM_INT);
-                $stmt->execute();
-                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                if (!empty($data)) {
-                    $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
-                    $processedCount += count($data);
-                    echo "Processed $processedCount / $totalCount records for $targetTable\n";
-                }
-            }
+            $this->processInChunks(
+                $stmt,
+                [],
+                $totalCount,
+                self::CHUNK_SIZE,
+                function (array $data) use ($targetTable) {
+                    if (!empty($data)) {
+                        $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
+                    }
+                },
+                "Processed %d / %d records for $targetTable"
+            );
         }
     }
 
@@ -286,21 +342,19 @@ class OcreviewApiDataImporter
         ";
 
         $stmt = $sqliteStatistics->prepare($query);
-        $processedCount = 0;
 
-        for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
-            $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
-            $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
-            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            if (!empty($data)) {
-                $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
-                $processedCount += count($data);
-                echo "Processed $processedCount / $count records\n daily_member_statistics\n";
-            }
-        }
+        $this->processInChunks(
+            $stmt,
+            [1 => [$maxId, PDO::PARAM_INT]],
+            $count,
+            self::CHUNK_SIZE_SQLITE,
+            function (array $data) {
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
+                }
+            },
+            'Processed %d / %d records for daily_member_statistics'
+        );
     }
 
     private function importTotalCount(): void
@@ -339,21 +393,19 @@ class OcreviewApiDataImporter
         ";
 
         $stmt = $sqliteStatistics->prepare($query);
-        $processedCount = 0;
 
-        for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
-            $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
-            $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
-            $stmt->bindValue(3, $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            if (!empty($data)) {
-                $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
-                $processedCount += count($data);
-                echo "Processed $processedCount / $count records\n daily_member_statistics\n";
-            }
-        }
+        $this->processInChunks(
+            $stmt,
+            [1 => [$maxId, PDO::PARAM_INT]],
+            $count,
+            self::CHUNK_SIZE_SQLITE,
+            function (array $data) {
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
+                }
+            },
+            'Processed %d / %d records for line_official_ranking_total_count'
+        );
     }
 
     /**
@@ -404,21 +456,19 @@ class OcreviewApiDataImporter
             ";
 
             $stmt = $sqliteRankingPosition->prepare($query);
-            $processedCount = 0;
 
-            for ($offset = 0; $offset < $count; $offset += self::CHUNK_SIZE_SQLITE) {
-                $stmt->bindValue(1, $maxId, PDO::PARAM_INT);
-                $stmt->bindValue(2, self::CHUNK_SIZE_SQLITE, PDO::PARAM_INT);
-                $stmt->bindValue(3, $offset, PDO::PARAM_INT);
-                $stmt->execute();
-                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                if (!empty($data)) {
-                    $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
-                    $processedCount += count($data);
-                    echo "Processed $processedCount / $count records for $targetTable\n";
-                }
-            }
+            $this->processInChunks(
+                $stmt,
+                [1 => [$maxId, PDO::PARAM_INT]],
+                $count,
+                self::CHUNK_SIZE_SQLITE,
+                function (array $data) use ($targetTable) {
+                    if (!empty($data)) {
+                        $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
+                    }
+                },
+                "Processed %d / %d records for $targetTable"
+            );
         }
     }
 }
