@@ -11,7 +11,7 @@ class OpenChatStatsRankingApiRepository
     function findHourlyStatsRanking(OpenChatApiArgs $args): array
     {
         return array_map(
-            fn ($oc) => new OpenChatListDto($oc),
+            fn($oc) => new OpenChatListDto($oc),
             $this->getStatsRanking('statistics_ranking_hour', $args)
         );
     }
@@ -19,7 +19,7 @@ class OpenChatStatsRankingApiRepository
     function findDailyStatsRanking(OpenChatApiArgs $args): array
     {
         return array_map(
-            fn ($oc) => new OpenChatListDto($oc),
+            fn($oc) => new OpenChatListDto($oc),
             $this->getStatsRanking('statistics_ranking_hour24', $args)
         );
     }
@@ -27,7 +27,7 @@ class OpenChatStatsRankingApiRepository
     function findWeeklyStatsRanking(OpenChatApiArgs $args): array
     {
         return array_map(
-            fn ($oc) => new OpenChatListDto($oc),
+            fn($oc) => new OpenChatListDto($oc),
             $this->getStatsRanking('statistics_ranking_week', $args)
         );
     }
@@ -47,7 +47,7 @@ class OpenChatStatsRankingApiRepository
             'limit' => $args->limit,
         ];
 
-        $query = fn ($category) => fn ($where) =>
+        $query = fn($category) => fn($where) =>
         "SELECT
             oc.id,
             oc.name,
@@ -68,7 +68,7 @@ class OpenChatStatsRankingApiRepository
         LIMIT
             :offset, :limit";
 
-        $countQuery = fn ($category) => fn ($where) =>
+        $countQuery = fn($category) => fn($where) =>
         "SELECT
             count(*) as count
         FROM
@@ -98,9 +98,9 @@ class OpenChatStatsRankingApiRepository
         if ($args->sub_category) {
             $result = DB::executeLikeSearchQuery(
                 $query("AND " . $categoryStatement),
-                fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $args->sub_category,
-                $params
+                $params,
             );
 
             if (!$result || $args->page !== 0) {
@@ -109,7 +109,7 @@ class OpenChatStatsRankingApiRepository
 
             $count = DB::executeLikeSearchQuery(
                 $countQuery("AND " . $categoryStatement),
-                fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $args->sub_category
             );
 
@@ -168,9 +168,10 @@ class OpenChatStatsRankingApiRepository
         // キーワード検索時
         $result = DB::executeLikeSearchQuery(
             $query("AND " . $categoryStatement),
-            fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
             $args->keyword,
-            $params
+            $params,
+            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
         );
 
         if (!$result || $args->page !== 0) {
@@ -179,8 +180,9 @@ class OpenChatStatsRankingApiRepository
 
         $count = DB::executeLikeSearchQuery(
             $countQuery("AND " . $categoryStatement),
-            fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
-            $args->keyword
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+            $args->keyword,
+            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
         );
 
         $result[0]['totalCount'] = $count[0]['count'];
@@ -207,7 +209,7 @@ class OpenChatStatsRankingApiRepository
             'limit' => $args->limit,
         ];
 
-        $query = fn ($category) => fn ($where) =>
+        $query = fn($category) => fn($where) =>
         "SELECT
             oc.id,
             oc.name,
@@ -226,7 +228,7 @@ class OpenChatStatsRankingApiRepository
         LIMIT
             :offset, :limit";
 
-        $countQuery = fn ($category) => fn ($where) =>
+        $countQuery = fn($category) => fn($where) =>
         "SELECT
             count(*) as count
         FROM
@@ -238,7 +240,7 @@ class OpenChatStatsRankingApiRepository
         // サブカテゴリーが選択されていない場合
         if (!$args->sub_category && !$args->keyword && !$args->tag && !$args->badge) {
             $result = array_map(
-                fn ($oc) => new OpenChatListDto($oc),
+                fn($oc) => new OpenChatListDto($oc),
                 DB::fetchAll(
                     $query($categoryStatement . $whereClause)('WHERE'),
                     $params
@@ -257,10 +259,10 @@ class OpenChatStatsRankingApiRepository
         // サブカテゴリー選択時
         if ($args->sub_category) {
             $result = array_map(
-                fn ($oc) => new OpenChatListDto($oc),
+                fn($oc) => new OpenChatListDto($oc),
                 DB::executeLikeSearchQuery(
                     $query("AND " . $categoryStatement . $whereClause),
-                    fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                    fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                     $args->sub_category,
                     $params
                 )
@@ -272,7 +274,7 @@ class OpenChatStatsRankingApiRepository
 
             $count = DB::executeLikeSearchQuery(
                 $countQuery("AND " . $categoryStatement . $whereClause),
-                fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $args->sub_category
             );
 
@@ -288,7 +290,7 @@ class OpenChatStatsRankingApiRepository
                 $categoryArg = $categoryStatement . $whereClause . " AND oc.emblem = :emblem";
                 $param2 = ['emblem' => $args->badge];
                 $result = array_map(
-                    fn ($oc) => new OpenChatListDto($oc),
+                    fn($oc) => new OpenChatListDto($oc),
                     DB::fetchAll(
                         $query($categoryArg)('WHERE'),
                         [...$params, ...$param2]
@@ -297,7 +299,7 @@ class OpenChatStatsRankingApiRepository
             } else {
                 $categoryArg = $categoryStatement . $whereClause . " AND oc.emblem > 0";
                 $result = array_map(
-                    fn ($oc) => new OpenChatListDto($oc),
+                    fn($oc) => new OpenChatListDto($oc),
                     DB::fetchAll(
                         $query($categoryArg)('WHERE'),
                         $params
@@ -320,7 +322,7 @@ class OpenChatStatsRankingApiRepository
             $whereArg = 'JOIN recommend AS r ON oc.id = r.id WHERE';
 
             $result = array_map(
-                fn ($oc) => new OpenChatListDto($oc),
+                fn($oc) => new OpenChatListDto($oc),
                 DB::fetchAll(
                     $query($categoryArg)($whereArg),
                     [...$params, 'tag' => $args->tag]
@@ -338,12 +340,13 @@ class OpenChatStatsRankingApiRepository
 
         // キーワード検索時
         $result = array_map(
-            fn ($oc) => new OpenChatListDto($oc),
+            fn($oc) => new OpenChatListDto($oc),
             DB::executeLikeSearchQuery(
                 $query("AND " . $categoryStatement . $whereClause),
-                fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $args->keyword,
-                $params
+                $params,
+                whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
             )
         );
 
@@ -353,8 +356,9 @@ class OpenChatStatsRankingApiRepository
 
         $count = DB::executeLikeSearchQuery(
             $countQuery("AND " . $categoryStatement . $whereClause),
-            fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
-            $args->keyword
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+            $args->keyword,
+            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
         );
 
         $result[0]->totalCount = $count[0]['count'];
