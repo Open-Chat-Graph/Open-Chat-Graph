@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\SecretsConfig;
+use App\Models\RankingPositionDB\RankingPositionDB;
 use Shared\Exceptions\ValidationException;
 use Shared\MimimalCmsConfig;
 
@@ -65,10 +66,9 @@ class DatabaseApiController
             }
 
             // データベースの最終更新時間を取得
-            $lastUpdateQuery = "SELECT MAX(recorded_at) as last_update FROM line_official_ranking_total_count";
-            $lastUpdateStmt = $pdo->query($lastUpdateQuery);
-            $lastUpdateResult = $lastUpdateStmt->fetch(\PDO::FETCH_ASSOC);
-            $lastUpdate = $lastUpdateResult['last_update'];
+            $lastUpdateQuery = "SELECT MAX(time) as last_update FROM rising";
+            $lastUpdateStmt = RankingPositionDB::connect()->query($lastUpdateQuery);
+            $lastUpdate = $lastUpdateStmt->fetchColumn();
 
             // レスポンス
             $response = [
