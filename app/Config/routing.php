@@ -8,6 +8,7 @@ use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
 use App\Controllers\Api\CommentReportApiController;
+use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
@@ -123,7 +124,7 @@ Route::path(
 )
     ->middleware([VerifyCsrfToken::class])
     ->matchStr('url', 'post', regex: OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
-    
+
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
@@ -190,7 +191,7 @@ Route::path(
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
     ->match(function (Reception $reception) {
-                if (MimimalCmsConfig::$urlRoot !== '')
+        if (MimimalCmsConfig::$urlRoot !== '')
             return false;
 
         handleRequestWithETagAndCache(json_encode($reception->input()));
@@ -210,7 +211,7 @@ Route::path(
     ->matchStr('text', 'post', maxLen: 1000)
     ->match(
         function (string $text, string $name) {
-                        if (MimimalCmsConfig::$urlRoot !== '')
+            if (MimimalCmsConfig::$urlRoot !== '')
                 return false;
 
             return removeAllZeroWidthCharacters($text)
@@ -229,7 +230,7 @@ Route::path(
 )
     ->matchNum('comment_id', min: 1)
     ->matchStr('type', 'post', regex: ['empathy', 'insights', 'negative'])
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->middleware([VerifyCsrfToken::class]);
 
 // 通報API
@@ -238,7 +239,7 @@ Route::path(
     [CommentReportApiController::class, 'index']
 )
     ->matchNum('comment_id', min: 1)
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
 
 Route::path('admin/cookie')
@@ -261,7 +262,7 @@ Route::path(
 )
     ->matchNum('id')
     ->matchNum('commentId')
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('flag', min: 0, max: 3);
 
 Route::path(
@@ -269,14 +270,14 @@ Route::path(
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('commentId');
 
 Route::path(
     'admin-api/commentbanroom@post',
     [AdminEndPointController::class, 'commentbanroom']
 )
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
@@ -346,14 +347,13 @@ Route::path(
     }); */
 
 Route::path('furigana@POST')
-        ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('json');
 
 Route::path('furigana/guideline')
     ->match(function () {
         handleRequestWithETagAndCache('guideline');
-
-                return MimimalCmsConfig::$urlRoot === '';
+        return MimimalCmsConfig::$urlRoot === '';
     });
 
 Route::path(
@@ -362,8 +362,24 @@ Route::path(
 )
     ->match(function () {
         handleRequestWithETagAndCache('defamationGuideline');
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 
-                return MimimalCmsConfig::$urlRoot === '';
+Route::path(
+    'database/{user}/query',
+    [DatabaseApiController::class, 'index']
+)
+    ->match(function (AdminAuthService $adminAuthService, string $user) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
+    })
+    ->matchStr('stmt');
+
+Route::path(
+    'database/{user}/schema',
+    [DatabaseApiController::class, 'schema']
+)
+    ->match(function (AdminAuthService $adminAuthService, string $user) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
     });
 
 cache();
