@@ -69,10 +69,9 @@ class AdminPageController
 
     function apidb_test()
     {
-        $path = AppConfig::ROOT_PATH . 'batch/cron/update_api_db.php';
+        $path = AppConfig::ROOT_PATH . 'batch/exec/update_api_db.php';
 
         exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-        AdminTool::sendDiscordNotify("APIデータベース更新スクリプトを実行しました。");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
