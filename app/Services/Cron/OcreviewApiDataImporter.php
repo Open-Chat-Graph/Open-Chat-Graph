@@ -548,7 +548,6 @@ class OcreviewApiDataImporter
                     $this->bulkUpdateTargetRecords($updatesNeeded);
                 }
             },
-            'Synced member counts: %d / %d records'
         );
     }
 
