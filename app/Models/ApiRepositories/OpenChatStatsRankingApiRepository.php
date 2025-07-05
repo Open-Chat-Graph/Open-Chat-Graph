@@ -100,7 +100,7 @@ class OpenChatStatsRankingApiRepository
                 $query("AND " . $categoryStatement),
                 fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $args->sub_category,
-                $params,
+                $params
             );
 
             if (!$result || $args->page !== 0) {
@@ -168,10 +168,9 @@ class OpenChatStatsRankingApiRepository
         // キーワード検索時
         $result = DB::executeLikeSearchQuery(
             $query("AND " . $categoryStatement),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
             $args->keyword,
-            $params,
-            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
+            $params
         );
 
         if (!$result || $args->page !== 0) {
@@ -180,9 +179,8 @@ class OpenChatStatsRankingApiRepository
 
         $count = DB::executeLikeSearchQuery(
             $countQuery("AND " . $categoryStatement),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
-            $args->keyword,
-            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
+            $args->keyword
         );
 
         $result[0]['totalCount'] = $count[0]['count'];
@@ -343,10 +341,9 @@ class OpenChatStatsRankingApiRepository
             fn($oc) => new OpenChatListDto($oc),
             DB::executeLikeSearchQuery(
                 $query("AND " . $categoryStatement . $whereClause),
-                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
+                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
                 $args->keyword,
-                $params,
-                whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
+                $params
             )
         );
 
@@ -356,9 +353,8 @@ class OpenChatStatsRankingApiRepository
 
         $count = DB::executeLikeSearchQuery(
             $countQuery("AND " . $categoryStatement . $whereClause),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
-            $args->keyword,
-            whereClausePrefix: is_int($args->keyword) ? 'WHERE ' : 'WHERE oc.id = ' . $args->keyword . ' OR '
+            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
+            $args->keyword
         );
 
         $result[0]->totalCount = $count[0]['count'];
