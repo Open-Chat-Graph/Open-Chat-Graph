@@ -200,7 +200,9 @@ class SyncOpenChat
 
     function isAfterRetryNotificationTime(): bool
     {
-        return !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
+        return !isDailyUpdateTime()
+            && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
+            && !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
             && !isDailyUpdateTime(new \DateTime('-3 hour'), new \DateTime('-3 hour'))
             && !isDailyUpdateTime(new \DateTime('-4 hour'), new \DateTime('-4 hour'))
             && !isDailyUpdateTime(new \DateTime('-5 hour'), new \DateTime('-5 hour'))
