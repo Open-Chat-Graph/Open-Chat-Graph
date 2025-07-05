@@ -153,7 +153,6 @@ class OcreviewApiDataImporter
                     $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
                 }
             },
-            'Processed %d / %d records openchat_master'
         );
 
         // After processing regular updates, check for member count differences
@@ -276,7 +275,7 @@ class OcreviewApiDataImporter
             $this->discordNotificationCount++;
 
             // Send notification on first call or every 100th call
-            if ($this->discordNotificationCount === 1 || $this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
+            if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
                 AdminTool::sendDiscordNotify($message);
             }
         }
@@ -330,7 +329,6 @@ class OcreviewApiDataImporter
                         $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
                     }
                 },
-                "Processed %d / %d records for $targetTable"
             );
         }
     }
