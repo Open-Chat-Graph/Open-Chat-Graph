@@ -9,6 +9,7 @@ use App\Models\Importer\SqlInsert;
 use App\Models\Importer\SqlInsertUpdateWithBindValue;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
+use App\Services\Admin\AdminTool;
 use PDO;
 use PDOStatement;
 use Shared\MimimalCmsConfig;
@@ -260,6 +261,8 @@ class OcreviewApiDataImporter
     {
         if (AppConfig::$isDevlopment) {
             echo $message . "\n";
+        } else {
+            AdminTool::sendDiscordNotify($message);
         }
     }
 
