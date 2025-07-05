@@ -103,12 +103,14 @@ class OcreviewApiDataImporter
         $lastUpdated = $result['max_updated'] ?? '1970-01-01 00:00:00';
 
         // Get total count
-        $countQuery = "SELECT COUNT(*) FROM open_chat WHERE updated_at > ?";
+        $countQuery = "SELECT COUNT(*) FROM open_chat WHERE updated_at >= ?";
         $countStmt = $this->sourcePdo->prepare($countQuery);
         $countStmt->execute([$lastUpdated]);
         $totalCount = $countStmt->fetchColumn();
 
         if ($totalCount === 0) {
+            // No records with updated_at >= last_updated_at, check for member count differences
+            $this->syncMemberCountDifferences();
             return;
         }
 
@@ -129,7 +131,7 @@ class OcreviewApiDataImporter
                 created_at,
                 updated_at
             FROM open_chat
-            WHERE updated_at > ?
+            WHERE updated_at >= ?
             ORDER BY id
             LIMIT ? OFFSET ?
         ";
@@ -151,8 +153,11 @@ class OcreviewApiDataImporter
                     $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
                 }
             },
-            'Processed %d / %d records'
+            'Processed %d / %d records openchat_master'
         );
+
+        // After processing regular updates, check for member count differences
+        $this->syncMemberCountDifferences();
     }
 
     /**
@@ -269,7 +274,7 @@ class OcreviewApiDataImporter
             echo $message . "\n";
         } else {
             $this->discordNotificationCount++;
-            
+
             // Send notification on first call or every 100th call
             if ($this->discordNotificationCount === 1 || $this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
                 AdminTool::sendDiscordNotify($message);
@@ -481,5 +486,115 @@ class OcreviewApiDataImporter
                 "Processed %d / %d records for $targetTable"
             );
         }
+    }
+
+    /**
+     * Sync member count differences between source and target
+     * This handles cases where only the member count changed but updated_at wasn't updated
+     */
+    private function syncMemberCountDifferences(): void
+    {
+        // Get all target records for comparison
+        $targetData = $this->getAllTargetRecords();
+        
+        if (empty($targetData)) {
+            return;
+        }
+
+        // Convert to lookup array for efficient comparison
+        $targetLookup = [];
+        foreach ($targetData as $record) {
+            $targetLookup[$record['openchat_id']] = $record['current_member_count'];
+        }
+
+        // Get total count of source records
+        $totalCount = $this->sourcePdo->query("SELECT COUNT(*) FROM open_chat")->fetchColumn();
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        // Process source records in chunks to find differences
+        $query = "
+            SELECT id, member
+            FROM open_chat
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->sourcePdo->prepare($query);
+
+        $this->processInChunks(
+            $stmt,
+            [],
+            $totalCount,
+            self::CHUNK_SIZE,
+            function (array $rows) use ($targetLookup) {
+                $updatesNeeded = [];
+                
+                foreach ($rows as $row) {
+                    $openchatId = $row['id'];
+                    
+                    // Check if this record exists in target and has member count differences
+                    if (isset($targetLookup[$openchatId])) {
+                        $targetMemberCount = $targetLookup[$openchatId];
+                        
+                        // Check if member count is different
+                        if ($row['member'] !== $targetMemberCount) {
+                            $updatesNeeded[] = $row;
+                        }
+                    }
+                }
+
+                if (!empty($updatesNeeded)) {
+                    $this->bulkUpdateTargetRecords($updatesNeeded);
+                }
+            },
+            'Synced member counts: %d / %d records'
+        );
+    }
+
+    /**
+     * Get all target records for comparison
+     */
+    private function getAllTargetRecords(): array
+    {
+        $query = "SELECT openchat_id, current_member_count FROM openchat_master";
+        $stmt = $this->targetPdo->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Bulk update target records
+     */
+    private function bulkUpdateTargetRecords(array $records): void
+    {
+        if (empty($records)) {
+            return;
+        }
+
+        // Build bulk update query
+        $memberCases = [];
+        $ids = [];
+        
+        foreach ($records as $record) {
+            $id = $record['id'];
+            $member = $record['member'];
+            
+            $memberCases[] = "WHEN {$id} THEN {$member}";
+            $ids[] = $id;
+        }
+        
+        $idsStr = implode(',', $ids);
+        $memberCasesStr = implode(' ', $memberCases);
+        
+        $query = "
+            UPDATE openchat_master 
+            SET current_member_count = CASE openchat_id {$memberCasesStr} END
+            WHERE openchat_id IN ({$idsStr})
+        ";
+        
+        $this->targetPdo->exec($query);
     }
 }
