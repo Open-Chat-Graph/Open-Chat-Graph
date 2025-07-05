@@ -12,6 +12,7 @@ use Shadow\DB;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
+use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatImageUpdater;
@@ -70,9 +71,10 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'batch/cron/update_api_db.php';
 
-        $result = exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
+        AdminTool::sendDiscordNotify("APIデータベース更新スクリプトを実行しました。");
 
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。' . var_export($result)]);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
     function retry_daily_test()
