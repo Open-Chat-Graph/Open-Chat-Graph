@@ -24,6 +24,8 @@ try {
     addCronLog('End');
 
     if (!MimimalCmsConfig::$urlRoot) {
+        set_time_limit(3600);
+        
         // Create an instance of OcreviewApiDataImporter
         $importer = app(\App\Services\Cron\OcreviewApiDataImporter::class);
 
