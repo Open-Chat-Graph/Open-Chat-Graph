@@ -366,19 +366,21 @@ Route::path(
     });
 
 Route::path(
-    'database/{user}/query',
+    'database/{user}/query@get@options',
     [DatabaseApiController::class, 'index']
 )
     ->match(function (AdminAuthService $adminAuthService, string $user) {
+        allowCORS();
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
     })
     ->matchStr('stmt');
 
 Route::path(
-    'database/{user}/schema',
+    'database/{user}/schema@get@options',
     [DatabaseApiController::class, 'schema']
 )
     ->match(function (AdminAuthService $adminAuthService, string $user) {
+        allowCORS();
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
     });
 
