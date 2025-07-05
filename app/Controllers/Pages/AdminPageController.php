@@ -66,6 +66,15 @@ class AdminPageController
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
 
+    function apidb_test()
+    {
+        $path = AppConfig::ROOT_PATH . 'batch/cron/update_api_db.php';
+
+        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
     function retry_daily_test()
     {
         $urlRoot = MimimalCmsConfig::$urlRoot;
