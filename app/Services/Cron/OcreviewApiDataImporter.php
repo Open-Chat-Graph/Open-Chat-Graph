@@ -21,8 +21,14 @@ class OcreviewApiDataImporter
     private PDO $sqliteStatisticsPdo;
     private PDO $sqliteRankingPositionPdo;
 
+    // Discord notification counter
+    private int $discordNotificationCount = 0;
+
     // Target database configuration
     private const TARGET_DB_NAME = 'ocgraph_sqlapi';
+
+    // Discord notification configuration
+    private const DISCORD_NOTIFY_INTERVAL = 100;
 
     // Chunk size for bulk operations
     private const CHUNK_SIZE = 2000;
@@ -262,7 +268,12 @@ class OcreviewApiDataImporter
         if (AppConfig::$isDevlopment) {
             echo $message . "\n";
         } else {
-            AdminTool::sendDiscordNotify($message);
+            $this->discordNotificationCount++;
+            
+            // Send notification on first call or every 100th call
+            if ($this->discordNotificationCount === 1 || $this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
+                AdminTool::sendDiscordNotify($message);
+            }
         }
     }
 
