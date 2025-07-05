@@ -7,7 +7,6 @@ namespace App\Services\Cron;
 use App\Config\AppConfig;
 use App\Models\Importer\SqlInsert;
 use App\Models\Importer\SqlInsertUpdateWithBindValue;
-use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
 use PDO;
@@ -18,9 +17,11 @@ class OcreviewApiDataImporter
 {
     private PDO $targetPdo;
     private PDO $sourcePdo;
+    private PDO $sqliteStatisticsPdo;
+    private PDO $sqliteRankingPositionPdo;
 
     // Target database configuration
-    private const TARGET_DB_NAME = 'ocreview_api';
+    private const TARGET_DB_NAME = 'ocgraph_sqlapi';
 
     // Chunk size for bulk operations
     private const CHUNK_SIZE = 2000;
@@ -59,18 +60,29 @@ class OcreviewApiDataImporter
     private function initializeConnections(): void
     {
         // Connect to source database (ocgraph_ocreview)
-        $this->sourcePdo = DB::connect();
+        $this->sourcePdo = new PDO(
+            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, 'ocgraph_ocreview'),
+            MimimalCmsConfig::$dbUserName,
+            MimimalCmsConfig::$dbPassword,
+            [
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION TRANSACTION READ ONLY"
+            ]
+        );
 
         // Connect to target database (ocreview_api)
         $this->targetPdo = new PDO(
             sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, self::TARGET_DB_NAME),
             MimimalCmsConfig::$dbUserName,
             MimimalCmsConfig::$dbPassword,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]
         );
+
+        $this->sqliteStatisticsPdo = SQLiteStatistics::connect([
+            'mode' => '?mode=ro'
+        ]);
+
+        $this->sqliteRankingPositionPdo = SQLiteRankingPosition::connect([
+            'mode' => '?mode=ro'
+        ]);
     }
 
     /**
@@ -127,7 +139,7 @@ class OcreviewApiDataImporter
                 foreach ($rows as $row) {
                     $data[] = $this->transformOpenChatRow($row);
                 }
-                
+
                 if (!empty($data)) {
                     $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
                 }
@@ -219,19 +231,19 @@ class OcreviewApiDataImporter
             foreach ($bindParams as $position => [$value, $type]) {
                 $stmt->bindValue($position, $value, $type);
             }
-            
+
             // Bind dynamic parameters (limit and offset)
             $nextPosition = count($bindParams) + 1;
             $stmt->bindValue($nextPosition, $chunkSize, PDO::PARAM_INT);
             $stmt->bindValue($nextPosition + 1, $offset, PDO::PARAM_INT);
-            
+
             $stmt->execute();
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (!empty($data)) {
                 $processCallback($data);
                 $processedCount += count($data);
-                
+
                 if ($progressMessage !== null) {
                     $this->log(sprintf($progressMessage, $processedCount, $totalCount));
                 }
@@ -314,12 +326,7 @@ class OcreviewApiDataImporter
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $maxId = (int)$result['max_id'];
 
-        // Initialize SQLite connection
-        $sqliteStatistics = SQLiteStatistics::connect([
-            'mode' => '?mode=ro'
-        ]);
-
-        $stmt = $sqliteStatistics->prepare("SELECT count(*) FROM statistics WHERE id > ?");
+        $stmt = $this->sqliteStatisticsPdo->prepare("SELECT count(*) FROM statistics WHERE id > ?");
         $stmt->execute([$maxId]);
         $count = $stmt->fetchColumn();
 
@@ -341,7 +348,7 @@ class OcreviewApiDataImporter
             LIMIT ? OFFSET ?
         ";
 
-        $stmt = $sqliteStatistics->prepare($query);
+        $stmt = $this->sqliteStatisticsPdo->prepare($query);
 
         $this->processInChunks(
             $stmt,
@@ -364,12 +371,7 @@ class OcreviewApiDataImporter
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $maxId = (int)$result['max_id'];
 
-        // Initialize SQLite connection
-        $sqliteStatistics = SQLiteRankingPosition::connect([
-            'mode' => '?mode=ro'
-        ]);
-
-        $stmt = $sqliteStatistics->prepare("SELECT count(*) FROM total_count WHERE id > ?");
+        $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM total_count WHERE id > ?");
         $stmt->execute([$maxId]);
         $count = $stmt->fetchColumn();
 
@@ -392,7 +394,7 @@ class OcreviewApiDataImporter
             LIMIT ? OFFSET ?
         ";
 
-        $stmt = $sqliteStatistics->prepare($query);
+        $stmt = $this->sqliteRankingPositionPdo->prepare($query);
 
         $this->processInChunks(
             $stmt,
@@ -413,11 +415,6 @@ class OcreviewApiDataImporter
      */
     private function importLineOfficialActivityHistory(): void
     {
-        // Initialize SQLite connection for ranking position
-        $sqliteRankingPosition = SQLiteRankingPosition::connect([
-            'mode' => '?mode=ro'
-        ]);
-
         $tables = [
             'ranking' => 'line_official_activity_ranking_history',
             'rising' => 'line_official_activity_trending_history',
@@ -429,7 +426,7 @@ class OcreviewApiDataImporter
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             $maxId = (int)$result['max_id'];
 
-            $stmt = $sqliteRankingPosition->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
+            $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
             $stmt->execute([$maxId]);
             $count = $stmt->fetchColumn();
 
@@ -455,7 +452,7 @@ class OcreviewApiDataImporter
                 LIMIT ? OFFSET ?
             ";
 
-            $stmt = $sqliteRankingPosition->prepare($query);
+            $stmt = $this->sqliteRankingPositionPdo->prepare($query);
 
             $this->processInChunks(
                 $stmt,
