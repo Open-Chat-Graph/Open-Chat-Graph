@@ -20,6 +20,11 @@ class DatabaseApiController
         header('Content-Type: application/json');
         ob_start('ob_gzhandler');
 
+        // データベースの最終更新時間を取得
+        $lastUpdateQuery = "SELECT MAX(time) as last_update FROM rising";
+        $lastUpdateStmt = RankingPositionDB::connect()->query($lastUpdateQuery);
+        $lastUpdate = $lastUpdateStmt->fetchColumn();
+
         try {
             $pdo = $this->getPdo();
             $result = $pdo->query($this->filterQuery($stmt));
@@ -27,6 +32,7 @@ class DatabaseApiController
             echo json_encode([
                 'status' => 'success',
                 'data' => $result->fetchAll(\PDO::FETCH_ASSOC),
+                'lastUpdate' => $lastUpdate,
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         } catch (\Exception $e) {
             echo json_encode([
