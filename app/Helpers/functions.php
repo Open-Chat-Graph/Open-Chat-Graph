@@ -607,10 +607,16 @@ function addVerboseCronLog(string|array $log)
     }
 }
 
-function t(string $text): string
+function t(string $text, ?string $lang = null): string
 {
     static $data = json_decode(file_get_contents(AppConfig::TRANSLATION_FILE), true);
-    static $lang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
+    static $defaultLang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
+
+    if ($lang === null) {
+        $lang = $defaultLang;
+    } else {
+        $lang = str_replace('/', '', $lang) ?: 'ja';
+    }
 
     return $data[$text][$lang] ?? $text;
 }

@@ -13,11 +13,11 @@ class PolicyPageController
     function index(PageBreadcrumbsListSchema $breadcrumbsShema)
     {
         $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
-        $_meta = meta()->setTitle(t('オプチャグラフについて'));
+        $_meta = meta()->setTitle(t('オプチャグラフとは？'));
         $_meta->image_url = '';
         $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
         $_meta->setDescription($desc)->setOgpDescription($desc);
-        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフについて'), 'policy');
+        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'), 'policy');
 
         $_news = array_reverse(TopPageNews::getTopPageNews());
 
@@ -33,7 +33,7 @@ class PolicyPageController
         $_meta->image_url = '';
         $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
         $_meta->setDescription($desc)->setOgpDescription($desc);
-        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフについて'), 'policy', t('プライバシーポリシー'), 'privacy');
+        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'), 'policy', t('プライバシーポリシー'), 'privacy');
 
         $view = view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema'));
         handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);

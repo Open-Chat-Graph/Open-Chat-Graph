@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\StaticData\StaticDataFile;
@@ -18,6 +19,7 @@ class IndexPageController
         PageBreadcrumbsListSchema $pageBreadcrumbsListSchema,
         OfficialPageList $officialPageList,
     ) {
+        AppConfig::$listLimitTopRanking = 5;
         $dto = $staticDataGeneration->getTopPageData();
 
         $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list'];

@@ -14,7 +14,7 @@
                 <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
                 <? endif ?>
-                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフについて') ?></a></il>
+                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
             </ul>
         </section>
         <hr class="hr-bottom" style="margin: 0 1rem; padding: 3.5px 0; margin-top: 4px;">

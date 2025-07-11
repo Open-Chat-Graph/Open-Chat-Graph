@@ -71,7 +71,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                 $result[] = [
                     'id' => 0,
                     'user' => ($el['name'] ?: '匿名'),
-                    'name' => 'オプチャグラフについて',
+                    'name' => 'オプチャグラフとは？',
                     'img_url' => 'siteicon',
                     'emblem' => 0,
                     'description' => $el['text'],
