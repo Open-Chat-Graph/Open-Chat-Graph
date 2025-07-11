@@ -3,7 +3,6 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
@@ -15,15 +14,17 @@ viewComponent('head', compact('_css', '_meta', '_schema') + ['dataOverlays' => '
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
         <div style="padding: 1rem;">
             <small style="display: block; color: #000; font-size: 9px; font-weight: bold;">LINE</small>
-            <h1 style="margin: 0; padding: 0; font-size: 50px; font-weight: bold; line-height: 1;">OPENCHAT Graph📈</h1>
-            <small style="display: block; color: #000; font-size: 9px; font-weight: bold; margin-top: 1rem;">おぷちゃぐらふ</small>
+            <h1 style="margin: 0; padding: 0; font-size: 48px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
+            <small style="display: block; color: #000; font-size: 10px; margin-top: 1rem;">
+                <a href="<?php echo url(["urlRoot" => "", "paths" => [""]]) ?>" style="color: inherit; font-weight: bold;">オプチャグラフ</a>／<a href="<?php echo url(["urlRoot" => "", "paths" => ["tw"]]) ?>" style="color: inherit; font-weight: bold;">LINE社群流量統計</a>／<a href="<?php echo url(["urlRoot" => "", "paths" => ["th"]]) ?>" style="color: inherit; font-weight: bold;">LINE OPENCHAT สถิติการเข้าชม</a>
+            </small>
         </div>
         <section class="top-ranking top-btns">
-            <a style="margin: 0;" class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('policy') ?>">
+            <a style="margin: 0; margin-top: 1rem;" class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('policy') ?>">
                 <span class="ranking-readMore"><?php echo t('オプチャグラフについて') ?></span>
             </a>
         </section>
-        <hr style="margin: 1rem 0;">
+        <hr style="margin: .5rem 0;">
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
             <hr style="margin: 1rem 0;">

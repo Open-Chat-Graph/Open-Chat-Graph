@@ -25,7 +25,7 @@ class IndexPageController
         $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 
         $_schema = $_meta->generateTopPageSchema(
-            'OpenChat Graph',
+            t('オプチャグラフ'),
             $_meta->description,
             url(),
             url('assets/ogp.png'),

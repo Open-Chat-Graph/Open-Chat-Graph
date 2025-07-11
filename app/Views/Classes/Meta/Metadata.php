@@ -29,7 +29,7 @@ class Metadata
         $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
 
         $this->title = t('オプチャグラフ');
-        $this->site_name = 'OpenChat Graph';
+        $this->site_name = t('オプチャグラフ');
 
         $this->locale = t('ja');
 
@@ -90,7 +90,6 @@ class Metadata
         return Schema::webSite()
             ->name($this->site_name)
             ->url(url(['urlRoot' => '', 'paths' => []]))
-            ->alternateName(['LINE OpenChat Graph', 'OC Graph', 'オプチャグラフ'])
             ->image($this->image_url)
             ->toScript();
     }

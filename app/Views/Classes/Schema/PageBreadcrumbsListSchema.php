@@ -19,7 +19,7 @@ class PageBreadcrumbsListSchema
     function __construct(
         private Metadata $metadata
     ) {
-        $this->publisherName = 'OpenChat Graph';
+        $this->publisherName = t('オプチャグラフ');
         $this->publisherLogo = url(['urlRoot' => '', 'paths' => ['assets/icon-192x192.png']]);
         $this->siteImg = url(['urlRoot' => '', 'paths' => ['assets/ogp.png']]);
     }
