@@ -7,7 +7,7 @@ use Shared\MimimalCmsConfig;
 use App\Views\Ads\GoogleAdsence as GAd;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']) ?>
+viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
