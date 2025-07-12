@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
-<?php viewComponent('policy_head', compact('_css', '_meta')) ?>
+<?php
+
+use App\Views\Ads\GoogleAdsence as GAd;
+
+viewComponent('policy_head', compact('_css', '_meta')) ?>
 
 <body>
     <script type="application/json" id="comment-app-init-dto">
@@ -8,6 +12,9 @@
     </script>
     <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
+    <div style="margin-top: -8px;">
+        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+    </div>
     <main style="overflow: hidden;">
         <article class="terms">
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
@@ -28,7 +35,7 @@
                 <p>
                     <b>データの取得は公式サイトのみから行います。LINEアプリ本体に係るデータを取得することはありません。</b>
                 </p>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">オプチャグラフに掲載される条件</h3>
                     <p>
                         オプチャグラフのクローラーは<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">公式サイトのランキング</a>から新しいルームを見つけて登録します。<b>ランキングに掲載されていないルームは登録されません。</b>
@@ -49,7 +56,7 @@
                         <a href="<?php echo url('recently-registered') ?>">最近登録されたオープンチャット</a>
                     </p>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">公式サイトでの掲載条件</h3>
                     <p>
                         オープンチャットの検索を許可しているなどの条件において、開設したルームが公式サイトに掲載されます。
@@ -61,7 +68,7 @@
                         参考ページ: <a href="https://openchat-jp.line.me/other/notice_webmain_3gf87gs1" target="_blank">Webブラウザ版メイン画面公開と検索エンジン対応のお知らせ | LINEオープンチャット</a>
                     </p>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">情報更新のスケジュール</h3>
                     <p>
                         オプチャグラフのクローラーは公式サイトを定期巡回してルームのタイトル、説明文、画像、人数統計、ランキング履歴などを更新します。
@@ -72,7 +79,7 @@
                         <li>ランキング未掲載かつ1週間以上メンバー数に変動がないルーム: 1週間毎</li>
                     </ul>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">キーワード検索機能について</h3>
                     <p>
                         オプチャグラフが提供するキーワード検索機能は公式サイトからインデックスした情報に基づいています。Google・Yahoo・Bingなどの検索サイトが表示する検索結果と同様の内容です。
@@ -84,7 +91,7 @@
                         <b>オプチャグラフはLINE公式の検索機能について関与していません。公式の検索機能にルームが表示されない理由を調べることはできません。</b>
                     </p>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">ランキングの順位グラフについて</h3>
                     <p>
                         オプチャグラフのクローラーは公式サイトのランキング順位を1時間毎に記録します。ルームの並び順から順位を数えて算出しています。
@@ -132,10 +139,14 @@
                     <span id="comments" aria-hidden="true"></span>
                 </p>
 
+                <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+
                 <h2 style="margin-bottom: 2rem;">オプチャグラフに関する情報共有・コメント</h2>
                 <div style="min-height: 400px;">
                     <div id="comment-root"></div>
                 </div>
+
+                <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
                 <h2>メールでのお問い合わせ先</h2>
                 <p>オプチャグラフお問い合わせ窓口: <a href="mailto:support@openchat-review.me">support@openchat-review.me</a></p>
@@ -157,7 +168,7 @@
                 <p>
                     <b>數據僅從官方網站獲取，不會取得與 LINE 應用程式本體相關的數據。</b>
                 </p>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">LINE社群流量統計收錄的條件</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式從<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">官方網站排名</a>中找到新的聊天室並進行登記。<b>未列入排名的聊天室不會被登記。</b>
@@ -172,7 +183,7 @@
                         未列入排名（例如剛建立）的聊天室，只要出現在官方網站中，也可以手動登記到LINE社群流量統計。
                     </p>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">資訊更新的排程</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式定期巡覽官方網站，更新聊天室的標題、說明、圖片、人數統計及排名歷史等資訊。
@@ -183,7 +194,7 @@
                         <li>未列入排名且人數超過一週未變動的聊天室：每週更新一次</li>
                     </ul>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">關於排名的趨勢圖</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式每小時記錄官方網站中的排名位置，透過聊天室的排列順序計算排名。
@@ -210,7 +221,7 @@
                 <p>
                     <b>ข้อมูลจะถูกรวบรวมจากเว็บไซต์ทางการเท่านั้น จะไม่มีการรวบรวมข้อมูลจากตัวแอปพลิเคชัน LINE</b>
                 </p>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">เงื่อนไขการรวบรวมข้อมูลใน LINE OPENCHAT สถิติการเข้าชม</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม ค้นหาและลงทะเบียนห้องใหม่จาก<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">การจัดอันดับบนเว็บไซต์ทางการ</a> <b>ห้องที่ไม่ได้อยู่ในการจัดอันดับจะไม่ได้รับการลงทะเบียน</b>
@@ -225,7 +236,7 @@
                         ห้องที่ไม่ได้อยู่ในการจัดอันดับ (เช่น ห้องที่เพิ่งสร้าง) สามารถลงทะเบียนใน LINE OPENCHAT สถิติการเข้าชม ได้ด้วยตนเองหากอยู่ในเว็บไซต์ทางการ
                     </p>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">กำหนดการอัปเดตข้อมูล</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม เยี่ยมชมเว็บไซต์ทางการเป็นประจำเพื่ออัปเดตข้อมูล เช่น ชื่อห้อง คำอธิบาย รูปภาพ สถิติสมาชิก ประวัติการจัดอันดับ ฯลฯ
@@ -236,7 +247,7 @@
                         <li>ห้องที่ไม่ได้อยู่ในการจัดอันดับและไม่มีการเปลี่ยนแปลงจำนวนสมาชิกเกิน 1 สัปดาห์: อัปเดตทุกสัปดาห์</li>
                     </ul>
                 </section>
-                <section style="margin: 2rem 0;">
+                <section style="margin: 1rem 0;">
                     <h3 style="font-size: 14px;">เกี่ยวกับกราฟอันดับการจัดอันดับ</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม บันทึกอันดับการจัดอันดับบนเว็บไซต์ทางการทุกชั่วโมง โดยคำนวณอันดับจากลำดับของห้อง
@@ -248,6 +259,7 @@
             <?php endif ?>
         </article>
     </main>
+    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
     <?php viewComponent('footer_inner') ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
