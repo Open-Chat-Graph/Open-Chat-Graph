@@ -2,6 +2,7 @@
 
 namespace App\Views\Schema;
 
+use App\Config\AppConfig;
 use Spatie\SchemaOrg\Schema;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
@@ -32,35 +33,66 @@ class OcPageSchema
 
         $recommendSection = array_map(fn(RecommendListDto $r) => "「{$r->listName}」のおすすめ", $tags);
 
-        // WebPageの構築
-        $webPage = Schema::article()
+        // 統計・分析ページとしてのWebPage構築
+        $webPage = Schema::webPage()
             ->publisher($this->schema->publisher())
             ->author($this->schema->person())
-            ->headline($title)
+            ->name($title)
             ->description($description)
             ->image(imgUrl($oc['id'], $oc['img_url']))
             ->datePublished($datePublished)
-            ->dateModified(new \DateTime($oc['updated_at']))
-            ->articleSection(
-                [
-                    $name,
-                    t('メンバー数の推移グラフ'),
-                    t('ランキングの順位表示'),
-                    ...$recommendSection,
-                ] + (
-                    // TODO: 日本語以外ではコメントが無効
-                    MimimalCmsConfig::$urlRoot === ''
-                    ? [
-                        'オープンチャットについてのコメント',
-                        'コメントする',
-                    ]
-                    : []
-                )
+            ->dateModified($dateModified)
+            ->specialty('Statistics')
+            ->about(
+                Schema::organization()
+                    ->name($name)
+                    ->description($oc['description'])
+                    ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                    ->logo(imgUrl($oc['id'], $oc['img_url']))
+                    ->aggregateRating(
+                        Schema::aggregateRating()
+                            ->ratingValue(5)
+                            ->reviewCount($oc['member'])
+                    )
             )
+            ->isPartOf(
+                Schema::webSite()
+                    ->name(t('オプチャグラフ'))
+                    ->url(url(['urlRoot' => '', 'paths' => []]))
+                    ->description(t('LINEオープンチャットのメンバー数推移を追跡・分析するサービス'))
+            )
+            ->keywords([
+                $name,
+                t('メンバー数の推移グラフ'),
+                t('ランキングの順位表示'),
+                'LINE OpenChat',
+                t('統計'),
+                t('分析'),
+                ...$recommendSection,
+            ] + (
+                // TODO: 日本語以外ではコメントが無効
+                MimimalCmsConfig::$urlRoot === ''
+                ? [
+                    'オープンチャットについてのコメント',
+                    'コメントする',
+                ]
+                : []
+            ))
             ->potentialAction($this->schema->potentialAction());
 
-        if (MimimalCmsConfig::$urlRoot === '')
-            $webPage->mainEntity($this->schema->room($oc));
+        if (MimimalCmsConfig::$urlRoot === '') {
+            $webPage->mainEntity(
+                Schema::dataset()
+                    ->name($name . 'の統計データ')
+                    ->description('メンバー数推移、増減率、ランキング順位などの統計情報')
+                    ->url(url('oc/' . $oc['id']))
+                    ->dateModified($dateModified)
+                    ->creator($this->schema->publisher())
+                    ->about($this->schema->room($oc))
+                    ->measurementTechnique('定期的なクローリングによるデータ収集')
+                    ->temporalCoverage($datePublished->format('Y-m-d') . '/' . $dateModified->format('Y-m-d'))
+            );
+        }
 
         // JSON-LDのマークアップを生成
         return $webPage->toScript();

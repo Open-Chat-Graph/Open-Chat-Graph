@@ -88,31 +88,57 @@ class PageBreadcrumbsListSchema
             ->name('LINE');
     }
 
-    function room(array $room): DiscussionForumPosting
+    function room(array $room)
     {
-        return Schema::discussionForumPosting()
-            ->headline($room['name'])
+        // 日本語版（コメント機能有り）の場合はDiscussionForumPosting
+        if (MimimalCmsConfig::$urlRoot === '') {
+            return Schema::discussionForumPosting()
+                ->headline($room['name'])
+                ->description($room['description'])
+                ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                ->sameAs($room['url'] ? AppConfig::LINE_APP_URL . $room['url'] . AppConfig::LINE_APP_SUFFIX : '')
+                ->interactionStatistic(
+                    Schema::interactionCounter()
+                        ->interactionType('https://schema.org/FollowAction')
+                        ->userInteractionCount($room['member'])
+                )
+                ->image([
+                    imgUrl($room['id'], $room['img_url']),
+                ])
+                ->datePublished(new \DateTime($room['created_at']))
+                ->dateModified(new \DateTime($room['updated_at']))
+                ->provider(
+                    $this->lineOcOrganization()
+                )
+                ->author(
+                    Schema::person()
+                        ->name($room['name'])
+                        ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                );
+        }
+        
+        // 他言語版（コメント機能無し）の場合はOrganization
+        return Schema::organization()
+            ->name($room['name'])
             ->description($room['description'])
             ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
             ->sameAs($room['url'] ? AppConfig::LINE_APP_URL . $room['url'] . AppConfig::LINE_APP_SUFFIX : '')
-            ->interactionStatistic(
-                Schema::interactionCounter()
-                    ->interactionType('https://schema.org/FollowAction')
-                    ->userInteractionCount($room['member'])
+            ->aggregateRating(
+                Schema::aggregateRating()
+                    ->ratingValue(5)
+                    ->reviewCount($room['member'])
+                    ->bestRating(5)
+                    ->worstRating(1)
             )
-            ->image([
+            ->logo([
                 imgUrl($room['id'], $room['img_url']),
             ])
-            ->datePublished(new \DateTime($room['created_at']))
-            ->dateModified(new \DateTime($room['updated_at']))
-            ->provider(
+            ->foundingDate(new \DateTime($room['created_at']))
+            ->parentOrganization(
                 $this->lineOcOrganization()
             )
-            ->author(
-                Schema::person()
-                    ->name($room['name'])
-                    ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $room['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
-            );
+            ->numberOfEmployees($room['member'])
+            ->slogan($room['description']);
     }
 
     function actionApplication()
@@ -145,7 +171,6 @@ class PageBreadcrumbsListSchema
         string $tag,
         array $rooms // オープンチャットルームの情報を配列で追加
     ): string {
-        $count = count($rooms);
         // 各オープンチャットルームをItemListとして追加
         $itemList = Schema::itemList();
 
@@ -165,7 +190,6 @@ class PageBreadcrumbsListSchema
 
         $itemList->itemListElement($listArray);
 
-        $time = $dateModified->format('G:i');
 
         $webSite = Schema::article()
             ->headline($title)
@@ -193,6 +217,6 @@ class PageBreadcrumbsListSchema
                 Schema::entryPoint()
                     ->urlTemplate(url('ranking?keyword={search_term_string}'))
             )
-            ->query('equired name=search_term_string');
+            ->query('required name=search_term_string');
     }
 }
