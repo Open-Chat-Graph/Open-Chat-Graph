@@ -76,46 +76,18 @@ class PageBreadcrumbsListSchema
     function generateRecommend(
         string $title,
         string $description,
-        string $url,
-        \DateTimeInterface $datePublished,
         \DateTimeInterface $dateModified,
-        string $tag,
-        array $rooms // オープンチャットルームの情報を配列で追加
+        string $tag
     ): string {
-        // 各オープンチャットルームをItemListとして追加
-        $itemList = Schema::itemList();
-
-        $listArray = [];
-        foreach ($rooms as $index => $room) {
-            $listArray[] = Schema::listItem()
-                ->item(
-                    schema::article()
-                        ->headline($room['name'])
-                        ->description($room['description'])
-                        ->image(imgPreviewUrl($room['id'], $room['img_url']))
-                        ->url(url('oc/' . $room['id']))
-                        ->position($index + 1)
-                );
-        }
-
-        $itemList->itemListElement($listArray);
-
-        $webSite = Schema::article()
-            ->headline($title)
+        $collectionPage = Schema::collectionPage()
+            ->inLanguage($this->metadata->locale)
+            ->name($title)
             ->description($description)
-            ->image(imgUrl($rooms[0]['id'], $rooms[0]['img_url']))
             ->publisher($this->publisher())
-            ->datePublished($datePublished)
             ->dateModified($dateModified)
-            ->articleSection([$title, t('関連のテーマ')])
-            ->about(Schema::thing()->name($tag))
-            ->mainEntityOfPage(
-                Schema::collectionPage()
-                    ->id($url)
-            )
-            ->mainEntity($itemList);
+            ->about(Schema::thing()->name($tag));
 
-        return $webSite->toScript();
+        return $collectionPage->toScript();
     }
 
 

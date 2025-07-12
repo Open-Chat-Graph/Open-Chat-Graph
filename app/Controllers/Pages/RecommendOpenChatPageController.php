@@ -98,11 +98,8 @@ class RecommendOpenChatPageController
         $_schema = $this->breadcrumbsShema->generateRecommend(
             $headline,
             $_meta->description,
-            url("recommend?tag=" . urlencode($tag)),
-            new \DateTime('2024-04-06 08:00:00'),
             $hourlyUpdatedAt,
-            $tag,
-            $recommendList
+            $tag
         );
 
         return view('recommend_content', compact(
