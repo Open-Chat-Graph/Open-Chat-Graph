@@ -36,7 +36,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <b>データの取得は公式サイトのみから行います。LINEアプリ本体に係るデータを取得することはありません。</b>
                 </p>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">オプチャグラフに掲載される条件</h3>
+                    <h3>オプチャグラフに掲載される条件</h3>
                     <p>
                         オプチャグラフのクローラーは<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">公式サイトのランキング</a>から新しいルームを見つけて登録します。<b>ランキングに掲載されていないルームは登録されません。</b>
                     </p>
@@ -57,7 +57,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </p>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">公式サイトでの掲載条件</h3>
+                    <h3>公式サイトでの掲載条件</h3>
                     <p>
                         オープンチャットの検索を許可しているなどの条件において、開設したルームが公式サイトに掲載されます。
                     </p>
@@ -69,18 +69,18 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </p>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">情報更新のスケジュール</h3>
+                    <h3>情報更新のスケジュール</h3>
                     <p>
                         オプチャグラフのクローラーは公式サイトを定期巡回してルームのタイトル、説明文、画像、人数統計、ランキング履歴などを更新します。
                     </p>
-                    <ul style="font-size: 16px; line-height: 2;">
+                    <ul style="font-size: 18px; line-height: 2;">
                         <li>ランキング掲載中のルーム: 1時間毎（毎時30分頃）</li>
                         <li>ランキング未掲載のルーム: 1日毎 （23:30〜0:30頃）</li>
                         <li>ランキング未掲載かつ1週間以上メンバー数に変動がないルーム: 1週間毎</li>
                     </ul>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">キーワード検索機能について</h3>
+                    <h3>キーワード検索機能について</h3>
                     <p>
                         オプチャグラフが提供するキーワード検索機能は公式サイトからインデックスした情報に基づいています。Google・Yahoo・Bingなどの検索サイトが表示する検索結果と同様の内容です。
                     </p>
@@ -92,7 +92,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </p>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">ランキングの順位グラフについて</h3>
+                    <h3>ランキングの順位グラフについて</h3>
                     <p>
                         オプチャグラフのクローラーは公式サイトのランキング順位を1時間毎に記録します。ルームの並び順から順位を数えて算出しています。
                     </p>
@@ -169,7 +169,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <b>數據僅從官方網站獲取，不會取得與 LINE 應用程式本體相關的數據。</b>
                 </p>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">LINE社群流量統計收錄的條件</h3>
+                    <h3>LINE社群流量統計收錄的條件</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式從<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">官方網站排名</a>中找到新的聊天室並進行登記。<b>未列入排名的聊天室不會被登記。</b>
                     </p>
@@ -184,18 +184,18 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </p>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">資訊更新的排程</h3>
+                    <h3>資訊更新的排程</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式定期巡覽官方網站，更新聊天室的標題、說明、圖片、人數統計及排名歷史等資訊。
                     </p>
-                    <ul style="font-size: 16px; line-height: 2;">
+                    <ul style="font-size: 18px; line-height: 2;">
                         <li>排名中的聊天室：每小時更新</li>
                         <li>未列入排名的聊天室：每天更新（23:30 ～ 0:30）</li>
                         <li>未列入排名且人數超過一週未變動的聊天室：每週更新一次</li>
                     </ul>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">關於排名的趨勢圖</h3>
+                    <h3>關於排名的趨勢圖</h3>
                     <p>
                         LINE社群流量統計的爬蟲程式每小時記錄官方網站中的排名位置，透過聊天室的排列順序計算排名。
                     </p>
@@ -222,7 +222,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <b>ข้อมูลจะถูกรวบรวมจากเว็บไซต์ทางการเท่านั้น จะไม่มีการรวบรวมข้อมูลจากตัวแอปพลิเคชัน LINE</b>
                 </p>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">เงื่อนไขการรวบรวมข้อมูลใน LINE OPENCHAT สถิติการเข้าชม</h3>
+                    <h3>เงื่อนไขการรวบรวมข้อมูลใน LINE OPENCHAT สถิติการเข้าชม</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม ค้นหาและลงทะเบียนห้องใหม่จาก<a href="https://openchat.line.me/jp/explore?sort=RANKING" rel="external" target="_blank">การจัดอันดับบนเว็บไซต์ทางการ</a> <b>ห้องที่ไม่ได้อยู่ในการจัดอันดับจะไม่ได้รับการลงทะเบียน</b>
                     </p>
@@ -237,18 +237,18 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </p>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">กำหนดการอัปเดตข้อมูล</h3>
+                    <h3>กำหนดการอัปเดตข้อมูล</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม เยี่ยมชมเว็บไซต์ทางการเป็นประจำเพื่ออัปเดตข้อมูล เช่น ชื่อห้อง คำอธิบาย รูปภาพ สถิติสมาชิก ประวัติการจัดอันดับ ฯลฯ
                     </p>
-                    <ul style="font-size: 16px; line-height: 2;">
+                    <ul style="font-size: 18px; line-height: 2;">
                         <li>ห้องที่อยู่ในการจัดอันดับ: อัปเดตทุกชั่วโมง (ประมาณเวลา 30 นาทีของทุกชั่วโมง)</li>
                         <li>ห้องที่ไม่ได้อยู่ในการจัดอันดับ: อัปเดตทุกวัน (23:30 ～ 0:30)</li>
                         <li>ห้องที่ไม่ได้อยู่ในการจัดอันดับและไม่มีการเปลี่ยนแปลงจำนวนสมาชิกเกิน 1 สัปดาห์: อัปเดตทุกสัปดาห์</li>
                     </ul>
                 </section>
                 <section style="margin: 1rem 0;">
-                    <h3 style="font-size: 16px;">เกี่ยวกับกราฟอันดับการจัดอันดับ</h3>
+                    <h3>เกี่ยวกับกราฟอันดับการจัดอันดับ</h3>
                     <p>
                         โปรแกรมรวบรวมข้อมูลของ LINE OPENCHAT สถิติการเข้าชม บันทึกอันดับการจัดอันดับบนเว็บไซต์ทางการทุกชั่วโมง โดยคำนวณอันดับจากลำดับของห้อง
                     </p>
