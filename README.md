@@ -1,113 +1,187 @@
-# オプチャグラフ
-https://openchat-review.me
+# オプチャグラフ（OpenChat Graph）
 
-![Image](/public/assets/image.jpg)
+LINE OpenChatのメンバー数推移を可視化し、トレンドを分析できるWebサービス
 
-## プロジェクトの概要
-オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフで比較できるWEBサイトです。  
-[オプチャグラフとは](https://openchat-review.me/policy)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Live](https://img.shields.io/badge/Live-openchat--review.me-green)](https://openchat-review.me)
 
-このサイトは、オープンチャットの参加者数の推移などの情報を日々収集し、データベースに記録します。この収集は、オプチャグラフ専用のクローラーが[LINEオープンチャット公式サイト](https://openchat.line.me/jp)を定期的に巡回することで行われます。  
+![オプチャグラフ](/public/assets/image.jpg)
 
-オプチャグラフのWEBサイト上では、収集されたデータを様々な形式で表示します。例えば、キーワード検索を用いて特定のオープンチャットを探すことができ、検索結果を参加者数の増加順に並び替えることも可能です。  
+## 概要
 
-また、過去1時間、24時間、1週間という期間での参加者数の増加ランキングを表示する機能もあり、どのオープンチャットが現在人気を集めているのか、またどのようなテーマが注目されているのかを知ることができます。
+オプチャグラフは、LINE OpenChatコミュニティの成長トレンドを追跡・分析するWebアプリケーションです。15万以上のOpenChatを毎時間クロールし、メンバー数の推移、ランキング、統計データを提供します。
 
-オプチャグラフは、オープンチャットの動向を簡単に把握できる便利なツールです。
+### 主な機能
 
-## 人数増加ランキング表示
-  ### オプチャグラフのランキング掲載条件
-  1. メンバー数の変動: 過去1週間でメンバー数に変動があるオープンチャットのみがランキング対象となります。
-  2. 最低メンバー数: 現在のメンバー数と比較基準となる前日または前週のメンバー数が共に10人以上である必要があります。
+- 📊 **成長トレンド可視化** - メンバー数の推移をグラフで表示
+- 🔍 **高度な検索機能** - キーワード、タグ、カテゴリでの検索
+- 📈 **リアルタイムランキング** - 1時間/24時間/週間の成長ランキング
+- 🌏 **多言語対応** - 日本語、タイ語、繁体字中国語に対応
+- 💬 **コメント機能** - ユーザー同士の情報交換
+- 🏷️ **推奨タグシステム** - AIによる関連タグの自動生成
 
-## 技術概要
-- バックエンド:
-  - PHP
-  - [MimimalCMS](https://github.com/mimimiku778/MimimalCMS): カスタム軽量MVCフレームワーク
-  - MySQL/MariaDB & SQLite: MySQLはオープンチャット情報の保存用、SQLiteはランキングと統計の管理用。
-  - Symfony/browser-kit & Spatie/schema-org: ウェブクローリングとSEO最適化に使用。
+## 🚀 開発環境のセットアップ
 
-- フロントエンド:
-  - TypeScript & React
-  - MUI: 一貫したデザインを提供。
-  - Chart.js & Swiper.js: グラフ表示とスライド機能に使用。 
+### 前提条件
 
-- 改善点:
-  - パフォーマンスとセキュリティ: カスタムMVCフレームワークでパフォーマンスを最適化し、Raw SQL使用時のSQLインジェクション対策を実施。
-  - 技術選定: 開発速度、コスト効率、将来のスケーラビリティを考慮し、フロントエンドはReact/Nextへの移行を検討中。
+- Docker & Docker Compose
+- PHP 8.3+
+- Composer
+- Node.js 18+ (フロントエンド開発時)
 
-#### 説明
-バックエンドはPHPで書かれ、古典的なLAMPスタックを使用しています。  
+### クイックスタート
 
-データベースは、複雑なクエリと細かなテーブル結合が多用されるため、全てRaw SQLで管理されています。  
-オープンチャットの情報は基本的にMySQLに保存され、テーブルのAUTO_INCREMENTで発行されるIDとオープンチャットURLの2カラムのみが日次でバックアップされています。
+```bash
+# リポジトリのクローン
+git clone https://github.com/pika-0203/Open-Chat-Graph.git
+cd Open-Chat-Graph
 
-ランキングの順位と人数の統計データはSQLiteで管理されています。これはMySQLを使用しているサーバーでは容量の大きさが問題となり、稼働が困難になったためです。SQLiteのデータベースファイルも日次でバックアップされています。
+# 依存関係のインストール
+composer install
 
-フロントエンドはPHPとCSR(クライアントサイドレンダリング)を行うReactが混在しており、PHPのページ内にReactでモジュール化されたコンポーネントが複数組み込まれています。将来的にはReactやNext.jsへの完全移行も検討されています。  
+# ローカル設定のセットアップ
+# ⚠️ 機密情報が必要です - GitHubのIssueでお問い合わせください
+./local-setup.sh
 
-今でもまだMVP(プロトタイプ)の延長線上にあり、開発が容易なPHPを使用しています。  
-サイトの発展次第ではサーバーを移行して、バックエンドのコードをGoで書き直すということも視野に入れています。  
+# Docker環境の起動
+docker-compose up -d
+```
 
-## 1時間毎のクローリング時の並行処理
-このプロジェクトでは、公式サイトからランキングデータを高速にダウンロードしてデータベースを更新するシステムを構築しました。  
-このシステムは、約15万件のオープンチャットを効率的に処理することができます。  
-  - 具体的には、以下の特徴を持つ処理を行っています。
-    - 全24カテゴリのランキングデータを、24個の並行プロセスで同時にダウンロードします。  
-    - 各プロセスは、2つのカテゴリ（ランキングと急上昇）のデータを取得します。  
-    - このプロジェクトに最適化された独自のレンダリング技術・データベースの更新技術で高速にデータを更新します。  
+**アクセスURL:**
+- Web: http://localhost:8000
+- phpMyAdmin: http://localhost:8080
+- MySQL: localhost:3306
 
-- データ取得を並行処理で実行する親プロセス  
-[OpenChatApiDbMergerWithParallelDownloader.php](https://github.com/pika-0203/Open-Chat-Graph/blob/main/app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php)  
+## 🏗️ アーキテクチャ
 
-- execから実行される子プロセス  
-[ParallelDownloadOpenChat.php](https://github.com/pika-0203/Open-Chat-Graph/blob/main/app/Services/Cron/ParallelDownloadOpenChat.php)  
+### 技術スタック
 
-- 子プロセスで利用する、「ランキングデータの取得処理クラス・ダウンロードデータの検証クラス」を実行するクラス  
-[OpenChatApiDataParallelDownloader.php](https://github.com/pika-0203/Open-Chat-Graph/blob/main/app/Services/OpenChat/OpenChatApiDataParallelDownloader.php)  
+#### バックエンド
+- **フレームワーク**: [MimimalCMS](https://github.com/mimimiku778/MimimalCMS) (カスタム軽量MVC)
+- **言語**: PHP 8.3
+- **データベース**: 
+  - MySQL/MariaDB (メインデータ)
+  - SQLite (ランキング・統計データ)
+- **依存性注入**: カスタムDIコンテナ
 
-## オプチャグラフBotのUA
-  オプチャグラフBotのクローリングは、以下のユーザーエージェント（UA）を使用して統一的に行われます。  
-  IPアドレスについては、レンタルサーバーを使用しているため一定ではありませんが、基本的には固定IPを利用しています。  
+#### フロントエンド
+- **言語**: TypeScript, JavaScript
+- **フレームワーク**: React (サーバーサイドPHPとのハイブリッド)
+- **UIライブラリ**: MUI, Chart.js, Swiper.js
+- **ビルド**: 事前ビルド済みバンドル
 
-  - `Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)`  
+### データベース設計
 
-  このユーザーエージェントは、オプチャグラフBotがLINE公式サイトをクローリングする際に使用されます。  
+詳細なデータベーススキーマについては [db_schema.md](./db_schema.md) を参照してください。
 
-  LINE公式サイト側では、このユーザーエージェントを識別することで、オプチャグラフBotからのアクセスを確認することができます。  
+### ディレクトリ構造
 
-## フロントエンドのリポジトリ  
-ランキングページ  
-https://github.com/mimimiku778/Open-Chat-Graph-Frontend  
+```
+/
+├── app/                    # アプリケーションコード (MVC)
+│   ├── Config/            # ルーティング・設定
+│   ├── Controllers/       # HTTPハンドラー
+│   ├── Models/           # データアクセス層
+│   ├── Services/         # ビジネスロジック
+│   └── Views/            # テンプレート・React
+├── shadow/                # MimimalCMSフレームワーク
+├── batch/                 # バッチ処理・クロンジョブ
+├── shared/               # 共通設定・DI定義
+├── storage/              # データファイル・SQLite DB
+└── public/               # 公開ディレクトリ
+```
 
-グラフ表示  
-https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph  
+## 🕷️ クローリングシステム
 
-コメント機能  
-https://github.com/mimimiku778/Open-Chat-Graph-Comments  
+### 並列処理アーキテクチャ
 
-## ライセンスについて
-公開しているソースコードはすべて MIT License で公開しています。
+約15万件のOpenChatを効率的に処理するための高速並列クローリングシステムを実装しています。
 
-## クローラー  
-クローラーはウェブサイト上の情報を自動的に収集するプログラムです。このプロジェクトでは、オープンチャットの情報を定期的に収集する独自のクローラーを作成しています。  
-これにより、オープンチャットの最新の人数データや説明文といった情報をリアルタイムに反映することができています。  
+- **24並列プロセス**: 全カテゴリを同時処理
+- **独自最適化**: 高速レンダリング・DB更新技術
+- **自動リトライ**: エラー処理とフォールバック
 
-クローラーによって収集されたデータから特定の情報を抽出し、整理する行為をスクレイピングと言います。  
+#### 主要コンポーネント
 
-具体的には、ウェブページからテキストや画像などのデータを取得し、それを解析して有用な情報を抽出するプロセスです。このプロジェクトでのクローラーの使用も、実質的にはスクレイピングの一種と言えます。  
+1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - 親プロセス
+2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - 子プロセス
+3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - データ処理
 
-- クローラーやスクレイピングツールを開発する際には、いくつかの重要な注意点があります。以下に主なものを挙げます。
+### ユーザーエージェント
 
-  - 法的な観点: ウェブサイトのコンテンツは著作権で保護されていることが多いため、無断でのデータ収集や利用は著作権侵害にあたる可能性があります。また、特定のサイトはスクレイピングを禁止している場合がありますので、利用規約を事前に確認してください。
+```
+Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)
+```
 
-  - サイトへの負荷: クローラーやスクレイピングツールは短時間に大量のリクエストを送ることができますが、これが原因で対象サイトに過大な負荷をかけ、サービスの妨げになることがあります。リクエストの間隔を適切に設定し、サイトに負荷をかけ過ぎないようにしましょう。
+## 🧪 テスト
 
-  - 個人情報の取り扱い: 収集したデータに個人情報が含まれている場合、それをどのように扱うかには特に注意が必要です。個人情報保護法などの関連法規を遵守し、情報の適切な管理と保護に努めてください。
+```bash
+# 全テストの実行
+./vendor/bin/phpunit
 
-  - robots.txtの尊重: ウェブサイトのルートディレクトリにあるrobots.txtファイルは、クローラーに対してどのページをスクレイピングしてよいか、どのページを避けるべきかの指示を含んでいます。クローラーやスクレイピングツールを開発する際には、このファイルの内容を尊重することが重要です。
+# 特定ディレクトリのテスト
+./vendor/bin/phpunit app/Services/test/
 
-  クローラーやスクレイピングツールの開発は、多くの面で実用性が高いものですが、上記のような注意点を守りながら、倫理的かつ法的な枠組みの中で行うことが重要です。
+# 特定ファイルのテスト
+./vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
+```
 
-## 連絡先
-[E-MAIL](<mailto:support@openchat-review.me>)  
+### テスト構成
+- **配置**: 各モジュールの `test/` サブディレクトリ
+- **命名規則**: `*Test.php`
+- **フレームワーク**: PHPUnit 9.6
+
+## 📊 ランキングシステム
+
+### 掲載条件
+
+1. **メンバー数変動**: 過去1週間で変動があること
+2. **最低メンバー数**: 現在・比較時点ともに10人以上
+
+### ランキング種別
+
+- **1時間**: 直近1時間の成長率
+- **24時間**: 日次成長率
+- **週間**: 週間成長率
+
+## 🔗 関連リポジトリ
+
+### フロントエンドコンポーネント
+
+- [ランキングページ](https://github.com/mimimiku778/Open-Chat-Graph-Frontend)
+- [グラフ表示](https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph)
+- [コメント機能](https://github.com/mimimiku778/Open-Chat-Graph-Comments)
+
+## 🤝 コントリビューション
+
+プルリクエストやイシューの報告を歓迎します。大きな変更を加える場合は、まずイシューを作成して変更内容について議論してください。
+
+### 開発ガイドライン
+
+1. PSR-4オートローディング規約に従う
+2. テストを書く（PHPUnit使用）
+3. 既存のコードスタイルに合わせる
+4. コミットメッセージは明確に
+
+## ⚖️ ライセンス
+
+このプロジェクトは [MIT License](LICENSE.md) の下で公開されています。
+
+## 📞 連絡先
+
+- **Email**: [support@openchat-review.me](mailto:support@openchat-review.me)
+- **Website**: [https://openchat-review.me](https://openchat-review.me)
+
+## 🙏 謝辞
+
+このプロジェクトは多くのオープンソースプロジェクトに支えられています。特に以下のプロジェクトに感謝します：
+
+- LINE Corporation
+- PHPコミュニティ
+- Reactコミュニティ
+
+---
+
+<p align="center">
+  Made with ❤️ for the LINE OpenChat Community
+</p>
