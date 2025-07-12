@@ -89,7 +89,8 @@ class Metadata
     {
         return Schema::webSite()
             ->name($this->site_name)
-            ->url(url(['urlRoot' => '', 'paths' => []]))
+            ->inLanguage($this->locale)
+            ->url(url())
             ->image($this->image_url)
             ->toScript();
     }
