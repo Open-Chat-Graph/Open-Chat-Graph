@@ -330,6 +330,111 @@ class SyncOpenChat
 3. **エラー回復**: 失敗時の自動リトライ
 4. **通知システム**: Discord通知による監視
 
+#### 再試行フローの詳細
+
+**実行時間の設定:**
+```php
+// 言語別のcron実行時間
+const CRON_START_MINUTE = [
+    '' =>    30,  // 日本語: 毎時30分
+    '/tw' => 35,  // 台湾: 毎時35分  
+    '/th' => 40,  // タイ: 毎時40分
+];
+
+const CRON_MERGER_HOUR_RANGE_START = [
+    '' =>    23,  // 日本語: 23:30（日次処理）
+    '/tw' => 0,   // 台湾: 0:35（日次処理）
+    '/th' => 1,   // タイ: 1:40（日次処理）
+];
+```
+
+**1. 毎時処理の再試行フロー:**
+```php
+// SyncOpenChat::handleHalfHourCheck() - 毎時0分実行
+function handleHalfHourCheck()
+{
+    if ($this->state->getBool(StateType::isHourlyTaskActive)) {
+        // 前回の処理が継続中の場合、再試行
+        $this->retryHourlyTask();
+    } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
+        // ランキング永続化が未完了の場合、後続処理のみ実行
+        $this->hourlyTaskAfterDbMerge(true);
+    }
+}
+
+private function retryHourlyTask()
+{
+    addCronLog('Retry hourlyTask');
+    AdminTool::sendDiscordNotify('Retry hourlyTask');
+    
+    // 実行中の並列プロセスを強制終了
+    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+    sleep(30); // プロセス終了待機
+    
+    $this->handle(); // 再実行
+}
+```
+
+**2. 日次処理の再試行フロー:**
+```php
+private function retryDailyTask()
+{
+    // 6:30以降（通知時間後）の場合のみDiscord通知
+    if ($this->isAfterRetryNotificationTime()) {
+        AdminTool::sendDiscordNotify('Retrying dailyTask');
+    }
+    
+    // 全プロセス強制終了
+    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+    OpenChatDailyCrawling::setKillFlagTrue();
+    sleep(30);
+    
+    $this->dailyTask(); // 日次処理再実行
+}
+
+// 通知制御: 6時間以内の再試行では通知を抑制
+function isAfterRetryNotificationTime(): bool
+{
+    return !isDailyUpdateTime()
+        && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
+        && !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
+        && !isDailyUpdateTime(new \DateTime('-3 hour'), new \DateTime('-3 hour'))
+        && !isDailyUpdateTime(new \DateTime('-4 hour'), new \DateTime('-4 hour'))
+        && !isDailyUpdateTime(new \DateTime('-5 hour'), new \DateTime('-5 hour'))
+        && !isDailyUpdateTime(new \DateTime('-6 hour'), new \DateTime('-6 hour'));
+}
+```
+
+**3. 状態管理による制御:**
+```php
+enum SyncOpenChatStateType: string
+{
+    case isDailyTaskActive = 'isDailyTaskActive';
+    case isHourlyTaskActive = 'isHourlyTaskActive';
+    case openChatApiDbMergerKillFlag = 'openChatApiDbMergerKillFlag';
+    case openChatDailyCrawlingKillFlag = 'openChatDailyCrawlingKillFlag';
+    case isUpdateInvitationTicketActive = 'isUpdateInvitationTicketActive';
+}
+```
+
+**4. エラー回復メカニズム:**
+
+- **プロセス監視**: 実行状態フラグで異常検知
+- **強制終了**: killFlagによる安全な停止
+- **段階的復旧**: 部分的に失敗した処理の継続実行
+- **通知制御**: 頻繁な通知を避けるタイムウィンドウ
+- **データ整合性**: 途中失敗時の状態復元
+
+**5. 多言語環境での分散実行:**
+
+各言語版が異なる時間に実行されることで、サーバー負荷を分散：
+
+- **日本語**: 23:30, X:30（毎時）
+- **台湾版**: 0:35, X:35（毎時） 
+- **タイ版**: 1:40, X:40（毎時）
+
+この設計により、大規模データ処理でも高い可用性を実現しています。
+
 ### ハイブリッドデータベース設計
 
 #### MySQL（リアルタイム更新）

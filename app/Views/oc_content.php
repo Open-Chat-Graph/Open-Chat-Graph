@@ -234,24 +234,24 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php $adsRendered = true; ?>
+      <?php $adsRendere = true; ?>
     <?php endif ?>
 
     <?php if ($recommend[0] && $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php $adsRendered = true; ?>
+      <?php $adsRendere = true; ?>
     <?php endif ?>
 
     <?php if (isset($officialDto) && $officialDto) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php $adsRendered = true; ?>
+      <?php $adsRendere = true; ?>
     <?php endif ?>
 
-    <?php if ($adsRendered) : ?>
+    <?php if ($adsRendere) : ?>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
