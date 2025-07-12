@@ -57,8 +57,10 @@ class OcPageSchema
                     : []
                 )
             )
-            ->mainEntity($this->schema->room($oc))
             ->potentialAction($this->schema->potentialAction());
+
+        if (MimimalCmsConfig::$urlRoot === '')
+            $webPage->mainEntity($this->schema->room($oc));
 
         // JSON-LDのマークアップを生成
         return $webPage->toScript();
