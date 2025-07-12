@@ -102,27 +102,6 @@ $stmt->execute([$value1, $value2]);
 
 Note: The database configuration is automatically loaded from `local-secrets.php` for development environment.
 
-## Testing
-
-### PHPUnit
-```bash
-# Run all tests
-./vendor/bin/phpunit
-
-# Run specific test directory
-./vendor/bin/phpunit app/Services/test/
-./vendor/bin/phpunit app/Models/test/
-
-# Run specific test file
-./vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
-```
-
-### Test Structure
-- Tests are co-located in `test/` subdirectories
-- 50+ test files following `*Test.php` pattern
-- Mix of unit and integration tests
-- Extends `PHPUnit\Framework\TestCase`
-
 ## Code Quality
 
 ### Current Tools

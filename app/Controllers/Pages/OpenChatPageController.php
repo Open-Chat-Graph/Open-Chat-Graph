@@ -127,7 +127,6 @@ class OpenChatPageController
             $_meta->description,
             new \DateTime($oc['created_at']),
             new \DateTime($_statsDto->endDate),
-            $recommend,
             $oc,
         );
 
