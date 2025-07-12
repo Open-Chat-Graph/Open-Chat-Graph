@@ -45,22 +45,23 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
         <div class="modify-top-padding">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]) ?>
         </div>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php if ($dto->recentCommentList): ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
