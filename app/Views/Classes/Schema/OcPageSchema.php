@@ -34,12 +34,17 @@ class OcPageSchema
             Schema::discussionForumPosting()
                 ->name($oc['name'])
                 ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
+                ->author(
+                    Schema::organization()->name('LINE OpenChat')
+                )
+                ->datePublished($datePublished)
         );
 
         // mainEntityの追加 - データセット情報
         $webPage->mainEntity(
             Schema::dataset()
                 ->name(sprintf(t('LINEオープンチャット「%s」統計データ'), $oc['name']))
+                ->description(t('このデータセットには、LINEオープンチャットのメンバー数の時系列変化、日別・時間別の成長率、参加者数の推移に関する詳細な統計情報が含まれています。データは1時間ごとに自動収集され、トレンド分析や人気度の測定に活用されます。'))
                 ->temporalCoverage($datePublished->format('Y-m-d') . '/' . (new \DateTime() >= new \DateTime('today 06:00') ? (new \DateTime('today 06:00'))->format('Y-m-d') : (new \DateTime('yesterday 06:00'))->format('Y-m-d')))
         );
 
