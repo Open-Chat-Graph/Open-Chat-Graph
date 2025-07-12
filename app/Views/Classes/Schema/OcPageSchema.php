@@ -84,17 +84,13 @@ class OcPageSchema
             $webPage->mainEntity(
                 Schema::dataset()
                     ->name($name . 'の統計データ')
-                    ->description($name . 'のLINEオープンチャットにおけるメンバー数の推移、1時間・1日・1週間の増減率、全体およびカテゴリ別ランキングでの順位変動などの詳細な統計情報を提供します。')
+                    ->description('メンバー数推移、増減率、ランキング順位などの統計情報')
                     ->url(url('oc/' . $oc['id']))
                     ->dateModified($dateModified)
                     ->creator($this->schema->publisher())
                     ->about($this->schema->room($oc))
                     ->measurementTechnique('定期的なクローリングによるデータ収集')
                     ->temporalCoverage($datePublished->format('Y-m-d') . '/' . $dateModified->format('Y-m-d'))
-                    ->license(Schema::creativeWork()
-                        ->name('CC BY 4.0')
-                        ->url('https://creativecommons.org/licenses/by/4.0/')
-                    )
             );
         }
 
