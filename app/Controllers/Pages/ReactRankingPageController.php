@@ -93,9 +93,8 @@ class ReactRankingPageController
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             t('ランキング'),
-            'ranking',
+            $category ? 'ranking' : '',
             $category ? array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] : '',
-            $category ? (string)$category : ''
         );
 
         return view('ranking_react_content', compact('_css', '_js', '_meta', '_argDto', '_breadcrumbsShema', 'category'));

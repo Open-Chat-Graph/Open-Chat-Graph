@@ -60,11 +60,7 @@ class RecommendOpenChatPageController
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_page'];
 
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema(
-            t('おすすめ'),
-            'recommend',
             $extractTag,
-            'recommend/?tag=' . urlencode($tag),
-            true
         );
 
         $canonical = url('recommend?tag=' . urlencode($tag));

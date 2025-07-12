@@ -119,10 +119,7 @@ class OpenChatPageController
         $_meta->thumbnail = imgPreviewUrl($oc['id'], $oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
-            t('オプチャ'),
-            'oc',
             $oc['tag1'] ?: $category,
-            (string)$open_chat_id
         );
 
         $_schema = $ocPageSchema->generateSchema(

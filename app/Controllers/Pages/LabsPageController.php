@@ -20,7 +20,7 @@ class LabsPageController
         $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
         $_meta = meta()->setTitle(self::Title);
         $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
-        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(self::Title, 'policy');
+        $_breadcrumbsShema = $breadcrumbsShema->generateSchema(self::Title);
 
         $_recommendDto = $staticDataGeneration->getRecommendPageDto();
 

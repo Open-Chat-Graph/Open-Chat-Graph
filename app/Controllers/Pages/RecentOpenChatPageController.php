@@ -52,7 +52,7 @@ class RecentOpenChatPageController
         $subTitle = $recentPage === 0 ? '' : "({$recentPage}ページ目)";
         $_meta = meta()->setTitle($pageTitle . $subTitle);
 
-        $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema('最近登録されたオープンチャット', 'oc');
+        $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema('最近登録されたオープンチャット');
 
         return view(
             'recent_content',

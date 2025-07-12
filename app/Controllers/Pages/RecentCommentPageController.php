@@ -61,7 +61,6 @@ class RecentCommentPageController
             'コメント',
             'comments-timeline',
             $subTitle,
-            $subTitle ? ((string)$unmodifeidPageNumber) : ''
         );
 
         $topPageDto = $staticDataGeneration->getTopPageData();

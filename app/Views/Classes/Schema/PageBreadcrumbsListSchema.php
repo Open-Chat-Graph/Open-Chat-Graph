@@ -25,26 +25,42 @@ class PageBreadcrumbsListSchema
     }
 
     // パンくずリスト
-    function generateSchema(string $listItemName, string $path, string $secondName = '', string $secondPath = '', bool $fullPath = false): string
+    function generateSchema(string $listItemName, string $path = '', string $secondName = '', string $secondPath = '', bool $fullPath = false): string
     {
         $breadcrumbList = Schema::breadcrumbList();
 
-        $itemListElement = [
-            Schema::listItem()
-                ->position(1)
-                ->name(t('トップ'))
-                ->item(rtrim(url(), '/')),
-            Schema::listItem()
-                ->position(2)
-                ->name($listItemName)
-                ->item(url($path)),
-        ];
+        if ($path) {
+            $itemListElement = [
+                Schema::listItem()
+                    ->position(1)
+                    ->name(t('トップ'))
+                    ->item(rtrim(url(), '/')),
+                Schema::listItem()
+                    ->position(2)
+                    ->name($listItemName)
+                    ->item(url($path)),
+            ];
+        } else {
+            $itemListElement = [
+                Schema::listItem()
+                    ->position(1)
+                    ->name(t('トップ'))
+                    ->item(rtrim(url(), '/')),
+                Schema::listItem()
+                    ->position(2)
+                    ->name($listItemName),
+            ];
+        }
 
         if ($secondName && $secondPath) {
             $itemListElement[] = Schema::listItem()
                 ->position(3)
                 ->name($secondName)
                 ->item(url($fullPath ? $secondPath : ($path . '/' . $secondPath)));
+        } elseif ($secondName) {
+            $itemListElement[] = Schema::listItem()
+                ->position(3)
+                ->name($secondName);
         }
 
         $breadcrumbList->itemListElement($itemListElement);

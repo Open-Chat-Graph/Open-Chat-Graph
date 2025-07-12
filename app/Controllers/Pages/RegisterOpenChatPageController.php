@@ -21,7 +21,7 @@ class RegisterOpenChatPageController
             '_meta' => meta()
                 ->setTitle('オープンチャットを登録する')
                 ->setDescription('オプチャグラフは公式ランキングからオプチャを自動で登録します。このフォームは公式ランキングに未掲載のオプチャを手動で登録できます。'),
-            '_breadcrumbsShema' => $breadcrumbsShema->generateSchema('オプチャ', 'oc')
+            '_breadcrumbsShema' => $breadcrumbsShema->generateSchema('オプチャ')
         ];
 
         $viewBeforeRegister = fn () => view('register_form_content', $view);
