@@ -29,6 +29,8 @@ class PageBreadcrumbsListSchema
     {
         $breadcrumbList = Schema::breadcrumbList();
 
+        $breadcrumbList->inLanguage($this->metadata->locale);
+
         if ($path) {
             $itemListElement = [
                 Schema::listItem()
