@@ -19,7 +19,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
         <article class="terms">
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <h1 style="letter-spacing: 0px;">オプチャグラフとは？</h1>
-                <p>オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。</p>
+                <p>オプチャグラフはLINEオープンチャットの成長傾向をグラフやランキングで比較できるWEBサイトです。</p>
                 <p>LINE非公式の<a href="https://github.com/pika-0203/Open-Chat-Graph" target="_blank">オープンソースプロジェクト</a>により運営されています。 </p>
                 <h2>サイトの目的</h2>
                 <p>・ユーザーがオープンチャットを見つけて参加する機会を作る</p>
