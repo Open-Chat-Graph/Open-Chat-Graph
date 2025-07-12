@@ -74,7 +74,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $extractTag) ?><br>
       <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
     </p>
-
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
     <?php if (isset($recommend)) : ?>
       <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
         <aside class="list-aside">

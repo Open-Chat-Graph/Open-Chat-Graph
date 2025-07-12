@@ -13,33 +13,28 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
         <div class="ads-wropper">
-            <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
+            <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle']) ?>
         </div>
         <div style="padding: 1rem; padding-top: 0; padding-bottom: .5rem;">
-            <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
-            <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
-            <small style="display: block; color: #000; font-size: 10px; margin-top: 0.5rem;">
+            <small style="display: block; color: #000; font-size: 10px; margin: .5rem 0 1rem 0;">
                 <?php
                 $languages = array_keys(AppConfig::LINE_OPEN_URL);
-                // MimimalCmsConfig::$urlRoot と同じ値を0番目に移動
-                $currentIndex = array_search(MimimalCmsConfig::$urlRoot, $languages);
-                if ($currentIndex !== false) {
-                    $currentLang = $languages[$currentIndex];
-                    unset($languages[$currentIndex]);
-                    $languages = array_values($languages); // インデックスを詰める
-                    array_unshift($languages, $currentLang);
-                }
+
                 ?>
+
                 <?php foreach ($languages as $key => $lang): ?>
-                    <?php if ($lang !== MimimalCmsConfig::$urlRoot): ?>
-                        <a href="<?php echo url(["urlRoot" => "", "paths" => [$lang]]) ?>" style="color: inherit;"><?php echo t('オプチャグラフ', $lang) ?></a>
+                    <?php if ($lang === MimimalCmsConfig::$urlRoot): ?>
+                        <span style="color: inherit; font-weight: bold;"><?php echo t('オプチャグラフ', $lang) ?></span>
                     <?php else: ?>
-                        <a href="<?php echo url(["urlRoot" => "", "paths" => [str_replace('/', '', $lang) . '/policy']]) ?>" style="color: inherit; font-weight: bold; font-size: 13px;"><?php echo t('オプチャグラフとは？') ?></a>
+                        <a href="<?php echo url(["urlRoot" => "", "paths" => [$lang]]) ?>" style="color: inherit;"><?php echo t('オプチャグラフ', $lang) ?></a>
                     <?php endif; ?>
                     <?php if ($key !== count($languages) - 1): ?>／<?php endif; ?>
                 <?php endforeach; ?>
             </small>
+            <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
+            <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
         </div>
+        <a href="<?php echo url(["urlRoot" => "", "paths" => [str_replace('/', '', MimimalCmsConfig::$urlRoot) . '/policy']]) ?>" style="color: inherit; font-weight: bold; font-size: 13px; display: block; margin: 0.5rem 1rem; width: fit-content;"><?php echo t('オプチャグラフとは？') ?></a>
         <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
         ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
