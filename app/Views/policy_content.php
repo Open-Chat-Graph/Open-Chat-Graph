@@ -12,7 +12,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
     </script>
     <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
-    <div style="margin-top: -8px;" class="ads-wropper">
+    <div class="ads-wropper">
         <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
     </div>
     <main style="overflow: hidden;">

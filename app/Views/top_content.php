@@ -12,7 +12,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-        <div style="margin-top: -8px;" class="ads-wropper">
+        <div class="ads-wropper">
             <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
         </div>
         <div style="padding: 1rem; padding-top: 0; padding-bottom: .5rem;">
