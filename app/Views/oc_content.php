@@ -211,6 +211,26 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       ?>
     <?php endif ?>
 
+    <aside class="recommend-list-aside">
+      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
+    </aside>
+
+    <aside class="recommend-list-aside">
+      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
+    </aside>
+    <aside class="recommend-list-aside">
+      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
+    </aside>
+
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+    ?>
+
+    <aside class="recommend-list-aside">
+      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
+    </aside>
+
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    
     <?php if ($recommend[1]) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
@@ -265,26 +285,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
-    <aside class="recommend-list-aside">
-      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
-    </aside>
-
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
-    </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-    ?>
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-    </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-    ?>
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-    </aside>
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    
     <?php viewComponent('footer_inner') ?>
 
   </article>
