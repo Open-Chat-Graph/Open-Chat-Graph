@@ -595,26 +595,20 @@ body::before {
   }
 
   .horizontal-ads {
-    width: 468px;
+    width: auto;
     height: 60px;
     max-height: 60px;
-    position: absolute;
-    z-index: 1;
-    right: 0;
-    left: 0;
-    margin: auto;
-    transform: translate(0, -10px);
   }
 }
 
 @media screen and (min-width: 728px) {
   .horizontal-ads-parent {
-    height: 90px;
+    height: 106px;
     margin: 8px;
   }
 
   .horizontal-ads {
-    width: 728px;
+    width: auto;
     height: 90px;
     max-height: 90px;
   }

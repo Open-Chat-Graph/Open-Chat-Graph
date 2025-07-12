@@ -11,10 +11,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <div style="margin-top: -8px;" class="ads-wropper">
-        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
-    </div>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
+        <div style="margin-top: -8px;" class="ads-wropper">
+            <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
+        </div>
         <div style="padding: 1rem; padding-top: 0; padding-bottom: .5rem;">
             <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
             <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
