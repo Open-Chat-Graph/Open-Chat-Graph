@@ -38,7 +38,7 @@ class OpenChatPageController
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
-        AppConfig::$listLimitTopRanking = 5;
+        AppConfig::$listLimitTopRanking = 10;
 
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
         $topPageDto = $staticDataGeneration->getTopPageData();

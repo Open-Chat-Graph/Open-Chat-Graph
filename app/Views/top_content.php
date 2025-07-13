@@ -46,9 +46,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </div>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
