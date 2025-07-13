@@ -23,7 +23,7 @@ class RecommendOpenChatPageController
         StaticDataFile $staticDataGeneration,
         string $tag
     ) {
-        AppConfig::$listLimitTopRanking = 5;
+        AppConfig::$listLimitTopRanking = 10;
 
         if (MimimalCmsConfig::$urlRoot === '') {
             if (isset(RecommendTagFilters::RedirectTags[$tag]))
