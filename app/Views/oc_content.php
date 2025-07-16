@@ -129,7 +129,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocThirdWide']) ?>
 
     <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
       <div><?php echo t('オープンチャットの情報') ?></div>
