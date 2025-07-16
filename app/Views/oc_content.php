@@ -374,6 +374,23 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         myListJsonCookie.set('expires', expiresTimestamp)
       })
     </script>
+    <?php if (AppConfig::$enableCloudflare): ?>
+      <script type="module">
+        import {
+          getComment
+        } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
+
+        getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
+      </script>
+    <?php else: ?>
+      <script type="module">
+        import {
+          applyTimeElapsedString
+        } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
+
+        applyTimeElapsedString()
+      </script>
+    <?php endif ?>
   <?php endif ?>
 
   <?php echo $_breadcrumbsShema ?>
