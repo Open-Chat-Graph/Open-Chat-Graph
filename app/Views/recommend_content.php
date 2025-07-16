@@ -24,7 +24,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
 
     <section class="recommend-header-wrapper">
 
@@ -74,7 +74,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $extractTag) ?><br>
       <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
     </p>
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopWide']) ?>
     <?php if (isset($recommend)) : ?>
       <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
         <aside class="list-aside">
@@ -146,7 +145,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php endif ?>
 
             </li>
-            <?php if ($listsLastKey !== $key) : ?>
+            <?php if ($key === 0) : ?>
+              <li>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorRectangle']) ?>
+              </li>
+            <?php elseif ($listsLastKey !== $key) : ?>
               <li>
                 <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
               </li>

@@ -42,6 +42,11 @@ class OpenChatPageController
 
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
         $topPageDto = $staticDataGeneration->getTopPageData();
+        $topPageDto->recentCommentList = $recentCommentListRepository->findRecentCommentOpenChatAll(
+            0,
+            15,
+            open_chat_id: $open_chat_id,
+        );
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);

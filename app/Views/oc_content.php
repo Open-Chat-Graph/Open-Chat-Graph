@@ -12,7 +12,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopHorizontal']) ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
       <div class="talkroom_banner_img_area">
@@ -112,9 +112,50 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
 
     </section>
-
     <hr class="hr-top" style="margin-bottom: 0;">
+    <?php if (isset($_adminDto)) : ?>
+      <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
+    <?php endif ?>
+    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
+      <h2 class="graph-title" style="margin-bottom: .5rem;">
+        <div><?php echo t('メンバー数の推移グラフ') ?></div>
+      </h2>
+      <!-- グラフセクション -->
+      <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
+        <div class="chart-canvas-box" id="dummy-canvas"></div>
+        <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
+      </div>
+      <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
 
+    </section>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+
+    <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
+      <div><?php echo t('オープンチャットの情報') ?></div>
+    </h2>
+    <hr class="hr-top" style="margin-bottom: 0;">
+    <div class="title-bar" style="margin: 1rem;">
+      <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div class="title-bar-oc-name-wrapper">
+          <div class="title-bar-oc-name" style="font-size: 12px; color: #111"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+          <div class="title-bar-oc-member" style="font-size: 12px; color: #111">(<?php echo formatMember($oc['member']) ?>)</div>
+        </div>
+      </div>
+      <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
+        <?php if (isset($oc['api_created_at'])) : ?>
+          <span class="number-box created-at">
+            <div class="openchat-itme-stats-title"><?php echo t('ルーム開設') ?></div>
+            <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
+          </span>
+        <?php endif ?>
+        <span class="number-box created-at registed">
+          <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
+          <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
+        </span>
+      </div>
+    </div>
     <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
@@ -160,56 +201,15 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </section>
       </div>
     </nav>
-
-    <?php GAd::output(GAd::AD_SLOTS['ocTopWide2']) ?>
-
-    <?php if (isset($_adminDto)) : ?>
-      <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
-    <?php endif ?>
-    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
-
-      <div class="title-bar">
-        <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <h2 class="graph-title">
-            <div><?php echo t('メンバー数の推移グラフ') ?></div>
-          </h2>
-          <div class="title-bar-oc-name-wrapper">
-            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-            <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
-          </div>
-        </div>
-        <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
-          <?php if (isset($oc['api_created_at'])) : ?>
-            <span class="number-box created-at">
-              <div class="openchat-itme-stats-title"><?php echo t('ルーム開設') ?></div>
-              <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
-            </span>
-          <?php endif ?>
-          <span class="number-box created-at registed">
-            <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
-            <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
-          </span>
-        </div>
-      </div>
-      <!-- グラフセクション -->
-      <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
-        <div class="chart-canvas-box" id="dummy-canvas"></div>
-        <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
-      </div>
-      <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
-
-    </section>
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-    ?>
+    <hr class="hr-top" style="margin-bottom: 0;">
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
       ?>
     <?php endif ?>
 
@@ -217,7 +217,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
       ?>
     <?php endif ?>
 
@@ -225,7 +225,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
       ?>
     <?php endif ?>
 
@@ -234,12 +234,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
       ?>
     <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -254,39 +255,40 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           </div>
         </div>
         <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0; padding-top: 12px;">
-          <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
-            <span class="ranking-readMore">他のルームのコメントを見る（タイムライン）</span>
-          </a>
+        <hr class="hr-top" style="margin: 1rem 0;">
+        <aside class="recent-comment-list" style="padding-bottom: 0;">
+          <?php if ($topPageDto->recentCommentList): ?>
+            <?php viewComponent('top_ranking_recent_comments', [
+              'recentCommentList' => $topPageDto->recentCommentList,
+              'title' => '最近投稿された他ルームのコメント',
+            ]) ?>
+          <?php endif ?>
         </aside>
       </section>
     <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
     <?php endif ?>
 
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocTopHorizontal']) ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-    ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
     ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
-
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <?php viewComponent('footer_inner') ?>
 

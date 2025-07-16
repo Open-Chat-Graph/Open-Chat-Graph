@@ -4,17 +4,17 @@
     <nav class="footer-link-box-outer">
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
+                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
+                    <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
+                <li><a class="unset" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
+            <? endif ?>
+            <li><a class="unset" href="<?php echo url('policy/privacy') ?>"><?php echo t('プライバシーポリシー') ?></a></il>
+            </ul>
+            <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></il>
                     <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></il>
                 <? endif ?>
-                <li><a class="unset" href="<?php echo url('policy/privacy') ?>"><?php echo t('プライバシーポリシー') ?></a></il>
-            </ul>
-            <ul class="footer-link-inner">
-                <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
-                    <li><a class="unset" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
-                <? endif ?>
-                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
             </ul>
         </section>
         <hr class="hr-bottom" style="margin: 0 1rem; padding: 3.5px 0; margin-top: 4px;">

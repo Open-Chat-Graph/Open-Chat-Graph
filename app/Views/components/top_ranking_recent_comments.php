@@ -2,7 +2,7 @@
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
             <h2 class="unset">
-                <span class="openchat-list-title">最近のコメント投稿</span>
+                <span class="openchat-list-title"><?php echo $title ?? '最近のコメント投稿' ?></span>
             </h2>
         </div>
     </header>
