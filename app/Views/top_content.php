@@ -41,6 +41,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
+        <hr class="hr-top" style="margin-bottom: 0;">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
