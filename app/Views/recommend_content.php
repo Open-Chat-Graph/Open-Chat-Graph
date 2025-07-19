@@ -179,10 +179,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['recommendTopHorizontal']) ?>
-    <aside class="top-ranking-list-aside">
+    <aside class="top-ranking-list-aside" style="margin-bottom: 2rem;">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
-    <hr class="hr-top" style="margin-bottom: 0;">
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
