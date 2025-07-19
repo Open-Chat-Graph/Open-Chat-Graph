@@ -126,9 +126,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
       <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
     </section>
-    <hr class="hr-top" style="margin-bottom: 0;">
+    <hr class="hr-top" style="margin-bottom: 1rem;">
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    <hr class="hr-top" style="margin-bottom: 0;">
+    <hr class="hr-top" style="margin-bottom: 0; margin-top: 1rem;">
     <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
       <div><?php echo t('オープンチャットの詳細') ?></div>
     </h2>
