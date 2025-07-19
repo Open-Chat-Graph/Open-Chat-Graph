@@ -41,9 +41,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>

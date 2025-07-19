@@ -19,7 +19,7 @@ class IndexPageController
         PageBreadcrumbsListSchema $pageBreadcrumbsListSchema,
         OfficialPageList $officialPageList,
     ) {
-        AppConfig::$listLimitTopRanking = 20;
+        AppConfig::$listLimitTopRanking = 10;
         $dto = $staticDataGeneration->getTopPageData();
 
         $_css = ['room_list', 'site_header', 'site_footer', 'search_form', 'recommend_list'];

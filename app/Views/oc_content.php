@@ -125,15 +125,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
       </div>
       <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
-
     </section>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocThirdWide']) ?>
-
-    <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
-      <div><?php echo t('オープンチャットの情報') ?></div>
-    </h2>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <hr class="hr-top" style="margin-bottom: 0;">
+    <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
+      <div><?php echo t('オープンチャットの詳細') ?></div>
+    </h2>
     <div class="title-bar" style="margin: 1rem;">
       <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
       <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -180,7 +177,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <div style="display: flex; flex-direction: column">
         <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
           <?php if ($oc['url']) : ?>
-            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link">
+            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 18px; padding: 8px 20px;">
               <div style="display: flex; align-items: center; justify-content: center;">
                 <?php if ($oc['join_method_type'] !== 0) : ?>
                   <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
@@ -200,15 +197,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </section>
       </div>
     </nav>
-    <hr class="hr-top" style="margin-bottom: 0;">
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <hr class="hr-top" style="margin-bottom: 1rem;">
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -216,7 +212,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -224,7 +220,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -233,13 +229,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
       ?>
     <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocListBottomWide']) ?>
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
@@ -268,7 +263,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
 
@@ -278,12 +273,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
     </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle'])
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
     ?>
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
