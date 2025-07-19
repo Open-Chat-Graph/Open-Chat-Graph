@@ -269,7 +269,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <aside class="recommend-list-aside" style="margin-bottom: 2rem;">
+    <aside class="recommend-list-aside" style="margin-bottom: 24px;">
       <?php viewComponent('topic_tag', compact('topPageDto')) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>

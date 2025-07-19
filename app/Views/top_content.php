@@ -37,7 +37,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <div class="modify-top-padding" style="margin-bottom: 2rem;">
+        <div class="modify-top-padding" style="margin-bottom: 24px;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
