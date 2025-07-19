@@ -44,12 +44,12 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
-
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php if ($dto->recentCommentList): ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
+
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
