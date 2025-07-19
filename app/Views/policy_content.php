@@ -12,9 +12,6 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
     </script>
     <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
-    <div class="ads-wropper">
-        <?php GAd::output(GAd::AD_SLOTS['siteTopWide']) ?>
-    </div>
     <main style="overflow: hidden;">
         <article class="terms">
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
@@ -139,14 +136,10 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <span id="comments" aria-hidden="true"></span>
                 </p>
 
-                <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-
                 <h2 style="margin-bottom: 2rem;">オプチャグラフに関する情報共有・コメント</h2>
                 <div style="min-height: 400px;">
                     <div id="comment-root"></div>
                 </div>
-
-                <?php GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
 
                 <h2>メールでのお問い合わせ先</h2>
                 <p>オプチャグラフお問い合わせ窓口: <a href="mailto:support@openchat-review.me">support@openchat-review.me</a></p>

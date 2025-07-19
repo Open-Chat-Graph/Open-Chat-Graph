@@ -122,7 +122,6 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
         <!-- 次のページ・前のページボタン -->
         <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
     </article>
-    <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive']) ?>
     <section class="unset" style="display: block;">
 
         <?php viewComponent('footer_inner') ?>
