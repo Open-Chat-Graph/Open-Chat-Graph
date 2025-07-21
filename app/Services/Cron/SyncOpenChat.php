@@ -12,6 +12,7 @@ use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
+use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastHourChecker;
@@ -200,13 +201,15 @@ class SyncOpenChat
 
     function isAfterRetryNotificationTime(): bool
     {
+        $currentTime = OpenChatServicesUtility::getModifiedCronTime('now');
+
         return !isDailyUpdateTime()
-            && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
-            && !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
-            && !isDailyUpdateTime(new \DateTime('-3 hour'), new \DateTime('-3 hour'))
-            && !isDailyUpdateTime(new \DateTime('-4 hour'), new \DateTime('-4 hour'))
-            && !isDailyUpdateTime(new \DateTime('-5 hour'), new \DateTime('-5 hour'))
-            && !isDailyUpdateTime(new \DateTime('-6 hour'), new \DateTime('-6 hour'));
+            && !isDailyUpdateTime($currentTime->modify('-1 hour'), $currentTime->modify('-1 hour'))
+            && !isDailyUpdateTime($currentTime->modify('-2 hour'), $currentTime->modify('-2 hour'))
+            && !isDailyUpdateTime($currentTime->modify('-3 hour'), $currentTime->modify('-3 hour'))
+            && !isDailyUpdateTime($currentTime->modify('-4 hour'), $currentTime->modify('-4 hour'))
+            && !isDailyUpdateTime($currentTime->modify('-5 hour'), $currentTime->modify('-5 hour'))
+            && !isDailyUpdateTime($currentTime->modify('-6 hour'), $currentTime->modify('-6 hour'));
     }
 
     /**
