@@ -3,6 +3,7 @@
 <?php
 
 use App\Config\AppConfig;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -12,8 +13,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
+    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+      <div style="margin: -16px 0;">
+        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+      </div>
+    <?php endif ?>
     <!-- オープンチャット表示ヘッダー -->
-    <section class="openchat-header unset" style="padding: 10px 1rem 0 1rem;">
+    <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
       <div class="talkroom_banner_img_area">
         <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
@@ -111,46 +117,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       </div>
 
     </section>
-    <hr class="hr-top" style="margin-bottom: 0;">
-    <?php if (isset($_adminDto)) : ?>
-      <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
-    <?php endif ?>
-    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
-      <h2 class="graph-title" style="margin-bottom: .5rem;">
-        <div><?php echo t('メンバー数の推移グラフ') ?></div>
-      </h2>
-      <!-- グラフセクション -->
-      <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
-        <div class="chart-canvas-box" id="dummy-canvas"></div>
-        <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
-      </div>
-      <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
-    </section>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    <h2 class="graph-title" style="margin: 0rem 1rem; margin-top: 1rem">
-      <div><?php echo t('オープンチャットの詳細') ?></div>
-    </h2>
-    <div class="title-bar" style="margin: 1rem;">
-      <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
-      <div style="display: flex; flex-direction: column; gap: 2px;">
-        <div class="title-bar-oc-name-wrapper">
-          <div class="title-bar-oc-name" style="font-size: 12px; color: #111"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-          <div class="title-bar-oc-member" style="font-size: 12px; color: #111">(<?php echo formatMember($oc['member']) ?>)</div>
-        </div>
-      </div>
-      <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
-        <?php if (isset($oc['api_created_at'])) : ?>
-          <span class="number-box created-at">
-            <div class="openchat-itme-stats-title"><?php echo t('ルーム開設') ?></div>
-            <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
-          </span>
-        <?php endif ?>
-        <span class="number-box created-at registed">
-          <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
-          <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
-        </span>
-      </div>
-    </div>
+
+    <hr class="hr-top" style="margin-bottom: 8px;">
+
     <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
         <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
@@ -176,7 +145,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <div style="display: flex; flex-direction: column">
         <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
           <?php if ($oc['url']) : ?>
-            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 18px; padding: 8px 20px;">
+            <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 15px; padding: 10px 20px;">
               <div style="display: flex; align-items: center; justify-content: center;">
                 <?php if ($oc['join_method_type'] !== 0) : ?>
                   <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
@@ -196,8 +165,49 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </section>
       </div>
     </nav>
-    <hr class="hr-top" style="margin-bottom: 1rem;">
-
+    <?php if (isset($_adminDto)) : ?>
+      <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
+    <?php endif ?>
+    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+      <div style="margin: -8px 0;">
+        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+      </div>
+    <?php else: ?>
+      <hr class="hr-top" style="margin-bottom: 8px;">
+    <?php endif ?>
+    <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
+      <div class="title-bar" style="margin-bottom: 1.5rem;">
+        <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 class="graph-title">
+            <div><?php echo t('メンバー数の推移グラフ') ?></div>
+          </h2>
+          <div class="title-bar-oc-name-wrapper">
+            <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+            <div class="title-bar-oc-member">(<?php echo formatMember($oc['member']) ?>)</div>
+          </div>
+        </div>
+        <div style="margin-left: auto; display: flex; flex-direction: column; gap: 2px;">
+          <?php if (isset($oc['api_created_at'])) : ?>
+            <span class="number-box created-at">
+              <div class="openchat-itme-stats-title"><?php echo t('ルーム開設') ?></div>
+              <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['api_created_at'], format: 'Y/m/d') ?></div>
+            </span>
+          <?php endif ?>
+          <span class="number-box created-at registed">
+            <div class="openchat-itme-stats-title"><?php echo t('登録') ?></div>
+            <div class="openchat-itme-stats-title" style="margin-left: 4px;"><?php echo convertDatetime($oc['created_at'], format: 'Y/m/d') ?></div>
+          </span>
+        </div>
+      </div>
+      <!-- グラフセクション -->
+      <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
+        <div class="chart-canvas-box" id="dummy-canvas"></div>
+        <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
+      </div>
+      <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
+    </section>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
@@ -242,7 +252,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         </aside>
       </section>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    <?php endif ?>  
+    <?php endif ?>
 
     <?php if ($recommend[0] && $recommend[3]) : ?>
       <aside class="recommend-list-aside">

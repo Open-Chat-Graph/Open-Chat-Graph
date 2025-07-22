@@ -35,6 +35,10 @@ class RecommendUtility
         'ミセスグリーンアップル' => 'ミセス',
     ];
 
+    const AdEnhancementTag = [
+        '下ネタ',
+    ];
+
     static function extractTag(string|int $str): string
     {
         if (MimimalCmsConfig::$urlRoot !== '') {
@@ -54,5 +58,10 @@ class RecommendUtility
         }
 
         return self::OmitPettern[$str] ?? $str;
+    }
+
+    static function isAdEnhancementTag(string $tag): bool
+    {
+        return in_array($tag, self::AdEnhancementTag, true);
     }
 }
