@@ -115,7 +115,7 @@ Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'n
 Route::path('recommend')
     ->matchStr('tag', maxLen: 100)
     ->match(function (string $tag) {
-        return redirect(url('recommend/' . urlencode($tag)));
+        return redirect(url('recommend/' . urlencode($tag)), 301);
     });
 
 Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
