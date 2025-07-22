@@ -53,7 +53,7 @@ if ($recommend->type === RecommendListType::Category) {
             <span class="ranking-readMore"><?php echo sprintfT('%sをもっと見る', $recommend->listName) ?></span>
         </a>
     <?php else : ?>
-        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
+        <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url("recommend/" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
             <span class="ranking-readMore"><?php echo sprintfT('%sをもっと見る', RecommendUtility::extractTag($recommend->listName)) ?></span>
         </a>
     <?php endif ?>

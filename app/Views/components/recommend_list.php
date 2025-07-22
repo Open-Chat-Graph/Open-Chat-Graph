@@ -22,7 +22,7 @@ use App\Services\Recommend\Enum\RecommendListType;
                         </h3>
                     <?php endif ?>
                 <?php else : ?>
-                    <a class="unset" href="<?php echo url("recommend?tag=" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
+                    <a class="unset" href="<?php echo url("recommend/" . urlencode(htmlspecialchars_decode($recommend->listName))) ?>">
                         <h3>
                             <div style="text-wrap: wrap;">「<?php echo $recommend->listName ?>」の</div>
                             <div>おすすめ</div>

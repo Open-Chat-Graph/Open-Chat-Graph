@@ -27,7 +27,7 @@ class RecommendOpenChatPageController
 
         if (MimimalCmsConfig::$urlRoot === '') {
             if (isset(RecommendTagFilters::RedirectTags[$tag]))
-                return redirect('recommend?tag=' . urlencode(RecommendTagFilters::RedirectTags[$tag]), 301);
+                return redirect('recommend/' . urlencode(RecommendTagFilters::RedirectTags[$tag]), 301);
 
             $extractTag = RecommendUtility::extractTag($tag);
         } else {
@@ -63,7 +63,7 @@ class RecommendOpenChatPageController
             $extractTag,
         );
 
-        $canonical = url('recommend?tag=' . urlencode($tag));
+        $canonical = url('recommend/' . urlencode($tag));
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 

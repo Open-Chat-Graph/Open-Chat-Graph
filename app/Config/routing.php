@@ -111,10 +111,18 @@ Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'n
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
-Route::path('recommend', [RecommendOpenChatPageController::class, 'index'])
+// タグ関連のルーティング
+Route::path('recommend')
+    ->matchStr('tag', maxLen: 100)
+    ->match(function (string $tag) {
+        return redirect(url('recommend/' . urlencode($tag)));
+    });
+
+Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 100)
     ->match(function (string $tag) {
         handleRequestWithETagAndCache($tag);
+        return ['tag' => urldecode($tag)];
     });
 
 Route::path(

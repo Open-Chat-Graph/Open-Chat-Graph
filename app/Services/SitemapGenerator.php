@@ -73,7 +73,7 @@ class SitemapGenerator
         }
 
         foreach ($this->recommendUpdater->getAllTagNames() as $tag) {
-            $sitemap->addItem($this->currentUrl . 'recommend?tag=' . urlencode($tag), lastmod: $datetime);
+            $sitemap->addItem($this->currentUrl . 'recommend/' . urlencode($tag), lastmod: $datetime);
         }
 
         foreach ($this->recommendUpdater->getAllTagNames() as $tag) {

@@ -18,7 +18,7 @@ function greenTag($word)
 {
 ?>
     <li>
-        <a class="hour tag-btn" href="<?php echo url('recommend?tag=' . urlencode(htmlspecialchars_decode($word))) ?>">
+        <a class="hour tag-btn" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($word))) ?>">
             <?php echo RecommendUtility::extractTag($word) ?>
             <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
                 <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
@@ -51,7 +51,7 @@ function greenTag($word)
 
             <?php foreach ($tags['hour24'] as $key => $word) : ?>
                 <li>
-                    <a class="tag-btn" href="<?php echo url('recommend?tag=' . urlencode(htmlspecialchars_decode($word))) ?>">
+                    <a class="tag-btn" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($word))) ?>">
                         <?php echo RecommendUtility::extractTag($word) ?>
                     </a>
                 </li>
