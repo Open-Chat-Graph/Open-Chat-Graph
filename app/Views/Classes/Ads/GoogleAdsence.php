@@ -111,7 +111,7 @@ class GoogleAdsence
      */
     static function output(array $adElement)
     {
-        if (AppConfig::$isStaging || AppConfig::$disableAds || AppConfig::$disableAdTags) return;
+        if (AppConfig::$isStaging || AppConfig::$disableAds || (AppConfig::$disableAdTags ?? false)) return;
 
         if (count($adElement) === 1) {
             self::responsive($adElement[0], 'responsive-google');
