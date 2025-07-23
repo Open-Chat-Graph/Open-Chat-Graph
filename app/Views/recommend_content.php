@@ -3,7 +3,6 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -25,11 +24,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-    <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
-      <div style="margin: -16px 0;">
-        <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
-      </div>
-    <?php endif ?>
     <section class="recommend-header-wrapper">
 
       <div class="recommend-header-bottom" style="padding-top: 8px;">

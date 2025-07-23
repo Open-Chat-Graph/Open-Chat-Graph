@@ -3,7 +3,6 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -13,11 +12,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
-    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
-      <div style="margin: -16px 0;">
-        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-      </div>
-    <?php endif ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
       <div class="talkroom_banner_img_area">
@@ -168,13 +162,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php if (isset($_adminDto)) : ?>
       <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
     <?php endif ?>
-    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
-      <div style="margin: -8px 0;">
-        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-      </div>
-    <?php else: ?>
-      <hr class="hr-top" style="margin-bottom: 8px;">
-    <?php endif ?>
+    <hr class="hr-top" style="margin-bottom: 8px;">
     <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
       <div class="title-bar" style="margin-bottom: 1.5rem;">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
