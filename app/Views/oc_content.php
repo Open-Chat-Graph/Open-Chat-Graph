@@ -180,7 +180,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <h2 class="graph-title">
-            <div><?php echo t('メンバー数の推移グラフ') ?></div>
+            <div><?php echo t('メンバー数推移') ?></div>
           </h2>
           <div class="title-bar-oc-name-wrapper">
             <div class="title-bar-oc-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
