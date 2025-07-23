@@ -55,4 +55,15 @@ class RecommendUtility
 
         return self::OmitPettern[$str] ?? $str;
     }
+
+    static function getValidTag(string|int $str): string|false
+    {
+        $lowercaseTag = strtolower((string)$str);
+        foreach (self::OmitPettern as $key => $originalTag) {
+            if (strtolower($key) === $lowercaseTag) {
+                return $originalTag;
+            }
+        }
+        return false;
+    }
 }

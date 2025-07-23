@@ -141,7 +141,7 @@ class AppConfig
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
     // TODO: 試験的に広告タグを無効化するフラグ
-    static bool $disableAdTags = true;
+    static bool $disableAdTags = false;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [

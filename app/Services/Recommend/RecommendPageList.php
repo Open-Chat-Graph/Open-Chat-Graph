@@ -20,9 +20,15 @@ class RecommendPageList
         return $this->recommendStaticDataGenerator->getRecomendRanking($tag);
     }
 
-    function isValidTag(string $tag): bool
+    function getValidTag(string $tag): string|false
     {
         $tags = $this->recommendUpdater->getAllTagNames();
-        return in_array($tag, $tags);
+        $lowercaseTag = strtolower($tag);
+        foreach ($tags as $originalTag) {
+            if (strtolower($originalTag) === $lowercaseTag) {
+            return $originalTag;
+            }
+        }
+        return false;
     }
 }

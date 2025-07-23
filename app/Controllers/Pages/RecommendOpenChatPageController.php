@@ -24,19 +24,20 @@ class RecommendOpenChatPageController
         string $tag
     ) {
         AppConfig::$listLimitTopRanking = 10;
-
         if (MimimalCmsConfig::$urlRoot === '') {
             if (isset(RecommendTagFilters::RedirectTags[$tag]))
                 return redirect('recommend/' . urlencode(RecommendTagFilters::RedirectTags[$tag]), 301);
-
-            $extractTag = RecommendUtility::extractTag($tag);
+            
+            $extractTag = RecommendUtility::getValidTag($tag);
         } else {
             $extractTag = $tag;
         }
-
-
-        if (!$recommendPageList->isValidTag($tag))
+        
+        $tag = $recommendPageList->getValidTag($tag);
+        if (!$tag)
             return false;
+
+        $extractTag = $extractTag ?: $tag;
 
         $_dto = $staticDataGeneration->getRecommendPageDto();
 
