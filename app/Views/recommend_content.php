@@ -100,11 +100,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       </header>
     <?php endif ?>
     <section class="recommend-ranking-section">
-      <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
-        <div style="margin: -16px 0;">
-          <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
-        </div>
-      <?php endif ?>
       <?php if (isset($recommend)) : ?>
         <ol class="openchat-item-list parent unset">
           <?php
