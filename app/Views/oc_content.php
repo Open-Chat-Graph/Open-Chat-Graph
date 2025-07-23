@@ -3,6 +3,7 @@
 <?php
 
 use App\Config\AppConfig;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsence as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -12,6 +13,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="unset openchat body" style="overflow: hidden;">
+    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+      <div style="margin: -16px 0;">
+        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+      </div>
+    <?php endif ?>
     <!-- オープンチャット表示ヘッダー -->
     <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
       <div class="talkroom_banner_img_area">
@@ -112,7 +118,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     </section>
 
-    <hr class="hr-top" style="margin-bottom: 8px;">
+    <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+      <div style="margin: -8px 0;">
+        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
+      </div>
+    <?php else: ?>
+      <hr class="hr-top" style="margin-bottom: 8px;">
+    <?php endif ?>
 
     <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
       <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
