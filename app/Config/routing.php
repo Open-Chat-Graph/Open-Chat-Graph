@@ -113,13 +113,13 @@ Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'n
 
 // タグ関連のルーティング
 Route::path('recommend')
-    ->matchStr('tag', maxLen: 100)
+    ->matchStr('tag', maxLen: 1000)
     ->match(function (string $tag) {
         return redirect(url('recommend/' . urlencode($tag)), 301);
     });
 
 Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
-    ->matchStr('tag', maxLen: 100)
+    ->matchStr('tag', maxLen: 1000)
     ->match(function (string $tag) {
         handleRequestWithETagAndCache($tag);
         return ['tag' => urldecode($tag)];
