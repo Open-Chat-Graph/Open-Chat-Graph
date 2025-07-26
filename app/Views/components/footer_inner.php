@@ -13,6 +13,7 @@
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></il>
                     <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
+                <li><a class="unset" href="<?php echo url('labs/live') ?>">ライブトーク分析ツール</a></il>
                 <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></il>
                 <? endif ?>
             </ul>

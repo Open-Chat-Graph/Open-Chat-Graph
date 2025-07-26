@@ -18,6 +18,7 @@ use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdsRegistrationPageController;
 use App\Controllers\Pages\FuriganaPageController;
+use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
@@ -177,6 +178,18 @@ Route::path(
         handleRequestWithETagAndCache("recent-comments");
     });
 
+Route::path(
+    'labs',
+    [LabsPageController::class, 'index']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path(
+    'labs/live',
+    [LabsPageController::class, 'live']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 /* Route::path(
     'labs/tags',
     [TagLabsPageController::class, 'index']
@@ -189,7 +202,7 @@ Route::path(
         handleRequestWithETagAndCache("labs/tags");
     }); */
 
-Route::path(
+/* Route::path(
     'labs/publication-analytics',
     [RankingBanLabsPageController::class, 'index']
 )
@@ -203,7 +216,7 @@ Route::path(
             return false;
 
         handleRequestWithETagAndCache(json_encode($reception->input()));
-    });
+    }); */
 
 // コメントAPI
 Route::path(

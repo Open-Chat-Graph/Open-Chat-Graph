@@ -64,10 +64,6 @@
     margin-bottom: 1rem;
 }
 
-.site_header_outer {
-    position: absolute;
-}
-
 hr {
     margin: 1rem 0;
 }
@@ -168,7 +164,7 @@ table th {
 }
 
 form {
-    margin: 2rem 0;
+    margin: 2rem 0 0 0;
     font-size: 13px;
 }
 
@@ -206,4 +202,17 @@ form {
     .chart-btn:hover:not(:disabled) {
         background-color: #f1f5f9;
     }
+}
+
+#graph-area.hidden-graph {
+    display: flex;
+    flex-direction: column;
+}
+
+.hidden-graph .file-form {
+    order: 1;
+}
+
+.hidden-graph .ko-wrapper {
+    order: 2;
 }
