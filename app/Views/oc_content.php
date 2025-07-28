@@ -217,14 +217,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       ?>
     <?php endif ?>
 
-    <?php if ($recommend[1]) : ?>
-      <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-      </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
-    <?php endif ?>
-
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
@@ -254,14 +246,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
-    <?php if ($recommend[0] && $recommend[3]) : ?>
-      <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-      </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
-    <?php endif ?>
-
     <?php if (isset($officialDto) && $officialDto) : ?>
       <aside class="recommend-list-aside">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
@@ -273,7 +257,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <aside class="recommend-list-aside" style="margin-bottom: 24px;">
-      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
+      <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
@@ -282,9 +266,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
     ?>
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
-    </aside>
 
     <?php viewComponent('footer_inner') ?>
 

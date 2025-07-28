@@ -187,18 +187,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
     <aside class="top-ranking-list-aside" style="margin-bottom: 24px;">
-      <?php viewComponent('topic_tag', compact('topPageDto')) ?>
+      <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-    </aside>
-
-
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-
-    <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_week', ['dto' => $topPageDto]) ?>
     </aside>
 
     <?php viewComponent('footer_inner') ?>
