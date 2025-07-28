@@ -30,6 +30,7 @@ class AppConfig
     const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
     static int $listLimitTopRanking = 10;
+    static int $tagListLimit = 3;
     const LIST_LIMIT_MY_LIST = 50;
     const LIST_LIMIT_RECENT_COMMENT = 50;
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
