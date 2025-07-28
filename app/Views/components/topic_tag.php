@@ -56,7 +56,7 @@ function greenTag($word)
             <?php endforeach ?>
 
             <?php foreach ($tags['hour24'] as $key2 => $word) : ?>
-                <?php if ($key + $key2 + 2 <= $tagLimit): ?>
+                <?php if (($key ?? 0) + $key2 + 2 <= $tagLimit): ?>
                     <li>
                         <a class="tag-btn" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($word))) ?>">
                             <?php echo RecommendUtility::extractTag($word) ?>
@@ -67,7 +67,7 @@ function greenTag($word)
                 <?php endif ?>
             <?php endforeach ?>
 
-            <?php if ($key + $key2 + 2 >= 21) : ?>
+            <?php if (($key ?? 0) + ($key2 ?? 0) + 2 >= 21) : ?>
                 <li id="open-btn-li">
                     <button class="unset tag-btn open-btn" onclick="this.parentElement.parentElement.classList.toggle('open')"></button>
                 </li>
