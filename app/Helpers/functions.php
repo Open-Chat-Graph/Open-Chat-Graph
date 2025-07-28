@@ -626,3 +626,38 @@ function sprintfT(string $format, string|int ...$values): string
     $text = t($format);
     return sprintf($text, ...$values);
 }
+
+/**
+ * 説明文を指定文字数で切り詰める
+ * @param string $text 元のテキスト
+ * @param int $limit 文字数制限
+ * @param string $suffix 省略記号
+ * @return string 切り詰められたテキスト
+ */
+function truncateDescription($text, $limit = 120, $suffix = '...')
+{
+    // 改行やタブを半角スペースに変換
+    $text = preg_replace('/[\r\n\t]+/', ' ', $text);
+
+    // 連続する半角スペースを1つに
+    $text = preg_replace('/\s+/', ' ', $text);
+
+    // 前後の空白を削除
+    $text = trim($text);
+
+    // 文字数チェック
+    if (mb_strlen($text, 'UTF-8') <= $limit) {
+        return $text;
+    }
+
+    // 指定文字数で切り取り
+    $truncated = mb_substr($text, 0, $limit, 'UTF-8');
+
+    // 単語の途中で切れないように調整（日本語対応）
+    $lastSpace = mb_strrpos($truncated, ' ', 0, 'UTF-8');
+    if ($lastSpace !== false && $lastSpace > $limit * 0.8) {
+        $truncated = mb_substr($truncated, 0, $lastSpace, 'UTF-8');
+    }
+
+    return $truncated . $suffix;
+}

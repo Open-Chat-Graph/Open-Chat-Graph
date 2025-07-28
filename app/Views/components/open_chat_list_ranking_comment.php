@@ -27,7 +27,7 @@ $count3 = 0;
             </div>
           </a>
         </h3>
-        <p class="openchat-item-desc unset"><?php echo $oc['description'] ?></p>
+        <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description']) ?></p>
       </li>
     <?php else : ?>
       <?php $count2++ ?>

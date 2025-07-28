@@ -10,7 +10,7 @@ class OcPageMeta
     {
         $name = $oc['name'];
 
-        $desc = $oc['description'] ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
+        $desc = truncateDescription($oc['description'], 160) ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
         
         return meta()
             ->setTitle($name)
