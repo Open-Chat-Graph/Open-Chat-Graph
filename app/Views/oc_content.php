@@ -408,9 +408,19 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         // 半数以上がブロックされていたらtrue
         return totalCount > 0 && (blockedCount / totalCount) >= 0.5;
       }
-      setTimeout(() => {
-        detectAdBlock() && alert('アドブロック検出: iframe が 1px に縮小されています');
-      }, 1000)
+      
+      // 使用方法2: もっとシンプルに（インターバルで監視）
+      const checkInterval = setInterval(() => {
+        if (document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')) {
+          clearInterval(checkInterval);
+          if (detectAdBlock()) {
+            alert('アドブロック検出: iframe が 1px に縮小されています');
+          }
+        }
+      }, 200); // 200ms間隔でチェック
+
+      // 10秒後には必ず停止
+      setTimeout(() => clearInterval(checkInterval), 10000);
     </script>
   <?php endif ?>
 </body>
