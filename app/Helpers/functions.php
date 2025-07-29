@@ -578,6 +578,13 @@ function adminMode(): true
     return true;
 }
 
+function isAdmin(): bool
+{
+    /** @var AdminAuthService $adminAuthService */
+    $adminAuthService = app(AdminAuthService::class);
+    return $adminAuthService->auth();
+}
+
 function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 {
     $path = $fullPath === false ? (__DIR__ . '/../../storage/' . $filename) : $filename;

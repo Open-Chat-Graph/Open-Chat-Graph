@@ -305,7 +305,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   ?>
     <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
   <?php endif ?>
-
+  <script>
+    const admin = <?php echo (string)isAdmin(); ?>;
+  </script>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではマイリストが無効

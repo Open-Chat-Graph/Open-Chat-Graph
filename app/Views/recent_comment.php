@@ -135,7 +135,9 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
 
         applyTimeElapsedString()
     </script>
-
+    <script>
+        const admin = <?php echo (string)isAdmin(); ?>;
+    </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
         ;

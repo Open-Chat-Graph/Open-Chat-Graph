@@ -80,6 +80,9 @@
         const liveTalkAnalyzer = new LiveTalkAnalyzerEventListener(7);
         liveTalkAnalyzer.eventListener();
     </script>
+    <script>
+        const admin = <?php echo (string)isAdmin(); ?>;
+    </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 </body>
 

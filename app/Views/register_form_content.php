@@ -86,6 +86,9 @@
         // 古いSafariの対策
         addOpenChatForm.addEventListener('submit', e => e.target.elements['submit'].disabled && e.preventDefault())
     </script>
+    <script>
+        const admin = <?php echo (string)isAdmin(); ?>;
+    </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 </body>
 
