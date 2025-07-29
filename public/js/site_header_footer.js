@@ -319,4 +319,5 @@ if (typeof admin === "undefined" || !admin) {
 
   // 10秒後には必ず停止
   setTimeout(() => clearInterval(checkInterval), 10000);
+  console.log("AdBlock検出の監視を開始しました");
 }
