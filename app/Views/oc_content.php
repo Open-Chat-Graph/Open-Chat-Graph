@@ -408,7 +408,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         // 半数以上がブロックされていたらtrue
         return totalCount > 0 && (blockedCount / totalCount) >= 0.5;
       }
-      detectAdBlock()
+      setTimeout(() => {
+        detectAdBlock()
+      }, 1000)
     </script>
   <?php endif ?>
 </body>
