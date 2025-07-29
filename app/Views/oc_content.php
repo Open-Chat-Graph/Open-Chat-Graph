@@ -373,44 +373,102 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <?php echo $_breadcrumbsShema ?>
   <?php if ($oc['id'] === 149382): ?>
     <script>
+      // シンプルなGoogle AdSenseアドブロック検出
       function detectAdBlock() {
-        // すべてのAdSense要素を取得
-        const adElements = document.querySelectorAll('.adsbygoogle');
+        const adElements = document.querySelectorAll('.adsbygoogle[data-adsbygoogle-status="done"]');
 
-        if (adElements.length === 0) {
-          console.log('AdSense要素が見つかりません');
-          return false;
-        }
+        if (adElements.length === 0) return false;
 
         let blockedCount = 0;
-        let totalCount = 0;
 
-        adElements.forEach(adElement => {
-          // data-adsbygoogle-status="done" の要素のみチェック
-          if (adElement.getAttribute('data-adsbygoogle-status') === 'done') {
-            totalCount++;
-
-            // iframe内のiframeを探す
-            const iframe = adElement.querySelector('iframe');
-
-            if (iframe) {
-              const style = window.getComputedStyle(iframe);
-
-              // 1pxに縮小されているかチェック
-              if (style.width === '1px' && style.height === '1px') {
-                blockedCount++;
-                console.log('アドブロック検出: iframe が 1px に縮小されています');
-              }
+        adElements.forEach(ad => {
+          const iframe = ad.querySelector('iframe');
+          if (iframe) {
+            const style = window.getComputedStyle(iframe);
+            if (style.width === '1px' && style.height === '1px') {
+              blockedCount++;
             }
           }
         });
 
-        // 半数以上がブロックされていたらtrue
-        return totalCount > 0 && (blockedCount / totalCount) >= 0.5;
+        return blockedCount > 0 && (blockedCount / adElements.length) >= 0.5;
       }
-      setTimeout(() => {
-        detectAdBlock() && alert('アドブロック検出: iframe が 1px に縮小されています');
-      }, 1000)
+
+      // AdSense読み込み完了を監視
+      function watchAdSenseLoad(callback) {
+        const observer = new MutationObserver((mutations) => {
+          // data-adsbygoogle-status="done"が追加されたかチェック
+          for (const mutation of mutations) {
+            if (mutation.type === 'attributes' &&
+              mutation.attributeName === 'data-adsbygoogle-status' &&
+              mutation.target.classList.contains('adsbygoogle') &&
+              mutation.target.getAttribute('data-adsbygoogle-status') === 'done') {
+
+              // 新しく読み込み完了した広告を発見
+              const hasAdBlock = detectAdBlock();
+              callback(hasAdBlock);
+
+              // 必要に応じてobserverを停止
+              // observer.disconnect();
+            }
+          }
+        });
+
+        // body全体を監視
+        observer.observe(document.body, {
+          attributes: true,
+          subtree: true,
+          attributeFilter: ['data-adsbygoogle-status']
+        });
+
+        return observer;
+      }
+
+      // 使用例1: MutationObserverを使う方法
+      document.addEventListener('DOMContentLoaded', () => {
+        // 既に読み込まれている広告をチェック
+        if (document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')) {
+          if (detectAdBlock()) {
+            console.log('アドブロッカーが検出されました（既存）');
+          }
+        }
+
+        // 今後読み込まれる広告を監視
+        watchAdSenseLoad((hasAdBlock) => {
+          if (hasAdBlock) {
+            console.log('アドブロッカーが検出されました（新規）');
+            // ここに必要な処理を追加
+          }
+        });
+      });
+
+      // 使用例2: もっとシンプルな方法（すべての広告が読み込まれるのを待つ）
+      function waitForAllAds() {
+        const checkAllAdsLoaded = () => {
+          const totalAds = document.querySelectorAll('.adsbygoogle').length;
+          const loadedAds = document.querySelectorAll('.adsbygoogle[data-adsbygoogle-status="done"]').length;
+
+          if (totalAds > 0 && totalAds === loadedAds) {
+            // すべての広告が読み込み完了
+            if (detectAdBlock()) {
+              console.log('アドブロッカーが検出されました');
+              // ここに必要な処理を追加
+            }
+          } else {
+            // まだ読み込み中なら再チェック
+            requestAnimationFrame(checkAllAdsLoaded);
+          }
+        };
+
+        requestAnimationFrame(checkAllAdsLoaded);
+      }
+
+      // DOMContentLoadedまたはload時に実行
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', waitForAllAds);
+      } else {
+        waitForAllAds();
+      }
     </script>
   <?php endif ?>
 </body>
