@@ -23,7 +23,6 @@ FROM
             statistics
         WHERE
             date = date(:DATE_STRING)
-            AND member >= 10
             AND open_chat_id IN (
                 SELECT
                     open_chat_id
