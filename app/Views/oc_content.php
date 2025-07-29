@@ -441,34 +441,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           }
         });
       });
-
-      // 使用例2: もっとシンプルな方法（すべての広告が読み込まれるのを待つ）
-      function waitForAllAds() {
-        const checkAllAdsLoaded = () => {
-          const totalAds = document.querySelectorAll('.adsbygoogle').length;
-          const loadedAds = document.querySelectorAll('.adsbygoogle[data-adsbygoogle-status="done"]').length;
-
-          if (totalAds > 0 && totalAds === loadedAds) {
-            // すべての広告が読み込み完了
-            if (detectAdBlock()) {
-              console.log('アドブロッカーが検出されました');
-              // ここに必要な処理を追加
-            }
-          } else {
-            // まだ読み込み中なら再チェック
-            requestAnimationFrame(checkAllAdsLoaded);
-          }
-        };
-
-        requestAnimationFrame(checkAllAdsLoaded);
-      }
-
-      // DOMContentLoadedまたはload時に実行
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitForAllAds);
-      } else {
-        waitForAllAds();
-      }
     </script>
   <?php endif ?>
 </body>
