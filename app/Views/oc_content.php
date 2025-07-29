@@ -399,7 +399,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               // 1pxに縮小されているかチェック
               if (style.width === '1px' && style.height === '1px') {
                 blockedCount++;
-                console.log('アドブロック検出: iframe が 1px に縮小されています');
+                alert('アドブロック検出: iframe が 1px に縮小されています');
               }
             }
           }
