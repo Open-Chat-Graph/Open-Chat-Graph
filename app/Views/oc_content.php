@@ -399,7 +399,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
               // 1pxに縮小されているかチェック
               if (style.width === '1px' && style.height === '1px') {
                 blockedCount++;
-                alert('アドブロック検出: iframe が 1px に縮小されています');
+                console.log('アドブロック検出: iframe が 1px に縮小されています');
               }
             }
           }
@@ -409,7 +409,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         return totalCount > 0 && (blockedCount / totalCount) >= 0.5;
       }
       setTimeout(() => {
-        detectAdBlock()
+        detectAdBlock() && alert('アドブロック検出: iframe が 1px に縮小されています');
       }, 1000)
     </script>
   <?php endif ?>
