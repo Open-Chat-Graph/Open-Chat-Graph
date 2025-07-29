@@ -371,58 +371,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <?php endif ?>
 
   <?php echo $_breadcrumbsShema ?>
-  <?php if ($oc['id'] === 149382): ?>
-    <script>
-      function detectAdBlock() {
-        // すべてのAdSense要素を取得
-        const adElements = document.querySelectorAll('.adsbygoogle');
-
-        if (adElements.length === 0) {
-          console.log('AdSense要素が見つかりません');
-          return false;
-        }
-
-        let blockedCount = 0;
-        let totalCount = 0;
-
-        adElements.forEach(adElement => {
-          // data-adsbygoogle-status="done" の要素のみチェック
-          if (adElement.getAttribute('data-adsbygoogle-status') === 'done') {
-            totalCount++;
-
-            // iframe内のiframeを探す
-            const iframe = adElement.querySelector('iframe');
-
-            if (iframe) {
-              const style = window.getComputedStyle(iframe);
-
-              // 1pxに縮小されているかチェック
-              if (style.width === '1px' && style.height === '1px') {
-                blockedCount++;
-                console.log('アドブロック検出: iframe が 1px に縮小されています');
-              }
-            }
-          }
-        });
-
-        // 半数以上がブロックされていたらtrue
-        return totalCount > 0 && (blockedCount / totalCount) >= 0.5;
-      }
-      
-      // 使用方法2: もっとシンプルに（インターバルで監視）
-      const checkInterval = setInterval(() => {
-        if (document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')) {
-          clearInterval(checkInterval);
-          if (detectAdBlock()) {
-            alert('アドブロック検出: iframe が 1px に縮小されています');
-          }
-        }
-      }, 200); // 200ms間隔でチェック
-
-      // 10秒後には必ず停止
-      setTimeout(() => clearInterval(checkInterval), 10000);
-    </script>
-  <?php endif ?>
 </body>
 
 </html>

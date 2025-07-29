@@ -41,6 +41,7 @@ class OpenChatPageController
         AppConfig::$listLimitTopRanking = 5;
 
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
+        $_isAdmin = adminMode();
         $topPageDto = $staticDataGeneration->getTopPageData();
         $topPageDto->recentCommentList = $recentCommentListRepository->findRecentCommentOpenChatAll(
             0,
