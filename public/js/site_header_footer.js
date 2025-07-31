@@ -279,7 +279,7 @@ function detectAdBlock() {
 
   let blockedCount = 0;
   let totalCount = 0;
-  let smallSizeCount = 0;
+  let importantCount = 0;
 
   adElements.forEach((adElement) => {
     // data-adsbygoogle-status="done" の要素のみチェック
@@ -299,21 +299,28 @@ function detectAdBlock() {
         if (width === 1 && height === 1) {
           blockedCount++;
           console.log("アドブロック検出: iframe が 1px に縮小されています");
-        } else if (width <= 3 && height <= 3) {
-          // 3px以下の場合の別カウント（関数の外で定義が必要）
-          smallSizeCount++;
-          console.log("小さなサイズ検出: iframe が 3px 以下です");
         } else {
           console.log("w", style.width, "h", style.height);
+        }
+
+        // style属性でheight: 1px !important; と width: 1px !important; をチェック
+        const styleAttr = iframe.getAttribute("style") || "";
+        if (
+          styleAttr.includes("height: 1px !important;") &&
+          styleAttr.includes("width: 1px !important;")
+        ) {
+          importantCount++;
+          console.log(
+            "アドブロック検出: iframe に height: 1px !important; と width: 1px !important; が設定されています"
+          );
         }
       }
     }
   });
 
-  // 半数以上がブロックされていたらtrue
   if (totalCount > 0 && blockedCount / totalCount >= 0.5) {
     return 1;
-  } else if (smallSizeCount > 0 && smallSizeCount / totalCount >= 0.5) {
+  } else if (importantCount > 0 && importantCount / totalCount >= 0.5) {
     return 2;
   } else {
     return 0;
@@ -326,13 +333,9 @@ if (typeof admin === "undefined" || !admin) {
     if (
       document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')
     ) {
-      if (detectAdBlock() === 1) {
+      clearInterval(checkInterval);
+      if (detectAdBlock()) {
         whiteOut();
-        clearInterval(checkInterval);
-      } else if (detectAdBlock() === 2) {
-        return;
-      } else {
-        clearInterval(checkInterval);
       }
     }
   }, 200); // 200ms間隔でチェック
