@@ -279,6 +279,7 @@ function detectAdBlock() {
 
   let blockedCount = 0;
   let totalCount = 0;
+  let smallSizeCount = 0;
 
   adElements.forEach((adElement) => {
     // data-adsbygoogle-status="done" の要素のみチェック
