@@ -292,9 +292,16 @@ function detectAdBlock() {
         const style = window.getComputedStyle(iframe);
 
         // 1pxに縮小されているかチェック
-        if (style.width === "1px" && style.height === "1px") {
+        const width = parseFloat(style.width);
+        const height = parseFloat(style.height);
+
+        if (width === 1 && height === 1) {
           blockedCount++;
           console.log("アドブロック検出: iframe が 1px に縮小されています");
+        } else if (width <= 3 && height <= 3) {
+          // 3px以下の場合の別カウント（関数の外で定義が必要）
+          smallSizeCount++;
+          console.log("小さなサイズ検出: iframe が 3px 以下です");
         } else {
           console.log("w", style.width, "h", style.height);
         }
@@ -303,7 +310,13 @@ function detectAdBlock() {
   });
 
   // 半数以上がブロックされていたらtrue
-  return totalCount > 0 && blockedCount / totalCount >= 0.5;
+  if (totalCount > 0 && blockedCount / totalCount >= 0.5) {
+    return 1;
+  } else if (smallSizeCount > 0 && smallSizeCount / totalCount >= 0.5) {
+    return 2;
+  } else {
+    return 0;
+  }
 }
 
 if (typeof admin === "undefined" || !admin) {
@@ -312,14 +325,18 @@ if (typeof admin === "undefined" || !admin) {
     if (
       document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')
     ) {
-      clearInterval(checkInterval);
-      if (detectAdBlock()) {
+      if (detectAdBlock() === 1) {
         whiteOut();
+        clearInterval(checkInterval);
+      } else if (detectAdBlock() === 2) {
+        return;
+      } else {
+        clearInterval(checkInterval);
       }
     }
   }, 200); // 200ms間隔でチェック
 
   // 10秒後には必ず停止
-  setTimeout(() => clearInterval(checkInterval), 10000);
+  setTimeout(() => clearInterval(checkInterval), 10000); // 10秒後に停止
   console.log("AdBlock検出の監視を開始しました");
 }
