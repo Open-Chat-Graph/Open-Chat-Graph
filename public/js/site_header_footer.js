@@ -295,6 +295,8 @@ function detectAdBlock() {
         if (style.width === "1px" && style.height === "1px") {
           blockedCount++;
           console.log("アドブロック検出: iframe が 1px に縮小されています");
+        } else {
+          console.log("w", style.width, "h", style.height);
         }
       }
     }
