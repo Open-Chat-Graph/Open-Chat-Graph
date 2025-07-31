@@ -201,7 +201,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
 
   <script>
-    const admin = <?php echo (string)isAdmin(); ?>;
+    const admin = <?php echo isAdmin() ? 1 : 0; ?>;
   </script>
   <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
