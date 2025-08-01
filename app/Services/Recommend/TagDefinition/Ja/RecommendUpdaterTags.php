@@ -8,6 +8,16 @@ use App\Services\Recommend\TagDefinition\RecommendUpdaterTagsInterface;
 
 class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
 {
+    function getStrongestTags(): array
+    {
+        $tags = [
+            "おぜう",
+            ["URAWAZASAN", ["utfbin_#URA", 'URAWAZASAN', '裏ワザ_AND_植民地', 'URA_AND_植民地', '裏ワザ帝国']],
+        ];
+
+        return $tags;
+    }
+
     function getBeforeCategoryNameTags(): array
     {
         $tags = [

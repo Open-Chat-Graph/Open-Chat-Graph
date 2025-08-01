@@ -2,7 +2,13 @@
 
 namespace App\Services\Recommend\TagDefinition;
 
-interface RecommendUpdaterTagsInterface {
+interface RecommendUpdaterTagsInterface
+{
+    /**
+     * @return array<string,(string|array{string, string[]})[]>
+     */
+    function getStrongestTags(): array;
+
     /**
      * @return array<string,(string|array{string,string[]})[]>
      */

@@ -265,11 +265,14 @@ class RecommendUpdater
         }
     }
 
-    protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend')
+    /**
+     * @param callable(): array<string, (string|array{string, string[]})[]> $getTags
+     */
+    protected function updateBefore(string $column, string $table, callable $getTags): void
     {
         $strongTags = array_map(
             fn($a) => array_map(fn($str) => $this->replace($str, $column), $a),
-            $this->recommendUpdaterTags->getBeforeCategoryNameTags()
+            $getTags()
         );
 
         $excute = function ($table, $tag, $search, $category) {
@@ -301,11 +304,22 @@ class RecommendUpdater
 
         foreach ($strongTags as $category => $array) {
             foreach ($array as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getBeforeCategoryNameTags()[$category][$key];
+                $tag = $getTags()[$category][$key];
                 $tag = is_array($tag) ? $tag[0] : $tag;
                 $excute($table, $tag, $search, $category);
             }
         }
+    }
+
+    protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend'): void
+    {
+        $this->updateBefore($column, $table, fn() => $this->recommendUpdaterTags->getBeforeCategoryNameTags());
+    }
+
+    protected function updateStrongestTags(): void
+    {
+        $this->updateBefore('oc.name', 'recommend', fn() => $this->recommendUpdaterTags->getStrongestTags());
+        $this->updateBefore('oc.description', 'recommend', fn() => $this->recommendUpdaterTags->getStrongestTags());
     }
 
     protected function updateName2(
