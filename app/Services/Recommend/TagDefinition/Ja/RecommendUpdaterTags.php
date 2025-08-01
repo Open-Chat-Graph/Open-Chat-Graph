@@ -11,8 +11,8 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getStrongestTags(): array
     {
         $tags = [
-            "おぜう",
-            ["URAWAZASAN", ["utfbin_#URA", 'URAWAZASAN', '裏ワザ_AND_植民地', 'URA_AND_植民地', '裏ワザ帝国']],
+            ["おぜう", ["おぜうの集い", "おぜう_AND_占領区", "おぜう_AND_植民地"]],
+            ["URAWAZASAN", ["utfbin_#URA", "URAWAZASAN_OR_裏ワザ帝国", "裏ワザ_AND_植民地", "utfbin_URA_AND_植民地"]],
         ];
 
         return $tags;
