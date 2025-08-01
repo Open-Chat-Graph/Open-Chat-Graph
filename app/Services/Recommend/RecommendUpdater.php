@@ -103,6 +103,7 @@ class RecommendUpdater
     {
         $tags = array_merge(
             array_merge(...$this->recommendUpdaterTags->getBeforeCategoryNameTags()),
+            $this->recommendUpdaterTags->getStrongestTags(),
             $this->recommendUpdaterTags->getNameStrongTags(),
             $this->recommendUpdaterTags->getDescStrongTags(),
             $this->recommendUpdaterTags->getAfterDescStrongTags(),
