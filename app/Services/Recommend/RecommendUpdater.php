@@ -420,7 +420,7 @@ class RecommendUpdater
                     (
                         SELECT
                             oc.*
-                        FROM\
+                        FROM
                             open_chat AS oc
                             LEFT JOIN {$table} AS t ON t.id = oc.id
                             LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
