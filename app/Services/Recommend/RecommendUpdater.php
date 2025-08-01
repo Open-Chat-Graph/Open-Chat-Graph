@@ -76,6 +76,7 @@ class RecommendUpdater
 
         DB::transaction(function () {
             $this->deleteRecommendTags('recommend');
+            $this->updateStrongestTags();
             $this->updateBeforeCategory();
             $this->updateName();
             $this->updateDescription('oc.name', 'recommend');
