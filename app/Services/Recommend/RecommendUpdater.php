@@ -273,14 +273,11 @@ class RecommendUpdater
         }
     }
 
-    /**
-     * @param callable(): array<string, (string|array{string, string[]})[]> $getTags
-     */
-    protected function updateBefore(string $column, string $table, callable $getTags): void
+    protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend'): void
     {
         $strongTags = array_map(
             fn($a) => array_map(fn($str) => $this->replace($str, $column), $a),
-            $getTags()
+            $this->recommendUpdaterTags->getBeforeCategoryNameTags()
         );
 
         $excute = function ($table, $tag, $search, $category) {
@@ -312,22 +309,61 @@ class RecommendUpdater
 
         foreach ($strongTags as $category => $array) {
             foreach ($array as $key => $search) {
-                $tag = $getTags()[$category][$key];
+                $tag = $this->recommendUpdaterTags->getBeforeCategoryNameTags()[$category][$key];
                 $tag = is_array($tag) ? $tag[0] : $tag;
                 $excute($table, $tag, $search, $category);
             }
         }
     }
 
-    protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend'): void
+    protected function updateStrongestTags()
     {
-        $this->updateBefore($column, $table, fn() => $this->recommendUpdaterTags->getBeforeCategoryNameTags());
+        $this->executeUpdateStrongestTags('oc.name');
+        $this->executeUpdateStrongestTags('oc.description');
     }
 
-    protected function updateStrongestTags(): void
+    protected function executeUpdateStrongestTags(
+        string $column = 'oc.name',
+        string $table = 'recommend',
+    ) {
+        $tags = $this->getReplacedStrongestTags($column);
+
+        foreach ($tags as $key => $search) {
+            $tag = $this->formatTag($this->tags[$key]);
+
+            DB::execute(
+                "INSERT INTO
+                    {$table}
+                SELECT
+                    oc.id,
+                    '{$tag}'
+                FROM
+                    (
+                        SELECT
+                            oc.*
+                        FROM
+                            open_chat AS oc
+                            LEFT JOIN {$table} AS t ON t.id = oc.id
+                        WHERE
+                            t.id IS NULL
+                            AND oc.updated_at BETWEEN :start
+                            AND :end
+                    ) AS oc
+                WHERE
+                    {$search}",
+                ['start' => $this->start, 'end' => $this->end]
+            );
+        }
+    }
+
+    /** @return string[] */
+    protected function getReplacedStrongestTags(string $column): array
     {
-        $this->updateBefore('oc.name', 'recommend', fn() => $this->recommendUpdaterTags->getStrongestTags());
-        $this->updateBefore('oc.description', 'recommend', fn() => $this->recommendUpdaterTags->getStrongestTags());
+        $tags = $this->recommendUpdaterTags->getStrongestTags();
+
+        $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
+
+        return array_map(fn($str) => $this->replace($str, $column), $tags);
     }
 
     protected function updateName2(
@@ -384,7 +420,7 @@ class RecommendUpdater
                     (
                         SELECT
                             oc.*
-                        FROM
+                        FROM\
                             open_chat AS oc
                             LEFT JOIN {$table} AS t ON t.id = oc.id
                             LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
