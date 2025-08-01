@@ -18,9 +18,9 @@ try {
      */
     $recommendUpdater = app(RecommendUpdater::class);
     $now = date('Y-m-d H:i:s');
-    AdminTool::sendDiscordNotify('updateRecommendTables start at ' . $now);
+    AdminTool::sendDiscordNotify('updateRecommendTables onlyRecommend start at ' . $now);
     $recommendUpdater->updateRecommendTables(false, true);
-    AdminTool::sendDiscordNotify('updateRecommendTables done start at ' . $now);
+    AdminTool::sendDiscordNotify('updateRecommendTables onlyRecommend done ' . $now);
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
