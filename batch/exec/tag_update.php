@@ -24,4 +24,5 @@ try {
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
+    AdminTool::sendDiscordNotify('updateRecommendTables failed ' . $now);
 }
