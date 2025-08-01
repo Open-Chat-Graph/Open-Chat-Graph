@@ -28,6 +28,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
                 ["ハイキュー!!FLY HIGH（ハイキューフライハイ／ハイフラ）", ["ハイフラ_OR_ハイキュー"]],
                 ["ポケットモンスター（ポケモン）", ["ポケモン大好きチャット"]],
                 ["ポケポケ（Pokémon TCG Pocket）", ["ポケポケ"]],
+                ["ポケモンチャンピオンズ（Pokémon Champions）", ["ポケモンチャンピオンズ"]],
                 ["スプラトゥーン", ["スプラ"]],
             ],
             "41" => [
