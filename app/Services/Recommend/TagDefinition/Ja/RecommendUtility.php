@@ -11,6 +11,7 @@ class RecommendUtility
     const OmitPettern = [
         'ディズニー ツムツム' => 'ツムツム',
         'Pokémon TCG Pocket' => 'ポケポケ',
+        'Pokémon Champions' => 'ポケモンチャンピオンズ',
         '歌リレー' => 'ボイメ 歌',
         '歌い手のトークルーム' => '歌い手',
         'ゼベワン' => 'ZB1',
