@@ -19,7 +19,7 @@ try {
     $recommendUpdater = app(RecommendUpdater::class);
     $now = date('Y-m-d H:i:s');
     AdminTool::sendDiscordNotify('updateRecommendTables start at ' . $now);
-    $recommendUpdater->updateRecommendTables(false, true);
+    $recommendUpdater->updateRecommendTables(false);
     AdminTool::sendDiscordNotify('updateRecommendTables done at ' . $now);
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
