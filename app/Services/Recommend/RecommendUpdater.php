@@ -34,7 +34,7 @@ class RecommendUpdater
         }
     }
 
-    function updateRecommendTables(bool $betweenUpdateTime = true)
+    function updateRecommendTables(bool $betweenUpdateTime = true, bool $onlyRecommend = false)
     {
         $this->start = $betweenUpdateTime
             ? file_get_contents(AppConfig::getStorageFilePath('tagUpdatedAtDatetime'))
@@ -44,7 +44,7 @@ class RecommendUpdater
             ? OpenChatServicesUtility::getModifiedCronTime(strtotime('+1hour'))->format('Y-m-d H:i:s')
             : '2033-10-16 00:00:00';
 
-        $this->updateRecommendTablesProcess();
+        $this->updateRecommendTablesProcess($onlyRecommend);
 
         safeFileRewrite(
             AppConfig::getStorageFilePath('tagUpdatedAtDatetime'),
@@ -52,35 +52,9 @@ class RecommendUpdater
         );
     }
 
-    protected function updateRecommendTablesProcess()
+    protected function updateRecommendTablesProcess(bool $onlyRecommend = false)
     {
-        if (MimimalCmsConfig::$urlRoot === '') {
-            DB::transaction(function () {
-                $this->deleteRecommendTags('recommend');
-                $this->updateBeforeCategory();
-                $this->updateName();
-                $this->updateDescription('oc.name', 'recommend');
-                $this->updateDescription();
-                $this->modifyRecommendTags();
-            });
-
-            DB::transaction(function () {
-                $this->deleteTags('oc_tag');
-                $this->updateBeforeCategory('oc.name', 'oc_tag');
-                $this->updateBeforeCategory(table: 'oc_tag');
-                $this->updateDescription('oc.name', 'oc_tag');
-                $this->updateDescription(table: 'oc_tag');
-                $this->updateName(table: 'oc_tag');
-            });
-
-            DB::transaction(function () {
-                $this->deleteTags('oc_tag2');
-                $this->updateDescription2('oc.name');
-                $this->updateDescription2();
-                $this->updateName2();
-                $this->updateName2('oc.description');
-            });
-        } else {
+        if (MimimalCmsConfig::$urlRoot !== '') {
             DB::transaction(function () {
                 $this->deleteRecommendTags('recommend');
                 $this->updateDescription(column: 'oc.name', allowDuplicateEntries: true);
@@ -96,7 +70,39 @@ class RecommendUpdater
             DB::transaction(function () {
                 $this->deleteTags('oc_tag2');
             });
+
+            return;
         }
+
+        DB::transaction(function () {
+            $this->deleteRecommendTags('recommend');
+            $this->updateBeforeCategory();
+            $this->updateName();
+            $this->updateDescription('oc.name', 'recommend');
+            $this->updateDescription();
+            $this->modifyRecommendTags();
+        });
+
+        if ($onlyRecommend) {
+            return;
+        }
+
+        DB::transaction(function () {
+            $this->deleteTags('oc_tag');
+            $this->updateBeforeCategory('oc.name', 'oc_tag');
+            $this->updateBeforeCategory(table: 'oc_tag');
+            $this->updateDescription('oc.name', 'oc_tag');
+            $this->updateDescription(table: 'oc_tag');
+            $this->updateName(table: 'oc_tag');
+        });
+
+        DB::transaction(function () {
+            $this->deleteTags('oc_tag2');
+            $this->updateDescription2('oc.name');
+            $this->updateDescription2();
+            $this->updateName2();
+            $this->updateName2('oc.description');
+        });
     }
 
     function getAllTagNames(): array
