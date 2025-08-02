@@ -79,7 +79,7 @@ class Metadata
         $tags .= '<meta property="og:description" content="' . $this->ogpDescription . '">' . "\n";
         if ($this->image_url) $tags .= '<meta property="og:image" content="' . $this->image_url . '">' . "\n";
         $tags .= '<meta property="og:site_name" content="' . $this->site_name . '">' . "\n";
-        $tags .= '<meta name="twitter:card" content="summary_large_image">' . "\n";
+        $tags .= '<meta name="twitter:card" content="summary">' . "\n";
         $tags .= '<meta name="twitter:image" content="' . $this->image_url . '">' . "\n";
         $tags .= '<meta name="twitter:title" content="' . $this->title . '">' . "\n";
         $tags .= '<meta name="twitter:description" content="' . $this->ogpDescription . '">' . "\n";
