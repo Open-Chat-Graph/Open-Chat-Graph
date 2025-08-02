@@ -80,9 +80,6 @@ class Metadata
         if ($this->image_url) $tags .= '<meta property="og:image" content="' . $this->image_url . '">' . "\n";
         $tags .= '<meta property="og:site_name" content="' . $this->site_name . '">' . "\n";
         $tags .= '<meta name="twitter:card" content="summary">' . "\n";
-        $tags .= '<meta name="twitter:image" content="' . $this->image_url . '">' . "\n";
-        $tags .= '<meta name="twitter:title" content="' . $this->title . '">' . "\n";
-        $tags .= '<meta name="twitter:description" content="' . $this->ogpDescription . '">' . "\n";
         $tags .= '<meta name="twitter:site" content="@openchat_graph">' . "\n";
 
         if ($this->thumbnail) $tags .= '<meta name="thumbnail" content="' . $this->thumbnail . '">' . "\n";
