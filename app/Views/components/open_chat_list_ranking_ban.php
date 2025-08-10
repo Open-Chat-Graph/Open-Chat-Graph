@@ -60,7 +60,9 @@
                 <?php endif ?>
               <?php endforeach ?>
             <?php else : ?>
-              <span>ルーム内容変更なし</span>
+              <?php if (strtotime($oc['old_datetime']) > strtotime('2025-08-10 23:59:59')) : ?>
+                <span>ルーム内容変更なし</span>
+              <?php endif ?>
             <?php endif ?>
           </div>
 

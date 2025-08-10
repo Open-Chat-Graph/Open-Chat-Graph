@@ -16,7 +16,7 @@ use Shared\MimimalCmsConfig;
 
 class RankingBanTableUpdater
 {
-    private \DateTime $time;
+    public \DateTime $time;
 
     function __construct(
         private RankingPositionPageRepositoryInterface $rankingPositionRepo,
@@ -24,9 +24,10 @@ class RankingBanTableUpdater
         private StatisticsPageRepositoryInterface $statisticsRepo,
         private SqlInsert $sqlInsert,
         private OpenChatUpdaterFromApi $openChatUpdaterFromApi,
+        private ProgressNotifier $notifier,
+        mixed $time = null
     ) {
-        $this->time = OpenChatServicesUtility::getModifiedCronTime('now');
-        //$this->time = new \DateTime('2024-01-31 16:30:00');
+        $this->time = $time instanceof \DateTime ? $time : OpenChatServicesUtility::getModifiedCronTime('now');
     }
 
     private function buildTableData(
@@ -83,6 +84,10 @@ class RankingBanTableUpdater
     {
         $endDateTime = $latestTime->format('Y-m-d H:i:s');
 
+        // 進捗通知を開始
+        $this->notifier->setTotalCount(count($deleteListArray));
+        $this->notifier->notifyStart('RankingBanTableUpdater::updateTable');
+
         foreach ($deleteListArray as $row) {
             $id = $row['open_chat_id'];
             $datetime = $row['datetime'];
@@ -122,6 +127,9 @@ class RankingBanTableUpdater
                         AND flag = 0"
                 );
             }
+
+            // 進捗通知
+            $this->notifier->incrementAndNotify('RankingBanTableUpdater::updateTable');
         }
     }
 
@@ -136,6 +144,10 @@ class RankingBanTableUpdater
             $latestOcIdArray[$key] = $oc['open_chat_id'];
         }
 
+        // 進捗通知を開始
+        $this->notifier->setTotalCount(count($latestOcIdArray));
+        $this->notifier->notifyStart('RankingBanTableUpdater::crawlUpdateDeleteOpenChat');
+
         foreach ($latestOcIdArray as $key => $id) {
             $this->openChatUpdaterFromApi->fetchUpdateOpenChat($id, false);
 
@@ -149,6 +161,9 @@ class RankingBanTableUpdater
                     id = {$id}"
             );
 
+            // 進捗通知
+            $this->notifier->incrementAndNotify('RankingBanTableUpdater::crawlUpdateDeleteOpenChat');
+
             if (!$oc) continue;
             if (!$oc['update_items'] || new \DateTime($oc['updated_at']) < $latestTime) continue;
 
@@ -159,7 +174,7 @@ class RankingBanTableUpdater
         return $ocArray;
     }
 
-    function updateRankingBanTable()
+    function updateRankingBanTable(?\DateTime $crawlLatestTime = null)
     {
         // 日本以外の場合、更新をスキップする
         if (MimimalCmsConfig::$urlRoot !== '') {
@@ -201,9 +216,10 @@ class RankingBanTableUpdater
         }
 
         [$insertOcArray, $deleteListArray] = $this->buildTableData($openChatArray, $this->time, $existsListArray);
+
         $this->updateTable($this->time, $deleteListArray);
 
-        $result = $this->crawlUpdateDeleteOpenChat($insertOcArray, $this->time);
+        $result = $this->crawlUpdateDeleteOpenChat($insertOcArray, $crawlLatestTime ?? $this->time);
 
         $this->sqlInsert->import(DB::connect(), 'ranking_ban', $result);
     }
