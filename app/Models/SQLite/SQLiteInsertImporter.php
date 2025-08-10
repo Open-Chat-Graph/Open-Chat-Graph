@@ -8,6 +8,9 @@ use App\Models\Importer\AbstractSqlImporter;
 
 class SQLiteInsertImporter extends AbstractSqlImporter
 {
+    private const MAX_RETRIES = 5;
+    private const RETRY_USLEEP_TIME = 100000; // 0.1 seconds
+
     /**
      * @throws \RuntimeException
      * @throws \PDOException
@@ -28,7 +31,36 @@ class SQLiteInsertImporter extends AbstractSqlImporter
 
     protected function importProsess(\PDO $pdo, array $keys, array $chunk, string $tableName): int
     {
-        return $this->execute($pdo, $keys, $chunk, $tableName);
+        return $this->executeWithRetry($pdo, $keys, $chunk, $tableName);
+    }
+
+    private function executeWithRetry(\PDO $pdo, array $keys, array $chunk, string $tableName): int
+    {
+        $attempts = 0;
+        $result = false;
+        $lastException = null;
+        $rowCount = 0;
+        
+        while ($attempts < self::MAX_RETRIES && !$result) {
+            try {
+                $rowCount = $this->execute($pdo, $keys, $chunk, $tableName);
+                $result = true;
+            } catch (\PDOException $e) {
+                if (strpos($e->getMessage(), 'database is locked') === false) {
+                    throw $e;
+                }
+
+                $lastException = $e;
+                usleep(self::RETRY_USLEEP_TIME); // Wait for 0.1 seconds
+                $attempts++;
+            }
+        }
+
+        if (!$result) {
+            throw $lastException ?? new \RuntimeException('Failed to execute import due to unknown error');
+        }
+
+        return $rowCount;
     }
 
     protected function buildQuery(array $keys, array $chunk, string $tableName): string
