@@ -105,7 +105,7 @@ class RankingBanPageRepository
     {
         $updatedAtValue = $change === 0
             ? "AND (rb.updated_at >= 1 OR (rb.update_items IS NOT NULL AND rb.update_items != ''))"
-            : ($change === 1 ? "AND (rb.updated_at = 0 AND (rb.update_items IS NULL OR rb.update_items = ''))" : '');
+            : ($change === 1 ? "AND (rb.updated_at = 0 AND (rb.update_items IS NULL OR rb.update_items = '') AND rb.datetime >= '2025-08-10 23:59:59')" : '');
 
         $endDatetime = $publish === 0
             ? "AND rb.end_datetime IS NOT NULL"

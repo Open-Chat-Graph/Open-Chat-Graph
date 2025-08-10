@@ -202,7 +202,7 @@ Route::path(
         handleRequestWithETagAndCache("labs/tags");
     }); */
 
-/* Route::path(
+Route::path(
     'labs/publication-analytics',
     [RankingBanLabsPageController::class, 'index']
 )
@@ -216,7 +216,7 @@ Route::path(
             return false;
 
         handleRequestWithETagAndCache(json_encode($reception->input()));
-    }); */
+    });
 
 // コメントAPI
 Route::path(

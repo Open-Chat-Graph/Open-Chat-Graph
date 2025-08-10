@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\RankingBan;
 
 use App\Services\Traits\TraitPaginationRecordsCalculator;
-use App\Config\AppConfig;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 
 class RakingBanPageService
