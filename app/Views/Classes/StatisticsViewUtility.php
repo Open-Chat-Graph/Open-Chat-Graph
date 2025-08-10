@@ -11,7 +11,7 @@ class StatisticsViewUtility
     /**
      * @return array{ diff_member: int, percent_increase: float, diff_member2: int, percent_increase2: float }
      */
-    function getOcPageArrayElementMemberDiff(StatisticsChartDto $dto): array
+    function getOcPageArrayElementMemberDiff(StatisticsChartDto $dto, int $memberCount): array
     {
         $result = [
             'diff_member' => null,
@@ -28,7 +28,7 @@ class StatisticsViewUtility
         [
             'diffNum' => $result['diff_member'],
             'percentIncrease' => $result['percent_increase']
-        ] = $this->calculateDiff($dto->member[$maxIndex], $dto->member[$maxIndex - 1]);
+        ] = $this->calculateDiff($memberCount, $dto->member[$maxIndex - 1]);
 
         if (!isset($dto->member[$maxIndex - 7])) {
             return $result;
@@ -37,7 +37,7 @@ class StatisticsViewUtility
         [
             'diffNum' => $result['diff_member2'],
             'percentIncrease' => $result['percent_increase2']
-        ] = $this->calculateDiff($dto->member[$maxIndex], $dto->member[$maxIndex - 7]);
+        ] = $this->calculateDiff($memberCount, $dto->member[$maxIndex - 7]);
 
         return $result;
     }

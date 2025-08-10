@@ -108,7 +108,7 @@ class OpenChatPageController
             $_statsDto = new StatisticsChartDto((new \DateTime('-1day'))->format('Y-m-d'), (new \DateTime('now'))->format('Y-m-d'));
         }
 
-        $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto);
+        $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto, $oc['member']);
 
         $_css = [
             'room_list',
