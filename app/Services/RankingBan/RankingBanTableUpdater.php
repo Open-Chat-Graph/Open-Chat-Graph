@@ -12,6 +12,7 @@ use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class RankingBanTableUpdater
 {
@@ -160,6 +161,11 @@ class RankingBanTableUpdater
 
     function updateRankingBanTable()
     {
+        // 日本以外の場合、更新をスキップする
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return;
+        }
+
         $openChatArray = DB::fetchAll(
             "SELECT
                 oc.id,
