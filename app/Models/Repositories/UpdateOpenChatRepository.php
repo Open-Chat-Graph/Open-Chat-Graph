@@ -60,7 +60,7 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
             'category' => $dto->category ?? null,
             'emblem' => $dto->emblem ?? null,
             'join_method_type' => $dto->joinMethodType ?? null,
-            // 'update_items' => $dto->getUpdateItems(),
+            'update_items' => $dto->getUpdateItems(),
         ];
 
         $columnsToUpdate = array_filter($columnsToSet, fn ($value) => $value !== null);

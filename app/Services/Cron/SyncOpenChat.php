@@ -136,7 +136,7 @@ class SyncOpenChat
                 $this->invitationTicketUpdater->updateInvitationTicketAll();
                 $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
             }, 'updateInvitationTicketAll'],
-            //[fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
+            [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
             [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
                     addCronLog('Skip updateRecommendTables because dailyTask is active');
