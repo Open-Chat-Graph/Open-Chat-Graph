@@ -91,7 +91,7 @@ class RecommendOpenChatPageController
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
         $count = $recommend->getCount();
-        $headline = t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag) . sprintfT('TOP%s', $count);
+        $headline = t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag);
         $_meta->setTitle($headline);
         $_meta->setImageUrl(imgUrl($recommendList[0]['id'], $recommendList[0]['img_url']));
         $_meta->thumbnail = imgPreviewUrl($recommendList[0]['id'], $recommendList[0]['img_url']);
