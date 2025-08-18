@@ -12,6 +12,13 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body class="top-page">
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
+        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
+            <div class="anniv-banner" style="background: linear-gradient(-156deg, #0dc95a, #11d871 23.96%, #11d593 55.46%, #12cfcd 83.85%, #16c2c1);border-radius:8px;padding:12px 16px;margin:12px 12px 0;color:#fff;font-weight:700;font-size:16px;display:block;align-items:center;gap:.6em;">
+                <span>🎉オープンチャット６周年おめでとう！🎂 </span>
+            </div>
+            <small style="font-size: 11px; margin: 0 1rem">暫くの間広告表示を控えめにします</small>
+        <?php endif ?>
+
         <div style="padding: 1rem; padding-top: 0; padding-bottom: .5rem;">
             <div style="margin: 1rem 0;">
                 <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
@@ -37,7 +44,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <div class="modify-top-padding" style="margin-bottom: 24px;">
+        <div class="modify-top-padding" style="margin-bottom: 0px;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>

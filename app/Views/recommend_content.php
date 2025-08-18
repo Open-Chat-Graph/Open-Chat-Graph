@@ -25,11 +25,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
+
     <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
+      <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
       <div style="margin: -16px 0;">
         <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
       </div>
     <?php endif ?>
+
     <section class="recommend-header-wrapper">
 
       <div class="recommend-header-bottom" style="padding-top: 8px;">
@@ -186,7 +189,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <aside class="top-ranking-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <aside class="top-ranking-list-aside" style="margin-bottom: 24px;">
+    <aside class="top-ranking-list-aside" style="margin-bottom: 0px;">
       <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
@@ -204,6 +207,10 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     const admin = <?php echo isAdmin() ? 1 : 0; ?>;
   </script>
   <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
+
+  <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
+    <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+  <?php endif ?>
 
   <?php echo $_breadcrumbsShema ?>
 </body>

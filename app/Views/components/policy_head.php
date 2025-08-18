@@ -21,6 +21,6 @@
         <meta name="robots" content="noindex, nofollow">
     <?php endif ?>
     <?php if (!isset($disableGAd) || !$disableGAd) : ?>
-        <?php \App\Views\Ads\GoogleAdsence::gTag($dataOverlays ?? null) ?>
+        <?php //\App\Views\Ads\GoogleAdsence::gTag($dataOverlays ?? null) ?>
     <?php endif ?>
 </head>

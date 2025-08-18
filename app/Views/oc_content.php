@@ -13,11 +13,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
+
     <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+      <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
       <div style="margin: -16px 0;">
         <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
       </div>
     <?php endif ?>
+
     <article class="unset" style="display: block;">
       <!-- オープンチャット表示ヘッダー -->
       <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
@@ -258,7 +261,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <aside class="recommend-list-aside">
       <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
     </aside>
-    <aside class="recommend-list-aside" style="margin-bottom: 24px;">
+    <aside class="recommend-list-aside" style="margin-bottom: 0px;">
       <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
     </aside>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
@@ -309,6 +312,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     const admin = <?php echo isAdmin() ? 1 : 0; ?>;
   </script>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
+
+  <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
+    <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+  <?php endif ?>
 
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではマイリストが無効
   ?>
