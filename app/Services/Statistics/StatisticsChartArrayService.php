@@ -9,15 +9,18 @@ use App\Services\Statistics\Dto\StatisticsChartDto;
 
 class StatisticsChartArrayService
 {
-    private const MAX_RETRIES = 5;
-
     function __construct(
         private StatisticsPageRepositoryInterface $statisticsPageRepository,
     ) {}
 
+    /**
+     * 日毎のメンバー数の統計を取得する
+     * 
+     * @return array{ date: string, member: int }[] date: Y-m-d
+     */
     function buildStatisticsChartArray(int $open_chat_id): StatisticsChartDto|false
     {
-        $memberStats = $this->getMemberStatsWithRetry($open_chat_id);
+        $memberStats = $this->statisticsPageRepository->getDailyMemberStatsDateAsc($open_chat_id);
 
         if (!$memberStats) {
             return false;
@@ -30,31 +33,6 @@ class StatisticsChartArrayService
             $this->generateDateArray($dto->startDate, $dto->endDate),
             $memberStats
         );
-    }
-
-    /**
-     * 日毎のメンバー数の統計を取得する
-     * 
-     * @return array{ date: string, member: int }[] date: Y-m-d
-     */
-    private function getMemberStatsWithRetry(int $open_chat_id, int $maxRetries = self::MAX_RETRIES): array
-    {
-        $attempts = 0;
-
-        while ($attempts < $maxRetries) {
-            try {
-                return $this->statisticsPageRepository->getDailyMemberStatsDateAsc($open_chat_id);
-            } catch (\PDOException $e) {
-                if (strpos($e->getMessage(), 'database disk image is malformed') === false) {
-                    throw $e;
-                }
-
-                usleep(100000); // Wait for 0.1 seconds
-                $attempts++;
-            }
-        }
-
-        throw new \RuntimeException("Failed to get member stats after {$maxRetries} attempts.");
     }
 
     /**  

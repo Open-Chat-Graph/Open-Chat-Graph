@@ -11,38 +11,9 @@ use App\Services\OpenChat\Dto\OpenChatDto;
 
 class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 {
-    private const MAX_RETRIES = 5;
-    private const GET_DAILY_POSITION_USLEEP_TIME = 100000; // 0.1 seconds
-
-    private function executeWithRetry(string $query, ?array $params = null): void
-    {
-        $attempts = 0;
-        $result = false;
-        $lastException = null;
-        
-        while ($attempts < self::MAX_RETRIES && !$result) {
-            try {
-                SQLiteStatistics::execute($query, $params);
-                $result = true;
-            } catch (\PDOException $e) {
-                if (strpos($e->getMessage(), 'database is locked') === false) {
-                    throw $e;
-                }
-
-                $lastException = $e;
-                usleep(self::GET_DAILY_POSITION_USLEEP_TIME); // Wait for 0.1 seconds
-                $attempts++;
-            }
-        }
-
-        if (!$result) {
-            throw $lastException ?? new \RuntimeException('Failed to execute query due to unknown error');
-        }
-    }
-
     public function addNewOpenChatStatisticsFromDto(OpenChatDto $dto): void
     {
-        $this->executeWithRetry(
+        SQLiteStatistics::execute(
             "INSERT INTO
                 statistics (open_chat_id, member, date)
             VALUES
@@ -58,12 +29,12 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
             VALUES
                 (:open_chat_id, :member, :date)';
 
-        $this->executeWithRetry($query, compact('open_chat_id', 'member', 'date'));
+        SQLiteStatistics::execute($query, compact('open_chat_id', 'member', 'date'));
     }
 
     public function deleteDailyStatistics(int $open_chat_id): void
     {
-        $this->executeWithRetry(
+        SQLiteStatistics::execute(
             'DELETE FROM statistics WHERE open_chat_id = :open_chat_id',
             compact('open_chat_id')
         );

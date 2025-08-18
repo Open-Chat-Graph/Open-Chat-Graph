@@ -11,9 +11,6 @@ use App\Services\OpenChat\Enum\RankingType;
 
 class SqliteRankingPositionPageRepository implements RankingPositionPageRepositoryInterface
 {
-    private const MAX_RETRIES = 5;
-    private const GET_DAILY_POSITION_USLEEP_TIME = 100000; // 0.1 seconds
-
     public function getDailyPosition(
         RankingType $type,
         int $open_chat_id,
@@ -44,24 +41,7 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
 
         SQLiteRankingPosition::connect(['mode' => '?mode=ro&nolock=1']);
 
-        $attempts = 0;
-        $result = null;
-        while ($attempts < self::MAX_RETRIES && is_null($result)) {
-            try {
-                $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
-            } catch (\PDOException $e) {
-                if (strpos($e->getMessage(), 'database disk image is malformed') === false) {
-                    throw $e;
-                }
-
-                usleep(self::GET_DAILY_POSITION_USLEEP_TIME); // Wait for 0.1 seconds
-                $attempts++;
-            }
-        }
-
-        if (is_null($result)) {
-            throw new \RuntimeException("Failed to get daily position after {$attempts} attempts.");
-        }
+        $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
 
         SQLiteRankingPosition::$pdo = null;
 

@@ -10,6 +10,10 @@ class SQLiteInsertImporter extends AbstractSqlImporter
 {
     private const MAX_RETRIES = 5;
     private const RETRY_USLEEP_TIME = 100000; // 0.1 seconds
+    private const RETRYABLE_ERRORS = [
+        'database disk image is malformed',
+        'database is locked'
+    ];
 
     /**
      * @throws \RuntimeException
@@ -46,7 +50,15 @@ class SQLiteInsertImporter extends AbstractSqlImporter
                 $rowCount = $this->execute($pdo, $keys, $chunk, $tableName);
                 $result = true;
             } catch (\PDOException $e) {
-                if (strpos($e->getMessage(), 'database is locked') === false) {
+                $shouldRetry = false;
+                foreach (self::RETRYABLE_ERRORS as $error) {
+                    if (str_contains($e->getMessage(), $error)) {
+                        $shouldRetry = true;
+                        break;
+                    }
+                }
+
+                if (!$shouldRetry) {
                     throw $e;
                 }
 
