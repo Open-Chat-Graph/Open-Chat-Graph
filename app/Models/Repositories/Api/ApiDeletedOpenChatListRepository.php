@@ -52,7 +52,7 @@ class ApiDeletedOpenChatListRepository
                 categories c ON om.category_id = c.category_id
             WHERE
                 DATE(ocd.deleted_at) = :date
-                AND om.current_member_count >= 30";
+                AND om.current_member_count >= 15";
 
         $deletedOpenChats = ApiDB::fetchAll($query, compact('date'));
 
