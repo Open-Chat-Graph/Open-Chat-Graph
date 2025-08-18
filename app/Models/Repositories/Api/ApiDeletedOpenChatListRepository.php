@@ -61,7 +61,7 @@ class ApiDeletedOpenChatListRepository
         if ($deletedOpenChats === false) {
             return false;
         }
-/* 
+
         // Filter out OpenChats based on display_name patterns
         $deletedOpenChats = array_filter($deletedOpenChats, function($openChat) {
             foreach (self::$filterPatterns as $filter) {
@@ -92,7 +92,7 @@ class ApiDeletedOpenChatListRepository
                     line_official_activity_ranking_history
                 WHERE
                     openchat_id = :openchat_id
-                    AND category_id = 0
+                    AND category_id = :category_id
                 ORDER BY 
                     record_date DESC, 
                     record_id DESC
@@ -100,6 +100,7 @@ class ApiDeletedOpenChatListRepository
 
             $ranking = ApiDB::fetch($rankingQuery, [
                 'openchat_id' => $openChat['openchat_id'],
+                'category_id' => $openChat['category_id'],
             ]);
 
             $openChat['activity_ranking_position'] = $ranking['activity_ranking_position'] ?? null;
@@ -118,7 +119,7 @@ class ApiDeletedOpenChatListRepository
             }
 
             return $posA <=> $posB;
-        }); */
+        });
 
         return array_slice($deletedOpenChats, 0, $limit);
     }
