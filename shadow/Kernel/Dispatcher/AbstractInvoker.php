@@ -41,6 +41,13 @@ abstract class AbstractInvoker
             }
 
             $paramClassName = $paramType->getName();
+            
+            // Check container bindings first, just like ConstructorInjection::getMethodArgs does
+            if (isset(ConstructorInjection::$container[$paramClassName])) {
+                $methodArgs[] = $this->ci->constructorInjection($paramClassName);
+                continue;
+            }
+            
             if (!class_exists($paramClassName)) {
                 $paramClassName = $this->ci->resolveInterfaceToClass($paramClassName);
             }
@@ -68,6 +75,13 @@ abstract class AbstractInvoker
             }
 
             $paramClassName = $paramType->getName();
+            
+            // Check container bindings first, just like ConstructorInjection::getMethodArgs does
+            if (isset(ConstructorInjection::$container[$paramClassName])) {
+                $closureArgs[] = $this->ci->constructorInjection($paramClassName);
+                continue;
+            }
+            
             if (!class_exists($paramClassName)) {
                 $paramClassName = $this->ci->resolveInterfaceToClass($paramClassName);
             }
