@@ -16,8 +16,8 @@ class AppConfig
     const ETAG_ARG = [300, 3600 * 24, false];
 
     const LINE_URL = 'https://line.me/ti/g2/';
-    const LINE_APP_URL = 'line://ti/g2/';
-    const LINE_APP_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
+    const LINE_APP_URL = 'https://line.me/ti/g2/';
+    const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
     const OPENCHAT_IMG_PREVIEW_PATH = 'preview';
     const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p';
@@ -27,7 +27,7 @@ class AppConfig
         '/tw' => 'https://openchat.line.me/tw/cover/',
         '/th' => 'https://openchat.line.me/th/cover/',
     ];
-    const LINE_OPEN_URL_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
+    const LINE_OPEN_URL_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
     static int $listLimitTopRanking = 10;
     static int $tagListLimit = 3;
