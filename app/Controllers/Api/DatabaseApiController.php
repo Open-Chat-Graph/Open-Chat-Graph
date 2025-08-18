@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use App\Config\SecretsConfig;
 use App\Models\RankingPositionDB\RankingPositionDB;
+use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use Shared\Exceptions\ValidationException;
 use Shared\MimimalCmsConfig;
 
@@ -40,6 +41,21 @@ class DatabaseApiController
                 'message' => $e->getMessage(),
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         }
+    }
+
+    function ban(ApiDeletedOpenChatListRepository $repo, string $date)
+    {
+        header('Content-Type: application/json');
+        ob_start('ob_gzhandler');
+
+        $result = $repo->getDeletedOpenChatList($date, 999999);
+
+        $response = [];
+        if($result) {
+            $response = array_column($result, 'openchat_id');
+        }
+
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     function schema()
@@ -109,6 +125,11 @@ class DatabaseApiController
         // 長さチェックのみ
         if (strlen($query) > 10000) {
             throw new ValidationException('Query too long');
+        }
+
+        // UPDATE / DELETE を禁止（大文字小文字を問わず）
+        if (preg_match('/^\s*(UPDATE|DELETE)\b/i', $query)) {
+            throw new ValidationException('UPDATE / DELETE statements are not allowed');
         }
 
         // LIMITチェック

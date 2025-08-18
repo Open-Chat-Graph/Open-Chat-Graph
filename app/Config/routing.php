@@ -67,6 +67,21 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache($open_chat_id));
 
+// TODO: test-api
+Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function (int $open_chat_id) {
+        handleRequestWithETagAndCache($open_chat_id);
+        app()->bind(
+            \App\Models\Repositories\OpenChatPageRepositoryInterface::class,
+            fn() => new \App\Models\Repositories\Api\ApiOpenChatPageRepository()
+        );
+        app()->bind(
+            \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class,
+            fn() => new \App\Models\Repositories\Api\ApiStatisticsPageRepository()
+        );
+    });
+
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     ->match(fn(Reception $reception) => handleRequestWithETagAndCache(json_encode($reception->input())));
 
@@ -390,9 +405,9 @@ Route::path(
     'database/{user}/query@get@options',
     [DatabaseApiController::class, 'index']
 )
-    ->match(function (AdminAuthService $adminAuthService, string $user) {
+    ->match(function (string $user) {
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     })
     ->matchStr('stmt');
 
@@ -400,10 +415,20 @@ Route::path(
     'database/{user}/schema@get@options',
     [DatabaseApiController::class, 'schema']
 )
-    ->match(function (AdminAuthService $adminAuthService, string $user) {
+    ->match(function (string $user) {
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
+
+Route::path(
+    'database/{user}/ban@get@options',
+    [DatabaseApiController::class, 'ban']
+)
+    ->match(function (string $user) {
+        allowCORS();
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
+    })
+    ->matchStr('date');
 
 cache();
 Route::run();

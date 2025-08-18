@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Views;
 
-use App\Models\Repositories\OpenChatListRepositoryInterface;
+use App\Models\Repositories\OpenChatRecentListRepositoryInterface;
 use App\Services\Traits\TraitPaginationRecordsCalculator;
 
 class OpenChatStatisticsRecent
@@ -12,7 +12,7 @@ class OpenChatStatisticsRecent
     use TraitPaginationRecordsCalculator;
 
     public function __construct(
-        private OpenChatListRepositoryInterface $openChatListRepository,
+        private OpenChatRecentListRepositoryInterface $openChatListRepository,
         private OpenChatPagination $openChatPagination,
     ) {}
 
@@ -26,7 +26,7 @@ class OpenChatStatisticsRecent
         return $this->openChatPagination->getSelectElementArgOrderDesc(
             $pageNumber,
             count($labelArray),
-            $this->openChatListRepository->findAllOrderById(...),
+            $this->openChatListRepository->findAllOrderByEntity(...),
             $labelArray,
             $limit,
         );

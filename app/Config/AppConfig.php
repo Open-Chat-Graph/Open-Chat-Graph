@@ -19,6 +19,9 @@ class AppConfig
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
+    const LINE_IMG_URL = 'https://obs.line-scdn.net/';
+    const LINE_IMG_URL_PREVIEW_PATH = '/preview';
+
     const OPENCHAT_IMG_PREVIEW_PATH = 'preview';
     const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p';
 
@@ -141,7 +144,6 @@ class AppConfig
     static bool $disableAds = false;
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
-    // TODO: 試験的に広告タグを無効化するフラグ
     static bool $disableAdTags = false;
 
     /** @var array<string,int> */

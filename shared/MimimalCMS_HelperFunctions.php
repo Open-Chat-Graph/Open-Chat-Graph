@@ -493,7 +493,7 @@ function pre_var_dump($var)
  * echo $elapsed; // in milliseconds
  * ```
  */
-function getScriptExecutionTime(float $start = null): float
+function getScriptExecutionTime(?float $start = null): float
 {
     if ($start === null) {
         $start = microtime(true);

@@ -301,6 +301,16 @@ function getImgPreviewPath(int $open_chat_id, string $imgUrl): string
     return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/{$subDir}/{$imgUrl}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp";
 }
 
+function lineImgUrl($img_url)
+{
+    return AppConfig::LINE_IMG_URL . $img_url;
+}
+
+function linePreviewUrl($img_url)
+{
+    return AppConfig::LINE_IMG_URL . $img_url . AppConfig::LINE_IMG_URL_PREVIEW_PATH;
+}
+
 function filePathNumById(int $id): string
 {
     return (string)floor($id / 1000);

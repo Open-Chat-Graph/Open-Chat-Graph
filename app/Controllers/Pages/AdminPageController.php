@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
+use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
@@ -38,6 +39,17 @@ class AdminPageController
     {
         $result = $repo->getUserListLogAll(9999, 0);
         return view('admin/dash_my_list', ['result' => $result]);
+    }
+
+    function ban(ApiDeletedOpenChatListRepository $repo, string $date)
+    {
+        $result = $repo->getDeletedOpenChatList($date, 999999);
+        $result = array_map(function ($item) {
+            $item['description'] = truncateDescription($item['description']);
+            return $item;
+        }, $result);
+
+        pre_var_dump($result);
     }
 
     function cron_test(string $lang)
