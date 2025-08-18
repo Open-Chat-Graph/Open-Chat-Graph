@@ -48,10 +48,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
 
-        <?php //GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
-        <?php //GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
