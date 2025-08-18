@@ -52,14 +52,16 @@ class ApiDeletedOpenChatListRepository
                 categories c ON om.category_id = c.category_id
             WHERE
                 DATE(ocd.deleted_at) = :date
-                AND om.current_member_count >= 15";
+                AND om.current_member_count >= 20
+            ORDER BY
+                om.established_at DESC";
 
         $deletedOpenChats = ApiDB::fetchAll($query, compact('date'));
 
         if ($deletedOpenChats === false) {
             return false;
         }
-
+/* 
         // Filter out OpenChats based on display_name patterns
         $deletedOpenChats = array_filter($deletedOpenChats, function($openChat) {
             foreach (self::$filterPatterns as $filter) {
@@ -116,7 +118,7 @@ class ApiDeletedOpenChatListRepository
             }
 
             return $posA <=> $posB;
-        });
+        }); */
 
         return array_slice($deletedOpenChats, 0, $limit);
     }
