@@ -111,6 +111,11 @@ class DatabaseApiController
             throw new ValidationException('Query too long');
         }
 
+        // UPDATE / DELETE を禁止（大文字小文字を問わず）
+        if (preg_match('/^\s*(UPDATE|DELETE)\b/i', $query)) {
+            throw new ValidationException('UPDATE / DELETE statements are not allowed');
+        }
+
         // LIMITチェック
         if (preg_match('/^\s*SELECT/i', $query)) {
             if (preg_match('/LIMIT\s+(\d+)/i', $query, $matches)) {
