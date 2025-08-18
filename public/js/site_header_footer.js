@@ -266,7 +266,7 @@ async function blockblock() {
     });
 }
 
-// if (typeof admin === "undefined" || !admin) blockblock();
+if (typeof admin === "undefined" || !admin) blockblock();
 
 function detectAdBlock() {
   // すべてのAdSense要素を取得
@@ -327,7 +327,7 @@ function detectAdBlock() {
   }
 }
 
-/* if (typeof admin === "undefined" || !admin) {
+if (typeof admin === "undefined" || !admin) {
   // （インターバルで監視）
   const checkInterval = setInterval(() => {
     if (
@@ -344,4 +344,3 @@ function detectAdBlock() {
   setTimeout(() => clearInterval(checkInterval), 10000); // 10秒後に停止
   console.log("AdBlock検出の監視を開始しました");
 }
- */

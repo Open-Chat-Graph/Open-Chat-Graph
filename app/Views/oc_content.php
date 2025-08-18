@@ -209,13 +209,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
       </section>
     </article>
-    <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -245,7 +245,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <?php endif ?>
         </aside>
       </section>
-      <?php //GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
     <?php if (isset($officialDto) && $officialDto) : ?>
