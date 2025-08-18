@@ -6,7 +6,7 @@ namespace App\Models\Repositories;
 
 use App\Models\Repositories\DB;
 
-class OpenChatListRepository implements OpenChatListRepositoryInterface
+class OpenChatListRepository implements OpenChatListRepositoryInterface, OpenChatRecentListRepositoryInterface
 {
     public function getRecordCount(): int
     {
@@ -29,7 +29,7 @@ class OpenChatListRepository implements OpenChatListRepositoryInterface
         )->fetchColumn();
     }
 
-    public function findAllOrderById(
+    public function findAllOrderByEntity(
         int $startId,
         int $endId,
     ): array {

@@ -405,9 +405,9 @@ Route::path(
     'database/{user}/query@get@options',
     [DatabaseApiController::class, 'index']
 )
-    ->match(function (AdminAuthService $adminAuthService, string $user) {
+    ->match(function (string $user) {
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     })
     ->matchStr('stmt');
 
@@ -415,10 +415,20 @@ Route::path(
     'database/{user}/schema@get@options',
     [DatabaseApiController::class, 'schema']
 )
-    ->match(function (AdminAuthService $adminAuthService, string $user) {
+    ->match(function (string $user) {
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->registerAdminCookie($user);
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
+
+Route::path(
+    'database/{user}/ban@get@options',
+    [DatabaseApiController::class, 'ban']
+)
+    ->match(function (string $user) {
+        allowCORS();
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
+    })
+    ->matchStr('date');
 
 cache();
 Route::run();

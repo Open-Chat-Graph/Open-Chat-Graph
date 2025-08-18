@@ -22,18 +22,6 @@ interface OpenChatListRepositoryInterface
     public function getPastWeekRankingRecordCount(): int;
 
     /**
-     * 登録日順で取得する
-     * 
-     * @return array `[['id' => int, 'name' => string, 'url' => string, 'description' => string, 'img_url' => string, 'member' => int, 'datetime' => string]]`
-     */
-    public function findAllOrderById(
-        int $startId,
-        int $endId,
-    ): array;
-
-    public function findAllOrderByIdCreatedAtColumn(): array;
-
-    /**
      * @return array `[['id' => int, 'name' => string, 'url' => string, 'description' => string, 'img_url' => string, 'member' => int, 'diff_member' => int, 'percent_increase' => float, 'ranking_id' => int]]`
      */
     public function getRankingRecordByMylist(array $idArray): array;
