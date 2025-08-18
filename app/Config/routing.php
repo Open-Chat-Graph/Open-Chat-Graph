@@ -70,7 +70,11 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
 // TODO: test-api
 Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(function (int $open_chat_id) {
+    ->match(function (AdminAuthService $adminAuthService, int $open_chat_id) {
+        if (!$adminAuthService->auth()) {
+            return false;
+        }
+
         handleRequestWithETagAndCache($open_chat_id);
         app()->bind(
             \App\Models\Repositories\OpenChatPageRepositoryInterface::class,
