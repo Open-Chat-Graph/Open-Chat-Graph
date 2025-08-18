@@ -19,6 +19,9 @@ class AppConfig
     const LINE_APP_URL = 'line://ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default';
 
+    const LINE_IMG_URL = 'https://obs.line-scdn.net/';
+    const LINE_IMG_URL_PREVIEW_PATH = '/preview';
+
     const OPENCHAT_IMG_PREVIEW_PATH = 'preview';
     const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p';
 

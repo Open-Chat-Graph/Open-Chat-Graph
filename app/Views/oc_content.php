@@ -22,7 +22,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <!-- オープンチャット表示ヘッダー -->
       <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
         <div class="talkroom_banner_img_area">
-          <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['id'], $oc['img_url']) ?>">
+          <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
           <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
             <nav class="my-list-form">
               <label class="checkbox-label" for="my-list-checkbox">
@@ -178,7 +178,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
       <hr class="hr-top" style="margin-bottom: 8px;">
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
-          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgPreviewUrl($oc['id'], $oc['img_url']) : linePreviewUrl($oc['api_img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
             <h2 class="graph-title">
               <div><?php echo t('メンバー数推移') ?></div>
@@ -223,7 +223,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     ?>
       <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
-          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['id'], $oc['img_url']) ?>">
+          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgPreviewUrl($oc['id'], $oc['img_url']) : linePreviewUrl($oc['api_img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
             <h2 class="graph-title">
               <div>オープンチャットについてのコメント</div>

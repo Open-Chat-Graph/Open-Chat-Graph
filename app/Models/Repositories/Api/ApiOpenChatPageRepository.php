@@ -20,16 +20,15 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
      */
     function getOpenChatById(int $id): array|false
     {
-        ApiDB::connect();
-        
-        $query = "
-            SELECT 
+        $query =
+            "SELECT
                 om.openchat_id AS id,
                 om.line_internal_id AS emid,
                 om.display_name AS name,
                 om.invitation_url AS url,
                 om.description,
-                om.profile_image_url AS img_url,
+                '' AS img_url,
+                om.profile_image_url AS api_img_url,
                 om.current_member_count AS member,
                 CASE 
                     WHEN om.verification_badge = 'スペシャル' THEN 1
@@ -64,14 +63,9 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
             LEFT JOIN 
                 growth_ranking_past_week grw ON om.openchat_id = grw.openchat_id
             WHERE 
-                om.openchat_id = ?
-        ";
-        
-        $stmt = ApiDB::$pdo->prepare($query);
-        $stmt->execute([$id]);
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        
-        return $result ?: false;
+                om.openchat_id = :id";
+
+        return ApiDB::fetch($query, compact('id'));
     }
 
     /**
