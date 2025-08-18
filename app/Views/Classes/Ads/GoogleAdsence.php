@@ -162,7 +162,9 @@ class GoogleAdsence
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment || AppConfig::$disableAds) return;
 
-        $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
+        //$dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
+        $dataOverlaysAttr = '';
+        
         $adClient = self::AD_CLIENT;
 
         echo <<<EOT
