@@ -102,9 +102,6 @@ class OpenChatPageController
 
         $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
         if (!$_statsDto) {
-            //http_response_code(503);
-            //echo 'メンテナンス中';
-            //exit;
             $_statsDto = new StatisticsChartDto((new \DateTime('-1day'))->format('Y-m-d'), (new \DateTime('now'))->format('Y-m-d'));
         }
 
