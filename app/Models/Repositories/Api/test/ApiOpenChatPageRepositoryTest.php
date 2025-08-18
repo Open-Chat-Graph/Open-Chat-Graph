@@ -76,24 +76,7 @@ class ApiOpenChatPageRepositoryTest extends TestCase
         
         $this->assertTrue(true);
     }
-
-    public function testGetRankingPositionCategoryById()
-    {
-        echo "\n=== Testing ApiOpenChatPageRepository::getRankingPositionCategoryById ===\n";
-        
-        $openChatId = 3;
-        $category = $this->repository->getRankingPositionCategoryById($openChatId);
-        
-        if ($category !== false) {
-            echo "Category for OpenChat ID {$openChatId}: {$category}\n";
-            debug(['id' => $openChatId, 'category' => $category]);
-        } else {
-            echo "Category not found for OpenChat ID {$openChatId}\n";
-        }
-        
-        $this->assertTrue(true);
-    }
-
+    
     public function testMultipleOpenChats()
     {
         echo "\n=== Testing multiple OpenChats to see data structure ===\n";

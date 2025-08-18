@@ -96,32 +96,9 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
      */
     function isExistsOpenChat(int $id): bool
     {
-        ApiDB::connect();
-        
-        $query = "SELECT 1 FROM openchat_master WHERE openchat_id = ? LIMIT 1";
-        
-        $stmt = ApiDB::$pdo->prepare($query);
-        $stmt->execute([$id]);
-        
-        return $stmt->fetchColumn() !== false;
-    }
-
-    /**
-     * Get category for ranking position by OpenChat ID
-     * 
-     * @param int $id OpenChat ID
-     * @return int|false Category ID or false if not found
-     */
-    function getRankingPositionCategoryById(int $id): int|false
-    {
-        ApiDB::connect();
-        
-        $query = "SELECT category_id FROM openchat_master WHERE openchat_id = ?";
-        
-        $stmt = ApiDB::$pdo->prepare($query);
-        $stmt->execute([$id]);
-        $result = $stmt->fetchColumn();
-        
-        return $result !== false ? (int)$result : false;
+        return (bool) ApiDB::fetchColumn(
+            "SELECT 1 FROM openchat_master WHERE openchat_id = :id LIMIT 1",
+            compact('id')
+        );
     }
 }
