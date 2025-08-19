@@ -9,7 +9,6 @@ use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use App\Models\Repositories\DB;
 
 class OpenChatApiDbMergerProcess
 {
