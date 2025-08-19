@@ -47,7 +47,7 @@ class ApiDeletedOpenChatListRepository
             FROM
                 openchat_master om
             JOIN
-                ocgraph_ocreview.open_chat_deleted ocd ON om.line_internal_id = ocd.emid
+                ocgraph_ocreview.open_chat_deleted ocd ON om.openchat_id = ocd.id
             JOIN
                 categories c ON om.category_id = c.category_id
             WHERE
