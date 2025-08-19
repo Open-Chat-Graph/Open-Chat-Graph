@@ -15,8 +15,7 @@ class DeleteOpenChatRepository implements DeleteOpenChatRepositoryInterface
         private StatisticsRepositoryInterface $statisticsRepository,
         private RankingPositionRepositoryInterface $rankingPositionRepository,
         private DeleteCommentRepositoryInterface $deleteCommentRepository,
-    ) {
-    }
+    ) {}
 
     public function deleteOpenChat(int $open_chat_id): bool
     {
@@ -34,5 +33,16 @@ class DeleteOpenChatRepository implements DeleteOpenChatRepositoryInterface
         $this->deleteCommentRepository->deleteCommentsAll($open_chat_id);
 
         return $result;
+    }
+
+    public function insertDeletedOpenChat(int $open_chat_id, string $emid): void
+    {
+        DB::executeAndCheckResult(
+            "INSERT IGNORE INTO
+                open_chat_deleted (id, emid)
+            VALUES
+                (:open_chat_id, :emid)",
+            compact('open_chat_id', 'emid')
+        );
     }
 }
