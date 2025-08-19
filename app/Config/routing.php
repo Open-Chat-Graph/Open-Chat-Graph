@@ -29,6 +29,7 @@ use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
+use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
@@ -117,7 +118,7 @@ Route::path(
         if (!$isValid)
             return false;
 
-        app(ApiDbOpenChatControllerServiceProvider::class)->register();
+        app(ApiRankingPositionPageRepositoryServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
