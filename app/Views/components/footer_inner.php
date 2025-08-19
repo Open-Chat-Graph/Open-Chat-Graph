@@ -14,7 +14,7 @@
             <ul class="footer-link-inner">
                 <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="<?php echo url('labs/live') ?>">ライブトーク分析ツール</a></il>
-                    <li><a class="unset" href="<?php echo url('labs/publication-analytics?publish=2&change=2&percent=100') ?>">公式ランキング掲載の分析</a></il>
+                    <li><a class="unset" href="<?php echo url('labs/publication-analytics') ?>">公式ランキング掲載の分析</a></il>
                     <li><a class="unset" href="https://x.com/openchat_graph" target="_blank">オプチャグラフ公式X<span class="line-link-icon777"></span></a></li>
                 <? endif ?>
             </ul>
