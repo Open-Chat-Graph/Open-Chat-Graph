@@ -24,7 +24,7 @@ class OpenChatMargeUpdateProcess
     function mergeUpdateOpenChat(OpenChatRepositoryDto $repoDto, OpenChatDto|false $ocDto, bool $updateMember = true): OpenChatUpdaterDto|false
     {
         if ($ocDto === false || OpenChatServicesUtility::containsHashtagNolog($ocDto)) {
-            $this->openChatDeleter->deleteOpenChat($repoDto->open_chat_id, $repoDto->getLocalImgUrl());
+            $this->openChatDeleter->deleteOpenChat($repoDto);
             return false;
         }
 
