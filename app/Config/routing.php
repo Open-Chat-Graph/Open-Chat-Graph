@@ -80,6 +80,13 @@ Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
         app(ApiRepositoryServiceProvider::class)->register();
     });
 
+// TODO: test-api
+Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function (string $user) {
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
+    });
+
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     ->match(fn(Reception $reception) => handleRequestWithETagAndCache(json_encode($reception->input())));
 
