@@ -20,7 +20,7 @@ class OpenChatRepositoryDto
     private string $local_img_url;
 
     /**
-     * @param array{ emid: string, name: string, description: string, img_url: string, local_img_url: string, member: string, api_created_at: int | null, category: int | null, emblem: int | null }[] $openChatData
+     * @param array{ emid: string, name: string, description: string, img_url: string, local_img_url: string, member: int, api_created_at: int | null, category: int | null, emblem: int | null } $openChatData
      */
     function __construct(int $id, array $openChatData)
     {

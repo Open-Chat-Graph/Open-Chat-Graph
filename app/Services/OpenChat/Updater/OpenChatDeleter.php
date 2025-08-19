@@ -6,6 +6,7 @@ namespace App\Services\OpenChat\Updater;
 
 use App\Services\OpenChat\Dto\OpenChatUpdaterDtoFactory;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
+use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 use App\Services\OpenChat\Store\OpenChatImageStore;
 
 class OpenChatDeleter implements OpenChatDeleterInterface
@@ -17,10 +18,10 @@ class OpenChatDeleter implements OpenChatDeleterInterface
     ) {
     }
 
-    function deleteOpenChat(int $open_chat_id, string $imgUrl): void
+    function deleteOpenChat(OpenChatRepositoryDto $repoDto): void
     {
-        $updaterDto = $this->openChatUpdaterDtoFactory->mapToDeleteOpenChatDto($open_chat_id);
+        $updaterDto = $this->openChatUpdaterDtoFactory->mapToDeleteOpenChatDto($repoDto->open_chat_id);
         $this->updateRepository->updateOpenChatRecord($updaterDto);
-        $this->openChatImageStore->deleteImage($open_chat_id, $imgUrl);
+        $this->openChatImageStore->deleteImage($repoDto->open_chat_id, $repoDto->getLocalImgUrl());
     }
 }
