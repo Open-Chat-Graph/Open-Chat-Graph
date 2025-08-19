@@ -13,14 +13,8 @@ class ApiRepositoryServiceProvider implements ServiceProviderInterface
 {
     function register(): void
     {
-        app()->bind(
-            OpenChatPageRepositoryInterface::class,
-            fn() => new ApiOpenChatPageRepository()
-        );
-        
-        app()->bind(
-            StatisticsPageRepositoryInterface::class,
-            fn() => new ApiStatisticsPageRepository()
-        );
+        app()->bind(OpenChatPageRepositoryInterface::class, ApiOpenChatPageRepository::class);
+
+        app()->bind(StatisticsPageRepositoryInterface::class, ApiStatisticsPageRepository::class);
     }
 }
