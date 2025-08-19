@@ -84,6 +84,7 @@ Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (string $user) {
+        app(ApiRepositoryServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
