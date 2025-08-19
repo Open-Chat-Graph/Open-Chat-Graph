@@ -28,6 +28,7 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
+use App\ServiceProvider\ApiRepositoryServiceProvider;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
@@ -76,14 +77,7 @@ Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
         }
 
         handleRequestWithETagAndCache($open_chat_id);
-        app()->bind(
-            \App\Models\Repositories\OpenChatPageRepositoryInterface::class,
-            fn() => new \App\Models\Repositories\Api\ApiOpenChatPageRepository()
-        );
-        app()->bind(
-            \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class,
-            fn() => new \App\Models\Repositories\Api\ApiStatisticsPageRepository()
-        );
+        app(ApiRepositoryServiceProvider::class)->register();
     });
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
