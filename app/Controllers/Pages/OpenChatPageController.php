@@ -15,12 +15,12 @@ use App\Services\Recommend\RecommendGenarator;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
 use App\Services\Statistics\StatisticsChartArrayService;
-use App\Views\Dto\RankingPositionChartArgDto;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
+use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
 use Shared\MimimalCmsConfig;
 
 class OpenChatPageController
@@ -35,6 +35,7 @@ class OpenChatPageController
         StaticDataFile $staticDataGeneration,
         RecommendGenarator $recommendGenarator,
         RecentCommentListRepositoryInterface $recentCommentListRepository,
+        RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -134,7 +135,7 @@ class OpenChatPageController
 
         $_hourlyRange = $this->buildHourlyRange($oc);
 
-        $_chartArgDto = $this->buildChartDto($oc, $categoryValue ?? t('すべて'));
+        $_chartArgDto = $rankingPositionChartArgDtoFactory->create($oc, $categoryValue ?? t('すべて'));
         $_commentArgDto = [
             'baseUrl' => url(),
             'openChatId' => $oc['id']
@@ -206,16 +207,5 @@ class OpenChatPageController
         $hourlyUpdatedAt->modify('-1hour');
 
         return '<time datetime="' . $hourlyTime . '">' . t('1時間') . '</time>';
-    }
-
-    private function buildChartDto(array $oc, string $categoryName): RankingPositionChartArgDto
-    {
-        $_chartArgDto = new RankingPositionChartArgDto;
-        $_chartArgDto->id = $oc['id'];
-        $_chartArgDto->categoryKey = $oc['category'] ?? (is_int($oc['api_created_at']) ? 0 : null);
-        $_chartArgDto->categoryName = $categoryName;
-        $_chartArgDto->baseUrl = url();
-        $_chartArgDto->urlRoot = MimimalCmsConfig::$urlRoot;
-        return $_chartArgDto;
     }
 }

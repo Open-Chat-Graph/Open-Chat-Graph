@@ -52,6 +52,8 @@ class MimimalCmsConfig
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
         
         \App\Services\OpenChat\Updater\OpenChatDeleterInterface::class => \App\Services\OpenChat\Updater\OpenChatDeleter::class,
+        
+        \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
     ];
 
     // URL root
