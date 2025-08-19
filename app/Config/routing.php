@@ -28,7 +28,7 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Middleware\VerifyCsrfToken;
-use App\ServiceProvider\ApiRepositoryServiceProvider;
+use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
@@ -69,22 +69,11 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache($open_chat_id));
 
 // TODO: test-api
-Route::path('ocapi/{open_chat_id}', [OpenChatPageController::class, 'index'])
-    ->matchNum('open_chat_id', min: 1)
-    ->match(function (AdminAuthService $adminAuthService, int $open_chat_id) {
-        if (!$adminAuthService->auth()) {
-            return false;
-        }
-
-        handleRequestWithETagAndCache($open_chat_id);
-        app(ApiRepositoryServiceProvider::class)->register();
-    });
-
-// TODO: test-api
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (string $user) {
-        app(ApiRepositoryServiceProvider::class)->register();
+
+        app(ApiDbOpenChatControllerServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
@@ -109,6 +98,27 @@ Route::path(
 
         handleRequestWithETagAndCache(json_encode($reception->input()));
         return true;
+    });
+
+// TODO: test-api
+Route::path(
+    'ranking-position/{user}/oc/{open_chat_id}/position',
+    [RankingPositionApiController::class, 'rankingPosition']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('category', min: 0)
+    ->matchStr('sort', regex: ['ranking', 'rising'])
+    ->matchStr('start_date')
+    ->matchStr('end_date')
+    ->match(function (string $start_date, string $end_date, string $user) {
+        $isValid = $start_date === date("Y-m-d", strtotime($start_date))
+            && $end_date === date("Y-m-d", strtotime($end_date))
+            && strtotime($start_date) <= strtotime($end_date);
+        if (!$isValid)
+            return false;
+
+        app(ApiDbOpenChatControllerServiceProvider::class)->register();
+        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
 Route::path(
