@@ -8,7 +8,7 @@ use App\Services\OpenChat\Dto\OpenChatUpdaterDtoFactory;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Store\OpenChatImageStore;
 
-class OpenChatDeleter
+class OpenChatDeleter implements OpenChatDeleterInterface
 {
     function __construct(
         private OpenChatUpdaterDtoFactory $openChatUpdaterDtoFactory,
@@ -17,7 +17,7 @@ class OpenChatDeleter
     ) {
     }
 
-    function OpenChatDeleter(int $open_chat_id, string $imgUrl): void
+    function deleteOpenChat(int $open_chat_id, string $imgUrl): void
     {
         $updaterDto = $this->openChatUpdaterDtoFactory->mapToDeleteOpenChatDto($open_chat_id);
         $this->updateRepository->updateOpenChatRecord($updaterDto);

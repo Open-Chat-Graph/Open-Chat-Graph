@@ -9,7 +9,7 @@ use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 use App\Services\OpenChat\Dto\OpenChatUpdaterDto;
-use App\Services\OpenChat\Updater\OpenChatDeleter;
+use App\Services\OpenChat\Updater\OpenChatDeleterInterface;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
 class OpenChatMargeUpdateProcess
@@ -17,14 +17,14 @@ class OpenChatMargeUpdateProcess
     function __construct(
         private OpenChatUpdaterDtoFactory $openChatUpdaterDtoFactory,
         private UpdateOpenChatRepositoryInterface $updateRepository,
-        private OpenChatDeleter $openChatDeleter,
+        private OpenChatDeleterInterface $openChatDeleter,
     ) {
     }
 
     function mergeUpdateOpenChat(OpenChatRepositoryDto $repoDto, OpenChatDto|false $ocDto, bool $updateMember = true): OpenChatUpdaterDto|false
     {
         if ($ocDto === false || OpenChatServicesUtility::containsHashtagNolog($ocDto)) {
-            $this->openChatDeleter->OpenChatDeleter($repoDto->open_chat_id, $repoDto->getLocalImgUrl());
+            $this->openChatDeleter->deleteOpenChat($repoDto->open_chat_id, $repoDto->getLocalImgUrl());
             return false;
         }
 

@@ -50,6 +50,8 @@ class MimimalCmsConfig
         \App\Models\CommentRepositories\RecentCommentListRepositoryInterface::class => \App\Models\CommentRepositories\RecentCommentListRepository::class,
         
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
+        
+        \App\Services\OpenChat\Updater\OpenChatDeleterInterface::class => \App\Services\OpenChat\Updater\OpenChatDeleter::class,
     ];
 
     // URL root
