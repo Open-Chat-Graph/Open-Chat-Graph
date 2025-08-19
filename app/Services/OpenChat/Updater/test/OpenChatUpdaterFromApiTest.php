@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class OpenChatUpdaterFromApiTest extends TestCase
 {
-    public function fetchUpdateOpenChat_test(): void
+    public function test(): void
     {
         /**
          * @var OpenChatUpdaterFromApi $updater
