@@ -53,7 +53,7 @@ class ApiDeletedOpenChatListRepository
                 categories c ON om.category_id = c.category_id
             WHERE
                 DATE(ocd.deleted_at) = :date
-                AND om.current_member_count >= 20
+                AND om.current_member_count >= 15
             ORDER BY
                 om.established_at DESC";
 
