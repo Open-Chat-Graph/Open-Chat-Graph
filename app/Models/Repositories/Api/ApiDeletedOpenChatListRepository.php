@@ -106,7 +106,7 @@ class ApiDeletedOpenChatListRepository
 
         // Fetch member growth statistics for each OpenChat
         foreach ($deletedOpenChats as &$openChat) {
-            // 最新のメンバー数と比較用のメンバー数を取得（7日前より古い最新のレコード、なければ最古のレコード）
+            // 最新のメンバー数と比較用のメンバー数を取得（7日前と30日前）
             $growthQuery =
                 "SELECT 
                     latest.member_count as latest_count,
@@ -118,7 +118,9 @@ class ApiDeletedOpenChatListRepository
                     COALESCE(
                         week_ago_or_newer.statistics_date,
                         oldest.statistics_date
-                    ) as comparison_date
+                    ) as comparison_date,
+                    month_ago.member_count as month_ago_count,
+                    month_ago.statistics_date as month_ago_date
                 FROM 
                     (SELECT member_count, statistics_date 
                      FROM daily_member_statistics 
@@ -140,13 +142,25 @@ class ApiDeletedOpenChatListRepository
                      FROM daily_member_statistics 
                      WHERE openchat_id = :openchat_id4
                      ORDER BY statistics_date ASC 
-                     LIMIT 1) as oldest ON 1=1";
+                     LIMIT 1) as oldest ON 1=1
+                LEFT JOIN
+                    (SELECT member_count, statistics_date 
+                     FROM daily_member_statistics 
+                     WHERE openchat_id = :openchat_id5 
+                       AND statistics_date <= DATE_SUB(
+                           (SELECT MAX(statistics_date) FROM daily_member_statistics WHERE openchat_id = :openchat_id6),
+                           INTERVAL 30 DAY
+                       )
+                     ORDER BY statistics_date DESC 
+                     LIMIT 1) as month_ago ON 1=1";
 
             $growth = ApiDB::fetch($growthQuery, [
                 'openchat_id' => $openChat['openchat_id'],
                 'openchat_id2' => $openChat['openchat_id'],
                 'openchat_id3' => $openChat['openchat_id'],
                 'openchat_id4' => $openChat['openchat_id'],
+                'openchat_id5' => $openChat['openchat_id'],
+                'openchat_id6' => $openChat['openchat_id'],
             ]);
 
             // メンバー増加数を計算
@@ -161,6 +175,25 @@ class ApiDeletedOpenChatListRepository
             } else {
                 // データがない場合、増加数を0に設定
                 $openChat['member_growth'] = 0;
+            }
+            
+            // 1ヶ月間の成長をチェック（減少している場合はフラグを立てる）
+            $openChat['is_declining'] = false;
+            if ($growth && $growth['latest_count'] !== null) {
+                // 1ヶ月前のデータがある場合はそれと比較
+                if ($growth['month_ago_count'] !== null) {
+                    $monthlyGrowth = $growth['latest_count'] - $growth['month_ago_count'];
+                    if ($monthlyGrowth < 0) {
+                        $openChat['is_declining'] = true;
+                    }
+                }
+                // 1ヶ月前のデータがない場合は最古のデータと比較（ただし最新と同じでない場合）
+                elseif ($growth['comparison_count'] !== null && $growth['latest_date'] !== $growth['comparison_date']) {
+                    $overallGrowth = $growth['latest_count'] - $growth['comparison_count'];
+                    if ($overallGrowth < 0) {
+                        $openChat['is_declining'] = true;
+                    }
+                }
             }
 
             // 最終結果からcategory_idを削除
@@ -187,11 +220,12 @@ class ApiDeletedOpenChatListRepository
         $highPriorityItems = [];  // キーワード一致 - 上位20位以内に押し上げ
         $mediumPriorityItems = []; // メンバー50人以上 - 上位48位以内に押し上げ
         $regularItems = [];
-        $lowPriorityItems = [];   // 低優先度キーワード - 10位程度下げる
+        $lowPriorityItems = [];   // 低優先度キーワードまたは減少中 - 10位程度下げる
         
         foreach ($deletedOpenChats as $openChat) {
             $hasHighPriorityKeyword = false;
             $hasLowPriorityKeyword = false;
+            $isDeclining = $openChat['is_declining'] ?? false;
             
             // display_nameで高優先度キーワード（第1グループ）をチェック
             foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
@@ -225,7 +259,8 @@ class ApiDeletedOpenChatListRepository
             // 分類
             if ($hasHighPriorityKeyword) {
                 $highPriorityItems[] = $openChat;
-            } elseif ($hasLowPriorityKeyword) {
+            } elseif ($hasLowPriorityKeyword || $isDeclining) {
+                // 低優先度キーワードまたは1ヶ月で減少している場合
                 $lowPriorityItems[] = $openChat;
             } elseif ($openChat['current_member_count'] >= 50) {
                 $mediumPriorityItems[] = $openChat;
@@ -291,9 +326,10 @@ class ApiDeletedOpenChatListRepository
         
         $deletedOpenChats = $adjustedResult;
 
-        // 結果から一時的なmember_growthフィールドを削除
+        // 結果から一時的なフィールドを削除
         foreach ($deletedOpenChats as &$openChat) {
             unset($openChat['member_growth']);
+            unset($openChat['is_declining']);
         }
 
         return array_slice($deletedOpenChats, 0, $limit);
