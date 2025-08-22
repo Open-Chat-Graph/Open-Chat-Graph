@@ -46,7 +46,7 @@ class ApiDeletedOpenChatListRepository
      * 低優先度キーワード（順位を下げる）
      * display_nameにこれらのキーワードを含むルームは下位に配置
      */
-    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ'];
+    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ', 'LOW_PRIORITY_KEYWORDS'];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
     {
@@ -261,7 +261,29 @@ class ApiDeletedOpenChatListRepository
                 return $severePenaltyA <=> $severePenaltyB; // 大幅減少していない方が上位
             }
             
-            // 第2優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
+            // 低優先度キーワードのチェック
+            $hasLowPriorityA = false;
+            $hasLowPriorityB = false;
+            
+            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                if (mb_strpos($a['display_name'], $keyword) !== false) {
+                    $hasLowPriorityA = true;
+                    break;
+                }
+            }
+            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                if (mb_strpos($b['display_name'], $keyword) !== false) {
+                    $hasLowPriorityB = true;
+                    break;
+                }
+            }
+            
+            // 第2優先: 低優先度キーワードペナルティ
+            if ($hasLowPriorityA !== $hasLowPriorityB) {
+                return $hasLowPriorityA <=> $hasLowPriorityB; // 低優先度でない方が上位
+            }
+            
+            // 第3優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
             $smallRoomPenaltyA = ($currentMemberA <= 20 && !$hasHighPriorityA);
             $smallRoomPenaltyB = ($currentMemberB <= 20 && !$hasHighPriorityB);
             
@@ -269,12 +291,12 @@ class ApiDeletedOpenChatListRepository
                 return $smallRoomPenaltyA <=> $smallRoomPenaltyB; // 小規模でない方が上位
             }
             
-            // 第3優先: メンバー増加数（多い順）
+            // 第4優先: メンバー増加数（多い順）
             if ($memberGrowthA !== $memberGrowthB) {
                 return $memberGrowthB <=> $memberGrowthA;
             }
             
-            // 第4優先: 現在のメンバー数（多い順）
+            // 第5優先: 現在のメンバー数（多い順）
             if ($currentMemberA !== $currentMemberB) {
                 return $currentMemberB <=> $currentMemberA;
             }
