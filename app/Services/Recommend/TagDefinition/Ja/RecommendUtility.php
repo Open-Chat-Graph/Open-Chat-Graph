@@ -46,6 +46,7 @@ class RecommendUtility
         'FX',
         'パチンコ・スロット（パチスロ）',
         '副業',
+        'せどり',
         'お金',
         'TEMU',
         '70代',
