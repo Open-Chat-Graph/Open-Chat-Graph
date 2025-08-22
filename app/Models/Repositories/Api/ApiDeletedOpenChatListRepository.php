@@ -7,10 +7,10 @@ namespace App\Models\Repositories\Api;
 class ApiDeletedOpenChatListRepository
 {
     /**
-     * Filter patterns for display_name
-     * Each element can be:
-     * - ['pattern' => 'regex', 'categories' => null] - applies to all categories
-     * - ['pattern' => 'regex', 'categories' => ['category_name1', 'category_name2']] - applies only to specified categories
+     * display_nameのフィルターパターン
+     * 各要素は以下の形式:
+     * - ['pattern' => '正規表現', 'categories' => null] - 全カテゴリに適用
+     * - ['pattern' => '正規表現', 'categories' => ['カテゴリ名1', 'カテゴリ名2']] - 指定カテゴリのみに適用
      */
     private static array $filterPatterns = [
         ['pattern' => '/第[0-9０-９]+回/', 'categories' => null], // 第{半角または全角の数字１文字以上}回
@@ -29,6 +29,24 @@ class ApiDeletedOpenChatListRepository
         ['pattern' => '/連絡用/', 'categories' => null],
         ['pattern' => '/(?<![0-9０-９])[0-9０-９]{1,2}[\/／][0-9０-９]{1,2](?![0-9０-９])/', 'categories' => null],
     ];
+
+    /**
+     * 高優先度キーワード（上位20位以内に押し上げ）
+     * display_nameにこれらのキーワードを含むルームを優先表示
+     */
+    private const HIGH_PRIORITY_KEYWORDS_NAME = ['大人', 'シングル'];
+
+    /**
+     * 高優先度キーワード（上位20位以内に押し上げ）
+     * display_nameまたはdescriptionにこれらのキーワードを含むルームを優先表示
+     */
+    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達'];
+
+    /**
+     * 低優先度キーワード（順位を下げる）
+     * display_nameにこれらのキーワードを含むルームは下位に配置
+     */
+    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ'];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
     {
@@ -88,13 +106,19 @@ class ApiDeletedOpenChatListRepository
 
         // Fetch member growth statistics for each OpenChat
         foreach ($deletedOpenChats as &$openChat) {
-            // Fetch latest member count and oldest available count (preferably 7 days ago or older)
+            // 最新のメンバー数と比較用のメンバー数を取得（7日前より古い最新のレコード、なければ最古のレコード）
             $growthQuery =
                 "SELECT 
                     latest.member_count as latest_count,
                     latest.statistics_date as latest_date,
-                    COALESCE(week_ago.member_count, oldest.member_count) as comparison_count,
-                    COALESCE(week_ago.statistics_date, oldest.statistics_date) as comparison_date
+                    COALESCE(
+                        week_ago_or_newer.member_count,
+                        oldest.member_count
+                    ) as comparison_count,
+                    COALESCE(
+                        week_ago_or_newer.statistics_date,
+                        oldest.statistics_date
+                    ) as comparison_date
                 FROM 
                     (SELECT member_count, statistics_date 
                      FROM daily_member_statistics 
@@ -110,7 +134,7 @@ class ApiDeletedOpenChatListRepository
                            INTERVAL 7 DAY
                        )
                      ORDER BY statistics_date DESC 
-                     LIMIT 1) as week_ago ON 1=1
+                     LIMIT 1) as week_ago_or_newer ON 1=1
                 LEFT JOIN
                     (SELECT member_count, statistics_date 
                      FROM daily_member_statistics 
@@ -125,115 +149,161 @@ class ApiDeletedOpenChatListRepository
                 'openchat_id4' => $openChat['openchat_id'],
             ]);
 
-            // Calculate member growth
+            // メンバー増加数を計算
             if ($growth && $growth['latest_count'] !== null && $growth['comparison_count'] !== null) {
-                // If we have both latest and comparison data, calculate the difference
+                // 最新と比較データの両方がある場合、差分を計算
                 if ($growth['latest_date'] !== $growth['comparison_date']) {
                     $openChat['member_growth'] = $growth['latest_count'] - $growth['comparison_count'];
                 } else {
-                    // If only one record exists, set growth to 0
+                    // レコードが1つしかない場合、増加数を0に設定
                     $openChat['member_growth'] = 0;
                 }
             } else {
-                // If no data available, set growth to 0
+                // データがない場合、増加数を0に設定
                 $openChat['member_growth'] = 0;
             }
 
-            // Remove category_id from the final result
+            // 最終結果からcategory_idを削除
             unset($openChat['category_id']);
         }
 
-        // Sort by member growth (descending order)
+        // メンバー増加数で並び替え（降順）
         usort($deletedOpenChats, function ($a, $b) {
             $growthA = $a['member_growth'] ?? 0;
             $growthB = $b['member_growth'] ?? 0;
 
             if ($growthA === $growthB) {
-                // If growth is the same, sort by openchat_id for consistency
+                // 増加数が同じ場合、openchat_idで安定ソート
                 return $a['openchat_id'] <=> $b['openchat_id'];
             }
 
-            // Sort in descending order (higher growth first)
+            // 降順で並び替え（増加数が多い順）
             return $growthB <=> $growthA;
         });
 
-        // Apply boost for specific keywords and member count
-        $boostedKeywords = ['大人', 'シングル'];
-        $boostedKeywordsInNameOrDesc = ['リア友', '友達'];
+        // 特定キーワードとメンバー数による優先度調整
         
-        // Find and categorize items by boost priority
-        $highPriorityItems = [];  // Keyword matches - boost to top 20
-        $mediumPriorityItems = []; // 50+ members - boost to top 48
+        // 優先度別にアイテムを分類  
+        $highPriorityItems = [];  // キーワード一致 - 上位20位以内に押し上げ
+        $mediumPriorityItems = []; // メンバー50人以上 - 上位48位以内に押し上げ
         $regularItems = [];
         
-        foreach ($deletedOpenChats as $openChat) {
-            $hasKeyword = false;
+        // 低優先度キーワードを含むアイテムのインデックスを記録（後で順位調整）
+        $lowPriorityIndices = [];
+        
+        foreach ($deletedOpenChats as $index => $openChat) {
+            $hasHighPriorityKeyword = false;
+            $hasLowPriorityKeyword = false;
             
-            // Check display_name for first set of keywords
-            foreach ($boostedKeywords as $keyword) {
+            // display_nameで高優先度キーワード（第1グループ）をチェック
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
                 if (mb_strpos($openChat['display_name'], $keyword) !== false) {
-                    $hasKeyword = true;
+                    $hasHighPriorityKeyword = true;
                     break;
                 }
             }
             
-            // Check display_name and description for second set of keywords
-            if (!$hasKeyword) {
-                foreach ($boostedKeywordsInNameOrDesc as $keyword) {
+            // display_nameとdescriptionで高優先度キーワード（第2グループ）をチェック
+            if (!$hasHighPriorityKeyword) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
                     if (mb_strpos($openChat['display_name'], $keyword) !== false || 
                         mb_strpos($openChat['description'], $keyword) !== false) {
-                        $hasKeyword = true;
+                        $hasHighPriorityKeyword = true;
                         break;
                     }
                 }
             }
             
-            if ($hasKeyword) {
+            // display_nameで低優先度キーワードをチェック
+            if (!$hasHighPriorityKeyword) {
+                foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                    if (mb_strpos($openChat['display_name'], $keyword) !== false) {
+                        $hasLowPriorityKeyword = true;
+                        $lowPriorityIndices[] = $index;
+                        break;
+                    }
+                }
+            }
+            
+            if ($hasHighPriorityKeyword) {
                 $highPriorityItems[] = $openChat;
-            } elseif ($openChat['current_member_count'] >= 50) {
+            } elseif ($openChat['current_member_count'] >= 50 && !$hasLowPriorityKeyword) {
                 $mediumPriorityItems[] = $openChat;
             } else {
                 $regularItems[] = $openChat;
             }
         }
         
-        // Merge results with natural distribution
+        // 自然な分布で結果をマージ
         $finalResult = [];
         $highIndex = 0;
         $mediumIndex = 0;
         $regularIndex = 0;
         
-        // Natural positions for high priority items within top 20
+        // 上位20位以内での高優先度アイテムの自然な配置位置
         $highPriorityPositions = [2, 5, 8, 11, 14, 17, 19];
-        // Natural positions for medium priority items within positions 20-48
+        // 20-48位での中優先度アイテムの自然な配置位置
         $mediumPriorityPositions = [22, 25, 28, 31, 34, 37, 40, 43, 46];
         
         for ($i = 0; $i < count($deletedOpenChats); $i++) {
-            // Insert high priority items at specific positions within top 20
+            // 上位20位以内の特定位置に高優先度アイテムを挿入
             if ($i < 20 && in_array($i, $highPriorityPositions) && $highIndex < count($highPriorityItems)) {
                 $finalResult[] = $highPriorityItems[$highIndex++];
             }
-            // Insert medium priority items at specific positions within 20-48
+            // 20-48位の特定位置に中優先度アイテムを挿入
             elseif ($i >= 20 && $i < 48 && in_array($i, $mediumPriorityPositions) && $mediumIndex < count($mediumPriorityItems)) {
                 $finalResult[] = $mediumPriorityItems[$mediumIndex++];
             }
-            // Fill with regular items
+            // 通常アイテムで埋める
             elseif ($regularIndex < count($regularItems)) {
                 $finalResult[] = $regularItems[$regularIndex++];
             }
-            // Add remaining high priority items if regular items are exhausted
+            // 通常アイテムがなくなったら残りの高優先度アイテムを追加
             elseif ($highIndex < count($highPriorityItems)) {
                 $finalResult[] = $highPriorityItems[$highIndex++];
             }
-            // Add remaining medium priority items if other items are exhausted
+            // 他のアイテムがなくなったら残りの中優先度アイテムを追加
             elseif ($mediumIndex < count($mediumPriorityItems)) {
                 $finalResult[] = $mediumPriorityItems[$mediumIndex++];
             }
         }
         
-        $deletedOpenChats = $finalResult;
+        // 低優先度アイテムの順位を10位程度下げる処理
+        $adjustedResult = [];
+        $lowPriorityBuffer = [];
+        
+        foreach ($finalResult as $item) {
+            // 現在のアイテムが低優先度キーワードを含むかチェック
+            $isLowPriority = false;
+            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                if (mb_strpos($item['display_name'], $keyword) !== false) {
+                    $isLowPriority = true;
+                    break;
+                }
+            }
+            
+            if ($isLowPriority) {
+                // 低優先度アイテムはバッファに保存
+                $lowPriorityBuffer[] = $item;
+            } else {
+                // 通常アイテムを追加
+                $adjustedResult[] = $item;
+                
+                // 10個先に進んだら、バッファから低優先度アイテムを追加
+                if (count($adjustedResult) % 10 === 0 && !empty($lowPriorityBuffer)) {
+                    $adjustedResult[] = array_shift($lowPriorityBuffer);
+                }
+            }
+        }
+        
+        // 残りの低優先度アイテムを追加
+        foreach ($lowPriorityBuffer as $item) {
+            $adjustedResult[] = $item;
+        }
+        
+        $deletedOpenChats = $adjustedResult;
 
-        // Remove the temporary member_growth field from the results
+        // 結果から一時的なmember_growthフィールドを削除
         foreach ($deletedOpenChats as &$openChat) {
             unset($openChat['member_growth']);
         }
