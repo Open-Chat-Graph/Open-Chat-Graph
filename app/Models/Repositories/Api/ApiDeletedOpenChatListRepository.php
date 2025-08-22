@@ -201,18 +201,25 @@ class ApiDeletedOpenChatListRepository
             unset($openChat['category_id']);
         }
 
-        // メンバー増加数で並び替え（降順）
+        // まず現在のメンバー数で並び替え（多い順）、次にメンバー増加数で並び替え（降順）
         usort($deletedOpenChats, function ($a, $b) {
+            $memberCountA = $a['current_member_count'] ?? 0;
+            $memberCountB = $b['current_member_count'] ?? 0;
             $growthA = $a['member_growth'] ?? 0;
             $growthB = $b['member_growth'] ?? 0;
 
-            if ($growthA === $growthB) {
-                // 増加数が同じ場合、openchat_idで安定ソート
-                return $a['openchat_id'] <=> $b['openchat_id'];
+            // まず現在のメンバー数で比較（多い順）
+            if ($memberCountA !== $memberCountB) {
+                return $memberCountB <=> $memberCountA;
             }
 
-            // 降順で並び替え（増加数が多い順）
-            return $growthB <=> $growthA;
+            // メンバー数が同じ場合、増加数で比較（多い順）
+            if ($growthA !== $growthB) {
+                return $growthB <=> $growthA;
+            }
+
+            // 両方同じ場合、openchat_idで安定ソート
+            return $a['openchat_id'] <=> $b['openchat_id'];
         });
 
         // 特定キーワードとメンバー数による優先度調整
@@ -279,6 +286,8 @@ class ApiDeletedOpenChatListRepository
             $declineB = $b['peak_decline_rate'] ?? 0;
             $memberGrowthA = $a['member_growth'] ?? 0;
             $memberGrowthB = $b['member_growth'] ?? 0;
+            $currentMemberA = $a['current_member_count'] ?? 0;
+            $currentMemberB = $b['current_member_count'] ?? 0;
             
             // スコア計算: 成長率 - 減少率 + 絶対増加数のボーナス
             $scoreA = $growthA - $declineA + ($memberGrowthA > 0 ? min($memberGrowthA, 10) : 0);
@@ -288,12 +297,17 @@ class ApiDeletedOpenChatListRepository
                 return $scoreB <=> $scoreA; // 高スコア順
             }
             
-            // スコアが同じ場合は成長率で比較
+            // スコアが同じ場合は現在のメンバー数で比較（多い順）
+            if ($currentMemberA !== $currentMemberB) {
+                return $currentMemberB <=> $currentMemberA;
+            }
+            
+            // 次に成長率で比較
             if ($growthA !== $growthB) {
                 return $growthB <=> $growthA;
             }
             
-            // 次にメンバー増加数で比較
+            // 最後にメンバー増加数で比較
             if ($memberGrowthA !== $memberGrowthB) {
                 return $memberGrowthB <=> $memberGrowthA;
             }
