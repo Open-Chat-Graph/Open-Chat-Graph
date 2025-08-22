@@ -304,6 +304,240 @@ class ApiDeletedOpenChatListRepository
             return $a['openchat_id'] <=> $b['openchat_id'];
         });
 
+        // 特定キーワードとメンバー数による優先度調整
+        
+        // 優先度別にアイテムを分類  
+        $highPriorityItems = [];  // キーワード一致 - 上位20位以内に押し上げ
+        $mediumPriorityItems = []; // メンバー50人以上 - 上位48位以内に押し上げ
+        $regularItems = [];
+        $lowPriorityItems = [];   // 低優先度キーワードまたは減少中 - 10位程度下げる
+        
+        foreach ($deletedOpenChats as $openChat) {
+            $hasHighPriorityKeyword = false;
+            $hasLowPriorityKeyword = false;
+            $valleyGrowthRate = $openChat['valley_growth_rate'] ?? 0;
+            
+            // display_nameで高優先度キーワード（第1グループ）をチェック
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
+                if (mb_strpos($openChat['display_name'], $keyword) !== false) {
+                    $hasHighPriorityKeyword = true;
+                    break;
+                }
+            }
+            
+            // display_nameとdescriptionで高優先度キーワード（第2グループ）をチェック
+            if (!$hasHighPriorityKeyword) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
+                    if (mb_strpos($openChat['display_name'], $keyword) !== false || 
+                        mb_strpos($openChat['description'], $keyword) !== false) {
+                        $hasHighPriorityKeyword = true;
+                        break;
+                    }
+                }
+            }
+            
+            // display_nameで低優先度キーワードをチェック
+            if (!$hasHighPriorityKeyword) {
+                foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                    if (mb_strpos($openChat['display_name'], $keyword) !== false) {
+                        $hasLowPriorityKeyword = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 分類（最低から大きく成長しているルームは高優先度扱い）
+            if ($hasHighPriorityKeyword || $valleyGrowthRate >= 100) {
+                // キーワード一致または最低から2倍以上成長している場合は高優先度
+                $highPriorityItems[] = $openChat;
+            } elseif ($hasLowPriorityKeyword) {
+                $lowPriorityItems[] = $openChat;
+            } elseif ($openChat['current_member_count'] >= 50 || $valleyGrowthRate >= 50) {
+                // メンバー50人以上または最低から1.5倍以上成長している場合は中優先度
+                $mediumPriorityItems[] = $openChat;
+            } else {
+                $regularItems[] = $openChat;
+            }
+        }
+        
+        // 高優先度キーワードを最優先にしたソート関数
+        $sortWithHighPriorityFirst = function($a, $b) {
+            // 高優先度キーワードのチェック
+            $hasHighPriorityA = false;
+            $hasHighPriorityB = false;
+            
+            // display_nameで高優先度キーワード（第1グループ）をチェック
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
+                if (mb_strpos($a['display_name'], $keyword) !== false) {
+                    $hasHighPriorityA = true;
+                    break;
+                }
+            }
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
+                if (mb_strpos($b['display_name'], $keyword) !== false) {
+                    $hasHighPriorityB = true;
+                    break;
+                }
+            }
+            
+            // display_nameとdescriptionで高優先度キーワード（第2グループ）をチェック
+            if (!$hasHighPriorityA) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
+                    if (mb_strpos($a['display_name'], $keyword) !== false || 
+                        mb_strpos($a['description'], $keyword) !== false) {
+                        $hasHighPriorityA = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasHighPriorityB) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
+                    if (mb_strpos($b['display_name'], $keyword) !== false || 
+                        mb_strpos($b['description'], $keyword) !== false) {
+                        $hasHighPriorityB = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 第0優先: 高優先度キーワードの有無
+            if ($hasHighPriorityA !== $hasHighPriorityB) {
+                return $hasHighPriorityB <=> $hasHighPriorityA; // 高優先度が上位
+            }
+            
+            // 低優先度キーワードのチェック
+            $hasLowPriorityA = false;
+            $hasLowPriorityB = false;
+            
+            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                if (mb_strpos($a['display_name'], $keyword) !== false) {
+                    $hasLowPriorityA = true;
+                    break;
+                }
+            }
+            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
+                if (mb_strpos($b['display_name'], $keyword) !== false) {
+                    $hasLowPriorityB = true;
+                    break;
+                }
+            }
+            
+            $currentMemberA = $a['current_member_count'] ?? 0;
+            $currentMemberB = $b['current_member_count'] ?? 0;
+            $memberGrowthA = $a['member_growth'] ?? 0;
+            $memberGrowthB = $b['member_growth'] ?? 0;
+            $growthA = $a['valley_growth_rate'] ?? 0;
+            $growthB = $b['valley_growth_rate'] ?? 0;
+            $declineA = $a['peak_decline_rate'] ?? 0;
+            $declineB = $b['peak_decline_rate'] ?? 0;
+            
+            // 大幅減少（30%以上）の場合は大きくペナルティ
+            $severePenaltyA = $declineA >= 30;
+            $severePenaltyB = $declineB >= 30;
+            
+            // 第1優先: 大幅減少ペナルティ（30%以上減少は下位）
+            if ($severePenaltyA !== $severePenaltyB) {
+                return $severePenaltyA <=> $severePenaltyB; // 大幅減少していない方が上位
+            }
+            
+            // 第2優先: 低優先度キーワードペナルティ
+            if ($hasLowPriorityA !== $hasLowPriorityB) {
+                return $hasLowPriorityA <=> $hasLowPriorityB; // 低優先度でない方が上位
+            }
+            
+            // 第3優先: メンバー増加数（多い順）
+            if ($memberGrowthA !== $memberGrowthB) {
+                return $memberGrowthB <=> $memberGrowthA;
+            }
+            
+            // 第4優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
+            $smallRoomPenaltyA = ($currentMemberA <= 20 && !$hasHighPriorityA);
+            $smallRoomPenaltyB = ($currentMemberB <= 20 && !$hasHighPriorityB);
+            
+            if ($smallRoomPenaltyA !== $smallRoomPenaltyB) {
+                return $smallRoomPenaltyA <=> $smallRoomPenaltyB; // 小規模でない方が上位
+            }
+            
+            // 第5優先: 現在のメンバー数（多い順）
+            if ($currentMemberA !== $currentMemberB) {
+                return $currentMemberB <=> $currentMemberA;
+            }
+            
+            // 第6優先: 成長率（高い順）
+            if ($growthA !== $growthB) {
+                return $growthB <=> $growthA;
+            }
+            
+            // 第7優先: 減少率（低い順）
+            if ($declineA !== $declineB) {
+                return $declineA <=> $declineB;
+            }
+            
+            return $a['openchat_id'] <=> $b['openchat_id'];
+        };
+        
+        usort($regularItems, $sortWithHighPriorityFirst);
+        usort($lowPriorityItems, $sortWithHighPriorityFirst);
+        usort($mediumPriorityItems, $sortWithHighPriorityFirst);
+        usort($highPriorityItems, $sortWithHighPriorityFirst);
+        
+        // 自然な分布で結果をマージ
+        $finalResult = [];
+        $highIndex = 0;
+        $mediumIndex = 0;
+        $regularIndex = 0;
+        $lowIndex = 0;
+        
+        // 上位20位以内での高優先度アイテムの自然な配置位置
+        $highPriorityPositions = [2, 5, 8, 11, 14, 17, 19];
+        // 20-48位での中優先度アイテムの自然な配置位置
+        $mediumPriorityPositions = [22, 25, 28, 31, 34, 37, 40, 43, 46];
+        
+        // まず高・中・通常優先度のアイテムをマージ
+        for ($i = 0; $i < count($deletedOpenChats); $i++) {
+            // 上位20位以内の特定位置に高優先度アイテムを挿入
+            if ($i < 20 && in_array($i, $highPriorityPositions) && $highIndex < count($highPriorityItems)) {
+                $finalResult[] = $highPriorityItems[$highIndex++];
+            }
+            // 20-48位の特定位置に中優先度アイテムを挿入
+            elseif ($i >= 20 && $i < 48 && in_array($i, $mediumPriorityPositions) && $mediumIndex < count($mediumPriorityItems)) {
+                $finalResult[] = $mediumPriorityItems[$mediumIndex++];
+            }
+            // 通常アイテムで埋める
+            elseif ($regularIndex < count($regularItems)) {
+                $finalResult[] = $regularItems[$regularIndex++];
+            }
+            // 通常アイテムがなくなったら残りの高優先度アイテムを追加
+            elseif ($highIndex < count($highPriorityItems)) {
+                $finalResult[] = $highPriorityItems[$highIndex++];
+            }
+            // 他のアイテムがなくなったら残りの中優先度アイテムを追加
+            elseif ($mediumIndex < count($mediumPriorityItems)) {
+                $finalResult[] = $mediumPriorityItems[$mediumIndex++];
+            }
+        }
+        
+        // 低優先度アイテムを10位程度下げて挿入
+        $adjustedResult = [];
+        $insertedCount = 0;
+        
+        foreach ($finalResult as $item) {
+            $adjustedResult[] = $item;
+            $insertedCount++;
+            
+            // 10個ごとに低優先度アイテムを1つ挿入
+            if ($insertedCount % 10 === 0 && $lowIndex < count($lowPriorityItems)) {
+                $adjustedResult[] = $lowPriorityItems[$lowIndex++];
+            }
+        }
+        
+        // 残りの低優先度アイテムを最後に追加
+        while ($lowIndex < count($lowPriorityItems)) {
+            $adjustedResult[] = $lowPriorityItems[$lowIndex++];
+        }
+        
+        $deletedOpenChats = $adjustedResult;
+
         // 結果から一時的なフィールドを削除
         foreach ($deletedOpenChats as &$openChat) {
             unset($openChat['member_growth']);

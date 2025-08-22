@@ -651,7 +651,7 @@ function sprintfT(string $format, string|int ...$values): string
  * @param string $suffix 省略記号
  * @return string 切り詰められたテキスト
  */
-function truncateDescription($text, $limit = 70, $suffix = '...')
+function truncateDescription($text, $limit = 120, $suffix = '...')
 {
     // 改行やタブを半角スペースに変換
     $text = preg_replace('/[\r\n\t]+/', ' ', $text);
@@ -677,91 +677,4 @@ function truncateDescription($text, $limit = 70, $suffix = '...')
     }
 
     return $truncated . $suffix;
-}
-
-/**
- * 文字列からハッシュタグ（# or ＃で開始）を除去する。
- * 先頭から $allowFirst 個のうち、
- * 「タグ文字列（# を除いた部分）が本文（ハッシュタグを除いた文字列）に含まれないもの」
- * だけを保持し、それ以外は削除する。
- *
- * @param string $text
- * @param int $allowFirst
- * @return string
- */
-function stripHashtags(string $text, int $allowFirst = 1, string $extraText = ''): string
-{
-    if ($allowFirst < 0) $allowFirst = 0;
-
-    // 本文（ハッシュタグを除去した文字列）を作る
-    $content = preg_replace('/[#＃][^\s#＃]+/u', '', $text);
-    // 大文字小文字を無視して比較するために小文字化
-    $contentLower = mb_strtolower($content . $extraText, 'UTF-8');
-
-    $kept = 0;
-    $result = preg_replace_callback('/[#＃]([^\s#＃]+)/u', function ($m) use (&$kept, $allowFirst, $contentLower) {
-        $tagText = $m[1];
-        // allowFirst > 0 のときのみ保持の可能性を検討
-        if ($allowFirst > 0 && $kept < $allowFirst) {
-            // 本文にタグ文字列が含まれていない場合のみ保持対象
-            $tagLower = mb_strtolower($tagText, 'UTF-8');
-            if (mb_strpos($contentLower, $tagLower) === false) {
-                $kept++;
-                return $m[0]; // 元のハッシュタグを保持
-            }
-        }
-        // 条件を満たさないものは削除
-        return '';
-    }, $text);
-
-    // 余分な空白を整形（半角/全角スペース・タブ）
-    $result = preg_replace('/[ \t\x{3000}]+/u', ' ', $result);
-    $result = preg_replace('/[ \t\x{3000}]+(\R)/u', '$1', $result);
-    $result = preg_replace('/^[ \t\x{3000}]+|[ \t\x{3000}]+$/u', '', $result);
-
-    return $result;
-}
-
-function collapseKeywordEnumerations(string $text, int $minItems = 12, int $keepFirst = 0): string
-{
-    // 区切り: 半角/全角スペース・読点（、，,）・改行（\R）
-    $sep = '(?:[ 　]*[、 ，,][ 　]*|[ 　]+|[ 　]*\R+[ 　]*)';
-    $token = '[^\s、 ，,。！？；：]+';
-    $pattern = '/(?:' . $token . $sep . '){' . ($minItems - 1) . ',}' . $token . '/u';
-
-    $isKeywordLike = function (string $t): bool {
-        $t = trim($t, "()（）[]【】「」『』.,、。!！?？;；:：・/／-‐‑–—+＋_＿&＆");
-        if ($t === '' || mb_strlen($t, 'UTF-8') > 24) return false;
-
-        $letters = preg_match_all('/[\p{L}\p{N}]/u', $t);
-        if (!$letters || $letters <= 0) return false;
-
-        $hiragana = preg_match_all('/\p{Hiragana}/u', $t);
-        if ($hiragana === false) $hiragana = 0;
-
-        return ($hiragana / max(1, $letters)) <= 0.3;
-    };
-
-    $result = preg_replace_callback($pattern, function ($m) use ($isKeywordLike, $keepFirst) {
-        // 改行は [] に入れず、オルタネーションで扱う
-        $tokens = preg_split('/(?:[ 　、 ，,]+|\R+)/u', $m[0], -1, PREG_SPLIT_NO_EMPTY);
-        $filtered = array_values(array_filter($tokens, fn($t) => $isKeywordLike($t)));
-        if (count($filtered) === 0) return $m[0];
-
-        // keepFirst=0 なら列挙を削除
-        if ($keepFirst <= 0) return '';
-
-        // 指定数以下なら改変しない
-        if (count($filtered) <= $keepFirst) return $m[0];
-
-        // 先頭 keepFirst 個だけ残して省略
-        return implode('、', array_slice($filtered, 0, $keepFirst)) . '…';
-    }, $text);
-
-    // 削除後の体裁を軽く整える（空白・読点周り、連続改行など）
-    $result = preg_replace('/[ \t\x{3000}]+/u', ' ', $result);              // 連続空白→1
-    $result = preg_replace('/[ 　]*(?:[、，,])[ 　]*/u', '、', $result);      // 読点前後の空白整理
-    $result = preg_replace("/(\R){3,}/u", "\n\n", $result);                   // 3行以上の改行→2行
-    $result = preg_replace('/[ \t\x{3000}]+(\R)/u', '$1', $result);           // 行末空白除去
-    return trim($result);
 }
