@@ -16,9 +16,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
     <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
       <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
-      <div style="margin: -16px 0;">
-        <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-      </div>
     <?php endif ?>
 
     <article class="unset" style="display: block;">
@@ -122,13 +119,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
       </section>
 
-      <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
-        <div style="margin: -8px 0;">
-          <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle']) ?>
-        </div>
-      <?php else: ?>
-        <hr class="hr-top" style="margin-bottom: 8px;">
-      <?php endif ?>
+      <hr class="hr-top" style="margin-bottom: 8px;">
 
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">

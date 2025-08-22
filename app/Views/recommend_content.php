@@ -28,9 +28,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
       <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
-      <div style="margin: -16px 0;">
-        <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle']) ?>
-      </div>
     <?php endif ?>
 
     <section class="recommend-header-wrapper">
