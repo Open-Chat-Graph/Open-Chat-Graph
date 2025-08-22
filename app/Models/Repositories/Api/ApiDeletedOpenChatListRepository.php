@@ -55,7 +55,6 @@ class ApiDeletedOpenChatListRepository
                 categories c ON om.category_id = c.category_id
             WHERE
                 DATE(ocd.deleted_at) = :date
-                AND om.current_member_count >= 15
             ORDER BY
                 om.established_at DESC";
 
@@ -86,43 +85,81 @@ class ApiDeletedOpenChatListRepository
         // Re-index array after filtering
         $deletedOpenChats = array_values($deletedOpenChats);
 
-        // Fetch latest ranking for each OpenChat
+        // Fetch member growth statistics for each OpenChat
         foreach ($deletedOpenChats as &$openChat) {
-            $rankingQuery =
+            // Fetch latest member count and oldest available count (preferably 7 days ago or older)
+            $growthQuery =
                 "SELECT 
-                    activity_ranking_position
+                    latest.member_count as latest_count,
+                    latest.statistics_date as latest_date,
+                    COALESCE(week_ago.member_count, oldest.member_count) as comparison_count,
+                    COALESCE(week_ago.statistics_date, oldest.statistics_date) as comparison_date
                 FROM 
-                    line_official_activity_ranking_history
-                WHERE
-                    openchat_id = :openchat_id
-                    AND category_id = :category_id
-                ORDER BY 
-                    record_date DESC, 
-                    record_id DESC
-                LIMIT 1";
+                    (SELECT member_count, statistics_date 
+                     FROM daily_member_statistics 
+                     WHERE openchat_id = :openchat_id 
+                     ORDER BY statistics_date DESC 
+                     LIMIT 1) as latest
+                LEFT JOIN
+                    (SELECT member_count, statistics_date 
+                     FROM daily_member_statistics 
+                     WHERE openchat_id = :openchat_id2 
+                       AND statistics_date <= DATE_SUB(
+                           (SELECT MAX(statistics_date) FROM daily_member_statistics WHERE openchat_id = :openchat_id3),
+                           INTERVAL 7 DAY
+                       )
+                     ORDER BY statistics_date DESC 
+                     LIMIT 1) as week_ago ON 1=1
+                LEFT JOIN
+                    (SELECT member_count, statistics_date 
+                     FROM daily_member_statistics 
+                     WHERE openchat_id = :openchat_id4
+                     ORDER BY statistics_date ASC 
+                     LIMIT 1) as oldest ON 1=1";
 
-            $ranking = ApiDB::fetch($rankingQuery, [
+            $growth = ApiDB::fetch($growthQuery, [
                 'openchat_id' => $openChat['openchat_id'],
-                'category_id' => $openChat['category_id'],
+                'openchat_id2' => $openChat['openchat_id'],
+                'openchat_id3' => $openChat['openchat_id'],
+                'openchat_id4' => $openChat['openchat_id'],
             ]);
 
-            $openChat['activity_ranking_position'] = $ranking['activity_ranking_position'] ?? null;
+            // Calculate member growth
+            if ($growth && $growth['latest_count'] !== null && $growth['comparison_count'] !== null) {
+                // If we have both latest and comparison data, calculate the difference
+                if ($growth['latest_date'] !== $growth['comparison_date']) {
+                    $openChat['member_growth'] = $growth['latest_count'] - $growth['comparison_count'];
+                } else {
+                    // If only one record exists, set growth to 0
+                    $openChat['member_growth'] = 0;
+                }
+            } else {
+                // If no data available, set growth to 0
+                $openChat['member_growth'] = 0;
+            }
 
-            // Remove category_id from the final result as it was not in the original output
+            // Remove category_id from the final result
             unset($openChat['category_id']);
         }
 
-        // Sort by activity_ranking_position
+        // Sort by member growth (descending order)
         usort($deletedOpenChats, function ($a, $b) {
-            $posA = $a['activity_ranking_position'] ?? 999999;
-            $posB = $b['activity_ranking_position'] ?? 999999;
+            $growthA = $a['member_growth'] ?? 0;
+            $growthB = $b['member_growth'] ?? 0;
 
-            if ($posA === $posB) {
+            if ($growthA === $growthB) {
+                // If growth is the same, sort by openchat_id for consistency
                 return $a['openchat_id'] <=> $b['openchat_id'];
             }
 
-            return $posA <=> $posB;
+            // Sort in descending order (higher growth first)
+            return $growthB <=> $growthA;
         });
+
+        // Remove the temporary member_growth field from the results
+        foreach ($deletedOpenChats as &$openChat) {
+            unset($openChat['member_growth']);
+        }
 
         return array_slice($deletedOpenChats, 0, $limit);
     }
