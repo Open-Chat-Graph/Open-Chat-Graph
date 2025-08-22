@@ -43,7 +43,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
           <div class="talkroom_description_box close" id="talkroom_description_box">
             <p class="talkroom_description" id="talkroom-description">
-              <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
+              <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", collapseKeywordEnumerations(stripHashtags($oc['description'], 1, $oc['name'])))) ?></span>
             </p>
             <button id="talkroom-description-close-btn" class="close-btn" title="<?php echo t('一部を表示') ?>"><?php echo t('一部を表示') ?></button>
             <div class="more" id="read_more_btn">
