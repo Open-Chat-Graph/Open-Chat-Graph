@@ -47,6 +47,7 @@ class RecommendUtility
         '副業',
         'お金',
         'TEMU',
+        '投資',
         'SHEIN',
         'ポイ活',
     ];
