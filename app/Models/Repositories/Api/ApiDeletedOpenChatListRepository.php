@@ -26,6 +26,7 @@ class ApiDeletedOpenChatListRepository
         ['pattern' => '/忘年会/', 'categories' => null],
         ['pattern' => '/教員/', 'categories' => null],
         ['pattern' => '/就活/', 'categories' => null],
+        ['pattern' => '/連絡用/', 'categories' => null],
     ];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
