@@ -38,6 +38,17 @@ class RecommendUtility
 
     const AdEnhancementTag = [
         '下ネタ',
+        '競馬予想',
+        '競艇予想',
+        '仮想通貨',
+        '株式投資',
+        'FX',
+        'パチンコ・スロット（パチスロ）',
+        '副業',
+        'お金',
+        'TEMU',
+        'SHEIN',
+        'ポイ活',
     ];
 
     static function extractTag(string|int $str): string
