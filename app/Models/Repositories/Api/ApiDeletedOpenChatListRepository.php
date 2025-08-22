@@ -368,20 +368,25 @@ class ApiDeletedOpenChatListRepository
                 return $memberGrowthB <=> $memberGrowthA;
             }
             
-            // 第4優先: 現在のメンバー数（多い順）但し20人以下は大幅ペナルティ
-            $adjustedMemberA = $currentMemberA <= 20 ? $currentMemberA - 100 : $currentMemberA;
-            $adjustedMemberB = $currentMemberB <= 20 ? $currentMemberB - 100 : $currentMemberB;
+            // 第4優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
+            $smallRoomPenaltyA = ($currentMemberA <= 20 && !$hasHighPriorityA);
+            $smallRoomPenaltyB = ($currentMemberB <= 20 && !$hasHighPriorityB);
             
-            if ($adjustedMemberA !== $adjustedMemberB) {
-                return $adjustedMemberB <=> $adjustedMemberA;
+            if ($smallRoomPenaltyA !== $smallRoomPenaltyB) {
+                return $smallRoomPenaltyA <=> $smallRoomPenaltyB; // 小規模でない方が上位
             }
             
-            // 第5優先: 成長率（高い順）
+            // 第5優先: 現在のメンバー数（多い順）
+            if ($currentMemberA !== $currentMemberB) {
+                return $currentMemberB <=> $currentMemberA;
+            }
+            
+            // 第6優先: 成長率（高い順）
             if ($growthA !== $growthB) {
                 return $growthB <=> $growthA;
             }
             
-            // 第6優先: 減少率（低い順）
+            // 第7優先: 減少率（低い順）
             if ($declineA !== $declineB) {
                 return $declineA <=> $declineB;
             }
