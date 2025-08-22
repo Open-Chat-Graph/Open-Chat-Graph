@@ -271,21 +271,31 @@ class ApiDeletedOpenChatListRepository
             }
         }
         
-        // 最低からの成長率でソート（成長率が高い順）、次に減少率でソート（減少率が低い順）
+        // 成長率と減少率を組み合わせたスコアでソート
         $sortByGrowthAndDecline = function($a, $b) {
             $growthA = $a['valley_growth_rate'] ?? 0;
             $growthB = $b['valley_growth_rate'] ?? 0;
             $declineA = $a['peak_decline_rate'] ?? 0;
             $declineB = $b['peak_decline_rate'] ?? 0;
+            $memberGrowthA = $a['member_growth'] ?? 0;
+            $memberGrowthB = $b['member_growth'] ?? 0;
             
-            // まず成長率で比較（成長率が高い順）
+            // スコア計算: 成長率 - 減少率 + 絶対増加数のボーナス
+            $scoreA = $growthA - $declineA + ($memberGrowthA > 0 ? min($memberGrowthA, 10) : 0);
+            $scoreB = $growthB - $declineB + ($memberGrowthB > 0 ? min($memberGrowthB, 10) : 0);
+            
+            if ($scoreA !== $scoreB) {
+                return $scoreB <=> $scoreA; // 高スコア順
+            }
+            
+            // スコアが同じ場合は成長率で比較
             if ($growthA !== $growthB) {
                 return $growthB <=> $growthA;
             }
             
-            // 次に減少率で比較（減少率が低い順）
-            if ($declineA !== $declineB) {
-                return $declineA <=> $declineB;
+            // 次にメンバー増加数で比較
+            if ($memberGrowthA !== $memberGrowthB) {
+                return $memberGrowthB <=> $memberGrowthA;
             }
             
             return $a['openchat_id'] <=> $b['openchat_id'];
