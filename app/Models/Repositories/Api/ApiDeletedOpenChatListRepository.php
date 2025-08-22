@@ -157,6 +157,82 @@ class ApiDeletedOpenChatListRepository
             return $growthB <=> $growthA;
         });
 
+        // Apply boost for specific keywords and member count
+        $boostedKeywords = ['大人', 'シングル'];
+        $boostedKeywordsInNameOrDesc = ['リア友', '友達'];
+        
+        // Find and categorize items by boost priority
+        $highPriorityItems = [];  // Keyword matches - boost to top 20
+        $mediumPriorityItems = []; // 50+ members - boost to top 48
+        $regularItems = [];
+        
+        foreach ($deletedOpenChats as $openChat) {
+            $hasKeyword = false;
+            
+            // Check display_name for first set of keywords
+            foreach ($boostedKeywords as $keyword) {
+                if (mb_strpos($openChat['display_name'], $keyword) !== false) {
+                    $hasKeyword = true;
+                    break;
+                }
+            }
+            
+            // Check display_name and description for second set of keywords
+            if (!$hasKeyword) {
+                foreach ($boostedKeywordsInNameOrDesc as $keyword) {
+                    if (mb_strpos($openChat['display_name'], $keyword) !== false || 
+                        mb_strpos($openChat['description'], $keyword) !== false) {
+                        $hasKeyword = true;
+                        break;
+                    }
+                }
+            }
+            
+            if ($hasKeyword) {
+                $highPriorityItems[] = $openChat;
+            } elseif ($openChat['current_member_count'] >= 50) {
+                $mediumPriorityItems[] = $openChat;
+            } else {
+                $regularItems[] = $openChat;
+            }
+        }
+        
+        // Merge results with natural distribution
+        $finalResult = [];
+        $highIndex = 0;
+        $mediumIndex = 0;
+        $regularIndex = 0;
+        
+        // Natural positions for high priority items within top 20
+        $highPriorityPositions = [2, 5, 8, 11, 14, 17, 19];
+        // Natural positions for medium priority items within positions 20-48
+        $mediumPriorityPositions = [22, 25, 28, 31, 34, 37, 40, 43, 46];
+        
+        for ($i = 0; $i < count($deletedOpenChats); $i++) {
+            // Insert high priority items at specific positions within top 20
+            if ($i < 20 && in_array($i, $highPriorityPositions) && $highIndex < count($highPriorityItems)) {
+                $finalResult[] = $highPriorityItems[$highIndex++];
+            }
+            // Insert medium priority items at specific positions within 20-48
+            elseif ($i >= 20 && $i < 48 && in_array($i, $mediumPriorityPositions) && $mediumIndex < count($mediumPriorityItems)) {
+                $finalResult[] = $mediumPriorityItems[$mediumIndex++];
+            }
+            // Fill with regular items
+            elseif ($regularIndex < count($regularItems)) {
+                $finalResult[] = $regularItems[$regularIndex++];
+            }
+            // Add remaining high priority items if regular items are exhausted
+            elseif ($highIndex < count($highPriorityItems)) {
+                $finalResult[] = $highPriorityItems[$highIndex++];
+            }
+            // Add remaining medium priority items if other items are exhausted
+            elseif ($mediumIndex < count($mediumPriorityItems)) {
+                $finalResult[] = $mediumPriorityItems[$mediumIndex++];
+            }
+        }
+        
+        $deletedOpenChats = $finalResult;
+
         // Remove the temporary member_growth field from the results
         foreach ($deletedOpenChats as &$openChat) {
             unset($openChat['member_growth']);
