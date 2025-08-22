@@ -47,6 +47,8 @@ class RecommendUtility
         '副業',
         'お金',
         'TEMU',
+        '70代',
+        '60代',
         '投資',
         'SHEIN',
         'ポイ活',
