@@ -278,47 +278,44 @@ class ApiDeletedOpenChatListRepository
             }
         }
         
-        // 成長率と減少率を組み合わせたスコアでソート
-        $sortByGrowthAndDecline = function($a, $b) {
+        // メンバー数を最優先にしたソート関数
+        $sortByMemberCountFirst = function($a, $b) {
+            $currentMemberA = $a['current_member_count'] ?? 0;
+            $currentMemberB = $b['current_member_count'] ?? 0;
+            $memberGrowthA = $a['member_growth'] ?? 0;
+            $memberGrowthB = $b['member_growth'] ?? 0;
             $growthA = $a['valley_growth_rate'] ?? 0;
             $growthB = $b['valley_growth_rate'] ?? 0;
             $declineA = $a['peak_decline_rate'] ?? 0;
             $declineB = $b['peak_decline_rate'] ?? 0;
-            $memberGrowthA = $a['member_growth'] ?? 0;
-            $memberGrowthB = $b['member_growth'] ?? 0;
-            $currentMemberA = $a['current_member_count'] ?? 0;
-            $currentMemberB = $b['current_member_count'] ?? 0;
             
-            // スコア計算: 成長率 - 減少率 + 絶対増加数のボーナス
-            $scoreA = $growthA - $declineA + ($memberGrowthA > 0 ? min($memberGrowthA, 10) : 0);
-            $scoreB = $growthB - $declineB + ($memberGrowthB > 0 ? min($memberGrowthB, 10) : 0);
-            
-            if ($scoreA !== $scoreB) {
-                return $scoreB <=> $scoreA; // 高スコア順
-            }
-            
-            // スコアが同じ場合は現在のメンバー数で比較（多い順）
+            // 第1優先: 現在のメンバー数（多い順）
             if ($currentMemberA !== $currentMemberB) {
                 return $currentMemberB <=> $currentMemberA;
             }
             
-            // 次に成長率で比較
+            // 第2優先: メンバー増加数（多い順）
+            if ($memberGrowthA !== $memberGrowthB) {
+                return $memberGrowthB <=> $memberGrowthA;
+            }
+            
+            // 第3優先: 成長率（高い順）
             if ($growthA !== $growthB) {
                 return $growthB <=> $growthA;
             }
             
-            // 最後にメンバー増加数で比較
-            if ($memberGrowthA !== $memberGrowthB) {
-                return $memberGrowthB <=> $memberGrowthA;
+            // 第4優先: 減少率（低い順）
+            if ($declineA !== $declineB) {
+                return $declineA <=> $declineB;
             }
             
             return $a['openchat_id'] <=> $b['openchat_id'];
         };
         
-        usort($regularItems, $sortByGrowthAndDecline);
-        usort($lowPriorityItems, $sortByGrowthAndDecline);
-        usort($mediumPriorityItems, $sortByGrowthAndDecline);
-        usort($highPriorityItems, $sortByGrowthAndDecline);
+        usort($regularItems, $sortByMemberCountFirst);
+        usort($lowPriorityItems, $sortByMemberCountFirst);
+        usort($mediumPriorityItems, $sortByMemberCountFirst);
+        usort($highPriorityItems, $sortByMemberCountFirst);
         
         // 自然な分布で結果をマージ
         $finalResult = [];
