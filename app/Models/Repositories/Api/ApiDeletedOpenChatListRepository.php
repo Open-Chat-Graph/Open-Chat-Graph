@@ -201,24 +201,84 @@ class ApiDeletedOpenChatListRepository
             unset($openChat['category_id']);
         }
 
-        // まず現在のメンバー数で並び替え（多い順）、次にメンバー増加数で並び替え（降順）
+        // 最初に新しいロジックでソート
         usort($deletedOpenChats, function ($a, $b) {
-            $memberCountA = $a['current_member_count'] ?? 0;
-            $memberCountB = $b['current_member_count'] ?? 0;
-            $growthA = $a['member_growth'] ?? 0;
-            $growthB = $b['member_growth'] ?? 0;
-
-            // まず現在のメンバー数で比較（多い順）
-            if ($memberCountA !== $memberCountB) {
-                return $memberCountB <=> $memberCountA;
+            // 高優先度キーワードのチェック
+            $hasHighPriorityA = false;
+            $hasHighPriorityB = false;
+            
+            // display_nameで高優先度キーワード（第1グループ）をチェック
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
+                if (mb_strpos($a['display_name'], $keyword) !== false) {
+                    $hasHighPriorityA = true;
+                    break;
+                }
+            }
+            foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
+                if (mb_strpos($b['display_name'], $keyword) !== false) {
+                    $hasHighPriorityB = true;
+                    break;
+                }
+            }
+            
+            // display_nameとdescriptionで高優先度キーワード（第2グループ）をチェック
+            if (!$hasHighPriorityA) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
+                    if (mb_strpos($a['display_name'], $keyword) !== false || 
+                        mb_strpos($a['description'], $keyword) !== false) {
+                        $hasHighPriorityA = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasHighPriorityB) {
+                foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
+                    if (mb_strpos($b['display_name'], $keyword) !== false || 
+                        mb_strpos($b['description'], $keyword) !== false) {
+                        $hasHighPriorityB = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 第0優先: 高優先度キーワードの有無
+            if ($hasHighPriorityA !== $hasHighPriorityB) {
+                return $hasHighPriorityB <=> $hasHighPriorityA; // 高優先度が上位
+            }
+            
+            $currentMemberA = $a['current_member_count'] ?? 0;
+            $currentMemberB = $b['current_member_count'] ?? 0;
+            $declineA = $a['peak_decline_rate'] ?? 0;
+            $declineB = $b['peak_decline_rate'] ?? 0;
+            $memberGrowthA = $a['member_growth'] ?? 0;
+            $memberGrowthB = $b['member_growth'] ?? 0;
+            
+            // 第1優先: 大幅減少ペナルティ（30%以上減少は下位）
+            $severePenaltyA = $declineA >= 30;
+            $severePenaltyB = $declineB >= 30;
+            
+            if ($severePenaltyA !== $severePenaltyB) {
+                return $severePenaltyA <=> $severePenaltyB; // 大幅減少していない方が上位
+            }
+            
+            // 第2優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
+            $smallRoomPenaltyA = ($currentMemberA <= 20 && !$hasHighPriorityA);
+            $smallRoomPenaltyB = ($currentMemberB <= 20 && !$hasHighPriorityB);
+            
+            if ($smallRoomPenaltyA !== $smallRoomPenaltyB) {
+                return $smallRoomPenaltyA <=> $smallRoomPenaltyB; // 小規模でない方が上位
+            }
+            
+            // 第3優先: メンバー増加数（多い順）
+            if ($memberGrowthA !== $memberGrowthB) {
+                return $memberGrowthB <=> $memberGrowthA;
+            }
+            
+            // 第4優先: 現在のメンバー数（多い順）
+            if ($currentMemberA !== $currentMemberB) {
+                return $currentMemberB <=> $currentMemberA;
             }
 
-            // メンバー数が同じ場合、増加数で比較（多い順）
-            if ($growthA !== $growthB) {
-                return $growthB <=> $growthA;
-            }
-
-            // 両方同じ場合、openchat_idで安定ソート
             return $a['openchat_id'] <=> $b['openchat_id'];
         });
 
