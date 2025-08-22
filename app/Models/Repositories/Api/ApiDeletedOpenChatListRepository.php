@@ -106,11 +106,9 @@ class ApiDeletedOpenChatListRepository
 
         // Fetch member growth statistics for each OpenChat
         foreach ($deletedOpenChats as &$openChat) {
-            // 最新のメンバー数、比較用メンバー数、最大・最小メンバー数を取得
+            // 比較用メンバー数、最大・最小メンバー数を取得（最新は current_member_count を使用）
             $growthQuery =
                 "SELECT 
-                    latest.member_count as latest_count,
-                    latest.statistics_date as latest_date,
                     COALESCE(
                         week_ago_or_newer.member_count,
                         oldest.member_count
@@ -120,69 +118,55 @@ class ApiDeletedOpenChatListRepository
                         oldest.statistics_date
                     ) as comparison_date,
                     peak.member_count as peak_count,
-                    valley.member_count as valley_count
+                    valley.member_count as valley_count,
+                    oldest.statistics_date as oldest_date
                 FROM 
                     (SELECT member_count, statistics_date 
                      FROM daily_member_statistics 
                      WHERE openchat_id = :openchat_id 
+                       AND statistics_date <= DATE_SUB(NOW(), INTERVAL 7 DAY)
                      ORDER BY statistics_date DESC 
-                     LIMIT 1) as latest
+                     LIMIT 1) as week_ago_or_newer
                 LEFT JOIN
                     (SELECT member_count, statistics_date 
                      FROM daily_member_statistics 
-                     WHERE openchat_id = :openchat_id2 
-                       AND statistics_date <= DATE_SUB(
-                           (SELECT MAX(statistics_date) FROM daily_member_statistics WHERE openchat_id = :openchat_id3),
-                           INTERVAL 7 DAY
-                       )
-                     ORDER BY statistics_date DESC 
-                     LIMIT 1) as week_ago_or_newer ON 1=1
-                LEFT JOIN
-                    (SELECT member_count, statistics_date 
-                     FROM daily_member_statistics 
-                     WHERE openchat_id = :openchat_id4
+                     WHERE openchat_id = :openchat_id2
                      ORDER BY statistics_date ASC 
                      LIMIT 1) as oldest ON 1=1
                 LEFT JOIN
                     (SELECT MAX(member_count) as member_count
                      FROM daily_member_statistics 
-                     WHERE openchat_id = :openchat_id5) as peak ON 1=1
+                     WHERE openchat_id = :openchat_id3) as peak ON 1=1
                 LEFT JOIN
                     (SELECT MIN(member_count) as member_count
                      FROM daily_member_statistics 
-                     WHERE openchat_id = :openchat_id6) as valley ON 1=1";
+                     WHERE openchat_id = :openchat_id4) as valley ON 1=1";
 
             $growth = ApiDB::fetch($growthQuery, [
                 'openchat_id' => $openChat['openchat_id'],
                 'openchat_id2' => $openChat['openchat_id'],
                 'openchat_id3' => $openChat['openchat_id'],
                 'openchat_id4' => $openChat['openchat_id'],
-                'openchat_id5' => $openChat['openchat_id'],
-                'openchat_id6' => $openChat['openchat_id'],
             ]);
 
-            // メンバー増加数を計算
-            if ($growth && $growth['latest_count'] !== null && $growth['comparison_count'] !== null) {
-                // 最新と比較データの両方がある場合、差分を計算
-                if ($growth['latest_date'] !== $growth['comparison_date']) {
-                    $openChat['member_growth'] = $growth['latest_count'] - $growth['comparison_count'];
-                } else {
-                    // レコードが1つしかない場合、増加数を0に設定
-                    $openChat['member_growth'] = 0;
-                }
+            // メンバー増加数を計算（最新はcurrent_member_countを使用）
+            $currentMemberCount = $openChat['current_member_count'];
+            if ($growth && $growth['comparison_count'] !== null) {
+                // 比較データがある場合、current_member_countとの差分を計算
+                $openChat['member_growth'] = $currentMemberCount - $growth['comparison_count'];
             } else {
                 // データがない場合、増加数を0に設定
                 $openChat['member_growth'] = 0;
             }
             
-            // 最大メンバー数からの減少率と最小メンバー数からの成長率を計算
+            // 最大メンバー数からの減少率と最小メンバー数からの成長率を計算（最新はcurrent_member_countを使用）
             $openChat['peak_decline_rate'] = 0;
             $openChat['valley_growth_rate'] = 0;
             
-            if ($growth && $growth['latest_count'] !== null) {
+            if ($growth) {
                 // 最大メンバー数からの減少率
                 if ($growth['peak_count'] !== null && $growth['peak_count'] > 0) {
-                    $decline = $growth['peak_count'] - $growth['latest_count'];
+                    $decline = $growth['peak_count'] - $currentMemberCount;
                     if ($decline > 0) {
                         $openChat['peak_decline_rate'] = ($decline / $growth['peak_count']) * 100;
                     }
@@ -190,7 +174,7 @@ class ApiDeletedOpenChatListRepository
                 
                 // 最小メンバー数からの成長率
                 if ($growth['valley_count'] !== null && $growth['valley_count'] > 0) {
-                    $growthAmount = $growth['latest_count'] - $growth['valley_count'];
+                    $growthAmount = $currentMemberCount - $growth['valley_count'];
                     if ($growthAmount > 0) {
                         $openChat['valley_growth_rate'] = ($growthAmount / $growth['valley_count']) * 100;
                     }
