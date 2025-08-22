@@ -28,20 +28,19 @@ class ApiDeletedOpenChatListRepository
         ['pattern' => '/就活/', 'categories' => null],
         ['pattern' => '/連絡用/', 'categories' => null],
         ['pattern' => '/^[0-9０-９]{1,2}[\/／][0-9０-９]{1,2}/', 'categories' => null],  // 先頭の日付形式（8/20など）
-        ['pattern' => '/(?<![0-9０-９])[0-9０-９]{1,2}[\/／][0-9０-９]{1,2](?![0-9０-９])/', 'categories' => null],
     ];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME = [];
+    private const HIGH_PRIORITY_KEYWORDS_NAME = ['大人', 'シングル'];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameまたはdescriptionにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達', '大人', 'シングル'];
+    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達'];
 
     /**
      * 低優先度キーワード（順位を下げる）
