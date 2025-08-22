@@ -46,7 +46,7 @@ class ApiDeletedOpenChatListRepository
      * 低優先度キーワード（順位を下げる）
      * display_nameにこれらのキーワードを含むルームは下位に配置
      */
-    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ'];
+    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ'];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
     {
@@ -187,11 +187,9 @@ class ApiDeletedOpenChatListRepository
         $highPriorityItems = [];  // キーワード一致 - 上位20位以内に押し上げ
         $mediumPriorityItems = []; // メンバー50人以上 - 上位48位以内に押し上げ
         $regularItems = [];
+        $lowPriorityItems = [];   // 低優先度キーワード - 10位程度下げる
         
-        // 低優先度キーワードを含むアイテムのインデックスを記録（後で順位調整）
-        $lowPriorityIndices = [];
-        
-        foreach ($deletedOpenChats as $index => $openChat) {
+        foreach ($deletedOpenChats as $openChat) {
             $hasHighPriorityKeyword = false;
             $hasLowPriorityKeyword = false;
             
@@ -219,15 +217,17 @@ class ApiDeletedOpenChatListRepository
                 foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
                     if (mb_strpos($openChat['display_name'], $keyword) !== false) {
                         $hasLowPriorityKeyword = true;
-                        $lowPriorityIndices[] = $index;
                         break;
                     }
                 }
             }
             
+            // 分類
             if ($hasHighPriorityKeyword) {
                 $highPriorityItems[] = $openChat;
-            } elseif ($openChat['current_member_count'] >= 50 && !$hasLowPriorityKeyword) {
+            } elseif ($hasLowPriorityKeyword) {
+                $lowPriorityItems[] = $openChat;
+            } elseif ($openChat['current_member_count'] >= 50) {
                 $mediumPriorityItems[] = $openChat;
             } else {
                 $regularItems[] = $openChat;
@@ -239,12 +239,14 @@ class ApiDeletedOpenChatListRepository
         $highIndex = 0;
         $mediumIndex = 0;
         $regularIndex = 0;
+        $lowIndex = 0;
         
         // 上位20位以内での高優先度アイテムの自然な配置位置
         $highPriorityPositions = [2, 5, 8, 11, 14, 17, 19];
         // 20-48位での中優先度アイテムの自然な配置位置
         $mediumPriorityPositions = [22, 25, 28, 31, 34, 37, 40, 43, 46];
         
+        // まず高・中・通常優先度のアイテムをマージ
         for ($i = 0; $i < count($deletedOpenChats); $i++) {
             // 上位20位以内の特定位置に高優先度アイテムを挿入
             if ($i < 20 && in_array($i, $highPriorityPositions) && $highIndex < count($highPriorityItems)) {
@@ -268,37 +270,23 @@ class ApiDeletedOpenChatListRepository
             }
         }
         
-        // 低優先度アイテムの順位を10位程度下げる処理
+        // 低優先度アイテムを10位程度下げて挿入
         $adjustedResult = [];
-        $lowPriorityBuffer = [];
+        $insertedCount = 0;
         
         foreach ($finalResult as $item) {
-            // 現在のアイテムが低優先度キーワードを含むかチェック
-            $isLowPriority = false;
-            foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
-                if (mb_strpos($item['display_name'], $keyword) !== false) {
-                    $isLowPriority = true;
-                    break;
-                }
-            }
+            $adjustedResult[] = $item;
+            $insertedCount++;
             
-            if ($isLowPriority) {
-                // 低優先度アイテムはバッファに保存
-                $lowPriorityBuffer[] = $item;
-            } else {
-                // 通常アイテムを追加
-                $adjustedResult[] = $item;
-                
-                // 10個先に進んだら、バッファから低優先度アイテムを追加
-                if (count($adjustedResult) % 10 === 0 && !empty($lowPriorityBuffer)) {
-                    $adjustedResult[] = array_shift($lowPriorityBuffer);
-                }
+            // 10個ごとに低優先度アイテムを1つ挿入
+            if ($insertedCount % 10 === 0 && $lowIndex < count($lowPriorityItems)) {
+                $adjustedResult[] = $lowPriorityItems[$lowIndex++];
             }
         }
         
-        // 残りの低優先度アイテムを追加
-        foreach ($lowPriorityBuffer as $item) {
-            $adjustedResult[] = $item;
+        // 残りの低優先度アイテムを最後に追加
+        while ($lowIndex < count($lowPriorityItems)) {
+            $adjustedResult[] = $lowPriorityItems[$lowIndex++];
         }
         
         $deletedOpenChats = $adjustedResult;
