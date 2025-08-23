@@ -11,7 +11,7 @@ class OcPageMeta
     {
         $name = $oc['name'];
 
-        $desc = $oc['description'] ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
+        $desc = truncateDescription(CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name'])) ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
 
         return meta()
             ->setTitle($name)

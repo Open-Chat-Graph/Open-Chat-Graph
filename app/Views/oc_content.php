@@ -5,7 +5,12 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
+use App\Views\Classes\CollapseKeywordEnumerations;
 use Shared\MimimalCmsConfig;
+
+$collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name'], keepFirst: 1);
+$formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
+$formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
 
