@@ -484,8 +484,9 @@ class OpenChatStatsRankingApiRepository
 
     private function executeKeywordSearchWithPriority(string $query, string $keyword, array $params): array
     {
-        // キーワードを分割
-        $keywords = array_filter(explode(' ', $keyword), fn($k) => !empty(trim($k)));
+        // キーワードを分割（全角スペースを半角スペースに変換してから分割）
+        $normalizedKeyword = str_replace('　', ' ', $keyword);
+        $keywords = array_filter(explode(' ', $normalizedKeyword), fn($k) => !empty(trim($k)));
         if (empty($keywords)) {
             return [];
         }
@@ -527,8 +528,9 @@ class OpenChatStatsRankingApiRepository
 
     private function executeKeywordCountQuery(string $countQuery, string $keyword): array
     {
-        // キーワードを分割
-        $keywords = array_filter(explode(' ', $keyword), fn($k) => !empty(trim($k)));
+        // キーワードを分割（全角スペースを半角スペースに変換してから分割）
+        $normalizedKeyword = str_replace('　', ' ', $keyword);
+        $keywords = array_filter(explode(' ', $normalizedKeyword), fn($k) => !empty(trim($k)));
         if (empty($keywords)) {
             return [['count' => 0]];
         }
