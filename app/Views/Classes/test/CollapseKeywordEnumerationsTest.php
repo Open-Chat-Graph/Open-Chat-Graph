@@ -431,4 +431,119 @@ class CollapseKeywordEnumerationsTest extends TestCase
         $this->assertStringContainsString('情報共有オプチャです', $result);
         $this->assertStringContainsString('よろしくお願い致します', $result);
     }
+    
+    public function testEmbeddedKeywordEnumerationInSentence()
+    {
+        // 文章内に埋め込まれたキーワード羅列のテスト（仮想通貨パターン）
+        $text = 'ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です。ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。  バイナンス、コインチェック 、ビットバンク、DMMビットコイン #BTC  #ETH #XRP #XEM #LISK #MONA #ADA #TRX #TRON #XVG #LTC #BCH #XLM #OMG #Polkadot #Chainlink #BSV #WBTC #USDC #TEZOS #VET #binancecoin #株式投資 #投資 #暗号通貨 #暗号資産 #DeFi #NFT #CHZ';
+
+        $result = CollapseKeywordEnumerations::collapse($text, 4, 0, 0);
+        
+        // 文章の基本部分は保持される
+        $this->assertStringContainsString('ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です', $result);
+        $this->assertStringContainsString('などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです', $result);
+        
+        // 長いキーワード羅列部分は削除される
+        $this->assertStringNotContainsString('NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム', $result);
+        $this->assertStringNotContainsString('バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス', $result);
+        
+        // 短いキーワード列も削除される（文章外のキーワード羅列として通常パターンで処理）
+        // minItems=4なので4個のキーワード列は削除される
+        $this->assertStringNotContainsString('バイナンス、コインチェック、ビットバンク、DMMビットコイン', $result);
+    }
+    
+    public function testEmbeddedKeywordEnumerationWithKeepFirst()
+    {
+        // 文章内埋め込み型キーワード羅列の短縮テスト（keepFirst > 0）
+        $text = 'ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です。ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。  バイナンス、コインチェック 、ビットバンク、DMMビットコイン #BTC  #ETH #XRP';
+
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 3, 0);
+        
+        // 文章の基本部分は保持される
+        $this->assertStringContainsString('ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です', $result);
+        $this->assertStringContainsString('仮想通貨のチャートを予想するグループです', $result);
+        
+        // 長いキーワード羅列は先頭3個+「…」に短縮される
+        $this->assertStringContainsString('…', $result);
+        // 最初の数個は残る
+        $this->assertStringContainsString('ビットコイン', $result);
+        // 末尾の方は削除される
+        $this->assertStringNotContainsString('バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス', $result);
+        
+        // 短いキーワード列は先頭3個+「…」に短縮される
+        $this->assertStringContainsString('バイナンス', $result);
+    }
+    
+    public function testTwitterPatternWithEtc()
+    {
+        // ユーザーが指定したTwitterパターンのテスト
+        $text = 'Twitter(gabu_coin)フォローいただければ優先的に勧誘します。ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。';
+        
+        // keepFirst=1 で「ビットコイン、etc…などのアルトコイン...」となることを期待
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 1, 0);
+        
+        // 基本的な文章部分は保持される
+        $this->assertStringContainsString('Twitter(gabu_coin)フォローいただければ優先的に勧誘します', $result);
+        $this->assertStringContainsString('などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです', $result);
+        
+        // キーワード羅列は「ビットコイン、etc…」に短縮される
+        $this->assertStringContainsString('ビットコイン、etc…', $result);
+        
+        // 長いリストの中身は削除される
+        $this->assertStringNotContainsString('NFT、チリーズ、SAND、ENJIN', $result);
+        $this->assertStringNotContainsString('バイナンスコイン、テザー、ビットコインキャッシュ', $result);
+    }
+    
+    public function testActualGabrielPattern()
+    {
+        // 実際のガブリエルのパターンのテスト - Twitterバージョンでの正確な変換をテスト
+        $text = 'Twitter(gabu_coin)フォローいただければ優先的に勧誘します。ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。';
+
+        // keepFirst=1で長いキーワード羅列を「ビットコイン、etc…」に短縮
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 1, 0, '', false, 3);
+        
+        // 期待される正確な結果
+        $expected = 'Twitter(gabu_coin)フォローいただければ優先的に勧誘します。ビットコイン、etc…などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。';
+        
+        $this->assertEquals($expected, $result);
+        
+        // 追加のテスト - 元のガブリエルパターンでスタンドアロンキーワード削除
+        $textWithStandalone = 'ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です。ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。  バイナンス、コインチェック 、ビットバンク、DMMビットコイン';
+        
+        $resultStandalone = CollapseKeywordEnumerations::collapse($textWithStandalone, 4, 0, 0, '', false, 3);
+        
+        // スタンドアロンキーワードリストは削除される
+        $this->assertStringNotContainsString('バイナンス、コインチェック、ビットバンク、DMMビットコイン', $resultStandalone);
+        // メイン文章は保持される
+        $this->assertStringContainsString('ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です', $resultStandalone);
+        $this->assertStringContainsString('などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです', $resultStandalone);
+    }
+    
+    public function testCoreKeywordEnumerationAbbreviation()
+    {
+        // コア機能のテスト：長いキーワード羅列の「etc…」省略
+        $longEnumeration = 'ビットコイン、NFT、チリーズ、SAND、ENJIN、リップル、ネム、IOST、ステラ、イーサリアム、エイダ、トロン、バージ、ポルカドット、モナコイン、ライトコイン、リスク、モナコイン、オミセゴー、ファクトム、バイナンスコイン、テザー、ビットコインキャッシュ、モネロ、テゾス、VeChain、BAT、QTUM 、LINK、EOS、NEO、DOGE、IOTA、DASH、AVAX、FIL、DOGE、NANOなどのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。';
+        
+        $result = CollapseKeywordEnumerations::collapse($longEnumeration, 12, 1, 0, '', false, 3);
+        $expected = 'ビットコイン、etc…などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。';
+        
+        $this->assertEquals($expected, $result);
+    }
+    
+    public function testKeywordListWithTrailingText()
+    {
+        // 末尾にハッシュタグや文章がある場合の処理テスト
+        $textWithTrailing = 'ガブリエル(gabu_coin)が運営する仮想通貨考察グループその2です。などのアルトコインから草コインまでの仮想通貨のチャートを予想するグループです。 バイナンス、コインチェック、ビットバンク、DMMビットコイン #BTC';
+        
+        // keepFirst=0で削除
+        $result1 = CollapseKeywordEnumerations::collapse($textWithTrailing, 4, 0, 1);
+        $this->assertStringNotContainsString('バイナンス、コインチェック', $result1);
+        $this->assertStringContainsString('#BTC', $result1);
+        
+        // keepFirst=1で省略
+        $result2 = CollapseKeywordEnumerations::collapse($textWithTrailing, 4, 1, 1);
+        $this->assertStringContainsString('バイナンス…', $result2);
+        $this->assertStringContainsString('#BTC', $result2);
+        $this->assertStringNotContainsString('コインチェック、ビットバンク', $result2);
+    }
 }

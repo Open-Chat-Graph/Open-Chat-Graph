@@ -8,7 +8,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
 use App\Views\Classes\CollapseKeywordEnumerations;
 use Shared\MimimalCmsConfig;
 
-$collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name']);
+$collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name'], keepFirst: 1);
 $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
