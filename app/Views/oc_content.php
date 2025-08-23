@@ -5,7 +5,12 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
+use App\Views\Classes\CollapseKeywordEnumerations;
 use Shared\MimimalCmsConfig;
+
+$collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name']);
+$formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
+$formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
 
@@ -43,12 +48,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
           <div class="talkroom_description_box close" id="talkroom_description_box">
             <p class="talkroom_description" id="talkroom-description">
-              <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
+              <span id="talkroom-description-btn"><?php echo $formatedDescription ?></span>
             </p>
             <button id="talkroom-description-close-btn" class="close-btn" title="<?php echo t('一部を表示') ?>"><?php echo t('一部を表示') ?></button>
             <div class="more" id="read_more_btn">
               <div class="more-separater">&nbsp;</div>
-              <button class="unset more-text" style="font-weight: bold; color: #111;" title="<?php echo t('もっと見る') ?>">…<?php echo t('もっと見る') ?></button>
+              <button class="unset more-text" style="font-weight: bold; color: #111;" title="<?php echo t('すべて見る') ?>">…<?php echo t('すべて見る') ?></button>
             </div>
           </div>
 
@@ -269,6 +274,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
   <script async>
     (function() {
+      const isCollapsed = <?php echo $formatedDescription !== $formatedRowDescription ? 'true' : 'false' ?>
+
       // 説明文の続きを読むボタン
       const readMoreBtn = document.getElementById('read_more_btn')
       const talkroomDesc = document.getElementById('talkroom-description')
@@ -276,17 +283,25 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
       const closeId = 'talkroom-description-close-btn'
 
-      if (talkroomDesc.offsetHeight >= talkroomDesc.scrollHeight) {
+      if (talkroomDesc.offsetHeight >= talkroomDesc.scrollHeight && !isCollapsed) {
         talkroomDescBox.classList.add('hidden')
       } else {
         const open = document.getElementById(closeId)
         const close = document.getElementById('talkroom-description-close-btn')
+        const description = document.getElementById('talkroom-description-btn')
+
+        const openAndfetchDescription = () => {
+          talkroomDescBox.classList.remove('close')
+          description.textContent = (<?php echo json_encode([$formatedRowDescription], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
+        }
 
         readMoreBtn.style.visibility = "visible"
-        talkroomDesc.addEventListener('click', (e) => e.target.id !== closeId && talkroomDescBox.classList.remove('close'))
-        readMoreBtn.addEventListener('click', (e) => e.target.id !== closeId && talkroomDescBox.classList.remove('close'))
+        talkroomDesc.addEventListener('click', (e) => e.target.id !== closeId && openAndfetchDescription())
+        readMoreBtn.addEventListener('click', (e) => e.target.id !== closeId && openAndfetchDescription())
+
         close.addEventListener('click', () => {
           talkroomDescBox.classList.add('close')
+          description.textContent = (<?php echo json_encode([$formatedDescription], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
           window.scrollTo({
             top: 0,
           });

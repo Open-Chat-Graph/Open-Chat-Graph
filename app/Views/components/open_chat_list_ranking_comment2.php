@@ -44,7 +44,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
           </a>
         </h3>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
-          <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description']) ?></p>
+          <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description'], 80) ?></p>
         <?php else : ?>
           <div class="comment-user" style="font-size: 12px;">
             <span>削除されたコメント</span>

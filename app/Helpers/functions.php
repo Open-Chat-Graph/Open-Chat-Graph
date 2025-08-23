@@ -651,7 +651,7 @@ function sprintfT(string $format, string|int ...$values): string
  * @param string $suffix 省略記号
  * @return string 切り詰められたテキスト
  */
-function truncateDescription($text, $limit = 120, $suffix = '...')
+function truncateDescription($text, $limit = 70, $suffix = '...')
 {
     // 改行やタブを半角スペースに変換
     $text = preg_replace('/[\r\n\t]+/', ' ', $text);

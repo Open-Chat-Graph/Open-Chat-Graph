@@ -2,6 +2,7 @@
 
 namespace App\Views\Meta;
 
+use App\Views\Classes\CollapseKeywordEnumerations;
 use App\Views\Meta\Metadata;
 
 class OcPageMeta
@@ -10,8 +11,8 @@ class OcPageMeta
     {
         $name = $oc['name'];
 
-        $desc = truncateDescription($oc['description'], 160) ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
-        
+        $desc = truncateDescription(CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name'])) ?: (t('LINEオープンチャット') . sprintfT('「%s」', $oc['name']));
+
         return meta()
             ->setTitle($name)
             ->setDescription("{$desc}")

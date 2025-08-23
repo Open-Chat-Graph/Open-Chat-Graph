@@ -171,6 +171,15 @@ class CollapseKeywordEnumerationsTest extends TestCase
         $this->assertStringNotContainsString('これは本文です', $result);
     }
 
+    public function testReturnRemovedOnlyFlag2()
+    {
+        // 削除された部分のみを返すフラグのテスト
+        $text = 'これは本文です。#荒野 #荒野行動 #歌 #ライト #ライブトーク #イラスト';
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0, '', true);
+        $this->assertStringContainsString('#荒野', $result);
+        $this->assertStringNotContainsString('これは本文です', $result);
+    }
+
     public function testExtraTextForHashtagFiltering()
     {
         // extraText パラメータでハッシュタグフィルタリングの精度を上げる
