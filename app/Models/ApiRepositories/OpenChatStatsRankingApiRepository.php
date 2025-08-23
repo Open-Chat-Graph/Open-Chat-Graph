@@ -165,9 +165,82 @@ class OpenChatStatsRankingApiRepository
             return $result;
         }
 
-        // キーワード検索時
+        // キーワード検索時 - nameを優先、その後description、最後にidでのマッチ
+        $nameWhereClause = '';
+        $descWhereClause = '';
+        $idWhereClause = '';
+        
         $result = DB::executeLikeSearchQuery(
-            $query("AND " . $categoryStatement),
+            function($whereClause) use ($tableName, $categoryStatement, $sortColumn, $args, &$nameWhereClause, &$descWhereClause, &$idWhereClause) {
+                $nameWhereClause = str_replace(['OR oc.description LIKE', 'OR oc.id LIKE'], ['', ''], $whereClause);
+                $descWhereClause = str_replace(['(oc.name LIKE', 'OR oc.id LIKE'], ['(oc.description LIKE', ''], $whereClause);
+                $idWhereClause = str_replace(['(oc.name LIKE', 'OR oc.description LIKE'], ['(oc.id LIKE', ''], $whereClause);
+                
+                return "SELECT * FROM (
+                    (SELECT
+                        oc.id,
+                        oc.name,
+                        oc.description,
+                        oc.member,
+                        oc.local_img_url AS img_url,
+                        oc.emblem,
+                        oc.join_method_type,
+                        oc.category,
+                        sr.diff_member,
+                        sr.percent_increase
+                    FROM
+                        open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$nameWhereClause}
+                    ORDER BY
+                        {$sortColumn} {$args->order})
+                    UNION
+                    (SELECT
+                        oc.id,
+                        oc.name,
+                        oc.description,
+                        oc.member,
+                        oc.local_img_url AS img_url,
+                        oc.emblem,
+                        oc.join_method_type,
+                        oc.category,
+                        sr.diff_member,
+                        sr.percent_increase
+                    FROM
+                        open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$descWhereClause} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id 
+                        WHERE {$categoryStatement} AND {$nameWhereClause}
+                    )
+                    ORDER BY
+                        {$sortColumn} {$args->order})
+                    UNION
+                    (SELECT
+                        oc.id,
+                        oc.name,
+                        oc.description,
+                        oc.member,
+                        oc.local_img_url AS img_url,
+                        oc.emblem,
+                        oc.join_method_type,
+                        oc.category,
+                        sr.diff_member,
+                        sr.percent_increase
+                    FROM
+                        open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$idWhereClause} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id 
+                        WHERE {$categoryStatement} AND ({$nameWhereClause} OR {$descWhereClause})
+                    )
+                    ORDER BY
+                        {$sortColumn} {$args->order})
+                ) AS union_result
+                LIMIT :offset, :limit";
+            },
             fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
             $args->keyword,
             $params
@@ -178,7 +251,32 @@ class OpenChatStatsRankingApiRepository
         }
 
         $count = DB::executeLikeSearchQuery(
-            $countQuery("AND " . $categoryStatement),
+            function($whereClause) use ($tableName, $categoryStatement, $nameWhereClause, $descWhereClause, $idWhereClause) {
+                return "SELECT count(*) as count FROM (
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$nameWhereClause}
+                    UNION
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$descWhereClause} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id 
+                        WHERE {$categoryStatement} AND {$nameWhereClause}
+                    )
+                    UNION
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                    WHERE {$categoryStatement} AND {$idWhereClause} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id 
+                        WHERE {$categoryStatement} AND ({$nameWhereClause} OR {$descWhereClause})
+                    )
+                ) AS union_count";
+            },
             fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
             $args->keyword
         );
@@ -336,11 +434,76 @@ class OpenChatStatsRankingApiRepository
             return $result;
         }
 
-        // キーワード検索時
+        // キーワード検索時 - nameを優先、その後description、最後にidでのマッチ
+        $nameWhereClause2 = '';
+        $descWhereClause2 = '';
+        $idWhereClause2 = '';
+        
         $result = array_map(
             fn($oc) => new OpenChatListDto($oc),
             DB::executeLikeSearchQuery(
-                $query("AND " . $categoryStatement . $whereClause),
+                function($keywordWhere) use ($categoryStatement, $whereClause, $sortColumn, $args, &$nameWhereClause2, &$descWhereClause2, &$idWhereClause2) {
+                    $nameWhereClause2 = str_replace(['OR oc.description LIKE', 'OR oc.id LIKE'], ['', ''], $keywordWhere);
+                    $descWhereClause2 = str_replace(['(oc.name LIKE', 'OR oc.id LIKE'], ['(oc.description LIKE', ''], $keywordWhere);
+                    $idWhereClause2 = str_replace(['(oc.name LIKE', 'OR oc.description LIKE'], ['(oc.id LIKE', ''], $keywordWhere);
+                    
+                    return "SELECT * FROM (
+                        (SELECT
+                            oc.id,
+                            oc.name,
+                            oc.description,
+                            oc.member,
+                            oc.local_img_url AS img_url,
+                            oc.emblem,
+                            oc.join_method_type,
+                            oc.category,
+                            oc.api_created_at
+                        FROM
+                            open_chat AS oc
+                        WHERE {$categoryStatement} {$whereClause} AND {$nameWhereClause2}
+                        ORDER BY
+                            {$sortColumn} {$args->order})
+                        UNION
+                        (SELECT
+                            oc.id,
+                            oc.name,
+                            oc.description,
+                            oc.member,
+                            oc.local_img_url AS img_url,
+                            oc.emblem,
+                            oc.join_method_type,
+                            oc.category,
+                            oc.api_created_at
+                        FROM
+                            open_chat AS oc
+                        WHERE {$categoryStatement} {$whereClause} AND {$descWhereClause2} AND oc.id NOT IN (
+                            SELECT oc.id FROM open_chat AS oc 
+                            WHERE {$categoryStatement} {$whereClause} AND {$nameWhereClause2}
+                        )
+                        ORDER BY
+                            {$sortColumn} {$args->order})
+                        UNION
+                        (SELECT
+                            oc.id,
+                            oc.name,
+                            oc.description,
+                            oc.member,
+                            oc.local_img_url AS img_url,
+                            oc.emblem,
+                            oc.join_method_type,
+                            oc.category,
+                            oc.api_created_at
+                        FROM
+                            open_chat AS oc
+                        WHERE {$categoryStatement} {$whereClause} AND {$idWhereClause2} AND oc.id NOT IN (
+                            SELECT oc.id FROM open_chat AS oc 
+                            WHERE {$categoryStatement} {$whereClause} AND ({$nameWhereClause2} OR {$descWhereClause2})
+                        )
+                        ORDER BY
+                            {$sortColumn} {$args->order})
+                    ) AS union_result
+                    LIMIT :offset, :limit";
+                },
                 fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
                 $args->keyword,
                 $params
@@ -352,7 +515,27 @@ class OpenChatStatsRankingApiRepository
         }
 
         $count = DB::executeLikeSearchQuery(
-            $countQuery("AND " . $categoryStatement . $whereClause),
+            function($keywordWhere) use ($categoryStatement, $whereClause, $nameWhereClause2, $descWhereClause2, $idWhereClause2) {
+                return "SELECT count(*) as count FROM (
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                    WHERE {$categoryStatement} {$whereClause} AND {$nameWhereClause2}
+                    UNION
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                    WHERE {$categoryStatement} {$whereClause} AND {$descWhereClause2} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        WHERE {$categoryStatement} {$whereClause} AND {$nameWhereClause2}
+                    )
+                    UNION
+                    SELECT oc.id
+                    FROM open_chat AS oc
+                    WHERE {$categoryStatement} {$whereClause} AND {$idWhereClause2} AND oc.id NOT IN (
+                        SELECT oc.id FROM open_chat AS oc 
+                        WHERE {$categoryStatement} {$whereClause} AND ({$nameWhereClause2} OR {$descWhereClause2})
+                    )
+                ) AS union_count";
+            },
             fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
             $args->keyword
         );
