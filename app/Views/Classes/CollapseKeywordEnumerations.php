@@ -90,7 +90,7 @@ class CollapseKeywordEnumerations
         }, $textAfterHashtagProcess);
 
         // 通常のキーワード羅列パターンの処理
-        $result = preg_replace_callback($pattern, function ($m) use ($keepFirst, &$removedParts) {
+        $processed = preg_replace_callback($pattern, function ($m) use ($keepFirst, &$removedParts) {
             // まず文章的なパターンがあるかチェック
             if (self::isSentenceLike($m[0])) {
                 return $m[0]; // 文章と判定されたら保持
@@ -123,6 +123,9 @@ class CollapseKeywordEnumerations
             }
             return implode('、', array_slice($filtered, 0, $keepFirst)) . '…';
         }, $result);
+        
+        // preg_replace_callbackがnullを返した場合（エラー時）は元の文字列を使用
+        $result = $processed !== null ? $processed : $result;
 
         // 除去された部分のみを返す場合
         if ($returnRemovedOnly) {
