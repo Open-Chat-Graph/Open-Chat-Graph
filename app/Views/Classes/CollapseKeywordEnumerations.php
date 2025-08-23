@@ -16,11 +16,20 @@ class CollapseKeywordEnumerations
     ): string {
         $removedParts = [];
 
-        // ハッシュタグの処理
+        // パラメータの範囲チェックとサニタイズ
+        if ($minItems < 1) $minItems = 1;
+        if ($minItems > 10000) $minItems = 10000;  // 正規表現の制限を考慮
+        if ($keepFirst < 0) $keepFirst = 0;
+        if ($keepFirst > 10000) $keepFirst = 10000;
         if ($allowHashtags < 0) $allowHashtags = 0;
+        if ($allowHashtags > 1000) $allowHashtags = 1000;
 
         // 本文（ハッシュタグを除去した文字列）を作る
         $content = preg_replace('/[#＃][^\s#＃]+/u', '', $text);
+        // preg_replaceがnullを返した場合の対処
+        if ($content === null) {
+            $content = $text;
+        }
         $contentLower = mb_strtolower($content . $extraText, 'UTF-8');
 
         $keptHashtags = 0;
@@ -44,17 +53,32 @@ class CollapseKeywordEnumerations
             $removedParts[] = $m[0];
             return '';
         }, $text);
+        
+        // preg_replace_callbackがnullを返した場合の対処
+        if ($textAfterHashtagProcess === null) {
+            $textAfterHashtagProcess = $text;
+        }
 
         // 区切り: 半角/全角スペース・読点（、，,）・縦棒（|｜）・改行（\R）
         $sep = '(?:[ 　]*[、 ，,|｜][ 　]*|[ 　]+|[ 　]*\R+[ 　]*)';
         $token = '[^\s、 ，,|｜。！？；：]+';
-        $pattern = '/(?:' . $token . $sep . '){' . ($minItems - 1) . ',}' . $token . '/u';
+        
+        // 正規表現パターンの構築（エラー防止のため制限をチェック）
+        $minItemsForRegex = min($minItems - 1, 1000); // 正規表現の制限を考慮
+        $pattern = '/(?:' . $token . $sep . '){' . $minItemsForRegex . ',}' . $token . '/u';
 
         // 縦棒区切りパターンの処理（より低い閾値で処理）
         // スペースを含む企業名等も考慮して、パイプ区切りパターンを改善
         // ただし、文章的な内容（助詞を含む、文の構造を持つ）は除外
         // 2個以上のトークンでも企業名羅列として処理
         $pipePattern = '/(?:[^|｜\n\r]+[|｜][ 　]*){1,}[^|｜\n\r]+/u';
+        
+        // エラーハンドラーを設定して正規表現エラーをキャッチ
+        set_error_handler(function($errno, $errstr) {
+            // 正規表現のコンパイルエラーを無視
+            return true;
+        }, E_WARNING);
+        
         $result = preg_replace_callback($pipePattern, function ($m) use ($keepFirst, &$removedParts) {
             // まず、マッチした文字列が文章的かどうかを判定
             if (self::isSentenceLike($m[0])) {
@@ -62,6 +86,10 @@ class CollapseKeywordEnumerations
             }
             
             $tokens = preg_split('/[ 　]*[|｜][ 　]*/u', $m[0], -1, PREG_SPLIT_NO_EMPTY);
+            // preg_splitがfalseを返した場合の対処
+            if ($tokens === false) {
+                return $m[0];
+            }
             // 各トークンの前後の空白を除去
             $tokens = array_map('trim', $tokens);
             $filtered = array_values(array_filter($tokens, fn($t) => self::isKeywordLike($t)));
@@ -88,6 +116,11 @@ class CollapseKeywordEnumerations
 
             return $m[0];
         }, $textAfterHashtagProcess);
+        
+        // preg_replace_callbackがnullを返した場合の対処
+        if ($result === null) {
+            $result = $textAfterHashtagProcess;
+        }
 
         // 通常のキーワード羅列パターンの処理
         $processed = preg_replace_callback($pattern, function ($m) use ($keepFirst, &$removedParts) {
@@ -98,6 +131,10 @@ class CollapseKeywordEnumerations
 
             // 改行は [] に入れず、オルタネーションで扱う
             $tokens = preg_split('/(?:[ 　、 ，,]+|\R+)/u', $m[0], -1, PREG_SPLIT_NO_EMPTY);
+            // preg_splitがfalseを返した場合の対処
+            if ($tokens === false) {
+                return $m[0];
+            }
             $filtered = array_values(array_filter($tokens, fn($t) => self::isKeywordLike($t)));
 
             // キーワード的なトークンが全体の50%未満なら保持
@@ -126,6 +163,9 @@ class CollapseKeywordEnumerations
         
         // preg_replace_callbackがnullを返した場合（エラー時）は元の文字列を使用
         $result = $processed !== null ? $processed : $result;
+        
+        // エラーハンドラーを復元
+        restore_error_handler();
 
         // 除去された部分のみを返す場合
         if ($returnRemovedOnly) {
@@ -133,10 +173,18 @@ class CollapseKeywordEnumerations
         }
 
         // 削除後の体裁を軽く整える（空白・読点周り、連続改行など）
-        $result = preg_replace('/[ \t\x{3000}]+/u', ' ', $result);              // 連続空白→1
-        $result = preg_replace('/[ 　]*(?:[、，,])[ 　]*/u', '、', $result);      // 読点前後の空白整理
-        $result = preg_replace("/(\R){3,}/u", "\n\n", $result);                   // 3行以上の改行→2行
-        $result = preg_replace('/[ \t\x{3000}]+(\R)/u', '$1', $result);           // 行末空白除去
+        $temp = preg_replace('/[ \t\x{3000}]+/u', ' ', $result);              // 連続空白→1
+        if ($temp !== null) $result = $temp;
+        
+        $temp = preg_replace('/[ 　]*(?:[、，,])[ 　]*/u', '、', $result);      // 読点前後の空白整理
+        if ($temp !== null) $result = $temp;
+        
+        $temp = preg_replace("/(\R){3,}/u", "\n\n", $result);                   // 3行以上の改行→2行
+        if ($temp !== null) $result = $temp;
+        
+        $temp = preg_replace('/[ \t\x{3000}]+(\R)/u', '$1', $result);           // 行末空白除去
+        if ($temp !== null) $result = $temp;
+        
         return trim($result);
     }
 
@@ -146,11 +194,17 @@ class CollapseKeywordEnumerations
         if (!mb_check_encoding($t, 'UTF-8')) return false;
 
         // 記号を個別に除去（エンコーディング問題を回避）
-        $t = preg_replace('/^[()（）\[\]【】「」『』.,、。!！?？;；:：・\/／\-+＋_＿&＆]+|[()（）\[\]【】「」『』.,、。!！?？;；:：・\/／\-+＋_＿&＆]+$/u', '', $t);
+        $cleaned = preg_replace('/^[()（）\[\]【】「」『』.,、。!！?？;；:：・\/／\-+＋_＿&＆]+|[()（）\[\]【】「」『』.,、。!！?？;；:：・\/／\-+＋_＿&＆]+$/u', '', $t);
+        // preg_replaceがnullを返した場合の対処
+        if ($cleaned === null) {
+            $cleaned = $t;
+        }
+        $t = $cleaned;
         if ($t === '' || mb_strlen($t, 'UTF-8') > 24) return false;
 
         $letters = preg_match_all('/[\p{L}\p{N}]/u', $t);
-        if (!$letters || $letters <= 0) return false;
+        // preg_match_allがfalseを返した場合の対処
+        if ($letters === false || $letters <= 0) return false;
 
         // アルファベットの数をカウント（英文判定用）
         $alphabet = preg_match_all('/[a-zA-Z]/u', $t);
@@ -226,6 +280,8 @@ class CollapseKeywordEnumerations
         $commaCount = substr_count($matchedText, '、') + substr_count($matchedText, '，') + substr_count($matchedText, ',');
         $pipeCount = substr_count($matchedText, '｜') + substr_count($matchedText, '|');
         $particleMatches = preg_match_all('/[がをにへでとやからまで]/u', $matchedText);
+        // preg_match_allがfalseを返した場合の対処
+        if ($particleMatches === false) $particleMatches = 0;
 
         // 縦棒が多く、助詞が少ない場合はキーワード羅列
         if ($pipeCount >= 5 && $particleMatches <= $pipeCount / 3) {

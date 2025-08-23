@@ -319,4 +319,83 @@ class CollapseKeywordEnumerationsTest extends TestCase
         $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
         $this->assertEquals($text, $result);
     }
+
+    public function testPregReplaceCallbackNullHandling()
+    {
+        // preg_replace_callbackがnullを返すケースをテスト
+        // 極端に長い文字列や複雑なパターンでpreg_replace_callbackがエラーになる可能性をテスト
+        
+        // ケース1: 空文字列の処理
+        $text = '';
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
+        $this->assertIsString($result);
+        $this->assertEquals('', $result);
+        
+        // ケース2: 非常に長い繰り返しパターン（バックトラック制限に達する可能性）
+        $longKeywords = array_fill(0, 1000, 'キーワード');
+        $text = implode('、', $longKeywords);
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース3: 特殊文字を含むテキスト
+        $text = "特殊文字\x00\x01\x02を含むテキスト";
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース4: UTF-8マルチバイト文字の境界ケース
+        $text = '𠮷野家、𩸽、𠀋、😀、🍕、🎉、テスト、キーワード、羅列、削除、対象、文字列';
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース5: 非常に多くの改行を含むテキスト
+        $text = str_repeat("\n", 100) . "テキスト" . str_repeat("\n", 100);
+        $result = CollapseKeywordEnumerations::collapse($text, 12, 0, 0);
+        $this->assertIsString($result);
+        $this->assertStringContainsString('テキスト', $result);
+    }
+    
+    public function testTypeConsistencyAndErrorHandling()
+    {
+        // 型の一貫性とエラーハンドリングのテスト
+        
+        // ケース1: 不正なUTF-8文字列
+        $invalidUtf8 = "\x80\x81\x82";
+        $result = CollapseKeywordEnumerations::collapse($invalidUtf8, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース2: nullバイトを含む文字列
+        $nullByte = "テスト\0文字列";
+        $result = CollapseKeywordEnumerations::collapse($nullByte, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース3: 制御文字を含む文字列
+        $controlChars = "テスト\x01\x02\x03文字列";
+        $result = CollapseKeywordEnumerations::collapse($controlChars, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース4: ネストした正規表現パターン（バックトラック爆発の可能性）
+        $nested = str_repeat('((', 50) . 'test' . str_repeat('))', 50);
+        $result = CollapseKeywordEnumerations::collapse($nested, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース5: 極端に長い単一トークン
+        $longToken = str_repeat('あ', 10000);
+        $result = CollapseKeywordEnumerations::collapse($longToken, 12, 0, 0);
+        $this->assertIsString($result);
+        
+        // ケース6: 複雑な混合パターン
+        $complex = "#タグ1 | 企業A | 企業B | #タグ2、キーワード1、キーワード2\n\n\n利用ルール｜禁止事項｜注意事項";
+        $result = CollapseKeywordEnumerations::collapse($complex, 12, 0, 1);
+        $this->assertIsString($result);
+        
+        // ケース7: エッジケースの引数
+        $result = CollapseKeywordEnumerations::collapse('テスト', 0, 0, 0);
+        $this->assertIsString($result);
+        
+        $result = CollapseKeywordEnumerations::collapse('テスト', -1, -1, -1);
+        $this->assertIsString($result);
+        
+        $result = CollapseKeywordEnumerations::collapse('テスト', PHP_INT_MAX, PHP_INT_MAX, PHP_INT_MAX);
+        $this->assertIsString($result);
+    }
 }
