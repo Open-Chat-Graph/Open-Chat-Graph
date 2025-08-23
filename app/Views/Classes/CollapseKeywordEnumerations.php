@@ -124,14 +124,70 @@ class CollapseKeywordEnumerations
 
         // 通常のキーワード羅列パターンの処理
         $processed = preg_replace_callback($pattern, function ($m) use ($keepFirst, &$removedParts) {
-            // まず文章的なパターンがあるかチェック
+            // マッチしたテキストが複数の段落を含む場合、段落ごとに処理
+            $paragraphs = preg_split('/\n\s*\n/', $m[0]);
+            if (count($paragraphs) > 1) {
+                $processedParts = [];
+                foreach ($paragraphs as $paragraph) {
+                    $paragraph = trim($paragraph);
+                    if (empty($paragraph)) {
+                        $processedParts[] = $paragraph;
+                        continue;
+                    }
+                    
+                    // 各段落を個別に判定
+                    if (self::isSentenceLike($paragraph)) {
+                        $processedParts[] = $paragraph; // 文章的な段落は保持
+                    } else {
+                        // キーワード羅列として処理
+                        $tokens = preg_split('/(?:[ 　、 ，,]+|\R+)/u', $paragraph, -1, PREG_SPLIT_NO_EMPTY);
+                        if ($tokens === false) {
+                            $processedParts[] = $paragraph;
+                            continue;
+                        }
+                        $filtered = array_values(array_filter($tokens, fn($t) => self::isKeywordLike($t)));
+
+                        // キーワード的なトークンが全体の50%未満なら保持
+                        if (count($filtered) < count($tokens) * 0.5) {
+                            $processedParts[] = $paragraph;
+                            continue;
+                        }
+
+                        if (count($filtered) === 0) {
+                            $processedParts[] = $paragraph;
+                            continue;
+                        }
+
+                        // keepFirst=0 なら列挙を削除
+                        if ($keepFirst <= 0) {
+                            $removedParts[] = $paragraph;
+                            $processedParts[] = ''; // 削除
+                        } else {
+                            // 指定数以下なら改変しない
+                            if (count($filtered) <= $keepFirst) {
+                                $processedParts[] = $paragraph;
+                            } else {
+                                // 先頭 keepFirst 個だけ残して省略
+                                $removedKeywords = array_slice($filtered, $keepFirst);
+                                if (!empty($removedKeywords)) {
+                                    $removedParts[] = implode('、', $removedKeywords);
+                                }
+                                $processedParts[] = implode('、', array_slice($filtered, 0, $keepFirst)) . '…';
+                            }
+                        }
+                    }
+                }
+                return implode("\n\n", array_filter($processedParts, fn($p) => $p !== ''));
+            }
+            
+            // 単一段落の場合は従来の処理
             if (self::isSentenceLike($m[0])) {
                 return $m[0]; // 文章と判定されたら保持
             }
 
             // 改行は [] に入れず、オルタネーションで扱う
             $tokens = preg_split('/(?:[ 　、 ，,]+|\R+)/u', $m[0], -1, PREG_SPLIT_NO_EMPTY);
-            // preg_splitがfalseを返した場合の対処
+            // preg_splitがfalseを返った場合の対処
             if ($tokens === false) {
                 return $m[0];
             }
@@ -290,6 +346,17 @@ class CollapseKeywordEnumerations
 
         // 読点が5個以上あり、助詞が読点の半分以下の場合はキーワード羅列
         if ($commaCount >= 5 && $particleMatches <= $commaCount / 2) {
+            return false;
+        }
+
+        // スペース区切りの長いキーワード羅列の場合
+        // 助詞密度が低く、スペースで区切られた多数の項目がある場合はキーワード羅列と判定
+        $textLength = mb_strlen($matchedText, 'UTF-8');
+        $spaceCount = substr_count($matchedText, ' ') + substr_count($matchedText, '　');
+        $particleDensity = $particleMatches / max(1, $textLength);
+        
+        // スペース区切りで長いテキスト（100文字以上）かつ助詞密度が低い場合（0.02未満）はキーワード羅列
+        if ($textLength >= 100 && $spaceCount >= 10 && $particleDensity < 0.02) {
             return false;
         }
 
