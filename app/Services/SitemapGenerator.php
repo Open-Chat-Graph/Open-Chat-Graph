@@ -19,6 +19,7 @@ class SitemapGenerator
     const SITEMAP_PATH = 'https://openchat-review.me/sitemaps/';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemaps/';
     const INDEX_SITEMAP = __DIR__ . '/../../public/sitemap.xml';
+    const MINIMUM_LASTMOD = '2025-08-23 21:30:00';
     private string $currentUrl = '';
     private int $currentNum = 0;
 
@@ -88,6 +89,10 @@ class SitemapGenerator
         $sitemap = new Sitemap();
         foreach ($openChat as $oc) {
             ['id' => $id, 'updated_at' => $updated_at] = $oc;
+            // updated_atが最小日時より古い場合は最小日時を使用
+            if ($updated_at < self::MINIMUM_LASTMOD) {
+                $updated_at = self::MINIMUM_LASTMOD;
+            }
             $this->addItem($sitemap, "oc/{$id}", $updated_at);
         }
 
