@@ -49,11 +49,22 @@ class RecommendUtility
         'せどり',
         'お金',
         'TEMU',
+        '40代',
+        '50代',
         '70代',
         '60代',
+        '不動産',
+        '企業研究',
+        '営業',
+        '起業',
+        '貯金',
+        'ポケモンカード（ポケカ）',
+        'トレーディングカード（トレカ）',
+        'ワンピースカード',
         '投資',
         'SHEIN',
         'ポイ活',
+        '全国 雑談',
     ];
 
     static function extractTag(string|int $str): string
