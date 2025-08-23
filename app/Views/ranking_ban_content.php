@@ -231,7 +231,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php endif ?>
     </main>
     <?php viewComponent('footer_inner') ?>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
         ((form) => {

@@ -63,7 +63,7 @@
         </article>
     </main>
     <?php viewComponent('footer_inner') ?>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script>
         const admin = <?php echo isAdmin() ? 1 : 0; ?>;
     </script>

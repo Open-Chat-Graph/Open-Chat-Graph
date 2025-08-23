@@ -4,7 +4,7 @@
 
 use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
@@ -65,7 +65,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div class="refresh-icon"></div><time style="font-size: 11px; color: #b7b7b7; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script>
         const admin = <?php echo isAdmin() ? 1 : 0; ?>;
     </script>

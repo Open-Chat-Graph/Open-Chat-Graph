@@ -4,7 +4,7 @@
 
 use App\Config\AppConfig;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
@@ -15,7 +15,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
   <div class="unset openchat body" style="overflow: hidden;">
 
     <?php if (RecommendUtility::isAdEnhancementTag($recommend[2] ?? '')): ?>
-      <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
+      <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <?php endif ?>
 
     <article class="unset" style="display: block;">
@@ -266,7 +266,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
     <?php viewComponent('footer_inner') ?>
 
   </div>
-  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+  <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
   <script async>
     (function() {
       // 説明文の続きを読むボタン

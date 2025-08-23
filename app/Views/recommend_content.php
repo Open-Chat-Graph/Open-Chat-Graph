@@ -4,7 +4,7 @@
 
 use App\Config\AppConfig;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
 /** @var \App\Services\StaticData\Dto\StaticRecommendPageDto $_dto */
@@ -27,7 +27,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
     <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
-      <?php \App\Views\Ads\GoogleAdsence::gTag('bottom') ?>
+      <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <?php endif ?>
 
     <section class="recommend-header-wrapper">
@@ -195,7 +195,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   </article>
 
-  <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+  <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
 
   <script>
     const admin = <?php echo isAdmin() ? 1 : 0; ?>;

@@ -2,7 +2,7 @@
 <html lang="<?php echo t('ja') ?>">
 <?php
 
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 
 viewComponent('policy_head', compact('_css', '_meta')) ?>
 
@@ -252,7 +252,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
             <?php endif ?>
         </article>
     </main>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <?php viewComponent('footer_inner') ?>
     <?php echo $_breadcrumbsShema ?>
 </body>

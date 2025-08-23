@@ -3,7 +3,7 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 
 viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?>
 

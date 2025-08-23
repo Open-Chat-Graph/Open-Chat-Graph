@@ -5,7 +5,7 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
 if (!$recommend->getCount()) {

@@ -6,7 +6,7 @@ $ads = $showAds ?? false;
 $omit = $omitDeleted ?? true;
 $listCount = count($openChatList);
 
-use App\Views\Ads\GoogleAdsence as GAd;
+use App\Views\Ads\GoogleAdsense as GAd;
 
 /**
  * @var array{ id:int,user:string,name:string,img_url:string,description:string,member:int,emblem:int,category:int,time:string }[] $openChatList

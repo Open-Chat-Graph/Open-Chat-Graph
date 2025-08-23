@@ -13,7 +13,7 @@
     </style>
     <?php viewComponent('site_header') ?>
     <main style="padding: 0 1rem;" style="overflow: hidden;">
-        <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteTopRectangle']) ?>
+        <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
 
         <h2>オプチャグラフにオープンチャットを手動で登録する</h2>
         <p>
@@ -73,7 +73,7 @@
         </p>
     </main>
     <?php viewComponent('footer_inner') ?>
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script type="module">
         import {
             OpenChatUrlValidator

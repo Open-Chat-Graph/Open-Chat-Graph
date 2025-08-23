@@ -28,7 +28,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <span class="ranking-readMore">ライブトーク利用時間分析ツールを開く<span class="small"></span>
                 </a>
             </article>
-            <?php \App\Views\Ads\GoogleAdsence::output(\App\Views\Ads\GoogleAdsence::AD_SLOTS['siteTopRectangle']) ?>
+            <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
             <article class="terms" style="opacity: .5;">
                 <h2>(公開中止)タグで見るトレンド動向</h2>
                 <!-- <a href="<?php echo url('labs/tags') ?>" aria-label="タグで見るトレンド動向"> -->
@@ -57,7 +57,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
         <?php viewComponent('footer_inner') ?>
     </div>
 
-    <?php \App\Views\Ads\GoogleAdsence::loadAdsTag() ?>
+    <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <?php echo $_breadcrumbsShema ?>
 </body>
 

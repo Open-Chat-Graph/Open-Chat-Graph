@@ -4,7 +4,7 @@ namespace App\Views\Ads;
 
 use App\Config\AppConfig;
 
-class GoogleAdsence
+class GoogleAdsense
 {
     const AD_CLIENT = 'ca-pub-2330982526015125';
 
