@@ -9,7 +9,7 @@ class CollapseKeywordEnumerations
     public static function collapse(
         string $text,
         int $minItems = 12,
-        int $keepFirst = 0,
+        int $keepFirst = 1,
         int $allowHashtags = 1,
         string $extraText = '',
         bool $returnRemovedOnly = false,

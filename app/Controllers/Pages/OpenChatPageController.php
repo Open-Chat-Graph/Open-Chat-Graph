@@ -20,6 +20,7 @@ use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
+use App\Views\Classes\CollapseKeywordEnumerations;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
 use Shared\MimimalCmsConfig;
 
@@ -118,7 +119,11 @@ class OpenChatPageController
             'graph_page',
             'ads_element'
         ];
-        $_meta = $meta->generateMetadata($open_chat_id, $oc)->setImageUrl(imgUrl($oc['id'], $oc['img_url']));
+
+        $collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name']);
+        $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
+
+        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription])->setImageUrl(imgUrl($oc['id'], $oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['id'], $oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
@@ -142,6 +147,8 @@ class OpenChatPageController
         ];
         $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;
 
+        $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
+
         return view('oc_content', compact(
             '_meta',
             '_css',
@@ -157,6 +164,8 @@ class OpenChatPageController
             '_adminDto',
             'officialDto',
             'topPageDto',
+            'formatedDescription',
+            'formatedRowDescription',
         ));
     }
 
