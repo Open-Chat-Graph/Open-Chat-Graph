@@ -65,8 +65,7 @@ class OpenChatStatsRankingApiRepository
         {$where} {$category}
         ORDER BY
             {$sortColumn} {$args->order}
-        LIMIT
-            :offset, :limit";
+        LIMIT :offset, :limit";
 
         $countQuery = fn($category) => fn($where) =>
         "SELECT
@@ -76,7 +75,7 @@ class OpenChatStatsRankingApiRepository
             JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
         {$where} {$category}";
 
-        $categoryStatement = $args->category ? "category = {$args->category}" : 1;
+        $categoryStatement = $args->category ? "category = {$args->category}" : "1";
 
         // 検索が選択されていない場合
         if (!$args->sub_category && !$args->keyword && !$args->tag && !$args->badge) {
@@ -166,25 +165,7 @@ class OpenChatStatsRankingApiRepository
         }
 
         // キーワード検索時
-        $result = DB::executeLikeSearchQuery(
-            $query("AND " . $categoryStatement),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
-            $args->keyword,
-            $params
-        );
-
-        if (!$result || $args->page !== 0) {
-            return $result;
-        }
-
-        $count = DB::executeLikeSearchQuery(
-            $countQuery("AND " . $categoryStatement),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
-            $args->keyword
-        );
-
-        $result[0]['totalCount'] = $count[0]['count'];
-        return $result;
+        return $this->getStatsRankingWithKeywordPriority($tableName, $args, $sortColumn, $categoryStatement);
     }
 
     function findStatsAll(OpenChatApiArgs $args): array
@@ -223,8 +204,7 @@ class OpenChatStatsRankingApiRepository
         {$where} {$category}
         ORDER BY
             {$sortColumn} {$args->order}
-        LIMIT
-            :offset, :limit";
+        LIMIT :offset, :limit";
 
         $countQuery = fn($category) => fn($where) =>
         "SELECT
@@ -233,7 +213,7 @@ class OpenChatStatsRankingApiRepository
             open_chat AS oc
         {$where} {$category}";
 
-        $categoryStatement = $args->category ? "category = {$args->category}" : 1;
+        $categoryStatement = $args->category ? "category = {$args->category}" : "1";
 
         // サブカテゴリーが選択されていない場合
         if (!$args->sub_category && !$args->keyword && !$args->tag && !$args->badge) {
@@ -337,11 +317,156 @@ class OpenChatStatsRankingApiRepository
         }
 
         // キーワード検索時
+        return $this->getStatsAllWithKeywordPriority($args, $sortColumn, $categoryStatement, $whereClause);
+    }
+
+    private function getStatsRankingWithKeywordPriority(string $tableName, OpenChatApiArgs $args, string $sortColumn, $categoryStatement): array
+    {
+        $params = [
+            'offset' => $args->page * $args->limit,
+            'limit' => $args->limit,
+        ];
+
+        // name一致を優先するUNIONクエリ  
+        $sortColumnAlias = str_replace('sr.', '', $sortColumn); // エイリアス調整
+        $query = "
+        SELECT * FROM (
+            SELECT
+                oc.id,
+                oc.name,
+                oc.description,
+                oc.member,
+                oc.local_img_url AS img_url,
+                oc.emblem,
+                oc.join_method_type,
+                oc.category,
+                sr.diff_member,
+                sr.percent_increase,
+                1 as priority
+            FROM
+                open_chat AS oc
+                JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+            WHERE
+                {$categoryStatement}
+                AND (%s)
+            
+            UNION
+            
+            SELECT
+                oc.id,
+                oc.name,
+                oc.description,
+                oc.member,
+                oc.local_img_url AS img_url,
+                oc.emblem,
+                oc.join_method_type,
+                oc.category,
+                sr.diff_member,
+                sr.percent_increase,
+                2 as priority
+            FROM
+                open_chat AS oc
+                JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+            WHERE
+                {$categoryStatement}
+                AND NOT (%s)
+                AND (%s)
+        ) AS combined
+        ORDER BY
+            priority ASC, {$sortColumnAlias} {$args->order}
+        LIMIT %d, %d";
+
+        // カウント用クエリ
+        $countQuery = "
+        SELECT count(*) as count
+        FROM
+            open_chat AS oc
+            JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+        WHERE
+            {$categoryStatement}
+            AND (%s)";
+
+        $result = $this->executeKeywordSearchWithPriority(
+            $query,
+            $args->keyword,
+            $params
+        );
+
+        if (!$result || $args->page !== 0) {
+            return $result;
+        }
+
+        $count = $this->executeKeywordCountQuery($countQuery, $args->keyword);
+
+        $result[0]['totalCount'] = $count[0]['count'];
+        return $result;
+    }
+
+    private function getStatsAllWithKeywordPriority(OpenChatApiArgs $args, string $sortColumn, $categoryStatement, string $whereClause): array
+    {
+        $params = [
+            'offset' => $args->page * $args->limit,
+            'limit' => $args->limit,
+        ];
+
+        // name一致を優先するUNIONクエリ
+        $sortColumnAlias = str_replace('oc.', '', $sortColumn); // エイリアス調整
+        $query = "
+        SELECT * FROM (
+            SELECT
+                oc.id,
+                oc.name,
+                oc.description,
+                oc.member,
+                oc.local_img_url AS img_url,
+                oc.emblem,
+                oc.join_method_type,
+                oc.category,
+                oc.api_created_at,
+                1 as priority
+            FROM
+                open_chat AS oc
+            WHERE
+                {$categoryStatement}{$whereClause}
+                AND (%s)
+            
+            UNION
+            
+            SELECT
+                oc.id,
+                oc.name,
+                oc.description,
+                oc.member,
+                oc.local_img_url AS img_url,
+                oc.emblem,
+                oc.join_method_type,
+                oc.category,
+                oc.api_created_at,
+                2 as priority
+            FROM
+                open_chat AS oc
+            WHERE
+                {$categoryStatement}{$whereClause}
+                AND NOT (%s)
+                AND (%s)
+        ) AS combined
+        ORDER BY
+            priority ASC, {$sortColumnAlias} {$args->order}
+        LIMIT %d, %d";
+
+        // カウント用クエリ
+        $countQuery = "
+        SELECT count(*) as count
+        FROM
+            open_chat AS oc
+        WHERE
+            {$categoryStatement}{$whereClause}
+            AND (%s)";
+
         $result = array_map(
             fn($oc) => new OpenChatListDto($oc),
-            DB::executeLikeSearchQuery(
-                $query("AND " . $categoryStatement . $whereClause),
-                fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
+            $this->executeKeywordSearchWithPriority(
+                $query,
                 $args->keyword,
                 $params
             )
@@ -351,13 +476,77 @@ class OpenChatStatsRankingApiRepository
             return $result;
         }
 
-        $count = DB::executeLikeSearchQuery(
-            $countQuery("AND " . $categoryStatement . $whereClause),
-            fn($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})",
-            $args->keyword
-        );
+        $count = $this->executeKeywordCountQuery($countQuery, $args->keyword);
 
         $result[0]->totalCount = $count[0]['count'];
         return $result;
+    }
+
+    private function executeKeywordSearchWithPriority(string $query, string $keyword, array $params): array
+    {
+        // キーワードを分割
+        $keywords = array_filter(explode(' ', $keyword), fn($k) => !empty(trim($k)));
+        if (empty($keywords)) {
+            return [];
+        }
+
+        // プレースホルダーを準備
+        $nameConditions = [];
+        $descConditions = [];
+        $allConditions = [];
+        $searchParams = $params;
+        
+        foreach ($keywords as $i => $kw) {
+            $nameConditions[] = "oc.name LIKE :keyword{$i}";
+            $descConditions[] = "oc.description LIKE :keyword{$i}";
+            $allConditions[] = "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})";
+            $searchParams["keyword{$i}"] = "%{$kw}%";
+        }
+
+        $nameCondition = implode(' AND ', $nameConditions);
+        $descCondition = implode(' AND ', $descConditions);
+
+        // クエリにプレースホルダーを置換 (LIMITの値も含む)
+        $finalQuery = sprintf(
+            $query,
+            $nameCondition,      // name一致部分
+            $nameCondition,      // NOT条件のname一致部分
+            $descCondition,      // description一致部分
+            (int)$params['offset'],  // offset
+            (int)$params['limit']    // limit
+        );
+
+        // LIMITパラメータをsearchParamsから除外
+        unset($searchParams['offset'], $searchParams['limit']);
+
+        DB::connect();
+        $stmt = DB::$pdo->prepare($finalQuery);
+        $stmt->execute($searchParams);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function executeKeywordCountQuery(string $countQuery, string $keyword): array
+    {
+        // キーワードを分割
+        $keywords = array_filter(explode(' ', $keyword), fn($k) => !empty(trim($k)));
+        if (empty($keywords)) {
+            return [['count' => 0]];
+        }
+
+        $allConditions = [];
+        $searchParams = [];
+        
+        foreach ($keywords as $i => $kw) {
+            $allConditions[] = "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i} OR oc.id LIKE :keyword{$i})";
+            $searchParams["keyword{$i}"] = "%{$kw}%";
+        }
+
+        $allCondition = implode(' AND ', $allConditions);
+        $finalQuery = sprintf($countQuery, $allCondition);
+
+        DB::connect();
+        $stmt = DB::$pdo->prepare($finalQuery);
+        $stmt->execute($searchParams);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

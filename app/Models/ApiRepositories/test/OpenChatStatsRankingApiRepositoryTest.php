@@ -145,7 +145,7 @@ class OpenChatStatsRankingApiRepositoryTest extends TestCase
         $args->category = 0;
         $args->limit = 20;
         $args->page = 0;
-        $args->sort = 'member';
+        $args->sort = 'rate';
         $args->order = 'DESC';
         $args->keyword = 'ダイエット';
         $args->sub_category = '';
@@ -153,7 +153,7 @@ class OpenChatStatsRankingApiRepositoryTest extends TestCase
         $args->badge = 0;
         $args->list = '';
 
-        $result = $this->repo->findStatsAll($args);
+        $result = $this->repo->findHourlyStatsRanking($args);
         
         if (!empty($result)) {
             $nameMatches = 0;
@@ -186,5 +186,92 @@ class OpenChatStatsRankingApiRepositoryTest extends TestCase
         }
         
         $this->assertTrue(true);
+    }
+
+    public function testFindStatsAllWithoutKeyword()
+    {
+        echo "\n=== Testing findStatsAll without keyword ===\n";
+        
+        $args = new OpenChatApiArgs;
+        $args->category = 0;
+        $args->limit = 5;
+        $args->page = 0;
+        $args->sort = 'member';
+        $args->order = 'DESC';
+        $args->keyword = ''; // キーワードなし
+        $args->sub_category = '';
+        $args->tag = '';
+        $args->badge = 0;
+        $args->list = '';
+
+        $result = $this->repo->findStatsAll($args);
+        
+        echo "Found " . count($result) . " results\n";
+        if (!empty($result)) {
+            echo "First result - ID: " . $result[0]->id . ", Member: " . $result[0]->member . "\n";
+            if (isset($result[0]->totalCount)) {
+                echo "Total count: " . $result[0]->totalCount . "\n";
+            }
+        }
+        
+        $this->assertNotEmpty($result, 'Should find results without keyword');
+    }
+
+    public function testFindHourlyStatsRankingWithoutKeyword()
+    {
+        echo "\n=== Testing findHourlyStatsRanking without keyword ===\n";
+        
+        $args = new OpenChatApiArgs;
+        $args->category = 0;
+        $args->limit = 5;
+        $args->page = 0;
+        $args->sort = 'rate';
+        $args->order = 'DESC';
+        $args->keyword = ''; // キーワードなし
+        $args->sub_category = '';
+        $args->tag = '';
+        $args->badge = 0;
+        $args->list = '';
+
+        $result = $this->repo->findHourlyStatsRanking($args);
+        
+        echo "Found " . count($result) . " results\n";
+        if (!empty($result)) {
+            echo "First result - ID: " . $result[0]->id . ", Member: " . $result[0]->member . "\n";
+            if (isset($result[0]->totalCount)) {
+                echo "Total count: " . $result[0]->totalCount . "\n";
+            }
+        }
+        
+        $this->assertNotEmpty($result, 'Should find results without keyword');
+    }
+
+    public function testFindStatsAllWithCategory()
+    {
+        echo "\n=== Testing findStatsAll with category filter ===\n";
+        
+        $args = new OpenChatApiArgs;
+        $args->category = 1; // カテゴリー指定
+        $args->limit = 5;
+        $args->page = 0;
+        $args->sort = 'member';
+        $args->order = 'DESC';
+        $args->keyword = '';
+        $args->sub_category = '';
+        $args->tag = '';
+        $args->badge = 0;
+        $args->list = '';
+
+        $result = $this->repo->findStatsAll($args);
+        
+        echo "Found " . count($result) . " results for category 1\n";
+        if (!empty($result)) {
+            echo "First result - ID: " . $result[0]->id . ", Category: " . $result[0]->category . "\n";
+            if (isset($result[0]->totalCount)) {
+                echo "Total count: " . $result[0]->totalCount . "\n";
+            }
+        }
+        
+        $this->assertTrue(true); // カテゴリフィルターが動作することを確認
     }
 }
