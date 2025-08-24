@@ -359,7 +359,7 @@ class RecommendUpdater
     /** @return string[] */
     protected function getReplacedStrongestTags(string $column): array
     {
-        $tags = $this->recommendUpdaterTags->getStrongestTags();
+        $tags = $this->recommendUpdaterTags->getStrongestTags($column);
 
         $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
 
