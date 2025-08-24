@@ -439,6 +439,7 @@ html {
   color: #777;
   font-weight: normal;
   line-height: 1.3;
+  text-wrap: nowrap;
 }
 
 .title-bar-oc-name .super-icon.sp {
