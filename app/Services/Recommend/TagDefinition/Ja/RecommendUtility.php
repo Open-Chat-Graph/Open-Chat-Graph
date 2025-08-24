@@ -85,6 +85,7 @@ class RecommendUtility
         "ふるさと納税",
         'SHEIN',
         'ポイ活',
+        '資産運用',
         'Instagram（インスタ）',
         'SNS',
         '全国 雑談',
