@@ -27,20 +27,4 @@ class ApiStatisticsPageRepositoryTest extends TestCase
             $this->assertArrayHasKey('member', $firstRecord);
         }
     }
-
-    public function testGetMemberCount()
-    {
-        $stats = $this->repository->getDailyMemberStatsDateAsc(self::TEST_ID);
-
-        if (!empty($stats)) {
-            $testDate = $stats[0]['date'];
-            $memberCount = $this->repository->getMemberCount(self::TEST_ID, $testDate);
-            
-            $this->assertIsInt($memberCount);
-            $this->assertGreaterThanOrEqual(0, $memberCount);
-        }
-        
-        $invalidResult = $this->repository->getMemberCount(self::TEST_ID, '1999-01-01');
-        $this->assertFalse($invalidResult);
-    }
 }

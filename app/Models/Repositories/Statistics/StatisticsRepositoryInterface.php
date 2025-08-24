@@ -37,4 +37,13 @@ interface StatisticsRepositoryInterface
      * @return int[]
      */
     public function getOpenChatIdArrayByDate(string $date): array;
+
+    /**
+     * 指定した日付・IDのメンバー数を取得する
+     * 
+     * @param string $date Y-m-d
+     * 
+     * @return int
+     */
+    public function getMemberCount(int $open_chat_id, string $date): int|false;
 }

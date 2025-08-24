@@ -8,7 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Importer\SqlInsert;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface;
-use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
+use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
@@ -21,7 +21,7 @@ class RankingBanTableUpdater
     function __construct(
         private RankingPositionPageRepositoryInterface $rankingPositionRepo,
         private RankingPositionHourPageRepositoryInterface $rankingPositionHourRepo,
-        private StatisticsPageRepositoryInterface $statisticsRepo,
+        private StatisticsRepositoryInterface $statisticsRepo,
         private SqlInsert $sqlInsert,
         private OpenChatUpdaterFromApi $openChatUpdaterFromApi,
         private ProgressNotifier $notifier,

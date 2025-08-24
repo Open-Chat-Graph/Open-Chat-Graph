@@ -12,13 +12,4 @@ interface StatisticsPageRepositoryInterface
      * @return array{ date: string, member: int }[] date: Y-m-d
      */
     public function getDailyMemberStatsDateAsc(int $open_chat_id): array;
-
-    /**
-     * 指定した日付・IDのメンバー数を取得する
-     * 
-     * @param string $date Y-m-d
-     * 
-     * @return int
-     */
-    public function getMemberCount(int $open_chat_id, string $date): int|false;
 }

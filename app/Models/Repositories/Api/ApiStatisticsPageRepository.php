@@ -51,33 +51,4 @@ class ApiStatisticsPageRepository implements StatisticsPageRepositoryInterface
             ];
         }, $results);
     }
-
-    /**
-     * Get member count for a specific date
-     * 
-     * @param int $open_chat_id OpenChat ID
-     * @param string $date Date in Y-m-d format
-     * @return int|false Member count or false if not found
-     */
-    function getMemberCount(int $open_chat_id, string $date): int|false
-    {
-        ApiDB::connect();
-
-        $query = "
-            SELECT 
-                member_count
-            FROM 
-                daily_member_statistics
-            WHERE 
-                openchat_id = ? 
-                AND statistics_date = ?
-            LIMIT 1
-        ";
-
-        $stmt = ApiDB::$pdo->prepare($query);
-        $stmt->execute([$open_chat_id, $date]);
-        $result = $stmt->fetchColumn();
-
-        return $result !== false ? (int)$result : false;
-    }
 }

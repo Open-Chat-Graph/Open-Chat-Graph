@@ -170,4 +170,18 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 
         return SQLiteStatistics::fetchAll($query, null, [\PDO::FETCH_COLUMN, 0]);
     }
+
+    public function getMemberCount(int $open_chat_id, string $date): int|false
+    {
+        $query =
+            "SELECT
+                member
+            FROM
+                statistics
+            WHERE
+                open_chat_id = {$open_chat_id}
+                AND date = '{$date}'";
+
+        return SQLiteStatistics::fetchColumn($query);
+    }
 }

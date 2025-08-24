@@ -28,18 +28,4 @@ class SqliteStatisticsPageRepository implements StatisticsPageRepositoryInterfac
 
         return $result;
     }
-
-    public function getMemberCount(int $open_chat_id, string $date): int|false
-    {
-        $query =
-            "SELECT
-                member
-            FROM
-                statistics
-            WHERE
-                open_chat_id = {$open_chat_id}
-                AND date = '{$date}'";
-
-        return SQLiteStatistics::fetchColumn($query);
-    }
 }
