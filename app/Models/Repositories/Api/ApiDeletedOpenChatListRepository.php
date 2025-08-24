@@ -74,6 +74,27 @@ class ApiDeletedOpenChatListRepository
             WHERE
                 DATE(ocd.deleted_at) = :date
                 AND om.current_member_count > 10
+                AND EXISTS (
+                    SELECT 1
+                    FROM daily_member_statistics dms1
+                    WHERE dms1.openchat_id = om.openchat_id
+                    AND dms1.statistics_date = (
+                        SELECT MAX(statistics_date)
+                        FROM daily_member_statistics dms2
+                        WHERE dms2.openchat_id = om.openchat_id
+                    )
+                )
+                AND EXISTS (
+                    SELECT 1
+                    FROM daily_member_statistics dms3
+                    WHERE dms3.openchat_id = om.openchat_id
+                    AND dms3.statistics_date = DATE_SUB(
+                        (SELECT MAX(statistics_date)
+                         FROM daily_member_statistics dms4
+                         WHERE dms4.openchat_id = om.openchat_id),
+                        INTERVAL 1 DAY
+                    )
+                )
             ORDER BY
                 om.established_at DESC";
 
