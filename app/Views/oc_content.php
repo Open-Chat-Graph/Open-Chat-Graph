@@ -7,7 +7,7 @@ use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
-viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_statsDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
+viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_commentArgDto') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
   <!-- 固定ヘッダー -->
@@ -200,6 +200,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
           <div class="chart-canvas-box" id="dummy-canvas"></div>
           <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
         </div>
+        <script type="application/json" id="stats-dto">
+          <?php echo json_encode($_statsDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
+        </script>
         <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
       </section>
     </article>
