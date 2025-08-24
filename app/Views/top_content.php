@@ -41,13 +41,16 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </div>
         <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
         ?>
+            <hr class="hr-bottom" style="margin: auto;">
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
+            <hr class="hr-top" style="margin: 1rem auto;">
         <?php endif ?>
-        <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <div class="modify-top-padding" style="margin-bottom: 0px;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
+        <hr class="hr-top" style="margin: 1rem auto;">
+        <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
