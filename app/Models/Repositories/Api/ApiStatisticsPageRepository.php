@@ -23,32 +23,44 @@ class ApiStatisticsPageRepository implements StatisticsPageRepositoryInterface
     {
         ApiDB::connect();
 
-        $query = "
-            SELECT 
+        $query =
+            "SELECT 
                 statistics_date AS date,
                 member_count AS member
             FROM 
                 daily_member_statistics
             WHERE 
-                openchat_id = ?
+                openchat_id = :open_chat_id
             ORDER BY 
-                statistics_date ASC
-        ";
+                statistics_date ASC";
 
-        $stmt = ApiDB::$pdo->prepare($query);
-        $stmt->execute([$open_chat_id]);
-        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        if (empty($results)) {
+        $result = ApiDB::fetchAll($query, compact('open_chat_id'));
+        if (empty($result)) {
             return [];
         }
 
-        // Convert member count to integer
-        return array_map(function ($row) {
-            return [
-                'date' => $row['date'],
-                'member' => (int)$row['member']
-            ];
-        }, $results);
+        $currentMemberCount = ApiDB::fetchColumn(
+            "SELECT
+                current_member_count
+            FROM 
+                openchat_master 
+            WHERE 
+                openchat_id = :open_chat_id",
+            compact('open_chat_id')
+        );
+
+        if ($currentMemberCount === $result[count($result) - 1]['member']) {
+            return $result;
+        }
+
+        $lastDate = new \DateTime($result[count($result) - 1]['date']);
+        $lastDate->modify('+1 day');
+
+        $newStats = [
+            'date' => $lastDate->format('Y-m-d'),
+            'member' => $currentMemberCount
+        ];
+
+        return array_merge($result, [$newStats]);
     }
 }
