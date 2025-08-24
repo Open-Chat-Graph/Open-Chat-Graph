@@ -92,6 +92,9 @@ class RecommendUtility
         'SNS',
         '全国 雑談',
         '不用品・遺品整理・汚部屋・ゴミ屋敷',
+        'ZB1（ゼロベースワン／ゼベワン）',
+        'Stray Kids',
+        'IVE',
     ];
 
     static function extractTag(string|int $str): string
