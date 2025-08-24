@@ -34,19 +34,19 @@ class ApiDeletedOpenChatListRepository
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME = ['大人', 'シングル'];
+    private const HIGH_PRIORITY_KEYWORDS_NAME = ['大人', 'シングル', 'その先', 'オトナ',];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameまたはdescriptionにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達'];
+    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達',];
 
     /**
      * 低優先度キーワード（順位を下げる）
      * display_nameにこれらのキーワードを含むルームは下位に配置
      */
-    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ', 'LOW_PRIORITY_KEYWORDS'];
+    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ',];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
     {
@@ -84,7 +84,7 @@ class ApiDeletedOpenChatListRepository
         }
 
         // Filter out OpenChats based on display_name patterns
-        $deletedOpenChats = array_filter($deletedOpenChats, function($openChat) {
+        $deletedOpenChats = array_filter($deletedOpenChats, function ($openChat) {
             foreach (self::$filterPatterns as $filter) {
                 // Check if pattern matches
                 if (preg_match($filter['pattern'], $openChat['display_name'])) {
@@ -158,11 +158,11 @@ class ApiDeletedOpenChatListRepository
                 // データがない場合、増加数を0に設定
                 $openChat['member_growth'] = 0;
             }
-            
+
             // 最大メンバー数からの減少率と最小メンバー数からの成長率を計算（最新はcurrent_member_countを使用）
             $openChat['peak_decline_rate'] = 0;
             $openChat['valley_growth_rate'] = 0;
-            
+
             if ($growth) {
                 // 最大メンバー数からの減少率
                 if ($growth['peak_count'] !== null && $growth['peak_count'] > 0) {
@@ -171,7 +171,7 @@ class ApiDeletedOpenChatListRepository
                         $openChat['peak_decline_rate'] = ($decline / $growth['peak_count']) * 100;
                     }
                 }
-                
+
                 // 最小メンバー数からの成長率
                 if ($growth['valley_count'] !== null && $growth['valley_count'] > 0) {
                     $growthAmount = $currentMemberCount - $growth['valley_count'];
@@ -190,7 +190,7 @@ class ApiDeletedOpenChatListRepository
             // 高優先度キーワードのチェック
             $hasHighPriorityA = false;
             $hasHighPriorityB = false;
-            
+
             // display_nameで高優先度キーワード（第1グループ）をチェック
             foreach (self::HIGH_PRIORITY_KEYWORDS_NAME as $keyword) {
                 if (mb_strpos($a['display_name'], $keyword) !== false) {
@@ -204,12 +204,14 @@ class ApiDeletedOpenChatListRepository
                     break;
                 }
             }
-            
+
             // display_nameとdescriptionで高優先度キーワード（第2グループ）をチェック
             if (!$hasHighPriorityA) {
                 foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
-                    if (mb_strpos($a['display_name'], $keyword) !== false || 
-                        mb_strpos($a['description'], $keyword) !== false) {
+                    if (
+                        mb_strpos($a['display_name'], $keyword) !== false ||
+                        mb_strpos($a['description'], $keyword) !== false
+                    ) {
                         $hasHighPriorityA = true;
                         break;
                     }
@@ -217,38 +219,40 @@ class ApiDeletedOpenChatListRepository
             }
             if (!$hasHighPriorityB) {
                 foreach (self::HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC as $keyword) {
-                    if (mb_strpos($b['display_name'], $keyword) !== false || 
-                        mb_strpos($b['description'], $keyword) !== false) {
+                    if (
+                        mb_strpos($b['display_name'], $keyword) !== false ||
+                        mb_strpos($b['description'], $keyword) !== false
+                    ) {
                         $hasHighPriorityB = true;
                         break;
                     }
                 }
             }
-            
+
             // 第0優先: 高優先度キーワードの有無
             if ($hasHighPriorityA !== $hasHighPriorityB) {
                 return $hasHighPriorityB <=> $hasHighPriorityA; // 高優先度が上位
             }
-            
+
             $currentMemberA = $a['current_member_count'] ?? 0;
             $currentMemberB = $b['current_member_count'] ?? 0;
             $declineA = $a['peak_decline_rate'] ?? 0;
             $declineB = $b['peak_decline_rate'] ?? 0;
             $memberGrowthA = $a['member_growth'] ?? 0;
             $memberGrowthB = $b['member_growth'] ?? 0;
-            
+
             // 第1優先: 大幅減少ペナルティ（30%以上減少は下位）
             $severePenaltyA = $declineA >= 30;
             $severePenaltyB = $declineB >= 30;
-            
+
             if ($severePenaltyA !== $severePenaltyB) {
                 return $severePenaltyA <=> $severePenaltyB; // 大幅減少していない方が上位
             }
-            
+
             // 低優先度キーワードのチェック
             $hasLowPriorityA = false;
             $hasLowPriorityB = false;
-            
+
             foreach (self::LOW_PRIORITY_KEYWORDS as $keyword) {
                 if (mb_strpos($a['display_name'], $keyword) !== false) {
                     $hasLowPriorityA = true;
@@ -261,25 +265,25 @@ class ApiDeletedOpenChatListRepository
                     break;
                 }
             }
-            
+
             // 第2優先: 低優先度キーワードペナルティ
             if ($hasLowPriorityA !== $hasLowPriorityB) {
                 return $hasLowPriorityA <=> $hasLowPriorityB; // 低優先度でない方が上位
             }
-            
+
             // 第3優先: 小規模ルーム（20人以下）の大幅ペナルティ（高優先度キーワードは除外）
             $smallRoomPenaltyA = ($currentMemberA <= 20 && !$hasHighPriorityA);
             $smallRoomPenaltyB = ($currentMemberB <= 20 && !$hasHighPriorityB);
-            
+
             if ($smallRoomPenaltyA !== $smallRoomPenaltyB) {
                 return $smallRoomPenaltyA <=> $smallRoomPenaltyB; // 小規模でない方が上位
             }
-            
+
             // 第4優先: メンバー増加数（多い順）
             if ($memberGrowthA !== $memberGrowthB) {
                 return $memberGrowthB <=> $memberGrowthA;
             }
-            
+
             // 第5優先: 現在のメンバー数（多い順）
             if ($currentMemberA !== $currentMemberB) {
                 return $currentMemberB <=> $currentMemberA;
