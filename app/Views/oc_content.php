@@ -207,12 +207,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_c
       </section>
     </article>
     <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside">
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'])
       ?>
     <?php endif ?>
 
@@ -232,9 +233,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_c
           </div>
         </div>
         <div id="comment-root"></div>
-        <hr class="hr-top" style="margin: 1rem 0;">
         <aside class="recent-comment-list" style="padding-bottom: 0;">
           <?php if ($topPageDto->recentCommentList): ?>
+            <hr class="hr-top" style="margin: 1rem 0;">
             <?php viewComponent('top_ranking_recent_comments', [
               'recentCommentList' => $topPageDto->recentCommentList,
               'title' => '最近投稿された他ルームのコメント',
@@ -244,27 +245,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_c
       </section>
       <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
-
-    <?php if (isset($officialDto) && $officialDto) : ?>
-      <aside class="recommend-list-aside">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-      </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-    <?php endif ?>
-
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
-    </aside>
-    <aside class="recommend-list-aside" style="margin-bottom: 0px;">
-      <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
-    </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-
-    <aside class="recommend-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-    </aside>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-    ?>
 
     <?php viewComponent('footer_inner') ?>
 

@@ -143,6 +143,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php endif ?>
 
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
+                <hr class="hr-top" style="margin: 1rem 0;">
                 <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                   <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
                 </a>
@@ -168,28 +169,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </section>
       <?php endif ?>
 
-      <aside class="list-aside recommend-ranking-bottom" style="padding-top: 0; margin-bottom: 0;">
-        <?php if (
-          isset($recommend)
-          && (
-            ($recommendTags = $recommend->buildFilterdTags($listArray, filteredTagSort: []))
-          )
-        ) : ?>
-          <?php viewComponent('recommend_content_tags', ['tags' => $recommendTags, 'tag' => $tag]) ?>
-        <?php endif ?>
-      </aside>
     </section>
     <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-    <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour', ['dto' => $topPageDto]) ?>
-    </aside>
-    <aside class="top-ranking-list-aside" style="margin-bottom: 0px;">
-      <?php viewComponent('topic_tag', compact('topPageDto') + ['tagLimit' => 10]) ?>
-    </aside>
-    <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
-    <aside class="top-ranking-list-aside">
-      <?php viewComponent('top_ranking_comment_list_hour24', ['dto' => $topPageDto]) ?>
-    </aside>
 
     <?php viewComponent('footer_inner') ?>
 
