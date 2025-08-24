@@ -14,6 +14,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
             ["おぜう", ["おぜうの集い", "おぜう_AND_占領区", "おぜう_AND_植民地"]],
             ["URAWAZASAN", ["utfbin_#URA", "URAWAZASAN_OR_裏ワザ帝国", "裏ワザ_AND_植民地", "utfbin_URA_AND_植民地"]],
             $column === "oc.name" ? ["その先", ["大人_AND_恋バナ", "大人_AND_その先", "恋バナ_AND_その先", "雑談_AND_その先", "オトナ_AND_その先"]] : ["その先", ["大人_AND_恋バナ_AND_その先",]],
+            $column === "oc.name" ? ["TikTok Lite", ["TikTok_AND_Lite", "TikTok_AND_ライト", "TikTok_AND_魚", "TikTok_AND_はちみつ"]] : ["TikTok Lite", ["TikTok_AND_魚_AND_はちみつ",]],
         ];
 
         return $tags;
@@ -236,6 +237,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
             "生活音",
             "SHEIN",
             "TEMU",
+            ["TikTok Lite", ["TikTok_AND_Lite", "TikTok_AND_魚", "TikTok_AND_はちみつ"]],
             "メルカリ",
             "ふるさと納税",
             "コストコ",
