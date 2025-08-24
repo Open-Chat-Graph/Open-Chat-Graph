@@ -34,13 +34,13 @@ class ApiDeletedOpenChatListRepository
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME = ['大人', 'シングル', 'その先', 'オトナ',];
+    private const HIGH_PRIORITY_KEYWORDS_NAME = ['恋バナ', 'シングル', 'その先', '既婚', '40代', '50代',];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameまたはdescriptionにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達',];
+    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達', 'ネ友'];
 
     /**
      * 低優先度キーワード（順位を下げる）
