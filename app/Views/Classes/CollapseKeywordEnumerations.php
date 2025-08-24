@@ -4,9 +4,21 @@ declare(strict_types=1);
 
 namespace App\Views\Classes;
 
-class CollapseKeywordEnumerations
+class CollapseKeywordEnumerations implements CollapseKeywordEnumerationsInterface
 {
     public static function collapse(
+        string $text,
+        int $minItems = 12,
+        int $keepFirst = 1,
+        int $allowHashtags = 1,
+        string $extraText = '',
+        bool $returnRemovedOnly = false,
+        int $embeddedMinItems = 3
+    ): string {
+        return (new static)->collapseJa($text, $minItems, $keepFirst, $allowHashtags, $extraText, $returnRemovedOnly, $embeddedMinItems);
+    }
+
+    function collapseJa(
         string $text,
         int $minItems = 12,
         int $keepFirst = 1,
@@ -56,7 +68,7 @@ class CollapseKeywordEnumerations
             $removedParts[] = $m[0];
             return '';
         }, $text);
-        
+
         // preg_replace_callbackがnullを返した場合の対処
         if ($textAfterHashtagProcess === null) {
             $textAfterHashtagProcess = $text;
@@ -68,21 +80,21 @@ class CollapseKeywordEnumerations
         // 最初に一致したパターンを使用（など、から、まで、といった、について、を、の）
         $embeddedMinCount = $embeddedMinItems - 1; // 正規表現用に1を引く
         $embeddedPattern = '/([^。！？\n\r]*[、，,][ 　]*[^、，,。！？；：\n\r]+(?:[、，,][ 　]*[^、，,。！？；：\n\r]+){' . $embeddedMinCount . ',})(?=など|から|まで|といった|について)/u';
-        
+
         // 埋め込み型キーワード羅列を処理
         $textAfterHashtagProcess = preg_replace_callback($embeddedPattern, function ($m) use ($keepFirst, &$removedParts, $embeddedMinItems) {
             return self::processEmbeddedKeywords($m[0], $keepFirst, $removedParts, 0.7, $embeddedMinItems);
         }, $textAfterHashtagProcess);
-        
+
         // preg_replace_callbackがnullを返った場合の対処
         if ($textAfterHashtagProcess === null) {
             $textAfterHashtagProcess = $text;
         }
-        
+
         // 区切り: 半角/全角スペース・読点（、，,）・縦棒（|｜）・改行（\R）
         $sep = '(?:[ 　]*[、 ，,|｜][ 　]*|[ 　]+|[ 　]*\R+[ 　]*)';
         $token = '[^\s、 ，,|｜。！？；：]+';
-        
+
         // 正規表現パターンの構築（エラー防止のため制限をチェック）
         $minItemsForRegex = min($minItems - 1, 1000); // 正規表現の制限を考慮
         $pattern = '/(?:' . $token . $sep . '){' . $minItemsForRegex . ',}' . $token . '/u';
@@ -92,19 +104,19 @@ class CollapseKeywordEnumerations
         // ただし、文章的な内容（助詞を含む、文の構造を持つ）は除外
         // 2個以上のトークンでも企業名羅列として処理
         $pipePattern = '/(?:[^|｜\n\r]+[|｜][ 　]*){1,}[^|｜\n\r]+/u';
-        
+
         // エラーハンドラーを設定して正規表現エラーをキャッチ
-        set_error_handler(function() {
+        set_error_handler(function () {
             // 正規表現のコンパイルエラーを無視
             return true;
         }, E_WARNING);
-        
+
         $result = preg_replace_callback($pipePattern, function ($m) use ($keepFirst, &$removedParts) {
             // まず、マッチした文字列が文章的かどうかを判定
             if (self::isSentenceLike($m[0])) {
                 return $m[0]; // 文章と判定されたら保持
             }
-            
+
             $tokens = preg_split('/[ 　]*[|｜][ 　]*/u', $m[0], -1, PREG_SPLIT_NO_EMPTY);
             // preg_splitがfalseを返した場合の対処
             if ($tokens === false) {
@@ -136,7 +148,7 @@ class CollapseKeywordEnumerations
 
             return $m[0];
         }, $textAfterHashtagProcess);
-        
+
         // preg_replace_callbackがnullを返した場合の対処
         if ($result === null) {
             $result = $textAfterHashtagProcess;
@@ -154,7 +166,7 @@ class CollapseKeywordEnumerations
                         $processedParts[] = $paragraph;
                         continue;
                     }
-                    
+
                     // 各段落を個別に判定
                     if (self::isSentenceLike($paragraph)) {
                         $processedParts[] = $paragraph; // 文章的な段落は保持
@@ -199,23 +211,23 @@ class CollapseKeywordEnumerations
                 }
                 return implode("\n\n", array_filter($processedParts, fn($p) => $p !== ''));
             }
-            
+
             // 単一段落の場合 - キーワード羅列と文章的な部分を分離して処理
             $matchedText = $m[0];
-            
+
             // ハッシュタグや文章的な部分が混在している可能性を考慮
             // まず、明らかなキーワード羅列部分を特定
             if (preg_match('/^([^\s、，,#＃]*(?:[、，,][ 　]*[^\s、，,#＃]+)+)(.*)$/u', $matchedText, $parts)) {
                 $keywordPart = $parts[1];
                 $trailingPart = $parts[2];
-                
+
                 // キーワード部分のみで判定
                 if (!self::isSentenceLike($keywordPart)) {
                     // キーワード羅列として処理
                     $tokens = preg_split('/(?:[ 　、 ，,]+|\R+)/u', $keywordPart, -1, PREG_SPLIT_NO_EMPTY);
                     if ($tokens !== false) {
                         $filtered = array_values(array_filter($tokens, fn($t) => self::isKeywordLike($t)));
-                        
+
                         // キーワード的なトークンが50%以上なら処理対象
                         if (count($filtered) >= count($tokens) * 0.5 && count($filtered) > 0) {
                             if ($keepFirst <= 0) {
@@ -236,7 +248,7 @@ class CollapseKeywordEnumerations
                     }
                 }
             }
-            
+
             // 従来の処理（全体が文章的な場合）
             if (self::isSentenceLike($matchedText)) {
                 return $matchedText;
@@ -273,10 +285,10 @@ class CollapseKeywordEnumerations
             }
             return implode('、', array_slice($filtered, 0, $keepFirst)) . '…';
         }, $result);
-        
+
         // preg_replace_callbackがnullを返した場合（エラー時）は元の文字列を使用
         $result = $processed !== null ? $processed : $result;
-        
+
         // エラーハンドラーを復元
         restore_error_handler();
 
@@ -288,16 +300,16 @@ class CollapseKeywordEnumerations
         // 削除後の体裁を軽く整える（空白・読点周り、連続改行など）
         $temp = preg_replace('/[ \t\x{3000}]+/u', ' ', $result);              // 連続空白→1
         if ($temp !== null) $result = $temp;
-        
+
         $temp = preg_replace('/[ 　]*(?:[、，,])[ 　]*/u', '、', $result);      // 読点前後の空白整理
         if ($temp !== null) $result = $temp;
-        
+
         $temp = preg_replace("/(\R){3,}/u", "\n\n", $result);                   // 3行以上の改行→2行
         if ($temp !== null) $result = $temp;
-        
+
         $temp = preg_replace('/[ \t\x{3000}]+(\R)/u', '$1', $result);           // 行末空白除去
         if ($temp !== null) $result = $temp;
-        
+
         return trim($result);
     }
 
@@ -353,12 +365,12 @@ class CollapseKeywordEnumerations
             if (in_array(strtolower($t), $commonWords)) {
                 return false;
             }
-            
+
             // 企業名らしいパターン（大文字を含む、&記号、複数単語など）はキーワードとして扱う
             if (preg_match('/[A-Z]/', $t) || preg_match('/&/', $t) || preg_match('/\s+/', $t)) {
                 return true;
             }
-            
+
             // 英文の場合、4文字以上の単語は通常の文章と判定（ただし上記企業名パターンを除く）
             if (mb_strlen($t, 'UTF-8') >= 4) {
                 return false;
@@ -411,7 +423,7 @@ class CollapseKeywordEnumerations
         $textLength = mb_strlen($matchedText, 'UTF-8');
         $spaceCount = substr_count($matchedText, ' ') + substr_count($matchedText, '　');
         $particleDensity = $particleMatches / max(1, $textLength);
-        
+
         // スペース区切りで長いテキスト（100文字以上）かつ助詞密度が低い場合（0.02未満）はキーワード羅列
         if ($textLength >= 100 && $spaceCount >= 10 && $particleDensity < 0.02) {
             return false;
@@ -421,10 +433,10 @@ class CollapseKeywordEnumerations
         if ($particleMatches > 0 && $commaCount < 5) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * 埋め込み型キーワード羅列の処理
      */
@@ -435,72 +447,72 @@ class CollapseKeywordEnumerations
         if (preg_match('/(.*?)(?:など|から|まで|といった|について|として|による|によって|に対して|の中|を含む)/u', $matchedText, $matches)) {
             $processingText = $matches[1];
         }
-        
+
         // 読点で分割してトークンを取得
         $tokens = preg_split('/[ 　]*[、，,][ 　]*/u', $processingText, -1, PREG_SPLIT_NO_EMPTY);
         if ($tokens === false) {
             return $matchedText; // エラーの場合は元のまま
         }
-        
+
         // 各トークンをクリーンアップ
         $tokens = array_map('trim', $tokens);
         $tokens = array_filter($tokens, fn($t) => !empty($t));
-        
+
         // 最初の要素が空の場合（読点で始まる場合）を除去
         if (count($tokens) > 0 && empty($tokens[0])) {
             $tokens = array_slice($tokens, 1);
         }
-        
+
         // 最低限のトークン数をチェック
         if (count($tokens) < $embeddedMinItems) {
             return $matchedText;
         }
-        
+
         // キーワード的なトークンをフィルタリング
         $filtered = array_values(array_filter($tokens, fn($t) => self::isKeywordLike($t)));
-        
+
         // キーワード的なトークンが指定された閾値以上でない場合は保持
         if (count($filtered) < count($tokens) * $threshold) {
             return $matchedText;
         }
-        
+
         // keepFirst=0 なら全て削除（ただし「など」以降は保持）
         if ($keepFirst <= 0) {
             $cleanedText = trim($processingText, '、，, 　');
             if (!empty($cleanedText)) {
                 $removedParts[] = $cleanedText;
             }
-            
+
             // 「など」以降の部分を取得
             $suffixText = '';
             if (preg_match('/(など.*)/u', $matchedText, $suffixMatches)) {
                 $suffixText = $suffixMatches[1];
             }
-            
+
             return $suffixText;
         }
-        
+
         // 指定数以下なら改変しない
         if (count($filtered) <= $keepFirst) {
             return $matchedText;
         }
-        
+
         // 先頭 keepFirst 個だけ残して「etc…」で省略
         $removedKeywords = array_slice($filtered, $keepFirst);
         if (!empty($removedKeywords)) {
             $removedParts[] = implode('、', $removedKeywords);
         }
-        
+
         // 「など」以降の部分を取得
         $suffixText = '';
         if (preg_match('/(など.*)/u', $matchedText, $suffixMatches)) {
             $suffixText = $suffixMatches[1];
         }
-        
+
         // 元のテキストが読点で始まっているかチェック
         $startsWithComma = preg_match('/^[、，,]/', $matchedText);
         $startsWithPeriod = preg_match('/^[。！？]/', $matchedText);
-        
+
         $result = '';
         if ($startsWithPeriod) {
             // 句点で始まっている場合は句点を除いて処理し、後で句点を追加
@@ -510,7 +522,7 @@ class CollapseKeywordEnumerations
         } else {
             $result = implode('、', array_slice($filtered, 0, $keepFirst)) . '、etc…';
         }
-        
+
         // 「など」以降の文章を追加
         return $result . $suffixText;
     }

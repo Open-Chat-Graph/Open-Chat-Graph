@@ -20,7 +20,7 @@ use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
-use App\Views\Classes\CollapseKeywordEnumerations;
+use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
 use Shared\MimimalCmsConfig;
 
@@ -37,6 +37,7 @@ class OpenChatPageController
         RecommendGenarator $recommendGenarator,
         RecentCommentListRepositoryInterface $recentCommentListRepository,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
+        CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -120,7 +121,7 @@ class OpenChatPageController
             'ads_element'
         ];
 
-        $collapsedDescription = CollapseKeywordEnumerations::collapse($oc['description'], extraText: $oc['name']);
+        $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription])->setImageUrl(imgUrl($oc['id'], $oc['img_url']));
