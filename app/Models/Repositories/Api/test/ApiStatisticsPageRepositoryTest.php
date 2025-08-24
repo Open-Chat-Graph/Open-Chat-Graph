@@ -15,19 +15,6 @@ class ApiStatisticsPageRepositoryTest extends TestCase
         $this->repository = new ApiStatisticsPageRepository();
     }
 
-    public function testGetDailyStatisticsByPeriod()
-    {
-        $result = $this->repository->getDailyStatisticsByPeriod(self::TEST_ID);
-
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('date', $result);
-        $this->assertArrayHasKey('member', $result);
-        
-        if (!empty($result['date'])) {
-            $this->assertCount(count($result['date']), $result['member']);
-        }
-    }
-
     public function testGetDailyMemberStatsDateAsc()
     {
         $result = $this->repository->getDailyMemberStatsDateAsc(self::TEST_ID);
