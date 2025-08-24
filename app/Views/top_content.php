@@ -19,7 +19,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <small style="font-size: 11px; margin: 0 1rem">暫くの間広告表示を控えめにします</small>
         <?php endif ?>
 
-        <div style="padding: 1rem; padding-top: 0; padding-bottom: .5rem;">
+        <div style="padding: 0 1rem; margin-bottom: 2rem;">
             <div style="margin: 1rem 0;">
                 <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
                 <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
@@ -41,15 +41,12 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </div>
         <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
         ?>
-            <hr class="hr-bottom" style="margin: auto;">
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
-            <hr class="hr-top" style="margin: 1rem auto;">
         <?php endif ?>
-        <div class="modify-top-padding" style="margin-bottom: 0px;">
+        <div class="modify-top-padding" style="margin-bottom: 2rem; margin-top: 2rem;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
-        <hr class="hr-top" style="margin: 1rem auto;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
