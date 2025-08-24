@@ -11,7 +11,6 @@ use App\Models\Repositories\Api\ApiStatisticsPageRepository;
 use App\Services\OpenChat\Api\ApiRankingPositionChartArgDtoFactory;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
-use stdClass;
 
 class ApiDbOpenChatControllerServiceProvider implements ServiceProviderInterface
 {
