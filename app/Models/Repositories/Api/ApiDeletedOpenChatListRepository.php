@@ -85,6 +85,23 @@ class ApiDeletedOpenChatListRepository
                         INTERVAL 1 DAY
                     )
                 )
+                AND NOT (
+                    om.current_member_count <= 20
+                    AND om.current_member_count <= COALESCE(
+                        (SELECT member_count
+                         FROM daily_member_statistics
+                         WHERE openchat_id = om.openchat_id
+                           AND statistics_date <= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+                         ORDER BY statistics_date DESC
+                         LIMIT 1),
+                        (SELECT member_count
+                         FROM daily_member_statistics
+                         WHERE openchat_id = om.openchat_id
+                         ORDER BY statistics_date ASC
+                         LIMIT 1),
+                        om.current_member_count
+                    )
+                )
             ORDER BY
                 om.established_at DESC";
 
