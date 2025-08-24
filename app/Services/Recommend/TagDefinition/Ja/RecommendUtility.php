@@ -86,6 +86,7 @@ class RecommendUtility
         'SHEIN',
         'ポイ活',
         'Instagram（インスタ）',
+        'SNS',
         '全国 雑談',
         '不用品・遺品整理・汚部屋・ゴミ屋敷',
     ];
