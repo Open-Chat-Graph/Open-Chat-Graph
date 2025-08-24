@@ -43,6 +43,7 @@ class RecommendUtility
         '仮想通貨',
         'Coin',
         '株式投資',
+        '美容整形',
         '億り人',
         'メルカリ',
         'FX',
