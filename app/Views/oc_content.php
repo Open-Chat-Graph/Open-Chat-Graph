@@ -288,7 +288,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
         const openAndfetchDescription = () => {
           if (talkroomDescBox.classList.contains('close')) {
             talkroomDescBox.classList.remove('close')
-            description.textContent = (<?php echo json_encode([$formatedRowDescription], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
+            description.textContent = (<?php echo json_encode([htmlspecialchars_decode($formatedRowDescription)], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
           }
         }
 
@@ -298,7 +298,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema', '_chartArgDto', '_s
 
         close.addEventListener('click', () => {
           talkroomDescBox.classList.add('close')
-          description.textContent = (<?php echo json_encode([$formatedDescription], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
+          description.textContent = (<?php echo json_encode([htmlspecialchars_decode($formatedDescription)], flags: JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)[0]
           window.scrollTo({
             top: 0,
           });
