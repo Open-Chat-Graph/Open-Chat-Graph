@@ -34,19 +34,19 @@ class ApiDeletedOpenChatListRepository
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME = ['恋バナ', 'シングル', 'その先', '既婚', '40代', '50代',];
+    private const HIGH_PRIORITY_KEYWORDS_NAME = [];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameまたはdescriptionにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = ['リア友', '友達', 'ネ友'];
+    private const HIGH_PRIORITY_KEYWORDS_NAME_OR_DESC = [];
 
     /**
      * 低優先度キーワード（順位を下げる）
      * display_nameにこれらのキーワードを含むルームは下位に配置
      */
-    private const LOW_PRIORITY_KEYWORDS = ['也', 'なりきり', 'nrkr', 'オリキャラ', 'ﾅﾘｷﾘ',];
+    private const LOW_PRIORITY_KEYWORDS = [];
 
     function getDeletedOpenChatList(string $date, int $limit): array|false
     {
