@@ -28,7 +28,8 @@ class ApiDeletedOpenChatListRepository
         ['pattern' => '/就活/', 'categories' => null],
         ['pattern' => '/志望者/', 'categories' => null],
         ['pattern' => '/連絡用/', 'categories' => null],
-        ['pattern' => '/^[0-9０-９]{1,2}[\/／][0-9０-９]{1,2}/', 'categories' => null],  // 先頭の日付形式（8/20など）
+        ['pattern' => '/[0-9０-９]{1,2}[\/／][0-9０-９]{1,2}/', 'categories' => null],  // 先頭の日付形式（8/20など）
+        ['pattern' => '/[0-9０-９]{1,2}月[0-9０-９]{1,2}日/', 'categories' => null],  // x月x日,xx月xxx日
     ];
 
     /**
