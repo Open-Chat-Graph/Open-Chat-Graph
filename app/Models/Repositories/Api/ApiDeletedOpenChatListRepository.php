@@ -295,11 +295,6 @@ class ApiDeletedOpenChatListRepository
                 return $memberGrowthB <=> $memberGrowthA;
             }
 
-            // 第5優先: 現在のメンバー数（多い順）
-            if ($currentMemberA !== $currentMemberB) {
-                return $currentMemberB <=> $currentMemberA;
-            }
-
             return $a['openchat_id'] <=> $b['openchat_id'];
         });
 
