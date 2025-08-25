@@ -34,7 +34,7 @@ class ApiDeletedOpenChatListRepository
      * 高優先度キーワード（上位20位以内に押し上げ）
      * display_nameにこれらのキーワードを含むルームを優先表示
      */
-    private const HIGH_PRIORITY_KEYWORDS_NAME = [];
+    private const HIGH_PRIORITY_KEYWORDS_NAME = ['その先に'];
 
     /**
      * 高優先度キーワード（上位20位以内に押し上げ）
