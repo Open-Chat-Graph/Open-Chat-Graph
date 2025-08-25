@@ -187,10 +187,28 @@ class ApiDeletedOpenChatListRepository
             
             // 1ヶ月以上メンバー数の増加が0かどうかをチェック
             $openChat['zero_growth_over_month'] = false;
-            if ($growth && $growth['month_ago_count'] !== null) {
-                // 1ヶ月前のデータが存在し、現在と同じメンバー数の場合
-                if ($currentMemberCount <= $growth['month_ago_count']) {
-                    $openChat['zero_growth_over_month'] = true;
+            if ($growth) {
+                if ($growth['month_ago_count'] !== null) {
+                    // 1ヶ月前のデータが存在する場合
+                    if ($currentMemberCount <= $growth['month_ago_count']) {
+                        $openChat['zero_growth_over_month'] = true;
+                    }
+                } else if ($growth['oldest_date'] !== null) {
+                    // 1ヶ月前のデータが存在しない場合、最古のデータを確認
+                    $oldestDate = new \DateTime($growth['oldest_date']);
+                    $now = new \DateTime();
+                    $interval = $oldestDate->diff($now);
+                    
+                    if ($interval->days <= 30) {
+                        // 最古のデータが30日以内の場合（新しいルーム）
+                        if ($growth['comparison_count'] !== null && $currentMemberCount <= $growth['comparison_count']) {
+                            $openChat['zero_growth_over_month'] = true;
+                        }
+                    } else {
+                        // 最古のデータが30日より前の場合（レコードが歯抜けで稼働率が低い）
+                        // 大幅ダウン対象とする
+                        $openChat['zero_growth_over_month'] = true;
+                    }
                 }
             }
 
