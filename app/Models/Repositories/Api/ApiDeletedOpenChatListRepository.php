@@ -252,14 +252,6 @@ class ApiDeletedOpenChatListRepository
             $memberGrowthA = $a['member_growth'] ?? 0;
             $memberGrowthB = $b['member_growth'] ?? 0;
 
-            // 第1優先: 大幅減少ペナルティ（30%以上減少は下位）
-            $severePenaltyA = $declineA >= 30;
-            $severePenaltyB = $declineB >= 30;
-
-            if ($severePenaltyA !== $severePenaltyB) {
-                return $severePenaltyA <=> $severePenaltyB; // 大幅減少していない方が上位
-            }
-
             // 低優先度キーワードのチェック
             $hasLowPriorityA = false;
             $hasLowPriorityB = false;
@@ -293,6 +285,11 @@ class ApiDeletedOpenChatListRepository
             // 第4優先: メンバー増加数（多い順）
             if ($memberGrowthA !== $memberGrowthB) {
                 return $memberGrowthB <=> $memberGrowthA;
+            }
+
+            // 第5優先: 現在のメンバー数（多い順）
+            if ($currentMemberA !== $currentMemberB) {
+                return $currentMemberB <=> $currentMemberA;
             }
 
             return $a['openchat_id'] <=> $b['openchat_id'];
