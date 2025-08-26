@@ -18,6 +18,7 @@ use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdsRegistrationPageController;
 use App\Controllers\Pages\FuriganaPageController;
+use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
@@ -68,6 +69,12 @@ Route::path('/')
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache($open_chat_id));
+
+Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 
 // TODO: test-api
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])

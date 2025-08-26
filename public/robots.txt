@@ -1,5 +1,9 @@
+User-agent: Googlebot
+Disallow: /oc/*/jump
+
 User-agent: *
 Disallow: /tw/recently-registered
 Disallow: /th/recently-registered
 Disallow: /recently-registered
+
 Sitemap: https://openchat-review.me/sitemap.xml
