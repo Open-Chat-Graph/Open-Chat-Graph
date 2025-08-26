@@ -113,7 +113,6 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
                 compact('openChatList') + [
                     'listLen' => AppConfig::LIST_LIMIT_RECENT_COMMENT,
                     'omitDeleted' => false,
-                    'showAds' => true
                 ]
             ) ?>
         </section>
