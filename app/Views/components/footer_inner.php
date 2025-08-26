@@ -27,7 +27,7 @@
             <a href="<?php echo t('https://openchat-jp.line.me/other/beginners_guide') ?>" class="app_link app-dl" target="_blank">
                 <span class="text"><?php echo t('はじめてのLINEオープンチャットガイド（LINE公式）') ?><span class="line-link-icon777"></span></span>
             </a>
-            <a href="https://line.me/download" class="app_link app-dl" target="_blank">
+            <a href="https://line.me/D" class="app_link app-dl" target="_blank">
                 <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?><span class="line-link-icon777"></span></span>
             </a>
         </aside>
