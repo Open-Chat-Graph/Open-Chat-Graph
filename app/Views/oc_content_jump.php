@@ -11,6 +11,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
+    <div style="margin: -24px 0;">
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorRectangle']) ?>
+    </div>
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <article class="unset" style="display: block; padding: 0 1rem">
       <h2 style="margin: 1rem 0; text-align: center;">誹謗中傷、荒らし行為、出会いを求める行為などは禁止されています。</h2>
