@@ -49,7 +49,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <?php endif ?>
       </section>
     </article>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
