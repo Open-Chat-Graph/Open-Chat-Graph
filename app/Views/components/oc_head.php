@@ -13,12 +13,6 @@
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css", urlRoot: '') ?>">
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
-    <script type="application/json" id="chart-arg">
-        <?php echo json_encode($_chartArgDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
-    </script>
-    <script type="application/json" id="comment-app-init-dto">
-        <?php echo json_encode($_commentArgDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
-    </script>
     <link rel="canonical" href="<?php echo url(strstr(path(), '?', true) ?: path()) ?>">
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
