@@ -13,6 +13,7 @@ class JumpOpenChatPageController
         int $open_chat_id,
     ) {
         $oc = $ocRepo->getOpenChatById($open_chat_id);
+        if (!$oc) return false;
 
         $_meta = meta()->setTitle('【参加確認】' . $oc['name'])
             ->setDescription('【参加確認】' . $oc['description'])

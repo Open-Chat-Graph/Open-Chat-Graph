@@ -3,7 +3,6 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Views\Ads\GoogleAdsense as GAd;
 
 viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']); ?>
 
@@ -14,10 +13,10 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <article class="unset" style="display: block; padding: 0 1rem">
       <h2 style="margin: 1rem 0; text-align: center;">参加前の確認事項</h2>
-      <span style="text-align: center; display: block; margin: 1rem 0">オープンチャットは24時間365日モニタリングを実施しています。規約違反があった場合、トークルーム・投稿の削除、オープンチャットの利用停止、さらにLINEアプリ自体の利用停止措置を行う場合があります。</span>
-      <img src="<?php echo fileUrl('assets/line-guilde.webp') ?>" alt="オープンチャット禁止事項" style="max-width: 100%; height: auto; display: block; margin: 1rem auto;">
+      <img src="<?php echo fileUrl('assets/line-guilde.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
+      <span style="text-align: center; display: block; margin: 1rem 0; font-size: 13px;">オープンチャットは24時間365日モニタリングを実施しています。規約違反があった場合、トークルーム・投稿の削除、オープンチャットの利用停止、さらにLINEアプリ自体の利用停止措置を行う場合があります。</span>
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-      <h2 style="margin: 1rem 0;">参加するオープンチャットの確認</h2>
+      <h2 style="margin: 1rem 0; text-align: center;">参加するオープンチャットの確認</h2>
       <!-- オープンチャット表示ヘッダー -->
       <div style="margin: 1rem;">
         <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
