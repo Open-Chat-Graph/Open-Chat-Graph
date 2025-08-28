@@ -40,27 +40,27 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">「出会いを求める投稿」の禁止</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">「出会いを求める投稿」の禁止</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_a.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">「個人情報投稿」の禁止</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">「個人情報投稿」の禁止</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_b.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">「未成年の不健全な出会いや集まりの計画・勧誘」の禁止</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">「未成年の不健全な出会いや集まりの計画・勧誘」の禁止</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_c.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">「人が傷つく・不快に思う可能性がある投稿」の禁止</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">「人が傷つく・不快に思う可能性がある投稿」の禁止</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_d.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">「著作権や肖像権・プライバシーを侵害する行為」の禁止</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">「著作権や肖像権・プライバシーを侵害する行為」の禁止</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_e.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
           <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
           <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-          <h3 style="margin: 1rem 0; text-align: center;">通報について</h3>
+          <h2 style="margin: 1rem 0; text-align: center;">通報について</h2>
           <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_f.webp') ?>" alt="オープンチャット禁止事項" style="  max-width: calc(100% + 2rem); height: auto; display: block; margin: 1rem -1rem;">
         </section style="margin: 1rem 0; width: 100%;">
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
