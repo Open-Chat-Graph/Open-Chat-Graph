@@ -1,9 +1,15 @@
-User-agent: Googlebot
-Disallow: /oc/*/jump
+# Google AdSenseクローラーのみ許可
+User-agent: Mediapartners-Google
+Allow: /oc/*/jump
 
+User-agent: AdsBot-Google
+Allow: /oc/*/jump
+
+# その他すべてのクローラー
 User-agent: *
 Disallow: /tw/recently-registered
 Disallow: /th/recently-registered
 Disallow: /recently-registered
+Disallow: /oc/*/jump
 
 Sitemap: https://openchat-review.me/sitemap.xml
