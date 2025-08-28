@@ -87,6 +87,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
               <span class="text"><?php echo t('LINEで開く') ?></span>
             </div>
           </a>
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php endif ?>
       </section>
     </article>
