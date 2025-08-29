@@ -12,6 +12,7 @@ use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
+use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use Shared\MimimalCmsConfig;
 
 class RankingBanTableUpdater
@@ -25,6 +26,7 @@ class RankingBanTableUpdater
         private SqlInsert $sqlInsert,
         private OpenChatUpdaterFromApi $openChatUpdaterFromApi,
         private ProgressNotifier $notifier,
+        private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         mixed $time = null
     ) {
         $this->time = $time instanceof \DateTime ? $time : OpenChatServicesUtility::getModifiedCronTime('now');
@@ -178,6 +180,12 @@ class RankingBanTableUpdater
     {
         // 日本以外の場合、更新をスキップする
         if (MimimalCmsConfig::$urlRoot !== '') {
+            return;
+        }
+
+        $lastTime = new \DateTime($this->time->format('Y-m-d H:i:s'))->modify('-1 hour')->format('Y-m-d H:i:s');
+        $dbTime = $this->rankingPositionHourRepository->getLastHour();
+        if ((!$crawlLatestTime) && ($dbTime !== $lastTime)) {
             return;
         }
 
