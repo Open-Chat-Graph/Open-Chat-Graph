@@ -295,7 +295,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         return $this->inserter->import(RankingPositionDB::connect(), 'total_count', $totalCount);
     }
 
-    public function getLastHour(): string|false
+    public function getLastHour(int $offset = 0): string|false
     {
         $categoryCount = count(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
 
@@ -311,8 +311,8 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
             ORDER BY
                 time DESC
             LIMIT
-                1",
-            compact('categoryCount')
+                :offset, 1",
+            compact('categoryCount', 'offset')
         );
     }
 }

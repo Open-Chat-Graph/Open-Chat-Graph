@@ -47,5 +47,5 @@ interface RankingPositionHourRepositoryInterface
     /**
      * @return string|false Y-m-d H:i:s
      */
-    public function getLastHour(): string|false;
+    public function getLastHour(int $offset = 0): string|false;
 }
