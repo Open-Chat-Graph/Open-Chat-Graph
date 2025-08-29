@@ -14,9 +14,10 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <article class="unset" style="display: block;">
       <section style="display: block;">
-        <h2 style="margin: 1rem; text-align: center;">参加するオープンチャットの確認</h2>
+        <h2 style="margin: 1rem; text-align: center;">⚠️参加前にお読みください</h2>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <!-- オープンチャット表示ヘッダー -->
+        <h3 style="margin: 1rem; text-align: center;">参加するオープンチャットの確認</h3>
         <div style="margin: 1rem 2rem;">
           <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
         </div>
@@ -34,33 +35,62 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       </section>
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
       <section style="margin: 1rem 0; width: 100%;">
-        <h2 style="margin: 1rem; text-align: center;">⚠️参加前にお読みください</h2>
-        <span style="text-align: center; display: block; margin: 1rem; font-size: 14px;">以下の禁止事項を確認してから参加してください。<br>最後までスクロールすると参加ボタンが表示されます。</span>
+        <h3 style="margin: 1rem; text-align: center;">オープンチャットの禁止事項</h3>
+        <span style="text-align: center; display: block; margin: 1rem; font-size: 16px;">以下の禁止事項をよくお読みいただき、各項目にチェックを入れてください。</span>
+        <span style="text-align: center; display: block; margin: 1rem; font-size: 16px;">全ての項目にチェックを入れると、最後までスクロールした場所にある「LINEで開く」ボタンが有効になります。</span>
         <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-general" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-general" style="font-size: 14px; cursor: pointer;">オープンチャットの利用規約について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">「出会いを求める投稿」の禁止</h2>
+        <h3 style="margin: 1rem; text-align: center;">「出会いを求める投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_a.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-dating" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-dating" style="font-size: 14px; cursor: pointer;">出会いを求める投稿の禁止について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">「個人情報投稿」の禁止</h2>
+        <h3 style="margin: 1rem; text-align: center;">「個人情報投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_b.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-privacy" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-privacy" style="font-size: 14px; cursor: pointer;">個人情報投稿の禁止について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">「未成年の不健全な出会いや集まりの計画・勧誘」の禁止</h2>
+        <h3 style="margin: 1rem; text-align: center;">「未成年の不健全な出会いや集まりの計画・勧誘」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_c.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-minors" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-minors" style="font-size: 14px; cursor: pointer;">未成年の不健全な出会いや集まりの禁止について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">「人が傷つく・不快に思う可能性がある投稿」の禁止</h2>
+        <h3 style="margin: 1rem; text-align: center;">「人が傷つく・不快に思う可能性がある投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_d.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-harmful" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-harmful" style="font-size: 14px; cursor: pointer;">人が傷つく・不快に思う投稿の禁止について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">「著作権や肖像権・プライバシーを侵害する行為」の禁止</h2>
+        <h3 style="margin: 1rem; text-align: center;">「著作権や肖像権・プライバシーを侵害する行為」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_e.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-copyright" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-copyright" style="font-size: 14px; cursor: pointer;">著作権や肖像権・プライバシー侵害の禁止について確認しました</label>
+        </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-        <h2 style="margin: 1rem; text-align: center;">通報について</h2>
+        <h3 style="margin: 1rem; text-align: center;">通報について</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_f.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
+        <div style="margin: 1rem 2rem; display: flex; align-items: center;">
+          <input type="checkbox" id="check-report" style="width: 20px; height: 20px; margin-right: 10px;">
+          <label for="check-report" style="font-size: 14px; cursor: pointer;">通報機能について確認しました</label>
+        </div>
       </section style="margin: 1rem 0; width: 100%;">
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
       <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -76,7 +106,10 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         </div>
       </div>
       <?php if ($oc['url']) : ?>
-        <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 16px; padding: 20px 20px; border-radius: 8px; width: calc(100% - 2rem) !important; margin: 1rem;">
+        <div id="checkbox-warning" style="color: red; font-size: 14px; text-align: center; margin: 0 1rem; font-weight: bold;">
+          ※ 全ての確認項目にチェックを入れてください
+        </div>
+        <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" id="line-open-button" class="openchat_link" style="font-size: 16px; padding: 20px 20px; border-radius: 8px; width: calc(100% - 2rem) !important; margin: 1rem; opacity: 0.5; pointer-events: none;">
           <div style="display: flex; align-items: center; justify-content: center;">
             <?php if ($oc['join_method_type'] !== 0) : ?>
               <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
@@ -98,6 +131,70 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   </script>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+  <script>
+    // チェックボックスの状態を確認して、ボタンの有効/無効を切り替える
+    function checkAllCheckboxes() {
+      const checkboxes = [
+        'check-general',
+        'check-dating',
+        'check-privacy',
+        'check-minors',
+        'check-harmful',
+        'check-copyright',
+        'check-report'
+      ];
+
+      const allChecked = checkboxes.every(id => {
+        const checkbox = document.getElementById(id);
+        return checkbox && checkbox.checked;
+      });
+
+      const button = document.getElementById('line-open-button');
+      const warning = document.getElementById('checkbox-warning');
+
+      if (button) {
+        if (allChecked) {
+          // 全てチェックされた場合、ボタンを有効化
+          button.style.opacity = '1';
+          button.style.pointerEvents = 'auto';
+          if (warning) {
+            warning.style.display = 'none';
+          }
+        } else {
+          // チェックが不完全な場合、ボタンを無効化
+          button.style.opacity = '0.5';
+          button.style.pointerEvents = 'none';
+          if (warning) {
+            warning.style.display = 'block';
+          }
+        }
+      }
+    }
+
+    // ページ読み込み時とチェックボックス変更時に実行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 各チェックボックスにイベントリスナーを追加
+      const checkboxIds = [
+        'check-general',
+        'check-dating',
+        'check-privacy',
+        'check-minors',
+        'check-harmful',
+        'check-copyright',
+        'check-report'
+      ];
+
+      checkboxIds.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+          checkbox.addEventListener('change', checkAllCheckboxes);
+        }
+      });
+
+      // 初期状態をチェック
+      checkAllCheckboxes();
+    });
+  </script>
 </body>
 
 </html>
