@@ -183,7 +183,7 @@ class RankingBanTableUpdater
             return;
         }
 
-        $lastTime = new \DateTime($this->time->format('Y-m-d H:i:s'))->modify('-1 hour')->format('Y-m-d H:i:s');
+        $lastTime = (new \DateTime($this->time->format('Y-m-d H:i:s')))->modify('-1 hour')->format('Y-m-d H:i:s');
         $dbTime = $this->rankingPositionHourRepository->getLastHour();
         if ((!$crawlLatestTime) && ($dbTime !== $lastTime)) {
             return;
