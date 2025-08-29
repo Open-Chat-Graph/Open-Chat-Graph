@@ -158,8 +158,8 @@ class AppConfig
 
     const CRON_START_MINUTE = [
         '' =>    30,
-        '/tw' => 35,
-        '/th' => 40,
+        '/tw' => 45,
+        '/th' => 00,
     ];
 
     const CRON_MERGER_HOUR_RANGE_START = [
