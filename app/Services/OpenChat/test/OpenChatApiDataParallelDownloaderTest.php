@@ -6,7 +6,7 @@ use App\Services\OpenChat\OpenChatApiDataParallelDownloader;
 
 class OpenChatApiDataParallelDownloaderTest extends TestCase
 {
-    public function fetchOpenChatApi_test()
+    public function testfetchOpenChatApi()
     {
         set_time_limit(3600 * 10);
 
@@ -15,7 +15,7 @@ class OpenChatApiDataParallelDownloaderTest extends TestCase
          */
         $openChatDataDbApiMerger = app(OpenChatApiDataParallelDownloader::class);
 
-        $result = $openChatDataDbApiMerger->fetchOpenChatApi(RankingType::Ranking, '0');
+        $result = $openChatDataDbApiMerger->fetchOpenChatApi(RankingType::Ranking, '16');
 
         var_dump($result);
 
