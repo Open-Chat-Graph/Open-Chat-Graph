@@ -51,7 +51,7 @@ html {
 }
 
 .recommend-list-aside:has(.top-ranking.not-rank) .top-ranking.not-rank {
-  padding: .5rem 1rem;
+  padding: 0.5rem 1rem;
 }
 
 .oc-page-footer {
@@ -71,10 +71,19 @@ html {
 
 .oc-desc-nav {
   display: flex;
-  justify-content: space-evenly;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 0;
   border-top: 1px solid #efefef;
+}
+
+@media screen and (min-width: 512px) {
+  .oc-desc-nav {
+    display: flex;
+    justify-content: space-evenly;
+    padding: 1rem 0;
+    border-top: 1px solid #efefef;
+  }
 }
 
 /* .oc-desc-nav.no-ranking {
@@ -98,7 +107,6 @@ html {
   display: flex;
   flex-direction: column;
 }
-
 
 .talkroom_banner_img {
   object-fit: cover;
@@ -149,7 +157,14 @@ html {
   font-size: 11px;
   display: block;
   width: fit-content;
-  background: -webkit-linear-gradient(98deg, #0dc95a, #11d871 23.96%, #11d593 55.46%, #12cfcd 83.85%, #16c2c1);
+  background: -webkit-linear-gradient(
+    98deg,
+    #0dc95a,
+    #11d871 23.96%,
+    #11d593 55.46%,
+    #12cfcd 83.85%,
+    #16c2c1
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -209,7 +224,11 @@ html {
 
 .talkroom_description_box .more-separater {
   width: 4rem;
-  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1)
+  );
 }
 
 /* オープンチャットの説明 */
@@ -366,15 +385,23 @@ html {
   font-weight: bold;
 }
 
-.open-btn {}
+.open-btn {
+}
 
 .open-btn.pc-btn {
   display: none;
 }
 
 .openchat_link {
-  background: linear-gradient(-156deg, #0dc95a, #11d871 23.96%, #11d593 55.46%, #12cfcd 83.85%, #16c2c1);
-  border-radius: 5rem;
+  background: linear-gradient(
+    -156deg,
+    #0dc95a,
+    #11d871 23.96%,
+    #11d593 55.46%,
+    #12cfcd 83.85%,
+    #16c2c1
+  );
+  border-radius: 7px;
   box-sizing: border-box;
   color: #fff;
   font-weight: 700;
@@ -385,7 +412,7 @@ html {
   font-size: 12px;
   text-decoration: none;
   width: 100%;
-  padding: 8px 14px;
+  height: 51px;
   line-height: 1;
   gap: 6px;
   flex-direction: column;
@@ -532,11 +559,6 @@ html {
 
   .first-recommend {
     margin: 2rem 0;
-  }
-
-  .openchat_link {
-    width: fit-content;
-    padding: 8px 1rem;
   }
 
   .link-mark .link-title {
