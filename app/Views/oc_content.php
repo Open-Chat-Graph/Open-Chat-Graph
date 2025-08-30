@@ -144,7 +144,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <div style="display: flex; flex-direction: column">
           <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
             <?php if ($oc['url']) : ?>
-              <a href="<?php echo url('oc', $oc['id'], 'jump') ?>" class="openchat_link" style="font-size: 15px; padding: 10px 20px;">
+              <a href="<?php echo MimimalCmsConfig::$urlRoot === '' ? url('oc', $oc['id'], 'jump') : AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 15px; padding: 10px 20px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
                   <?php if ($oc['join_method_type'] !== 0) : ?>
                     <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
