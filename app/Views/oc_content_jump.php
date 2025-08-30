@@ -44,7 +44,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-general" style="font-size: 14px; cursor: pointer;">オープンチャットの利用規約について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">「出会いを求める投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_a.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -52,7 +54,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-dating" style="font-size: 14px; cursor: pointer;">出会いを求める投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">「個人情報投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_b.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -60,7 +64,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-privacy" style="font-size: 14px; cursor: pointer;">個人情報投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">「未成年の不健全な出会いや集まりの計画・勧誘」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_c.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -68,7 +74,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-minors" style="font-size: 14px; cursor: pointer;">未成年の不健全な出会いや集まりの禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">「人が傷つく・不快に思う可能性がある投稿」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_d.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -76,7 +84,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-harmful" style="font-size: 14px; cursor: pointer;">人が傷つく・不快に思う投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">「著作権や肖像権・プライバシーを侵害する行為」の禁止</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_e.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -84,7 +94,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <label for="check-copyright" style="font-size: 14px; cursor: pointer;">著作権や肖像権・プライバシー侵害の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
         <h3 style="margin: 1rem; text-align: center;">通報について</h3>
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_f.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
@@ -93,7 +105,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         </div>
       </section style="margin: 1rem 0; width: 100%;">
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
-      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+      <div style="margin: -24px 0;">
+        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+      </div>
       <span style="text-align: center; display: block; margin: 1rem; font-size: 13px;">オープンチャットは24時間365日モニタリングを実施しています。規約違反があった場合、トークルーム・投稿の削除、オープンチャットの利用停止、さらにLINEアプリ自体の利用停止措置を行う場合があります。</span>
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
       <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 1rem;">
@@ -119,7 +133,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
             <span class="text"><?php echo t('LINEで開く') ?></span>
           </div>
         </a>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <div style="margin: -24px 0;">
+          <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        </div>
       <?php endif ?>
       </section>
     </article>
