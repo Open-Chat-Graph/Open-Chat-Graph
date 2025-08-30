@@ -103,7 +103,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         </div>
       </section style="margin: 1rem 0; width: 100%;">
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
-      <?php ad() ?>
       <span style="text-align: center; display: block; margin: 1rem; font-size: 13px;">オープンチャットは24時間365日モニタリングを実施しています。規約違反があった場合、トークルーム・投稿の削除、オープンチャットの利用停止、さらにLINEアプリ自体の利用停止措置を行う場合があります。</span>
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
       <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 1rem;">
@@ -129,7 +128,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
             <span class="text"><?php echo t('LINEで開く') ?></span>
           </div>
         </a>
-        <?php ad() ?>
       <?php endif ?>
       </section>
     </article>
