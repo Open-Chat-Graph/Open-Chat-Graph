@@ -12,7 +12,6 @@ $isAdEnhancementTag = isset($recommend[2]) ? RecommendUtility::isAdEnhancementTa
 viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
-  <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
 
@@ -21,7 +20,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     <?php endif ?>
 
     <article class="unset" style="display: block;">
-      <!-- オープンチャット表示ヘッダー -->
       <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
         <div class="talkroom_banner_img_area">
           <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
@@ -195,7 +193,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             </span>
           </div>
         </div>
-        <!-- グラフセクション -->
+
         <div style="position: relative; margin: auto; padding-bottom: 1rem; transition: all 0.3s ease 0s; opacity: 0" id="graph-box">
           <div class="chart-canvas-box" id="dummy-canvas"></div>
           <div id="app" style="<?php if (!is_int($oc['api_created_at'])) echo 'min-height: 0px;' ?>"></div>
@@ -260,7 +258,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     (function() {
       const isCollapsed = <?php echo $formatedDescription !== $formatedRowDescription ? 'true' : 'false' ?>
 
-      // 説明文の続きを読むボタン
       const readMoreBtn = document.getElementById('read_more_btn')
       const talkroomDesc = document.getElementById('talkroom-description')
       const talkroomDescBox = document.getElementById('talkroom_description_box')

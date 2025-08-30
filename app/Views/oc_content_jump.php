@@ -20,7 +20,6 @@ function ad(bool $show = true)
 viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
-  <!-- 固定ヘッダー -->
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
@@ -28,7 +27,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       <section style="display: block;">
         <h2 style="margin: 1rem; text-align: center;">⚠️参加前にお読みください</h2>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
-        <!-- オープンチャット表示ヘッダー -->
         <h3 style="margin: 1rem; text-align: center;">参加するオープンチャットの確認</h3>
         <div style="margin: 1rem 2rem;">
           <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
@@ -144,7 +142,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
   <script>
-    // チェックボックスの状態を確認して、ボタンの有効/無効を切り替える
+    // Check the status of checkboxes and toggle button enable/disable
     function checkAllCheckboxes() {
       const checkboxes = [
         'check-general',
@@ -166,14 +164,14 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
 
       if (button) {
         if (allChecked) {
-          // 全てチェックされた場合、ボタンを有効化
+          // Enable button when all checkboxes are checked
           button.style.opacity = '1';
           button.style.pointerEvents = 'auto';
           if (warning) {
             warning.style.display = 'none';
           }
         } else {
-          // チェックが不完全な場合、ボタンを無効化
+          // Disable button when checkboxes are incomplete
           button.style.opacity = '0.5';
           button.style.pointerEvents = 'none';
           if (warning) {
@@ -183,9 +181,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       }
     }
 
-    // ページ読み込み時とチェックボックス変更時に実行
+    // Execute on page load and checkbox changes
     document.addEventListener('DOMContentLoaded', function() {
-      // 各チェックボックスにイベントリスナーを追加
+      // Add event listeners to each checkbox
       const checkboxIds = [
         'check-general',
         'check-dating',
@@ -203,7 +201,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         }
       });
 
-      // 初期状態をチェック
+      // Check initial state
       checkAllCheckboxes();
     });
   </script>
