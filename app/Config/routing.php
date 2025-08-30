@@ -74,7 +74,7 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
     ->matchNum('open_chat_id', min: 1)
     ->match(function (int $open_chat_id) {
         handleRequestWithETagAndCache($open_chat_id);
-        return MimimalCmsConfig::$urlRoot === '';
+        return MimimalCmsConfig::$urlRoot !== '/tw';
     });
 
 // TODO: test-api
