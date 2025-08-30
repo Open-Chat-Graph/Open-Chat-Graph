@@ -51,7 +51,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-general" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-general" style="font-size: 14px; cursor: pointer;">オープンチャットの利用規約について確認しました</label>
+          <label for="check-general" style="font-size: 15px; cursor: pointer;">オープンチャットの利用規約について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -59,7 +59,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_a.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-dating" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-dating" style="font-size: 14px; cursor: pointer;">出会いを求める投稿の禁止について確認しました</label>
+          <label for="check-dating" style="font-size: 15px; cursor: pointer;">出会いを求める投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -67,7 +67,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_b.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-privacy" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-privacy" style="font-size: 14px; cursor: pointer;">個人情報投稿の禁止について確認しました</label>
+          <label for="check-privacy" style="font-size: 15px; cursor: pointer;">個人情報投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -75,7 +75,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_c.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-minors" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-minors" style="font-size: 14px; cursor: pointer;">未成年の不健全な出会いや集まりの禁止について確認しました</label>
+          <label for="check-minors" style="font-size: 15px; cursor: pointer;">未成年の不健全な出会いや集まりの禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -83,7 +83,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_d.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-harmful" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-harmful" style="font-size: 14px; cursor: pointer;">人が傷つく・不快に思う投稿の禁止について確認しました</label>
+          <label for="check-harmful" style="font-size: 15px; cursor: pointer;">人が傷つく・不快に思う投稿の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -91,7 +91,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_e.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-copyright" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-copyright" style="font-size: 14px; cursor: pointer;">著作権や肖像権・プライバシー侵害の禁止について確認しました</label>
+          <label for="check-copyright" style="font-size: 15px; cursor: pointer;">著作権や肖像権・プライバシー侵害の禁止について確認しました</label>
         </div>
         <hr class="hr-bottom" style="margin: 1rem 0; width: 100%; ">
         <?php ad() ?>
@@ -99,7 +99,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <img src="<?php echo fileUrl('assets/line-guilde/contents_istribution_images_image_f.webp') ?>" alt="オープンチャット禁止事項" style=" max-width: 100%; height: auto; display:">
         <div style="margin: 1rem 2rem; display: flex; align-items: center;">
           <input type="checkbox" id="check-report" style="width: 20px; height: 20px; margin-right: 10px;">
-          <label for="check-report" style="font-size: 14px; cursor: pointer;">通報機能について確認しました</label>
+          <label for="check-report" style="font-size: 15px; cursor: pointer;">通報機能について確認しました</label>
         </div>
       </section style="margin: 1rem 0; width: 100%;">
       <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
