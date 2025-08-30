@@ -120,8 +120,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <hr class="hr-top" style="margin-bottom: 8px;">
 
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
-        <aside class="oc-desc-nav-category" style="display: flex; align-items:center;">
-          <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111;">
+        <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
+          <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111; margin: 0 auto;">
             <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
               <?php if (is_int($oc['api_created_at'])) : ?>
                 <div><?php echo t('カテゴリー') ?>&nbsp;</div>
@@ -141,8 +141,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </span>
         </aside>
 
-        <div style="display: flex; flex-direction: column">
-          <section class="open-btn sp-btn" style="padding: 0; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; width: 100%; margin: auto 0;">
+          <section class="open-btn sp-btn" style="width: 100%; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
               <a href="<?php echo MimimalCmsConfig::$urlRoot === '' ? url('oc', $oc['id'], 'jump') : AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" class="openchat_link" style="font-size: 15px; padding: 10px 20px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
@@ -153,12 +153,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
                   <?php endif ?>
                   <span class="text"><?php echo t('LINEで開く') ?></span>
                 </div>
-                <?php if ($oc['join_method_type'] === 1) : ?>
-                  <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('承認制') ?></span>
-                <?php endif ?>
-                <?php if ($oc['join_method_type'] === 2) : ?>
-                  <span style="font-size: 12px; margin-left: 4px; font-weight: normal;" class="text"><?php echo t('参加コード入力制') ?></span>
-                <?php endif ?>
               </a>
             <?php endif ?>
           </section>
