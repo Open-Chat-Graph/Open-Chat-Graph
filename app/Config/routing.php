@@ -68,12 +68,14 @@ Route::path('/')
 
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn(int $open_chat_id) => handleRequestWithETagAndCache($open_chat_id));
+    ->match(function (int $open_chat_id) {
+        if (MimimalCmsConfig::$urlRoot === '')
+            handleRequestWithETagAndCache($open_chat_id);
+    });
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (int $open_chat_id) {
-        handleRequestWithETagAndCache($open_chat_id);
         return MimimalCmsConfig::$urlRoot !== '/tw';
     });
 
