@@ -144,7 +144,7 @@ class AppConfig
     static bool $disableAds = false;
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
-    static bool $disableAdTags = false;
+    static bool $disableAdTags = true;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [
