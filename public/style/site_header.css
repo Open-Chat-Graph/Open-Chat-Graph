@@ -549,7 +549,7 @@ body::before {
   display: inline-block;
 }
 
-/* .grippy-host {
+.grippy-host {
   display: none;
 }
 
@@ -559,7 +559,7 @@ body::before {
 
 .left-side-rail-dismiss-btn {
   display: none;
-} */
+}
 
 .rectangle-ads {
   width: auto;
