@@ -104,27 +104,39 @@ const setHeaderShow2 = (header, hidden, show) => {
 (() => {
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'data-anchor-status') {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "data-anchor-status"
+      ) {
         const target = mutation.target;
-        if (target.matches('ins.adsbygoogle[data-anchor-status="displayed"]')) {
-          target.style.height = 'fit-content';
-          target.style.setProperty('height', 'fit-content', 'important');
+        if (
+          target.matches('ins.adsbygoogle[data-anchor-status="displayed"]') ||
+          target.matches(
+            'ins.adsbygoogle[data-anchor-status="ready-to-displayed"]'
+          )
+        ) {
+          target.style.height = "fit-content";
+          target.style.setProperty("height", "fit-content", "important");
         }
       }
     });
   });
 
   // 既存の要素をチェック
-  document.querySelectorAll('ins.adsbygoogle[data-anchor-status="displayed"]').forEach(el => {
-    el.style.height = 'fit-content';
-    el.style.setProperty('height', 'fit-content', 'important');
-  });
+  document
+    .querySelectorAll(
+      'ins.adsbygoogle[data-anchor-status="displayed"], ins.adsbygoogle[data-anchor-status="ready-to-displayed"]'
+    )
+    .forEach((el) => {
+      el.style.height = "fit-content";
+      el.style.setProperty("height", "fit-content", "important");
+    });
 
   // 新しく追加される要素を監視
   observer.observe(document.body, {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-anchor-status']
+    attributeFilter: ["data-anchor-status", "ready-to-displayed"],
   });
 })();
