@@ -118,6 +118,10 @@ const setHeaderShow2 = (header, hidden, show) => {
   const waitForValidHeight = (target) => {
     const checkHeight = () => {
       if (!setAdHeight(target)) {
+        // data-anchor-status が "displayed" になったら停止
+        if (target.getAttribute("data-anchor-status") === "displayed") {
+          return;
+        }
         requestAnimationFrame(checkHeight);
       }
     };
