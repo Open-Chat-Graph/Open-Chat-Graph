@@ -115,8 +115,12 @@ const setHeaderShow2 = (header, hidden, show) => {
             'ins.adsbygoogle[data-anchor-status="ready-to-display"]'
           )
         ) {
-          target.style.height = "fit-content";
-          target.style.setProperty("height", "fit-content", "important");
+          const iframe = target.querySelector('iframe');
+          if (iframe) {
+            const iframeHeight = iframe.offsetHeight;
+            target.style.height = `${iframeHeight}px`;
+            target.style.setProperty("height", `${iframeHeight}px`, "important");
+          }
         }
       }
     });
@@ -128,8 +132,12 @@ const setHeaderShow2 = (header, hidden, show) => {
       'ins.adsbygoogle[data-anchor-status="displayed"], ins.adsbygoogle[data-anchor-status="ready-to-display"]'
     )
     .forEach((el) => {
-      el.style.height = "fit-content";
-      el.style.setProperty("height", "fit-content", "important");
+      const iframe = el.querySelector('iframe');
+      if (iframe) {
+        const iframeHeight = iframe.offsetHeight;
+        el.style.height = `${iframeHeight}px`;
+        el.style.setProperty("height", `${iframeHeight}px`, "important");
+      }
     });
 
   // 新しく追加される要素を監視

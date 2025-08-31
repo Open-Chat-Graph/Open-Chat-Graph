@@ -561,11 +561,6 @@ body::before {
   display: none;
 }
 
-ins.adsbygoogle[data-anchor-status="ready-to-display"],
-ins.adsbygoogle[data-anchor-status="displayed"] {
-  height: fit-content !important;
-}
-
 .rectangle-ads {
   width: auto;
   aspect-ratio: 16/9;
