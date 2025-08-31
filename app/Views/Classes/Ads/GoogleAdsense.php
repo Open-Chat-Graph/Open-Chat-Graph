@@ -109,18 +109,18 @@ class GoogleAdsense
     /**
      * @param array $adElement { 0: int, 1: string }|{ 0: int }
      */
-    static function output(array $adElement)
+    static function output(array $adElement, bool $forceShow = false)
     {
         if (AppConfig::$isStaging || AppConfig::$disableAds) return;
 
         if (count($adElement) === 1) {
-            self::responsive($adElement[0], 'responsive-google');
+            self::responsive($adElement[0], 'responsive-google', $forceShow);
         } else {
-            self::rectangle($adElement[0], $adElement[1]);
+            self::rectangle($adElement[0], $adElement[1], $forceShow);
         }
     }
 
-    private static function rectangle(int $adSlot, string $cssClass)
+    private static function rectangle(int $adSlot, string $cssClass, bool $forceShow = false)
     {
 
         $adClient = self::AD_CLIENT;
@@ -129,7 +129,7 @@ class GoogleAdsense
         <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
         EOT;
 
-        if (!(AppConfig::$disableAdTags ?? false)) {
+        if (!($forceShow || AppConfig::$disableAdTags ?? false)) {
             echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-full-width-responsive="false"></ins>
         EOT;
@@ -140,7 +140,7 @@ class GoogleAdsense
         EOT;
     }
 
-    private static function responsive(int $adSlot, string $cssClass)
+    private static function responsive(int $adSlot, string $cssClass, bool $forceShow = false)
     {
         $adClient = self::AD_CLIENT;
 
@@ -148,7 +148,7 @@ class GoogleAdsense
         <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
         EOT;
 
-        if (!(AppConfig::$disableAdTags ?? false)) {
+        if (!($forceShow || AppConfig::$disableAdTags ?? false)) {
             echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="false"></ins>
         EOT;
