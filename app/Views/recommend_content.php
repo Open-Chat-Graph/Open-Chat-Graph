@@ -151,11 +151,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </li>
             <?php if ($key === 0) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'], true) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
               </li>
             <?php elseif ($listsLastKey !== $key) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'], true) ?>
+                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
               </li>
             <?php endif ?>
           <?php endforeach ?>
