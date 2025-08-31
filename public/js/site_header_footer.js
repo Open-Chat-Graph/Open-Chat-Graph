@@ -112,7 +112,7 @@ const setHeaderShow2 = (header, hidden, show) => {
         if (
           target.matches('ins.adsbygoogle[data-anchor-status="displayed"]') ||
           target.matches(
-            'ins.adsbygoogle[data-anchor-status="ready-to-displayed"]'
+            'ins.adsbygoogle[data-anchor-status="ready-to-display"]'
           )
         ) {
           target.style.height = "fit-content";
@@ -125,7 +125,7 @@ const setHeaderShow2 = (header, hidden, show) => {
   // 既存の要素をチェック
   document
     .querySelectorAll(
-      'ins.adsbygoogle[data-anchor-status="displayed"], ins.adsbygoogle[data-anchor-status="ready-to-displayed"]'
+      'ins.adsbygoogle[data-anchor-status="displayed"], ins.adsbygoogle[data-anchor-status="ready-to-display"]'
     )
     .forEach((el) => {
       el.style.height = "fit-content";
@@ -137,6 +137,6 @@ const setHeaderShow2 = (header, hidden, show) => {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["data-anchor-status", "ready-to-displayed"],
+    attributeFilter: ["data-anchor-status", "ready-to-display"],
   });
 })();
