@@ -22,7 +22,7 @@ class ApiOpenChatDeleter implements OpenChatDeleterInterface
     {
         $this->openChatDeleter->deleteOpenChat($repoDto);
 
-        if (!$this->openChatUrlChecker->isOpenChatUrlAvailable($repoDto->invitationTicket)) {
+        if ($repoDto->invitationTicket && !$this->openChatUrlChecker->isOpenChatUrlAvailable($repoDto->invitationTicket)) {
             $this->deleteOpenChatRepository->insertDeletedOpenChat($repoDto->open_chat_id, '');
         }
     }
