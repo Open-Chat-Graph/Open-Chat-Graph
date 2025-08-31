@@ -19,6 +19,9 @@ class AppConfig
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
+    const LINE_APP_URL_SP = 'https://liff.line.me/1573545970-LlNdaE20?to=squareCover&id=';
+    const LINE_APP_SUFFIX_SP = '&isJoinImmediately=1&utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
+
     const LINE_IMG_URL = 'https://obs.line-scdn.net/';
     const LINE_IMG_URL_PREVIEW_PATH = '/preview';
 

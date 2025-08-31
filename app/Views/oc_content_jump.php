@@ -133,7 +133,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <div id="checkbox-warning" class="oc-jump-checkbox-warning">
           ※ 全ての確認項目にチェックを入れてください
         </div>
-        <a href="<?php echo AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
+        <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
           <div class="oc-jump-line-button-content">
             <?php if ($oc['join_method_type'] !== 0) : ?>
               <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">

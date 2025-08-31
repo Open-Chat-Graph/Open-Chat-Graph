@@ -678,3 +678,15 @@ function truncateDescription($text, $limit = 70, $suffix = '...')
 
     return $truncated . $suffix;
 }
+
+/**
+ * @param array{url: string, emid: string, ...} $oc OpenChat data array containing at least url and emid
+ * @return string
+ */
+function lineAppUrl(array $oc): string
+{
+    if (!isMobile())
+        return AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX;
+
+    return AppConfig::LINE_APP_URL_SP . $oc['emid'] . AppConfig::LINE_APP_SUFFIX_SP;
+}
