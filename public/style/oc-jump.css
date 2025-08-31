@@ -1,0 +1,154 @@
+/* OpenChat Jump Page Styles */
+
+/* Main sections */
+.oc-jump-section {
+  display: block;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.oc-info-section {
+  display: block;
+}
+
+.oc-rules-section {
+  margin: 1rem 0;
+  width: 100%;
+}
+
+/* Titles and headings */
+.oc-jump-main-title {
+  margin: 1rem;
+  text-align: center;
+}
+
+.oc-jump-section-title {
+  margin: 1rem;
+  text-align: center;
+}
+
+/* Instructions */
+.oc-jump-instruction {
+  text-align: center;
+  display: block;
+  margin: 1rem;
+  font-size: 16px;
+}
+
+/* Image wrappers */
+.oc-jump-image-wrapper {
+  margin: 1rem 2rem;
+}
+
+/* Rule items container */
+.oc-rule-item {
+  margin-bottom: 0;
+}
+
+/* Rule images */
+.oc-jump-rule-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Info content area */
+.oc-jump-info-content {
+  margin: 1rem 2rem;
+  padding: 0;
+}
+
+/* Checkbox styles */
+.oc-jump-checkbox-wrapper {
+  margin: 1rem 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.oc-jump-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.oc-jump-checkbox-label {
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* Warning text */
+.oc-jump-warning-text {
+  text-align: center;
+  display: block;
+  margin: 1rem;
+  font-size: 13px;
+}
+
+/* Checkbox warning */
+.oc-jump-checkbox-warning {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+  margin: 0 1rem;
+  font-weight: bold;
+}
+
+/* Footer info section */
+.oc-jump-footer-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin: 1rem;
+}
+
+.oc-jump-footer-img {
+  /* Uses existing openchat-item-title-img styles */
+  border-radius: 99rem;
+  width: 64px;
+}
+
+.oc-jump-footer-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.oc-jump-footer-name-wrapper {
+  padding-right: 1.5rem;
+}
+
+.oc-jump-footer-name {
+  color: #111;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.oc-jump-footer-member {
+  color: #111;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* LINE open button */
+.oc-jump-line-button {
+  font-size: 16px;
+  padding: 20px 20px;
+  border-radius: 8px;
+  width: calc(100% - 2rem) !important;
+  margin: 1rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.oc-jump-line-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Horizontal rule styles */
+.hr-bottom {
+  margin: 1rem 0;
+  width: 100%;
+}
