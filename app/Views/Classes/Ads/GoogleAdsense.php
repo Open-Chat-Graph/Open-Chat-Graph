@@ -129,7 +129,7 @@ class GoogleAdsense
         <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
         EOT;
 
-        if (!($forceShow || AppConfig::$disableAdTags ?? false)) {
+        if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
             echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-full-width-responsive="false"></ins>
         EOT;
@@ -148,7 +148,7 @@ class GoogleAdsense
         <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
         EOT;
 
-        if (!($forceShow || AppConfig::$disableAdTags ?? false)) {
+        if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
             echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="false"></ins>
         EOT;
