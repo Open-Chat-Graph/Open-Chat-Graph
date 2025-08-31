@@ -685,8 +685,8 @@ function truncateDescription($text, $limit = 70, $suffix = '...')
  */
 function lineAppUrl(array $oc): string
 {
-    if (!isMobile())
-        return AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX;
+    /*  if (isMobile())
+        return AppConfig::LINE_APP_URL_SP . $oc['emid'] . AppConfig::LINE_APP_SUFFIX_SP; */
 
-    return AppConfig::LINE_APP_URL_SP . $oc['emid'] . AppConfig::LINE_APP_SUFFIX_SP;
+    return AppConfig::LINE_APP_URL . $oc['url'] . AppConfig::LINE_APP_SUFFIX;
 }
