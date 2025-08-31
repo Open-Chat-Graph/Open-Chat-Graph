@@ -100,3 +100,31 @@ const setHeaderShow2 = (header, hidden, show) => {
   const header = document.querySelector(".site_header_outer");
   setHeaderShow(header, -48, 0);
 })();
+
+(() => {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-anchor-status') {
+        const target = mutation.target;
+        if (target.matches('ins.adsbygoogle[data-anchor-status="displayed"]')) {
+          target.style.height = 'fit-content';
+          target.style.setProperty('height', 'fit-content', 'important');
+        }
+      }
+    });
+  });
+
+  // 既存の要素をチェック
+  document.querySelectorAll('ins.adsbygoogle[data-anchor-status="displayed"]').forEach(el => {
+    el.style.height = 'fit-content';
+    el.style.setProperty('height', 'fit-content', 'important');
+  });
+
+  // 新しく追加される要素を監視
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-anchor-status']
+  });
+})();
