@@ -152,3 +152,41 @@
   margin: 1rem 0;
   width: 100%;
 }
+
+/* Thai specific styles */
+.oc-jump-rule-title {
+  display: block;
+  margin: 1rem;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.oc-jump-rule-description {
+  display: block;
+  margin: 1rem;
+  font-size: 13px;
+}
+
+.oc-jump-checkbox-label-th {
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Additional styles for new classes */
+.oc-jump-member-count {
+  text-align: center;
+}
+
+.oc-jump-member-text {
+  color: #111;
+  font-weight: normal;
+}
+
+.oc-jump-chat-title {
+  text-align: center;
+}
+
+.oc-jump-banner-img {
+  aspect-ratio: 1.8;
+  border-radius: 0;
+}
