@@ -22,6 +22,19 @@ $enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版の�
 </head>
 
 <body style="margin: 0;">
+    <style>
+        .grippy-host {
+            display: none;
+        }
+
+        .right-side-rail-dismiss-btn {
+            display: none;
+        }
+
+        .left-side-rail-dismiss-btn {
+            display: none;
+        }
+    </style>
     <script type="application/json" id="arg-dto">
         <?php echo json_encode($_argDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
     </script>
