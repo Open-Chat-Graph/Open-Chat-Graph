@@ -1,3 +1,6 @@
+<?php
+$enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示 
+?>
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
 
@@ -12,7 +15,10 @@
     <?php endforeach ?>
     <script defer="defer" src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
-    <?php //\App\Views\Ads\GoogleAdsense::gTag("bottom") ?>
+    <?php if ($enableAdsense): ?>
+        <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php endif ?>
+
 </head>
 
 <body style="margin: 0;">
