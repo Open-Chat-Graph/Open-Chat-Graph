@@ -200,21 +200,21 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         </script>
         <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
       </section>
-    </article>
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
 
-    <?php if ($recommend[0] || $recommend[3]) : ?>
-      <aside class="recommend-list-aside">
-        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-      </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
-    <?php endif ?>
+      <?php if ($recommend[0] || $recommend[3]) : ?>
+        <aside class="recommend-list-aside" id="recommend-list-aside1">
+          <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
+          <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+        </aside>
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+        ?>
+      <?php endif ?>
+    </article>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
-      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;">
+      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;" id="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgPreviewUrl($oc['id'], $oc['img_url']) : linePreviewUrl($oc['api_img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
