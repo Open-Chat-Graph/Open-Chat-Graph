@@ -7,7 +7,7 @@ use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
-$isAdEnhancementTag = isset($recommend[2]) ? RecommendUtility::isAdEnhancementTag($recommend[2] ?? '') : false;
+$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']); ?>
 
@@ -15,7 +15,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
 
-    <?php if ($isAdEnhancementTag): ?>
+    <?php if ($enableAdsense): ?>
       <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <?php endif ?>
 
@@ -296,7 +296,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   </script>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
-  <?php if ($isAdEnhancementTag): ?>
+  <?php if ($enableAdsense): ?>
     <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
   <?php endif ?>
 

@@ -19,9 +19,15 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
 $hourlyUpdatedAt = $hourlyUpdatedAt ?? new DateTime();
 $hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
+$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+
 viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
 <body>
+  <?php if ($enableAdsense): ?>
+    <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+  <?php endif ?>
+
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
@@ -180,10 +186,10 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   </script>
   <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
-  <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
+  <?php if ($enableAdsense): ?>
     <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
   <?php endif ?>
-
+  
   <?php echo $_breadcrumbsShema ?>
 </body>
 

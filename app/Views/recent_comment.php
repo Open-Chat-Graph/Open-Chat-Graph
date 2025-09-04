@@ -4,10 +4,16 @@
 
 use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsense as GAd;
+use Shared\MimimalCmsConfig;
+
+$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
 
 viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?>
 
 <body class="body">
+    <?php if ($enableAdsense): ?>
+        <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php endif ?>
     <style>
         .list-title {
             color: #111;
@@ -138,6 +144,9 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
         const admin = <?php echo isAdmin() ? 1 : 0; ?>;
     </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
+    <?php if ($enableAdsense): ?>
+        <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+    <?php endif ?>
     <script>
         ;
         (function(el) {

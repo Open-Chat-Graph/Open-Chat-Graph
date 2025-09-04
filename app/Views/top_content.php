@@ -6,10 +6,16 @@ use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
 use App\Views\Ads\GoogleAdsense as GAd;
 
+$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
+    <?php if ($enableAdsense): ?>
+        <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php endif ?>
+
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
@@ -59,7 +65,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
-        
+
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
         <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
@@ -75,7 +81,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         const admin = <?php echo isAdmin() ? 1 : 0; ?>;
     </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-
+    <?php if ($enableAdsense): ?>
+        <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+    <?php endif ?>
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
     ?>
         <script>
