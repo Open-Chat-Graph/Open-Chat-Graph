@@ -41,6 +41,9 @@ $enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版の�
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <?php echo $_breadcrumbsShema ?>
+    <?php if ($enableAdsense): ?>
+        <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+    <?php endif ?>
 </body>
 
 </html>
