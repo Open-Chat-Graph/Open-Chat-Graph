@@ -34,38 +34,6 @@ LINE OpenChatのメンバー数推移を可視化し、トレンドを分析で�
 - 💬 **コメント機能** - ユーザー同士の情報交換
 - 🏷️ **推奨タグシステム** - AIによる関連タグの自動生成
 
-## 🚀 開発環境のセットアップ
-
-### 前提条件
-
-- Docker & Docker Compose
-- PHP 8.3+
-- Composer
-- Node.js 18+ (フロントエンド開発時)
-
-### クイックスタート
-
-```bash
-# リポジトリのクローン
-git clone https://github.com/pika-0203/Open-Chat-Graph.git
-cd Open-Chat-Graph
-
-# 依存関係のインストール
-composer install
-
-# ローカル設定のセットアップ
-# ⚠️ 機密情報が必要です - GitHubのIssueでお問い合わせください
-./local-setup.sh
-
-# Docker環境の起動
-docker-compose up -d
-```
-
-**アクセスURL:**
-- Web: http://localhost:8000
-- phpMyAdmin: http://localhost:8080
-- MySQL: localhost:3306
-
 ## 🏗️ アーキテクチャ
 
 ### 技術スタック
@@ -105,27 +73,37 @@ docker-compose up -d
 └── public/               # 公開ディレクトリ
 ```
 
-## 🕷️ クローリングシステム
+## 🚀 開発環境のセットアップ
 
-### 並列処理アーキテクチャ
+### 前提条件
 
-約15万件のOpenChatを効率的に処理するための高速並列クローリングシステムを実装しています。
+- Docker & Docker Compose
+- PHP 8.3+
+- Composer
+- Node.js 18+ (フロントエンド開発時)
 
-- **24並列プロセス**: 全カテゴリを同時処理
-- **独自最適化**: 高速レンダリング・DB更新技術
-- **自動リトライ**: エラー処理とフォールバック
+### クイックスタート
 
-#### 主要コンポーネント
+```bash
+# リポジトリのクローン
+git clone https://github.com/pika-0203/Open-Chat-Graph.git
+cd Open-Chat-Graph
 
-1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - 親プロセス
-2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - 子プロセス
-3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - データ処理
+# Docker環境の起動
+docker-compose up -d
 
-### ユーザーエージェント
+# 依存関係のインストール
+composer install
 
+# ローカル設定のセットアップ
+# ⚠️ 機密情報が必要です - GitHubのIssueでお問い合わせください
+./local-setup.sh
 ```
-Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)
-```
+
+**アクセスURL:**
+- Web: http://localhost:8000
+- phpMyAdmin: http://localhost:8080
+- MySQL: localhost:3306
 
 ## 💻 実装詳細
 
@@ -565,13 +543,27 @@ echo t('オプチャグラフ', '/tw'); // 特定言語指定
 - **24時間**: 日次成長率
 - **週間**: 週間成長率
 
-## 🔗 関連リポジトリ
+## 🕷️ クローリングシステム
 
-### フロントエンドコンポーネント
+### 並列処理アーキテクチャ
 
-- [ランキングページ](https://github.com/mimimiku778/Open-Chat-Graph-Frontend)
-- [グラフ表示](https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph)
-- [コメント機能](https://github.com/mimimiku778/Open-Chat-Graph-Comments)
+約15万件のOpenChatを効率的に処理するための高速並列クローリングシステムを実装しています。
+
+- **24並列プロセス**: 全カテゴリを同時処理
+- **独自最適化**: 高速レンダリング・DB更新技術
+- **自動リトライ**: エラー処理とフォールバック
+
+#### 主要コンポーネント
+
+1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - 親プロセス
+2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - 子プロセス
+3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - データ処理
+
+### ユーザーエージェント
+
+```
+Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)
+```
 
 ## 🤝 コントリビューション
 
