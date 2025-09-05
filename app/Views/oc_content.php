@@ -200,17 +200,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         </script>
         <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
       </section>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
-
-      <?php if ($recommend[0] || $recommend[3]) : ?>
-        <aside class="recommend-list-aside" id="recommend-list-aside1">
-          <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-          <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
-        </aside>
-        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-        ?>
-      <?php endif ?>
     </article>
+
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+
+    <?php if ($recommend[0] || $recommend[3]) : ?>
+      <aside class="recommend-list-aside" id="recommend-list-aside1">
+        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+      </aside>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
+      ?>
+    <?php endif ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
