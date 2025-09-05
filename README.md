@@ -2,6 +2,18 @@
 
 LINE OpenChatのメンバー数推移を可視化し、トレンドを分析できるWebサービス
 
+---
+
+**関連リポジトリ:**
+- ランキング画面: https://github.com/mimimiku778/Open-Chat-Graph-Frontend
+  - React, MUI, Swiper.js
+- グラフ画面: https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph
+  - Preact, MUI, Chart.js
+- コメント画面: https://github.com/mimimiku778/Open-Chat-Graph-Comments
+  - React, MUI 
+
+---
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Live](https://img.shields.io/badge/Live-openchat--review.me-green)](https://openchat-review.me)
 
