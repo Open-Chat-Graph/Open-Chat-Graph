@@ -61,6 +61,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
             class="oc-jump-rule-image">
         </div>
+        <hr class="hr-bottom">
         <?php if ($oc['url']) : ?>
           <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
             <div class="oc-jump-line-button-content">
