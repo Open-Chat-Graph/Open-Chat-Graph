@@ -27,8 +27,10 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
         <h2 class="oc-jump-main-title">⚠️参加前にお読みください</h2>
+        <span class="oc-jump-instruction">以下の詳細をご確認の上、最後までスクロールした場所にある「LINEで開く」ボタンから参加してください。</span>
         <hr class="hr-bottom">
         <h3 class="oc-jump-section-title">参加するオープンチャットの確認</h3>
+        <span class="oc-jump-instruction">以下の説明文をご確認ください。</span>
         <div class="oc-jump-image-wrapper">
           <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;"
             alt="<?php echo $oc['name'] ?>"
@@ -55,12 +57,11 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
-          <span class="oc-jump-instruction">以下の各禁止事項にチェックを入れてください。</span>
-          <span class="oc-jump-instruction">全項目をチェックすると、最後までスクロールした場所にある「LINEで開く」ボタンが有効になります。</span>
+          <span class="oc-jump-instruction">以下の禁止事項をご確認ください。</span>
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
             class="oc-jump-rule-image">
         </div>
-        <hr class="hr-bottom">
+        <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
         <?php if ($oc['url']) : ?>
           <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
             <div class="oc-jump-line-button-content">
