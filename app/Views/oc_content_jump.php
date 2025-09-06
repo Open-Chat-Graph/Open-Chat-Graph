@@ -37,7 +37,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
             src="<?php echo $oc['img_url'] ? imgUrl($oc['id'], $oc['img_url']) : lineImgUrl($oc['api_img_url']) ?>">
         </div>
         <div class="oc-jump-info-content">
-          <h1 class="talkroom_link_h1 unset" style="text-align: center;">
+          <h1 class="talkroom_link_h1 unset" style="text-align: center; white-space: normal;">
             <?php if ($oc['emblem'] === 1) : ?><span
                 class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span
                 class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
