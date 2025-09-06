@@ -209,9 +209,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
         <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
       </aside>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'])
-      ?>
     <?php endif ?>
+
+    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>
