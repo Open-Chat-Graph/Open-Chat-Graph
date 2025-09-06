@@ -53,7 +53,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           </div>
         </div>
       </section>
-      <hr class="hr-bottom">
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'], true) ?>
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
@@ -61,7 +61,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
             class="oc-jump-rule-image">
         </div>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'], true) ?>
         <?php if ($oc['url']) : ?>
           <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
             <div class="oc-jump-line-button-content">
