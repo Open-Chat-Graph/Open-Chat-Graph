@@ -46,8 +46,12 @@
   opacity: 0.5;
 }
 
-.MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
-.MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
+.MuiStack-root
+  .css-14edfjq
+  .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
+.MuiStack-root
+  .css-14edfjq
+  .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
   color: #b7b7b7;
   background-color: #fff;
 }
@@ -109,12 +113,5 @@
 @media screen and (min-width: 400px) {
   #chart-preact-canvas {
     width: calc(100% - 1px) !important;
-  }
-}
-
-@media screen and (min-width: 600px) {
-  #chart-preact-canvas {
-    height: 315px !important;
-    width: 567px !important;
   }
 }

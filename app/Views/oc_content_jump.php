@@ -22,9 +22,9 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
 
 <body>
   <?php viewComponent('site_header') ?>
-  <div class="unset openchat body" style="overflow: hidden;">
-    <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-    <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle'], true) ?>
+  <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+  <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle'], true) ?>
+  <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
         <h2 class="oc-jump-main-title">⚠️参加前にお読みください</h2>

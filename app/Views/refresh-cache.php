@@ -10,7 +10,7 @@
 </head>
 
 <body style="width: 100%; margin: 0;">
-    <div style="max-width: 600px; margin: auto;">
+    <div style="max-width: 980px; margin: auto;">
         <div style="padding: 1rem;">
             <p>ブラウザからオプチャグラフのキャッシュをクリアしました</p>
             <p>3秒後にトップページへ戻ります</p>

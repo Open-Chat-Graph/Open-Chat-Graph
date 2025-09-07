@@ -25,7 +25,7 @@
 
         .kokoku-preview .kokoku-element {
             margin: auto;
-            max-width: 600px;
+            max-width: 980px;
         }
 
         .copy-mode {
@@ -50,7 +50,7 @@
         <?php $dto->echoAdsElement() ?>
     </div>
     <main style="padding-top: 0;">
-        <section style="max-width: 600px; margin: auto;">
+        <section style="max-width: 980px; margin: auto;">
 
             <div id="form_outer" style="position: relative; width: 100%;">
                 <form onsubmit="return confirm('送信しますか？')" id="edit-form" method="POST" action="/ads/<?php echo $dto->id === 0 ? 'register' : 'update' ?>" style="width: 100%;">

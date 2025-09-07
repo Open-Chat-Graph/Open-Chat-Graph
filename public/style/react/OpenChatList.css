@@ -2,6 +2,10 @@ html {
   overflow-y: scroll; /* 常に垂直スクロールバーを表示 */
 }
 
+.css-1rn22tq {
+  max-width: 980px !important;
+}
+
 .OpenChatListItem-outer {
   all: unset;
   display: block;
@@ -9,7 +13,8 @@ html {
 }
 
 .div-fetchOpenChatRankingList * {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 .record-count {
@@ -31,6 +36,7 @@ html {
   all: unset;
   display: block;
   line-height: 1.5;
+  max-width: 980px;
 }
 
 .openchat-item {
@@ -143,7 +149,7 @@ html {
 }
 
 .item-lower-category {
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   height: 0%;
 }
 
@@ -159,7 +165,7 @@ html {
 }
 
 .item-lower-stats > span:nth-child(2) > span:nth-child(1):before {
-  content: '';
+  content: "";
   position: absolute;
   top: 7.5px;
   left: -7px;
@@ -192,5 +198,11 @@ html {
 @media screen and (max-width: 359px) {
   .openchat-item {
     margin-right: 0;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .OpenChatListItem-outer {
+    zoom: 120%;
   }
 }

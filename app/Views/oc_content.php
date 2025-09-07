@@ -13,14 +13,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
 <body>
   <?php viewComponent('site_header') ?>
+  <?php if ($enableAdsense): ?>
+    <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
+    <hr class="hr-top" style="margin-bottom: 4px;">
+  <?php endif ?>
+
   <div class="unset openchat body" style="overflow: hidden;">
-
-    <?php if ($enableAdsense): ?>
-      <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
-      <hr class="hr-top" style="margin-bottom: 4px;">
-    <?php endif ?>
-
     <article class="unset" style="display: block;">
       <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
         <div class="talkroom_banner_img_area">

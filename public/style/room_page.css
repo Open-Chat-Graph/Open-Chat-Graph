@@ -15,7 +15,7 @@ html {
   display: block;
   padding-bottom: 0;
   font-family: var(--font-family);
-  max-width: 600px;
+  max-width: 980px;
 }
 
 .openchat-header {
@@ -122,6 +122,7 @@ html {
   flex-direction: column;
   letter-spacing: -0.1px;
   gap: 4px;
+  width: 100%;
 }
 
 .h1-link {
@@ -726,4 +727,33 @@ html {
   font-size: 16px;
   color: #111;
   font-family: var(--font-family);
+}
+
+@media screen and (min-width: 768px) {
+  .title-bar .number-box,
+  .openchat-header,
+  .graph-title,
+  nav,
+  #comment-root,
+  .footer-link-box-outer,
+  .title-bar-oc-name-wrapper {
+    zoom: 120%;
+  }
+
+  .talkroom_description_box.close #talkroom-description-btn {
+    white-space: pre-wrap;
+  }
+
+  .talkroom_description_box.close .talkroom_description {
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    text-align: center;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  .talkroom_description {
+    text-align: left;
+    line-height: 1.5;
+  }
 }

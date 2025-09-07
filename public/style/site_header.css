@@ -8,7 +8,8 @@
   --secondary: #e3f6f5;
   --tertiary: #bae8e8;
   --headline: #111;
-  --width: 600px;
+  --width: 980px;
+  --max-width: 980px;
   --font-family: -apple-system, system-ui, blinkmacsystemfont, Helvetica Neue,
     helvetica, Hiragino Sans, arial, sans-serif;
 }
@@ -18,7 +19,8 @@
 }
 
 body {
-  margin: 0;
+  max-width: var(--max-width);
+  margin: 0 auto;
   transition: transform 1s;
   padding: 0;
   width: 100%;
@@ -72,7 +74,7 @@ body::before {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   width: 100%;
-  max-width: var(--width);
+  max-width: var(--max-width);
   transition: transform 0.3s;
   transform: translate(0px, 0px);
 }
@@ -509,6 +511,13 @@ body::before {
 @media screen and (min-width: 512px) {
   .site_header {
     justify-content: flex-start;
+    padding-left: 35.17px;
+  }
+
+  .header-nav {
+    position: relative;
+    padding-top: 1px;
+    padding-right: 0.5px;
   }
 
   .super-icon {
@@ -610,11 +619,11 @@ body::before {
   box-sizing: border-box;
 }
 
-/* .openchat-item-list .google-auto-placed {
+.openchat-item-list .google-auto-placed {
   margin: 0 -1rem;
   width: 100vw !important;
-  max-width: 600px;
-} */
+  max-width: 980px;
+}
 
 @media screen and (min-width: 512px) {
   .rectangle3-ads,

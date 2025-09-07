@@ -8,7 +8,7 @@
 }
 
 .mylist {
-  margin: .5rem 0;
+  margin: 0.5rem 0;
 }
 
 .top-ranking.top-btns {
@@ -186,7 +186,12 @@
   all: unset;
   font-size: 16px;
   font-weight: bold;
-  background: -webkit-linear-gradient(45deg, rgb(253, 18, 226) 20%, rgb(164, 67, 221), rgb(84, 126, 255) 90%);
+  background: -webkit-linear-gradient(
+    45deg,
+    rgb(253, 18, 226) 20%,
+    rgb(164, 67, 221),
+    rgb(84, 126, 255) 90%
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -275,7 +280,7 @@
 
 .openchat-item-list {
   display: block;
-  max-width: 600px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
@@ -289,7 +294,7 @@
 .recent-comment-list {
   display: flex;
   /* padding: 1rem 0; */
-  padding: .5rem 0;
+  padding: 0.5rem 0;
   flex-direction: column;
   gap: 12px;
   /* border-bottom: 1px solid #efefef; */
@@ -314,7 +319,8 @@
   letter-spacing: -0.3px;
   cursor: pointer;
   min-height: 58px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 .openchat-item.add-openchat-form-item {
@@ -434,7 +440,7 @@
   gap: 4px;
 }
 
-.openchat-item-lower>span:nth-child(2) {
+.openchat-item-lower > span:nth-child(2) {
   position: relative;
 }
 
@@ -448,7 +454,7 @@
 }
 
 .openchat-item-mui-chip-inner {
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-left: 7px;
@@ -684,8 +690,13 @@
   height: 42px;
   border: 1px solid #efefef;
   border-radius: 7px;
-  background: -webkit-linear-gradient(45deg, rgb(253, 18, 226) 20%, rgb(164, 67, 221), rgb(84, 126, 255) 90%);
-  opacity: .7;
+  background: -webkit-linear-gradient(
+    45deg,
+    rgb(253, 18, 226) 20%,
+    rgb(164, 67, 221),
+    rgb(84, 126, 255) 90%
+  );
+  opacity: 0.7;
 }
 
 .readMore-btn.top-ranking-readMore.white-btn,
@@ -709,7 +720,6 @@
   font-weight: 900;
 }
 
-
 .top-ranking .ranking-readMore,
 .recent-comment-list .ranking-readMore {
   font-size: 14px;
@@ -720,12 +730,11 @@
 .white-btn .ranking-readMore {
   color: #111;
   font-size: 13px;
-
 }
 
 .white-btn .ranking-readMore::after {
   display: inline-block;
-  content: '';
+  content: "";
   margin-left: 6px;
   width: 6px;
   height: 6px;
@@ -795,7 +804,7 @@
 }
 
 .page-select label span::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   right: -7px;
@@ -845,7 +854,7 @@
 }
 
 .button01.next a::after {
-  content: '';
+  content: "";
   margin-left: 4px;
   width: 5px;
   height: 5px;
@@ -856,7 +865,7 @@
 }
 
 .button01.prev a::before {
-  content: '';
+  content: "";
   margin-right: 4px;
   width: 5px;
   height: 5px;
@@ -981,7 +990,6 @@
 }
 
 @media screen and (max-width: 359px) {
-
   header,
   main {
     padding: 0rem 8px;
@@ -1035,7 +1043,7 @@
 .mylist .openchat-item::after {
   position: absolute;
   top: 76%;
-  content: '';
+  content: "";
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
@@ -1048,7 +1056,14 @@
 .mylist .openchat-item::before {
   left: 33px;
   border: solid 1px white;
-  background: linear-gradient(-332deg, #0dc95a, #11d871 21.96%, #11d593 53.46%, #12cfcd 81.85%, #16c2c1);
+  background: linear-gradient(
+    -332deg,
+    #0dc95a,
+    #11d871 21.96%,
+    #11d593 53.46%,
+    #12cfcd 81.85%,
+    #16c2c1
+  );
   z-index: 2;
 }
 
@@ -1222,7 +1237,6 @@
     line-height: 2;
   }
 
-
   .top-page .openchat-list-title {
     font-size: 20px;
   }
@@ -1290,10 +1304,12 @@
   height: 38px;
   width: 48px;
   right: 0px;
-  background-image: linear-gradient(90deg,
-      rgba(255, 255, 255, 0),
-      rgba(255, 255, 255, 0.95) 37%,
-      rgba(255, 255, 255, 1) 99%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.95) 37%,
+    rgba(255, 255, 255, 1) 99%
+  );
 }
 
 .tag-btn.open-btn {
@@ -1304,13 +1320,14 @@
   display: block;
   height: 36px;
   margin-left: auto;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
+    rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
   border: 1px solid #06c755;
 }
 
 .tag-btn.open-btn::after {
   display: inline-flex;
-  content: '';
+  content: "";
   position: absolute;
   width: 6px;
   height: 6px;
@@ -1375,7 +1392,11 @@
 }
 
 .gradient-bottom {
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1)
+  );
   position: absolute;
   bottom: 0;
   left: 0;
@@ -1473,4 +1494,22 @@
 
 .responsive-google {
   margin: auto !important;
+}
+
+@media screen and (min-width: 768px) {
+  .openchat-list-title {
+    zoom: 110%;
+  }
+
+  .openchat-item {
+    zoom: 125%;
+  }
+
+  .tag-list {
+    zoom: 120%;
+  }
+
+  .openchat-list-date.ranking-url {
+    zoom: 120%;
+  }
 }
