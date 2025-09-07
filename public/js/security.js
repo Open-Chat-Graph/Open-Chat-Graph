@@ -143,7 +143,7 @@ if (typeof admin === "undefined" || !admin) {
   setTimeout(() => clearInterval(checkInterval), 10000); // 10秒後に停止
   console.log("AdBlock検出の監視を開始しました");
 }
-
+/* 
 (() => {
   const setAdHeight = (target) => {
     const iframe = target.querySelector("iframe");
@@ -212,3 +212,4 @@ if (typeof admin === "undefined" || !admin) {
     attributeFilter: ["data-anchor-status"],
   });
 })();
+ */
