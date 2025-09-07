@@ -17,6 +17,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
     <?php if ($enableAdsense): ?>
       <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
+      <hr class="hr-top" style="margin-bottom: 4px;">
     <?php endif ?>
 
     <article class="unset" style="display: block;">
@@ -202,7 +204,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </section>
     </article>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
+    <hr class="hr-top" style="margin-bottom: 8px;">
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside" id="recommend-list-aside1">
@@ -242,7 +244,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <?php endif ?>
         </aside>
       </section>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive']) ?>
     <?php endif ?>
 
     <?php viewComponent('footer_inner') ?>

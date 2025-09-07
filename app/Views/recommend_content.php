@@ -26,14 +26,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 <body>
   <?php if ($enableAdsense): ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle'], true) ?>
+    <hr class="hr-top" style="margin-bottom: 4px; border: none;">
   <?php endif ?>
 
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-
-    <?php if (RecommendUtility::isAdEnhancementTag($tag)): ?>
-      <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-    <?php endif ?>
 
     <section class="recommend-header-wrapper">
 
@@ -157,11 +155,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </li>
             <?php if ($key === 0) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'], true) ?>
+                <hr class="hr-bottom" style="margin-top: 0;">
               </li>
             <?php elseif ($listsLastKey !== $key) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive']) ?>
+                <hr class="hr-bottom" style="margin-top: 0;">
               </li>
             <?php endif ?>
           <?php endforeach ?>
@@ -189,7 +187,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <?php if ($enableAdsense): ?>
     <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
   <?php endif ?>
-  
+
   <?php echo $_breadcrumbsShema ?>
 </body>
 

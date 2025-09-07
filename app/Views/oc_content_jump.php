@@ -24,6 +24,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   <?php viewComponent('site_header') ?>
   <div class="unset openchat body" style="overflow: hidden;">
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle'], true) ?>
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
         <h2 class="oc-jump-main-title">⚠️参加前にお読みください</h2>
@@ -53,7 +54,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           </div>
         </div>
       </section>
-      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'], true) ?>
+      <hr class="hr-top" style="margin-bottom: 8px;">
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
@@ -78,6 +79,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <?php endif ?>
       </section>
     </article>
+    <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive'], true) ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>

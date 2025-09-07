@@ -16,7 +16,7 @@ class GoogleAdsense
         'ocTopRectangle' => ['8037531176', 'rectangle3-ads'],
 
         // OCトップ2-rectangle
-        'ocTop2Rectangle' => ['4585711910', 'rectangle-ads'],
+        'ocTop2Rectangle' => ['4585711910', 'rectangle3-ads'],
 
         // OC-third-rectangle
         'ocThirdRectangle' => ['8325497013', 'rectangle3-ads'],
@@ -126,7 +126,7 @@ class GoogleAdsense
         $adClient = self::AD_CLIENT;
 
         echo <<<EOT
-        <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
+        <div class="{$cssClass}-parent">
         EOT;
 
         if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
@@ -145,7 +145,7 @@ class GoogleAdsense
         $adClient = self::AD_CLIENT;
 
         echo <<<EOT
-        <div style="padding: 24px 0; box-sizing: border-box;" class="{$cssClass}-parent">
+        <div class="{$cssClass}-parent">
         EOT;
 
         if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
