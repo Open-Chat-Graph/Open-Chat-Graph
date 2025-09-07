@@ -98,5 +98,5 @@ const setHeaderShow2 = (header, hidden, show) => {
 
 (() => {
   const header = document.querySelector(".site_header_outer");
-  setHeaderShow(header, -48, 0);
+  setHeaderShow2(header, -48, 0);
 })();

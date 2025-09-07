@@ -610,11 +610,11 @@ body::before {
   box-sizing: border-box;
 }
 
-.openchat-item-list .google-auto-placed {
+/* .openchat-item-list .google-auto-placed {
   margin: 0 -1rem;
   width: 100vw !important;
   max-width: 600px;
-}
+} */
 
 @media screen and (min-width: 512px) {
   .rectangle3-ads,
