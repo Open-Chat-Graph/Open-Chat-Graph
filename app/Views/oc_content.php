@@ -212,7 +212,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </aside>
     <?php endif ?>
 
-    <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
+    <hr class="hr-top" style="margin-bottom: 8px;">
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
     ?>

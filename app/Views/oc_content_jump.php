@@ -23,7 +23,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
 <body>
   <?php viewComponent('site_header') ?>
   <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-  <?php GAd::output(GAd::AD_SLOTS['recentCommentTopRectangle'], true) ?>
+  <?php GAd::output(GAd::AD_SLOTS['ocTop2Rectangle'], true) ?>
   <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
@@ -62,7 +62,16 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
             class="oc-jump-rule-image">
         </div>
-        <hr class="hr-bottom">
+        <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
+        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 1rem;">
+          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgPreviewUrl($oc['id'], $oc['img_url']) : linePreviewUrl($oc['api_img_url']) ?>">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
+              <div class="title-bar-oc-name" style="color: #111; font-size: 13px; font-weight: bold;"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+              <div class="title-bar-oc-member" style="color: #111; font-size: 13px; font-weight: bold;">(<?php echo formatMember($oc['member']) ?>)</div>
+            </div>
+          </div>
+        </div>
         <?php if ($oc['url']) : ?>
           <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
             <div class="oc-jump-line-button-content">
@@ -79,7 +88,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <?php endif ?>
       </section>
     </article>
-    <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive'], true) ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
