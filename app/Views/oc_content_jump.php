@@ -47,17 +47,16 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
-          <span class="oc-jump-instruction">以下の禁止事項をご確認ください。</span>
+          <span class="oc-jump-instruction">以下の禁止事項をご確認後、「LINEで開く」を押してください。</span>
           <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
             class="oc-jump-rule-image">
         </div>
-        <hr class="hr-bottom" style="margin: 1rem 0; width: 100%;">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 1rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo $oc['img_url'] ? imgPreviewUrl($oc['id'], $oc['img_url']) : linePreviewUrl($oc['api_img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
             <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
-              <div class="title-bar-oc-name" style="color: #111; font-size: 13px; font-weight: bold;"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-              <div class="title-bar-oc-member" style="color: #111; font-size: 13px; font-weight: bold;">(<?php echo formatMember($oc['member']) ?>)</div>
+              <div class="title-bar-oc-name" style="color: #111; font-size: 12px;"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+              <div class="title-bar-oc-member" style="color: #111; font-size: 12px;">(<?php echo formatMember($oc['member']) ?>)</div>
             </div>
           </div>
         </div>
