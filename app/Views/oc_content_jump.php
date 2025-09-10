@@ -2,20 +2,7 @@
 <html lang="<?php echo t('ja') ?>">
 <?php
 
-use App\Config\AppConfig;
 use App\Views\Ads\GoogleAdsense as GAd;
-
-function ad(bool $show = true)
-{
-  if (!$show) return;
-
-?>
-  <div style="margin: -24px 0;">
-    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
-  </div>
-<?php
-
-}
 
 $_css[] = 'oc-jump';
 viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']); ?>
@@ -23,7 +10,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
 <body>
   <?php viewComponent('site_header') ?>
   <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-  <?php GAd::output(GAd::AD_SLOTS['ocTop2Rectangle'], true) ?>
+  <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle'], true) ?>
   <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
@@ -54,6 +41,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           </div>
         </div>
       </section>
+      <?php GAd::output(GAd::AD_SLOTS['siteTopWide'], true) ?>
       <hr class="hr-top" style="margin-bottom: 8px;">
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
@@ -88,6 +76,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         <?php endif ?>
       </section>
     </article>
+    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive'], true) ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
