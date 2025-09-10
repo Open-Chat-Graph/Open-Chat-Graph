@@ -14,7 +14,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 <body class="top-page">
     <?php if ($enableAdsense): ?>
         <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle'], true) ?>
     <?php endif ?>
 
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
