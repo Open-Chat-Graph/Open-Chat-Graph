@@ -73,7 +73,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           </div>
         </div>
         <?php if ($oc['url']) : ?>
-          <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link">
+          <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="oc-jump-line-button openchat_link" style="max-width: 100%;">
             <div class="oc-jump-line-button-content">
               <?php if ($oc['join_method_type'] !== 0) : ?>
                 <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg"
