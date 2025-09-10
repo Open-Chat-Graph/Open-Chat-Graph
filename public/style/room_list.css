@@ -488,6 +488,20 @@
   margin: 17px 1.5rem 17px 30px;
 }
 
+@media screen and (min-width: 768px) {
+  .top-ranking:not(.not-rank) .openchat-item {
+    margin: 13px 3rem 13px 30px;
+  }
+
+  .top-ranking.not-rank .openchat-item {
+    margin: 13px 3rem 13px 0;
+  }
+
+  .recommend-ranking-section .top-ranking:not(.not-rank) .openchat-item {
+    margin: 17px 3rem 17px 30px;
+  }
+}
+
 .recent-comment-list .openchat-item {
   min-height: 40px;
   margin: 0;
