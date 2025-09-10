@@ -19,10 +19,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
-        <h2 class="oc-jump-main-title">⚠️参加前にお読みください</h2>
-        <span class="oc-jump-instruction">以下の詳細をご確認の上、最後までスクロールした場所にある「LINEで開く」ボタンから参加してください。</span>
-        <hr class="hr-bottom">
-        <h3 class="oc-jump-section-title">参加するオープンチャットの確認</h3>
+        <h2 class="oc-jump-main-title">⚠️参加前の確認</h2>
         <span class="oc-jump-instruction">以下の説明文をご確認ください。</span>
         <div class="oc-jump-image-wrapper">
           <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;"
@@ -47,7 +44,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         </div>
       </section>
       <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide'], true) ?>
-      <hr class="hr-top" style="margin-bottom: 8px;">
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
