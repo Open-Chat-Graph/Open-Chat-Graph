@@ -27,7 +27,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <?php if ($enableAdsense): ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle'], true) ?>
-    <hr class="hr-top" style="margin-bottom: 4px; border: none;">
   <?php endif ?>
 
   <?php viewComponent('site_header') ?>

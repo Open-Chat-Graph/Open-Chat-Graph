@@ -16,7 +16,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   <?php if ($enableAdsense): ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
-    <hr class="hr-top" style="margin-bottom: 4px;">
   <?php endif ?>
 
   <div class="unset openchat body" style="overflow: hidden;">
@@ -203,7 +202,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </section>
     </article>
 
-    <hr class="hr-top" style="margin-bottom: 8px;">
     <?php if ($enableAdsense): ?>
       <?php GAd::output(GAd::AD_SLOTS['ocTopWide2'], true) ?>
     <?php endif ?>
