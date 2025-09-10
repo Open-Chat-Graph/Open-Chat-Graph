@@ -41,7 +41,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           </div>
         </div>
       </section>
-      <?php GAd::output(GAd::AD_SLOTS['siteTopWide'], true) ?>
+      <?php GAd::output(GAd::AD_SLOTS['siteSeparatorWide'], true) ?>
       <hr class="hr-top" style="margin-bottom: 8px;">
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
