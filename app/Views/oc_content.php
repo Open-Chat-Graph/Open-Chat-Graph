@@ -204,6 +204,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     </article>
 
     <hr class="hr-top" style="margin-bottom: 8px;">
+    <?php if ($enableAdsense): ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocTopWide2'], true) ?>
+    <?php endif ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
       <aside class="recommend-list-aside" id="recommend-list-aside1">
@@ -243,6 +246,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <?php endif ?>
         </aside>
       </section>
+    <?php endif ?>
+    <?php if ($enableAdsense): ?>
+      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
     <?php endif ?>
 
     <?php viewComponent('footer_inner') ?>
