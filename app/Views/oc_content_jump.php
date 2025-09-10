@@ -8,6 +8,11 @@ $_css[] = 'oc-jump';
 viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
+  <style>
+    .responsive-google-parent {
+      padding: 0;
+    }
+  </style>
   <?php viewComponent('site_header') ?>
   <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
   <?php GAd::output(GAd::AD_SLOTS['siteTopRectangle'], true) ?>
