@@ -24,7 +24,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             </div>
         <?php endif ?>
 
-        <div style="padding: 0 1rem; margin-bottom: 2rem;">
+        <div style="padding: 0 1rem; margin-bottom: 1rem;">
             <div style="margin: 1rem 0;">
                 <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
                 <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
@@ -48,27 +48,29 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
-        <div class="modify-top-padding" style="margin-bottom: 2rem; margin-top: 2rem;">
+        <hr class="hr-top" style="margin-bottom: 8px;">
+        <div class="modify-top-padding" style="margin-bottom: 0rem;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php if ($dto->recentCommentList): ?>
             <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
         <?php endif ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
-        <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
 
         <?php viewComponent('footer_inner') ?>

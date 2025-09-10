@@ -615,7 +615,7 @@ body::before {
 }
 
 .responsive-google-parent {
-  padding: 24px 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
