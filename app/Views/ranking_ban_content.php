@@ -83,7 +83,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
     </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
-    <main style="max-width: 980px; padding: 0 1rem; overflow: hidden;">
+    <main style="max-width: 812px; padding: 0 1rem; overflow: hidden;">
         <header class="openchat-list-title-area unset" style="padding-top: 1rem;">
             <div style="flex-direction: column;">
                 <h2 class="list-title">

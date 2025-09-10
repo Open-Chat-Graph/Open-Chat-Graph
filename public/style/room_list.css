@@ -280,7 +280,7 @@
 
 .openchat-item-list {
   display: block;
-  max-width: 980px;
+  max-width: 812px;
   margin: 0 auto;
 }
 
@@ -1502,14 +1502,14 @@
   }
 
   .openchat-item {
-    zoom: 125%;
+    zoom: 115%;
   }
 
   .tag-list {
-    zoom: 120%;
+    zoom: 110%;
   }
 
   .openchat-list-date.ranking-url {
-    zoom: 120%;
+    zoom: 110%;
   }
 }

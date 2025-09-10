@@ -27,7 +27,7 @@ li {
 .ranking-page-main {
   display: block;
   font-family: var(--font-family);
-  max-width: 980px;
+  max-width: 812px;
 }
 
 .ranking-page-main .talkroom_banner_img_figure {
@@ -527,11 +527,11 @@ section aside:hover {
   .recommend-header-desc.desc-bottom,
   .list-aside.recommend-ranking-bottom,
   .recommend-header-wrapper {
-    zoom: 120%;
+    zoom: 110%;
   }
 
   .recommend-ranking-section-header {
     margin: 8px 0;
-    zoom: 140%;
+    zoom: 110%;
   }
 }

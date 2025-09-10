@@ -3,7 +3,7 @@ html {
 }
 
 .css-1rn22tq {
-  max-width: 980px !important;
+  max-width: 812px !important;
 }
 
 .OpenChatListItem-outer {
@@ -36,7 +36,7 @@ html {
   all: unset;
   display: block;
   line-height: 1.5;
-  max-width: 980px;
+  max-width: 812px;
 }
 
 .openchat-item {
@@ -203,6 +203,6 @@ html {
 
 @media screen and (min-width: 768px) {
   .OpenChatListItem-outer {
-    zoom: 120%;
+    zoom: 110%;
   }
 }

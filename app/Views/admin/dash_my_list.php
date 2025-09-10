@@ -12,7 +12,7 @@
 </head>
 
 <body style="padding: 0;">
-    <main style="max-width: 980px;">
+    <main style="max-width: 812px;">
         <?php viewComponent('site_header') ?>
         <div style="margin-top: 5rem;">
             <p>ユーザー数: <?php echo count($result) ?></p>

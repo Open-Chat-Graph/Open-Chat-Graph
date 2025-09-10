@@ -8,8 +8,8 @@
   --secondary: #e3f6f5;
   --tertiary: #bae8e8;
   --headline: #111;
-  --width: 980px;
-  --max-width: 980px;
+  --width: 812px;
+  --max-width: 812px;
   --font-family: -apple-system, system-ui, blinkmacsystemfont, Helvetica Neue,
     helvetica, Hiragino Sans, arial, sans-serif;
 }
@@ -622,7 +622,7 @@ body::before {
 .openchat-item-list .google-auto-placed {
   margin: 0 -1rem;
   width: 100vw !important;
-  max-width: 980px;
+  max-width: 812px;
 }
 
 @media screen and (min-width: 512px) {

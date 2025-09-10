@@ -15,7 +15,7 @@ html {
   display: block;
   padding-bottom: 0;
   font-family: var(--font-family);
-  max-width: 980px;
+  max-width: 812px;
 }
 
 .openchat-header {
@@ -32,6 +32,8 @@ html {
   margin: 0;
   padding-top: 1rem;
   white-space: nowrap;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .comment-section {
@@ -417,6 +419,7 @@ html {
   line-height: 1;
   gap: 6px;
   flex-direction: column;
+  max-width: 250px;
 }
 
 .openchat_link .text {
@@ -737,7 +740,7 @@ html {
   #comment-root,
   .footer-link-box-outer,
   .title-bar-oc-name-wrapper {
-    zoom: 120%;
+    zoom: 110%;
   }
 
   .talkroom_description_box.close #talkroom-description-btn {

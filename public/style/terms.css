@@ -1,11 +1,11 @@
 main {
   color: #616161;
-  max-width: 980px;
+  max-width: 812px;
   margin: auto;
 }
 
 .footer-elem-outer {
-  max-width: 980px;
+  max-width: 812px;
   margin: auto;
 }
 
@@ -35,7 +35,7 @@ h1 {
 .terms {
   font-family: var(--font-family);
   padding: 1rem;
-  max-width: 980px;
+  max-width: 812px;
   margin: auto;
 }
 

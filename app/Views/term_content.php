@@ -41,7 +41,7 @@ use App\Config\AppConfig;
             margin: 0;
         }
     </style>
-    <main style="max-width: 980px;">
+    <main style="max-width: 812px;">
         <article class="terms">
             <h1>利用規約</h1>
             <p>この利用規約（以下「本規約」といいます。）は、openchat-review.me（以下「本サイト」といいます。）がこのウェブサイト上で提供するサービス（以下、「本サービス」といいます。）の利用条件を定めるものです。本サービスのユーザ（以下「利用者」といいます。）は、本規約に同意したうえで、本サービスをご利用いただきます。</p>
