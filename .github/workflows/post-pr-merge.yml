@@ -5,14 +5,32 @@ on:
     types: [closed]
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR番号'
+        required: true
+        type: string
+      pr_title:
+        description: 'PRタイトル'
+        required: true
+        type: string
+      pr_url:
+        description: 'PR URL'
+        required: true
+        type: string
+      pr_author:
+        description: 'PR作成者のGitHubユーザー名'
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   post-to-x:
-    # PRがマージされた場合のみ実行
-    if: github.event.pull_request.merged == true
+    # PRがマージされた場合のみ実行（手動実行時は常に実行）
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -70,8 +88,8 @@ jobs:
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
         TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_URL: ${{ github.event.pull_request.html_url }}
-        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+        PR_TITLE: ${{ inputs.pr_title || github.event.pull_request.title }}
+        PR_URL: ${{ inputs.pr_url || github.event.pull_request.html_url }}
+        PR_AUTHOR: ${{ inputs.pr_author || github.event.pull_request.user.login }}
       run: node post-pr-merge.js
