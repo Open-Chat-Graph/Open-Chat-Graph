@@ -7,8 +7,8 @@ namespace App\Services\Cron;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use App\Services\DailyUpdateCronService;
-use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
@@ -24,7 +24,7 @@ use App\Services\UpdateHourlyMemberRankingService;
 class SyncOpenChat
 {
     function __construct(
-        private OpenChatApiDbMerger $merger,
+        private OpenChatApiDbMergerWithParallelDownloader $merger,
         private SitemapGenerator $sitemap,
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
         private RankingPositionHourPersistenceLastHourChecker $rankingPositionHourChecker,
@@ -39,6 +39,7 @@ class SyncOpenChat
         ini_set('memory_limit', '2G');
 
         set_exception_handler(function (\Throwable $e) {
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
             AdminTool::sendDiscordNotify($e->__toString());
             addCronLog($e->__toString());
         });
@@ -151,6 +152,7 @@ class SyncOpenChat
     {
         addCronLog('Retry hourlyTask');
         AdminTool::sendDiscordNotify('Retry hourlyTask');
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
@@ -185,6 +187,7 @@ class SyncOpenChat
         }
 
         addCronLog('Retry dailyTask');
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 

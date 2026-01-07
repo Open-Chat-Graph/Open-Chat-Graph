@@ -24,11 +24,11 @@ class DB extends \Shadow\DB implements DBInterface
         try {
             return parent::execute($query, $params);
         } catch (\PDOException $e) {
-            if ($e->errorInfo[1] === 2006) {
+            if (($e->errorInfo[1] ?? null) === 2006) {
                 static::$pdo = null;
                 return parent::execute($query, $params);
             }
-            
+
             throw $e;
         }
     }

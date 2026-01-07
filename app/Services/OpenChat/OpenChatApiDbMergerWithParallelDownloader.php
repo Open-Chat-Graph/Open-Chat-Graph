@@ -26,25 +26,59 @@ class OpenChatApiDbMergerWithParallelDownloader
         private OpenChatApiDbMergerProcess $process,
         private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
     ) {}
-    function fetchOpenChatApiRankingAll()
+    function fetchOpenChatApiRankingAll(?int $batchSize = null)
     {
         $this->setKillFlagFalse();
         $this->stateRepository->cleanUpAll();
 
+        // カテゴリ配列とその逆順配列を準備
+        // 順方向配列と逆方向配列を組み合わせることで、データ量の多いカテゴリと少ないカテゴリをペアにして負荷分散
         $categoryArray = array_values(OpenChatCrawlerConfig::PARALLEL_DOWNLOADER_CATEGORY_ORDER[MimimalCmsConfig::$urlRoot]);
         $categoryReverse = array_reverse($categoryArray);
-        foreach ($categoryArray as $key => $category) {
-            $this->download([[RankingType::Ranking, $category], [RankingType::Rising, $categoryReverse[$key]]]);
-        }
 
-        $flag = false;
-        while (!$flag) {
-            sleep(10);
-            foreach ([RankingType::Ranking, RankingType::Rising] as $type)
-                foreach ($categoryReverse as $category)
-                    $this->mergeProcess($type, $category);
+        // 並列ダウンロード数を取得（例：2なら2ペア＝4カテゴリを同時実行）
+        // テスト用に引数で渡された場合はそれを使用
+        $batchSize = $batchSize ?? AppConfig::PARALLEL_DOWNLOAD_BATCH_SIZE[MimimalCmsConfig::$urlRoot];
 
-            $flag = $this->stateRepository->isCompletedAll();
+        // カテゴリインデックス（キー）をバッチサイズごとに分割
+        // 例：[0,1,2,3,4...] → [[0,1], [2,3], [4,5], ...]
+        $batchKeys = array_chunk(array_keys($categoryArray), $batchSize);
+
+        foreach ($batchKeys as $batch) {
+            // 各バッチ内のカテゴリペアを同時にダウンロード開始
+            // categoryArray[key]とcategoryReverse[key]の組み合わせで負荷分散
+            foreach ($batch as $key) {
+                $this->download([
+                    [RankingType::Ranking, $categoryArray[$key]],
+                    [RankingType::Rising, $categoryReverse[$key]]
+                ]);
+            }
+
+            // バッチ内の全ダウンロードが完了するまで待機
+            $batchComplete = false;
+            while (!$batchComplete) {
+                sleep(10);
+
+                // バッチ内のカテゴリに対してマージ処理
+                foreach ($batch as $key) {
+                    if ($this->stateRepository->isDownloaded(RankingType::Ranking, $categoryArray[$key])) {
+                        $this->mergeProcess(RankingType::Ranking, $categoryArray[$key]);
+                    }
+                    if ($this->stateRepository->isDownloaded(RankingType::Rising, $categoryReverse[$key])) {
+                        $this->mergeProcess(RankingType::Rising, $categoryReverse[$key]);
+                    }
+                }
+
+                // バッチ内の全カテゴリが完了したかチェック
+                $batchComplete = true;
+                foreach ($batch as $key) {
+                    if (!$this->stateRepository->isDownloaded(RankingType::Ranking, $categoryArray[$key]) ||
+                        !$this->stateRepository->isDownloaded(RankingType::Rising, $categoryReverse[$key])) {
+                        $batchComplete = false;
+                        break;
+                    }
+                }
+            }
         }
 
         OpenChatDataForUpdaterWithCacheRepository::clearCache();
@@ -67,8 +101,6 @@ class OpenChatApiDbMergerWithParallelDownloader
 
     function mergeProcess(RankingType $type, int $category)
     {
-        if (!$this->stateRepository->isDownloaded($type, $category)) return;
-
         $this->checkKillFlag();
 
         $dtos = match ($type) {

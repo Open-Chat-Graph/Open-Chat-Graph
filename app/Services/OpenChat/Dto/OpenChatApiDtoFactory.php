@@ -13,7 +13,7 @@ class OpenChatApiDtoFactory
      * 
      * @return array `[string]` Errors 
      */
-    function validateAndMapToOpenChatDto(array $apiData, \Closure $callback = null): array
+    function validateAndMapToOpenChatDto(array $apiData, ?\Closure $callback = null): array
     {
         $errors = [];
 
