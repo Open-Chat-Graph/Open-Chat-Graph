@@ -157,8 +157,6 @@ class AppConfig
         'RankingBanTableUpdater' => 10,
     ];
 
-
-
     const CRON_START_MINUTE = [
         '' =>    30,
         '/tw' => 35,
@@ -169,6 +167,21 @@ class AppConfig
         '' =>    23,
         '/tw' => 0,
         '/th' => 1,
+    ];
+
+    /**
+     * 並列ダウンロード数の設定
+     * 各言語ごとに同時にダウンロードするカテゴリのペア数（Ranking + Rising = 1ペア）
+     *
+     * 例: 2 = 2カテゴリのRanking + 2カテゴリのRising = 合計4つを同時実行
+     *
+     * 値が大きいほど処理が速くなるが、429エラー（Too Many Requests）のリスクが高まる
+     * 台湾版はデータ量が多いため、並列数を抑えて429エラーを防ぐ
+     */
+    const PARALLEL_DOWNLOAD_BATCH_SIZE = [
+        '' =>    1,  // 日本版: 3ペア（6同時）
+        '/tw' => 1,  // 台湾版: 2ペア（4同時）- データ量が多いため控えめ
+        '/th' => 1,  // タイ版: 3ペア（6同時）
     ];
 
     const DATE_TIME_ZONE = [
