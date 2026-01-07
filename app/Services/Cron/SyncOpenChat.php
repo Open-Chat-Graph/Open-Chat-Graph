@@ -162,11 +162,11 @@ class SyncOpenChat
 
     private function dailyTask()
     {
+        $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
 
-        $this->state->setTrue(StateType::isDailyTaskActive);
         set_time_limit(5400);
-
+        
         /** 
          * @var DailyUpdateCronService $updater
          */
