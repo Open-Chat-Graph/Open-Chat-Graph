@@ -1,0 +1,80 @@
+name: Post PR Merge to X
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  post-to-x:
+    # PRがマージされた場合のみ実行
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install twitter-api-v2
+      run: npm install twitter-api-v2
+
+    - name: Create post script
+      run: |
+        cat > post-pr-merge.js << 'EOF'
+        import { TwitterApi } from 'twitter-api-v2';
+
+        const client = new TwitterApi({
+          appKey: process.env.TWITTER_API_KEY,
+          appSecret: process.env.TWITTER_API_SECRET,
+          accessToken: process.env.TWITTER_ACCESS_TOKEN,
+          accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+        });
+
+        async function postTweet() {
+          try {
+            const prNumber = process.env.PR_NUMBER;
+            const prTitle = process.env.PR_TITLE;
+            const prUrl = process.env.PR_URL;
+            const prAuthor = process.env.PR_AUTHOR;
+
+            const message = `✨ プルリクエストがマージされました
+
+#${prNumber}: ${prTitle}
+By @${prAuthor}
+
+${prUrl}
+
+#オプチャグラフ #OpenChatGraph`;
+
+            const tweet = await client.v2.tweet(message);
+            console.log(`Tweet posted: ${tweet.data.id}`);
+
+          } catch (error) {
+            console.error('Error:', error);
+            process.exit(1);
+          }
+        }
+
+        postTweet();
+        EOF
+
+    - name: Post to X (Twitter)
+      env:
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      run: node post-pr-merge.js
