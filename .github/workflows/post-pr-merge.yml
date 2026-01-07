@@ -46,17 +46,14 @@ jobs:
             const prUrl = process.env.PR_URL;
             const prAuthor = process.env.PR_AUTHOR;
 
-            const message = `✨ プルリクエストがマージされました
-
-#${prNumber}: ${prTitle}
-By @${prAuthor}
-
-${prUrl}
-
-#オプチャグラフ #OpenChatGraph`;
+            const message = '✨ プルリクエストがマージされました\n\n' +
+              '#' + prNumber + ': ' + prTitle + '\n' +
+              'By @' + prAuthor + '\n\n' +
+              prUrl + '\n\n' +
+              '#オプチャグラフ #OpenChatGraph';
 
             const tweet = await client.v2.tweet(message);
-            console.log(`Tweet posted: ${tweet.data.id}`);
+            console.log('Tweet posted: ' + tweet.data.id);
 
           } catch (error) {
             console.error('Error:', error);
