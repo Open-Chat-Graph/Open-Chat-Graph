@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
 use App\Services\OpenChat\Crawler\OpenChatApiRisingDownloaderProcess;
