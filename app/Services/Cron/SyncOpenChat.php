@@ -170,10 +170,16 @@ class SyncOpenChat
         $updater = app(DailyUpdateCronService::class);
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
+        // DailyUpdateCronServiceで取得したフィルターキャッシュデータを取得
+        // saveFiltersCacheAfterDailyTaskで再利用するため（重複クエリ防止）
+        $cachedFilterIds = $updater->getCachedMemberChangeIdArray();
+
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
-            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask(), 'saveFiltersCacheAfterDailyTask'],
+            // DailyUpdateCronServiceで取得したデータを渡してクエリの重複実行を防ぐ
+            // nullを渡すと再度クエリを実行する（データ鮮度優先）
+            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'saveFiltersCacheAfterDailyTask'],
         );
     }
 
