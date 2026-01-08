@@ -178,10 +178,10 @@ class AppConfig
      * 値が大きいほど処理が速くなるが、429エラー（Too Many Requests）のリスクが高まる
      * 台湾版はデータ量が多いため、並列数を抑えて429エラーを防ぐ
      */
-    const PARALLEL_DOWNLOAD_BATCH_SIZE = [
-        '' =>    2,  // 日本版: 3ペア（6同時）
-        '/tw' => 2,  // 台湾版: 2ペア（4同時）- データ量が多いため控えめ
-        '/th' => 2,  // タイ版: 3ペア（6同時）
+    static array $parallelDownloadBatchSize = [
+        '' =>    1,  // 日本版: 3ペア（6同時）
+        '/tw' => 1,  // 台湾版: 2ペア（4同時）- データ量が多いため控えめ
+        '/th' => 1,  // タイ版: 3ペア（6同時）
     ];
 
     /**
@@ -191,7 +191,7 @@ class AppConfig
      * 値が大きいほど処理が速くなるが、429エラー（Too Many Requests）のリスクが高まる
      * 台湾版はデータ量が多いため、並列数を抑えて429エラーを防ぐ
      */
-    const DAILY_CRAWLING_PARALLEL_PROCESS_COUNT = [
+    static array $dailyCrawlingParallelProcessCount = [
         '' =>    2,  // 日本版: 3プロセス
         '/tw' => 2,  // 台湾版: 2プロセス（データ量が多いため控えめ）
         '/th' => 2,  // タイ版: 3プロセス

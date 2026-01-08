@@ -41,7 +41,7 @@ class OpenChatDailyCrawlingParallel
         }
 
         // 並列数を取得
-        $parallelCount = AppConfig::DAILY_CRAWLING_PARALLEL_PROCESS_COUNT[MimimalCmsConfig::$urlRoot] ?? 3;
+        $parallelCount = AppConfig::$dailyCrawlingParallelProcessCount[MimimalCmsConfig::$urlRoot] ?? 3;
 
         // IDを分割
         $chunks = array_chunk($openChatIdArray, (int)ceil(count($openChatIdArray) / $parallelCount));

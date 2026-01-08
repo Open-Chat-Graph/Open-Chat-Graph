@@ -38,7 +38,7 @@ class OpenChatApiDbMergerWithParallelDownloader
 
         // 並列ダウンロード数を取得（例：2なら2ペア＝4カテゴリを同時実行）
         // テスト用に引数で渡された場合はそれを使用
-        $batchSize = $batchSize ?? AppConfig::PARALLEL_DOWNLOAD_BATCH_SIZE[MimimalCmsConfig::$urlRoot];
+        $batchSize = $batchSize ?? AppConfig::$parallelDownloadBatchSize[MimimalCmsConfig::$urlRoot];
 
         // カテゴリインデックス（キー）をバッチサイズごとに分割
         // 例：[0,1,2,3,4...] → [[0,1], [2,3], [4,5], ...]
