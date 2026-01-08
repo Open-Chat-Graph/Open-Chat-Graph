@@ -113,10 +113,10 @@ class SyncOpenChat
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [function () {
-                $saveNextFiltersCache  = !$this->state->getBool(StateType::isDailyTaskActive);
-                if (!$saveNextFiltersCache) {
-                    addCronLog('Skip saveNextFiltersCache because dailyTask is active');
-                }
+                // フィルターキャッシュの更新判定
+                // hourlyTask: キャッシュを読むのみ、「新規部屋（レコード8以下）」を毎時取得してマージ（約5秒）
+                // dailyTask: dailyTask内で別途キャッシュ保存するため、ここでは保存しない
+                $saveNextFiltersCache = false;
 
                 $this->hourlyMemberRanking->update($saveNextFiltersCache);
             }, 'hourlyMemberRankingUpdate'],
@@ -163,7 +163,7 @@ class SyncOpenChat
 
         set_time_limit(5400);
 
-        /** 
+        /**
          * @var DailyUpdateCronService $updater
          */
         $updater = app(DailyUpdateCronService::class);
@@ -172,6 +172,7 @@ class SyncOpenChat
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask(), 'saveFiltersCacheAfterDailyTask'],
         );
     }
 

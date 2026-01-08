@@ -217,6 +217,7 @@ class AppConfig
         'openChatRankingPositionDir' =>   '/ranking_position/ranking',
         'openChatRisingPositionDir' =>    '/ranking_position/rising',
         'openChatHourFilterId' =>         '/ranking_position/filter.dat',
+        'openChatHourFilterIdDate' =>     '/ranking_position/filter_date.dat',
         'dailyCronUpdatedAtDate' =>       '/static_data_top/daily_updated_at.dat',
         'hourlyCronUpdatedAtDatetime' =>  '/static_data_top/hourly_updated_at.dat',
         'hourlyRealUpdatedAtDatetime' =>  '/static_data_top/real_updated_at.dat',

@@ -34,17 +34,67 @@ class UpdateHourlyMemberRankingService
         addVerboseCronLog(__METHOD__ . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
 
         $this->updateStaticData($time);
-        
+
         if ($saveNextFiltersCache)
             $this->saveNextFiltersCache($time);
     }
 
+    /**
+     * dailyTask後にフィルターキャッシュを保存する
+     *
+     * - 日付管理により、同じ日に複数回実行されても1回だけデータ取得
+     * - getMemberChangeWithinLastWeekCacheArray()は全statisticsテーブルをスキャンする重い処理のため、1日1回に制限
+     * - dailyTask実行時に既にこのデータを取得しているが、日付チェックによりスキップされるため実質的に重複実行は発生しない
+     */
+    function saveFiltersCacheAfterDailyTask(): void
+    {
+        $time = $this->rankingPositionHourRepository->getLastHour();
+        if (!$time) return;
+
+        $date = (new \DateTime($time))->format('Y-m-d');
+
+        // キャッシュの日付ファイルをチェック
+        $cacheDateFilePath = AppConfig::getStorageFilePath('openChatHourFilterIdDate');
+        $cachedDate = @file_get_contents($cacheDateFilePath);
+
+        // すでに今日のキャッシュがある場合はスキップ
+        // dailyTaskが同じ日に複数回実行されても、データ取得は1回のみ
+        if ($cachedDate === $date) {
+            addCronLog(__METHOD__ . ': Skip - Cache already updated today');
+            return;
+        }
+
+        // キャッシュを更新（変動がある部屋 + 新規部屋を含む全データ）
+        addVerboseCronLog(__METHOD__ . ' Start ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+        $filterIds = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($date);
+
+        // フィルターIDを保存
+        saveSerializedFile(
+            AppConfig::getStorageFilePath('openChatHourFilterId'),
+            $filterIds
+        );
+
+        // 日付を保存
+        safeFileRewrite($cacheDateFilePath, $date);
+
+        addVerboseCronLog(__METHOD__ . ' Done ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+    }
+
     private function getCachedFilters(string $time)
     {
-        $filters = getUnserializedFile(AppConfig::getStorageFilePath('openChatHourFilterId'));
-        return $filters
-            ? $filters
-            : $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
+        // キャッシュから「変動がある部屋」を取得
+        $cachedFilters = getUnserializedFile(AppConfig::getStorageFilePath('openChatHourFilterId'));
+
+        // キャッシュがない場合は全て取得
+        if (!$cachedFilters) {
+            return $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d'));
+        }
+
+        // 「レコード8以下の新規部屋」を毎回取得してマージ（約5秒）
+        // これにより新規ルームのリアルタイム性を確保
+        $newRooms = $this->statisticsRepository->getNewRoomsWithLessThan8Records();
+
+        return array_unique(array_merge($cachedFilters, $newRooms));
     }
 
     private function saveNextFiltersCache(string $time)
