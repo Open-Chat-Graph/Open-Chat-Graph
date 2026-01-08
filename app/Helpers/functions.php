@@ -659,7 +659,7 @@ function addCronLog(string|array $log)
 
     foreach ($log as $string) {
         error_log(
-            date('Y-m-d H:i:s') . ' ' . $string . ' [' . $processTag . ']' . "\n",
+            date('Y-m-d H:i:s') . ' [' . $processTag . '] ' . $string . "\n",
             3,
             AppConfig::getStorageFilePath('addCronLogDest')
         );
