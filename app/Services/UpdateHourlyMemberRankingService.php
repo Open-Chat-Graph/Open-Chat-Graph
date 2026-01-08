@@ -72,7 +72,7 @@ class UpdateHourlyMemberRankingService
 
         // キャッシュの日付ファイルをチェック
         $cacheDateFilePath = AppConfig::getStorageFilePath('openChatHourFilterIdDate');
-        $cachedDate = @file_get_contents($cacheDateFilePath);
+        $cachedDate = file_exists($cacheDateFilePath) ? file_get_contents($cacheDateFilePath) : false;
 
         // すでに今日のキャッシュがある場合はスキップ
         // dailyTaskが同じ日に複数回実行されても、データ取得は1回のみ
