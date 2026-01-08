@@ -10,6 +10,7 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\OpenChat\OpenChatDailyCrawlingParallel;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
@@ -183,6 +184,7 @@ class SyncOpenChat
         addCronLog('Retry dailyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
+        OpenChatDailyCrawlingParallel::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
