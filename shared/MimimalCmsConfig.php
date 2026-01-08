@@ -99,9 +99,9 @@ class MimimalCmsConfig
     public static array $httpErrors = [
         \Shared\Exceptions\NotFoundException::class =>         ['httpCode' => 404, 'log' => false, 'httpStatusMessage' => 'Not Found'],
         \Shared\Exceptions\MethodNotAllowedException::class => ['httpCode' => 405, 'log' => false, 'httpStatusMessage' => 'Method Not Allowed'],
-        \Shared\Exceptions\BadRequestException::class =>       ['httpCode' => 400, 'log' => true,  'httpStatusMessage' => 'Bad Request'],
-        \Shared\Exceptions\ValidationException::class =>       ['httpCode' => 400, 'log' => true,  'httpStatusMessage' => 'Bad Request'],
-        \Shared\Exceptions\InvalidInputException::class =>     ['httpCode' => 400, 'log' => true,  'httpStatusMessage' => 'Bad Request'],
+        \Shared\Exceptions\BadRequestException::class =>       ['httpCode' => 400, 'log' => false,  'httpStatusMessage' => 'Bad Request'],
+        \Shared\Exceptions\ValidationException::class =>       ['httpCode' => 400, 'log' => false,  'httpStatusMessage' => 'Bad Request'],
+        \Shared\Exceptions\InvalidInputException::class =>     ['httpCode' => 400, 'log' => false,  'httpStatusMessage' => 'Bad Request'],
         \Shared\Exceptions\UploadException::class =>           ['httpCode' => 400, 'log' => true,  'httpStatusMessage' => 'Bad Request'],
         \Shared\Exceptions\SessionTimeoutException::class =>   ['httpCode' => 401, 'log' => true,  'httpStatusMessage' => 'Unauthorized'],
         \Shared\Exceptions\UnauthorizedException::class =>     ['httpCode' => 401, 'log' => true,  'httpStatusMessage' => 'Unauthorized'],

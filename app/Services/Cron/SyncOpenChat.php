@@ -12,7 +12,6 @@ use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
-use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastHourChecker;
@@ -163,7 +162,7 @@ class SyncOpenChat
         $this->hourlyTask();
 
         set_time_limit(5400);
-        
+
         /** 
          * @var DailyUpdateCronService $updater
          */
@@ -178,10 +177,7 @@ class SyncOpenChat
 
     private function retryDailyTask()
     {
-        // 6:30以降にリトライした場合は通知
-        if ($this->isAfterRetryNotificationTime()) {
-            AdminTool::sendDiscordNotify('Retrying dailyTask');
-        }
+        AdminTool::sendDiscordNotify('Retrying dailyTask');
 
         addCronLog('Retry dailyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
@@ -191,22 +187,7 @@ class SyncOpenChat
         $this->dailyTask();
         addCronLog('Done Retry dailyTask');
 
-        if ($this->isAfterRetryNotificationTime()) {
-            AdminTool::sendDiscordNotify('Done retrying dailyTask');
-        }
-    }
-
-    function isAfterRetryNotificationTime(): bool
-    {
-        $currentTime = OpenChatServicesUtility::getModifiedCronTime('now');
-
-        return !isDailyUpdateTime()
-            && !isDailyUpdateTime($currentTime->modify('-1 hour'), $currentTime->modify('-1 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-2 hour'), $currentTime->modify('-2 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-3 hour'), $currentTime->modify('-3 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-4 hour'), $currentTime->modify('-4 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-5 hour'), $currentTime->modify('-5 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-6 hour'), $currentTime->modify('-6 hour'));
+        AdminTool::sendDiscordNotify('Done retrying dailyTask');
     }
 
     /**
