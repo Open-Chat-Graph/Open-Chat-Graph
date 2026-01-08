@@ -312,6 +312,38 @@ getMemberChangeWithinLastWeekCacheArray()が2回実行される
      3. Code location: [`DailyUpdateCronService::getTargetOpenChatIdArray()`](link)
      4. Implementation details: "クエリ結果をプロパティに保存し、2回目で再利用"
 
+6. **Separate problem and solution clearly**
+   - **Problem section**: Link to code BEFORE the fix (main branch or earlier commit)
+   - **Solution section**: Link to code AFTER the fix (current commit)
+   - **Why**: Allows reviewers to compare before/after and understand the change
+   - Example:
+     - ❌ Problem section linking to fixed code: "Problem: duplicate queries ([fixed code link])"
+     - ✅ Problem section linking to old code: "Problem: duplicate queries ([old code link])"
+     - ✅ Solution section linking to new code: "Solution: reuse query results ([new code link])"
+
+7. **Explain actual situation from logs**
+   - **Add timeline section** after problem overview
+   - **Show real timestamps** from cron logs to visualize the problem
+   - **Explain for third parties** who are not familiar with the codebase
+   - **Include context**: What the system does, what data it processes, why it matters
+   - Example structure:
+     ```markdown
+     ### ログから見る実際の状況
+
+     #### 日次データ更新処理のタイムライン（典型的な実行例）
+
+     [Context explanation for third parties]
+
+     ```
+     23:30  【開始】日次データ更新処理
+     23:35  ├─ 統計データ抽出（1回目）
+            │  └─ [What this does and why]
+     ...
+     ```
+
+     **問題**: [Specific problem identified from logs]
+     ```
+
 ### Example PR Structure
 
 ```markdown
