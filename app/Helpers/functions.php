@@ -337,6 +337,45 @@ function isDailyUpdateTime(
     return false;
 }
 
+/**
+ * Daily Cron開始時刻からの経過時間を計算
+ *
+ * @param string|null $urlRoot 言語（null = 現在の言語）
+ * @param DateTime|null $currentTime 現在時刻（null = 現在時刻）
+ * @return float 経過時間（時間単位）
+ */
+function getDailyCronElapsedHours(?string $urlRoot = null, ?DateTime $currentTime = null): float
+{
+    $urlRoot = $urlRoot ?? MimimalCmsConfig::$urlRoot;
+    $currentTime = $currentTime ?? new DateTime();
+
+    $cronStartTime = (new DateTime())->setTime(
+        AppConfig::CRON_MERGER_HOUR_RANGE_START[$urlRoot],
+        AppConfig::CRON_START_MINUTE[$urlRoot],
+        0
+    );
+
+    // cronが前日開始の場合
+    if ($cronStartTime > $currentTime) {
+        $cronStartTime->modify('-1 day');
+    }
+
+    return ($currentTime->getTimestamp() - $cronStartTime->getTimestamp()) / 3600;
+}
+
+/**
+ * Daily Cronが指定時間以内に開始されたかチェック
+ *
+ * @param float $withinHours 開始から何時間以内か
+ * @param string|null $urlRoot 言語（null = 現在の言語）
+ * @param DateTime|null $currentTime 現在時刻（null = 現在時刻）
+ * @return bool 指定時間以内ならtrue
+ */
+function isDailyCronWithinHours(float $withinHours, ?string $urlRoot = null, ?DateTime $currentTime = null): bool
+{
+    return getDailyCronElapsedHours($urlRoot, $currentTime) < $withinHours;
+}
+
 function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): string
 {
     $retryCount = 0;
