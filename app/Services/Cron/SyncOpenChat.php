@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
+use App\Config\AppConfig;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
@@ -25,7 +26,7 @@ use App\Services\UpdateHourlyMemberRankingService;
 class SyncOpenChat
 {
     function __construct(
-        private OpenChatApiDbMerger $merger,
+        private OpenChatApiDbMergerWithParallelDownloader $merger,
         private SitemapGenerator $sitemap,
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
         private RankingPositionHourPersistenceLastHourChecker $rankingPositionHourChecker,
@@ -41,8 +42,24 @@ class SyncOpenChat
 
         set_exception_handler(function (\Throwable $e) {
             OpenChatApiDbMerger::setKillFlagTrue();
-            AdminTool::sendDiscordNotify($e->__toString());
-            addCronLog($e->__toString());
+            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
+            OpenChatDailyCrawling::setKillFlagTrue();
+            OpenChatDailyCrawlingParallel::setKillFlagTrue();
+
+            // killフラグによる強制終了の場合、開始から10時間以内ならDiscord通知しない
+            $shouldNotify = true;
+            if ($e instanceof \App\Exceptions\ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
+                if (isDailyCronWithinHours(10)) {
+                    $shouldNotify = false;
+                    $elapsedHours = getDailyCronElapsedHours();
+                    addCronLog("killフラグによる強制終了（開始から" . round($elapsedHours, 2) . "時間経過）Discord通知スキップ");
+                }
+            }
+
+            if ($shouldNotify) {
+                AdminTool::sendDiscordNotify($e->__toString());
+                addCronLog($e->__toString());
+            }
         });
     }
 
@@ -67,7 +84,6 @@ class SyncOpenChat
     private function init()
     {
         checkLineSiteRobots();
-
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
             addCronLog('SyncOpenChat: hourlyTask is active');
         }
