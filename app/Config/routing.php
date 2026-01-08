@@ -28,6 +28,7 @@ use App\Controllers\Pages\RecentOpenChatPageController;
 use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
+use App\Controllers\Pages\LogController;
 use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
@@ -313,6 +314,23 @@ Route::path('admin/cookie')
         }
         return redirect();
     });
+
+// Admin Log Viewer
+Route::path('admin/log', [LogController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path('admin/log/exception', [LogController::class, 'exceptionLog'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetail'])
+    ->matchNum('index', min: 0)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
+    ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
     'admin-api@post',
