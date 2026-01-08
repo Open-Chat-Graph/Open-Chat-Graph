@@ -15,20 +15,14 @@
 
 declare(strict_types=1);
 
-use App\Config\AppConfig;
-use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
-use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Models\SQLite\SQLiteStatistics;
-use App\Services\UpdateHourlyMemberRankingService;
 use PHPUnit\Framework\TestCase;
 
 class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
 {
-    private UpdateHourlyMemberRankingService $service;
     private string $tempDbFile;
     private string $tempCacheFile;
     private string $tempCacheDateFile;
-    private \PDO $originalPdo;
     private string $testDate;
 
     /**
@@ -36,8 +30,6 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
      */
     protected function setUp(): void
     {
-        // 元のPDOインスタンスを保存
-        $this->originalPdo = SQLiteStatistics::$pdo;
 
         // テスト用の日付
         $this->testDate = date('Y-m-d');
@@ -63,9 +55,6 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
         // 一時的なキャッシュファイルパス
         $this->tempCacheFile = sys_get_temp_dir() . '/test_filter_cache_' . uniqid() . '.dat';
         $this->tempCacheDateFile = sys_get_temp_dir() . '/test_filter_date_' . uniqid() . '.dat';
-
-        // モックリポジトリとサービスのセットアップ
-        $this->setupService();
     }
 
     /**
@@ -73,8 +62,8 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
      */
     protected function tearDown(): void
     {
-        // 元のPDOインスタンスを復元
-        SQLiteStatistics::$pdo = $this->originalPdo;
+        // PDOインスタンスをクリア
+        SQLiteStatistics::$pdo = null;
 
         // 一時ファイルを削除
         if (file_exists($this->tempDbFile)) {
@@ -128,41 +117,6 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
         foreach ($testData as $row) {
             $stmt->execute($row);
         }
-    }
-
-    /**
-     * サービスとモックのセットアップ
-     */
-    private function setupService(): void
-    {
-        // StatisticsRepositoryのモック
-        $statisticsRepo = $this->createMock(StatisticsRepositoryInterface::class);
-
-        // getMemberChangeWithinLastWeekCacheArray: dailyTask時に呼ばれる
-        // 変動がある部屋 + 新規部屋 + 最終更新が1週間以上前の部屋
-        $statisticsRepo->method('getMemberChangeWithinLastWeekCacheArray')
-            ->willReturn([1001, 1003, 1004]);
-
-        // getNewRoomsWithLessThan8Records: hourlyTask時に毎回呼ばれる
-        // レコード数が8以下の新規部屋のみ
-        $statisticsRepo->method('getNewRoomsWithLessThan8Records')
-            ->willReturn([1003]);
-
-        // RankingPositionHourRepositoryのモック
-        $rankingPosRepo = $this->createMock(RankingPositionHourRepositoryInterface::class);
-        $rankingPosRepo->method('getLastHour')
-            ->willReturn($this->testDate . ' 12:00:00');
-
-        // UpdateHourlyMemberRankingServiceを手動で構築
-        // AppConfigのgetStorageFilePathをオーバーライドできないため、
-        // 実際のメソッドをテストする代わりに、キャッシュファイルパスを直接操作
-        $this->service = new UpdateHourlyMemberRankingService(
-            $this->createMock(\App\Services\StaticData\StaticDataGenerator::class),
-            $this->createMock(\App\Services\Recommend\StaticData\RecommendStaticDataGenerator::class),
-            $this->createMock(\App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface::class),
-            $rankingPosRepo,
-            $statisticsRepo
-        );
     }
 
     /**
@@ -364,60 +318,4 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
         $this->assertSame([1001, 1003, 1004], $allFilterIds);
     }
 
-    /**
-     * テスト6: dailyTask時のgetMemberChangeWithinLastWeekCacheArray重複実行防止
-     *
-     * 重要: dailyTaskでは以下の2箇所でgetMemberChangeWithinLastWeekCacheArrayが呼ばれる可能性:
-     * 1. DailyUpdateCronService::getTargetOpenChatIdArray() 内
-     * 2. UpdateHourlyMemberRankingService::saveFiltersCacheAfterDailyTask() 内
-     *
-     * このクエリは重い（全statisticsテーブルスキャン）ため、1回の実行で済ませる必要がある。
-     *
-     * 正しい実装パターン:
-     * - DailyUpdateCronServiceで取得したデータをsaveFiltersCacheAfterDailyTaskに渡す
-     * - saveFiltersCacheAfterDailyTaskは渡されたデータを使い、クエリを再実行しない
-     */
-    public function testAvoidDuplicateQueryInDailyTask(): void
-    {
-        echo "\n=== dailyTask時の重複クエリ防止テスト ===\n";
-
-        // シミュレーション: DailyUpdateCronServiceでの1回目の実行
-        echo "\n1. DailyUpdateCronService::getTargetOpenChatIdArray()内で実行\n";
-        $filterIdsFromDailyUpdate = [1001, 1003, 1004];
-        echo "   取得データ: [" . implode(', ', $filterIdsFromDailyUpdate) . "]\n";
-        echo "   → このデータを保存しておく\n";
-
-        // 正しいパターン: DailyUpdateCronServiceから取得したデータを使う
-        echo "\n2. saveFiltersCacheAfterDailyTask()でキャッシュ保存\n";
-        echo "   引数として渡されたデータを使用: [" . implode(', ', $filterIdsFromDailyUpdate) . "]\n";
-        echo "   → クエリを再実行せず、渡されたデータをそのまま保存\n";
-
-        // キャッシュ保存（データを再利用）
-        saveSerializedFile($this->tempCacheFile, $filterIdsFromDailyUpdate);
-        safeFileRewrite($this->tempCacheDateFile, $this->testDate);
-
-        // 保存されたキャッシュを検証
-        $savedCache = getUnserializedFile($this->tempCacheFile);
-        $this->assertSame($filterIdsFromDailyUpdate, $savedCache);
-
-        echo "\n結果: クエリ実行回数 = 1回（重複なし）\n";
-        echo "   ✓ DailyUpdateCronServiceで取得したデータを再利用\n";
-        echo "   ✓ saveFiltersCacheAfterDailyTaskではクエリを実行しない\n";
-
-        // 間違ったパターン（アンチパターン）のシミュレーション
-        echo "\n\n=== アンチパターン: データを再利用しない場合 ===\n";
-        echo "1. DailyUpdateCronService::getTargetOpenChatIdArray()内で実行\n";
-        echo "   getMemberChangeWithinLastWeekCacheArray() → 1回目のクエリ実行\n";
-        echo "   取得データ: [1001, 1003, 1004]\n";
-        echo "\n2. saveFiltersCacheAfterDailyTask()でキャッシュ保存\n";
-        echo "   getMemberChangeWithinLastWeekCacheArray() → 2回目のクエリ実行（無駄）\n";
-        echo "   取得データ: [1001, 1003, 1004]\n";
-        echo "\n結果: クエリ実行回数 = 2回（重複あり）\n";
-        echo "   ✗ 同じ重いクエリが2回実行される\n";
-        echo "   ✗ 処理時間が2倍かかる\n";
-        echo "   ✗ データベース負荷が増加\n";
-
-        // この重複が発生しないことを確認
-        $this->assertTrue(true, 'データ再利用パターンが正しく実装されていること');
-    }
 }
