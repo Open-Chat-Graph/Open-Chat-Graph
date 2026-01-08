@@ -93,6 +93,8 @@ class SyncOpenChat
 
     private function hourlyTask()
     {
+        addVerboseCronLog('Start hourlyTask');
+
         set_time_limit(1620);
 
         $this->state->setTrue(StateType::isHourlyTaskActive);
@@ -102,6 +104,8 @@ class SyncOpenChat
         $this->hourlyTaskAfterDbMerge(
             !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
         );
+
+        addVerboseCronLog('End hourlyTask');
     }
 
     private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
@@ -159,6 +163,8 @@ class SyncOpenChat
 
     private function dailyTask()
     {
+        addVerboseCronLog('Start dailyTask');
+
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
 
@@ -181,6 +187,8 @@ class SyncOpenChat
             // nullを渡すと再度クエリを実行する（データ鮮度優先）
             [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'saveFiltersCacheAfterDailyTask'],
         );
+
+        addVerboseCronLog('End dailyTask');
     }
 
     private function retryDailyTask()

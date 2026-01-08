@@ -41,13 +41,20 @@ class DailyUpdateCronService
      */
     function getTargetOpenChatIdArray(): array
     {
+        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start');
         $ocDbIdArray = $this->openChatRepository->getOpenChatIdAllByCreatedAtDate($this->date);
+        addVerboseCronLog('Total OpenChat count for date ' . $this->date . ': ' . count($ocDbIdArray));
+
+        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start getOpenChatIdArrayByDate');
         $statsDbIdArray = $this->statisticsRepository->getOpenChatIdArrayByDate($this->date);
+        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray End getOpenChatIdArrayByDate');
 
         $filteredIdArray = array_diff($ocDbIdArray, $statsDbIdArray);
 
         // 重いクエリを1回だけ実行し、結果をプロパティに保存
+        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start getMemberChangeWithinLastWeekCacheArray');
         $this->cachedMemberChangeIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
+        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray End getMemberChangeWithinLastWeekCacheArray');
 
         return array_filter($filteredIdArray, fn (int $id) => in_array($id, $this->cachedMemberChangeIdArray));
     }
@@ -65,6 +72,8 @@ class DailyUpdateCronService
 
     function update(?\Closure $crawlingEndFlag = null): void
     {
+        addVerboseCronLog('DailyUpdateCronService start for date: ' . $this->date);
+        
         $this->rankingPositionDailyUpdater->updateYesterdayDailyDb();
 
         $outOfRankId = $this->getTargetOpenChatIdArray();
