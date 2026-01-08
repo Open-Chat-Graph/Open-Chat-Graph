@@ -136,6 +136,10 @@ class OpenChatDailyCrawlingParallel
             // CPU負荷軽減のため少し待機
             usleep(100000); // 100ms
         }
+
+        // 全プロセス終了後に最終チェック
+        // 子プロセスがkillフラグで終了した場合でも例外を投げる
+        $this->checkKillFlag();
     }
 
     /**
@@ -150,8 +154,7 @@ class OpenChatDailyCrawlingParallel
         $index = $processInfo['index'];
         $exitCode = $status['exitcode'];
 
-        // stdout/stderrを読み取る
-        $stdout = stream_get_contents($processInfo['pipes'][1]);
+        // stderrを読み取る
         $stderr = stream_get_contents($processInfo['pipes'][2]);
 
         // パイプとプロセスを閉じる
@@ -174,12 +177,14 @@ class OpenChatDailyCrawlingParallel
     /**
      * killフラグチェック
      *
+     * 子プロセス側でkillフラグを監視して自主的に終了するため、
+     * 親プロセスは単に例外を投げるだけで良い
+     *
      * @throws ApplicationException killフラグが立っている場合
      */
     private function checkKillFlag(): void
     {
         if ($this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatDailyCrawlingKillFlag)) {
-            // 全子プロセスを終了させる処理は親プロセスで実施済みと想定
             throw new ApplicationException(
                 'OpenChatDailyCrawlingParallel: 強制終了しました',
                 AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE

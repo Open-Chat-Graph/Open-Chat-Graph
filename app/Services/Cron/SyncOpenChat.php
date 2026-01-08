@@ -9,6 +9,7 @@ use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
+use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatDailyCrawlingParallel;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
@@ -155,6 +156,7 @@ class SyncOpenChat
     {
         addCronLog('Retry hourlyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
@@ -197,6 +199,7 @@ class SyncOpenChat
 
         addCronLog('Retry dailyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
+        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         OpenChatDailyCrawlingParallel::setKillFlagTrue();
         sleep(30);

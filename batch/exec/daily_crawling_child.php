@@ -13,7 +13,8 @@ use App\Services\Admin\AdminTool;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Services\Utility\ErrorCounter;
-use App\Services\Crawler\CrawlerFactory;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 use Shared\MimimalCmsConfig;
 
 try {
@@ -47,9 +48,18 @@ try {
     /** @var ErrorCounter $errorCounter */
     $errorCounter = app(ErrorCounter::class);
 
+    /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
+    $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+
     // クローリング実行
     $successCount = 0;
     foreach ($openChatIdArray as $id) {
+        // killフラグチェック
+        if ($syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatDailyCrawlingKillFlag)) {
+            addCronLog("DailyCrawlingChild[{$processIndex}]: Kill flag detected, stopping gracefully ({$successCount}/" . count($openChatIdArray) . " completed)");
+            exit(0);
+        }
+
         $result = $openChatUpdater->fetchUpdateOpenChat($id);
 
         if ($result === false) {
@@ -64,9 +74,6 @@ try {
             $message = "DailyCrawlingChild[{$processIndex}]: 連続エラー回数が上限を超えました " . $logRepository->getRecentLog();
             throw new \RuntimeException($message);
         }
-
-        // API負荷軽減のための待機（100ms）
-        usleep(100000);
     }
 
     addCronLog("DailyCrawlingChild[{$processIndex}] done: {$successCount}/" . count($openChatIdArray));
