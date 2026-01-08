@@ -317,20 +317,31 @@ Route::path('admin/cookie')
 
 // Admin Log Viewer
 Route::path('admin/log', [LogController::class, 'index'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function () {
+        noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 
 Route::path('admin/log/exception', [LogController::class, 'exceptionLog'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function () {
+        noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 
 Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetail'])
     ->matchNum('index', min: 0)
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
-
+    ->match(function () {
+        noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function () {
+        noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
 
 Route::path(
     'admin-api@post',
