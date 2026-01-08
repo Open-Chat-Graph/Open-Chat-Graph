@@ -12,6 +12,11 @@ try {
         MimimalCmsConfig::$urlRoot = $argv[2];
     }
 
+    // ログプロセスタグの設定
+    if (isset($argv[3]) && $argv[3]) {
+        addCronLog('', $argv[3]);
+    }
+
     /**
      * @var array{ type: string, category: int }[] $args
      */

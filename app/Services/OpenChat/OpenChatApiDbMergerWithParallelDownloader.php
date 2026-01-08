@@ -72,8 +72,10 @@ class OpenChatApiDbMergerWithParallelDownloader
                 // バッチ内の全カテゴリが完了したかチェック
                 $batchComplete = true;
                 foreach ($batch as $key) {
-                    if (!$this->stateRepository->isDownloaded(RankingType::Ranking, $categoryArray[$key]) ||
-                        !$this->stateRepository->isDownloaded(RankingType::Rising, $categoryReverse[$key])) {
+                    if (
+                        !$this->stateRepository->isDownloaded(RankingType::Ranking, $categoryArray[$key]) ||
+                        !$this->stateRepository->isDownloaded(RankingType::Rising, $categoryReverse[$key])
+                    ) {
                         $batchComplete = false;
                         break;
                     }
@@ -96,7 +98,7 @@ class OpenChatApiDbMergerWithParallelDownloader
         $arg2 = escapeshellarg(MimimalCmsConfig::$urlRoot);
 
         $path = AppConfig::ROOT_PATH . 'batch/exec/exec_parallel_downloader.php';
-        exec(PHP_BINARY . " {$path} {$arg} {$arg2} >/dev/null 2>&1 &");
+        exec(PHP_BINARY . " {$path} {$arg} {$arg2} " . addCronLog() . " >/dev/null 2>&1 &");
     }
 
     function mergeProcess(RankingType $type, int $category)

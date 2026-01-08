@@ -23,6 +23,11 @@ try {
         throw new \InvalidArgumentException('引数が不足しています');
     }
 
+    // ログプロセスタグの設定
+    if (isset($argv[3]) && $argv[3]) {
+        addCronLog('', $argv[3]);
+    }
+
     // URL Rootの設定
     if ($argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
@@ -78,7 +83,6 @@ try {
 
     addCronLog("DailyCrawlingChild[{$processIndex}] done: {$successCount}/" . count($openChatIdArray));
     exit(0);
-
 } catch (\Throwable $e) {
     $errorMessage = "DailyCrawlingChild error: " . $e->__toString();
     addCronLog($errorMessage);

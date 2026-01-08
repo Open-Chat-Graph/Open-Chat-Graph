@@ -71,14 +71,20 @@ class OpenChatDailyCrawlingParallel
      */
     private function startChildProcess(array $chunk, int $index): array
     {
+        // 子プロセス側の「ログプロセスタグ（$argv[3]）」に渡す値を作る
+        // addCronLog() の戻り値（プロセスタグ等）をそのまま渡す
+        $logProcessTag = addCronLog();
+
         $cmd = sprintf(
-            '%s %s/batch/exec/daily_crawling_child.php %s %s %d',
-            AppConfig::$phpBinary,
-            AppConfig::ROOT_PATH,
-            MimimalCmsConfig::$urlRoot,
-            base64_encode(serialize($chunk)),
+            '%s %s %s %s %s %d',
+            escapeshellcmd(PHP_BINARY),
+            escapeshellarg(AppConfig::ROOT_PATH . '/batch/exec/daily_crawling_child.php'),
+            escapeshellarg(MimimalCmsConfig::$urlRoot),
+            escapeshellarg(base64_encode(serialize($chunk))),
+            escapeshellarg((string)addCronLog()),
             $index
         );
+
 
         $descriptorspec = [
             0 => ['pipe', 'r'],  // stdin

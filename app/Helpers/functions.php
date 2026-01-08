@@ -645,11 +645,16 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
     return filemtime($path);
 }
 
-function addCronLog(string|array $log)
+function addCronLog(string|array $log = '', string $setProcessTag = ''): string
 {
     // 実行中プロセ固有の短いタグ（6桁）を1回だけ生成
     static $processTag = null;
-    if ($processTag === null) {
+    if ($setProcessTag !== '' && is_null($processTag)) {
+        $processTag = $setProcessTag;
+        return $processTag;
+    } elseif ($log === '' && is_string($processTag)) {
+        return $processTag;
+    } elseif (is_null($processTag)) {
         $processTag = base62Hash((string)microtime(true));
     }
 
@@ -664,6 +669,8 @@ function addCronLog(string|array $log)
             AppConfig::getStorageFilePath('addCronLogDest')
         );
     }
+
+    return $processTag;
 }
 
 function addVerboseCronLog(string|array $log)
