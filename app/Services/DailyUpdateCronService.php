@@ -17,6 +17,14 @@ class DailyUpdateCronService
 {
     private string $date;
 
+    /**
+     * dailyTask時にgetMemberChangeWithinLastWeekCacheArrayで取得したデータを保存
+     * saveFiltersCacheAfterDailyTaskで再利用するため（重複クエリ防止）
+     *
+     * @var int[]|null
+     */
+    private ?array $cachedMemberChangeIdArray = null;
+
     function __construct(
         private RankingPositionDailyUpdater $rankingPositionDailyUpdater,
         private OpenChatDailyCrawlingParallel $openChatDailyCrawlingParallel,
@@ -38,9 +46,21 @@ class DailyUpdateCronService
 
         $filteredIdArray = array_diff($ocDbIdArray, $statsDbIdArray);
 
-        $memberChangeWithinLastWeekIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
+        // 重いクエリを1回だけ実行し、結果をプロパティに保存
+        $this->cachedMemberChangeIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
 
-        return array_filter($filteredIdArray, fn (int $id) => in_array($id, $memberChangeWithinLastWeekIdArray));
+        return array_filter($filteredIdArray, fn (int $id) => in_array($id, $this->cachedMemberChangeIdArray));
+    }
+
+    /**
+     * getTargetOpenChatIdArray()で取得したフィルターキャッシュデータを返す
+     * saveFiltersCacheAfterDailyTaskで再利用するため
+     *
+     * @return int[]|null
+     */
+    function getCachedMemberChangeIdArray(): ?array
+    {
+        return $this->cachedMemberChangeIdArray;
     }
 
     function update(?\Closure $crawlingEndFlag = null): void
