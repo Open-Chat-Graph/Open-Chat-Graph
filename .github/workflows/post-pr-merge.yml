@@ -64,7 +64,7 @@ jobs:
             const prUrl = process.env.PR_URL;
             const prAuthor = process.env.PR_AUTHOR;
 
-            const message = '✨ プルリクエストがマージされました\n\n' +
+            const message = '🚀 プルリクエストがマージされ、サイトに反映されました\n\n' +
               '#' + prNumber + ': ' + prTitle + '\n' +
               'By @' + prAuthor + '\n\n' +
               prUrl + '\n\n' +
