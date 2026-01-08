@@ -3,8 +3,7 @@ FROM php:8.3-apache
 # ユーザーID 1000でvscodeユーザーを作成（WSL互換性のため）
 RUN useradd -m -u 1000 -G www-data -s /bin/bash vscode && \
     mkdir -p /home/vscode/.vscode-server && \
-    chown -R vscode:vscode /home/vscode && \
-    echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    chown -R vscode:vscode /home/vscode
 
 COPY php.ini /usr/local/etc/php/php.ini
 RUN chmod 644 /usr/local/etc/php/php.ini
@@ -57,6 +56,9 @@ RUN apt-get update && apt-get install -y \
         gettext \
     && docker-php-ext-enable \
         opcache
+
+# vscodesudoers追加
+RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN pecl install xdebug-3.3.2 && \
     docker-php-ext-enable xdebug

@@ -28,6 +28,14 @@ interface StatisticsRepositoryInterface
     public function getHourMemberChangeWithinLastWeekArray(string $date): array;
 
     /**
+     * レコード数が8以下の新規部屋を取得
+     * 高速クエリ（約5秒）のため、毎時実行して新規ルームのリアルタイム性を確保
+     *
+     * @return int[] open_chat_id
+     */
+    public function getNewRoomsWithLessThan8Records(): array;
+
+    /**
      * @param array{ open_chat_id: int, member: int, date: string }[] $data
      */
     public function insertMember(array $data): int;

@@ -55,55 +55,88 @@ class RecommendUpdater
     protected function updateRecommendTablesProcess(bool $onlyRecommend = false)
     {
         if (MimimalCmsConfig::$urlRoot !== '') {
-            DB::transaction(function () {
-                $this->deleteRecommendTags('recommend');
-                $this->updateDescription(column: 'oc.name', allowDuplicateEntries: true);
-                $this->updateDescription(allowDuplicateEntries: true);
+            // 一時テーブルで処理を実行（トランザクション外で高速処理）
+            $this->processWithTemporaryTable('recommend', function () {
+                $this->deleteRecommendTags('recommend_temp');
+                $this->updateDescription(column: 'oc.name', table: 'recommend_temp', allowDuplicateEntries: true);
+                $this->updateDescription(table: 'recommend_temp', allowDuplicateEntries: true);
             });
 
-            DB::transaction(function () {
-                $this->deleteTags('oc_tag');
-                $this->updateName(table: 'oc_tag', allowDuplicateEntries: true);
-                $this->updateName('oc.description', table: 'oc_tag', allowDuplicateEntries: true);
+            $this->processWithTemporaryTable('oc_tag', function () {
+                $this->deleteTags('oc_tag_temp');
+                $this->updateName(table: 'oc_tag_temp', allowDuplicateEntries: true);
+                $this->updateName('oc.description', table: 'oc_tag_temp', allowDuplicateEntries: true);
             });
 
-            DB::transaction(function () {
-                $this->deleteTags('oc_tag2');
+            $this->processWithTemporaryTable('oc_tag2', function () {
+                $this->deleteTags('oc_tag2_temp');
             });
 
             return;
         }
 
-        DB::transaction(function () {
-            $this->deleteRecommendTags('recommend');
-            $this->updateStrongestTags();
-            $this->updateBeforeCategory();
-            $this->updateName();
-            $this->updateDescription('oc.name', 'recommend');
-            $this->updateDescription();
-            $this->modifyRecommendTags();
+        // 一時テーブルで処理を実行（トランザクション外で高速処理）
+        $this->processWithTemporaryTable('recommend', function () {
+            $this->deleteRecommendTags('recommend_temp');
+            $this->updateStrongestTags('recommend_temp');
+            $this->updateBeforeCategory('oc.name', 'recommend_temp');
+            $this->updateName(table: 'recommend_temp');
+            $this->updateDescription('oc.name', 'recommend_temp');
+            $this->updateDescription(table: 'recommend_temp');
+            $this->modifyRecommendTags('recommend_temp');
         });
 
         if ($onlyRecommend) {
             return;
         }
 
-        DB::transaction(function () {
-            $this->deleteTags('oc_tag');
-            $this->updateBeforeCategory('oc.name', 'oc_tag');
-            $this->updateBeforeCategory(table: 'oc_tag');
-            $this->updateDescription('oc.name', 'oc_tag');
-            $this->updateDescription(table: 'oc_tag');
-            $this->updateName(table: 'oc_tag');
+        $this->processWithTemporaryTable('oc_tag', function () {
+            $this->deleteTags('oc_tag_temp');
+            $this->updateBeforeCategory('oc.name', 'oc_tag_temp');
+            $this->updateBeforeCategory(table: 'oc_tag_temp');
+            $this->updateDescription('oc.name', 'oc_tag_temp');
+            $this->updateDescription(table: 'oc_tag_temp');
+            $this->updateName(table: 'oc_tag_temp');
         });
 
-        DB::transaction(function () {
-            $this->deleteTags('oc_tag2');
-            $this->updateDescription2('oc.name');
-            $this->updateDescription2();
-            $this->updateName2();
-            $this->updateName2('oc.description');
+        $this->processWithTemporaryTable('oc_tag2', function () {
+            $this->deleteTags('oc_tag2_temp');
+            $this->updateDescription2('oc.name', 'oc_tag2_temp');
+            $this->updateDescription2(table: 'oc_tag2_temp');
+            $this->updateName2(table: 'oc_tag2_temp');
+            $this->updateName2('oc.description', table: 'oc_tag2_temp');
         });
+    }
+
+    /**
+     * 一時テーブルを使用してデータを処理し、トランザクション内で本テーブルに反映
+     * トランザクション時間を数ミリ秒に短縮することでデッドロックリスクを削減
+     *
+     * @param string $targetTable 対象テーブル名
+     * @param callable $processCallback 一時テーブルに対する処理
+     */
+    private function processWithTemporaryTable(string $targetTable, callable $processCallback): void
+    {
+        $tempTable = $targetTable . '_temp';
+
+        // 1. 一時テーブルを作成（トランザクション外）
+        DB::execute("CREATE TEMPORARY TABLE {$tempTable} LIKE {$targetTable}");
+
+        // 2. 一時テーブルに対して処理を実行（トランザクション外で高速処理）
+        $processCallback();
+
+        // 3. 本テーブルに反映（トランザクション内、数ミリ秒で完了）
+        DB::transaction(function () use ($targetTable, $tempTable) {
+            // 更新対象のレコードを削除
+            DB::execute("DELETE FROM {$targetTable}
+                         WHERE id IN (SELECT id FROM {$tempTable})");
+
+            // 一時テーブルから本テーブルにコピー
+            DB::execute("INSERT INTO {$targetTable} SELECT * FROM {$tempTable}");
+        });
+
+        // 4. 一時テーブルを削除
+        DB::execute("DROP TEMPORARY TABLE {$tempTable}");
     }
 
     function getAllTagNames(): array
@@ -224,13 +257,13 @@ class RecommendUpdater
     ) {
         [$tags, $strongTags, $afterStrongTags] = $this->getReplacedTagsDesc($column);
 
-        $excute = function ($table, $tag, $search, $category) use ($allowDuplicateEntries) {
+        $excute = function ($targetTable, $tag, $search, $category) use ($allowDuplicateEntries) {
             $tag = $this->formatTag($tag);
             $duplicateEntries = $allowDuplicateEntries ? "AND t.tag = '{$tag}'" : '';
 
             DB::execute(
                 "INSERT INTO
-                    {$table}
+                    {$targetTable}
                 SELECT
                     oc.id,
                     '{$tag}'
@@ -240,7 +273,7 @@ class RecommendUpdater
                             oc.*
                         FROM
                             open_chat AS oc
-                            LEFT JOIN {$table} AS t ON t.id = oc.id {$duplicateEntries}
+                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id {$duplicateEntries}
                         WHERE
                             oc.category = {$category}
                             AND (oc.updated_at BETWEEN :start AND :end)
@@ -280,11 +313,11 @@ class RecommendUpdater
             $this->recommendUpdaterTags->getBeforeCategoryNameTags()
         );
 
-        $excute = function ($table, $tag, $search, $category) {
+        $excute = function ($targetTable, $tag, $search, $category) {
             $tag = $this->formatTag($tag);
             DB::execute(
                 "INSERT INTO
-                    {$table}
+                    {$targetTable}
                 SELECT
                     oc.id,
                     '{$tag}'
@@ -294,7 +327,7 @@ class RecommendUpdater
                             oc.*
                         FROM
                             open_chat AS oc
-                            LEFT JOIN {$table} AS t ON t.id = oc.id
+                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id
                         WHERE
                             t.id IS NULL
                             AND oc.category = {$category}
@@ -316,10 +349,10 @@ class RecommendUpdater
         }
     }
 
-    protected function updateStrongestTags()
+    protected function updateStrongestTags(string $table = 'recommend')
     {
-        $this->executeUpdateStrongestTags('oc.name');
-        $this->executeUpdateStrongestTags('oc.description');
+        $this->executeUpdateStrongestTags('oc.name', $table);
+        $this->executeUpdateStrongestTags('oc.description', $table);
     }
 
     protected function executeUpdateStrongestTags(
@@ -408,11 +441,11 @@ class RecommendUpdater
     {
         [$tags, $strongTags, $afterStrongTags] = $this->getReplacedTagsDesc($column);
 
-        $excute = function ($table, $tag, $search, $category) {
+        $excute = function ($targetTable, $tag, $search, $category) {
             $tag = $this->formatTag($tag);
             DB::execute(
                 "INSERT INTO
-                    {$table}
+                    {$targetTable}
                 SELECT
                     oc.id,
                     '{$tag}'
@@ -422,7 +455,7 @@ class RecommendUpdater
                             oc.*
                         FROM
                             open_chat AS oc
-                            LEFT JOIN {$table} AS t ON t.id = oc.id
+                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id
                             LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
                         WHERE
                             t.id IS NULL
@@ -498,8 +531,8 @@ class RecommendUpdater
         );
     }
 
-    protected function modifyRecommendTags()
+    protected function modifyRecommendTags(string $table = 'recommend')
     {
-        DB::execute("UPDATE recommend AS t1 JOIN modify_recommend AS t2 ON t1.id = t2.id SET t1.tag = t2.tag");
+        DB::execute("UPDATE {$table} AS t1 JOIN modify_recommend AS t2 ON t1.id = t2.id SET t1.tag = t2.tag");
     }
 }

@@ -10,9 +10,9 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
+use App\Services\OpenChat\OpenChatDailyCrawlingParallel;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
-use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastHourChecker;
@@ -93,6 +93,8 @@ class SyncOpenChat
 
     private function hourlyTask()
     {
+        addVerboseCronLog('Start hourlyTask');
+
         set_time_limit(1620);
 
         $this->state->setTrue(StateType::isHourlyTaskActive);
@@ -102,6 +104,8 @@ class SyncOpenChat
         $this->hourlyTaskAfterDbMerge(
             !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
         );
+
+        addVerboseCronLog('End hourlyTask');
     }
 
     private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
@@ -114,10 +118,10 @@ class SyncOpenChat
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
             [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
             [function () {
-                $saveNextFiltersCache  = !$this->state->getBool(StateType::isDailyTaskActive);
-                if (!$saveNextFiltersCache) {
-                    addCronLog('Skip saveNextFiltersCache because dailyTask is active');
-                }
+                // フィルターキャッシュの更新判定
+                // hourlyTask: キャッシュを読むのみ、「新規部屋（レコード8以下）」を毎時取得してマージ（約5秒）
+                // dailyTask: dailyTask内で別途キャッシュ保存するため、ここでは保存しない
+                $saveNextFiltersCache = false;
 
                 $this->hourlyMemberRanking->update($saveNextFiltersCache);
             }, 'hourlyMemberRankingUpdate'],
@@ -159,54 +163,48 @@ class SyncOpenChat
 
     private function dailyTask()
     {
+        addVerboseCronLog('Start dailyTask');
+
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
 
         set_time_limit(5400);
-        
-        /** 
+
+        /**
          * @var DailyUpdateCronService $updater
          */
         $updater = app(DailyUpdateCronService::class);
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
+        // DailyUpdateCronServiceで取得したフィルターキャッシュデータを取得
+        // saveFiltersCacheAfterDailyTaskで再利用するため（重複クエリ防止）
+        $cachedFilterIds = $updater->getCachedMemberChangeIdArray();
+
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
             [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            // DailyUpdateCronServiceで取得したデータを渡してクエリの重複実行を防ぐ
+            // nullを渡すと再度クエリを実行する（データ鮮度優先）
+            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'saveFiltersCacheAfterDailyTask'],
         );
+
+        addVerboseCronLog('End dailyTask');
     }
 
     private function retryDailyTask()
     {
-        // 6:30以降にリトライした場合は通知
-        if ($this->isAfterRetryNotificationTime()) {
-            AdminTool::sendDiscordNotify('Retrying dailyTask');
-        }
+        AdminTool::sendDiscordNotify('Retrying dailyTask');
 
         addCronLog('Retry dailyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
+        OpenChatDailyCrawlingParallel::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
         addCronLog('Done Retry dailyTask');
 
-        if ($this->isAfterRetryNotificationTime()) {
-            AdminTool::sendDiscordNotify('Done retrying dailyTask');
-        }
-    }
-
-    function isAfterRetryNotificationTime(): bool
-    {
-        $currentTime = OpenChatServicesUtility::getModifiedCronTime('now');
-
-        return !isDailyUpdateTime()
-            && !isDailyUpdateTime($currentTime->modify('-1 hour'), $currentTime->modify('-1 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-2 hour'), $currentTime->modify('-2 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-3 hour'), $currentTime->modify('-3 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-4 hour'), $currentTime->modify('-4 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-5 hour'), $currentTime->modify('-5 hour'))
-            && !isDailyUpdateTime($currentTime->modify('-6 hour'), $currentTime->modify('-6 hour'));
+        AdminTool::sendDiscordNotify('Done retrying dailyTask');
     }
 
     /**

@@ -184,6 +184,19 @@ class AppConfig
         '/th' => 1,  // タイ版: 3ペア（6同時）
     ];
 
+    /**
+     * デイリークローリングの並列プロセス数の設定
+     * 各言語ごとに同時に実行するクローリングプロセスの数
+     *
+     * 値が大きいほど処理が速くなるが、429エラー（Too Many Requests）のリスクが高まる
+     * 台湾版はデータ量が多いため、並列数を抑えて429エラーを防ぐ
+     */
+    const DAILY_CRAWLING_PARALLEL_PROCESS_COUNT = [
+        '' =>    3,  // 日本版: 3プロセス
+        '/tw' => 2,  // 台湾版: 2プロセス（データ量が多いため控えめ）
+        '/th' => 3,  // タイ版: 3プロセス
+    ];
+
     const DATE_TIME_ZONE = [
         '' =>   'Asia/Tokyo',
         '/tw' => 'Asia/Taipei',
@@ -217,6 +230,7 @@ class AppConfig
         'openChatRankingPositionDir' =>   '/ranking_position/ranking',
         'openChatRisingPositionDir' =>    '/ranking_position/rising',
         'openChatHourFilterId' =>         '/ranking_position/filter.dat',
+        'openChatHourFilterIdDate' =>     '/ranking_position/filter_date.dat',
         'dailyCronUpdatedAtDate' =>       '/static_data_top/daily_updated_at.dat',
         'hourlyCronUpdatedAtDatetime' =>  '/static_data_top/hourly_updated_at.dat',
         'hourlyRealUpdatedAtDatetime' =>  '/static_data_top/real_updated_at.dat',

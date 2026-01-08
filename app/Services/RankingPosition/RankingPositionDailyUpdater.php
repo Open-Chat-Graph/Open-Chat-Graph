@@ -27,8 +27,12 @@ class RankingPositionDailyUpdater
 
     function updateYesterdayDailyDb()
     {
+        addVerboseCronLog(__METHOD__ . ' Start persistHourToDaily');
         $this->rankingPositionDailyPersistence->persistHourToDaily();
+        addVerboseCronLog(__METHOD__ . ' End persistHourToDaily');
+        addVerboseCronLog(__METHOD__ . ' Start persistMemberStatsFromRankingPositionDb');
         $this->persistMemberStatsFromRankingPositionDb();
+        addVerboseCronLog(__METHOD__ . ' End persistMemberStatsFromRankingPositionDb');
     }
 
     private function persistMemberStatsFromRankingPositionDb(): void

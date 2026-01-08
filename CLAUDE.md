@@ -232,3 +232,143 @@ Views go in `/app/Views/`:
 - The DB class automatically selects the correct database based on `MimimalCmsConfig::$urlRoot`
 - Meta data is accessed via `meta()` helper function, not a service class
 - Views are returned directly with `view()`, not wrapped in Response object
+
+## Pull Request Guidelines
+
+When creating pull requests, follow these guidelines to ensure clarity for reviewers who may not be familiar with the codebase:
+
+### Writing Clear Titles
+
+**IMPORTANT**: PR titles appear on social media (X/Twitter timeline) and should be understandable by the general public.
+
+**❌ BAD - Using code terminology:**
+```
+perf: dailyTask処理時間の大幅短縮とタイムアウト問題の解決
+fix: getMemberChangeWithinLastWeekCacheArray()の重複実行を防止
+```
+
+**✅ GOOD - Explaining impact in plain language:**
+```
+perf: 日次データ更新処理のタイムアウト問題を解決（9〜11時間→1〜2時間）
+perf: オープンチャットランキング更新の処理時間を大幅短縮
+fix: 統計データ抽出クエリの重複実行を防止してDB負荷を軽減
+```
+
+**Title Guidelines:**
+- Avoid code terminology (class names, method names, variable names)
+- Include concrete numbers when possible (processing time, data volume)
+- Explain the business impact, not the technical change
+- Keep it concise but informative (50-80 characters ideal)
+
+### Writing Clear Descriptions
+
+**❌ BAD - Using code terminology directly:**
+```markdown
+## 問題
+dailyTaskのタイムアウト
+getMemberChangeWithinLastWeekCacheArray()が2回実行される
+```
+
+**✅ GOOD - Explaining business logic first, then linking to code:**
+```markdown
+## 問題
+### オープンチャットの日次データ更新処理のタイムアウト
+毎日23:30に実行される全データ更新処理が9〜11時間かかり完了しない問題。
+
+### 統計データ抽出クエリの重複実行
+全statisticsテーブル（8700万行）から「メンバー数が変動している部屋」を抽出する処理が、
+以下の2箇所で重複実行されている:
+- クローリング対象の絞り込み処理 ([`DailyUpdateCronService::getTargetOpenChatIdArray()`](link))
+- ランキング用キャッシュ保存処理 ([`UpdateHourlyMemberRankingService::saveFiltersCacheAfterDailyTask()`](link))
+```
+
+### Key Principles
+
+1. **Avoid code terminology in titles and summaries**
+   - ❌ "dailyTask", "hourlyTask", "getMemberChangeWithinLastWeekCacheArray"
+   - ✅ "オープンチャットの日次データ更新処理", "統計データ抽出処理"
+
+2. **Explain "what" before "where"**
+   - First: Describe what the code does in business/user terms
+   - Then: Link to the actual code with class/method names in the link text
+
+3. **Provide context for technical terms**
+   - When using method names, explain their purpose first
+   - Example: "統計データ抽出処理 ([`SqliteStatisticsRepository::getMemberChangeWithinLastWeekCacheArray()`](link))"
+
+4. **Structure information hierarchically**
+   - Start with business impact
+   - Explain the technical problem
+   - Link to specific code locations
+   - Provide implementation details
+
+5. **Balance abstraction and concrete details**
+   - **Abstraction (ビジネスロジック)**: Explain what the system does and why it matters
+   - **Concrete (具体的コード)**: Show how it's implemented with code references
+   - **Both are necessary**: Start with abstraction, then provide concrete technical details
+   - Example flow:
+     1. Business problem: "オープンチャットの日次データ更新処理が9時間かかる"
+     2. Technical cause: "全statisticsテーブル（8700万行）をスキャンする処理を2回実行"
+     3. Code location: [`DailyUpdateCronService::getTargetOpenChatIdArray()`](link)
+     4. Implementation details: "クエリ結果をプロパティに保存し、2回目で再利用"
+
+6. **Separate problem and solution clearly**
+   - **Problem section**: Link to code BEFORE the fix (main branch or earlier commit)
+   - **Solution section**: Link to code AFTER the fix (current commit)
+   - **Why**: Allows reviewers to compare before/after and understand the change
+   - Example:
+     - ❌ Problem section linking to fixed code: "Problem: duplicate queries ([fixed code link])"
+     - ✅ Problem section linking to old code: "Problem: duplicate queries ([old code link])"
+     - ✅ Solution section linking to new code: "Solution: reuse query results ([new code link])"
+
+7. **Explain actual situation from logs**
+   - **Add timeline section** after problem overview
+   - **Show real timestamps** from cron logs to visualize the problem
+   - **Explain for third parties** who are not familiar with the codebase
+   - **Include context**: What the system does, what data it processes, why it matters
+   - Example structure:
+     ```markdown
+     ### ログから見る実際の状況
+
+     #### 日次データ更新処理のタイムライン（典型的な実行例）
+
+     [Context explanation for third parties]
+
+     ```
+     23:30  【開始】日次データ更新処理
+     23:35  ├─ 統計データ抽出（1回目）
+            │  └─ [What this does and why]
+     ...
+     ```
+
+     **問題**: [Specific problem identified from logs]
+     ```
+
+### Example PR Structure
+
+```markdown
+## 問題の概要
+[High-level business problem in plain Japanese]
+
+### 具体的な問題
+1. **[User-facing issue]**
+   - 説明: [What users experience]
+   - 原因: [Technical cause in plain language]
+   - 該当コード: [`ClassName::methodName()`](link)
+
+## 対処内容
+### 1. [Change title in plain language]
+**変更内容**: [What was changed in business terms]
+**実装詳細**: [Technical details]
+**該当ファイル**: [Links to code]
+**効果**: [Expected impact]
+```
+
+### Common Terms Translation
+
+Use these translations when writing PRs:
+- dailyTask → オープンチャットの日次データ更新処理（毎日23:30実行）
+- hourlyTask → オープンチャットの毎時ランキング更新処理（毎時30分実行）
+- getMemberChangeWithinLastWeekCacheArray → 統計データ抽出処理（メンバー数が変動している部屋を取得）
+- saveFiltersCacheAfterDailyTask → ランキング用フィルターキャッシュ保存処理
+- OpenChatDailyCrawling → オープンチャットデータのクローリング処理
