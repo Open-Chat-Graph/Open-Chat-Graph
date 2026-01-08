@@ -647,12 +647,22 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 
 function addCronLog(string|array $log)
 {
+    // 実行中プロセ固有の短いタグ（6桁）を1回だけ生成
+    static $processTag = null;
+    if ($processTag === null) {
+        $processTag = base62Hash((string)microtime(true));
+    }
+
     if (is_string($log)) {
         $log = [$log];
     }
 
     foreach ($log as $string) {
-        error_log(date('Y-m-d H:i:s') . ' ' . $string . "\n", 3, AppConfig::getStorageFilePath('addCronLogDest'));
+        error_log(
+            date('Y-m-d H:i:s') . ' ' . $string . ' [' . $processTag . ']' . "\n",
+            3,
+            AppConfig::getStorageFilePath('addCronLogDest')
+        );
     }
 }
 
