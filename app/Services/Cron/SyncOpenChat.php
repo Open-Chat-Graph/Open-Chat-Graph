@@ -10,9 +10,7 @@ use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
-use App\Services\OpenChat\OpenChatApiDbMergerWithParallelDownloader;
 use App\Services\OpenChat\OpenChatDailyCrawling;
-use App\Services\OpenChat\OpenChatDailyCrawlingParallel;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
@@ -42,9 +40,7 @@ class SyncOpenChat
 
         set_exception_handler(function (\Throwable $e) {
             OpenChatApiDbMerger::setKillFlagTrue();
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
             OpenChatDailyCrawling::setKillFlagTrue();
-            OpenChatDailyCrawlingParallel::setKillFlagTrue();
 
             // killフラグによる強制終了の場合、開始から10時間以内ならDiscord通知しない
             $shouldNotify = true;
@@ -172,7 +168,6 @@ class SyncOpenChat
     {
         addCronLog('Retry hourlyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
-        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
@@ -215,9 +210,7 @@ class SyncOpenChat
 
         addCronLog('Retry dailyTask');
         OpenChatApiDbMerger::setKillFlagTrue();
-        OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
-        OpenChatDailyCrawlingParallel::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
