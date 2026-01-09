@@ -89,11 +89,21 @@ class LogController
 
         $result = $this->readCronLogReverse($filePath, $page, self::CRON_ITEMS_PER_PAGE);
 
+        // 日本語版のみメタデータを設定
+        $_meta = null;
+        if ($type === 'ja-cron') {
+            $_meta = meta()->setTitle('データ更新ログ詳細');
+            $desc = 'オプチャグラフのデータ更新処理の実行ログ詳細。毎時・日次の処理状況を時系列で確認できます。';
+            $_meta->setDescription($desc)->setOgpDescription($desc);
+            $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
+        }
+
         return view('admin/log_cron', [
             'type' => $type,
             'logs' => $result['logs'],
             'currentPage' => $page,
             'totalPages' => $result['totalPages'],
+            '_meta' => $_meta,
         ]);
     }
 

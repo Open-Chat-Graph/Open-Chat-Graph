@@ -53,6 +53,14 @@
 </head>
 
 <body>
+<?php
+$logDisplayNames = [
+    'ja-cron' => 'Japan',
+    'th-cron' => 'Thai',
+    'tw-cron' => 'Taiwan',
+    'exception' => 'エラーログ（管理者専用）',
+];
+?>
 <div class="container">
     <h1>データ更新ログ</h1>
 
@@ -61,24 +69,24 @@
         <li class="log-item">
             <?php if ($file['exists']): ?>
                 <?php if ($key === 'exception'): ?>
-                    <a href="<?php echo url('admin/log/exception') ?>">exception.log</a>
+                    <a href="<?php echo url('admin/log/exception') ?>"><?php echo $logDisplayNames[$key] ?></a>
                 <?php else: ?>
-                    <a href="<?php echo url('admin/log/' . $key) ?>"><?php echo htmlspecialchars($key) ?></a>
+                    <a href="<?php echo url('admin/log/' . $key) ?>"><?php echo $logDisplayNames[$key] ?? $key ?></a>
                 <?php endif; ?>
                 <div class="log-meta">
-                    <span class="log-exists">Available</span> | Size: <?php echo htmlspecialchars($file['size']) ?>
+                    <span class="log-exists">利用可能</span> | サイズ: <?php echo htmlspecialchars($file['size']) ?>
                 </div>
             <?php else: ?>
-                <span style="font-weight: bold; font-size: 18px; color: #999;"><?php echo htmlspecialchars($key) ?></span>
+                <span style="font-weight: bold; font-size: 18px; color: #999;"><?php echo $logDisplayNames[$key] ?? $key ?></span>
                 <div class="log-meta">
-                    <span class="log-missing">Not Found</span> | <?php echo htmlspecialchars($file['path']) ?>
+                    <span class="log-missing">ファイルなし</span>
                 </div>
             <?php endif; ?>
         </li>
         <?php endforeach; ?>
     </ul>
 
-    <h2>Cron処理の流れ</h2>
+    <h2>データ更新処理の流れ</h2>
 
     <p style="color: #666; margin-bottom: 20px;">
         オープンチャットのランキングデータは、LINE公式サイトから毎時30分に自動取得されます。<br>

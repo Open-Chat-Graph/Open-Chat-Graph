@@ -1,12 +1,22 @@
+<?php
+$isJapanese = $type === 'ja-cron';
+$pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
+?>
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="<?php echo $isJapanese ? 'ja' : 'en' ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cron Log - <?php echo htmlspecialchars($type) ?></title>
+    <?php if ($_meta): ?>
+        <?php echo $_meta ?>
+        <meta name="robots" content="noindex, nofollow">
+    <?php else: ?>
+        <title><?php echo htmlspecialchars($pageTitle) ?></title>
+    <?php endif; ?>
     <style>
-        body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #333; margin-bottom: 5px; }
         .back-link { margin-bottom: 20px; }
         .back-link a { color: #1a73e8; text-decoration: none; }
@@ -51,12 +61,16 @@
 </head>
 
 <body>
+<div class="container">
     <div class="back-link">
-        <a href="<?php echo url('admin/log') ?>">&larr; Back to Log List</a>
+        <a href="<?php echo url('admin/log') ?>">&larr; <?php echo $isJapanese ? 'ログ一覧に戻る' : 'Back to Log List' ?></a>
     </div>
 
-    <h1>Cron Log: <?php echo htmlspecialchars($type) ?></h1>
-    <p>Page <?php echo $currentPage ?> / <?php echo $totalPages ?> (1000 items per page, newest first)</p>
+    <h1><?php echo $isJapanese ? 'データ更新ログ詳細' : "Cron Log: {$type}" ?></h1>
+    <p><?php echo $isJapanese
+        ? "ページ {$currentPage} / {$totalPages}（1ページ1000件、新しい順）"
+        : "Page {$currentPage} / {$totalPages} (1000 items per page, newest first)"
+    ?></p>
 
     <div class="pagination">
         <?php if ($currentPage <= 1): ?>
@@ -90,13 +104,13 @@
     <table>
         <thead>
             <tr>
-                <th class="date-col">Date</th>
-                <th class="message-col">Message</th>
+                <th class="date-col"><?php echo $isJapanese ? '日時' : 'Date' ?></th>
+                <th class="message-col"><?php echo $isJapanese ? 'メッセージ' : 'Message' ?></th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($logs)): ?>
-                <tr><td colspan="2">No log entries found.</td></tr>
+                <tr><td colspan="2"><?php echo $isJapanese ? 'ログがありません' : 'No log entries found.' ?></td></tr>
             <?php else: ?>
                 <?php foreach ($logs as $log): ?>
                 <?php
@@ -150,6 +164,7 @@
             <a href="?page=<?php echo $currentPage + 1 ?>" class="nav-btn">&rarr;</a>
         <?php endif; ?>
     </div>
+</div>
 </body>
 
 </html>
