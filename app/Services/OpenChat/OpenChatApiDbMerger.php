@@ -66,9 +66,9 @@ class OpenChatApiDbMerger
             throw $e;
         } finally {
             $elapsedSeconds = microtime(true) - $startTime;
-            $minutes = floor($elapsedSeconds / 60);
-            $seconds = $elapsedSeconds - ($minutes * 60);
-            $elapsed = sprintf('%.0f分%.2f秒', $minutes, $seconds);
+            $minutes = (int) floor($elapsedSeconds / 60);
+            $seconds = (int) round($elapsedSeconds - ($minutes * 60));
+            $elapsed = $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
             addVerboseCronLog("LINE公式APIからランキングデータを取得完了（{$elapsed}）");
         }
     }
@@ -114,10 +114,10 @@ class OpenChatApiDbMerger
             
             $elapsed = '';
             if (isset($startTimes[$category])) {
-            $elapsedSeconds = microtime(true) - $startTimes[$category];
-            $minutes = floor($elapsedSeconds / 60);
-            $seconds = $elapsedSeconds - ($minutes * 60);
-            $elapsed = sprintf(' (%.0f分%.2f秒)', $minutes, $seconds);
+                $elapsedSeconds = microtime(true) - $startTimes[$category];
+                $minutes = (int) floor($elapsedSeconds / 60);
+                $seconds = (int) round($elapsedSeconds - ($minutes * 60));
+                $elapsed = $minutes > 0 ? " ({$minutes}分{$seconds}秒)" : " ({$seconds}秒)";
             }
             
             $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'メンバー数';
