@@ -4,7 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Log Viewer</title>
+    <title>データ更新ログ | オプチャグラフ</title>
+    <meta name="description" content="オプチャグラフのデータ更新処理（LINE公式サイトからのランキングデータ取得）の実行状況をリアルタイムで確認できます。">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- OGP -->
+    <meta property="og:title" content="データ更新ログ | オプチャグラフ">
+    <meta property="og:description" content="オプチャグラフのデータ更新処理の実行状況をリアルタイムで確認できます。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://openchat-review.me/admin/log">
+    <meta property="og:image" content="https://openchat-review.me/assets/ogp.png">
+    <meta property="og:site_name" content="オプチャグラフ">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="データ更新ログ | オプチャグラフ">
+    <meta name="twitter:description" content="オプチャグラフのデータ更新処理の実行状況をリアルタイムで確認できます。">
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
         h1, h2, h3 { color: #333; }
@@ -51,7 +66,7 @@
 </head>
 
 <body>
-    <h1>Log Viewer</h1>
+    <h1>データ更新ログ</h1>
 
     <ul class="log-list">
         <?php foreach ($logFiles as $key => $file): ?>
