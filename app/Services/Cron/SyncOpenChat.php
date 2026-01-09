@@ -143,7 +143,7 @@ class SyncOpenChat
                 $saveNextFiltersCache = false;
 
                 $this->hourlyMemberRanking->update($saveNextFiltersCache);
-            }, '毎時メンバーランキング更新'],
+            }, '毎時メンバーランキング関連の処理'],
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
