@@ -17,7 +17,7 @@ try {
     $syncOpenChat = app(SyncOpenChat::class);
 
     $syncOpenChat->handle(retryDailyTest: true);
-    addCronLog('End');
+    addCronLog('Done retry_daily_task');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());

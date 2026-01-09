@@ -645,9 +645,21 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
     return filemtime($path);
 }
 
-function addCronLog(string|array $log = '', string $setProcessTag = ''): string
+/**
+ * Cronログを出力する
+ *
+ * 出力形式: 2025-01-07 05:33:01 [abcd@05:30~] メッセージ GitHub::path/to/file.php:123
+ * - abcd: セッション固有の4文字ハッシュ
+ * - 05:30: Cron実行開始時刻
+ *
+ * @param string|array $log ログメッセージ
+ * @param string $setProcessTag プロセスタグを設定（初回のみ有効）
+ * @param int $backtraceDepth backtraceの深さ（呼び出し元特定用）
+ * @return string プロセスタグ
+ */
+function addCronLog(string|array $log = '', string $setProcessTag = '', int $backtraceDepth = 1): string
 {
-    // 実行中プロセ固有の短いタグ（6桁）を1回だけ生成
+    // セッション識別子を1回だけ生成: [4文字ハッシュ@開始時刻~] 形式
     static $processTag = null;
     if ($setProcessTag !== '' && is_null($processTag)) {
         $processTag = $setProcessTag;
@@ -655,16 +667,21 @@ function addCronLog(string|array $log = '', string $setProcessTag = ''): string
     } elseif ($log === '' && is_string($processTag)) {
         return $processTag;
     } elseif (is_null($processTag)) {
-        $processTag = base62Hash((string)microtime(true));
+        $hash = substr(base62Hash((string)microtime(true)), 0, 4);
+        $startTime = date('H:i');
+        $processTag = $hash . '@' . $startTime . '~';
     }
 
     if (is_string($log)) {
         $log = [$log];
     }
 
+    // 呼び出し元のファイル・行番号を取得してGitHub参照を生成
+    $githubRef = getCronLogGitHubRef($backtraceDepth);
+
     foreach ($log as $string) {
         error_log(
-            date('Y-m-d H:i:s') . ' [' . $processTag . '] ' . $string . "\n",
+            date('Y-m-d H:i:s') . ' [' . $processTag . '] ' . $string . ' ' . $githubRef . "\n",
             3,
             AppConfig::getStorageFilePath('addCronLogDest')
         );
@@ -673,11 +690,72 @@ function addCronLog(string|array $log = '', string $setProcessTag = ''): string
     return $processTag;
 }
 
-function addVerboseCronLog(string|array $log)
+/**
+ * Verbose Cronログを出力する（AppConfig::$verboseCronLogがtrueの場合のみ）
+ *
+ * @param string|array $log ログメッセージ
+ */
+function addVerboseCronLog(string|array $log): void
 {
     if (AppConfig::$verboseCronLog) {
-        addCronLog($log);
+        addCronLog($log, '', 2);
     }
+}
+
+/**
+ * Cronログ用のGitHub参照文字列を生成する
+ *
+ * backtraceの構造:
+ * - trace[0]: getCronLogGitHubRefを呼び出した場所（addCronLog内）
+ * - trace[1]: addCronLogを呼び出した場所（目的の行）
+ * - trace[2]: その上位の呼び出し元
+ *
+ * @param int $backtraceDepth 1=直接の呼び出し元, 2=さらに上位の呼び出し元
+ * @return string GitHub::path/to/file.php:123 形式の文字列
+ */
+function getCronLogGitHubRef(int $backtraceDepth = 1): string
+{
+    // backtraceDepth + 1 フレームを取得（0から始まるため+1が必要）
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $backtraceDepth + 2);
+    $caller = $trace[$backtraceDepth] ?? $trace[0] ?? null;
+
+    if (!$caller || !isset($caller['file'], $caller['line'])) {
+        return '';
+    }
+
+    // プロジェクトルートからの相対パスを取得
+    $projectRoot = dirname(__DIR__, 2) . '/';
+    $relativePath = str_replace($projectRoot, '', $caller['file']);
+
+    return 'GitHub::' . $relativePath . ':' . $caller['line'];
+}
+
+/**
+ * GitHub参照情報からGitHubのURLを生成する
+ *
+ * @param array{filePath: string, lineNumber: string|int, fileName?: string, label?: string} $githubRef
+ * @return string GitHubのURL
+ */
+function buildGitHubUrl(array $githubRef): string
+{
+    $repo = AppConfig::$githubRepo;
+    $branch = AppConfig::$githubBranch;
+    return "https://github.com/{$repo}/blob/{$branch}/{$githubRef['filePath']}#L{$githubRef['lineNumber']}";
+}
+
+/**
+ * GitHubリンクHTMLを生成する
+ *
+ * @param string $path ファイルパス
+ * @param int $line 行番号
+ * @param string|null $label リンクのラベル（省略時はファイル名:行番号）
+ * @return string Aタグ付きのHTML
+ */
+function githubLink(string $path, int $line, ?string $label = null): string
+{
+    $url = buildGitHubUrl(['filePath' => $path, 'lineNumber' => $line]);
+    $displayLabel = $label ?? basename($path) . ':' . $line;
+    return '<a href="' . htmlspecialchars($url) . '" target="_blank" rel="noopener">' . htmlspecialchars($displayLabel) . '</a>';
 }
 
 function t(string $text, ?string $lang = null): string

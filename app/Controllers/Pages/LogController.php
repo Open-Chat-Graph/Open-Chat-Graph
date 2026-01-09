@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Admin\AdminAuthService;
-use Shared\Exceptions\NotFoundException;
 
 /**
- * 管理者用ログ閲覧コントローラー
+ * ログ閲覧コントローラー
  *
- * exception.log と各言語のcron.logを閲覧するための管理画面を提供する。
+ * cronログは誰でも閲覧可能、exception.logは管理者のみ閲覧可能。
  * 大容量ファイルに対応するため、ファイルシークとキャッシュを使用して効率的に処理する。
  */
 class LogController
@@ -29,25 +28,26 @@ class LogController
         'tw-cron' => '/storage/tw/logs/cron.log',
     ];
 
-    /**
-     * 管理者認証を行う
-     * 認証失敗時は404を返す（管理画面の存在を隠すため）
-     */
-    public function __construct(AdminAuthService $adminAuthService)
-    {
-        if (!$adminAuthService->auth()) {
-            throw new NotFoundException;
-        }
-    }
+    public function __construct(
+        private AdminAuthService $adminAuthService
+    ) {}
 
     /**
      * ログ選択画面を表示
      * 4種類のログファイルの一覧と状態を表示する
+     * exception.logは管理者のみ表示
      */
     public function index()
     {
+        $isAdmin = $this->adminAuthService->auth();
+
         $logFiles = [];
         foreach (self::LOG_FILES as $key => $path) {
+            // 非管理者にはexception.logを表示しない
+            if ($key === 'exception' && !$isAdmin) {
+                continue;
+            }
+
             $fullPath = __DIR__ . '/../../..' . $path;
             $logFiles[$key] = [
                 'name' => $key,
@@ -57,8 +57,14 @@ class LogController
             ];
         }
 
+        $_meta = meta()->setTitle('データ更新ログ');
+        $desc = 'オプチャグラフのデータ更新処理（LINE公式サイトからのランキングデータ取得）の実行状況をリアルタイムで確認できます。';
+        $_meta->setDescription($desc)->setOgpDescription($desc);
+        $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
+
         return view('admin/log_index', [
             'logFiles' => $logFiles,
+            '_meta' => $_meta,
         ]);
     }
 
@@ -83,17 +89,28 @@ class LogController
 
         $result = $this->readCronLogReverse($filePath, $page, self::CRON_ITEMS_PER_PAGE);
 
+        // 日本語版のみメタデータを設定
+        $_meta = null;
+        if ($type === 'ja-cron') {
+            $_meta = meta()->setTitle('データ更新ログ詳細');
+            $desc = 'オプチャグラフのデータ更新処理の実行ログ詳細。毎時・日次の処理状況を時系列で確認できます。';
+            $_meta->setDescription($desc)->setOgpDescription($desc);
+            $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
+        }
+
         return view('admin/log_cron', [
             'type' => $type,
             'logs' => $result['logs'],
             'currentPage' => $page,
             'totalPages' => $result['totalPages'],
+            '_meta' => $_meta,
         ]);
     }
 
     /**
-     * 例外ログを表示
+     * 例外ログを表示（管理者専用）
      * 日付降順で300件ずつページング表示する
+     * 認証はルーティングで実施
      *
      * @param int $page ページ番号
      */
@@ -114,8 +131,9 @@ class LogController
     }
 
     /**
-     * 例外ログの詳細を表示
+     * 例外ログの詳細を表示（管理者専用）
      * 指定されたインデックスの例外エントリの生データを表示する
+     * 認証はルーティングで実施
      *
      * @param int $index エントリのインデックス（0から始まる）
      */
@@ -192,7 +210,7 @@ class LogController
 
     /**
      * cronログの1行をパースする
-     * 形式: "2025-01-07 05:33:01 メッセージ"
+     * 形式: "2025-01-07 05:33:01 [processTag] メッセージ GitHub::path/to/file.php:123"
      *
      * @param string $line ログ行
      * @return array|null パース結果、失敗時はnull
@@ -200,9 +218,30 @@ class LogController
     private function parseCronLine(string $line): ?array
     {
         if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.+)$/', $line, $matches)) {
+            $message = $matches[2];
+            $githubRef = null;
+
+            // GitHub参照を抽出（形式: GitHub::path/to/file.php:123）
+            if (preg_match('/\s+GitHub::([^\s]+):(\d+)\s*$/', $message, $githubMatches)) {
+                $filePath = $githubMatches[1];
+                $lineNumber = $githubMatches[2];
+                $fileName = basename($filePath);
+
+                $githubRef = [
+                    'filePath' => $filePath,
+                    'lineNumber' => $lineNumber,
+                    'fileName' => $fileName,
+                    'label' => $fileName . ':' . $lineNumber,
+                ];
+
+                // メッセージからGitHub参照部分を削除
+                $message = preg_replace('/\s+GitHub::[^\s]+:\d+\s*$/', '', $message);
+            }
+
             return [
                 'date' => $matches[1],
-                'message' => $matches[2],
+                'message' => $message,
+                'githubRef' => $githubRef,
             ];
         }
         return null;

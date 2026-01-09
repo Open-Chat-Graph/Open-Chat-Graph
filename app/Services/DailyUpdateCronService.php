@@ -41,20 +41,20 @@ class DailyUpdateCronService
      */
     function getTargetOpenChatIdArray(): array
     {
-        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start');
+        addVerboseCronLog('クローリング対象のオープンチャットを抽出中');
         $ocDbIdArray = $this->openChatRepository->getOpenChatIdAllByCreatedAtDate($this->date);
-        addVerboseCronLog('Total OpenChat count for date ' . $this->date . ': ' . count($ocDbIdArray));
+        addVerboseCronLog('登録オープンチャット数（' . $this->date . '）: ' . count($ocDbIdArray));
 
-        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start getOpenChatIdArrayByDate');
+        addVerboseCronLog('統計データ未登録のオープンチャットを取得中');
         $statsDbIdArray = $this->statisticsRepository->getOpenChatIdArrayByDate($this->date);
-        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray End getOpenChatIdArrayByDate');
+        addVerboseCronLog('統計データ未登録のオープンチャット取得完了');
 
         $filteredIdArray = array_diff($ocDbIdArray, $statsDbIdArray);
 
         // 重いクエリを1回だけ実行し、結果をプロパティに保存
-        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray Start getMemberChangeWithinLastWeekCacheArray');
+        addVerboseCronLog('メンバー数変動ありのオープンチャットを抽出中');
         $this->cachedMemberChangeIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
-        addVerboseCronLog('DailyUpdateCronService::getTargetOpenChatIdArray End getMemberChangeWithinLastWeekCacheArray');
+        addVerboseCronLog('メンバー数変動ありのオープンチャット抽出完了');
 
         return array_filter($filteredIdArray, fn (int $id) => in_array($id, $this->cachedMemberChangeIdArray));
     }
@@ -72,13 +72,13 @@ class DailyUpdateCronService
 
     function update(?\Closure $crawlingEndFlag = null): void
     {
-        addVerboseCronLog('DailyUpdateCronService start for date: ' . $this->date);
-        
+        addVerboseCronLog('日次データ更新を開始（対象日: ' . $this->date . '）');
+
         $this->rankingPositionDailyUpdater->updateYesterdayDailyDb();
 
         $outOfRankId = $this->getTargetOpenChatIdArray();
 
-        addCronLog('openChatCrawling start: ' . count($outOfRankId));
+        addCronLog('ランキング外オープンチャットのクローリング開始: ' . count($outOfRankId) . '件');
 
         // 開発環境の場合、更新制限をかける
         $isDevelopment = AppConfig::$isDevlopment ?? false;
@@ -91,16 +91,16 @@ class DailyUpdateCronService
 
         $result = $this->openChatDailyCrawling->crawling($outOfRankId);
 
-        addCronLog('openChatCrawling done: ' . $result);
+        addCronLog('ランキング外オープンチャットのクローリング完了: ' . $result);
         unset($outOfRankId);
         OpenChatDataForUpdaterWithCacheRepository::clearCache();
 
         if ($crawlingEndFlag)
             $crawlingEndFlag();
 
-        addCronLog('syncSubCategoriesAll start');
+        addCronLog('サブカテゴリ同期を開始');
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
-        addCronLog('syncSubCategoriesAll done: ' . count($categoryResult));
+        addCronLog('サブカテゴリ同期完了: ' . count($categoryResult) . '件');
 
         $this->updateRankingService->update($this->date);
     }

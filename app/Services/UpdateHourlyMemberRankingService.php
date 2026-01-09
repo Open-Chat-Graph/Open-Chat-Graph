@@ -26,12 +26,12 @@ class UpdateHourlyMemberRankingService
         $time = $this->rankingPositionHourRepository->getLastHour();
         if (!$time) return;
 
-        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
+        addVerboseCronLog('毎時メンバーランキングテーブルを更新中');
         $this->hourMemberRankingUpdaterRepository->updateHourRankingTable(
             new \DateTime($time),
             $this->getCachedFilters($time)
         );
-        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
+        addVerboseCronLog('毎時メンバーランキングテーブル更新完了');
 
         $this->updateStaticData($time);
 
@@ -77,7 +77,7 @@ class UpdateHourlyMemberRankingService
         // すでに今日のキャッシュがある場合はスキップ
         // dailyTaskが同じ日に複数回実行されても、データ取得は1回のみ
         if ($cachedDate === $date) {
-            addCronLog(getClassSimpleName($this) . ': Skip - Cache already updated today');
+            addCronLog('本日のフィルターキャッシュは更新済みのためスキップ');
             return;
         }
 
@@ -85,13 +85,13 @@ class UpdateHourlyMemberRankingService
         if ($filterIds === null) {
             // 引数がない場合: クエリを実行して最新データを取得（データ鮮度優先）
             // クローリング後の最新状態を反映できるが、処理時間が増加
-            addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+            addVerboseCronLog('過去1週間のメンバー変動データを取得中');
             $filterIds = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($date);
-            addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+            addVerboseCronLog('過去1週間のメンバー変動データ取得完了');
         } else {
             // 引数がある場合: DailyUpdateCronServiceから渡されたデータを再利用（パフォーマンス優先）
             // クエリを再実行せず、処理時間を短縮（現在の実装）
-            addCronLog(getClassSimpleName($this) . ': Reuse cached data from DailyUpdateCronService');
+            addCronLog('日次更新処理で取得済みのキャッシュデータを再利用');
         }
 
         // フィルターIDを保存
@@ -123,24 +123,24 @@ class UpdateHourlyMemberRankingService
 
     private function saveNextFiltersCache(string $time)
     {
-        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
+        addVerboseCronLog('過去1週間の毎時メンバー変動データを取得中');
         saveSerializedFile(
             AppConfig::getStorageFilePath('openChatHourFilterId'),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d')),
         );
-        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
+        addVerboseCronLog('過去1週間の毎時メンバー変動データ取得完了');
     }
 
     private function updateStaticData(string $time)
     {
         safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
 
-        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StaticDataGenerator::updateStaticData');
+        addVerboseCronLog('ランキング静的データを生成中');
         $this->staticDataGenerator->updateStaticData();
-        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StaticDataGenerator::updateStaticData');
+        addVerboseCronLog('ランキング静的データ生成完了');
 
-        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'RecommendStaticDataGenerator::updateStaticData');
+        addVerboseCronLog('おすすめ静的データを生成中');
         $this->recommendStaticDataGenerator->updateStaticData();
-        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'RecommendStaticDataGenerator::updateStaticData');
+        addVerboseCronLog('おすすめ静的データ生成完了');
     }
 }

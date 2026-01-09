@@ -147,6 +147,10 @@ class AppConfig
     static bool $disableAds = false;
     static bool $verboseCronLog = false;
     static bool $enableCloudflare = false;
+
+    /** GitHubリポジトリ（ログのソースコードリンク用） */
+    static string $githubRepo = 'pika-0203/Open-Chat-Graph';
+    static string $githubBranch = 'main';
     static bool $disableAdTags = true;
 
     /** @var array<string,int> */
