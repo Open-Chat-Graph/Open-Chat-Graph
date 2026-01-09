@@ -7,11 +7,12 @@
     <?php echo $_meta ?>
     <meta name="robots" content="noindex, nofollow">
     <style>
-        body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
         h1, h2, h3 { color: #333; }
         h2 { margin-top: 40px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
 
-        .log-list { list-style: none; padding: 0; max-width: 600px; }
+        .log-list { list-style: none; padding: 0; }
         .log-item { background: #fff; margin: 10px 0; padding: 15px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .log-item a { text-decoration: none; color: #1a73e8; font-weight: bold; font-size: 18px; }
         .log-item a:hover { text-decoration: underline; }
@@ -52,6 +53,7 @@
 </head>
 
 <body>
+<div class="container">
     <h1>データ更新ログ</h1>
 
     <ul class="log-list">
@@ -196,6 +198,7 @@
         </div>
     </div>
 
+</div>
 </body>
 
 </html>
