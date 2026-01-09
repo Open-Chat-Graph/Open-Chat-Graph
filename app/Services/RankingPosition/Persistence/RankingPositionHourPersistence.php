@@ -20,8 +20,7 @@ class RankingPositionHourPersistence
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private RisingPositionStore $risingPositionStore,
         private RankingPositionStore $rankingPositionStore
-    ) {
-    }
+    ) {}
 
     private function formatElapsedTime(float $startTime): string
     {
@@ -31,9 +30,9 @@ class RankingPositionHourPersistence
         return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
     }
 
-    private function getCategoryLabelWithCount(string $categoryName, string $typeLabel, int $count): string
+    private function getCategoryLabelWithCount(string $categoryName, string $typeLabel, ?int $count = null): string
     {
-        return "カテゴリ {$categoryName}の{$typeLabel} {$count}件";
+        return "カテゴリ {$categoryName}の{$typeLabel}" . (is_null($count) ? "" : " {$count}件");
     }
 
     function persistStorageFileToDb(): void
@@ -60,13 +59,13 @@ class RankingPositionHourPersistence
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $key => $category) {
             // 急上昇
             $risingStartTime = microtime(true);
+            $risingLabel = $this->getCategoryLabelWithCount($key, '急上昇', null);
+            addVerboseCronLog("{$risingLabel}をデータベースに反映中");
 
             [$risingFileTime, $risingOcDtoArray] = $this->risingPositionStore->getStorageData((string)$category);
             $risingInsertDtoArray = $this->createInsertDtoArray($risingOcDtoArray);
-            
-            $risingLabel = $this->getCategoryLabelWithCount($key, '急上昇', count($risingInsertDtoArray));
-            addVerboseCronLog("{$risingLabel}をデータベースに反映中");
-            
+
+
             unset($risingOcDtoArray);
 
             $this->rankingPositionHourRepository->insertFromDtoArray(RankingType::Rising, $risingFileTime, $risingInsertDtoArray);
@@ -79,12 +78,11 @@ class RankingPositionHourPersistence
 
             // ランキング
             $rankingStartTime = microtime(true);
+            $rankingLabel = $this->getCategoryLabelWithCount($key, 'ランキング', null);
+            addVerboseCronLog("{$rankingLabel}をデータベースに反映中");
 
             [$rankingFileTime, $rankingOcDtoArray] = $this->rankingPositionStore->getStorageData((string)$category);
             $rankingInsertDtoArray = $this->createInsertDtoArray($rankingOcDtoArray);
-
-            $rankingLabel = $this->getCategoryLabelWithCount($key, 'ランキング', count($rankingInsertDtoArray));
-            addVerboseCronLog("{$rankingLabel}をデータベースに反映中");
 
             unset($rankingOcDtoArray);
 
