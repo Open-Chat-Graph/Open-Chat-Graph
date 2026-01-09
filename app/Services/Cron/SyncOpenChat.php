@@ -37,26 +37,6 @@ class SyncOpenChat
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
         ini_set('memory_limit', '2G');
-
-        set_exception_handler(function (\Throwable $e) {
-            OpenChatApiDbMerger::setKillFlagTrue();
-            OpenChatDailyCrawling::setKillFlagTrue();
-
-            // killフラグによる強制終了の場合、開始から10時間以内ならDiscord通知しない
-            $shouldNotify = true;
-            if ($e instanceof \App\Exceptions\ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
-                if (isDailyCronWithinHours(10)) {
-                    $shouldNotify = false;
-                    $elapsedHours = getDailyCronElapsedHours();
-                    addCronLog("killフラグによる強制終了（開始から" . round($elapsedHours, 2) . "時間経過）Discord通知スキップ");
-                }
-            }
-
-            if ($shouldNotify) {
-                AdminTool::sendDiscordNotify($e->__toString());
-                addCronLog($e->__toString());
-            }
-        });
     }
 
     // 毎時30分に実行
@@ -81,7 +61,9 @@ class SyncOpenChat
     {
         checkLineSiteRobots();
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('SyncOpenChat: hourlyTask is active');
+            addCronLog('SyncOpenChat: [Warning] hourlyTask is active');
+            AdminTool::sendDiscordNotify('SyncOpenChat: [Warning] hourlyTask is active');
+            sleep(30);
         }
 
         if ($this->state->getBool(StateType::isDailyTaskActive)) {

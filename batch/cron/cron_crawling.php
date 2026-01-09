@@ -34,10 +34,24 @@ try {
         // Create an instance of OcreviewApiDataImporter
         $importer = app(\App\Services\Cron\OcreviewApiDataImporter::class);
 
+        addCronLog('Start OcreviewApiDataImporter');
         // Execute the import process
         $importer->execute();
+        addCronLog('End OcreviewApiDataImporter');
     }
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
-    AdminTool::sendDiscordNotify($e->__toString());
+    // killフラグによる強制終了の場合、開始から10時間以内ならDiscord通知しない
+    $shouldNotify = true;
+    if ($e instanceof \App\Exceptions\ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
+        if (isDailyCronWithinHours(10)) {
+            $shouldNotify = false;
+            $elapsedHours = getDailyCronElapsedHours();
+            addCronLog("killフラグによる強制終了（開始から" . round($elapsedHours, 2) . "時間経過）Discord通知スキップ");
+        }
+    }
+
+    if ($shouldNotify) {
+        AdminTool::sendDiscordNotify($e->__toString());
+        addCronLog($e->__toString());
+    }
 }
