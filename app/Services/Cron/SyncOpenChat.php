@@ -181,8 +181,6 @@ class SyncOpenChat
 
     private function retryDailyTask()
     {
-        AdminTool::sendDiscordNotify('日次処理リトライ開始');
-
         addCronLog('【日次処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
@@ -190,8 +188,6 @@ class SyncOpenChat
 
         $this->dailyTask();
         addCronLog('【日次処理】リトライ完了');
-
-        AdminTool::sendDiscordNotify('日次処理リトライ完了');
     }
 
     /**
