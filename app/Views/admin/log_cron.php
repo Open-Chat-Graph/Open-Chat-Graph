@@ -42,8 +42,8 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
         th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f9f9f9; font-weight: bold; position: sticky; top: 0; }
         .date-col { width: 160px; white-space: nowrap; font-family: monospace; }
-        .message-col { word-break: break-all; }
-        .source-link { margin-left: 1em; font-family: monospace; font-size: 12px; white-space: nowrap; }
+        .message-col { word-break: break-all; overflow-wrap: anywhere; }
+        .source-link { margin-left: 1em; font-family: monospace; font-size: 12px; word-break: break-all; overflow-wrap: anywhere; }
         .source-link a { color: #1a73e8; text-decoration: none; }
         .source-link a:hover { text-decoration: underline; }
         tr:hover { background: #f5f5f5; }

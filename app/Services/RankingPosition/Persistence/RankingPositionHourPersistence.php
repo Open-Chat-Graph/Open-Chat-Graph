@@ -55,7 +55,7 @@ class RankingPositionHourPersistence
             }
 
             unset($risingInsertDtoArray);
-            addCronLog("急上昇ランキングを保存: {$key}");
+            addCronLog("「急上昇」を保存: {$key}");
 
             [$rankingFileTime, $rankingOcDtoArray] = $this->rankingPositionStore->getStorageData((string)$category);
             $rankingInsertDtoArray = $this->createInsertDtoArray($rankingOcDtoArray);
@@ -65,7 +65,7 @@ class RankingPositionHourPersistence
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($rankingFileTime, $rankingInsertDtoArray);
 
             unset($rankingInsertDtoArray);
-            addCronLog("メンバー数ランキングを保存: {$key}");
+            addCronLog("「ランキング」を保存: {$key}");
 
             $fileTime = $rankingFileTime;
         }

@@ -110,7 +110,7 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 115) ?>
             </li>
             <li>
-                LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・メンバー数）
+                LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・ランキング）
                 <?php echo githubLink('app/Services/OpenChat/OpenChatApiDbMerger.php', 54) ?>
             </li>
             <li class="sub">各カテゴリのデータをダウンロード・保存</li>

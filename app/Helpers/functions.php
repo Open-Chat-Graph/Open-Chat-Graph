@@ -648,8 +648,8 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 /**
  * Cronログを出力する
  *
- * 出力形式: 2025-01-07 05:33:01 [abcd@05:30~] メッセージ GitHub::path/to/file.php:123
- * - abcd: セッション固有の4文字ハッシュ
+ * 出力形式: 2025-01-07 05:33:01 [JA@05:30~] メッセージ GitHub::path/to/file.php:123
+ * - JA/TH/TW: 言語コード（urlRootから判定）
  * - 05:30: Cron実行開始時刻
  *
  * @param string|array $log ログメッセージ
@@ -659,7 +659,7 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
  */
 function addCronLog(string|array $log = '', string $setProcessTag = '', int $backtraceDepth = 1): string
 {
-    // セッション識別子を1回だけ生成: [4文字ハッシュ@開始時刻~] 形式
+    // セッション識別子を1回だけ生成: [言語コード@開始時刻~] 形式
     static $processTag = null;
     if ($setProcessTag !== '' && is_null($processTag)) {
         $processTag = $setProcessTag;
@@ -667,9 +667,13 @@ function addCronLog(string|array $log = '', string $setProcessTag = '', int $bac
     } elseif ($log === '' && is_string($processTag)) {
         return $processTag;
     } elseif (is_null($processTag)) {
-        $hash = substr(base62Hash((string)microtime(true)), 0, 4);
+        $langCode = match (\Shared\MimimalCmsConfig::$urlRoot) {
+            '/th' => 'TH',
+            '/tw' => 'TW',
+            default => 'JA',
+        };
         $startTime = date('H:i');
-        $processTag = $hash . '@' . $startTime . '~';
+        $processTag = $langCode . '@' . $startTime . '~';
     }
 
     if (is_string($log)) {

@@ -101,8 +101,8 @@ class OpenChatApiDbMerger
             $startTimes[$category] = microtime(true);
             
             $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
-            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'メンバー数';
-            addVerboseCronLog("カテゴリ「{$categoryName}」の{$typeLabel}ランキングを取得中");
+            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
+            addVerboseCronLog("「{$categoryName}」カテゴリの「{$typeLabel}」を取得中");
 
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
@@ -120,8 +120,8 @@ class OpenChatApiDbMerger
                 $elapsed = $minutes > 0 ? " ({$minutes}分{$seconds}秒)" : " ({$seconds}秒)";
             }
             
-            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'メンバー数';
-            addVerboseCronLog("カテゴリ「{$categoryName}」の{$typeLabel}ランキング取得完了{$elapsed}");
+            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
+            addVerboseCronLog("「{$categoryName}」カテゴリの「{$typeLabel}」取得完了{$elapsed}");
 
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
