@@ -15,7 +15,7 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
         <title><?php echo htmlspecialchars($pageTitle) ?></title>
     <?php endif; ?>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        body { font-family: sans-serif; margin: 0; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { color: #333; margin-bottom: 5px; }
         .back-link { margin-bottom: 20px; }
