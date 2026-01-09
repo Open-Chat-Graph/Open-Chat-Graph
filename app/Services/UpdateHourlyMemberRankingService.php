@@ -26,12 +26,12 @@ class UpdateHourlyMemberRankingService
         $time = $this->rankingPositionHourRepository->getLastHour();
         if (!$time) return;
 
-        addVerboseCronLog(__METHOD__ . ' Start ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
         $this->hourMemberRankingUpdaterRepository->updateHourRankingTable(
             new \DateTime($time),
             $this->getCachedFilters($time)
         );
-        addVerboseCronLog(__METHOD__ . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
+        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'HourMemberRankingUpdaterRepositoryInterface::updateHourRankingTable');
 
         $this->updateStaticData($time);
 
@@ -77,7 +77,7 @@ class UpdateHourlyMemberRankingService
         // すでに今日のキャッシュがある場合はスキップ
         // dailyTaskが同じ日に複数回実行されても、データ取得は1回のみ
         if ($cachedDate === $date) {
-            addCronLog(__METHOD__ . ': Skip - Cache already updated today');
+            addCronLog(getClassSimpleName($this) . ': Skip - Cache already updated today');
             return;
         }
 
@@ -85,13 +85,13 @@ class UpdateHourlyMemberRankingService
         if ($filterIds === null) {
             // 引数がない場合: クエリを実行して最新データを取得（データ鮮度優先）
             // クローリング後の最新状態を反映できるが、処理時間が増加
-            addVerboseCronLog(__METHOD__ . ' Start ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+            addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
             $filterIds = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($date);
-            addVerboseCronLog(__METHOD__ . ' Done ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
+            addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StatisticsRepositoryInterface::getMemberChangeWithinLastWeekCacheArray');
         } else {
             // 引数がある場合: DailyUpdateCronServiceから渡されたデータを再利用（パフォーマンス優先）
             // クエリを再実行せず、処理時間を短縮（現在の実装）
-            addCronLog(__METHOD__ . ': Reuse cached data from DailyUpdateCronService');
+            addCronLog(getClassSimpleName($this) . ': Reuse cached data from DailyUpdateCronService');
         }
 
         // フィルターIDを保存
@@ -123,24 +123,24 @@ class UpdateHourlyMemberRankingService
 
     private function saveNextFiltersCache(string $time)
     {
-        addVerboseCronLog(__METHOD__ . ' Start ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
         saveSerializedFile(
             AppConfig::getStorageFilePath('openChatHourFilterId'),
             $this->statisticsRepository->getHourMemberChangeWithinLastWeekArray((new \DateTime($time))->format('Y-m-d')),
         );
-        addVerboseCronLog(__METHOD__ . ' Done ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
+        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StatisticsRepositoryInterface::getHourMemberChangeWithinLastWeekArray');
     }
 
     private function updateStaticData(string $time)
     {
         safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
 
-        addVerboseCronLog(__METHOD__ . ' Start ' . 'StaticDataGenerator::updateStaticData');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'StaticDataGenerator::updateStaticData');
         $this->staticDataGenerator->updateStaticData();
-        addVerboseCronLog(__METHOD__ . ' Done ' . 'StaticDataGenerator::updateStaticData');
+        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'StaticDataGenerator::updateStaticData');
 
-        addVerboseCronLog(__METHOD__ . ' Start ' . 'RecommendStaticDataGenerator::updateStaticData');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start ' . 'RecommendStaticDataGenerator::updateStaticData');
         $this->recommendStaticDataGenerator->updateStaticData();
-        addVerboseCronLog(__METHOD__ . ' Done ' . 'RecommendStaticDataGenerator::updateStaticData');
+        addVerboseCronLog(getClassSimpleName($this) . ' Done ' . 'RecommendStaticDataGenerator::updateStaticData');
     }
 }

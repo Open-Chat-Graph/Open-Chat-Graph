@@ -27,12 +27,12 @@ class RankingPositionDailyUpdater
 
     function updateYesterdayDailyDb()
     {
-        addVerboseCronLog(__METHOD__ . ' Start persistHourToDaily');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start persistHourToDaily');
         $this->rankingPositionDailyPersistence->persistHourToDaily();
-        addVerboseCronLog(__METHOD__ . ' End persistHourToDaily');
-        addVerboseCronLog(__METHOD__ . ' Start persistMemberStatsFromRankingPositionDb');
+        addVerboseCronLog(getClassSimpleName($this) . ' End persistHourToDaily');
+        addVerboseCronLog(getClassSimpleName($this) . ' Start persistMemberStatsFromRankingPositionDb');
         $this->persistMemberStatsFromRankingPositionDb();
-        addVerboseCronLog(__METHOD__ . ' End persistMemberStatsFromRankingPositionDb');
+        addVerboseCronLog(getClassSimpleName($this) . ' End persistMemberStatsFromRankingPositionDb');
     }
 
     private function persistMemberStatsFromRankingPositionDb(): void
