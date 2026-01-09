@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
+use App\Config\AppConfig;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
 use App\Services\OpenChat\Crawler\OpenChatApiRisingDownloaderProcess;
@@ -18,6 +19,7 @@ use App\Exceptions\ApplicationException;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use Shared\MimimalCmsConfig;
 
 class OpenChatApiDbMerger
 {
@@ -86,14 +88,18 @@ class OpenChatApiDbMerger
 
         // API カテゴリごとの処理
         $callbackByCategoryBefore = function (string $category) use ($positionStore): bool {
-            addVerboseCronLog("Start fetching category: {$category} " . getClassSimpleName($positionStore));
+            $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
+            addVerboseCronLog("Start fetching {$categoryName} " . getClassSimpleName($positionStore));
+
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
             return $fileTime === $now;
         };
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore): void {
-            addVerboseCronLog("Finished fetching category: {$category} " . getClassSimpleName($positionStore));
+            $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
+            addVerboseCronLog("Finished fetching {$categoryName} " . getClassSimpleName($positionStore));
+
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
 
