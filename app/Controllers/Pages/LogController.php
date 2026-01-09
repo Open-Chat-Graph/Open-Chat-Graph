@@ -57,8 +57,14 @@ class LogController
             ];
         }
 
+        $_meta = meta()->setTitle('データ更新ログ');
+        $desc = 'オプチャグラフのデータ更新処理（LINE公式サイトからのランキングデータ取得）の実行状況をリアルタイムで確認できます。';
+        $_meta->setDescription($desc)->setOgpDescription($desc);
+        $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
+
         return view('admin/log_index', [
             'logFiles' => $logFiles,
+            '_meta' => $_meta,
         ]);
     }
 
