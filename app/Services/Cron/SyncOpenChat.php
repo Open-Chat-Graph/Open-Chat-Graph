@@ -38,23 +38,6 @@ class SyncOpenChat
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
         ini_set('memory_limit', '2G');
-
-        set_exception_handler(function (\Throwable $e) {
-            // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
-            $shouldNotify = true;
-            if ($e instanceof ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
-                if (isDailyCronWithinHours(20)) {
-                    $shouldNotify = false;
-                    $elapsedHours = getDailyCronElapsedHours();
-                    addCronLog("日次処理を中断（開始から" . round($elapsedHours, 2) . "時間経過）");
-                }
-            }
-
-            if ($shouldNotify) {
-                AdminTool::sendDiscordNotify($e->__toString());
-                addCronLog($e->__toString());
-            }
-        });
     }
 
     // 毎時30分に実行
@@ -136,14 +119,7 @@ class SyncOpenChat
             ] : null,
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
             [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
-            [function () {
-                // フィルターキャッシュの更新判定
-                // hourlyTask: キャッシュを読むのみ、「新規部屋（レコード8以下）」を毎時取得してマージ（約5秒）
-                // dailyTask: dailyTask内で別途キャッシュ保存するため、ここでは保存しない
-                $saveNextFiltersCache = false;
-
-                $this->hourlyMemberRanking->update($saveNextFiltersCache);
-            }, '毎時メンバーランキング関連の処理'],
+            [fn() => $this->hourlyMemberRanking->update(), '毎時メンバーランキング関連の処理'],
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
@@ -195,16 +171,9 @@ class SyncOpenChat
         $updater = app(DailyUpdateCronService::class);
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
-        // DailyUpdateCronServiceで取得したフィルターキャッシュデータを取得
-        // saveFiltersCacheAfterDailyTaskで再利用するため（重複クエリ防止）
-        $cachedFilterIds = $updater->getCachedMemberChangeIdArray();
-
         $this->executeAndCronLog(
             [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), '日次画像更新'],
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
-            // DailyUpdateCronServiceで取得したデータを渡してクエリの重複実行を防ぐ
-            // nullを渡すと再度クエリを実行する（データ鮮度優先）
-            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'フィルターキャッシュ保存'],
         );
 
         addCronLog('【日次処理】完了');
