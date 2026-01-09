@@ -52,7 +52,7 @@ class OpenChatApiDbMerger
     function fetchOpenChatApiRankingAll(): array
     {
         $this->setKillFlagFalse();
-        
+
         try {
             $result1 = $this->fetchOpenChatApiRankingAllProcess($this->risingStore, $this->risingDownloader);
             $result2 = $this->fetchOpenChatApiRankingAllProcess($this->rankingStore, $this->rankingDownloader);
@@ -86,12 +86,14 @@ class OpenChatApiDbMerger
 
         // API カテゴリごとの処理
         $callbackByCategoryBefore = function (string $category) use ($positionStore): bool {
+            addVerboseCronLog("Start fetching category: {$category} " . getClassSimpleName($positionStore));
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
             return $fileTime === $now;
         };
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore): void {
+            addVerboseCronLog("Finished fetching category: {$category} " . getClassSimpleName($positionStore));
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
 
