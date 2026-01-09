@@ -49,7 +49,7 @@ class DailyUpdateCronService
         // キャッシュから取得、またはDBから取得して自動でキャッシュ保存
         $memberChangeIdArray = $this->memberChangeFilterCacheRepository->getForDaily($this->date);
 
-        return array_filter($filteredIdArray, fn(int $id) => in_array($id, $memberChangeIdArray));
+        return array_values(array_filter($filteredIdArray, fn(int $id) => in_array($id, $memberChangeIdArray)));
     }
 
     function update(?\Closure $crawlingEndFlag = null): void
