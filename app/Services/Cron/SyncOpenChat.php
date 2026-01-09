@@ -97,9 +97,15 @@ class SyncOpenChat
     // 毎時0分に実行
     function handleHalfHourCheck()
     {
+        if (AppConfig::$skipHandleHalfHourCheck) {
+            // 毎時処理の途中経過チェックをスキップ
+            return;
+        }
+
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
             $this->retryHourlyTask();
         } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
+            // この後の処理が重くなっており、既存のcron処理が終わっていない場合は二重に動いてしまう
             $this->hourlyTaskAfterDbMerge(true);
         }
     }

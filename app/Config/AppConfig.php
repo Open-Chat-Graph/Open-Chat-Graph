@@ -169,6 +169,9 @@ class AppConfig
         '/th' => 1,
     ];
 
+    // 毎時処理の途中経過チェックをスキップ
+    static bool $skipHandleHalfHourCheck = true;
+
     const DATE_TIME_ZONE = [
         '' =>   'Asia/Tokyo',
         '/tw' => 'Asia/Taipei',
