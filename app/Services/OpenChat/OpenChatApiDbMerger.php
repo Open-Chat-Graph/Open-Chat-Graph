@@ -62,6 +62,11 @@ class OpenChatApiDbMerger
         return "カテゴリ {$categoryName}の{$typeLabel}";
     }
 
+    private function getCategoryLabelWithCount(string $category, AbstractRankingPositionStore $positionStore, int $count): string
+    {
+        return "{$this->getCategoryLabel($category, $positionStore)} {$count}件";
+    }
+
     /**
      * @return array{ count: int, category: string, dateTime: \DateTime }[] 取得済件数とカテゴリ
      * @throws \RuntimeException
@@ -118,8 +123,10 @@ class OpenChatApiDbMerger
         };
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
+            $label = $this->getCategoryLabelWithCount($category, $positionStore, $positionStore->getCacheCount());
             $elapsed = isset($startTimes[$category]) ? "（{$this->formatElapsedTime($startTimes[$category])}）" : '';
-            addVerboseCronLog("{$this->getCategoryLabel($category, $positionStore)}取得完了{$elapsed}");
+            addVerboseCronLog("{$label}取得完了{$elapsed}");
+            
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
 

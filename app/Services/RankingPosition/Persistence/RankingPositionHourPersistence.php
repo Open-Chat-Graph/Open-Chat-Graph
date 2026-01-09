@@ -23,12 +23,25 @@ class RankingPositionHourPersistence
     ) {
     }
 
+    private function formatElapsedTime(float $startTime): string
+    {
+        $elapsedSeconds = microtime(true) - $startTime;
+        $minutes = (int) floor($elapsedSeconds / 60);
+        $seconds = (int) round($elapsedSeconds - ($minutes * 60));
+        return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
+    }
+
+    private function getCategoryLabelWithCount(string $categoryName, string $typeLabel, int $count): string
+    {
+        return "カテゴリ {$categoryName}の{$typeLabel} {$count}件";
+    }
+
     function persistStorageFileToDb(): void
     {
         $fileTime = $this->persist();
 
         $this->rankingPositionHourRepository->insertTotalCount($fileTime);
-        addCronLog("毎時ランキングデータを保存（{$fileTime}）");
+        addCronLog("毎時ランキング全データをデータベースに反映完了（{$fileTime}）");
 
         $deleteTime = new \DateTime($fileTime);
         $deleteTime->modify('- 1day');
@@ -45,8 +58,15 @@ class RankingPositionHourPersistence
 
         $fileTime = '';
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $key => $category) {
+            // 急上昇
+            $risingStartTime = microtime(true);
+
             [$risingFileTime, $risingOcDtoArray] = $this->risingPositionStore->getStorageData((string)$category);
             $risingInsertDtoArray = $this->createInsertDtoArray($risingOcDtoArray);
+            
+            $risingLabel = $this->getCategoryLabelWithCount($key, '急上昇', count($risingInsertDtoArray));
+            addVerboseCronLog("{$risingLabel}をデータベースに反映中");
+            
             unset($risingOcDtoArray);
 
             $this->rankingPositionHourRepository->insertFromDtoArray(RankingType::Rising, $risingFileTime, $risingInsertDtoArray);
@@ -55,17 +75,24 @@ class RankingPositionHourPersistence
             }
 
             unset($risingInsertDtoArray);
-            addCronLog("カテゴリ {$key}の急上昇をデータベースに反映完了");
-            
+            addVerboseCronLog("{$risingLabel}をデータベースに反映完了（{$this->formatElapsedTime($risingStartTime)}）");
+
+            // ランキング
+            $rankingStartTime = microtime(true);
+
             [$rankingFileTime, $rankingOcDtoArray] = $this->rankingPositionStore->getStorageData((string)$category);
             $rankingInsertDtoArray = $this->createInsertDtoArray($rankingOcDtoArray);
+
+            $rankingLabel = $this->getCategoryLabelWithCount($key, 'ランキング', count($rankingInsertDtoArray));
+            addVerboseCronLog("{$rankingLabel}をデータベースに反映中");
+
             unset($rankingOcDtoArray);
 
             $this->rankingPositionHourRepository->insertFromDtoArray(RankingType::Ranking, $rankingFileTime, $rankingInsertDtoArray);
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($rankingFileTime, $rankingInsertDtoArray);
 
             unset($rankingInsertDtoArray);
-            addCronLog("カテゴリ {$key}のランキングをデータベースに反映完了");
+            addVerboseCronLog("{$rankingLabel}をデータベースに反映完了（{$this->formatElapsedTime($rankingStartTime)}）");
 
             $fileTime = $rankingFileTime;
         }

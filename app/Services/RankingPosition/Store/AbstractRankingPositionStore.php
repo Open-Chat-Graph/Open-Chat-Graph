@@ -21,6 +21,11 @@ abstract class AbstractRankingPositionStore
         $this->apiDtoCache[] = $apiDto;
     }
 
+    function getCacheCount(): int
+    {
+        return count($this->apiDtoCache);
+    }
+
     function clearAllCacheDataAndSaveCurrentCategoryApiDataCache(string $category): void
     {
         saveSerializedFile(
