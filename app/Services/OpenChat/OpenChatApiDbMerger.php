@@ -47,6 +47,21 @@ class OpenChatApiDbMerger
         );
     }
 
+    private function formatElapsedTime(float $startTime): string
+    {
+        $elapsedSeconds = microtime(true) - $startTime;
+        $minutes = (int) floor($elapsedSeconds / 60);
+        $seconds = (int) round($elapsedSeconds - ($minutes * 60));
+        return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
+    }
+
+    private function getCategoryLabel(string $category, AbstractRankingPositionStore $positionStore): string
+    {
+        $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
+        $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
+        return "カテゴリ {$categoryName}の{$typeLabel}";
+    }
+
     /**
      * @return array{ count: int, category: string, dateTime: \DateTime }[] 取得済件数とカテゴリ
      * @throws \RuntimeException
@@ -65,11 +80,7 @@ class OpenChatApiDbMerger
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
         } finally {
-            $elapsedSeconds = microtime(true) - $startTime;
-            $minutes = (int) floor($elapsedSeconds / 60);
-            $seconds = (int) round($elapsedSeconds - ($minutes * 60));
-            $elapsed = $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
-            addVerboseCronLog("LINE公式APIからランキングデータを取得完了（{$elapsed}）");
+            addVerboseCronLog("LINE公式APIからランキングデータを取得完了（{$this->formatElapsedTime($startTime)}）");
         }
     }
 
@@ -99,10 +110,7 @@ class OpenChatApiDbMerger
         
         $callbackByCategoryBefore = function (string $category) use ($positionStore, &$startTimes): bool {
             $startTimes[$category] = microtime(true);
-            
-            $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
-            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
-            addVerboseCronLog("カテゴリ {$categoryName}の{$typeLabel}を取得中");
+            addVerboseCronLog("{$this->getCategoryLabel($category, $positionStore)}を取得中");
 
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
@@ -110,23 +118,10 @@ class OpenChatApiDbMerger
         };
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
-            $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
-            
-            $elapsed = '';
-            if (isset($startTimes[$category])) {
-                $elapsedSeconds = microtime(true) - $startTimes[$category];
-                $minutes = (int) floor($elapsedSeconds / 60);
-                $seconds = (int) round($elapsedSeconds - ($minutes * 60));
-                $elapsed = $minutes > 0 ? " ({$minutes}分{$seconds}秒)" : " ({$seconds}秒)";
-            }
-            
-            $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
-            addVerboseCronLog("カテゴリ {$categoryName}の{$typeLabel}取得完了{$elapsed}");
-
+            $elapsed = isset($startTimes[$category]) ? "（{$this->formatElapsedTime($startTimes[$category])}）" : '';
+            addVerboseCronLog("{$this->getCategoryLabel($category, $positionStore)}取得完了{$elapsed}");
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
-
-
 
         return $downloader->fetchOpenChatApiRankingAll($callback, $callbackByCategoryBefore, $callbackByCategoryAfter);
     }
