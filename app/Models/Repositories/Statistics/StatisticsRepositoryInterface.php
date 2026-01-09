@@ -18,16 +18,6 @@ interface StatisticsRepositoryInterface
     public function deleteDailyStatistics(int $open_chat_id): void;
 
     /**
-     * @return int[] open_chat_id
-     */
-    public function getMemberChangeWithinLastWeekCacheArray(string $date): array;
-
-    /**
-     * @return int[] open_chat_id
-     */
-    public function getHourMemberChangeWithinLastWeekArray(string $date): array;
-
-    /**
      * レコード数が8以下の新規部屋を取得
      * 高速クエリ（約5秒）のため、毎時実行して新規ルームのリアルタイム性を確保
      *

@@ -7,9 +7,9 @@
  * docker compose exec app vendor/bin/phpunit app/Models/SQLite/Repositories/Statistics/test/SqliteStatisticsRepositoryTest.php
  *
  * テスト対象メソッド:
- * - getMemberChangeWithinLastWeekCacheArray() - 3つのクエリを1つに統合した最適化版
- * - getHourMemberChangeWithinLastWeekArray() - 2つのクエリを1つに統合した最適化版
- * - getNewRoomsWithLessThan8Records() - 新規追加メソッド
+ * - getNewRoomsWithLessThan8Records() - レコード数が8以下の新規部屋
+ * - getMemberChangeWithinLastWeek() - 過去8日間でメンバー数が変動した部屋
+ * - getWeeklyUpdateRooms() - 最後のレコードが1週間以上前の部屋
  */
 
 declare(strict_types=1);
@@ -126,7 +126,6 @@ class SqliteStatisticsRepositoryTest extends TestCase
             [1005, 500, $this->today],
 
             // パターン6: 最近1日だけメンバー変動（ID: 1006）
-            // hourlyTask用のテストケース
             [1006, 600, date('Y-m-d', strtotime('-8 days'))],
             [1006, 600, date('Y-m-d', strtotime('-7 days'))],
             [1006, 600, date('Y-m-d', strtotime('-6 days'))],
@@ -169,16 +168,18 @@ class SqliteStatisticsRepositoryTest extends TestCase
     }
 
     /**
-     * テスト: getHourMemberChangeWithinLastWeekArray()
+     * テスト: getMemberChangeWithinLastWeek()
      *
      * 期待される動作:
-     * - 過去8日間でメンバー数が変動した部屋を取得
-     * - レコード数が8以下の新規部屋を含む
+     * - 過去8日間でメンバー数が変動した部屋のみを取得
      * - ID 1001, 1003, 1006が該当
+     *   - 1001: 100→105→110→115→115→120→120→120→120
+     *   - 1003: 50→55→60→65→70（新規部屋だがメンバー変動あり）
+     *   - 1006: 600→600→600→600→600→600→600→610→610
      */
-    public function testGetHourMemberChangeWithinLastWeekArray(): void
+    public function testGetMemberChangeWithinLastWeek(): void
     {
-        $result = $this->repository->getHourMemberChangeWithinLastWeekArray($this->today);
+        $result = $this->repository->getMemberChangeWithinLastWeek($this->today);
         sort($result);
 
         $expected = [1001, 1003, 1006];
@@ -186,30 +187,53 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $this->assertSame(
             $expected,
             $result,
-            '過去8日間でメンバー数が変動した部屋、または新規部屋を取得すること'
+            '過去8日間でメンバー数が変動した部屋を取得すること'
         );
     }
 
     /**
-     * テスト: getMemberChangeWithinLastWeekCacheArray()
+     * テスト: getWeeklyUpdateRooms()
      *
      * 期待される動作:
-     * - 過去8日間でメンバー数が変動した部屋
-     * - レコード数が8以下の新規部屋
-     * - 最終更新が1週間以上前の部屋
-     * - ID 1001, 1003, 1004, 1006が該当
+     * - 最後のレコードが1週間以上前の部屋を取得
+     * - ID 1004のみが該当
      */
-    public function testGetMemberChangeWithinLastWeekCacheArray(): void
+    public function testGetWeeklyUpdateRooms(): void
     {
-        $result = $this->repository->getMemberChangeWithinLastWeekCacheArray($this->today);
+        $result = $this->repository->getWeeklyUpdateRooms($this->today);
         sort($result);
+
+        $expected = [1004];
+
+        $this->assertSame(
+            $expected,
+            $result,
+            '最後のレコードが1週間以上前の部屋（ID: 1004）のみを取得すること'
+        );
+    }
+
+    /**
+     * テスト: 3つのメソッドを組み合わせた場合
+     *
+     * 期待される動作:
+     * - getMemberChangeWithinLastWeek + getNewRoomsWithLessThan8Records + getWeeklyUpdateRooms
+     * - = ID 1001, 1003, 1004, 1006
+     */
+    public function testCombinedMethods(): void
+    {
+        $memberChange = $this->repository->getMemberChangeWithinLastWeek($this->today);
+        $newRooms = $this->repository->getNewRoomsWithLessThan8Records();
+        $weeklyUpdate = $this->repository->getWeeklyUpdateRooms($this->today);
+
+        $combined = array_unique(array_merge($memberChange, $newRooms, $weeklyUpdate));
+        sort($combined);
 
         $expected = [1001, 1003, 1004, 1006];
 
         $this->assertSame(
             $expected,
-            $result,
-            '変動がある部屋、新規部屋、最終更新が1週間以上前の部屋を取得すること'
+            $combined,
+            '3つのメソッドを組み合わせると全対象部屋を取得できること'
         );
     }
 
@@ -282,13 +306,13 @@ class SqliteStatisticsRepositoryTest extends TestCase
 
         $this->assertSame(
             [],
-            $this->repository->getHourMemberChangeWithinLastWeekArray($this->today),
+            $this->repository->getMemberChangeWithinLastWeek($this->today),
             'データが存在しない場合、空配列を返すこと'
         );
 
         $this->assertSame(
             [],
-            $this->repository->getMemberChangeWithinLastWeekCacheArray($this->today),
+            $this->repository->getWeeklyUpdateRooms($this->today),
             'データが存在しない場合、空配列を返すこと'
         );
     }
