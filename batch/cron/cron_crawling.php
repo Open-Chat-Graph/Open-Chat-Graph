@@ -26,7 +26,6 @@ try {
         isset($argv[2]) && $argv[2] == 'dailyTest',
         isset($argv[3]) && $argv[3] == 'retryDailyTest'
     );
-    addCronLog('Done cron_crawling');
 
     if (!MimimalCmsConfig::$urlRoot) {
         set_time_limit(3600);
@@ -34,10 +33,10 @@ try {
         // Create an instance of OcreviewApiDataImporter
         $importer = app(\App\Services\Cron\OcreviewApiDataImporter::class);
 
-        addCronLog('Start OcreviewApiDataImporter');
-        // Execute the import process
+        addCronLog('アーカイブ用データベースにデータをインポート開始');
+        // インポート処理を実行
         $importer->execute();
-        addCronLog('Done OcreviewApiDataImporter');
+        addCronLog('アーカイブ用データベースにデータをインポート完了');
     }
 } catch (\Throwable $e) {
     AdminTool::sendDiscordNotify($e->__toString());
