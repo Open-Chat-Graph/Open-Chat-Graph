@@ -648,6 +648,10 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 /**
  * Cronログを出力する
  *
+ * 出力形式: 2025-01-07 05:33:01 [abcd@05:30~] メッセージ GitHub::path/to/file.php:123
+ * - abcd: セッション固有の4文字ハッシュ
+ * - 05:30: Cron実行開始時刻
+ *
  * @param string|array $log ログメッセージ
  * @param string $setProcessTag プロセスタグを設定（初回のみ有効）
  * @param int $backtraceDepth backtraceの深さ（呼び出し元特定用）
@@ -655,7 +659,7 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
  */
 function addCronLog(string|array $log = '', string $setProcessTag = '', int $backtraceDepth = 1): string
 {
-    // 実行中プロセ固有の短いタグ（6桁）を1回だけ生成
+    // セッション識別子を1回だけ生成: [4文字ハッシュ@開始時刻~] 形式
     static $processTag = null;
     if ($setProcessTag !== '' && is_null($processTag)) {
         $processTag = $setProcessTag;
@@ -663,7 +667,9 @@ function addCronLog(string|array $log = '', string $setProcessTag = '', int $bac
     } elseif ($log === '' && is_string($processTag)) {
         return $processTag;
     } elseif (is_null($processTag)) {
-        $processTag = base62Hash((string)microtime(true));
+        $hash = substr(base62Hash((string)microtime(true)), 0, 4);
+        $startTime = date('H:i');
+        $processTag = $hash . '@' . $startTime . '~';
     }
 
     if (is_string($log)) {
