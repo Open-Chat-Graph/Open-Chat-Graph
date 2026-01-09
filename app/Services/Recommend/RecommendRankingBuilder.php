@@ -10,7 +10,7 @@ use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use Shared\MimimalCmsConfig;
 
-class RecommendRankingBuilder
+class RecommendRankingBuilder implements RecommendRankingBuilderInterface
 {
     // 関連タグ取得に関する値（台湾・タイのみ）
     private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = null;
