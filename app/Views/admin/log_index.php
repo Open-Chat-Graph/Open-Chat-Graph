@@ -90,8 +90,8 @@
         <ul class="flow-list">
             <li class="highlight">
                 <strong>処理開始</strong>
-                <span class="log-sample">"Start hourlyTask"</span>
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 97) ?>
+                <span class="log-sample">"【毎時処理】開始"</span>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 115) ?>
             </li>
             <li>
                 LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・メンバー数）
@@ -132,8 +132,8 @@
             </li>
             <li class="highlight">
                 <strong>処理完了</strong>
-                <span class="log-sample">"Done hourlyTask"</span>
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 109) ?>
+                <span class="log-sample">"【毎時処理】完了"</span>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 127) ?>
             </li>
         </ul>
     </div>
@@ -146,8 +146,8 @@
         <ul class="flow-list">
             <li class="highlight">
                 <strong>処理開始</strong>
-                <span class="log-sample">"Start dailyTask"</span>
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 167) ?>
+                <span class="log-sample">"【日次処理】開始"</span>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 185) ?>
             </li>
             <li>
                 まず毎時処理を実行（上記の流れ）
@@ -180,8 +180,8 @@
             </li>
             <li class="highlight">
                 <strong>処理完了</strong>
-                <span class="log-sample">"Done dailyTask"</span>
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 192) ?>
+                <span class="log-sample">"【日次処理】完了"</span>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 210) ?>
             </li>
         </ul>
 

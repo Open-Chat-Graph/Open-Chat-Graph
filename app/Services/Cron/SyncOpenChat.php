@@ -46,7 +46,7 @@ class SyncOpenChat
                 if (isDailyCronWithinHours(20)) {
                     $shouldNotify = false;
                     $elapsedHours = getDailyCronElapsedHours();
-                    addCronLog("killフラグによる強制終了（開始から" . round($elapsedHours, 2) . "時間経過）Discord通知スキップ");
+                    addCronLog("日次処理を中断（開始から" . round($elapsedHours, 2) . "時間経過）");
                 }
             }
 
@@ -112,7 +112,7 @@ class SyncOpenChat
 
     private function hourlyTask()
     {
-        addCronLog('Start hourlyTask');
+        addCronLog('【毎時処理】開始');
 
         set_time_limit(1620);
 
@@ -124,7 +124,7 @@ class SyncOpenChat
             !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
         );
 
-        addCronLog('Done hourlyTask');
+        addCronLog('【毎時処理】完了');
     }
 
     private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
@@ -172,17 +172,17 @@ class SyncOpenChat
 
     private function retryHourlyTask()
     {
-        addCronLog('Retry hourlyTask');
+        addCronLog('【毎時処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
-        addCronLog('Done retrying hourlyTask');
+        addCronLog('【毎時処理】リトライ完了');
     }
 
     private function dailyTask()
     {
-        addCronLog('Start dailyTask');
+        addCronLog('【日次処理】開始');
 
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
@@ -207,22 +207,22 @@ class SyncOpenChat
             [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'フィルターキャッシュ保存'],
         );
 
-        addCronLog('Done dailyTask');
+        addCronLog('【日次処理】完了');
     }
 
     private function retryDailyTask()
     {
-        AdminTool::sendDiscordNotify('Retrying dailyTask');
+        AdminTool::sendDiscordNotify('日次処理リトライ開始');
 
-        addCronLog('Retry dailyTask');
+        addCronLog('【日次処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
-        addCronLog('Done Retry dailyTask');
+        addCronLog('【日次処理】リトライ完了');
 
-        AdminTool::sendDiscordNotify('Done retrying dailyTask');
+        AdminTool::sendDiscordNotify('日次処理リトライ完了');
     }
 
     /**
@@ -234,9 +234,9 @@ class SyncOpenChat
             if (!$task)
                 continue;
 
-            addCronLog('Start ' . $task[1]);
+            addCronLog($task[1] . 'を開始');
             $task[0]();
-            addCronLog('Done ' . $task[1]);
+            addCronLog($task[1] . 'が完了');
         }
     }
 }
