@@ -13,7 +13,7 @@
     <meta property="og:description" content="オプチャグラフのデータ更新処理の実行状況をリアルタイムで確認できます。">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://openchat-review.me/admin/log">
-    <meta property="og:image" content="https://openchat-review.me/assets/ogp.png">
+    <meta property="og:image" content="https://openchat-review.me/assets/ogp-log.png">
     <meta property="og:site_name" content="オプチャグラフ">
 
     <!-- Twitter Card -->
