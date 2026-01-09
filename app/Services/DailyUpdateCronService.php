@@ -89,8 +89,6 @@ class DailyUpdateCronService
             addCronLog("Development environment. Update limit: {$limit} / {$outOfRankIdCount}");
         }
 
-        // 並列処理でクローリング実行
-        addCronLog('Using parallel crawling');
         $result = $this->openChatDailyCrawling->crawling($outOfRankId);
 
         addCronLog('openChatCrawling done: ' . $result);
