@@ -25,25 +25,23 @@ jobs:
       run: |
         ssh -p 10022 ocgraph@ocgraph.wpx.jp "cd /home/ocgraph/openchat-review.me/public_html && git pull"
 
-  post-to-x:
-    needs: deploy
     # PRマージ時のみX投稿（手動デプロイ時は投稿しない）
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-
-    steps:
     - name: Checkout repository
+      if: github.event_name == 'pull_request'
       uses: actions/checkout@v4
 
     - name: Setup Node.js
+      if: github.event_name == 'pull_request'
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
     - name: Install twitter-api-v2
+      if: github.event_name == 'pull_request'
       run: npm install twitter-api-v2
 
     - name: Create post script
+      if: github.event_name == 'pull_request'
       run: |
         cat > post-pr-merge.js << 'EOF'
         import { TwitterApi } from 'twitter-api-v2';
@@ -65,8 +63,8 @@ jobs:
             const message = '🚀 プルリクエストがマージされ、サイトに反映されました\n\n' +
               '#' + prNumber + ': ' + prTitle + '\n' +
               'By @' + prAuthor + '\n\n' +
-              prUrl + '\n\n' +
-              '#オプチャグラフ #OpenChatGraph';
+              '#オプチャグラフ https://openchat-review.me' + '\n\n' +
+              prUrl;
 
             const tweet = await client.v2.tweet(message);
             console.log('Tweet posted: ' + tweet.data.id);
@@ -81,6 +79,7 @@ jobs:
         EOF
 
     - name: Post to X (Twitter)
+      if: github.event_name == 'pull_request'
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
