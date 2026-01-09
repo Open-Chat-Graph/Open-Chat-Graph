@@ -54,6 +54,8 @@ class OpenChatApiDbMerger
     function fetchOpenChatApiRankingAll(): array
     {
         $this->setKillFlagFalse();
+        $startTime = microtime(true);
+        addVerboseCronLog("Start fetchOpenChatApiRankingAll");
 
         try {
             $result1 = $this->fetchOpenChatApiRankingAllProcess($this->risingStore, $this->risingDownloader);
@@ -62,6 +64,12 @@ class OpenChatApiDbMerger
         } catch (\RuntimeException $e) {
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
+        } finally {
+            $elapsedSeconds = microtime(true) - $startTime;
+            $minutes = floor($elapsedSeconds / 60);
+            $seconds = $elapsedSeconds - ($minutes * 60);
+            $elapsed = sprintf('%.0f分%.2f秒', $minutes, $seconds);
+            addVerboseCronLog("Finished fetchOpenChatApiRankingAll ({$elapsed})");
         }
     }
 
@@ -87,7 +95,11 @@ class OpenChatApiDbMerger
         };
 
         // API カテゴリごとの処理
-        $callbackByCategoryBefore = function (string $category) use ($positionStore): bool {
+        $startTimes = [];
+        
+        $callbackByCategoryBefore = function (string $category) use ($positionStore, &$startTimes): bool {
+            $startTimes[$category] = microtime(true);
+            
             $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
             addVerboseCronLog("Start fetching {$categoryName} " . getClassSimpleName($positionStore));
 
@@ -96,12 +108,23 @@ class OpenChatApiDbMerger
             return $fileTime === $now;
         };
 
-        $callbackByCategoryAfter = function (string $category) use ($positionStore): void {
+        $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
             $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
-            addVerboseCronLog("Finished fetching {$categoryName} " . getClassSimpleName($positionStore));
+            
+            $elapsed = '';
+            if (isset($startTimes[$category])) {
+            $elapsedSeconds = microtime(true) - $startTimes[$category];
+            $minutes = floor($elapsedSeconds / 60);
+            $seconds = $elapsedSeconds - ($minutes * 60);
+            $elapsed = sprintf(' (%.0f分%.2f秒)', $minutes, $seconds);
+            }
+            
+            addVerboseCronLog("Finished fetching {$categoryName} " . getClassSimpleName($positionStore) . $elapsed);
 
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
+
+
 
         return $downloader->fetchOpenChatApiRankingAll($callback, $callbackByCategoryBefore, $callbackByCategoryAfter);
     }
