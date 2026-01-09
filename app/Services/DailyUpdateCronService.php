@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
+use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -18,14 +19,6 @@ class DailyUpdateCronService
 {
     private string $date;
 
-    /**
-     * dailyTask時にgetMemberChangeWithinLastWeekCacheArrayで取得したデータを保存
-     * saveFiltersCacheAfterDailyTaskで再利用するため（重複クエリ防止）
-     *
-     * @var int[]|null
-     */
-    private ?array $cachedMemberChangeIdArray = null;
-
     function __construct(
         private RankingPositionDailyUpdater $rankingPositionDailyUpdater,
         private OpenChatDailyCrawling $openChatDailyCrawling,
@@ -33,6 +26,7 @@ class DailyUpdateCronService
         private StatisticsRepositoryInterface $statisticsRepository,
         private UpdateDailyRankingService $updateRankingService,
         private OpenChatSubCategorySynchronizer $openChatSubCategorySynchronizer,
+        private MemberChangeFilterCacheRepositoryInterface $memberChangeFilterCacheRepository,
     ) {
         $this->date = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
     }
@@ -52,23 +46,10 @@ class DailyUpdateCronService
 
         $filteredIdArray = array_diff($ocDbIdArray, $statsDbIdArray);
 
-        // 重いクエリを1回だけ実行し、結果をプロパティに保存
-        addVerboseCronLog('メンバー数変動ありのオープンチャットを抽出中');
-        $this->cachedMemberChangeIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
-        addVerboseCronLog('メンバー数変動ありのオープンチャット抽出完了');
+        // キャッシュから取得、またはDBから取得して自動でキャッシュ保存
+        $memberChangeIdArray = $this->memberChangeFilterCacheRepository->getForDaily($this->date);
 
-        return array_filter($filteredIdArray, fn(int $id) => in_array($id, $this->cachedMemberChangeIdArray));
-    }
-
-    /**
-     * getTargetOpenChatIdArray()で取得したフィルターキャッシュデータを返す
-     * saveFiltersCacheAfterDailyTaskで再利用するため
-     *
-     * @return int[]|null
-     */
-    function getCachedMemberChangeIdArray(): ?array
-    {
-        return $this->cachedMemberChangeIdArray;
+        return array_filter($filteredIdArray, fn(int $id) => in_array($id, $memberChangeIdArray));
     }
 
     function update(?\Closure $crawlingEndFlag = null): void

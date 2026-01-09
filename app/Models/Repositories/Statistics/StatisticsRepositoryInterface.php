@@ -36,6 +36,20 @@ interface StatisticsRepositoryInterface
     public function getNewRoomsWithLessThan8Records(): array;
 
     /**
+     * 過去8日間でメンバー数が変動した部屋を取得
+     *
+     * @return int[] open_chat_id
+     */
+    public function getMemberChangeWithinLastWeek(string $date): array;
+
+    /**
+     * 最後のレコードが1週間以上前の部屋を取得（週次更新用）
+     *
+     * @return int[] open_chat_id
+     */
+    public function getWeeklyUpdateRooms(string $date): array;
+
+    /**
      * @param array{ open_chat_id: int, member: int, date: string }[] $data
      */
     public function insertMember(array $data): int;

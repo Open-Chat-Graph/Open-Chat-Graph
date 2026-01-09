@@ -119,14 +119,7 @@ class SyncOpenChat
             ] : null,
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
             [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
-            [function () {
-                // フィルターキャッシュの更新判定
-                // hourlyTask: キャッシュを読むのみ、「新規部屋（レコード8以下）」を毎時取得してマージ（約5秒）
-                // dailyTask: dailyTask内で別途キャッシュ保存するため、ここでは保存しない
-                $saveNextFiltersCache = false;
-
-                $this->hourlyMemberRanking->update($saveNextFiltersCache);
-            }, '毎時メンバーランキング関連の処理'],
+            [fn() => $this->hourlyMemberRanking->update(), '毎時メンバーランキング関連の処理'],
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {

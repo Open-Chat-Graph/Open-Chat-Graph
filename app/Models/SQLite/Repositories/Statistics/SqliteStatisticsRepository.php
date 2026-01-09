@@ -135,6 +135,33 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
         return SQLiteStatistics::fetchAll($query, null, $mode);
     }
 
+    public function getMemberChangeWithinLastWeek(string $date): array
+    {
+        // 過去8日間でメンバー数が変動した部屋
+        $query =
+            "SELECT open_chat_id
+            FROM statistics
+            WHERE `date` BETWEEN DATE(:curDate, '-8 days') AND :curDate
+            GROUP BY open_chat_id
+            HAVING COUNT(DISTINCT member) > 1";
+
+        $mode = [\PDO::FETCH_COLUMN, 0];
+        return SQLiteStatistics::fetchAll($query, ['curDate' => $date], $mode);
+    }
+
+    public function getWeeklyUpdateRooms(string $date): array
+    {
+        // 最後のレコードが1週間以上前の部屋（週次更新用）
+        $query =
+            "SELECT open_chat_id
+            FROM statistics
+            GROUP BY open_chat_id
+            HAVING MAX(`date`) <= DATE(:curDate, '-7 days')";
+
+        $mode = [\PDO::FETCH_COLUMN, 0];
+        return SQLiteStatistics::fetchAll($query, ['curDate' => $date], $mode);
+    }
+
     public function insertMember(array $data): int
     {
         /**
