@@ -76,15 +76,16 @@ class OpenChatApiDbMergerWithParallelDownloader
             RankingType::Ranking => $this->rankingStore->getStorageData((string)$category)[1],
         };
 
-        $log = $type->value . " " . array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category];
-        addCronLog("merge start: {$log}");
+        $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category];
+        $typeLabel = $type === RankingType::Rising ? '急上昇' : 'メンバー数';
+        addCronLog("DBマージ開始: {$typeLabel}ランキング「{$categoryName}」");
 
         foreach ($dtos as $dto)
             $this->process->validateAndMapToOpenChatDtoCallback($dto);
 
         $this->stateRepository->updateComplete($type, $category);
 
-        addCronLog("merge complete: {$log}");
+        addCronLog("DBマージ完了: {$typeLabel}ランキング「{$categoryName}」");
     }
 
     /** @throws ApplicationException */

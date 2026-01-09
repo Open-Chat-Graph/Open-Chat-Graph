@@ -28,14 +28,14 @@ class RankingPositionHourPersistence
         $fileTime = $this->persist();
 
         $this->rankingPositionHourRepository->insertTotalCount($fileTime);
-        addCronLog("HourPersistence TotalCountInsert: {$fileTime}");
+        addCronLog("毎時ランキングデータを保存（{$fileTime}）");
 
         $deleteTime = new \DateTime($fileTime);
         $deleteTime->modify('- 1day');
         $this->rankingPositionHourRepository->delete($deleteTime);
 
         $deleteTimeStr = $deleteTime->format('Y-m-d H:i:s');
-        addCronLog("HourPersistence Delete: {$deleteTimeStr}");
+        addCronLog("古いランキングデータを削除（{$deleteTimeStr}以前）");
     }
 
     private function persist(): string
@@ -55,7 +55,7 @@ class RankingPositionHourPersistence
             }
 
             unset($risingInsertDtoArray);
-            addCronLog("HourPersistence Rising: {$key}");
+            addCronLog("急上昇ランキングを保存: {$key}");
 
             [$rankingFileTime, $rankingOcDtoArray] = $this->rankingPositionStore->getStorageData((string)$category);
             $rankingInsertDtoArray = $this->createInsertDtoArray($rankingOcDtoArray);
@@ -65,7 +65,7 @@ class RankingPositionHourPersistence
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($rankingFileTime, $rankingInsertDtoArray);
 
             unset($rankingInsertDtoArray);
-            addCronLog("HourPersistence Ranking: {$key}");
+            addCronLog("メンバー数ランキングを保存: {$key}");
 
             $fileTime = $rankingFileTime;
         }

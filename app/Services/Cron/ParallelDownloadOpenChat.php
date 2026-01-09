@@ -45,12 +45,13 @@ class ParallelDownloadOpenChat
         $categoryStr = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category];
         $typeStr = $type->value;
 
-        addCronLog("download start: {$typeStr} {$categoryStr}");
+        $typeLabel = $typeStr === 'rising' ? '急上昇' : 'メンバー数';
+        addCronLog("ダウンロード開始: {$typeLabel}ランキング「{$categoryStr}」");
 
         $count = $this->downloader->fetchOpenChatApi($type, $category);
         $this->stateRepository->updateDownloaded($type, $category);
 
-        addCronLog("download complete: {$typeStr} {$categoryStr} {$count}");
+        addCronLog("ダウンロード完了: {$typeLabel}ランキング「{$categoryStr}」（{$count}件）");
     }
 
     private function handleDetectStopFlag(array $args, ApplicationException $e)

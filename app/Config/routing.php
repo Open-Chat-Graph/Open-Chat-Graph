@@ -324,16 +324,16 @@ Route::path('admin/log', [LogController::class, 'index'])
 
 Route::path('admin/log/exception', [LogController::class, 'exceptionLog'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
-    ->match(function () {
+    ->match(function (AdminAuthService $adminAuthService) {
         noStore();
-        return MimimalCmsConfig::$urlRoot === '';
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth();
     });
 
 Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetail'])
     ->matchNum('index', min: 0)
-    ->match(function () {
+    ->match(function (AdminAuthService $adminAuthService) {
         noStore();
-        return MimimalCmsConfig::$urlRoot === '';
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth();
     });
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])

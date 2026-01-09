@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
+use App\Exceptions\ApplicationException;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
@@ -37,6 +38,23 @@ class SyncOpenChat
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
         ini_set('memory_limit', '2G');
+
+        set_exception_handler(function (\Throwable $e) {
+            // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
+            $shouldNotify = true;
+            if ($e instanceof ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
+                if (isDailyCronWithinHours(20)) {
+                    $shouldNotify = false;
+                    $elapsedHours = getDailyCronElapsedHours();
+                    addCronLog("killフラグによる強制終了（開始から" . round($elapsedHours, 2) . "時間経過）Discord通知スキップ");
+                }
+            }
+
+            if ($shouldNotify) {
+                AdminTool::sendDiscordNotify($e->__toString());
+                addCronLog($e->__toString());
+            }
+        });
     }
 
     // 毎時30分に実行
@@ -61,13 +79,13 @@ class SyncOpenChat
     {
         checkLineSiteRobots();
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('SyncOpenChat: [Warning] hourlyTask is active');
+            addCronLog('[警告] 毎時処理が実行中です');
             AdminTool::sendDiscordNotify('SyncOpenChat: [Warning] hourlyTask is active');
             sleep(30);
         }
 
         if ($this->state->getBool(StateType::isDailyTaskActive)) {
-            addCronLog('SyncOpenChat: dailyTask is active');
+            addCronLog('日次処理が実行中です');
         }
     }
 
@@ -94,7 +112,7 @@ class SyncOpenChat
 
     private function hourlyTask()
     {
-        addVerboseCronLog('Start hourlyTask');
+        addCronLog('Start hourlyTask');
 
         set_time_limit(1620);
 
@@ -106,7 +124,7 @@ class SyncOpenChat
             !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
         );
 
-        addVerboseCronLog('End hourlyTask');
+        addCronLog('Done hourlyTask');
     }
 
     private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
@@ -114,10 +132,10 @@ class SyncOpenChat
         $this->executeAndCronLog(
             $persistStorageFileToDb ? [
                 fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
-                'rankingPositionHourPersistence'
+                '毎時ランキングデータのDB保存'
             ] : null,
-            [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), 'hourlyImageUpdate'],
-            [fn() => $this->hourlyMemberColumn->update(), 'hourlyMemberColumnUpdate'],
+            [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
+            [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
             [function () {
                 // フィルターキャッシュの更新判定
                 // hourlyTask: キャッシュを読むのみ、「新規部屋（レコード8以下）」を毎時取得してマージ（約5秒）
@@ -125,12 +143,12 @@ class SyncOpenChat
                 $saveNextFiltersCache = false;
 
                 $this->hourlyMemberRanking->update($saveNextFiltersCache);
-            }, 'hourlyMemberRankingUpdate'],
-            [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            }, '毎時メンバーランキング更新'],
+            [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     // 既に実行中の場合は1回だけスキップする
-                    addCronLog('Skip updateInvitationTicketAll because it is active');
+                    addCronLog('参加URL取得をスキップ（実行中のため）');
                     // スキップした場合は、次回実行時に実行するようにする
                     $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
                     return;
@@ -139,16 +157,16 @@ class SyncOpenChat
                 $this->state->setTrue(StateType::isUpdateInvitationTicketActive);
                 $this->invitationTicketUpdater->updateInvitationTicketAll();
                 $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
-            }, 'updateInvitationTicketAll'],
-            [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'updateRankingBanTable'],
+            }, '参加URL一括取得'],
+            [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'ランキングBAN情報更新'],
             [function () {
                 if ($this->state->getBool(StateType::isDailyTaskActive)) {
-                    addCronLog('Skip updateRecommendTables because dailyTask is active');
+                    addCronLog('おすすめ情報更新をスキップ（日次処理中のため）');
                     return;
                 }
 
                 $this->recommendUpdater->updateRecommendTables();
-            }, 'updateRecommendTables'],
+            }, 'おすすめ情報更新'],
         );
     }
 
@@ -164,7 +182,7 @@ class SyncOpenChat
 
     private function dailyTask()
     {
-        addVerboseCronLog('Start dailyTask');
+        addCronLog('Start dailyTask');
 
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
@@ -182,14 +200,14 @@ class SyncOpenChat
         $cachedFilterIds = $updater->getCachedMemberChangeIdArray();
 
         $this->executeAndCronLog(
-            [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), 'dailyImageUpdate'],
-            [fn() => purgeCacheCloudFlare(), 'purgeCacheCloudFlare'],
+            [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), '日次画像更新'],
+            [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
             // DailyUpdateCronServiceで取得したデータを渡してクエリの重複実行を防ぐ
             // nullを渡すと再度クエリを実行する（データ鮮度優先）
-            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'saveFiltersCacheAfterDailyTask'],
+            [fn() => $this->hourlyMemberRanking->saveFiltersCacheAfterDailyTask($cachedFilterIds), 'フィルターキャッシュ保存'],
         );
 
-        addVerboseCronLog('End dailyTask');
+        addCronLog('Done dailyTask');
     }
 
     private function retryDailyTask()

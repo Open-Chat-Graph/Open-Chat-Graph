@@ -9,6 +9,7 @@ Allow: /th/oc/*/jump
 
 # その他すべてのクローラー
 User-agent: *
+Disallow: /admin/log
 Disallow: /tw/recently-registered
 Disallow: /th/recently-registered
 Disallow: /recently-registered
