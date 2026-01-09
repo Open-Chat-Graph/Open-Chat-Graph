@@ -6,6 +6,8 @@ namespace App\Models\Repositories;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
 
 /**
  * メンバー数変動フィルターキャッシュのリポジトリ
@@ -26,6 +28,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
 {
     function __construct(
         private StatisticsRepositoryInterface $statisticsRepository,
+        private SyncOpenChatStateRepositoryInterface $syncStateRepository,
     ) {}
 
     /**
@@ -127,9 +130,9 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
             return null;
         }
 
-        // 日付チェック（openChatHourFilterIdDateを共通で使用）
-        $datePath = AppConfig::getStorageFilePath('openChatHourFilterIdDate');
-        if (!file_exists($datePath) || file_get_contents($datePath) !== $date) {
+        // 日付チェック（DBから取得）
+        $cachedDate = $this->syncStateRepository->getString(SyncOpenChatStateType::filterCacheDate);
+        if ($cachedDate !== $date) {
             return null;
         }
 
@@ -144,7 +147,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
     {
         saveSerializedFile(AppConfig::getStorageFilePath($key), $data);
 
-        // 日付も更新
-        safeFileRewrite(AppConfig::getStorageFilePath('openChatHourFilterIdDate'), $date);
+        // 日付も更新（DBに保存）
+        $this->syncStateRepository->setString(SyncOpenChatStateType::filterCacheDate, $date);
     }
 }

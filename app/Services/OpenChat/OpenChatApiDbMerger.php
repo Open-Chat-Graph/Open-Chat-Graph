@@ -59,7 +59,7 @@ class OpenChatApiDbMerger
     {
         $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
         $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
-        return "カテゴリ {$categoryName}の{$typeLabel}";
+        return "{$categoryName}の{$typeLabel}";
     }
 
     private function getCategoryLabelWithCount(string $category, AbstractRankingPositionStore $positionStore, int $count): string

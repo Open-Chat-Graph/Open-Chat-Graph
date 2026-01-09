@@ -32,7 +32,7 @@ class RankingPositionHourPersistence
 
     private function getCategoryLabelWithCount(string $categoryName, string $typeLabel, ?int $count = null): string
     {
-        return "カテゴリ {$categoryName}の{$typeLabel}" . (is_null($count) ? "" : " {$count}件");
+        return "{$categoryName}の{$typeLabel}" . (is_null($count) ? "" : " {$count}件");
     }
 
     function persistStorageFileToDb(): void
@@ -73,8 +73,8 @@ class RankingPositionHourPersistence
                 $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($risingFileTime, $risingInsertDtoArray);
             }
 
+            addVerboseCronLog("{$risingLabel}をデータベースに反映完了（{$this->formatElapsedTime($risingStartTime)}）", count($risingInsertDtoArray));
             unset($risingInsertDtoArray);
-            addVerboseCronLog("{$risingLabel}をデータベースに反映完了（{$this->formatElapsedTime($risingStartTime)}）");
 
             // ランキング
             $rankingStartTime = microtime(true);
@@ -89,8 +89,8 @@ class RankingPositionHourPersistence
             $this->rankingPositionHourRepository->insertFromDtoArray(RankingType::Ranking, $rankingFileTime, $rankingInsertDtoArray);
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($rankingFileTime, $rankingInsertDtoArray);
 
+            addVerboseCronLog("{$rankingLabel}をデータベースに反映完了（{$this->formatElapsedTime($rankingStartTime)}）", count($rankingInsertDtoArray));
             unset($rankingInsertDtoArray);
-            addVerboseCronLog("{$rankingLabel}をデータベースに反映完了（{$this->formatElapsedTime($rankingStartTime)}）");
 
             $fileTime = $rankingFileTime;
         }
