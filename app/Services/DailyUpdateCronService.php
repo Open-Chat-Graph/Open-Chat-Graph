@@ -73,13 +73,15 @@ class DailyUpdateCronService
 
     function update(?\Closure $crawlingEndFlag = null): void
     {
-        addVerboseCronLog('日次データ更新を開始（対象日: ' . $this->date . '）');
+        $title = isDailyUpdateTime() ? '開始' : '再開';
+
+        addVerboseCronLog('日次データ更新を' . $title . '（対象日: ' . $this->date . '）');
 
         $this->rankingPositionDailyUpdater->updateYesterdayDailyDb();
 
         $outOfRankId = $this->getTargetOpenChatIdArray();
 
-        addCronLog('ランキング外オープンチャットのクローリング開始: ' . count($outOfRankId) . '件');
+        addCronLog('ランキング外オープンチャットのクローリング' . $title . ': 残り' . count($outOfRankId) . '件');
 
         // 開発環境の場合、更新制限をかける
         $isDevelopment = AppConfig::$isDevlopment ?? false;
@@ -95,7 +97,7 @@ class DailyUpdateCronService
         } catch (\Throwable $e) {
             $result = $e->getMessage();
             addCronLog("ランキング外オープンチャットのクローリングが中断されました: {$result} / " . count($outOfRankId) . "件中");
-          throw new ApplicationException('強制終了しました', AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
+            throw new ApplicationException('強制終了しました', AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
         }
 
         addCronLog('ランキング外オープンチャットのクローリング完了: ' . $result . '件');
