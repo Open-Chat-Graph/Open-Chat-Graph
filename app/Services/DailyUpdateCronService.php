@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Config\AppConfig;
+use App\Exceptions\ApplicationException;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
@@ -56,7 +57,7 @@ class DailyUpdateCronService
         $this->cachedMemberChangeIdArray = $this->statisticsRepository->getMemberChangeWithinLastWeekCacheArray($this->date);
         addVerboseCronLog('メンバー数変動ありのオープンチャット抽出完了');
 
-        return array_filter($filteredIdArray, fn (int $id) => in_array($id, $this->cachedMemberChangeIdArray));
+        return array_filter($filteredIdArray, fn(int $id) => in_array($id, $this->cachedMemberChangeIdArray));
     }
 
     /**
@@ -89,9 +90,15 @@ class DailyUpdateCronService
             addCronLog("Development environment. Update limit: {$limit} / {$outOfRankIdCount}");
         }
 
-        $result = $this->openChatDailyCrawling->crawling($outOfRankId);
+        try {
+            $result = $this->openChatDailyCrawling->crawling($outOfRankId);
+        } catch (\Throwable $e) {
+            $result = $e->getMessage();
+            addCronLog("ランキング外オープンチャットのクローリングが中断されました: {$result} / " . count($outOfRankId) . "件中");
+          throw new ApplicationException('強制終了しました', AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
+        }
 
-        addCronLog('ランキング外オープンチャットのクローリング完了: ' . $result);
+        addCronLog('ランキング外オープンチャットのクローリング完了: ' . $result . '件');
         unset($outOfRankId);
         OpenChatDataForUpdaterWithCacheRepository::clearCache();
 
