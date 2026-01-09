@@ -26,7 +26,7 @@ use App\Services\UpdateHourlyMemberRankingService;
 class SyncOpenChat
 {
     function __construct(
-        private OpenChatApiDbMergerWithParallelDownloader $merger,
+        private OpenChatApiDbMerger $merger,
         private SitemapGenerator $sitemap,
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
         private RankingPositionHourPersistenceLastHourChecker $rankingPositionHourChecker,

@@ -8,7 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
-use App\Services\OpenChat\OpenChatDailyCrawlingParallel;
+use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\SubCategory\OpenChatSubCategorySynchronizer;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\RankingPositionDailyUpdater;
@@ -27,7 +27,7 @@ class DailyUpdateCronService
 
     function __construct(
         private RankingPositionDailyUpdater $rankingPositionDailyUpdater,
-        private OpenChatDailyCrawlingParallel $openChatDailyCrawlingParallel,
+        private OpenChatDailyCrawling $openChatDailyCrawling,
         private OpenChatRepositoryInterface $openChatRepository,
         private StatisticsRepositoryInterface $statisticsRepository,
         private UpdateDailyRankingService $updateRankingService,
@@ -91,7 +91,7 @@ class DailyUpdateCronService
 
         // 並列処理でクローリング実行
         addCronLog('Using parallel crawling');
-        $result = $this->openChatDailyCrawlingParallel->crawling($outOfRankId);
+        $result = $this->openChatDailyCrawling->crawling($outOfRankId);
 
         addCronLog('openChatCrawling done: ' . $result);
         unset($outOfRankId);
