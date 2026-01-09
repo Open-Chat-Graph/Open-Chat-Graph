@@ -102,7 +102,7 @@ class OpenChatApiDbMerger
             
             $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
             $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
-            addVerboseCronLog("「{$categoryName}」カテゴリの「{$typeLabel}」を取得中");
+            addVerboseCronLog("カテゴリ {$categoryName}の{$typeLabel}を取得中");
 
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
@@ -121,7 +121,7 @@ class OpenChatApiDbMerger
             }
             
             $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
-            addVerboseCronLog("「{$categoryName}」カテゴリの「{$typeLabel}」取得完了{$elapsed}");
+            addVerboseCronLog("カテゴリ {$categoryName}の{$typeLabel}取得完了{$elapsed}");
 
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
