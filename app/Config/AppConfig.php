@@ -209,7 +209,6 @@ class AppConfig
         'openChatRankingPositionDir' =>   '/ranking_position/ranking',
         'openChatRisingPositionDir' =>    '/ranking_position/rising',
         'openChatHourFilterId' =>         '/ranking_position/filter.dat',
-        'openChatHourFilterIdDate' =>     '/ranking_position/filter_date.dat',
         'filterMemberChange' =>           '/ranking_position/filter_member_change.dat',
         'filterNewRooms' =>               '/ranking_position/filter_new_rooms.dat',
         'filterWeeklyUpdate' =>           '/ranking_position/filter_weekly_update.dat',

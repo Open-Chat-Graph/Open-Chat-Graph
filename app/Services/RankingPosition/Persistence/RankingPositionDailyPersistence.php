@@ -19,10 +19,11 @@ class RankingPositionDailyPersistence
         $this->date = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
     }
 
-    function persistHourToDaily(): void
+    function persistHourToDaily(): bool
     {
         if ($this->rankingPositionRepository->getLastDate() === $this->date) {
-            return;
+            addVerboseCronLog('日次ランキングデータの永続化はスキップ（本日実行済み: ' . $this->date . '）');
+            return false;
         }
 
         $date = new \DateTime($this->date);
@@ -42,6 +43,9 @@ class RankingPositionDailyPersistence
         $this->rankingPositionRepository->insertTotalCount(
             $this->rankingPositionHourRepository->getTotalCount($date)
         );
+
+        addVerboseCronLog('日次ランキングデータの永続化が完了: ' . $this->date);
+        return true;
     }
 
     private function insert(\DateTime $date, \Closure $getter, \Closure $inserter)

@@ -38,10 +38,10 @@ class UpdateHourlyMemberRankingService
 
     private function getCachedFilters(string $time)
     {
-        $date = (new \DateTime($time))->format('Y-m-d');
-
         // 変動がある部屋（キャッシュ） + 新規部屋（リアルタイム）
-        return $this->memberChangeFilterCacheRepository->getForHourly($date);
+        return $this->memberChangeFilterCacheRepository->getForHourly(
+            (new \DateTime($time))->format('Y-m-d')
+        );
     }
 
     private function updateStaticData(string $time)
