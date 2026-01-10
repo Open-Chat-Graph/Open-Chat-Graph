@@ -804,6 +804,11 @@ class OcreviewApiDataImporter
         // openchat_master テーブルの主キーは openchat_id
         $primaryKey = 'openchat_id';
 
+        // line_internal_idが重複する既存レコードを削除（openchat_idが異なる場合）
+        if ($tableName === 'openchat_master') {
+            $this->removeConflictingLineInternalIds($chunk);
+        }
+
         // UPDATE句を生成（主キー以外のカラムを更新）
         $updateClauses = [];
         foreach ($columns as $column) {
@@ -830,6 +835,28 @@ class OcreviewApiDataImporter
 
         $stmt = $this->targetPdo->prepare($sql);
         $stmt->execute($allValues);
+    }
+
+    /**
+     * line_internal_idが重複する既存レコードを削除
+     * （openchat_idが異なる場合のみ）
+     *
+     * openchat_masterテーブルでは line_internal_id にUNIQUE制約があるため、
+     * 異なるopenchat_idで同じline_internal_idを持つレコードが存在すると、
+     * UPSERT時にUNIQUE制約違反が発生する。
+     * これを防ぐため、挿入前に重複する古いレコードを削除する。
+     */
+    private function removeConflictingLineInternalIds(array $chunk): void
+    {
+        foreach ($chunk as $row) {
+            if (!empty($row['line_internal_id'])) {
+                $stmt = $this->targetPdo->prepare(
+                    "DELETE FROM openchat_master
+                     WHERE line_internal_id = ? AND openchat_id != ?"
+                );
+                $stmt->execute([$row['line_internal_id'], $row['openchat_id']]);
+            }
+        }
     }
 
     /**
