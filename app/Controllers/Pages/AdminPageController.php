@@ -293,7 +293,10 @@ class AdminPageController
 
     function killdaily(SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository)
     {
-        $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatDailyCrawlingKillFlag);
+        $syncOpenChatStateRepository->setString(
+            SyncOpenChatStateType::openChatDailyCrawlingKillFlag,
+            date('Y-m-d H:i:s')
+        );
         return view('admin/admin_message_page', ['title' => 'OpenChatApiDbMerger', 'message' => 'OpenChatDailyCrawlingを強制終了しました']);
     }
 
