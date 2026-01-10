@@ -128,11 +128,11 @@ $logDisplayNames = [
             </li>
             <li>
                 メンバーランキングの更新
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 122) ?>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 128) ?>
             </li>
-            <li class="sub">ランキング静的データ生成（同期実行）</li>
-            <li class="sub">おすすめ静的データ生成とCDNキャッシュ削除（バックグラウンド起動）
-                <?php echo githubLink('batch/exec/update_recommend_static_data.php', 1) ?>
+            <li>
+                CDNキャッシュの削除
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 129) ?>
             </li>
             <li>
                 参加URLの一括取得
