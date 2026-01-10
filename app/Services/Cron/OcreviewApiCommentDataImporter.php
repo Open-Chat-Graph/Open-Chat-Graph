@@ -150,6 +150,14 @@ class OcreviewApiCommentDataImporter
 
         // flagカラムの差分同期
         $this->syncCommentFlags();
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'comment',
+            'comment',
+            'comment_id',
+            'comment_id'
+        );
     }
 
     /**
@@ -201,6 +209,10 @@ class OcreviewApiCommentDataImporter
 
     /**
      * コメントのflagカラムを一括更新（CASE文で高速化）
+     *
+     * SQLiteのパラメータ数制限（デフォルト999）を考慮してチャンク処理を行います。
+     * 1レコードあたり3パラメータ（comment_id × 2 + flag × 1）を使用するため、
+     * 999 / 3 = 333が理論上の最大値。安全マージンを考慮して250件ずつ処理します。
      */
     private function bulkUpdateCommentFlags(array $records): void
     {
@@ -208,6 +220,20 @@ class OcreviewApiCommentDataImporter
             return;
         }
 
+        // SQLiteのパラメータ数制限を考慮したチャンクサイズ
+        $recordsPerBatch = 100;
+
+        // レコードをチャンク単位で処理
+        foreach (array_chunk($records, $recordsPerBatch) as $chunk) {
+            $this->executeBulkUpdateFlagsBatch($chunk);
+        }
+    }
+
+    /**
+     * バッチ単位でのflag UPDATE実行
+     */
+    private function executeBulkUpdateFlagsBatch(array $records): void
+    {
         // CASE文を使った一括UPDATE
         $whenClauses = [];
         $commentIds = [];
@@ -266,8 +292,6 @@ class OcreviewApiCommentDataImporter
                     $this->sqliteInsert('comment_like', $data);
                 }
             }
-
-            $this->log(sprintf('comment_like: %d 件追加', count($idsToInsert)));
         }
 
         // 削除すべきレコードを削除
@@ -280,108 +304,105 @@ class OcreviewApiCommentDataImporter
                 $stmt = $this->targetPdo->prepare($query);
                 $stmt->execute($chunk);
             }
-
-            $this->log(sprintf('comment_like: %d 件削除', count($idsToDelete)));
         }
     }
 
     /**
-     * ban_roomテーブルのインポート（IDベース）
+     * ban_roomテーブルのインポート（完全同期）
+     *
+     * 【完全同期の仕組み】
+     * BANは解除される可能性があるため、削除も反映する必要がある。
+     * そのため、ソースとターゲットのID配列を比較して差分を適用する。
+     * - ソースに存在しターゲットに存在しないID: 追加
+     * - ターゲットに存在しソースに存在しないID: 削除
      */
     private function importBanRooms(): void
     {
-        // ターゲットDBから最大IDを取得
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(id), 0) as max_id FROM ban_room");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
+        // ソースとターゲットの全IDを取得
+        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $targetIds = $this->targetPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
 
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM ban_room WHERE id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 差分を計算
+        $idsToInsert = array_diff($sourceIds, $targetIds);
+        $idsToDelete = array_diff($targetIds, $sourceIds);
 
-        if ($count === 0) {
-            return;
-        }
+        // 追加すべきレコードをインポート
+        if (!empty($idsToInsert)) {
+            $chunks = array_chunk($idsToInsert, self::CHUNK_SIZE);
 
-        // 差分レコードのみを取得してインポート
-        $query = "
-            SELECT
-                id,
-                open_chat_id,
-                created_at,
-                type
-            FROM
-                ban_room
-            WHERE id > ?
-            ORDER BY id
-            LIMIT ? OFFSET ?
-        ";
+            foreach ($chunks as $chunk) {
+                $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+                $query = "SELECT id, open_chat_id, created_at, type FROM ban_room WHERE id IN ($placeholders)";
+                $stmt = $this->sourceCommentPdo->prepare($query);
+                $stmt->execute($chunk);
+                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $this->sourceCommentPdo->prepare($query);
-
-        $this->processInChunks(
-            $stmt,
-            [1 => [$maxId, PDO::PARAM_INT]],
-            $count,
-            self::CHUNK_SIZE,
-            function (array $data) {
                 if (!empty($data)) {
                     $this->sqliteInsert('ban_room', $data);
                 }
-            },
-            'ban_room: %d / %d 件処理完了'
-        );
+            }
+        }
+
+        // 削除すべきレコードを削除
+        if (!empty($idsToDelete)) {
+            $chunks = array_chunk($idsToDelete, self::CHUNK_SIZE);
+
+            foreach ($chunks as $chunk) {
+                $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+                $query = "DELETE FROM ban_room WHERE id IN ($placeholders)";
+                $stmt = $this->targetPdo->prepare($query);
+                $stmt->execute($chunk);
+            }
+        }
     }
 
     /**
-     * ban_userテーブルのインポート（IDベース）
+     * ban_userテーブルのインポート（完全同期）
+     *
+     * 【完全同期の仕組み】
+     * BANは解除される可能性があるため、削除も反映する必要がある。
+     * そのため、ソースとターゲットのID配列を比較して差分を適用する。
+     * - ソースに存在しターゲットに存在しないID: 追加
+     * - ターゲットに存在しソースに存在しないID: 削除
      */
     private function importBanUsers(): void
     {
-        // ターゲットDBから最大IDを取得
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(id), 0) as max_id FROM ban_user");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
+        // ソースとターゲットの全IDを取得
+        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $targetIds = $this->targetPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
 
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM ban_user WHERE id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 差分を計算
+        $idsToInsert = array_diff($sourceIds, $targetIds);
+        $idsToDelete = array_diff($targetIds, $sourceIds);
 
-        if ($count === 0) {
-            return;
-        }
+        // 追加すべきレコードをインポート
+        if (!empty($idsToInsert)) {
+            $chunks = array_chunk($idsToInsert, self::CHUNK_SIZE);
 
-        // 差分レコードのみを取得してインポート
-        $query = "
-            SELECT
-                id,
-                user_id,
-                ip,
-                created_at,
-                type
-            FROM
-                ban_user
-            WHERE id > ?
-            ORDER BY id
-            LIMIT ? OFFSET ?
-        ";
+            foreach ($chunks as $chunk) {
+                $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+                $query = "SELECT id, user_id, ip, created_at, type FROM ban_user WHERE id IN ($placeholders)";
+                $stmt = $this->sourceCommentPdo->prepare($query);
+                $stmt->execute($chunk);
+                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $this->sourceCommentPdo->prepare($query);
-
-        $this->processInChunks(
-            $stmt,
-            [1 => [$maxId, PDO::PARAM_INT]],
-            $count,
-            self::CHUNK_SIZE,
-            function (array $data) {
                 if (!empty($data)) {
                     $this->sqliteInsert('ban_user', $data);
                 }
-            },
-            'ban_user: %d / %d 件処理完了'
-        );
+            }
+        }
+
+        // 削除すべきレコードを削除
+        if (!empty($idsToDelete)) {
+            $chunks = array_chunk($idsToDelete, self::CHUNK_SIZE);
+
+            foreach ($chunks as $chunk) {
+                $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+                $query = "DELETE FROM ban_user WHERE id IN ($placeholders)";
+                $stmt = $this->targetPdo->prepare($query);
+                $stmt->execute($chunk);
+            }
+        }
     }
 
     /**
@@ -432,6 +453,14 @@ class OcreviewApiCommentDataImporter
                 }
             },
             'comment_log: %d / %d 件処理完了'
+        );
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'log',
+            'comment_log',
+            'id',
+            'id'
         );
     }
 
@@ -487,6 +516,7 @@ class OcreviewApiCommentDataImporter
      * 重複がある場合は無視されます（MySQLのINSERT IGNOREと同等）。
      *
      * 高速化のため一括INSERT（複数VALUES句）を使用
+     * SQLiteのパラメータ数制限（デフォルト999）を考慮してチャンク処理を行います。
      */
     private function sqliteInsert(string $tableName, array $data): void
     {
@@ -497,15 +527,31 @@ class OcreviewApiCommentDataImporter
         $columns = array_keys($data[0]);
         $columnCount = count($columns);
 
+        // SQLiteのパラメータ数制限を考慮したチャンクサイズ
+        // commentテーブル（8カラム）の場合: 999 / 8 = 124が理論上の最大値
+        // 安全マージンを考慮して、999 / カラム数 - 20 で計算
+        $recordsPerBatch = (int)floor(999 / $columnCount) - 20;
+
+        // データをチャンク単位で処理
+        foreach (array_chunk($data, $recordsPerBatch) as $chunk) {
+            $this->executeSqliteInsertBatch($tableName, $chunk, $columns, $columnCount);
+        }
+    }
+
+    /**
+     * SQLite INSERT のバッチ実行
+     */
+    private function executeSqliteInsertBatch(string $tableName, array $chunk, array $columns, int $columnCount): void
+    {
         // 一括INSERT用のVALUES句を生成
         $placeholders = '(' . implode(', ', array_fill(0, $columnCount, '?')) . ')';
-        $valuesClause = implode(', ', array_fill(0, count($data), $placeholders));
+        $valuesClause = implode(', ', array_fill(0, count($chunk), $placeholders));
 
         $sql = "INSERT OR IGNORE INTO {$tableName} (" . implode(', ', $columns) . ") VALUES {$valuesClause}";
 
         // 全行のデータを1次元配列にフラット化
         $allValues = [];
-        foreach ($data as $row) {
+        foreach ($chunk as $row) {
             foreach (array_values($row) as $value) {
                 $allValues[] = $value;
             }
@@ -527,6 +573,145 @@ class OcreviewApiCommentDataImporter
         // 初回または100件ごとにDiscord通知を送信
         if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
             AdminTool::sendDiscordNotify($message);
+        }
+    }
+
+    /**
+     * ソースの全レコードがターゲットに存在するか検証し、不足があれば修正
+     *
+     * アーカイブ用DBなので、ターゲット側はデータを削除しません。
+     * そのため、ターゲット ≧ ソースが正常な状態です。
+     * ソースに存在してターゲットに存在しないレコードがあれば、それを挿入します。
+     *
+     * @param string $sourceTable ソーステーブル名
+     * @param string $targetTable ターゲットテーブル名
+     * @param string $sourceIdColumn ソースのIDカラム名
+     * @param string $targetIdColumn ターゲットのIDカラム名
+     * @param callable|null $transformCallback データ変換コールバック (null の場合は変換なし)
+     */
+    private function verifyAndFixRecordCount(
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        string $targetIdColumn,
+        ?callable $transformCallback = null
+    ): void {
+        // ソースとターゲットの全IDを100件ずつ取得して差分を計算
+        $missingIds = $this->findMissingIds($sourceTable, $targetTable, $sourceIdColumn, $targetIdColumn);
+
+        if (empty($missingIds)) {
+            // 差分なし（全てのソースレコードがターゲットに存在する）
+            return;
+        }
+
+        // レコード数を取得（ログ用）
+        $sourceCount = $this->sourceCommentPdo->query("SELECT COUNT(*) FROM {$sourceTable}")->fetchColumn();
+        $targetCount = $this->targetPdo->query("SELECT COUNT(*) FROM {$targetTable}")->fetchColumn();
+
+        AdminTool::sendDiscordNotify(sprintf(
+            '【%s】不足レコード検出: %d 件のソースレコードがターゲットに存在しません (ソース: %d, ターゲット: %d)',
+            $targetTable,
+            count($missingIds),
+            $sourceCount,
+            $targetCount
+        ));
+
+        // 不足しているレコードを100件ずつチャンクで取得・挿入
+        $this->insertMissingRecords($sourceTable, $targetTable, $sourceIdColumn, $missingIds, $transformCallback);
+
+        AdminTool::sendDiscordNotify(sprintf('【%s】不足レコード挿入完了: %d 件', $targetTable, count($missingIds)));
+    }
+
+    /**
+     * ソースとターゲット間で不足しているIDを検出
+     *
+     * @return array 不足しているIDの配列
+     */
+    private function findMissingIds(
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        string $targetIdColumn
+    ): array {
+        // ターゲットの全IDを100件ずつ取得
+        $targetIds = $this->fetchAllIdsInChunks($this->targetPdo, $targetTable, $targetIdColumn);
+
+        // ソースの全IDを100件ずつ取得
+        $sourceIds = $this->fetchAllIdsInChunks($this->sourceCommentPdo, $sourceTable, $sourceIdColumn);
+
+        // 差分を計算（ソースに存在し、ターゲットに存在しないID）
+        return array_diff($sourceIds, $targetIds);
+    }
+
+    /**
+     * 指定されたテーブルから全IDを100件ずつチャンクで取得
+     *
+     * @return array IDの配列
+     */
+    private function fetchAllIdsInChunks(
+        PDO $pdo,
+        string $tableName,
+        string $idColumn
+    ): array {
+        $allIds = [];
+        $chunkSize = 100;
+        $offset = 0;
+
+        // 全体のレコード数を取得
+        $totalCount = $pdo->query("SELECT COUNT(*) FROM {$tableName}")->fetchColumn();
+
+        if ($totalCount === 0) {
+            return [];
+        }
+
+        // 100件ずつ取得
+        while ($offset < $totalCount) {
+            $query = "SELECT {$idColumn} FROM {$tableName} ORDER BY {$idColumn} LIMIT {$chunkSize} OFFSET {$offset}";
+            $stmt = $pdo->query($query);
+            $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            $allIds = array_merge($allIds, $ids);
+            $offset += $chunkSize;
+        }
+
+        return $allIds;
+    }
+
+    /**
+     * 不足しているレコードを100件ずつチャンクで取得・挿入
+     */
+    private function insertMissingRecords(
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        array $missingIds,
+        ?callable $transformCallback
+    ): void {
+        $chunkSize = 100;
+
+        foreach (array_chunk($missingIds, $chunkSize) as $chunk) {
+            // ソースDBから不足しているレコードを取得
+            $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+            $query = "SELECT * FROM {$sourceTable} WHERE {$sourceIdColumn} IN ({$placeholders})";
+            $stmt = $this->sourceCommentPdo->prepare($query);
+            $stmt->execute($chunk);
+            $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($records)) {
+                continue;
+            }
+
+            // データ変換が必要な場合は変換
+            if ($transformCallback !== null) {
+                $transformedRecords = [];
+                foreach ($records as $record) {
+                    $transformedRecords[] = $transformCallback($record);
+                }
+                $records = $transformedRecords;
+            }
+
+            // ターゲットDBに挿入
+            $this->sqliteInsert($targetTable, $records);
         }
     }
 }

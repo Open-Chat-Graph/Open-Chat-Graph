@@ -146,6 +146,15 @@ class OcreviewApiDataImporter
         if ($totalCount === 0) {
             // updated_at が更新されていない場合でも、メンバー数の差分をチェック
             $this->syncMemberCountDifferences();
+
+            // レコード数の整合性を検証し、不一致があれば修正
+            $this->verifyAndFixRecordCount(
+                'open_chat',
+                'openchat_master',
+                'id',
+                'openchat_id',
+                fn($row) => $this->transformOpenChatRow($row)
+            );
             return;
         }
 
@@ -193,6 +202,15 @@ class OcreviewApiDataImporter
 
         // updated_at が更新されていないメンバー数の変更も同期
         $this->syncMemberCountDifferences();
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'open_chat',
+            'openchat_master',
+            'id',
+            'openchat_id',
+            fn($row) => $this->transformOpenChatRow($row)
+        );
     }
 
     /**
@@ -367,6 +385,24 @@ class OcreviewApiDataImporter
                     }
                 },
             );
+
+            // レコード数の整合性を検証し、不一致があれば修正
+            $this->verifyAndFixRecordCount(
+                $sourceTable,
+                $targetTable,
+                'id',
+                'ranking_position',
+                function ($row) {
+                    return [
+                        'ranking_position' => $row['id'],
+                        'openchat_id' => $row['open_chat_id'],
+                        'member_increase_count' => $row['diff_member'],
+                        'growth_rate_percent' => $row['percent_increase']
+                    ];
+                },
+                $this->sourcePdo,
+                $this->targetPdo
+            );
         }
     }
 
@@ -421,6 +457,24 @@ class OcreviewApiDataImporter
             },
             'daily_member_statistics: %d / %d 件処理完了'
         );
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'statistics',
+            'daily_member_statistics',
+            'id',
+            'record_id',
+            function ($row) {
+                return [
+                    'record_id' => $row['id'],
+                    'openchat_id' => $row['open_chat_id'],
+                    'member_count' => $row['member'],
+                    'statistics_date' => $row['date']
+                ];
+            },
+            $this->sqliteStatisticsPdo,
+            $this->targetPdo
+        );
     }
 
     /**
@@ -474,6 +528,25 @@ class OcreviewApiDataImporter
                 }
             },
             'line_official_ranking_total_count: %d / %d 件処理完了'
+        );
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'total_count',
+            'line_official_ranking_total_count',
+            'id',
+            'record_id',
+            function ($row) {
+                return [
+                    'record_id' => $row['id'],
+                    'activity_trending_total_count' => $row['total_count_rising'],
+                    'activity_ranking_total_count' => $row['total_count_ranking'],
+                    'recorded_at' => $row['time'],
+                    'category_id' => $row['category']
+                ];
+            },
+            $this->sqliteRankingPositionPdo,
+            $this->targetPdo
         );
     }
 
@@ -537,6 +610,27 @@ class OcreviewApiDataImporter
                     }
                 },
                 "$targetTable: %d / %d 件処理完了"
+            );
+
+            // レコード数の整合性を検証し、不一致があれば修正
+            $this->verifyAndFixRecordCount(
+                $sourceTable,
+                $targetTable,
+                'id',
+                'record_id',
+                function ($row) use ($sourceTable) {
+                    $positionColumn = $sourceTable === 'ranking' ? 'activity_ranking_position' : 'activity_trending_position';
+                    return [
+                        'record_id' => $row['id'],
+                        'openchat_id' => $row['open_chat_id'],
+                        'category_id' => $row['category'],
+                        $positionColumn => $row['position'],
+                        'recorded_at' => date('Y-m-d H:i:s', strtotime($row['time'])),
+                        'record_date' => date('Y-m-d', strtotime($row['date']))
+                    ];
+                },
+                $this->sqliteRankingPositionPdo,
+                $this->targetPdo
             );
         }
     }
@@ -624,6 +718,10 @@ class OcreviewApiDataImporter
 
     /**
      * ターゲットDBのレコードを一括更新（CASE文で高速化）
+     *
+     * SQLiteのパラメータ数制限（デフォルト999）を考慮してチャンク処理を行います。
+     * 1レコードあたり3パラメータ（id × 2 + member × 1）を使用するため、
+     * 999 / 3 = 333が理論上の最大値。安全マージンを考慮して250件ずつ処理します。
      */
     private function bulkUpdateTargetRecordsSqlite(array $records): void
     {
@@ -631,6 +729,20 @@ class OcreviewApiDataImporter
             return;
         }
 
+        // SQLiteのパラメータ数制限を考慮したチャンクサイズ
+        $recordsPerBatch = 100;
+
+        // レコードをチャンク単位で処理
+        foreach (array_chunk($records, $recordsPerBatch) as $chunk) {
+            $this->executeBulkUpdateBatch($chunk);
+        }
+    }
+
+    /**
+     * バッチ単位でのUPDATE実行
+     */
+    private function executeBulkUpdateBatch(array $records): void
+    {
         // CASE文を使った一括UPDATE
         $whenClauses = [];
         $openchatIds = [];
@@ -775,5 +887,189 @@ class OcreviewApiDataImporter
             },
             'open_chat_deleted: %d / %d 件処理完了'
         );
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'open_chat_deleted',
+            'open_chat_deleted',
+            'id',
+            'id',
+            null,
+            $this->sourcePdo,
+            $this->targetPdo
+        );
+    }
+
+    /**
+     * ソースの全レコードがターゲットに存在するか検証し、不足があれば修正
+     *
+     * アーカイブ用DBなので、ターゲット側はデータを削除しません。
+     * そのため、ターゲット ≧ ソースが正常な状態です。
+     * ソースに存在してターゲットに存在しないレコードがあれば、それを挿入します。
+     *
+     * @param string $sourceTable ソーステーブル名
+     * @param string $targetTable ターゲットテーブル名
+     * @param string $sourceIdColumn ソースのIDカラム名
+     * @param string $targetIdColumn ターゲットのIDカラム名
+     * @param callable|null $transformCallback データ変換コールバック (null の場合は変換なし)
+     * @param PDO $sourcePdo ソースDB接続 (デフォルトは $this->sourcePdo)
+     * @param PDO $targetPdo ターゲットDB接続 (デフォルトは $this->targetPdo)
+     * @param string|null $sourceWhereClause ソースのWHERE条件 (オプション)
+     */
+    private function verifyAndFixRecordCount(
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        string $targetIdColumn,
+        ?callable $transformCallback = null,
+        ?PDO $sourcePdo = null,
+        ?PDO $targetPdo = null,
+        ?string $sourceWhereClause = null
+    ): void {
+        $sourcePdo = $sourcePdo ?? $this->sourcePdo;
+        $targetPdo = $targetPdo ?? $this->targetPdo;
+
+        // ソースとターゲットの全IDを100件ずつ取得して差分を計算
+        $missingIds = $this->findMissingIds($sourcePdo, $targetPdo, $sourceTable, $targetTable, $sourceIdColumn, $targetIdColumn, $sourceWhereClause);
+
+        if (empty($missingIds)) {
+            // 差分なし（全てのソースレコードがターゲットに存在する）
+            return;
+        }
+
+        // レコード数を取得（ログ用）
+        $sourceCountQuery = "SELECT COUNT(*) FROM {$sourceTable}" . ($sourceWhereClause ? " WHERE {$sourceWhereClause}" : "");
+        $sourceCount = $sourcePdo->query($sourceCountQuery)->fetchColumn();
+        $targetCount = $targetPdo->query("SELECT COUNT(*) FROM {$targetTable}")->fetchColumn();
+
+        AdminTool::sendDiscordNotify(sprintf(
+            '【%s】不足レコード検出: %d 件のソースレコードがターゲットに存在しません (ソース: %d, ターゲット: %d)',
+            $targetTable,
+            count($missingIds),
+            $sourceCount,
+            $targetCount
+        ));
+
+        // 不足しているレコードを100件ずつチャンクで取得・挿入
+        $this->insertMissingRecords(
+            $sourcePdo,
+            $targetPdo,
+            $sourceTable,
+            $targetTable,
+            $sourceIdColumn,
+            $missingIds,
+            $transformCallback
+        );
+
+        AdminTool::sendDiscordNotify(sprintf('【%s】不足レコード挿入完了: %d 件', $targetTable, count($missingIds)));
+    }
+
+    /**
+     * ソースとターゲット間で不足しているIDを検出
+     *
+     * @return array 不足しているIDの配列
+     */
+    private function findMissingIds(
+        PDO $sourcePdo,
+        PDO $targetPdo,
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        string $targetIdColumn,
+        ?string $sourceWhereClause
+    ): array {
+        // ターゲットの全IDを100件ずつ取得
+        $targetIds = $this->fetchAllIdsInChunks($targetPdo, $targetTable, $targetIdColumn);
+
+        // ソースの全IDを100件ずつ取得
+        $sourceIds = $this->fetchAllIdsInChunks($sourcePdo, $sourceTable, $sourceIdColumn, $sourceWhereClause);
+
+        // 差分を計算（ソースに存在し、ターゲットに存在しないID）
+        return array_diff($sourceIds, $targetIds);
+    }
+
+    /**
+     * 指定されたテーブルから全IDを100件ずつチャンクで取得
+     *
+     * @return array IDの配列
+     */
+    private function fetchAllIdsInChunks(
+        PDO $pdo,
+        string $tableName,
+        string $idColumn,
+        ?string $whereClause = null
+    ): array {
+        $allIds = [];
+        $chunkSize = 100;
+        $offset = 0;
+
+        // 全体のレコード数を取得
+        $countQuery = "SELECT COUNT(*) FROM {$tableName}" . ($whereClause ? " WHERE {$whereClause}" : "");
+        $totalCount = $pdo->query($countQuery)->fetchColumn();
+
+        if ($totalCount === 0) {
+            return [];
+        }
+
+        // 100件ずつ取得
+        while ($offset < $totalCount) {
+            $query = "SELECT {$idColumn} FROM {$tableName}" .
+                ($whereClause ? " WHERE {$whereClause}" : "") .
+                " ORDER BY {$idColumn} LIMIT {$chunkSize} OFFSET {$offset}";
+
+            $stmt = $pdo->query($query);
+            $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            $allIds = array_merge($allIds, $ids);
+            $offset += $chunkSize;
+        }
+
+        return $allIds;
+    }
+
+    /**
+     * 不足しているレコードを100件ずつチャンクで取得・挿入
+     */
+    private function insertMissingRecords(
+        PDO $sourcePdo,
+        PDO $targetPdo,
+        string $sourceTable,
+        string $targetTable,
+        string $sourceIdColumn,
+        array $missingIds,
+        ?callable $transformCallback
+    ): void {
+        $chunkSize = 100;
+
+        foreach (array_chunk($missingIds, $chunkSize) as $chunk) {
+            // ソースDBから不足しているレコードを取得
+            $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+            $query = "SELECT * FROM {$sourceTable} WHERE {$sourceIdColumn} IN ({$placeholders})";
+            $stmt = $sourcePdo->prepare($query);
+            $stmt->execute($chunk);
+            $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($records)) {
+                continue;
+            }
+
+            // データ変換が必要な場合は変換
+            if ($transformCallback !== null) {
+                $transformedRecords = [];
+                foreach ($records as $record) {
+                    $transformedRecords[] = $transformCallback($record);
+                }
+                $records = $transformedRecords;
+            }
+
+            // ターゲットDBに挿入
+            if ($targetTable === 'openchat_master') {
+                // openchat_masterはUPSERTを使用
+                $this->sqliteUpsert($targetTable, $records);
+            } else {
+                // その他のテーブルはINSERT OR IGNOREを使用
+                $this->sqlImporter->import($targetPdo, $targetTable, $records, $chunkSize);
+            }
+        }
     }
 }
