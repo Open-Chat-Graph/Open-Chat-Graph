@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\SecretsConfig;
 use App\Models\RankingPositionDB\RankingPositionDB;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use Shared\Exceptions\ValidationException;
 use Shared\MimimalCmsConfig;
 
 class DatabaseApiController
 {
-    private const DB_NAME = 'ocgraph_sqlapi';
+    // Migrated to SQLite - no longer need DB_NAME constant
+    // private const DB_NAME = 'ocgraph_sqlapi';
     private const MAX_LIMIT = 10000;
     private const DEFAULT_LIMIT = 1000;
 
@@ -64,28 +65,17 @@ class DatabaseApiController
         ob_start('ob_gzhandler');
 
         try {
-            $pdo = $this->getPdo();
+            // schema.sqlファイルの内容をそのまま返す
+            $schemaFilePath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/ocgraph_sqlapi/schema.sql';
 
-            // 全テーブルのCREATE文を一括で取得
-            $schemas = [];
-
-            // テーブル一覧を取得
-            $tablesQuery = "SHOW TABLES";
-            $stmt = $pdo->query($tablesQuery);
-            $tables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
-
-            // 各テーブルのCREATE文を取得
-            foreach ($tables as $tableName) {
-                $createQuery = "SHOW CREATE TABLE `$tableName`";
-                $createStmt = $pdo->query($createQuery);
-                $createResult = $createStmt->fetch(\PDO::FETCH_ASSOC);
-
-                // 改行とインデントを除去して1行にする
-                $createTable = $createResult['Create Table'];
-                $createTable = preg_replace('/\n\s*/', ' ', $createTable);
-                $createTable = preg_replace('/\s+/', ' ', $createTable);
-                $schemas[] = $createTable . ';';
+            if (!file_exists($schemaFilePath)) {
+                throw new \Exception('Schema file not found: ' . $schemaFilePath);
             }
+
+            $schemaContent = file_get_contents($schemaFilePath);
+
+            // 改行で分割して配列として返す
+            $schemaLines = explode("\n", $schemaContent);
 
             // データベースの最終更新時間を取得
             $lastUpdateQuery = "SELECT MAX(time) as last_update FROM rising";
@@ -94,14 +84,13 @@ class DatabaseApiController
 
             // レスポンス
             $response = [
-                'database_type' => 'MariaDB 10.5',
-                'tables_count' => count($schemas),
-                'schemas' => $schemas,
+                'database_type' => 'SQLite 3',
+                'schema' => $schemaLines,
                 'lastUpdate' => $lastUpdate
             ];
 
             echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        } catch (\PDOException $e) {
+        } catch (\Exception $e) {
             echo json_encode([
                 'error' => $e->getMessage()
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -110,14 +99,8 @@ class DatabaseApiController
 
     private function getPdo(): \PDO
     {
-        return new \PDO(
-            'mysql:host=' . MimimalCmsConfig::$dbHost . ';dbname=' . self::DB_NAME . ';charset=' . (MimimalCmsConfig::$dbCharset ?? 'utf8mb4'),
-            SecretsConfig::$apiDbUser,
-            SecretsConfig::$apiDbPassword,
-            [
-                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION TRANSACTION READ ONLY",
-            ]
-        );
+        // Use SQLite connection
+        return SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']); // Read-only mode
     }
 
     private function filterQuery(string $query): string
@@ -127,9 +110,9 @@ class DatabaseApiController
             throw new ValidationException('Query too long');
         }
 
-        // UPDATE / DELETE を禁止（大文字小文字を問わず）
-        if (preg_match('/^\s*(UPDATE|DELETE)\b/i', $query)) {
-            throw new ValidationException('UPDATE / DELETE statements are not allowed');
+        // UPDATE / DELETE / INSERT を禁止（大文字小文字を問わず）
+        if (preg_match('/^\s*(UPDATE|DELETE|INSERT)\b/i', $query)) {
+            throw new ValidationException('UPDATE / DELETE / INSERT statements are not allowed');
         }
 
         // LIMITチェック
