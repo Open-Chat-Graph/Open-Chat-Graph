@@ -49,10 +49,7 @@ class MimimalCmsConfig
         \App\Models\CommentRepositories\DeleteCommentRepositoryInterface::class => \App\Models\CommentRepositories\DeleteCommentRepository::class,
         \App\Models\CommentRepositories\LikePostRepositoryInterface::class => \App\Models\CommentRepositories\LikePostRepository::class,
         \App\Models\CommentRepositories\RecentCommentListRepositoryInterface::class => \App\Models\CommentRepositories\RecentCommentListRepository::class,
-
-        \App\Models\RecommendRepositories\RecommendRankingRepositoryInterface::class => \App\Models\RecommendRepositories\OptimizedRecommendRankingRepository::class,
-        \App\Services\Recommend\RecommendRankingBuilderInterface::class => \App\Services\Recommend\RecommendRankingBuilder::class,
-
+        
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
         
         \App\Services\OpenChat\Updater\OpenChatDeleterInterface::class => \App\Services\OpenChat\Updater\OpenChatDeleter::class,

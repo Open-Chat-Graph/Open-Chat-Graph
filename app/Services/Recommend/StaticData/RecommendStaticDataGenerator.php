@@ -7,20 +7,21 @@ namespace App\Services\Recommend\StaticData;
 use App\Config\AppConfig;
 use App\Models\RecommendRepositories\CategoryRankingRepository;
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
-use App\Models\RecommendRepositories\RecommendRankingRepositoryInterface;
+use App\Models\RecommendRepositories\RecommendRankingRepository;
+use App\Models\Repositories\DB;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendRankingBuilderInterface;
+use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
 use Shared\MimimalCmsConfig;
 
 class RecommendStaticDataGenerator
 {
     function __construct(
-        private RecommendRankingRepositoryInterface $recommendRankingRepository,
+        private RecommendRankingRepository $recommendRankingRepository,
         private CategoryRankingRepository $categoryRankingRepository,
         private OfficialRoomRankingRepository $officialRoomRankingRepository,
-        private RecommendRankingBuilderInterface $recommendRankingBuilder,
+        private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
     ) {}
 

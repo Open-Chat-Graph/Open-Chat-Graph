@@ -6,7 +6,7 @@ namespace App\Models\RecommendRepositories;
 
 use App\Models\Repositories\DB;
 
-abstract class AbstractRecommendRankingRepository implements RecommendRankingRepositoryInterface
+abstract class AbstractRecommendRankingRepository
 {
     const SelectPage = "
         oc.id,
