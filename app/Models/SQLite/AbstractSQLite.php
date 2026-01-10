@@ -38,6 +38,15 @@ abstract class AbstractSQLite extends DB implements DBInterface
 
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);
 
+        // Enable WAL mode for concurrent read/write performance
+        static::$pdo->exec('PRAGMA journal_mode=WAL');
+
+        // Set synchronous mode to NORMAL for balanced performance
+        static::$pdo->exec('PRAGMA synchronous=NORMAL');
+
+        // Set busy timeout to 10 seconds to handle concurrent access
+        static::$pdo->exec('PRAGMA busy_timeout=10000');
+
         return static::$pdo;
     }
 

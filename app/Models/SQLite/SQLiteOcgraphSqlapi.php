@@ -38,6 +38,16 @@ class SQLiteOcgraphSqlapi extends AbstractSQLite implements DBInterface
         $mode = $config['mode'] ?? '?mode=rwc';
         static::$pdo = new \PDO('sqlite:file:' . AppConfig::SQLITE_OCGRAPH_SQLAPI_DB_PATH . $mode);
 
+        // Apply SQLite optimizations (inherited from AbstractSQLite pattern)
+        // Enable WAL mode for concurrent read/write performance
+        static::$pdo->exec('PRAGMA journal_mode=WAL');
+
+        // Set synchronous mode to NORMAL for balanced performance
+        static::$pdo->exec('PRAGMA synchronous=NORMAL');
+
+        // Set busy timeout to 10 seconds to handle concurrent access
+        static::$pdo->exec('PRAGMA busy_timeout=10000');
+
         return static::$pdo;
     }
 }
