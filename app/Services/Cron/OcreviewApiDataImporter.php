@@ -666,6 +666,7 @@ class OcreviewApiDataImporter
      * INSERT OR REPLACE と異なり、既存レコードを削除せずに更新します。
      *
      * 高速化のため一括UPSERT（複数VALUES句）を使用
+     * SQLiteのパラメータ数制限（デフォルト999）を考慮してチャンク処理を行います
      */
     protected function sqliteUpsert(string $tableName, array $data): void
     {
@@ -676,6 +677,21 @@ class OcreviewApiDataImporter
         $columns = array_keys($data[0]);
         $columnCount = count($columns);
 
+        // SQLiteのパラメータ数制限（デフォルト999）を考慮したチャンクサイズ
+        // 100件ずつ処理することで安全に実行
+        $recordsPerBatch = 100;
+
+        // データをチャンク単位で処理
+        foreach (array_chunk($data, $recordsPerBatch) as $chunk) {
+            $this->executeSqliteUpsertBatch($tableName, $chunk, $columns, $columnCount);
+        }
+    }
+
+    /**
+     * SQLite UPSERT のバッチ実行
+     */
+    private function executeSqliteUpsertBatch(string $tableName, array $chunk, array $columns, int $columnCount): void
+    {
         // openchat_master テーブルの主キーは openchat_id
         $primaryKey = 'openchat_id';
 
@@ -689,7 +705,7 @@ class OcreviewApiDataImporter
 
         // 一括UPSERT用のVALUES句を生成
         $placeholders = '(' . implode(', ', array_fill(0, $columnCount, '?')) . ')';
-        $valuesClause = implode(', ', array_fill(0, count($data), $placeholders));
+        $valuesClause = implode(', ', array_fill(0, count($chunk), $placeholders));
 
         $sql = "INSERT INTO {$tableName} (" . implode(', ', $columns) . ") " .
             "VALUES {$valuesClause} " .
@@ -697,7 +713,7 @@ class OcreviewApiDataImporter
 
         // 全行のデータを1次元配列にフラット化
         $allValues = [];
-        foreach ($data as $row) {
+        foreach ($chunk as $row) {
             foreach (array_values($row) as $value) {
                 $allValues[] = $value;
             }
