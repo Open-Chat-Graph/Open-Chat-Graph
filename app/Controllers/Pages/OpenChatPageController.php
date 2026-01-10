@@ -22,6 +22,7 @@ use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
+use App\Views\Classes\Dto\CommentArgDtoFactoryInterface;
 use Shared\MimimalCmsConfig;
 
 class OpenChatPageController
@@ -37,6 +38,7 @@ class OpenChatPageController
         RecommendGenarator $recommendGenarator,
         RecentCommentListRepositoryInterface $recentCommentListRepository,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
+        CommentArgDtoFactoryInterface $commentArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         int $open_chat_id,
         ?string $isAdminPage,
@@ -138,10 +140,7 @@ class OpenChatPageController
         $_hourlyRange = $this->buildHourlyRange($oc);
 
         $_chartArgDto = $rankingPositionChartArgDtoFactory->create($oc, $categoryValue ?? t('すべて'));
-        $_commentArgDto = [
-            'baseUrl' => url(),
-            'openChatId' => $oc['id']
-        ];
+        $_commentArgDto = $commentArgDtoFactory->create($oc['id']);
         $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
