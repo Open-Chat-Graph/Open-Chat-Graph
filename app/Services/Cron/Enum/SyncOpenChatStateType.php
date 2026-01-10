@@ -11,6 +11,7 @@ enum SyncOpenChatStateType: string
     case openChatApiDbMergerKillFlag = 'openChatApiDbMergerKillFlag';
     case openChatDailyCrawlingKillFlag = 'openChatDailyCrawlingKillFlag';
     case isUpdateInvitationTicketActive = 'isUpdateInvitationTicketActive';
+    case isUpdateRecommendStaticDataActive = 'isUpdateRecommendStaticDataActive';
     case persistMemberStatsLastDate = 'persistMemberStatsLastDate';
     case filterCacheDate = 'filterCacheDate';
 }

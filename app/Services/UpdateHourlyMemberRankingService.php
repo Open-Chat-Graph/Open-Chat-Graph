@@ -8,14 +8,12 @@ use App\Config\AppConfig;
 use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
-use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\StaticData\StaticDataGenerator;
 
 class UpdateHourlyMemberRankingService
 {
     function __construct(
         private StaticDataGenerator $staticDataGenerator,
-        private RecommendStaticDataGenerator $recommendStaticDataGenerator,
         private HourMemberRankingUpdaterRepositoryInterface $hourMemberRankingUpdaterRepository,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private MemberChangeFilterCacheRepositoryInterface $memberChangeFilterCacheRepository,
@@ -52,8 +50,15 @@ class UpdateHourlyMemberRankingService
         $this->staticDataGenerator->updateStaticData();
         addVerboseCronLog('ランキング静的データ生成完了');
 
-        addVerboseCronLog('おすすめ静的データを生成中');
-        $this->recommendStaticDataGenerator->updateStaticData();
-        addVerboseCronLog('おすすめ静的データ生成完了');
+        // おすすめ静的データ生成とCDNキャッシュ削除をバックグラウンドで実行
+        $this->executeRecommendStaticDataGeneratorInBackground();
+    }
+
+    private function executeRecommendStaticDataGeneratorInBackground()
+    {
+        $arg = escapeshellarg(\Shared\MimimalCmsConfig::$urlRoot);
+        $path = AppConfig::ROOT_PATH . 'batch/exec/update_recommend_static_data.php';
+        exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
+        addVerboseCronLog('おすすめ静的データ生成をバックグラウンドで開始');
     }
 }
