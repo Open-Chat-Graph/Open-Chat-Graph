@@ -83,9 +83,6 @@ class OcreviewApiDataImporter
         // LINE公式ランキング総数のインポート（差分同期）
         $this->importTotalCount();
 
-        // カテゴリマスターのインポート（全件リフレッシュ）
-        $this->importCategories();
-
         // 削除されたオープンチャット履歴のインポート（差分同期）
         $this->importOpenChatDeleted();
 
@@ -721,44 +718,6 @@ class OcreviewApiDataImporter
 
         $stmt = $this->targetPdo->prepare($sql);
         $stmt->execute($allValues);
-    }
-
-    /**
-     * カテゴリマスターのインポート
-     *
-     * 【差分同期の仕組み】
-     * このテーブルは参照データのため、差分同期ではなく毎回全件リフレッシュします。
-     * カテゴリデータは追加・変更頻度が低いため、全削除→全挿入で最新状態に更新します。
-     */
-    private function importCategories(): void
-    {
-        // ソーステーブルのレコード数を取得
-        $countQuery = "SELECT COUNT(*) FROM category";
-        $totalCount = $this->sourcePdo->query($countQuery)->fetchColumn();
-
-        if ($totalCount === 0) {
-            return;
-        }
-
-        // ターゲットテーブルを全削除
-        $this->targetPdo->exec("DELETE FROM categories");
-
-        // ソーステーブルから全カテゴリを取得
-        $query = "
-            SELECT
-                id as category_id,
-                category as category_name
-            FROM
-                category
-            ORDER BY id
-        ";
-
-        $stmt = $this->sourcePdo->query($query);
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (!empty($data)) {
-            $this->sqlImporter->import($this->targetPdo, 'categories', $data, count($data));
-        }
     }
 
     /**
