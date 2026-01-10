@@ -6,6 +6,7 @@ use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
+use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600 * 2);
@@ -58,11 +59,12 @@ try {
     // 実行中フラグを下ろす
     $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
-    AdminTool::sendDiscordNotify($e->__toString());
-
     // エラー時もフラグを下ろす
     if (isset($state)) {
         $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
     }
+
+    addCronLog($e->__toString());
+    AdminTool::sendDiscordNotify($e->__toString());
+    ExceptionHandler::errorLog($e);
 }

@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
+use ExceptionHandler\ExceptionHandler;
 
 set_time_limit(3600 * 10);
 
@@ -15,5 +16,5 @@ try {
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
-    throw $e;
+    ExceptionHandler::errorLog($e);
 }

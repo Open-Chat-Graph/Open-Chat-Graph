@@ -7,6 +7,7 @@ use App\Exceptions\ApplicationException;
 use App\ServiceProvider\ApiOpenChatDeleterServiceProvider;
 use App\Services\Cron\SyncOpenChat;
 use App\Services\Admin\AdminTool;
+use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 try {
@@ -38,5 +39,6 @@ try {
     if ($shouldNotify) {
         AdminTool::sendDiscordNotify($e->__toString());
         addCronLog($e->__toString());
+        ExceptionHandler::errorLog($e);
     }
 }
