@@ -9,7 +9,6 @@ use App\Exceptions\InvalidMemberCountException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
-use App\Models\Repositories\DB;
 
 class OpenChatHourlyInvitationTicketUpdater
 {
