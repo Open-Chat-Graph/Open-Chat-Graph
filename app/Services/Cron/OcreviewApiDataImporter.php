@@ -5,118 +5,157 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
+use App\Models\CommentRepositories\CommentDB;
 use App\Models\Importer\SqlInsert;
-use App\Models\Importer\SqlInsertUpdateWithBindValue;
+use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Admin\AdminTool;
 use PDO;
 use PDOStatement;
 use Shared\MimimalCmsConfig;
 
+/**
+ * ocgraph_sqlapi データベース（SQLite）へのデータインポートサービス
+ * 
+ * docker compose exec app ./vendor/bin/phpunit app/Services/Cron/test/OcreviewApiDataImporterUpsertTest.php
+ *　
+ * 【実行頻度】毎時実行を想定
+ *
+ * 【差分同期の仕組み】
+ * このインポーターは、実行が中断されても自動的に差分を検知して最新化できる設計になっています。
+ * 各テーブルのインポート処理は、前回の最終取り込み時点を記録し、その時点以降の差分のみを取得します。
+ * そのため、数時間～数日間実行が停止していても、次回実行時に自動的に未取り込みデータを全て取り込み、
+ * データベースを最新状態に復元できます。
+ *
+ * 【データソース】
+ * - ソースDB: MySQL ocgraph_ocreview（メインデータベース）
+ * - ソースDB: SQLite statistics（統計データ）
+ * - ソースDB: SQLite ranking_position（ランキング履歴データ）
+ * - ターゲットDB: SQLite ocgraph_sqlapi（API公開用データベース）
+ */
 class OcreviewApiDataImporter
 {
-    private PDO $targetPdo;
-    private PDO $sourcePdo;
-    private PDO $sqliteStatisticsPdo;
-    private PDO $sqliteRankingPositionPdo;
+    protected PDO $targetPdo;
+    protected PDO $sourcePdo;
+    protected PDO $sourceCommentPdo;
+    protected PDO $sqliteStatisticsPdo;
+    protected PDO $sqliteRankingPositionPdo;
 
-    // Discord notification counter
+    /** Discord通知カウンター */
     private int $discordNotificationCount = 0;
 
-    // Target database configuration
-    private const TARGET_DB_NAME = 'ocgraph_sqlapi';
-
-    // Discord notification configuration
+    /** Discord通知間隔（何件処理するごとに通知するか） */
     private const DISCORD_NOTIFY_INTERVAL = 100;
 
-    // Chunk size for bulk operations
+    /** チャンクサイズ（MySQL一括処理） */
     private const CHUNK_SIZE = 2000;
+
+    /** チャンクサイズ（SQLite一括処理） */
     private const CHUNK_SIZE_SQLITE = 10000;
 
     public function __construct(
-        private SqlInsertUpdateWithBindValue $sqlImportUpdater,
         private SqlInsert $sqlImporter,
     ) {}
 
     /**
-     * Execute all import operations
+     * 全データインポート処理を実行
+     *
+     * 各テーブルのインポート処理を順次実行します。
+     * すべての処理は差分同期対応しているため、実行が中断されても次回実行時に自動復旧します。
      */
     public function execute(): void
     {
         $this->initializeConnections();
 
-        // Import OpenChat master data
+        // オープンチャットマスターデータのインポート（差分同期）
         $this->importOpenChatMaster();
 
-        // Import growth rankings (full refresh)
+        // 成長ランキングのインポート（全件リフレッシュ）
         $this->importGrowthRankings();
 
-        // Import daily member statistics (incremental)
+        // 日次メンバー統計のインポート（差分同期）
         $this->importDailyMemberStatistics();
 
-        // Import LINE official activity history
+        // LINE公式アクティビティ履歴のインポート（差分同期）
         $this->importLineOfficialActivityHistory();
 
+        // LINE公式ランキング総数のインポート（差分同期）
         $this->importTotalCount();
+
+        // カテゴリマスターのインポート（全件リフレッシュ）
+        $this->importCategories();
+
+        // 削除されたオープンチャット履歴のインポート（差分同期）
+        $this->importOpenChatDeleted();
+
+        // コメント関連データのインポート（差分同期）
+        $commentImporter = new OcreviewApiCommentDataImporter($this->sourceCommentPdo, $this->targetPdo);
+        $commentImporter->execute();
     }
 
     /**
-     * Initialize database connections
+     * データベース接続を初期化
+     *
+     * テスト時にオーバーライド可能にするためprotectedに変更
      */
-    private function initializeConnections(): void
+    protected function initializeConnections(): void
     {
-        // Connect to source database (ocgraph_ocreview)
-        $this->sourcePdo = new PDO(
-            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, 'ocgraph_ocreview'),
-            MimimalCmsConfig::$dbUserName,
-            MimimalCmsConfig::$dbPassword,
-            [
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION TRANSACTION READ ONLY"
-            ]
-        );
+        // ソースデータベース（MySQL: ocgraph_ocreview）に接続
+        $this->sourcePdo = DB::connect();
 
-        // Connect to target database (ocreview_api)
-        $this->targetPdo = new PDO(
-            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, self::TARGET_DB_NAME),
-            MimimalCmsConfig::$dbUserName,
-            MimimalCmsConfig::$dbPassword,
-        );
+        // ソースデータベース（MySQL: ocgraph_comment）に接続
+        $this->sourceCommentPdo = CommentDB::connect();
 
+        // ターゲットデータベース（SQLite: ocgraph_sqlapi）に接続
+        $this->targetPdo = SQLiteOcgraphSqlapi::connect();
+
+        // 統計データベース（SQLite: statistics）に読み取り専用で接続
         $this->sqliteStatisticsPdo = SQLiteStatistics::connect([
             'mode' => '?mode=ro'
         ]);
 
+        // ランキング履歴データベース（SQLite: ranking_position）に読み取り専用で接続
         $this->sqliteRankingPositionPdo = SQLiteRankingPosition::connect([
             'mode' => '?mode=ro'
         ]);
     }
 
     /**
-     * Import/Update openchat_master table
+     * オープンチャットマスターデータのインポート
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDBの last_updated_at の最大値を取得し、それ以降に更新されたレコードのみをソースから取得。
+     * 実行が中断されていても、前回の最終更新時点から自動的に差分を取り込みます。
+     *
+     * さらに、updated_at が更新されていなくてもメンバー数が変更されている場合は
+     * syncMemberCountDifferences() で同期します。
+     *
+     * テスト時にアクセス可能にするためprotectedに変更
      */
-    private function importOpenChatMaster(): void
+    protected function importOpenChatMaster(): void
     {
-        // Get the last update timestamp from target
+        // ターゲットDBから最終更新日時を取得（差分同期の起点）
         $stmt = $this->targetPdo->query("SELECT MAX(last_updated_at) as max_updated FROM openchat_master");
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $lastUpdated = $result['max_updated'] ?? '1970-01-01 00:00:00';
 
-        // Get total count
+        // ソースDBから差分レコード数を取得
         $countQuery = "SELECT COUNT(*) FROM open_chat WHERE updated_at >= ?";
         $countStmt = $this->sourcePdo->prepare($countQuery);
         $countStmt->execute([$lastUpdated]);
         $totalCount = $countStmt->fetchColumn();
 
         if ($totalCount === 0) {
-            // No records with updated_at >= last_updated_at, check for member count differences
+            // updated_at が更新されていない場合でも、メンバー数の差分をチェック
             $this->syncMemberCountDifferences();
             return;
         }
 
-        // Select only updated records from source
+        // 差分レコードのみを取得
         $query = "
-            SELECT 
+            SELECT
                 id,
                 emid,
                 name,
@@ -150,17 +189,18 @@ class OcreviewApiDataImporter
                 }
 
                 if (!empty($data)) {
-                    $this->sqlImportUpdater->import($this->targetPdo, 'openchat_master', $data);
+                    // SQLiteのUPSERT（INSERT OR REPLACE）でデータを更新
+                    $this->sqliteUpsert('openchat_master', $data);
                 }
             },
         );
 
-        // After processing regular updates, check for member count differences
+        // updated_at が更新されていないメンバー数の変更も同期
         $this->syncMemberCountDifferences();
     }
 
     /**
-     * Transform open_chat row to openchat_master format
+     * ソースDBのopen_chatレコードをターゲットDBのopenchat_master形式に変換
      */
     private function transformOpenChatRow(array $row): array
     {
@@ -182,7 +222,7 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Convert emblem value to verification badge
+     * エンブレム値を認証バッジテキストに変換
      */
     private function convertEmblem(?int $emblem): ?string
     {
@@ -194,7 +234,7 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Convert join method type to text
+     * 参加方法タイプを日本語テキストに変換
      */
     private function convertJoinMethod(int $joinMethodType): string
     {
@@ -207,7 +247,7 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Convert Unix timestamp to datetime
+     * Unixタイムスタンプを日時文字列に変換
      */
     private function convertUnixTimeToDatetime(?int $unixTime): ?string
     {
@@ -218,14 +258,14 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Process data in chunks with a prepared statement
-     * 
-     * @param PDOStatement $stmt The prepared statement to execute
-     * @param array $bindParams Array of parameters to bind [position => [value, type]]
-     * @param int $totalCount Total number of records to process
-     * @param int $chunkSize Size of each chunk
-     * @param callable $processCallback Callback to process fetched data
-     * @param string|null $progressMessage Optional progress message format (use %d for counts)
+     * プリペアドステートメントでデータをチャンク単位で処理
+     *
+     * @param PDOStatement $stmt 実行するプリペアドステートメント
+     * @param array $bindParams バインドするパラメータ配列 [position => [value, type]]
+     * @param int $totalCount 処理するレコードの総数
+     * @param int $chunkSize チャンクサイズ
+     * @param callable $processCallback 取得データを処理するコールバック関数
+     * @param string|null $progressMessage 進捗メッセージフォーマット（%dで件数を表示）
      */
     private function processInChunks(
         PDOStatement $stmt,
@@ -238,12 +278,12 @@ class OcreviewApiDataImporter
         $processedCount = 0;
 
         for ($offset = 0; $offset < $totalCount; $offset += $chunkSize) {
-            // Bind static parameters
+            // 静的パラメータをバインド
             foreach ($bindParams as $position => [$value, $type]) {
                 $stmt->bindValue($position, $value, $type);
             }
 
-            // Bind dynamic parameters (limit and offset)
+            // 動的パラメータ（LIMIT、OFFSET）をバインド
             $nextPosition = count($bindParams) + 1;
             $stmt->bindValue($nextPosition, $chunkSize, PDO::PARAM_INT);
             $stmt->bindValue($nextPosition + 1, $offset, PDO::PARAM_INT);
@@ -263,26 +303,27 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Log message only in development mode
-     * 
-     * @param string $message The message to log
+     * ログメッセージを出力
+     *
+     * @param string $message 出力するメッセージ
      */
     private function log(string $message): void
     {
-        if (AppConfig::$isDevlopment) {
-            echo $message . "\n";
-        } else {
-            $this->discordNotificationCount++;
+        $this->discordNotificationCount++;
 
-            // Send notification on first call or every 100th call
-            if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
-                AdminTool::sendDiscordNotify($message);
-            }
+        // 初回または100件ごとにDiscord通知を送信
+        if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
+            AdminTool::sendDiscordNotify($message);
         }
     }
 
     /**
-     * Import growth rankings (hourly, daily, weekly)
+     * 成長ランキングのインポート（1時間、24時間、1週間）
+     *
+     * 【差分同期の仕組み】
+     * このテーブルは差分同期ではなく、毎回全件リフレッシュします。
+     * ソースDBのランキングデータは常に最新の全順位を保持しているため、
+     * 全削除→全挿入で最新状態に更新します。
      */
     private function importGrowthRankings(): void
     {
@@ -293,7 +334,7 @@ class OcreviewApiDataImporter
         ];
 
         foreach ($rankings as $sourceTable => $targetTable) {
-            // Get total count
+            // ソーステーブルのレコード数を取得
             $countQuery = "SELECT COUNT(*) FROM $sourceTable";
             $totalCount = $this->sourcePdo->query($countQuery)->fetchColumn();
 
@@ -301,17 +342,17 @@ class OcreviewApiDataImporter
                 continue;
             }
 
-            // Truncate target table
-            $this->targetPdo->exec("TRUNCATE TABLE $targetTable");
+            // ターゲットテーブルを全削除（SQLiteはTRUNCATEをサポートしていないため DELETE を使用）
+            $this->targetPdo->exec("DELETE FROM $targetTable");
 
-            // Select all data from source
+            // ソーステーブルから全データを取得
             $query = "
-                SELECT 
+                SELECT
                     id as ranking_position,
                     open_chat_id as openchat_id,
                     diff_member as member_increase_count,
                     percent_increase as growth_rate_percent
-                FROM 
+                FROM
                     $sourceTable
                 ORDER BY id
                 LIMIT ? OFFSET ?
@@ -334,15 +375,20 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Import daily member statistics (incremental)
+     * 日次メンバー統計のインポート
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDBの record_id の最大値を取得し、それより大きいIDのレコードのみをソースから取得。
+     * 実行が中断されても、前回の最終取り込みID以降のレコードを自動的に取り込みます。
      */
     private function importDailyMemberStatistics(): void
     {
-        // Get the maximum record_id from target
+        // ターゲットDBから最大レコードIDを取得（差分同期の起点）
         $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM daily_member_statistics");
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $maxId = (int)$result['max_id'];
 
+        // ソースDBから差分レコード数を取得
         $stmt = $this->sqliteStatisticsPdo->prepare("SELECT count(*) FROM statistics WHERE id > ?");
         $stmt->execute([$maxId]);
         $count = $stmt->fetchColumn();
@@ -351,14 +397,14 @@ class OcreviewApiDataImporter
             return;
         }
 
-        // Query for records after maxId
+        // 差分レコードのみを取得
         $query = "
-            SELECT 
+            SELECT
                 id as record_id,
                 open_chat_id as openchat_id,
                 member as member_count,
                 date as statistics_date
-            FROM 
+            FROM
                 statistics
             WHERE id > ?
             ORDER BY id
@@ -377,17 +423,25 @@ class OcreviewApiDataImporter
                     $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
                 }
             },
-            'Processed %d / %d records for daily_member_statistics'
+            'daily_member_statistics: %d / %d 件処理完了'
         );
     }
 
+    /**
+     * LINE公式ランキング総数のインポート
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDBの record_id の最大値を取得し、それより大きいIDのレコードのみをソースから取得。
+     * 実行が中断されても、前回の最終取り込みID以降のレコードを自動的に取り込みます。
+     */
     private function importTotalCount(): void
     {
-        // Get the maximum record_id from target
+        // ターゲットDBから最大レコードIDを取得（差分同期の起点）
         $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM line_official_ranking_total_count");
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $maxId = (int)$result['max_id'];
 
+        // ソースDBから差分レコード数を取得
         $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM total_count WHERE id > ?");
         $stmt->execute([$maxId]);
         $count = $stmt->fetchColumn();
@@ -396,15 +450,15 @@ class OcreviewApiDataImporter
             return;
         }
 
-        // Query for records after maxId
+        // 差分レコードのみを取得
         $query = "
-            SELECT 
+            SELECT
                 id as record_id,
                 total_count_rising as activity_trending_total_count,
                 total_count_ranking as activity_ranking_total_count,
                 time as recorded_at,
                 category as category_id
-            FROM 
+            FROM
                 total_count
             WHERE id > ?
             ORDER BY id
@@ -423,12 +477,16 @@ class OcreviewApiDataImporter
                     $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
                 }
             },
-            'Processed %d / %d records for line_official_ranking_total_count'
+            'line_official_ranking_total_count: %d / %d 件処理完了'
         );
     }
 
     /**
-     * Import LINE official activity history
+     * LINE公式アクティビティ履歴のインポート（ランキング・急上昇）
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDBの record_id の最大値を取得し、それより大きいIDのレコードのみをソースから取得。
+     * 実行が中断されても、前回の最終取り込みID以降のレコードを自動的に取り込みます。
      */
     private function importLineOfficialActivityHistory(): void
     {
@@ -438,11 +496,12 @@ class OcreviewApiDataImporter
         ];
 
         foreach ($tables as $sourceTable => $targetTable) {
-            // Get the maximum ID from target to do incremental import
+            // ターゲットDBから最大レコードIDを取得（差分同期の起点）
             $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM $targetTable");
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             $maxId = (int)$result['max_id'];
 
+            // ソースDBから差分レコード数を取得
             $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
             $stmt->execute([$maxId]);
             $count = $stmt->fetchColumn();
@@ -453,9 +512,9 @@ class OcreviewApiDataImporter
 
             $positionColumn = $sourceTable === 'ranking' ? 'activity_ranking_position' : 'activity_trending_position';
 
-            // Query for records after maxId
+            // 差分レコードのみを取得
             $query = "
-                SELECT 
+                SELECT
                     id as record_id,
                     open_chat_id as openchat_id,
                     category as category_id,
@@ -481,38 +540,43 @@ class OcreviewApiDataImporter
                         $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
                     }
                 },
-                "Processed %d / %d records for $targetTable"
+                "$targetTable: %d / %d 件処理完了"
             );
         }
     }
 
     /**
-     * Sync member count differences between source and target
-     * This handles cases where only the member count changed but updated_at wasn't updated
+     * ソースとターゲット間のメンバー数差分を同期
+     *
+     * updated_at が更新されていなくてもメンバー数のみが変更されているケースを検知して同期します。
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDB内の全レコードとソースDBのメンバー数を比較し、差分があるレコードのみを更新。
+     * この処理により、updated_at が更新されなかったメンバー数の変更も漏れなく同期されます。
      */
     private function syncMemberCountDifferences(): void
     {
-        // Get all target records for comparison
+        // ターゲットDB内の全レコードを取得（比較用）
         $targetData = $this->getAllTargetRecords();
-        
+
         if (empty($targetData)) {
             return;
         }
 
-        // Convert to lookup array for efficient comparison
+        // 効率的な比較のために連想配列に変換
         $targetLookup = [];
         foreach ($targetData as $record) {
             $targetLookup[$record['openchat_id']] = $record['current_member_count'];
         }
 
-        // Get total count of source records
+        // ソースDBの総レコード数を取得
         $totalCount = $this->sourcePdo->query("SELECT COUNT(*) FROM open_chat")->fetchColumn();
 
         if ($totalCount === 0) {
             return;
         }
 
-        // Process source records in chunks to find differences
+        // ソースレコードをチャンク単位で処理し、差分を検出
         $query = "
             SELECT id, member
             FROM open_chat
@@ -529,15 +593,15 @@ class OcreviewApiDataImporter
             self::CHUNK_SIZE,
             function (array $rows) use ($targetLookup) {
                 $updatesNeeded = [];
-                
+
                 foreach ($rows as $row) {
                     $openchatId = $row['id'];
-                    
-                    // Check if this record exists in target and has member count differences
+
+                    // ターゲットに存在し、メンバー数が異なるレコードを抽出
                     if (isset($targetLookup[$openchatId])) {
                         $targetMemberCount = $targetLookup[$openchatId];
-                        
-                        // Check if member count is different
+
+                        // メンバー数の差分をチェック
                         if ($row['member'] !== $targetMemberCount) {
                             $updatesNeeded[] = $row;
                         }
@@ -545,14 +609,14 @@ class OcreviewApiDataImporter
                 }
 
                 if (!empty($updatesNeeded)) {
-                    $this->bulkUpdateTargetRecords($updatesNeeded);
+                    $this->bulkUpdateTargetRecordsSqlite($updatesNeeded);
                 }
             },
         );
     }
 
     /**
-     * Get all target records for comparison
+     * ターゲットDB内の全レコードを取得（比較用）
      */
     private function getAllTargetRecords(): array
     {
@@ -563,35 +627,178 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * Bulk update target records
+     * ターゲットDBのレコードを一括更新（CASE文で高速化）
      */
-    private function bulkUpdateTargetRecords(array $records): void
+    private function bulkUpdateTargetRecordsSqlite(array $records): void
     {
         if (empty($records)) {
             return;
         }
 
-        // Build bulk update query
-        $memberCases = [];
-        $ids = [];
-        
+        // CASE文を使った一括UPDATE
+        $whenClauses = [];
+        $openchatIds = [];
+        $params = [];
+
         foreach ($records as $record) {
-            $id = $record['id'];
-            $member = $record['member'];
-            
-            $memberCases[] = "WHEN {$id} THEN {$member}";
-            $ids[] = $id;
+            $whenClauses[] = "WHEN ? THEN ?";
+            $openchatIds[] = $record['id'];
+            $params[] = $record['id'];
+            $params[] = $record['member'];
         }
-        
-        $idsStr = implode(',', $ids);
-        $memberCasesStr = implode(' ', $memberCases);
-        
+
+        // 全openchat_idを最後に追加
+        $params = array_merge($params, $openchatIds);
+
+        $whenClause = implode(' ', $whenClauses);
+        $placeholders = implode(',', array_fill(0, count($openchatIds), '?'));
+
+        $sql = "UPDATE openchat_master SET current_member_count = CASE openchat_id {$whenClause} END WHERE openchat_id IN ($placeholders)";
+
+        $stmt = $this->targetPdo->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    /**
+     * SQLite用UPSERTヘルパー（INSERT ... ON CONFLICT ... DO UPDATE）
+     *
+     * MySQLの ON DUPLICATE KEY UPDATE と同等の動作をSQLiteで実現します。
+     * INSERT OR REPLACE と異なり、既存レコードを削除せずに更新します。
+     *
+     * 高速化のため一括UPSERT（複数VALUES句）を使用
+     */
+    protected function sqliteUpsert(string $tableName, array $data): void
+    {
+        if (empty($data)) {
+            return;
+        }
+
+        $columns = array_keys($data[0]);
+        $columnCount = count($columns);
+
+        // openchat_master テーブルの主キーは openchat_id
+        $primaryKey = 'openchat_id';
+
+        // UPDATE句を生成（主キー以外のカラムを更新）
+        $updateClauses = [];
+        foreach ($columns as $column) {
+            if ($column !== $primaryKey) {
+                $updateClauses[] = "{$column} = excluded.{$column}";
+            }
+        }
+
+        // 一括UPSERT用のVALUES句を生成
+        $placeholders = '(' . implode(', ', array_fill(0, $columnCount, '?')) . ')';
+        $valuesClause = implode(', ', array_fill(0, count($data), $placeholders));
+
+        $sql = "INSERT INTO {$tableName} (" . implode(', ', $columns) . ") " .
+            "VALUES {$valuesClause} " .
+            "ON CONFLICT({$primaryKey}) DO UPDATE SET " . implode(', ', $updateClauses);
+
+        // 全行のデータを1次元配列にフラット化
+        $allValues = [];
+        foreach ($data as $row) {
+            foreach (array_values($row) as $value) {
+                $allValues[] = $value;
+            }
+        }
+
+        $stmt = $this->targetPdo->prepare($sql);
+        $stmt->execute($allValues);
+    }
+
+    /**
+     * カテゴリマスターのインポート
+     *
+     * 【差分同期の仕組み】
+     * このテーブルは参照データのため、差分同期ではなく毎回全件リフレッシュします。
+     * カテゴリデータは追加・変更頻度が低いため、全削除→全挿入で最新状態に更新します。
+     */
+    private function importCategories(): void
+    {
+        // ソーステーブルのレコード数を取得
+        $countQuery = "SELECT COUNT(*) FROM category";
+        $totalCount = $this->sourcePdo->query($countQuery)->fetchColumn();
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        // ターゲットテーブルを全削除
+        $this->targetPdo->exec("DELETE FROM categories");
+
+        // ソーステーブルから全カテゴリを取得
         $query = "
-            UPDATE openchat_master 
-            SET current_member_count = CASE openchat_id {$memberCasesStr} END
-            WHERE openchat_id IN ({$idsStr})
+            SELECT
+                id as category_id,
+                category as category_name
+            FROM
+                category
+            ORDER BY id
         ";
-        
-        $this->targetPdo->exec($query);
+
+        $stmt = $this->sourcePdo->query($query);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($data)) {
+            $this->sqlImporter->import($this->targetPdo, 'categories', $data, count($data));
+        }
+    }
+
+    /**
+     * 削除されたオープンチャット履歴のインポート
+     *
+     * 【差分同期の仕組み】
+     * ターゲットDBの deleted_at の最大値を取得し、それ以降に削除されたレコードのみをソースから取得。
+     * 実行が中断されても、前回の最終取り込み時点以降の削除レコードを自動的に取り込みます。
+     *
+     * 【idカラムについて】
+     * open_chat_deleted.id は AUTO_INCREMENT だが、実際には openchat_id の値が明示的に挿入されています。
+     * このため、ApiDeletedOpenChatListRepository では om.openchat_id = ocd.id でJOINできます。
+     */
+    private function importOpenChatDeleted(): void
+    {
+        // ターゲットDBから最終削除日時を取得（差分同期の起点）
+        $stmt = $this->targetPdo->query("SELECT MAX(deleted_at) as max_deleted FROM open_chat_deleted");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxDeleted = $result['max_deleted'] ?? '1970-01-01 00:00:00';
+
+        // ソースDBから差分レコード数を取得
+        $countQuery = "SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at > ?";
+        $countStmt = $this->sourcePdo->prepare($countQuery);
+        $countStmt->execute([$maxDeleted]);
+        $totalCount = $countStmt->fetchColumn();
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        // 差分レコードのみを取得
+        $query = "
+            SELECT
+                id,
+                emid,
+                deleted_at
+            FROM
+                open_chat_deleted
+            WHERE deleted_at > ?
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->sourcePdo->prepare($query);
+
+        $this->processInChunks(
+            $stmt,
+            [1 => [$maxDeleted, PDO::PARAM_STR]],
+            $totalCount,
+            self::CHUNK_SIZE,
+            function (array $data) {
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, 'open_chat_deleted', $data, self::CHUNK_SIZE);
+                }
+            },
+            'open_chat_deleted: %d / %d 件処理完了'
+        );
     }
 }

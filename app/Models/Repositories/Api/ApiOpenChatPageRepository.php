@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories\Api;
 
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
 /**
  * Repository for OpenChat page data from ocgraph_sqlapi database
@@ -42,7 +43,7 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
                     WHEN '参加コード入力制' THEN 2
                     ELSE 0
                 END AS join_method_type,
-                UNIX_TIMESTAMP(om.established_at) AS api_created_at,
+                CAST(strftime('%s', om.established_at) AS INTEGER) AS api_created_at,
                 om.first_seen_at AS created_at,
                 om.last_updated_at AS updated_at,
                 NULL AS tag1,
@@ -65,7 +66,7 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
             WHERE 
                 om.openchat_id = :id";
 
-        return ApiDB::fetch($query, compact('id'));
+        return SQLiteOcgraphSqlapi::fetch($query, compact('id'));
     }
 
     /**
@@ -90,7 +91,7 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
      */
     function isExistsOpenChat(int $id): bool
     {
-        return (bool) ApiDB::fetchColumn(
+        return (bool) SQLiteOcgraphSqlapi::fetchColumn(
             "SELECT 1 FROM openchat_master WHERE openchat_id = :id LIMIT 1",
             compact('id')
         );

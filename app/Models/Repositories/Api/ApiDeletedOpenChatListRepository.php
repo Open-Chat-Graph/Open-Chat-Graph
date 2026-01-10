@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories\Api;
 
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
+
 class ApiDeletedOpenChatListRepository
 {
     /**
@@ -70,27 +72,27 @@ class ApiDeletedOpenChatListRepository
             FROM
                 openchat_master om
             JOIN
-                ocgraph_ocreview.open_chat_deleted ocd ON om.openchat_id = ocd.id
+                open_chat_deleted ocd ON om.openchat_id = ocd.id
             JOIN
                 categories c ON om.category_id = c.category_id
             WHERE
-                DATE(ocd.deleted_at) = :date
+                date(ocd.deleted_at) = :date
                 AND om.current_member_count > 10
                 AND EXISTS (
                     SELECT 1
                     FROM daily_member_statistics dms1
                     WHERE dms1.openchat_id = om.openchat_id
-                    AND dms1.statistics_date = DATE_SUB(
+                    AND dms1.statistics_date = date(
                         (SELECT MAX(statistics_date)
                          FROM daily_member_statistics dms2
                          WHERE dms2.openchat_id = om.openchat_id),
-                        INTERVAL 1 DAY
+                        '-1 day'
                     )
                 )
             ORDER BY
                 om.established_at DESC";
 
-        $deletedOpenChats = ApiDB::fetchAll($query, compact('date'));
+        $deletedOpenChats = SQLiteOcgraphSqlapi::fetchAll($query, compact('date'));
 
         if ($deletedOpenChats === false) {
             return false;
@@ -135,12 +137,12 @@ class ApiDeletedOpenChatListRepository
                     peak.member_count as peak_count,
                     valley.member_count as valley_count,
                     oldest.statistics_date as oldest_date
-                FROM 
-                    (SELECT member_count, statistics_date 
-                     FROM daily_member_statistics 
-                     WHERE openchat_id = :openchat_id 
-                       AND statistics_date <= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                     ORDER BY statistics_date DESC 
+                FROM
+                    (SELECT member_count, statistics_date
+                     FROM daily_member_statistics
+                     WHERE openchat_id = :openchat_id
+                       AND statistics_date <= date(datetime('now'), '-7 days')
+                     ORDER BY statistics_date DESC
                      LIMIT 1) as week_ago_or_newer
                 LEFT JOIN
                     (SELECT member_count, statistics_date 
@@ -149,11 +151,11 @@ class ApiDeletedOpenChatListRepository
                      ORDER BY statistics_date ASC 
                      LIMIT 1) as oldest ON 1=1
                 LEFT JOIN
-                    (SELECT member_count, statistics_date 
-                     FROM daily_member_statistics 
+                    (SELECT member_count, statistics_date
+                     FROM daily_member_statistics
                      WHERE openchat_id = :openchat_id3
-                       AND statistics_date <= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                     ORDER BY statistics_date DESC 
+                       AND statistics_date <= date(datetime('now'), '-30 days')
+                     ORDER BY statistics_date DESC
                      LIMIT 1) as month_ago ON 1=1
                 LEFT JOIN
                     (SELECT MAX(member_count) as member_count
@@ -164,7 +166,7 @@ class ApiDeletedOpenChatListRepository
                      FROM daily_member_statistics 
                      WHERE openchat_id = :openchat_id5) as valley ON 1=1";
 
-            $growth = ApiDB::fetch($growthQuery, [
+            $growth = SQLiteOcgraphSqlapi::fetch($growthQuery, [
                 'openchat_id' => $openChat['openchat_id'],
                 'openchat_id2' => $openChat['openchat_id'],
                 'openchat_id3' => $openChat['openchat_id'],

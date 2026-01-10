@@ -58,6 +58,7 @@ class MimimalCmsConfig
         \App\Services\OpenChat\Updater\OpenChatDeleterInterface::class => \App\Services\OpenChat\Updater\OpenChatDeleter::class,
         
         \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
+        \App\Views\Classes\Dto\CommentArgDtoFactoryInterface::class => \App\Views\Classes\Dto\CommentArgDtoFactory::class,
         \App\Views\Classes\CollapseKeywordEnumerationsInterface::class => \App\Views\Classes\CollapseKeywordEnumerations::class,
     ];
 

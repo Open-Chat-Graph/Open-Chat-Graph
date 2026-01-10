@@ -30,6 +30,9 @@ storage/furigana/**
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
 storage/*/SQLite/ranking_position/ranking_position.db
+storage/*/SQLite/ocgraph_sqlapi/*.db
+storage/ja/SQLite/*/*.db-shm
+storage/ja/SQLite/*/*.db-wal
 storage/*/ranking_position/*/*
 storage/*/ranking_position/filter.dat
 storage/*/ranking_position/filter_date.dat

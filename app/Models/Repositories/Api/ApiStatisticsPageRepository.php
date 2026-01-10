@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories\Api;
 
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
 /**
  * Repository for statistics page data from ocgraph_sqlapi database
@@ -21,7 +22,7 @@ class ApiStatisticsPageRepository implements StatisticsPageRepositoryInterface
      */
     function getDailyMemberStatsDateAsc(int $open_chat_id): array
     {
-        ApiDB::connect();
+        SQLiteOcgraphSqlapi::connect();
 
         $query =
             "SELECT 
@@ -34,12 +35,12 @@ class ApiStatisticsPageRepository implements StatisticsPageRepositoryInterface
             ORDER BY 
                 statistics_date ASC";
 
-        $result = ApiDB::fetchAll($query, compact('open_chat_id'));
+        $result = SQLiteOcgraphSqlapi::fetchAll($query, compact('open_chat_id'));
         if (empty($result)) {
             return [];
         }
 
-        $currentMemberCount = ApiDB::fetchColumn(
+        $currentMemberCount = SQLiteOcgraphSqlapi::fetchColumn(
             "SELECT
                 current_member_count
             FROM 

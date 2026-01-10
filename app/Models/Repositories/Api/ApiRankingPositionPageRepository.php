@@ -6,6 +6,7 @@ namespace App\Models\Repositories\Api;
 
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionPageRepoDto;
 use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\OpenChat\Enum\RankingType;
 
 /**
@@ -29,7 +30,7 @@ class ApiRankingPositionPageRepository implements RankingPositionPageRepositoryI
     ): RankingPositionPageRepoDto {
         $dto = new RankingPositionPageRepoDto;
         
-        ApiDB::connect();
+        SQLiteOcgraphSqlapi::connect();
         
         // Determine table based on ranking type
         $tableName = $type === RankingType::Ranking 
@@ -61,7 +62,7 @@ class ApiRankingPositionPageRepository implements RankingPositionPageRepositoryI
                 h.recorded_at ASC
         ";
         
-        $stmt = ApiDB::$pdo->prepare($query);
+        $stmt = SQLiteOcgraphSqlapi::$pdo->prepare($query);
         $stmt->execute([$open_chat_id, $category]);
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         
@@ -85,7 +86,7 @@ class ApiRankingPositionPageRepository implements RankingPositionPageRepositoryI
      */
     public function getFinalRankingPosition(int $open_chat_id, int $category): array|false
     {
-        ApiDB::connect();
+        SQLiteOcgraphSqlapi::connect();
         
         $query = "
             SELECT 
@@ -105,7 +106,7 @@ class ApiRankingPositionPageRepository implements RankingPositionPageRepositoryI
             LIMIT 1
         ";
         
-        $stmt = ApiDB::$pdo->prepare($query);
+        $stmt = SQLiteOcgraphSqlapi::$pdo->prepare($query);
         $stmt->execute([$open_chat_id, $category]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         

@@ -194,6 +194,9 @@ class AppConfig
 
     const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
 
+    /** SQLite ocgraph_sqlapi database path (Japanese only, not multi-language) */
+    const SQLITE_OCGRAPH_SQLAPI_DB_PATH = __DIR__ . '/../../storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db';
+
     private const STORAGE_DIR = [
         '' =>    __DIR__ . '/../../storage/ja',
         '/tw' => __DIR__ . '/../../storage/tw',
