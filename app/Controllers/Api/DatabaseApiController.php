@@ -66,7 +66,7 @@ class DatabaseApiController
 
         try {
             // schema.sqlファイルの内容をそのまま返す
-            $schemaFilePath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/ocgraph_sqlapi/schema.sql';
+            $schemaFilePath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/sqlapi_schema.sql';
 
             if (!file_exists($schemaFilePath)) {
                 throw new \Exception('Schema file not found: ' . $schemaFilePath);

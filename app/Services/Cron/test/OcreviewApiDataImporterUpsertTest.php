@@ -145,21 +145,21 @@ class OcreviewApiDataImporterUpsertTest extends TestCase
 
     private function setupTargetSchema(PDO $pdo): void
     {
-        $schemaPath = __DIR__ . '/../../../../storage/ja/SQLite/template/sqlapi_schema.sql';
+        $schemaPath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/sqlapi_schema.sql';
         $schema = file_get_contents($schemaPath);
         $pdo->exec($schema);
     }
 
     private function setupStatisticsSchema(PDO $pdo): void
     {
-        $schemaPath = __DIR__ . '/../../../../storage/ja/SQLite/template/statistics_schema.sql';
+        $schemaPath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/statistics_schema.sql';
         $schema = file_get_contents($schemaPath);
         $pdo->exec($schema);
     }
 
     private function setupRankingPositionSchema(PDO $pdo): void
     {
-        $schemaPath = __DIR__ . '/../../../../storage/ja/SQLite/template/ranking_position_schema.sql';
+        $schemaPath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/ranking_position_schema.sql';
         $schema = file_get_contents($schemaPath);
         $pdo->exec($schema);
     }

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
+use App\Models\CommentRepositories\CommentDB;
 use App\Models\Importer\SqlInsert;
+use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
@@ -37,6 +39,7 @@ class OcreviewApiDataImporter
 {
     protected PDO $targetPdo;
     protected PDO $sourcePdo;
+    protected PDO $sourceCommentPdo;
     protected PDO $sqliteStatisticsPdo;
     protected PDO $sqliteRankingPositionPdo;
 
@@ -86,6 +89,10 @@ class OcreviewApiDataImporter
 
         // 削除されたオープンチャット履歴のインポート（差分同期）
         $this->importOpenChatDeleted();
+
+        // コメント関連データのインポート（差分同期）
+        $commentImporter = new OcreviewApiCommentDataImporter($this->sourceCommentPdo, $this->targetPdo);
+        $commentImporter->execute();
     }
 
     /**
@@ -96,14 +103,10 @@ class OcreviewApiDataImporter
     protected function initializeConnections(): void
     {
         // ソースデータベース（MySQL: ocgraph_ocreview）に接続
-        $this->sourcePdo = new PDO(
-            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', MimimalCmsConfig::$dbHost, 'ocgraph_ocreview'),
-            MimimalCmsConfig::$dbUserName,
-            MimimalCmsConfig::$dbPassword,
-            [
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION TRANSACTION READ ONLY"
-            ]
-        );
+        $this->sourcePdo = DB::connect();
+
+        // ソースデータベース（MySQL: ocgraph_comment）に接続
+        $this->sourceCommentPdo = CommentDB::connect();
 
         // ターゲットデータベース（SQLite: ocgraph_sqlapi）に接続
         $this->targetPdo = SQLiteOcgraphSqlapi::connect();
@@ -186,15 +189,8 @@ class OcreviewApiDataImporter
                 }
 
                 if (!empty($data)) {
-                    $this->targetPdo->beginTransaction();
-                    try {
-                        // SQLiteのUPSERT（INSERT OR REPLACE）でデータを更新
-                        $this->sqliteUpsert('openchat_master', $data);
-                        $this->targetPdo->commit();
-                    } catch (\Exception $e) {
-                        $this->targetPdo->rollBack();
-                        throw $e;
-                    }
+                    // SQLiteのUPSERT（INSERT OR REPLACE）でデータを更新
+                    $this->sqliteUpsert('openchat_master', $data);
                 }
             },
         );
@@ -307,21 +303,17 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * ログメッセージを出力（開発環境では標準出力、本番環境ではDiscord通知）
+     * ログメッセージを出力
      *
      * @param string $message 出力するメッセージ
      */
     private function log(string $message): void
     {
-        if (AppConfig::$isDevlopment) {
-            echo $message . "\n";
-        } else {
-            $this->discordNotificationCount++;
+        $this->discordNotificationCount++;
 
-            // 初回または100件ごとにDiscord通知を送信
-            if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
-                AdminTool::sendDiscordNotify($message);
-            }
+        // 初回または100件ごとにDiscord通知を送信
+        if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
+            AdminTool::sendDiscordNotify($message);
         }
     }
 
@@ -375,14 +367,7 @@ class OcreviewApiDataImporter
                 self::CHUNK_SIZE,
                 function (array $data) use ($targetTable) {
                     if (!empty($data)) {
-                        $this->targetPdo->beginTransaction();
-                        try {
-                            $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
-                            $this->targetPdo->commit();
-                        } catch (\Exception $e) {
-                            $this->targetPdo->rollBack();
-                            throw $e;
-                        }
+                        $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE);
                     }
                 },
             );
@@ -435,14 +420,7 @@ class OcreviewApiDataImporter
             self::CHUNK_SIZE_SQLITE,
             function (array $data) {
                 if (!empty($data)) {
-                    $this->targetPdo->beginTransaction();
-                    try {
-                        $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
-                        $this->targetPdo->commit();
-                    } catch (\Exception $e) {
-                        $this->targetPdo->rollBack();
-                        throw $e;
-                    }
+                    $this->sqlImporter->import($this->targetPdo, 'daily_member_statistics', $data, self::CHUNK_SIZE_SQLITE);
                 }
             },
             'daily_member_statistics: %d / %d 件処理完了'
@@ -496,14 +474,7 @@ class OcreviewApiDataImporter
             self::CHUNK_SIZE_SQLITE,
             function (array $data) {
                 if (!empty($data)) {
-                    $this->targetPdo->beginTransaction();
-                    try {
-                        $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
-                        $this->targetPdo->commit();
-                    } catch (\Exception $e) {
-                        $this->targetPdo->rollBack();
-                        throw $e;
-                    }
+                    $this->sqlImporter->import($this->targetPdo, 'line_official_ranking_total_count', $data, self::CHUNK_SIZE_SQLITE);
                 }
             },
             'line_official_ranking_total_count: %d / %d 件処理完了'
@@ -566,14 +537,7 @@ class OcreviewApiDataImporter
                 self::CHUNK_SIZE_SQLITE,
                 function (array $data) use ($targetTable) {
                     if (!empty($data)) {
-                        $this->targetPdo->beginTransaction();
-                        try {
-                            $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
-                            $this->targetPdo->commit();
-                        } catch (\Exception $e) {
-                            $this->targetPdo->rollBack();
-                            throw $e;
-                        }
+                        $this->sqlImporter->import($this->targetPdo, $targetTable, $data, self::CHUNK_SIZE_SQLITE);
                     }
                 },
                 "$targetTable: %d / %d 件処理完了"
@@ -663,7 +627,7 @@ class OcreviewApiDataImporter
     }
 
     /**
-     * ターゲットDBのレコードを一括更新（SQLite版）
+     * ターゲットDBのレコードを一括更新（CASE文で高速化）
      */
     private function bulkUpdateTargetRecordsSqlite(array $records): void
     {
@@ -671,21 +635,28 @@ class OcreviewApiDataImporter
             return;
         }
 
-        $this->targetPdo->beginTransaction();
-        try {
-            $stmt = $this->targetPdo->prepare(
-                "UPDATE openchat_master SET current_member_count = ? WHERE openchat_id = ?"
-            );
+        // CASE文を使った一括UPDATE
+        $whenClauses = [];
+        $openchatIds = [];
+        $params = [];
 
-            foreach ($records as $record) {
-                $stmt->execute([$record['member'], $record['id']]);
-            }
-
-            $this->targetPdo->commit();
-        } catch (\Exception $e) {
-            $this->targetPdo->rollBack();
-            throw $e;
+        foreach ($records as $record) {
+            $whenClauses[] = "WHEN ? THEN ?";
+            $openchatIds[] = $record['id'];
+            $params[] = $record['id'];
+            $params[] = $record['member'];
         }
+
+        // 全openchat_idを最後に追加
+        $params = array_merge($params, $openchatIds);
+
+        $whenClause = implode(' ', $whenClauses);
+        $placeholders = implode(',', array_fill(0, count($openchatIds), '?'));
+
+        $sql = "UPDATE openchat_master SET current_member_count = CASE openchat_id {$whenClause} END WHERE openchat_id IN ($placeholders)";
+
+        $stmt = $this->targetPdo->prepare($sql);
+        $stmt->execute($params);
     }
 
     /**
@@ -694,7 +665,7 @@ class OcreviewApiDataImporter
      * MySQLの ON DUPLICATE KEY UPDATE と同等の動作をSQLiteで実現します。
      * INSERT OR REPLACE と異なり、既存レコードを削除せずに更新します。
      *
-     * テスト時にアクセス可能にするためprotectedに変更
+     * 高速化のため一括UPSERT（複数VALUES句）を使用
      */
     protected function sqliteUpsert(string $tableName, array $data): void
     {
@@ -703,7 +674,7 @@ class OcreviewApiDataImporter
         }
 
         $columns = array_keys($data[0]);
-        $placeholders = array_fill(0, count($columns), '?');
+        $columnCount = count($columns);
 
         // openchat_master テーブルの主キーは openchat_id
         $primaryKey = 'openchat_id';
@@ -716,16 +687,24 @@ class OcreviewApiDataImporter
             }
         }
 
+        // 一括UPSERT用のVALUES句を生成
+        $placeholders = '(' . implode(', ', array_fill(0, $columnCount, '?')) . ')';
+        $valuesClause = implode(', ', array_fill(0, count($data), $placeholders));
+
         $sql = "INSERT INTO {$tableName} (" . implode(', ', $columns) . ") " .
-               "VALUES (" . implode(', ', $placeholders) . ") " .
-               "ON CONFLICT({$primaryKey}) DO UPDATE SET " . implode(', ', $updateClauses);
+            "VALUES {$valuesClause} " .
+            "ON CONFLICT({$primaryKey}) DO UPDATE SET " . implode(', ', $updateClauses);
+
+        // 全行のデータを1次元配列にフラット化
+        $allValues = [];
+        foreach ($data as $row) {
+            foreach (array_values($row) as $value) {
+                $allValues[] = $value;
+            }
+        }
 
         $stmt = $this->targetPdo->prepare($sql);
-
-        foreach ($data as $row) {
-            $values = array_values($row);
-            $stmt->execute($values);
-        }
+        $stmt->execute($allValues);
     }
 
     /**
@@ -762,14 +741,7 @@ class OcreviewApiDataImporter
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (!empty($data)) {
-            $this->targetPdo->beginTransaction();
-            try {
-                $this->sqlImporter->import($this->targetPdo, 'categories', $data, count($data));
-                $this->targetPdo->commit();
-            } catch (\Exception $e) {
-                $this->targetPdo->rollBack();
-                throw $e;
-            }
+            $this->sqlImporter->import($this->targetPdo, 'categories', $data, count($data));
         }
     }
 
@@ -823,18 +795,10 @@ class OcreviewApiDataImporter
             self::CHUNK_SIZE,
             function (array $data) {
                 if (!empty($data)) {
-                    $this->targetPdo->beginTransaction();
-                    try {
-                        $this->sqlImporter->import($this->targetPdo, 'open_chat_deleted', $data, self::CHUNK_SIZE);
-                        $this->targetPdo->commit();
-                    } catch (\Exception $e) {
-                        $this->targetPdo->rollBack();
-                        throw $e;
-                    }
+                    $this->sqlImporter->import($this->targetPdo, 'open_chat_deleted', $data, self::CHUNK_SIZE);
                 }
             },
             'open_chat_deleted: %d / %d 件処理完了'
         );
     }
-
 }
