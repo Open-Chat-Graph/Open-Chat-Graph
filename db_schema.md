@@ -205,18 +205,6 @@ CREATE TABLE `ranking_ban` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-#### reject_room（拒否ルーム）
-
-**用途**: クロール対象から除外するチャットのリスト
-
-```sql
-CREATE TABLE `reject_room` (
-  `emid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`emid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-```
-
 #### open_chat_deleted（削除OpenChat履歴）
 
 **用途**: 削除されたOpenChatの記録を保持
