@@ -120,7 +120,7 @@ class SyncOpenChat
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
             [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
             [fn() => $this->hourlyMemberRanking->update(), '毎時メンバーランキング関連の処理'],
-            [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
+            // CDNキャッシュ削除はバックグラウンドバッチに移行（update_recommend_static_data.php）
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     // 既に実行中の場合は1回だけスキップする
