@@ -1,30 +1,30 @@
 # オプチャグラフ（OpenChat Graph）
 
 LINE OpenChatのメンバー数推移を可視化し、トレンドを分析できるWebサービス
-https://openchat-review.me
 
----
-
-**関連リポジトリ:**
-- ランキング画面: https://github.com/mimimiku778/Open-Chat-Graph-Frontend
-  - React, MUI, Swiper.js
-- グラフ画面: https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph
-  - Preact, MUI, Chart.js
-- コメント画面: https://github.com/mimimiku778/Open-Chat-Graph-Comments
-  - React, MUI 
-
----
+**🌐 公式サイト**: https://openchat-review.me
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Live](https://img.shields.io/badge/Live-openchat--review.me-green)](https://openchat-review.me)
 
 ![オプチャグラフ](/public/assets/image.jpg)
 
 **言語:** [日本語](README.md) | [English](README_EN.md)
 
+---
+
+**関連リポジトリ:**
+- [ランキング画面](https://github.com/mimimiku778/Open-Chat-Graph-Frontend) - React, MUI, Swiper.js
+- [グラフ画面](https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph) - Preact, MUI, Chart.js
+- [コメント画面](https://github.com/mimimiku778/Open-Chat-Graph-Comments) - React, MUI
+
+---
+
 ## 概要
 
-オプチャグラフは、LINE OpenChatコミュニティの成長トレンドを追跡・分析するWebアプリケーションです。15万以上のOpenChatを毎時間クロールし、メンバー数の推移、ランキング、統計データを提供します。
+オプチャグラフは、LINE OpenChatコミュニティの成長トレンドを追跡・分析するWebアプリケーションです。15万以上のOpenChatを定期的にクロールし、メンバー数の推移、ランキング、統計データを提供します。
+
+- **公式サイト**: https://openchat-review.me
+- **ライセンス**: MIT
 
 ### 主な機能
 
@@ -35,14 +35,45 @@ https://openchat-review.me
 - 💬 **コメント機能** - ユーザー同士の情報交換
 - 🏷️ **推奨タグシステム** - AIによる関連タグの自動生成
 
+## 🚀 開発環境のセットアップ
+
+### 前提条件
+
+- Docker & Docker Compose
+- PHP 8.3+
+- Composer
+
+### クイックスタート
+
+```bash
+# リポジトリのクローン
+git clone https://github.com/pika-0203/Open-Chat-Graph.git
+cd Open-Chat-Graph
+
+# Docker環境の起動
+docker compose up -d
+
+# コンテナ内で依存関係のインストール
+docker compose exec app composer install
+```
+
+**アクセスURL:**
+- Web: http://localhost:8000
+- phpMyAdmin: http://localhost:8080
+- MySQL: localhost:3306
+
+**⚠️ ローカル環境の詳細なセットアップ**
+
+本番環境と同等のデータおよび設定ファイル（機密情報を含む）が必要です。詳細については、X（Twitter）[@openchat_graph](https://x.com/openchat_graph) でお問い合わせください。
+
 ## 🏗️ アーキテクチャ
 
 ### 技術スタック
 
 #### バックエンド
-- **フレームワーク**: [MimimalCMS](https://github.com/mimimiku778/MimimalCMS) (カスタム軽量MVC)
+- **フレームワーク**: [MimimalCMS](https://github.com/mimimiku778/MimimalCMS) - 自前のカスタム軽量MVCフレームワーク（詳細はリンク先を参照）
 - **言語**: PHP 8.3
-- **データベース**: 
+- **データベース**:
   - MySQL/MariaDB (メインデータ)
   - SQLite (ランキング・統計データ)
 - **依存性注入**: カスタムDIコンテナ
@@ -52,10 +83,6 @@ https://openchat-review.me
 - **フレームワーク**: React (サーバーサイドPHPとのハイブリッド)
 - **UIライブラリ**: MUI, Chart.js, Swiper.js
 - **ビルド**: 事前ビルド済みバンドル
-
-### データベース設計
-
-詳細なデータベーススキーマについては [db_schema.md](./db_schema.md) を参照してください。
 
 ### ディレクトリ構造
 
@@ -68,468 +95,105 @@ https://openchat-review.me
 │   ├── Services/         # ビジネスロジック
 │   └── Views/            # テンプレート・React
 ├── shadow/                # MimimalCMSフレームワーク
-├── batch/                 # バッチ処理・クロンジョブ
+├── batch/                 # バッチ処理・cronジョブ
 ├── shared/               # 共通設定・DI定義
 ├── storage/              # データファイル・SQLite DB
 └── public/               # 公開ディレクトリ
 ```
 
-## 🚀 開発環境のセットアップ
+### データベース設計
 
-### 前提条件
+詳細なデータベーススキーマについては [db_schema.md](./db_schema.md) を参照してください。
 
-- Docker & Docker Compose
-- PHP 8.3+
-- Composer
-- Node.js 18+ (フロントエンド開発時)
+**設計戦略:**
+- **MySQL**: リアルタイム更新が必要なデータ（メンバー数、ランキング）
+- **SQLite**: 読み取り専用の集計データ（履歴、統計）
+- **使い分け**: パフォーマンス最適化のためのハイブリッド構成
 
-### クイックスタート
-
-```bash
-# リポジトリのクローン
-git clone https://github.com/pika-0203/Open-Chat-Graph.git
-cd Open-Chat-Graph
-
-# Docker環境の起動
-docker-compose up -d
-
-# 依存関係のインストール
-composer install
-
-# ローカル設定のセットアップ
-# ⚠️ 機密情報が必要です - GitHubのIssueでお問い合わせください
-./local-setup.sh
-```
-
-**アクセスURL:**
-- Web: http://localhost:8000
-- phpMyAdmin: http://localhost:8080
-- MySQL: localhost:3306
-
-## 💻 実装詳細
+## 💻 実装の特徴
 
 ### MVCアーキテクチャ
 
-#### Model層：リポジトリパターン
+**Model層: リポジトリパターン**
 
-インターフェース駆動設計により、テスト容易性と保守性を確保：
+インターフェース駆動設計により、テスト容易性と保守性を確保しています。実装の詳細は以下を参照:
+- [`OpenChatRepositoryInterface`](/app/Models/Repositories/OpenChatRepositoryInterface.php)
+- [`OpenChatRepository`](/app/Models/Repositories/OpenChatRepository.php)
 
-```php
-interface OpenChatRepositoryInterface
-{
-    public function addOpenChatFromDto(OpenChatDto $dto): int|false;
-    public function getOpenChatIdAll(): array;
-}
-
-class OpenChatRepository implements OpenChatRepositoryInterface
-{
-    public function addOpenChatFromDto(OpenChatDto $dto): int|false
-    {
-        // Raw SQLによる高パフォーマンスINSERT
-        $dto->registered_open_chat_id = DB::executeAndGetLastInsertId(
-            "INSERT IGNORE INTO open_chat (...) VALUES (...)",
-            [...] // 型安全なバインド値
-        );
-        
-        // SQLiteへの統計データ同期
-        $this->statisticsRepository->addNewOpenChatStatisticsFromDto($dto);
-        
-        return $dto->registered_open_chat_id;
-    }
-}
-```
-
-**特徴:**
+特徴:
 - Raw SQLによる複雑クエリと高パフォーマンス
 - MySQL + SQLiteハイブリッド構成
 - DTOパターンによる型安全性
 
-#### Controller層：依存性注入
+**Controller層: 依存性注入**
 
-```php
-class IndexPageController
-{
-    function index(
-        StaticDataFile $staticDataGeneration,
-        RecentCommentListRepositoryInterface $recentCommentListRepository,
-        PageBreadcrumbsListSchema $pageBreadcrumbsListSchema,
-        OfficialPageList $officialPageList,
-    ) {
-        $dto = $staticDataGeneration->getTopPageData();
-        
-        // SEO最適化スキーマ生成
-        $_schema = $_meta->generateTopPageSchema(...);
-        
-        return view('top_content', compact(...));
-    }
-}
-```
+疎結合設計により高い拡張性を実現。実装例:
+- [`IndexPageController`](/app/Controllers/Pages/IndexPageController.php)
 
-**設計思想:**
-- 疎結合設計による高い拡張性
-- SEOとパフォーマンス最適化を重視
-- ビューとビジネスロジックの明確な分離
+**View層: ハイブリッド統合**
 
-#### View層：ハイブリッド統合
-
-```php
-<!-- PHP テンプレート -->
-<?php if (MimimalCmsConfig::$urlRoot === ''): ?>
-    <div id="myListDiv"></div> <!-- React コンポーネントがマウント -->
-<?php endif ?>
-
-<!-- JavaScript統合 -->
-<script>
-// DOM操作とReactの協調動作
-document.addEventListener('DOMContentLoaded', function() {
-    ReactDOM.render(<MyListComponent />, document.getElementById('myListDiv'));
-});
-</script>
-```
-
-**統合方式:**
-- **サーバーサイド**: PHP テンプレートエンジン
-- **クライアントサイド**: React コンポーネント
-- **JavaScript**: DOM操作とイベントハンドリング
+サーバーサイドPHPテンプレート + クライアントサイドReactコンポーネントのハイブリッド構成。
 
 ### 依存性注入システム
 
-カスタムDIコンテナによる実装切り替え：
+カスタムDIコンテナによる実装切り替えを実現:
+- [`MimimalCmsConfig.php`](/shared/MimimalCmsConfig.php)
 
-```php
-// shared/MimimalCmsConfig.php
-public static array $constructorInjectionMap = [
-    // インターフェース → 実装クラスのマッピング
-    \App\Models\Repositories\Statistics\StatisticsRepositoryInterface::class 
-        => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository::class,
-    
-    // データベース実装の動的切り替え
-    \App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface::class 
-        => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionRepository::class,
-];
-```
-
-**メリット:**
+メリット:
 - インターフェース駆動で実装を抽象化
 - MySQLとSQLiteの切り替えが容易
 - テストとメンテナンスの向上
 
-### 並列クローリングシステム
+### データ更新システム（Cron）
 
-#### 親プロセス：並列実行制御
+オプチャグラフは、毎時間および毎日定期的にOpenChatデータを更新します。
 
-```php
-class OpenChatApiDbMergerWithParallelDownloader
-{
-    function fetchOpenChatApiRankingAll()
-    {
-        // 状態初期化
-        $this->setKillFlagFalse();
-        $this->stateRepository->cleanUpAll();
-        
-        // 24並列プロセスでダウンロード実行
-        foreach ($categoryArray as $key => $category) {
-            $this->download([
-                [RankingType::Ranking, $category], 
-                [RankingType::Rising, $categoryReverse[$key]]
-            ]);
-        }
-        
-        // 完了まで監視・マージ処理
-        while (!$flag) {
-            sleep(10);
-            foreach ([RankingType::Ranking, RankingType::Rising] as $type)
-                foreach ($categoryReverse as $category)
-                    $this->mergeProcess($type, $category);
-            
-            $flag = $this->stateRepository->isCompletedAll();
-        }
-    }
-}
-```
+#### 実行スケジュール
 
-#### 子プロセス：ダウンロード処理
+**毎時処理（hourlyTask）**
+- 実行時間: 毎時30分（日本語版）、毎時35分（台湾版）、毎時40分（タイ版）
+- タイムアウト: 27分
+- 処理内容: OpenChatデータのクローリング、画像更新、ランキング更新
 
-```php
-class ParallelDownloadOpenChat
-{
-    function handle(array $args)
-    {
-        try {
-            foreach ($args as $api) {
-                $type = RankingType::from($api['type']);
-                $category = $api['category'];
-                $this->download($type, $category);
-            }
-        } catch (ApplicationException $e) {
-            $this->handleDetectStopFlag($args, $e);
-        } catch (\Throwable $e) {
-            // 全プロセス強制終了
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            $this->handleGeneralException($api['type'], $api['category'], $e);
-        }
-    }
-}
-```
+**日次処理（dailyTask）**
+- 実行時間: 23:30（日本語版）、0:35（台湾版）、1:40（タイ版）
+- タイムアウト: 90分
+- 処理内容: 全データの完全更新、削除されたOpenChatの検出
 
-**並列処理の要点:**
-1. **24並列実行**: 全カテゴリ同時ダウンロード
-2. **状態管理**: データベースで進行状況追跡
-3. **エラーハンドリング**: 障害時の安全な停止
-4. **プロセス間通信**: killFlagによる制御
+**実装の詳細:**
+- [`SyncOpenChat`](/app/Services/Cron/SyncOpenChat.php) - 全体調整とスケジューリング
+- [`OpenChatApiDbMerger`](/app/Services/OpenChat/OpenChatApiDbMerger.php) - データ取得とDB更新
+- [`DailyUpdateCronService`](/app/Services/DailyUpdateCronService.php) - 日次処理の制御
 
-### Cronデータ更新システム
+#### エラー回復メカニズム
 
-#### 全体調整：SyncOpenChat
-
-```php
-class SyncOpenChat
-{
-    function handle(bool $dailyTest = false, bool $retryDailyTest = false)
-    {
-        $this->init();
-        
-        if (isDailyUpdateTime() || ($dailyTest && !$retryDailyTest)) {
-            // 毎日23:30実行
-            $this->dailyTask();
-        } else if ($this->isFailedDailyUpdate() || $retryDailyTest) {
-            $this->retryDailyTask();
-        } else {
-            // 毎時30分実行（23:30除く）
-            $this->hourlyTask();
-        }
-        
-        $this->sitemap->generate();
-    }
-    
-    private function hourlyTask()
-    {
-        set_time_limit(1620); // 27分タイムアウト
-        
-        $this->state->setTrue(StateType::isHourlyTaskActive);
-        $this->merger->fetchOpenChatApiRankingAll(); // 並列クローリング
-        $this->state->setFalse(StateType::isHourlyTaskActive);
-        
-        $this->hourlyTaskAfterDbMerge(
-            !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
-        );
-    }
-}
-```
-
-**Cron処理の複雑性:**
-1. **状態管理**: 実行中フラグで重複防止
-2. **段階的処理**: クローリング → 画像更新 → ランキング再計算
-3. **エラー回復**: 失敗時の自動リトライ
-4. **通知システム**: Discord通知による監視
-
-#### 再試行フローの詳細
-
-**実行時間の設定:**
-```php
-// 言語別のcron実行時間
-const CRON_START_MINUTE = [
-    '' =>    30,  // 日本語: 毎時30分
-    '/tw' => 35,  // 台湾: 毎時35分  
-    '/th' => 40,  // タイ: 毎時40分
-];
-
-const CRON_MERGER_HOUR_RANGE_START = [
-    '' =>    23,  // 日本語: 23:30（日次処理）
-    '/tw' => 0,   // 台湾: 0:35（日次処理）
-    '/th' => 1,   // タイ: 1:40（日次処理）
-];
-```
-
-**1. 毎時処理の再試行フロー:**
-```php
-// SyncOpenChat::handleHalfHourCheck() - 毎時0分実行
-function handleHalfHourCheck()
-{
-    if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-        // 前回の処理が継続中の場合、再試行
-        $this->retryHourlyTask();
-    } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-        // ランキング永続化が未完了の場合、後続処理のみ実行
-        $this->hourlyTaskAfterDbMerge(true);
-    }
-}
-
-private function retryHourlyTask()
-{
-    addCronLog('Retry hourlyTask');
-    AdminTool::sendDiscordNotify('Retry hourlyTask');
-    
-    // 実行中の並列プロセスを強制終了
-    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-    sleep(30); // プロセス終了待機
-    
-    $this->handle(); // 再実行
-}
-```
-
-**2. 日次処理の再試行フロー:**
-```php
-private function retryDailyTask()
-{
-    // 6:30以降（通知時間後）の場合のみDiscord通知
-    if ($this->isAfterRetryNotificationTime()) {
-        AdminTool::sendDiscordNotify('Retrying dailyTask');
-    }
-    
-    // 全プロセス強制終了
-    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-    OpenChatDailyCrawling::setKillFlagTrue();
-    sleep(30);
-    
-    $this->dailyTask(); // 日次処理再実行
-}
-
-// 通知制御: 6時間以内の再試行では通知を抑制
-function isAfterRetryNotificationTime(): bool
-{
-    return !isDailyUpdateTime()
-        && !isDailyUpdateTime(new \DateTime('-1 hour'), new \DateTime('-1 hour'))
-        && !isDailyUpdateTime(new \DateTime('-2 hour'), new \DateTime('-2 hour'))
-        && !isDailyUpdateTime(new \DateTime('-3 hour'), new \DateTime('-3 hour'))
-        && !isDailyUpdateTime(new \DateTime('-4 hour'), new \DateTime('-4 hour'))
-        && !isDailyUpdateTime(new \DateTime('-5 hour'), new \DateTime('-5 hour'))
-        && !isDailyUpdateTime(new \DateTime('-6 hour'), new \DateTime('-6 hour'));
-}
-```
-
-**3. 状態管理による制御:**
-```php
-enum SyncOpenChatStateType: string
-{
-    case isDailyTaskActive = 'isDailyTaskActive';
-    case isHourlyTaskActive = 'isHourlyTaskActive';
-    case openChatApiDbMergerKillFlag = 'openChatApiDbMergerKillFlag';
-    case openChatDailyCrawlingKillFlag = 'openChatDailyCrawlingKillFlag';
-    case isUpdateInvitationTicketActive = 'isUpdateInvitationTicketActive';
-}
-```
-
-**4. エラー回復メカニズム:**
-
+処理の堅牢性を確保するため、以下の仕組みを実装:
 - **プロセス監視**: 実行状態フラグで異常検知
+- **自動リトライ**: 失敗時の再実行（[`retryHourlyTask()`](/app/Services/Cron/SyncOpenChat.php), [`retryDailyTask()`](/app/Services/Cron/SyncOpenChat.php)）
 - **強制終了**: killFlagによる安全な停止
-- **段階的復旧**: 部分的に失敗した処理の継続実行
-- **通知制御**: 頻繁な通知を避けるタイムウィンドウ
-- **データ整合性**: 途中失敗時の状態復元
+- **通知システム**: Discord通知による監視
 
-**5. 多言語環境での分散実行:**
+詳細は [`SyncOpenChat::handleHalfHourCheck()`](/app/Services/Cron/SyncOpenChat.php) を参照。
 
-各言語版が異なる時間に実行されることで、サーバー負荷を分散：
+### 多言語対応
 
-- **日本語**: 23:30, X:30（毎時）
-- **台湾版**: 0:35, X:35（毎時） 
-- **タイ版**: 1:40, X:40（毎時）
+URL Root（`''`, `'/tw'`, `'/th'`）に基づいて、異なるデータベースと翻訳ファイルに自動切り替え。実装の詳細:
+- [`MimimalCmsConfig.php`](/shared/MimimalCmsConfig.php) - 言語別設定
+- [`App\Models\Repositories\DB`](/app/Models/Repositories/DB.php) - 言語別データベース接続
 
-この設計により、大規模データ処理でも高い可用性を実現しています。
+## 🔧 クローリングシステム
 
-### ハイブリッドデータベース設計
+### ユーザーエージェント
 
-#### MySQL（リアルタイム更新）
-
-```sql
--- statistics_ranking_hour: 毎時間完全再構築
-CREATE TABLE `statistics_ranking_hour` (
-  `id` int(11) NOT NULL,           -- ❗ランキング順位（1位、2位...）
-  `open_chat_id` int(11) NOT NULL, -- open_chat.idへの参照
-  `diff_member` int(11) NOT NULL,  -- 1時間での増加数
-  `percent_increase` float NOT NULL -- 増加率
-  -- ❗created_atカラムは存在しない
-);
+```
+Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)
 ```
 
-#### SQLite（読み取り専用最適化）
+### クローリング処理
 
-```sql
--- statistics: 履歴データ高速読み取り
-CREATE TABLE "statistics" (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  open_chat_id INTEGER NOT NULL,
-  "member" INTEGER NOT NULL,
-  date TEXT NOT NULL
-);
-CREATE UNIQUE INDEX statistics2_open_chat_id_IDX ON "statistics" (open_chat_id,date);
-```
-
-**設計戦略:**
-- **MySQL**: 書き込み重視、複雑JOIN
-- **SQLite**: 読み取り重視、履歴データ
-- **使い分け**: パフォーマンス最適化
-
-### 多言語対応アーキテクチャ
-
-#### URL Rootによる動的切り替え
-
-```php
-// MimimalCmsConfig::$urlRoot で言語決定
-$urlRoot = ''; // 日本語
-$urlRoot = '/tw'; // 台湾（繁体字中国語）
-$urlRoot = '/th'; // タイ語
-
-// データベース名動的決定
-$dbName = match($urlRoot) {
-    '' => 'ocgraph_ocreview',
-    '/tw' => 'ocgraph_ocreviewtw', 
-    '/th' => 'ocgraph_ocreviewth'
-};
-```
-
-#### 翻訳システム
-
-```php
-// ビューでの翻訳関数使用
-echo t('オプチャグラフ'); // 現在言語に応じて翻訳
-echo t('オプチャグラフ', '/tw'); // 特定言語指定
-```
-
-## 🔧 複雑性の理由と対策
-
-### 高負荷処理への対応
-
-- **15万件大量データ**: メモリ効率的な処理
-- **リアルタイム更新**: キャッシュとバッチ処理の最適化
-
-### 堅牢性の確保
-
-- **エラー回復**: 自動リトライとフォールバック
-- **監視システム**: Discord通知とログ記録
-- **データ整合性**: トランザクション管理
-- **プロセス制御**: 安全な強制終了機能
-
-## 🧪 テスト
-
-⚠️ **現状のテスト実装について**
-
-現在のテストは**動作確認レベル**の実装であり、全体をカバーする完成度には達していません。
-
-```bash
-# 既存テストの実行
-./vendor/bin/phpunit
-
-# 特定ディレクトリのテスト
-./vendor/bin/phpunit app/Services/test/
-
-# 特定ファイルのテスト
-./vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
-```
-
-### テスト構成
-- **配置**: 各モジュールの `test/` サブディレクトリ
-- **命名規則**: `*Test.php`
-- **フレームワーク**: PHPUnit 9.6
-- **カバレッジ**: 部分的（主要機能の動作確認のみ）
-
-### 今後の課題
-
-- [ ] **統合テスト**: 並列クローリングシステムのフルテスト
-- [ ] **パフォーマンステスト**: 大量データ処理の負荷テスト  
-- [ ] **E2Eテスト**: フロントエンドとバックエンドの統合テスト
-- [ ] **テストカバレッジ**: より包括的なユニットテスト
+約15万件のOpenChatを効率的に処理するためのクローリングシステム。実装の詳細:
+- [`OpenChatApiRankingDownloader`](/app/Services/OpenChat/Crawler/OpenChatApiRankingDownloader.php) - LINE APIからのデータ取得
+- [`OpenChatDailyCrawling`](/app/Services/OpenChat/OpenChatDailyCrawling.php) - 日次クローリング処理
 
 ## 📊 ランキングシステム
 
@@ -544,26 +208,22 @@ echo t('オプチャグラフ', '/tw'); // 特定言語指定
 - **24時間**: 日次成長率
 - **週間**: 週間成長率
 
-## 🕷️ クローリングシステム
+実装の詳細:
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php)
 
-### 並列処理アーキテクチャ
+## 🧪 テスト
 
-約15万件のOpenChatを効率的に処理するための高速並列クローリングシステムを実装しています。
+⚠️ 現在のテストは**動作確認レベル**の実装であり、全体をカバーする完成度には達していません。
 
-- **24並列プロセス**: 全カテゴリを同時処理
-- **独自最適化**: 高速レンダリング・DB更新技術
-- **自動リトライ**: エラー処理とフォールバック
+```bash
+# 既存テストの実行
+./vendor/bin/phpunit
 
-#### 主要コンポーネント
+# 特定ディレクトリのテスト
+./vendor/bin/phpunit app/Services/test/
 
-1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - 親プロセス
-2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - 子プロセス
-3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - データ処理
-
-### ユーザーエージェント
-
-```
-Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)
+# 特定ファイルのテスト
+./vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
 ```
 
 ## 🤝 コントリビューション
@@ -573,6 +233,8 @@ Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) 
 ### 開発ガイドライン
 
 #### 1. SOLID原則を第一に
+
+このプロジェクトは、SOLID原則に基づいて設計されています:
 
 - **S - 単一責任原則**: 各クラスは一つの責任のみを持つ
 - **O - 開放閉鎖原則**: 拡張に開いて、修正に閉じている
@@ -607,10 +269,11 @@ Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) 
 
 - **Email**: [support@openchat-review.me](mailto:support@openchat-review.me)
 - **Website**: [https://openchat-review.me](https://openchat-review.me)
+- **X (Twitter)**: [@openchat_graph](https://x.com/openchat_graph)
 
 ## 🙏 謝辞
 
-このプロジェクトは多くのオープンソースプロジェクトに支えられています。特に以下のプロジェクトに感謝します：
+このプロジェクトは多くのオープンソースプロジェクトに支えられています。特に以下に感謝します：
 
 - LINE Corporation
 - PHPコミュニティ

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
-use App\Exceptions\ApplicationException;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;

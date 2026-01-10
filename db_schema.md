@@ -1,20 +1,20 @@
-# オプチャグラフ データベーススキーマ詳細ドキュメント
+# データベーススキーマ
 
-## 概要
+オプチャグラフ（OpenChat Graph）のデータベース構成とスキーマの詳細。
 
-このドキュメントは、オプチャグラフ（OpenChat Graph）プロジェクトで使用している全データベースのスキーマと用途を詳細に解説します。LLMがデータ分析SQLを精度高く組み立てるため、および開発者がデータ構造を理解するための包括的なリファレンスです。
+## 多言語対応のデータベース切り替え
 
-## データベース構成
+URLのパス（`''`, `'/tw'`, `'/th'`）に応じて、異なるデータベースに自動接続します。
 
-### 多言語対応アーキテクチャ
+**実装:**
+- [`MimimalCMS_Settings.php`](https://github.com/pika-0203/Open-Chat-Graph/blob/main/shared/MimimalCMS_Settings.php#L40-L46) - リクエストURI（`$_SERVER['REQUEST_URI']`）に基づいて`MimimalCmsConfig::$urlRoot`を動的に設定
+  - `/th`で始まる場合: `/th`
+  - `/tw`で始まる場合: `/tw`
+  - それ以外（日本語）: `''`（空文字列）
+- [`AppConfig::$dbName`](https://github.com/pika-0203/Open-Chat-Graph/blob/main/app/Config/AppConfig.php#L238-L241) - 言語別データベース名のマッピング定義
+- [`DB::connect()`](https://github.com/pika-0203/Open-Chat-Graph/blob/main/app/Models/Repositories/DB.php#L18) - `MimimalCmsConfig::$urlRoot`をキーにして`AppConfig::$dbName`から対応するDB名を取得
 
-プロジェクトは多言語対応のため、URL Root（`''`, `'/tw'`, `'/th'`）に基づいて異なるデータベースに自動接続されます。
-
-**データベース接続設定:**
-- **ホスト**: `mysql` (Docker環境)
-- **認証情報**: `root` / `test_root_pass`
-
-**データベース名一覧:**
+**データベース名:**
 
 | 用途 | 日本語（''） | 台湾版（'/tw'） | タイ版（'/th'） |
 |------|-------------|----------------|----------------|
@@ -25,11 +25,9 @@
 
 ## 1. MySQL メインデータベース
 
-### 1.1 core テーブル群
+### 1.1 open_chat（OpenChatメインデータ）
 
-#### open_chat（OpenChatメインデータ）
-
-**用途**: LINE OpenChatの基本情報を格納するメインテーブル
+LINE OpenChatの基本情報を格納するメインテーブル。
 
 ```sql
 CREATE TABLE `open_chat` (
@@ -55,31 +53,28 @@ CREATE TABLE `open_chat` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-**主要カラム解説:**
-- `id`: プライマリキー、全ての関連テーブルで参照される中心的キー
-- `name`: チャット名（絵文字対応）
-- `img_url`: プロフィール画像のハッシュ値（128文字固定）
-- `local_img_url`: ローカルサーバー保存画像URL
-- `description`: チャット説明文（絵文字対応）
-- `member`: **現在のメンバー数**（リアルタイム更新）
-- `emid`: LINE内部管理ID（**ユニーク制約**）
-- `category`: カテゴリID（後述のカテゴリマッピング参照）
-- `api_created_at`: LINE API上の作成日時（UNIX timestamp）
+**主要カラム:**
+- `id`: プライマリキー、全ての関連テーブルで参照される
+- `emid`: LINE内部管理ID（ユニーク制約）
+- `member`: 現在のメンバー数（リアルタイム更新）
+- `category`: カテゴリID
 - `emblem`: 公式バッジ（0=なし、1=スペシャル、2=公式認証）
-- `join_method_type`: 参加方法タイプ
-- `url`: 招待リンク（ユニーク）
 
-### 1.2 統計・ランキングテーブル群
+**使用ファイル:**
+- [`OpenChatRepository`](/app/Models/Repositories/OpenChatRepository.php)
+- [`OpenChatPageRepository`](/app/Models/Repositories/OpenChatPageRepository.php)
+- [`OpenChatListRepository`](/app/Models/Repositories/OpenChatListRepository.php)
+- [`UpdateOpenChatRepository`](/app/Models/Repositories/UpdateOpenChatRepository.php)
+- [`DailyUpdateCronService`](/app/Services/DailyUpdateCronService.php)
 
-#### ⚠️ 重要な制約事項
-**statistics_ranking_* テーブルには `created_at` カラムが存在しません**
-- 時刻情報は `open_chat.updated_at` を使用
-- `id` カラムは**ランキング順位**を表す（id=1が1位）
-- データは毎時間完全再構築される
+### 1.2 統計・ランキングテーブル
+
+#### ⚠️ 重要な制約
+- **`created_at`カラムは存在しない** - 時刻情報は`open_chat.updated_at`を使用
+- **`id`カラムはランキング順位** - id=1が1位
+- **毎時間完全再構築** - データは都度削除・再挿入される
 
 #### statistics_ranking_hour（1時間成長ランキング）
-
-**用途**: 直近1時間のメンバー増加数ランキング
 
 ```sql
 CREATE TABLE `statistics_ranking_hour` (
@@ -92,15 +87,12 @@ CREATE TABLE `statistics_ranking_hour` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-**カラム解説:**
-- `id`: **ランキング順位**（1位、2位、...）
-- `open_chat_id`: open_chat.idへの参照
-- `diff_member`: 1時間でのメンバー増加数
-- `percent_increase`: メンバー増加率（%）
+**使用ファイル:**
+- [`SqliteStatisticsRankingUpdaterRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRankingUpdaterRepository.php)
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php)
+- [`OpenChatStatsRankingApiRepository`](/app/Models/ApiRepositories/OpenChatStatsRankingApiRepository.php)
 
 #### statistics_ranking_hour24（24時間成長ランキング）
-
-**用途**: 直近24時間のメンバー増加数ランキング
 
 ```sql
 CREATE TABLE `statistics_ranking_hour24` (
@@ -113,9 +105,11 @@ CREATE TABLE `statistics_ranking_hour24` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-#### statistics_ranking_day（日別成長ランキング）
+**使用ファイル:**
+- [`SqliteStatisticsRankingUpdaterRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRankingUpdaterRepository.php)
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php)
 
-**用途**: 日別のメンバー増加数ランキング
+#### statistics_ranking_day（日別成長ランキング）
 
 ```sql
 CREATE TABLE `statistics_ranking_day` (
@@ -128,9 +122,11 @@ CREATE TABLE `statistics_ranking_day` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-#### statistics_ranking_week（週間成長ランキング）
+**使用ファイル:**
+- [`SqliteStatisticsRankingUpdaterRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRankingUpdaterRepository.php)
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php)
 
-**用途**: 週間のメンバー増加数ランキング
+#### statistics_ranking_week（週間成長ランキング）
 
 ```sql
 CREATE TABLE `statistics_ranking_week` (
@@ -143,11 +139,15 @@ CREATE TABLE `statistics_ranking_week` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
+**使用ファイル:**
+- [`SqliteStatisticsRankingUpdaterRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRankingUpdaterRepository.php)
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php)
+
 ### 1.3 推薦・タグシステム
 
 #### recommend（推薦タグ）
 
-**用途**: OpenChatに関連付けられた推薦タグの管理
+OpenChatに関連付けられた推薦タグの管理。`recommend.id = open_chat.id`（1対1関係）
 
 ```sql
 CREATE TABLE `recommend` (
@@ -158,7 +158,10 @@ CREATE TABLE `recommend` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-**関係性**: `recommend.id = open_chat.id`（1対1関係）
+**使用ファイル:**
+- [`RecommendRankingRepository`](/app/Models/RecommendRepositories/RecommendRankingRepository.php)
+- [`CategoryRankingRepository`](/app/Models/RecommendRepositories/CategoryRankingRepository.php)
+- [`RecommendUpdater`](/app/Services/Recommend/RecommendUpdater.php)
 
 #### modify_recommend（推薦データ変更履歴）
 
@@ -171,9 +174,10 @@ CREATE TABLE `modify_recommend` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-#### oc_tag、oc_tag2（OpenChatタグ）
+**使用ファイル:**
+- [`RecommendUpdater`](/app/Services/Recommend/RecommendUpdater.php)
 
-**用途**: OpenChatに関連付けられたタグ情報
+#### oc_tag、oc_tag2（OpenChatタグ）
 
 ```sql
 CREATE TABLE `oc_tag` (
@@ -184,11 +188,14 @@ CREATE TABLE `oc_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
+**使用ファイル:**
+- [`OpenChatPageRepository`](/app/Models/Repositories/OpenChatPageRepository.php)
+
 ### 1.4 管理・制御テーブル
 
 #### ranking_ban（ランキングBANリスト）
 
-**用途**: 不正な成長をしているチャットをランキングから除外
+不正な成長をしているチャットをランキングから除外。
 
 ```sql
 CREATE TABLE `ranking_ban` (
@@ -205,9 +212,12 @@ CREATE TABLE `ranking_ban` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 ```
 
-#### open_chat_deleted（削除OpenChat履歴）
+**使用ファイル:**
+- [`RankingBanTableUpdater`](/app/Services/RankingBan/RankingBanTableUpdater.php)
+- [`RankingBanPageRepository`](/app/Models/RankingBanRepositories/RankingBanPageRepository.php)
+- [`RankingBanLabsPageController`](/app/Controllers/Pages/RankingBanLabsPageController.php)
 
-**用途**: 削除されたOpenChatの記録を保持
+#### open_chat_deleted（削除OpenChat履歴）
 
 ```sql
 CREATE TABLE `open_chat_deleted` (
@@ -218,62 +228,15 @@ CREATE TABLE `open_chat_deleted` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### 1.5 システム管理テーブル
+**使用ファイル:**
+- [`DeleteOpenChatRepository`](/app/Models/Repositories/DeleteOpenChatRepository.php)
+- [`DailyUpdateCronService`](/app/Services/DailyUpdateCronService.php)
 
-#### api_data_download_state（API データダウンロード状態）
+## 2. MySQL 専用データベース（ocgraph_ranking）
 
-**用途**: カテゴリ別のAPI データダウンロード進行状況を管理
+### member（メンバー履歴）
 
-```sql
-CREATE TABLE `api_data_download_state` (
-  `category` int(11) NOT NULL,
-  `ranking` int(11) NOT NULL,
-  `rising` int(11) NOT NULL,
-  PRIMARY KEY (`category`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-```
-
-### 1.6 広告関連テーブル
-
-#### ads（広告データ）
-
-**用途**: 表示する広告の管理
-
-```sql
-CREATE TABLE `ads` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ads_title` text NOT NULL,
-  `ads_sponsor_name` text NOT NULL,
-  `ads_paragraph` text NOT NULL,
-  `ads_href` text NOT NULL,
-  `ads_img_url` text NOT NULL,
-  `ads_tracking_url` text NOT NULL,
-  `ads_title_button` text NOT NULL,
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-#### ads_tag_map（広告とタグのマッピング）
-
-**用途**: 特定のタグに関連する広告の表示制御
-
-```sql
-CREATE TABLE `ads_tag_map` (
-  `tag` varchar(255) NOT NULL,
-  `ads_id` int(11) NOT NULL,
-  UNIQUE KEY `tag` (`tag`),
-  KEY `ads_tag` (`ads_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-## 2. MySQL 専用データベース
-
-### 2.1 ランキングデータベース（ocgraph_ranking）
-
-#### member（メンバー履歴）
-
-**用途**: OpenChatのメンバー数の時系列データ
+OpenChatのメンバー数の時系列データ。
 
 ```sql
 CREATE TABLE `member` (
@@ -284,9 +247,10 @@ CREATE TABLE `member` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-#### ranking（ランキング位置履歴）
+**使用ファイル:**
+- [`RankingPositionHourRepository`](/app/Models/RankingPositionDB/Repositories/RankingPositionHourRepository.php)
 
-**用途**: カテゴリ別のランキング位置の履歴
+### ranking（ランキング位置履歴）
 
 ```sql
 CREATE TABLE `ranking` (
@@ -298,9 +262,10 @@ CREATE TABLE `ranking` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-#### rising（急上昇ランキング履歴）
+**使用ファイル:**
+- [`RankingPositionHourRepository`](/app/Models/RankingPositionDB/Repositories/RankingPositionHourRepository.php)
 
-**用途**: 急上昇ランキングの位置履歴
+### rising（急上昇ランキング履歴）
 
 ```sql
 CREATE TABLE `rising` (
@@ -312,9 +277,10 @@ CREATE TABLE `rising` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-#### total_count（総数情報）
+**使用ファイル:**
+- [`RankingPositionHourRepository`](/app/Models/RankingPositionDB/Repositories/RankingPositionHourRepository.php)
 
-**用途**: カテゴリ別の総チャット数の履歴
+### total_count（総数情報）
 
 ```sql
 CREATE TABLE `total_count` (
@@ -326,11 +292,12 @@ CREATE TABLE `total_count` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-### 2.2 ユーザーログデータベース（ocgraph_userlog）
+**使用ファイル:**
+- [`RankingPositionHourRepository`](/app/Models/RankingPositionDB/Repositories/RankingPositionHourRepository.php)
 
-#### oc_list_user（ユーザーリスト）
+## 3. MySQL ユーザーログデータベース（ocgraph_userlog）
 
-**用途**: ユーザーが作成したOpenChatリストの管理
+### oc_list_user（ユーザーリスト）
 
 ```sql
 CREATE TABLE `oc_list_user` (
@@ -345,9 +312,12 @@ CREATE TABLE `oc_list_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-#### oc_list_user_list_show_log（ユーザーリスト表示ログ）
+**使用ファイル:**
+- [`UserLogRepository`](/app/Models/UserLogRepositories/UserLogRepository.php)
 
-**用途**: ユーザーリストの表示回数のログ
+### oc_list_user_list_show_log（ユーザーリスト表示ログ）
+
+⚠️ このテーブルのみ明示的な外部キー制約が設定されています。
 
 ```sql
 CREATE TABLE `oc_list_user_list_show_log` (
@@ -360,15 +330,108 @@ CREATE TABLE `oc_list_user_list_show_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 
-**⚠️ 注意**: このテーブルのみ明示的な外部キー制約が設定されています。
+**使用ファイル:**
+- [`UserLogRepository`](/app/Models/UserLogRepositories/UserLogRepository.php)
 
-## 3. SQLiteデータベース  
+## 4. SQLiteデータベース
 
-### 3.1 統計データ（/storage/{lang}/SQLite/statistics/statistics.db）
+パフォーマンス最適化のため、読み取り専用のデータや集計データはSQLiteで管理しています。
 
-#### statistics（統計履歴）
+**データベース種類:**
 
-**用途**: メンバー数の日別履歴データ（読み取り専用最適化）
+| データベース | パス | 多言語対応 | 用途 |
+|------------|------|----------|-----|
+| `sqlapi.db` | `/storage/ja/SQLite/ocgraph_sqlapi/` | ❌（日本語のみ） | 外部API用統合データ |
+| `statistics.db` | `/storage/{lang}/SQLite/statistics/` | ✅ | メンバー数の日別履歴 |
+| `ranking_position.db` | `/storage/{lang}/SQLite/ranking_position/` | ✅ | ランキング位置履歴 |
+
+**パフォーマンス最適化設定:**
+- WALモード（Write-Ahead Logging）- 並行読み書き性能向上
+- NORMAL同期モード - パフォーマンスと耐久性のバランス
+- busy timeout設定 - 並行アクセス時の待機時間
+
+### sqlapi.db（外部API用統合データベース）
+
+`/storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db`
+
+外部API用の統合データベース（**日本語版のみ**、多言語対応なし）。
+
+**特徴:**
+- 外部アクセス用のAPIデータを一元管理
+- WALモード、NORMAL同期モード、10秒busy timeout等のパフォーマンス最適化
+- MySQL、SQLiteの複数データソースからデータをインポート
+
+**主要テーブル:**
+
+#### openchat_master（OpenChatマスターデータ）
+```sql
+CREATE TABLE IF NOT EXISTS "openchat_master" (
+  "openchat_id" INTEGER NOT NULL,
+  "display_name" TEXT NOT NULL,
+  "profile_image_url" VARCHAR(128) NOT NULL,
+  "description" TEXT NOT NULL,
+  "current_member_count" INTEGER NOT NULL,
+  "first_seen_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "last_updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "line_internal_id" VARCHAR(255) NULL,
+  "established_at" DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+  "invitation_url" TEXT NULL,
+  "verification_badge" VARCHAR(20) NULL,
+  "join_method" VARCHAR(30) NOT NULL,
+  "category_id" INTEGER NULL,
+  PRIMARY KEY ("openchat_id"),
+  FOREIGN KEY("category_id") REFERENCES "categories" ("category_id")
+);
+```
+
+#### daily_member_statistics（日別メンバー統計）
+```sql
+CREATE TABLE IF NOT EXISTS "daily_member_statistics" (
+  "record_id" INTEGER NOT NULL,
+  "openchat_id" INTEGER NOT NULL,
+  "member_count" INTEGER NOT NULL,
+  "statistics_date" DATE NOT NULL,
+  PRIMARY KEY ("record_id")
+);
+```
+
+#### growth_ranking_past_hour, growth_ranking_past_24_hours, growth_ranking_past_week（成長ランキング）
+```sql
+CREATE TABLE IF NOT EXISTS "growth_ranking_past_hour" (
+  "ranking_position" INTEGER NOT NULL,
+  "openchat_id" INTEGER NOT NULL,
+  "member_increase_count" INTEGER NOT NULL,
+  "growth_rate_percent" FLOAT NOT NULL,
+  PRIMARY KEY ("ranking_position")
+);
+```
+
+#### comment, comment_like（コメント関連）
+```sql
+CREATE TABLE comment (
+  comment_id INTEGER PRIMARY KEY,
+  open_chat_id INTEGER NOT NULL,
+  id INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  text TEXT NOT NULL,
+  time TEXT NOT NULL,
+  flag INTEGER NOT NULL DEFAULT 0
+);
+```
+
+**使用ファイル:**
+- [`SQLiteOcgraphSqlapi`](/app/Models/SQLite/SQLiteOcgraphSqlapi.php) - データベース接続クラス
+- [`OcreviewApiDataImporter`](/app/Services/Cron/OcreviewApiDataImporter.php) - データインポートサービス
+- [`ApiOpenChatPageRepository`](/app/Models/Repositories/Api/ApiOpenChatPageRepository.php)
+- [`ApiStatisticsPageRepository`](/app/Models/Repositories/Api/ApiStatisticsPageRepository.php)
+- [`ApiCommentListRepository`](/app/Models/CommentRepositories/Api/ApiCommentListRepository.php)
+
+### statistics（統計履歴）
+
+`/storage/{lang}/SQLite/statistics/statistics.db`
+
+メンバー数の日別履歴データ（読み取り専用最適化、**多言語対応**）。
 
 ```sql
 CREATE TABLE IF NOT EXISTS "statistics" (
@@ -380,13 +443,13 @@ CREATE TABLE IF NOT EXISTS "statistics" (
 CREATE UNIQUE INDEX statistics2_open_chat_id_IDX ON "statistics" (open_chat_id,date);
 ```
 
-**重要**: MySQLより高速な読み取りパフォーマンスを提供
+**使用ファイル:**
+- [`SqliteStatisticsRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRepository.php)
+- [`SqliteStatisticsPageRepository`](/app/Models/SQLite/Repositories/Statistics/SqliteStatisticsPageRepository.php)
 
-### 3.2 ランキング位置データ（/storage/{lang}/SQLite/ranking_position/ranking_position.db）
+### rising（急上昇ランキング位置）
 
-#### rising（急上昇ランキング位置）
-
-**用途**: 急上昇ランキングの位置履歴（SQLite最適化版）
+`/storage/{lang}/SQLite/ranking_position/ranking_position.db`（**多言語対応**）
 
 ```sql
 CREATE TABLE rising (
@@ -400,9 +463,13 @@ CREATE TABLE rising (
 CREATE UNIQUE INDEX rising_open_chat_id_IDX ON rising (open_chat_id,category,date);
 ```
 
-#### ranking（通常ランキング位置）
+**使用ファイル:**
+- [`SqliteRankingPositionRepository`](/app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionRepository.php)
+- [`SqliteRankingPositionPageRepository`](/app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionPageRepository.php)
 
-**用途**: 通常ランキングの位置履歴（SQLite最適化版）
+### ranking（通常ランキング位置）
+
+`/storage/{lang}/SQLite/ranking_position/ranking_position.db`（**多言語対応**）
 
 ```sql
 CREATE TABLE ranking (
@@ -416,9 +483,13 @@ CREATE TABLE ranking (
 CREATE UNIQUE INDEX ranking_open_chat_id_IDX2 ON ranking (open_chat_id,category,date);
 ```
 
-#### total_count（総数情報）
+**使用ファイル:**
+- [`SqliteRankingPositionRepository`](/app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionRepository.php)
+- [`SqliteRankingPositionPageRepository`](/app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionPageRepository.php)
 
-**用途**: カテゴリ別総数の履歴（SQLite最適化版）
+### total_count（総数情報）
+
+`/storage/{lang}/SQLite/ranking_position/ranking_position.db`（**多言語対応**）
 
 ```sql
 CREATE TABLE total_count (
@@ -431,7 +502,10 @@ CREATE TABLE total_count (
 CREATE UNIQUE INDEX total_count_time_IDX ON total_count (time,category);
 ```
 
-## 4. カテゴリマッピング
+**使用ファイル:**
+- [`SqliteRankingPositionRepository`](/app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionRepository.php)
+
+## 5. カテゴリマッピング
 
 ### 日本語版カテゴリID
 
@@ -464,182 +538,71 @@ const OPEN_CHAT_CATEGORY = [
 ];
 ```
 
-## 5. LLM向け基本的なSQLクエリパターン
+## 6. パフォーマンス最適化
 
-### 5.1 現在のランキング取得
+### データベース使い分け戦略
 
-```sql
--- 1時間成長ランキング（上位10位）
-SELECT 
-    srh.id as ranking_position,
-    oc.id,
-    oc.name,
-    oc.member,
-    oc.category,
-    srh.diff_member,
-    srh.percent_increase,
-    r.tag,
-    oc.updated_at
-FROM statistics_ranking_hour srh
-JOIN open_chat oc ON srh.open_chat_id = oc.id
-LEFT JOIN recommend r ON r.id = oc.id
-WHERE srh.id <= 10
-ORDER BY srh.id;
+- **MySQL**: リアルタイム更新が必要なデータ（`open_chat`、`statistics_ranking_*`）
+- **SQLite**: 読み取り専用の集計データ（履歴データ、ランキング位置履歴）
 
--- 24時間成長ランキング
-SELECT 
-    srh24.id as ranking_position,
-    oc.name,
-    oc.member,
-    srh24.diff_member,
-    srh24.percent_increase
-FROM statistics_ranking_hour24 srh24
-JOIN open_chat oc ON srh24.open_chat_id = oc.id
-ORDER BY srh24.id
-LIMIT 10;
+### 重要な制約
 
--- 週間成長ランキング
-SELECT 
-    srw.id as ranking_position,
-    oc.name,
-    oc.member,
-    srw.diff_member,
-    srw.percent_increase
-FROM statistics_ranking_week srw
-JOIN open_chat oc ON srw.open_chat_id = oc.id
-ORDER BY srw.id
-LIMIT 10;
-```
+1. **statistics_ranking_* テーブルは時刻情報なし** - 時刻は`open_chat.updated_at`を参照
+2. **idカラムはランキング順位** - ORDER BY idでランキング順
+3. **open_chat_idが全関係の中心** - 全てのJOINの基準となるキー
 
-### 5.2 カテゴリ別ランキング
+### データ更新処理
 
-```sql
--- 特定カテゴリ（例：ゲーム=17）の1時間成長ランキング
-SELECT 
-    srh.id as ranking_position,
-    oc.name,
-    oc.member,
-    srh.diff_member,
-    srh.percent_increase
-FROM statistics_ranking_hour srh
-JOIN open_chat oc ON srh.open_chat_id = oc.id
-WHERE oc.category = 17
-ORDER BY srh.id
-LIMIT 20;
-```
+実装詳細は以下を参照:
+- [`SyncOpenChat`](/app/Services/Cron/SyncOpenChat.php) - 全体調整とスケジューリング
+- [`OpenChatApiDbMerger`](/app/Services/OpenChat/OpenChatApiDbMerger.php) - データ取得とDB更新
+- [`UpdateHourlyMemberRankingService`](/app/Services/UpdateHourlyMemberRankingService.php) - ランキング更新
 
-### 5.3 検索クエリ
+## 7. 注意事項
 
-```sql
--- 名前で検索
-SELECT 
-    oc.id,
-    oc.name,
-    oc.description,
-    oc.member,
-    oc.category,
-    r.tag
-FROM open_chat oc
-LEFT JOIN recommend r ON r.id = oc.id
-WHERE oc.name LIKE '%キーワード%'
-ORDER BY oc.member DESC
-LIMIT 50;
+### データ整合性
 
--- タグで検索
-SELECT 
-    oc.id,
-    oc.name,
-    oc.member,
-    r.tag
-FROM recommend r
-JOIN open_chat oc ON r.id = oc.id
-WHERE r.tag LIKE '%タグ%'
-ORDER BY oc.member DESC;
-```
+- `open_chat.emid`: LINE内部ID（ユニーク）
+- `open_chat.url`: 招待リンク（ユニーク、NULL可能）
+- 削除されたチャットは`open_chat_deleted`に記録
 
-### 5.4 履歴データ取得（SQLite）
-
-```sql
--- 特定チャットのメンバー数履歴（直近30日）
-SELECT 
-    open_chat_id,
-    member,
-    date
-FROM statistics
-WHERE open_chat_id = ? 
-  AND date >= date('now', '-30 days')
-ORDER BY date ASC;
-
--- 特定チャットのランキング位置履歴
-SELECT 
-    open_chat_id,
-    category,
-    position,
-    time,
-    date
-FROM ranking
-WHERE open_chat_id = ?
-  AND category = ?
-ORDER BY date DESC
-LIMIT 30;
-```
-
-## 6. パフォーマンス最適化のポイント
-
-### 6.1 データベース使い分け戦略
-
-- **MySQL**: リアルタイム更新が必要なデータ
-  - `open_chat`（メンバー数更新）
-  - `statistics_ranking_*`（ランキング再計算）
-
-- **SQLite**: 読み取り専用の集計データ
-  - 履歴データ（`statistics`）
-  - ランキング位置履歴（`ranking_position`）
-
-### 6.2 重要な制約
-
-1. **statistics_ranking_* テーブルは時刻情報なし**
-   - 時刻は `open_chat.updated_at` を参照
-   - データは毎時間完全再構築
-
-2. **idカラムはランキング順位**
-   - ORDER BY id でランキング順
-   - 1位、2位、3位...の順序
-
-3. **open_chat_idが全関係の中心**
-   - 全てのJOINの基準となるキー
-
-### 6.3 バッチ処理パターン
-
-```php
-// 統計ランキング更新の処理フロー例
-// 1. 既存データ削除
-DB::execute("TRUNCATE TABLE statistics_ranking_hour");
-
-// 2. 新しいランキングデータ一括挿入
-$this->inserter->import(DB::connect(), 'statistics_ranking_hour', $calculatedData);
-
-// 3. SQLite履歴データ更新
-$this->sqliteRepository->updateStatistics($historicalData);
-```
-
-## 7. 注意事項とベストプラクティス
-
-### 7.1 データ整合性
-
-- `open_chat.emid` は LINE の内部ID（ユニーク）
-- `open_chat.url` は招待リンク（ユニーク、NULL可能）
-- 削除されたチャットは `open_chat_deleted` に記録
-
-### 7.2 文字エンコーディング
+### 文字エンコーディング
 
 - **utf8mb4_unicode_520_ci**: 絵文字対応、名前・説明文用
 - **utf8mb4_bin**: バイナリ照合、URL・ID用
 
-### 7.3 インデックス戦略
+### インデックス戦略
 
 - 検索頻度の高いカラム（`member`, `updated_at`, `emid`）
 - 複合インデックス（SQLiteで多用）
 - JOINパフォーマンス最適化
 
-このドキュメントにより、LLMと開発者の両方が、オプチャグラフのデータ構造を正確に理解し、効率的なデータ分析と開発が可能になります。
+## 8. 現在未使用のテーブル
+
+### ads（広告データ）
+
+```sql
+CREATE TABLE `ads` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ads_title` text NOT NULL,
+  `ads_sponsor_name` text NOT NULL,
+  `ads_paragraph` text NOT NULL,
+  `ads_href` text NOT NULL,
+  `ads_img_url` text NOT NULL,
+  `ads_tracking_url` text NOT NULL,
+  `ads_title_button` text NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### ads_tag_map（広告とタグのマッピング）
+
+```sql
+CREATE TABLE `ads_tag_map` (
+  `tag` varchar(255) NOT NULL,
+  `ads_id` int(11) NOT NULL,
+  UNIQUE KEY `tag` (`tag`),
+  KEY `ads_tag` (`ads_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
