@@ -543,4 +543,148 @@ class OcreviewApiDataImporterCommentTest extends TestCase
         $result = $this->mockTargetPdo->query("SELECT * FROM comment WHERE comment_id = 1500")->fetch(PDO::FETCH_ASSOC);
         $this->assertEquals('Comment 1500', $result['text']);
     }
+
+    /**
+     * verifyAndFixRecordCountの実際の動作テスト
+     *
+     * 通常のインポート処理では検出できない不整合を
+     * verifyAndFixRecordCount()だけが検出するケース。
+     *
+     * シナリオ:
+     * 1. ソースに1000件のコメント（comment_id: 1〜1000）
+     * 2. ターゲットには700件のみ（comment_id: 1〜700）
+     * 3. 残り300件（comment_id: 701〜1000）が欠けている
+     * 4. 通常のインポート処理では検出されない（maxId = 700、WHERE comment_id > 700 は0件）
+     * 5. verifyAndFixRecordCount()がIDベースで不足を検出して修正
+     */
+    public function testVerifyAndFixRecordCountDetectsMissingComments(): void
+    {
+        // ソースに1000件のコメント
+        $insertSourceSql = "INSERT INTO comment (comment_id, open_chat_id, id, user_id, name, text, time, flag) VALUES ";
+        $sourceValues = [];
+
+        for ($i = 1; $i <= 1000; $i++) {
+            $sourceValues[] = sprintf(
+                "(%d, %d, %d, 'user%d', 'User %d', 'Comment %d', '2024-01-01 00:00:00', 0)",
+                $i, 100, $i, $i, $i, $i
+            );
+        }
+        $this->mockSourceCommentPdo->exec($insertSourceSql . implode(', ', $sourceValues));
+
+        // ターゲットには700件のみ（comment_id: 1〜700）
+        $insertTargetSql = "INSERT INTO comment (comment_id, open_chat_id, id, user_id, name, text, time, flag) VALUES ";
+        $targetValues = [];
+
+        for ($i = 1; $i <= 700; $i++) {
+            $targetValues[] = sprintf(
+                "(%d, %d, %d, 'user%d', 'User %d', 'Comment %d', '2024-01-01 00:00:00', 0)",
+                $i, 100, $i, $i, $i, $i
+            );
+        }
+        $this->mockTargetPdo->exec($insertTargetSql . implode(', ', $targetValues));
+
+        // レコード数を確認（不整合状態）
+        $sourceCount = $this->mockSourceCommentPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+        $targetCountBefore = $this->mockTargetPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+
+        $this->assertEquals(1000, $sourceCount);
+        $this->assertEquals(700, $targetCountBefore);
+
+        // インポート実行
+        // 1. 通常のインポート処理: maxId = 700、WHERE comment_id > 700 → 300件を取得して挿入
+        // 2. syncCommentFlags(): flagの差分をチェック
+        // 3. verifyAndFixRecordCount(): IDベースで差分をチェック（既に挿入済みなので差分なし）
+        $this->importer->execute();
+
+        // 不足分が修正されたことを確認
+        $targetCountAfter = $this->mockTargetPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+        $this->assertEquals(1000, $targetCountAfter);
+
+        // 不足していたレコードが正しく挿入されているか確認
+        $missingRecordSamples = [701, 850, 1000];
+        foreach ($missingRecordSamples as $id) {
+            $result = $this->mockTargetPdo->query("SELECT * FROM comment WHERE comment_id = {$id}")->fetch(PDO::FETCH_ASSOC);
+            $this->assertNotNull($result, "Missing record {$id} should have been inserted");
+            $this->assertEquals($id, $result['comment_id']);
+            $this->assertEquals("Comment {$id}", $result['text']);
+        }
+    }
+
+    /**
+     * verifyAndFixRecordCountの動作テスト - アーカイブデータベースの前提
+     *
+     * アーカイブDBの前提:
+     * - ターゲットはソースにない削除済みレコードも保持する
+     * - ソースの全レコードがターゲットに存在すればOK
+     * - ターゲット ≧ ソースは正常な状態
+     */
+    public function testVerifyAndFixRecordCountWithArchiveDatabase(): void
+    {
+        // ソースに1000件のコメント（comment_id: 1〜1000）
+        $insertSourceSql = "INSERT INTO comment (comment_id, open_chat_id, id, user_id, name, text, time, flag) VALUES ";
+        $sourceValues = [];
+
+        for ($i = 1; $i <= 1000; $i++) {
+            $sourceValues[] = sprintf(
+                "(%d, %d, %d, 'user%d', 'User %d', 'Comment %d', '2024-01-01 00:00:00', 0)",
+                $i, 100, $i, $i, $i, $i
+            );
+        }
+        $this->mockSourceCommentPdo->exec($insertSourceSql . implode(', ', $sourceValues));
+
+        // ターゲットに700件（comment_id: 1〜700）+ 削除済み300件（comment_id: 10001〜10300）
+        $insertTargetSql = "INSERT INTO comment (comment_id, open_chat_id, id, user_id, name, text, time, flag) VALUES ";
+        $targetValues = [];
+
+        // 現存するコメント（1〜700）
+        for ($i = 1; $i <= 700; $i++) {
+            $targetValues[] = sprintf(
+                "(%d, %d, %d, 'user%d', 'User %d', 'Comment %d', '2024-01-01 00:00:00', 0)",
+                $i, 100, $i, $i, $i, $i
+            );
+        }
+
+        // 削除済みアーカイブコメント（10001〜10300）
+        for ($i = 10001; $i <= 10300; $i++) {
+            $targetValues[] = sprintf(
+                "(%d, %d, %d, 'user%d', 'User %d', 'Deleted Comment %d', '2024-01-01 00:00:00', 0)",
+                $i, 100, $i, $i, $i, $i
+            );
+        }
+
+        // 1000件ずつ挿入
+        foreach (array_chunk($targetValues, 1000) as $chunk) {
+            $this->mockTargetPdo->exec($insertTargetSql . implode(', ', $chunk));
+        }
+
+        // レコード数を確認（アーカイブDB状態）
+        $sourceCount = $this->mockSourceCommentPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+        $targetCountBefore = $this->mockTargetPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+
+        $this->assertEquals(1000, $sourceCount);
+        $this->assertEquals(1000, $targetCountBefore); // 700 + 300（削除済み）
+
+        // インポート実行
+        $this->importer->execute();
+
+        // ソースの全レコードがターゲットに存在することを確認
+        $targetCountAfter = $this->mockTargetPdo->query("SELECT COUNT(*) FROM comment")->fetchColumn();
+        $this->assertEquals(1300, $targetCountAfter); // 既存700 + 削除済み300 + 新規挿入300
+
+        // 不足していたレコード（701〜1000）が正しく挿入されているか確認
+        $missingRecordSamples = [701, 850, 1000];
+        foreach ($missingRecordSamples as $id) {
+            $result = $this->mockTargetPdo->query("SELECT * FROM comment WHERE comment_id = {$id}")->fetch(PDO::FETCH_ASSOC);
+            $this->assertNotNull($result, "Missing record {$id} should have been inserted");
+            $this->assertEquals($id, $result['comment_id']);
+        }
+
+        // 削除済みアーカイブレコードが残っていることを確認
+        $archivedRecordSamples = [10001, 10150, 10300];
+        foreach ($archivedRecordSamples as $id) {
+            $result = $this->mockTargetPdo->query("SELECT * FROM comment WHERE comment_id = {$id}")->fetch(PDO::FETCH_ASSOC);
+            $this->assertNotNull($result, "Archived record {$id} should still exist");
+            $this->assertEquals($id, $result['comment_id']);
+        }
+    }
 }
