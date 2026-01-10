@@ -678,8 +678,9 @@ class OcreviewApiDataImporter
         $columnCount = count($columns);
 
         // SQLiteのパラメータ数制限（デフォルト999）を考慮したチャンクサイズ
-        // 100件ずつ処理することで安全に実行
-        $recordsPerBatch = 100;
+        // openchat_master は13カラムなので、999 / 13 = 76が理論上の最大値
+        // 安全マージンを考慮して50件ずつ処理（50 × 13 = 650パラメータ）
+        $recordsPerBatch = (int)floor(999 / $columnCount) - 20;
 
         // データをチャンク単位で処理
         foreach (array_chunk($data, $recordsPerBatch) as $chunk) {
