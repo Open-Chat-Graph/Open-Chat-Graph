@@ -92,6 +92,8 @@ class DailyUpdateCronService
         $categoryResult = $this->openChatSubCategorySynchronizer->syncSubCategoriesAll();
         addCronLog('サブカテゴリ同期完了: ' . count($categoryResult) . '件');
 
+        addCronLog('日次ランキング更新を開始');
         $this->updateRankingService->update($this->date);
+        addCronLog('日次ランキング更新完了');
     }
 }

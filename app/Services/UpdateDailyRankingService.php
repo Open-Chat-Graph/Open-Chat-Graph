@@ -15,17 +15,24 @@ class UpdateDailyRankingService
         private StaticDataGenerator $staticDataGenerator,
         private StatisticsRankingUpdaterRepositoryInterface $rankingUpdater,
         private OpenChatListRepositoryInterface $openChatListRepository,
-    ) {
-    }
+    ) {}
 
     /**
      * @param string $date Y-m-d
      */
     function update(string $date)
     {
+        addVerboseCronLog('日次ランキング更新処理を実行中（対象日: ' . $date . '）');
         $this->rankingUpdater->updateCreateDailyRankingTable($date);
+        addVerboseCronLog('日次ランキング更新処理完了');
+
+        addVerboseCronLog('過去１週間ランキング更新処理を実行中（対象日: ' . $date . '）');
         $this->rankingUpdater->updateCreatePastWeekRankingTable($date);
+        addVerboseCronLog('過去１週間ランキング更新処理完了');
+
+        addVerboseCronLog('ランキング静的データを生成中（対象日: ' . $date . '）');
         $this->updateStaticData($date);
+        addVerboseCronLog('ランキング静的データ生成処理完了');
     }
 
     private function updateStaticData(string $date)
