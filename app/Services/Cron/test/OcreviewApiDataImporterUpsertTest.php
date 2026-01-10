@@ -75,7 +75,7 @@ class OcreviewApiDataImporterUpsertTest extends TestCase
         $this->setupMockDatabases();
 
         // Importerインスタンス作成
-        $this->importer = new TestableOcreviewApiDataImporter(new SqlInsert());
+        $this->importer = new TestableOcreviewApiDataImporter(new \App\Models\SQLite\SQLiteInsertImporter());
         $this->importer->mockSourcePdo = $this->mockSourcePdo;
         $this->importer->mockTargetPdo = $this->mockTargetPdo;
 

@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
-use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentDB;
-use App\Models\Importer\SqlInsert;
 use App\Models\Repositories\DB;
+use App\Models\SQLite\SQLiteInsertImporter;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
@@ -56,7 +55,7 @@ class OcreviewApiDataImporter
     private const CHUNK_SIZE_SQLITE = 10000;
 
     public function __construct(
-        private SqlInsert $sqlImporter,
+        private SQLiteInsertImporter $sqlImporter,
     ) {}
 
     /**

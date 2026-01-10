@@ -30,7 +30,7 @@ class OcreviewApiCommentDataImporter
     private const DISCORD_NOTIFY_INTERVAL = 100;
 
     /** チャンクサイズ（MySQL一括処理） */
-    private const CHUNK_SIZE = 2000;
+    private const CHUNK_SIZE = 200;
 
     public function __construct(
         PDO $sourceCommentPdo,
