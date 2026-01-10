@@ -29,6 +29,7 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\TagLabsPageController;
 use App\Controllers\Pages\LogController;
+use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
@@ -340,6 +341,12 @@ Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->match(function () {
         noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
+// Adminer Database Tool
+Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
+    ->match(function () {
         return MimimalCmsConfig::$urlRoot === '';
     });
 
