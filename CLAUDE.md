@@ -114,16 +114,6 @@ No linting, static analysis, or code formatting tools are currently configured.
 
 ## Crawling System
 
-### Parallel Processing
-- Crawls ~150,000 OpenChats across 24 categories
-- 24 parallel processes for simultaneous downloads
-- Custom optimization for high-performance data updates
-
-### Key Files
-- `app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php` - Parent process
-- `app/Services/Cron/ParallelDownloadOpenChat.php` - Child process via exec
-- `app/Services/OpenChat/OpenChatApiDataParallelDownloader.php` - Data processing
-
 ### User Agent
 ```
 Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/pika-0203/Open-Chat-Graph)

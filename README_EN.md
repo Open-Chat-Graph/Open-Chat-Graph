@@ -95,19 +95,6 @@ For detailed database schema, see [db_schema.md](./db_schema.md).
 
 ## 🕷️ Crawling System
 
-### Parallel Processing Architecture
-
-High-performance parallel crawling system designed to efficiently process approximately 150,000 OpenChats.
-
-- **24 Parallel Processes**: Simultaneous processing of all categories
-- **Custom Optimization**: High-speed rendering and DB update techniques
-- **Auto Retry**: Error handling and fallback mechanisms
-
-#### Key Components
-
-1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - Parent process
-2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - Child process
-3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - Data processing
 
 ### User Agent
 
@@ -223,66 +210,7 @@ public static array $constructorInjectionMap = [
 - Easy switching between MySQL and SQLite
 - Improved testing and maintenance
 
-### Parallel Crawling System
 
-#### Parent Process: Parallel Execution Control
-
-```php
-class OpenChatApiDbMergerWithParallelDownloader
-{
-    function fetchOpenChatApiRankingAll()
-    {
-        // State initialization
-        $this->setKillFlagFalse();
-        $this->stateRepository->cleanUpAll();
-        
-        // Execute download with 24 parallel processes
-        foreach ($categoryArray as $key => $category) {
-            $this->download([
-                [RankingType::Ranking, $category], 
-                [RankingType::Rising, $categoryReverse[$key]]
-            ]);
-        }
-        
-        // Monitor and merge until completion
-        while (!$flag) {
-            sleep(10);
-            foreach ([RankingType::Ranking, RankingType::Rising] as $type)
-                foreach ($categoryReverse as $category)
-                    $this->mergeProcess($type, $category);
-            
-            $flag = $this->stateRepository->isCompletedAll();
-        }
-    }
-}
-```
-
-#### Child Process: Download Handling
-
-```php
-class ParallelDownloadOpenChat
-{
-    function handle(array $args)
-    {
-        try {
-            foreach ($args as $api) {
-                $type = RankingType::from($api['type']);
-                $category = $api['category'];
-                $this->download($type, $category);
-            }
-        } catch (ApplicationException $e) {
-            $this->handleDetectStopFlag($args, $e);
-        } catch (\Throwable $e) {
-            // Force termination of all processes
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            $this->handleGeneralException($api['type'], $api['category'], $e);
-        }
-    }
-}
-```
-
-**Parallel Processing Key Points:**
-1. **24 Parallel Execution**: Simultaneous download of all categories
 2. **State Management**: Progress tracking via database
 3. **Error Handling**: Safe shutdown on failures
 4. **Inter-process Communication**: Control via killFlag
@@ -316,7 +244,6 @@ class SyncOpenChat
         set_time_limit(1620); // 27-minute timeout
         
         $this->state->setTrue(StateType::isHourlyTaskActive);
-        $this->merger->fetchOpenChatApiRankingAll(); // Parallel crawling
         $this->state->setFalse(StateType::isHourlyTaskActive);
         
         $this->hourlyTaskAfterDbMerge(
@@ -383,7 +310,6 @@ Current tests are implemented at a **functional verification level** and do not 
 
 ### Future Improvements
 
-- [ ] **Integration Tests**: Full testing of parallel crawling system
 - [ ] **Performance Tests**: Load testing for large data processing
 - [ ] **E2E Tests**: Frontend and backend integration testing
 - [ ] **Test Coverage**: More comprehensive unit testing

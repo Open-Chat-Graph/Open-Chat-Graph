@@ -23,7 +23,6 @@ class MimimalCmsConfig
         \App\Models\Repositories\OpenChatRepositoryInterface::class => \App\Models\Repositories\OpenChatRepository::class,
         \App\Models\Repositories\UpdateOpenChatRepositoryInterface::class => \App\Models\Repositories\UpdateOpenChatRepository::class,
         \App\Models\Repositories\DeleteOpenChatRepositoryInterface::class => \App\Models\Repositories\DeleteOpenChatRepository::class,
-        \App\Models\Repositories\ParallelDownloadOpenChatStateRepositoryInterface::class => \App\Models\Repositories\ParallelDownloadOpenChatStateRepository::class,
         \App\Models\Repositories\SyncOpenChatStateRepositoryInterface::class => \App\Models\Repositories\SyncOpenChatStateRepository::class,
         \App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface::class => \App\Models\Repositories\MemberChangeFilterCacheRepository::class,
 

@@ -218,59 +218,10 @@ public static array $constructorInjectionMap = [
 
 #### 親プロセス：並列実行制御
 
-```php
-class OpenChatApiDbMergerWithParallelDownloader
-{
-    function fetchOpenChatApiRankingAll()
-    {
-        // 状態初期化
-        $this->setKillFlagFalse();
-        $this->stateRepository->cleanUpAll();
-        
-        // 24並列プロセスでダウンロード実行
-        foreach ($categoryArray as $key => $category) {
-            $this->download([
-                [RankingType::Ranking, $category], 
-                [RankingType::Rising, $categoryReverse[$key]]
-            ]);
-        }
-        
-        // 完了まで監視・マージ処理
-        while (!$flag) {
-            sleep(10);
-            foreach ([RankingType::Ranking, RankingType::Rising] as $type)
-                foreach ($categoryReverse as $category)
-                    $this->mergeProcess($type, $category);
-            
-            $flag = $this->stateRepository->isCompletedAll();
-        }
-    }
-}
-```
 
 #### 子プロセス：ダウンロード処理
 
-```php
-class ParallelDownloadOpenChat
-{
-    function handle(array $args)
-    {
-        try {
-            foreach ($args as $api) {
-                $type = RankingType::from($api['type']);
-                $category = $api['category'];
-                $this->download($type, $category);
-            }
-        } catch (ApplicationException $e) {
-            $this->handleDetectStopFlag($args, $e);
-        } catch (\Throwable $e) {
-            // 全プロセス強制終了
-            OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
-            $this->handleGeneralException($api['type'], $api['category'], $e);
-        }
-    }
-}
-```
+
 
 **並列処理の要点:**
 1. **24並列実行**: 全カテゴリ同時ダウンロード
@@ -361,7 +312,6 @@ private function retryHourlyTask()
     AdminTool::sendDiscordNotify('Retry hourlyTask');
     
     // 実行中の並列プロセスを強制終了
-    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
     sleep(30); // プロセス終了待機
     
     $this->handle(); // 再実行
@@ -378,7 +328,6 @@ private function retryDailyTask()
     }
     
     // 全プロセス強制終了
-    OpenChatApiDbMergerWithParallelDownloader::setKillFlagTrue();
     OpenChatDailyCrawling::setKillFlagTrue();
     sleep(30);
     
@@ -556,9 +505,6 @@ echo t('オプチャグラフ', '/tw'); // 特定言語指定
 
 #### 主要コンポーネント
 
-1. [OpenChatApiDbMergerWithParallelDownloader](app/Services/OpenChat/OpenChatApiDbMergerWithParallelDownloader.php) - 親プロセス
-2. [ParallelDownloadOpenChat](app/Services/Cron/ParallelDownloadOpenChat.php) - 子プロセス
-3. [OpenChatApiDataParallelDownloader](app/Services/OpenChat/OpenChatApiDataParallelDownloader.php) - データ処理
 
 ### ユーザーエージェント
 
