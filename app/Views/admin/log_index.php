@@ -103,7 +103,7 @@ $logDisplayNames = [
         以下の処理は、メイン処理とは別プロセスで並列実行されます：
         <ul style="margin: 8px 0; padding-left: 20px;">
             <li>ランキングDB反映処理（最新24時間のランキング・人数推移履歴をDBに保存）</li>
-            <li>おすすめタグ静的データ生成（完了後にCDNキャッシュ削除を実行）</li>
+            <li>おすすめ情報更新・静的データ生成（完了後にCDNキャッシュ削除を実行）</li>
             <li>アーカイブ用DBインポート処理（日本のみ）</li>
         </ul>
         これにより、次の毎時処理が始まるギリギリまで時間を有効活用できます。古いバックグラウンドプロセスが実行中の場合、新しいプロセスが自動的に古いプロセスを終了させます。
@@ -146,7 +146,9 @@ $logDisplayNames = [
                 メンバーランキングの更新
                 <?php echo githubLink('app/Services/UpdateHourlyMemberRankingService.php', 28) ?>
             </li>
-            <li class="sub">おすすめタグ静的データ生成をバックグラウンドで開始（完了後にCDNキャッシュ削除）</li>
+            <li class="sub">おすすめ情報更新・静的データ生成をバックグラウンドで開始（完了後にCDNキャッシュ削除）
+                <?php echo githubLink('batch/exec/update_recommend_static_data.php', 47) ?>
+            </li>
             <li>
                 参加URLの一括取得
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 126) ?>
@@ -156,12 +158,8 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 139) ?>
             </li>
             <li>
-                おすすめ情報テーブルの更新（日次処理中はスキップ）
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 140) ?>
-            </li>
-            <li>
                 アーカイブ用DBインポート処理をバックグラウンドで開始（日本のみ）
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 150) ?>
+                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 142) ?>
             </li>
             <li class="sub">過去のランキングデータをアーカイブ用DBにインポート（バックグラウンド実行）</li>
             <li class="highlight">
