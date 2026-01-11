@@ -129,7 +129,7 @@ $logDisplayNames = [
                 LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・ランキング）
                 <?php echo githubLink('app/Services/OpenChat/OpenChatApiDbMerger.php', 69) ?>
             </li>
-            <li class="sub">各オープンチャットの最新情報を取得・DB保存</li>
+            <li class="sub">各オープンチャットの最新情報を取得・DB保存/更新、ランキングデータをストレージに保存</li>
             <li>
                 バックグラウンドDB反映の完了を待機
                 <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 70) ?>
