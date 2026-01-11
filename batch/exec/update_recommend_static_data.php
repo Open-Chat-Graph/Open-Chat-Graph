@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
@@ -41,6 +42,15 @@ try {
     $state->setTrue(StateType::isUpdateRecommendStaticDataActive);
 
     /**
+     * @var RecommendUpdater $recommendUpdater
+     */
+    $recommendUpdater = app(RecommendUpdater::class);
+
+    addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
+    $recommendUpdater->updateRecommendTables();
+    addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
+
+    /**
      * @var RecommendStaticDataGenerator $recommendStaticDataGenerator
      */
     $recommendStaticDataGenerator = app(RecommendStaticDataGenerator::class);
@@ -55,7 +65,8 @@ try {
     addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
     purgeCacheCloudFlare();
     addVerboseCronLog('CDNキャッシュ削除完了（バックグラウンド）');
-
+    
+    addVerboseCronLog('【毎時処理】バックグラウンド処理完了');
     // 実行中フラグを下ろす
     $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
 } catch (\Throwable $e) {
