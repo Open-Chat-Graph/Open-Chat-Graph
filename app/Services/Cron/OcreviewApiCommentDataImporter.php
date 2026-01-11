@@ -32,6 +32,9 @@ class OcreviewApiCommentDataImporter
     /** チャンクサイズ（MySQL一括処理） */
     private const CHUNK_SIZE = 200;
 
+    /** 事前計算された差分データ（処理の重複を避けるため） */
+    private array $pendingCounts = [];
+
     public function __construct(
         PDO $sourceCommentPdo,
         PDO $targetPdo
@@ -54,6 +57,9 @@ class OcreviewApiCommentDataImporter
     {
         // テーブルが存在しない場合は作成
         $this->ensureCommentTablesExist();
+
+        // 処理開始前に全テーブルのINSERT件数を計算してログ出力
+        $this->calculateAndLogPendingCounts();
 
         // コメントテーブルのインポート（IDベース + flag差分同期）
         $this->importComments();
@@ -95,6 +101,45 @@ class OcreviewApiCommentDataImporter
     }
 
     /**
+     * 処理開始前に全テーブルのINSERT予定件数を計算してログ出力
+     */
+    private function calculateAndLogPendingCounts(): void
+    {
+        $counts = [];
+
+        $counts = array_merge($counts, $this->calculatePendingCountsForComments());
+        $counts = array_merge($counts, $this->calculatePendingCountsForCommentLikes());
+        $counts = array_merge($counts, $this->calculatePendingCountsForBanRooms());
+        $counts = array_merge($counts, $this->calculatePendingCountsForBanUsers());
+        $counts = array_merge($counts, $this->calculatePendingCountsForCommentLogs());
+
+        // ログ出力（1回だけ）
+        if (!empty($counts)) {
+            AdminTool::sendDiscordNotify('【Comment Data Importer】処理予定: ' . implode(', ', $counts));
+        } else {
+            AdminTool::sendDiscordNotify('【Comment Data Importer】処理対象のデータはありません');
+        }
+    }
+
+    /**
+     * comment の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForComments(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(comment_id), 0) as max_id FROM comment");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM comment WHERE comment_id > ?");
+        $stmt->execute([$maxId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['comment'] = ['max_id' => $maxId, 'count' => $count];
+
+        return $count > 0 ? ["comment: {$count}件"] : [];
+    }
+
+    /**
      * コメントテーブルのインポート
      *
      * 【差分同期の仕組み】
@@ -103,15 +148,9 @@ class OcreviewApiCommentDataImporter
      */
     private function importComments(): void
     {
-        // ターゲットDBから最大comment_idを取得
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(comment_id), 0) as max_id FROM comment");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
-
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM comment WHERE comment_id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $maxId = $this->pendingCounts['comment']['max_id'];
+        $count = $this->pendingCounts['comment']['count'];
 
         if ($count > 0) {
             // 差分レコードのみを取得してインポート
@@ -259,6 +298,28 @@ class OcreviewApiCommentDataImporter
     }
 
     /**
+     * comment_like の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForCommentLikes(): array
+    {
+        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM `like` ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $targetIds = $this->targetPdo->query("SELECT id FROM comment_like ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $idsToInsert = array_diff($sourceIds, $targetIds);
+        $idsToDelete = array_diff($targetIds, $sourceIds);
+        $this->pendingCounts['comment_like'] = [
+            'insert_ids' => $idsToInsert,
+            'delete_ids' => $idsToDelete
+        ];
+
+        if (empty($idsToInsert) && empty($idsToDelete)) {
+            return [];
+        }
+        return ["comment_like: 追加" . count($idsToInsert) . "件/削除" . count($idsToDelete) . "件"];
+    }
+
+    /**
      * いいねテーブルのインポート
      *
      * 【差分同期の仕組み】
@@ -269,13 +330,9 @@ class OcreviewApiCommentDataImporter
      */
     private function importCommentLikes(): void
     {
-        // ソースとターゲットの全IDを取得
-        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM `like` ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-        $targetIds = $this->targetPdo->query("SELECT id FROM comment_like ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-
-        // 差分を計算
-        $idsToInsert = array_diff($sourceIds, $targetIds);
-        $idsToDelete = array_diff($targetIds, $sourceIds);
+        // 事前計算した差分データを再利用
+        $idsToInsert = $this->pendingCounts['comment_like']['insert_ids'];
+        $idsToDelete = $this->pendingCounts['comment_like']['delete_ids'];
 
         // 追加すべきレコードをインポート
         if (!empty($idsToInsert)) {
@@ -308,6 +365,28 @@ class OcreviewApiCommentDataImporter
     }
 
     /**
+     * ban_room の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForBanRooms(): array
+    {
+        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $targetIds = $this->targetPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $idsToInsert = array_diff($sourceIds, $targetIds);
+        $idsToDelete = array_diff($targetIds, $sourceIds);
+        $this->pendingCounts['ban_room'] = [
+            'insert_ids' => $idsToInsert,
+            'delete_ids' => $idsToDelete
+        ];
+
+        if (empty($idsToInsert) && empty($idsToDelete)) {
+            return [];
+        }
+        return ["ban_room: 追加" . count($idsToInsert) . "件/削除" . count($idsToDelete) . "件"];
+    }
+
+    /**
      * ban_roomテーブルのインポート（完全同期）
      *
      * 【完全同期の仕組み】
@@ -318,13 +397,9 @@ class OcreviewApiCommentDataImporter
      */
     private function importBanRooms(): void
     {
-        // ソースとターゲットの全IDを取得
-        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-        $targetIds = $this->targetPdo->query("SELECT id FROM ban_room ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-
-        // 差分を計算
-        $idsToInsert = array_diff($sourceIds, $targetIds);
-        $idsToDelete = array_diff($targetIds, $sourceIds);
+        // 事前計算した差分データを再利用
+        $idsToInsert = $this->pendingCounts['ban_room']['insert_ids'];
+        $idsToDelete = $this->pendingCounts['ban_room']['delete_ids'];
 
         // 追加すべきレコードをインポート
         if (!empty($idsToInsert)) {
@@ -357,6 +432,28 @@ class OcreviewApiCommentDataImporter
     }
 
     /**
+     * ban_user の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForBanUsers(): array
+    {
+        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $targetIds = $this->targetPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+        $idsToInsert = array_diff($sourceIds, $targetIds);
+        $idsToDelete = array_diff($targetIds, $sourceIds);
+        $this->pendingCounts['ban_user'] = [
+            'insert_ids' => $idsToInsert,
+            'delete_ids' => $idsToDelete
+        ];
+
+        if (empty($idsToInsert) && empty($idsToDelete)) {
+            return [];
+        }
+        return ["ban_user: 追加" . count($idsToInsert) . "件/削除" . count($idsToDelete) . "件"];
+    }
+
+    /**
      * ban_userテーブルのインポート（完全同期）
      *
      * 【完全同期の仕組み】
@@ -367,13 +464,9 @@ class OcreviewApiCommentDataImporter
      */
     private function importBanUsers(): void
     {
-        // ソースとターゲットの全IDを取得
-        $sourceIds = $this->sourceCommentPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-        $targetIds = $this->targetPdo->query("SELECT id FROM ban_user ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
-
-        // 差分を計算
-        $idsToInsert = array_diff($sourceIds, $targetIds);
-        $idsToDelete = array_diff($targetIds, $sourceIds);
+        // 事前計算した差分データを再利用
+        $idsToInsert = $this->pendingCounts['ban_user']['insert_ids'];
+        $idsToDelete = $this->pendingCounts['ban_user']['delete_ids'];
 
         // 追加すべきレコードをインポート
         if (!empty($idsToInsert)) {
@@ -406,19 +499,31 @@ class OcreviewApiCommentDataImporter
     }
 
     /**
+     * comment_log の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForCommentLogs(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(id), 0) as max_id FROM comment_log");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM log WHERE id > ?");
+        $stmt->execute([$maxId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['comment_log'] = ['max_id' => $maxId, 'count' => $count];
+
+        return $count > 0 ? ["comment_log: {$count}件"] : [];
+    }
+
+    /**
      * logテーブルのインポート（IDベース）
      */
     private function importCommentLogs(): void
     {
-        // ターゲットDBから最大IDを取得
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(id), 0) as max_id FROM comment_log");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
-
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sourceCommentPdo->prepare("SELECT COUNT(*) FROM log WHERE id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $maxId = $this->pendingCounts['comment_log']['max_id'];
+        $count = $this->pendingCounts['comment_log']['count'];
 
         if ($count === 0) {
             return;

@@ -54,6 +54,8 @@ try {
 
     // 正常終了：状態をクリア
     $state->setArray(StateType::rankingPersistenceBackground, []);
+
+    addVerboseCronLog('バックグラウンドDB反映プロセスが正常終了しました');
 } catch (\Throwable $e) {
     addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
