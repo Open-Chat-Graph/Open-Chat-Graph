@@ -31,13 +31,14 @@ storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
 storage/*/SQLite/ranking_position/ranking_position.db
 storage/*/SQLite/ocgraph_sqlapi/*.db
-storage/ja/SQLite/*/*.db-shm
-storage/ja/SQLite/*/*.db-wal
+storage/*/SQLite/*/*.db-shm
+storage/*/SQLite/*/*.db-wal
 storage/*/ranking_position/*/*
 storage/*/ranking_position/filter.dat
 storage/*/ranking_position/filter_date.dat
 storage/*/static_data_top/*
-!storage/*/static_data_top/template
+!storage/*/static_data_top/non_essential_cache_sample
+!storage/*/static_data_top/required_file_template
 storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 

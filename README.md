@@ -16,10 +16,8 @@ LINE OpenChatのメンバー数推移を可視化し、トレンドを分析す�
 docker compose up -d
 docker compose exec app bash
 cd /var/www/html
-export MYSQL_HOST=mysql
-export MYSQL_PASSWORD=test_root_pass
+./local-setup.default.sh
 ./database/init-database.sh
-composer install
 ```
 
 - Web: http://localhost:7000
@@ -32,8 +30,8 @@ composer install
 docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 docker compose -f docker-compose.dev.yml exec app bash
 cd /var/www/html
+./local-setup.default.sh
 ./database/init-database.sh
-composer install
 ```
 
 - Web: http://localhost:8100

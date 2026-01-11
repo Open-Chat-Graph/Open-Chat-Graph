@@ -145,7 +145,7 @@ class AppConfig
     static bool $isStaging = false;
     static bool $disableStaticDataFile = false;
     static bool $disableAds = false;
-    static bool $verboseCronLog = false;
+    static bool $verboseCronLog = true;
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
@@ -236,9 +236,9 @@ class AppConfig
 
     /** @var array<string,string> */
     static array $dbName = [
-        '' =>    'ocreview',
-        '/tw' => 'ocreviewtw',
-        '/th' => 'ocreviewth',
+        '' =>    'ocgraph_ocreview',
+        '/tw' => 'ocgraph_ocreviewtw',
+        '/th' => 'ocgraph_ocreviewth',
     ];
     const RANKING_HOUR_TABLE_NAME = 'statistics_ranking_hour';
     const RANKING_DAY_TABLE_NAME =  'statistics_ranking_hour24';
@@ -246,25 +246,25 @@ class AppConfig
 
     /** @var array<string,string> */
     static array $rankingPositionDbName = [
-        '' =>    'ranking',
-        '/tw' => 'rankingtw',
-        '/th' => 'rankingth',
+        '' =>    'ocgraph_ranking',
+        '/tw' => 'ocgraph_rankingtw',
+        '/th' => 'ocgraph_rankingth',
     ];
 
     // TODO:多言語対応
     /** @var array<string,string> */
     static array $userLogDbName = [
-        '' =>    'userlog',
-        '/tw' => 'userlog',
-        '/th' => 'userlog',
+        '' =>    'ocgraph_userlog',
+        '/tw' => 'ocgraph_userlog',
+        '/th' => 'ocgraph_userlog',
     ];
 
     // TODO:多言語対応
     /** @var array<string,string> */
     static array $commentDbName = [
-        '' =>    'comment',
-        '/tw' => 'commenttw',
-        '/th' => 'commentth',
+        '' =>    'ocgraph_comment',
+        '/tw' => 'ocgraph_commenttw',
+        '/th' => 'ocgraph_commentth',
     ];
 
     const DEFAULT_OPENCHAT_IMG_URL = [
