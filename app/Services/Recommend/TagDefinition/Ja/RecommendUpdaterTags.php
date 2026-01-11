@@ -93,6 +93,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getNameStrongTags(): array
     {
         $tags = [
+            ["シール", ["シール_AND_情報", "シル活", "ポンポンドロップ", "シール_AND_共有", "シルパト"]],
             "御朱印",
             "神社",
             ["IVE", ["IVE_AND_シリアル", "IVE_AND_波", "IVE_AND_当選"]],
