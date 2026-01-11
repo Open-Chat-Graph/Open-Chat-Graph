@@ -50,6 +50,9 @@ class OpenChatApiDbMerger
         );
     }
 
+    /**
+     * カテゴリラベルを取得
+     */
     private function getCategoryLabel(string $category, AbstractRankingPositionStore $positionStore): string
     {
         $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
@@ -57,12 +60,9 @@ class OpenChatApiDbMerger
         return "{$categoryName}の{$typeLabel}";
     }
 
-    private function getCategoryLabelWithCount(string $category, AbstractRankingPositionStore $positionStore, int $count): string
-    {
-        return "{$this->getCategoryLabel($category, $positionStore)} {$count}件";
-    }
-
     /**
+     * APIから全ランキングデータを取得してDBマージ処理を行う
+     * 
      * @return array{ count: int, category: string, dateTime: \DateTime }[] 取得済件数とカテゴリ
      * @throws \RuntimeException
      */
@@ -84,6 +84,12 @@ class OpenChatApiDbMerger
         }
     }
 
+    /**
+     * APIから全ランキングデータを取得してDBマージ処理を行う
+     * 
+     * @return array{ count: int, category: string, dateTime: \DateTime }[] 取得済件数とカテゴリ
+     * @throws \RuntimeException
+     */
     private function fetchOpenChatApiRankingAllProcess(
         AbstractRankingPositionStore $positionStore,
         OpenChatApiRankingDownloader $downloader
@@ -127,23 +133,38 @@ class OpenChatApiDbMerger
             }
         };
 
-        // API カテゴリごとの処理
+        /** @var array<string, string|float> $startTimes APIカテゴリごとの処理 */
         $startTimes = [];
 
-        $callbackByCategoryBefore = function (string $category) use ($positionStore, &$startTimes, &$urlCount, &$currentCategory, &$lastCallbackTime): bool {
+        $callbackByCategoryBefore = function (string $category) use (
+            $positionStore,
+            &$startTimes,
+            &$urlCount,
+            &$currentCategory,
+            &$lastCallbackTime,
+        ): bool {
             $startTimes[$category] = microtime(true);
             $currentCategory = $category;
             $urlCount = 0; // カテゴリごとにリセット
             $lastCallbackTime = null; // カテゴリごとにリセット
-            addVerboseCronLog("{$this->getCategoryLabel($category, $positionStore)}を取得中");
 
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
-            return $fileTime === $now;
+            $isDownloadedCategory = $fileTime === $now;
+
+            if ($isDownloadedCategory) {
+                addVerboseCronLog(
+                    $this->getCategoryLabel($category, $positionStore) . "は最新のためスキップ（取得日時: " . substr($fileTime, 0, -3) . "）"
+                );
+            } else {
+                addVerboseCronLog($this->getCategoryLabel($category, $positionStore) . "を取得中");
+            }
+
+            return $isDownloadedCategory;
         };
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
-            $label = $this->getCategoryLabelWithCount($category, $positionStore, $positionStore->getCacheCount());
+            $label = $this->getCategoryLabel($category, $positionStore) . $positionStore->getCacheCount() . "件";
             $elapsed = isset($startTimes[$category]) ? "（" . formatElapsedTime($startTimes[$category]) . "）" : '';
             addVerboseCronLog("{$label}取得完了{$elapsed}");
 

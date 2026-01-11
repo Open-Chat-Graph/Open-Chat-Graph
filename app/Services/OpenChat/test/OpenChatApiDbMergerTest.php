@@ -3,6 +3,9 @@
 use PHPUnit\Framework\TestCase;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 
+/**
+ * docker compose exec app ./vendor/bin/phpunit app/Services/OpenChat/test/OpenChatApiDbMergerTest.php
+ */
 class OpenChatApiDbMergerTest extends TestCase
 {
     public function test()
