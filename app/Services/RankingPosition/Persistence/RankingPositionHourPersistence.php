@@ -123,7 +123,7 @@ class RankingPositionHourPersistence
         addVerboseCronLog("毎時ランキングをデータベースに反映するバックグラウンド処理を開始（対象時刻: " . $expectedFileTimeLog . "）");
 
         // ストレージファイル監視ループ（ファイルが準備でき次第、順次処理）
-        $startTime = time();
+        $startTime = microtime(true);
         $loopCount = 0;
 
         while (true) {
@@ -137,14 +137,14 @@ class RankingPositionHourPersistence
             // 定期的に待機中のログを出力（60ループごと ≒ 60秒ごと）
             if ($loopCount % self::LOG_INTERVAL_LOOP_COUNT === 0) {
                 addVerboseCronLog(
-                    'ストレージファイル待機中: ' . (time() - $startTime) . '秒経過、残り'
+                    'ストレージファイル待機中: ' . formatElapsedTime($startTime) . '経過、残り'
                         . count(array_filter($this->process->getProcessedState(), fn($p) => !$p['rising'] || !$p['ranking']))
                         . 'カテゴリ（バックグラウンド）'
                 );
             }
 
             // タイムアウトチェック（40分経過したらエラー）
-            if (time() - $startTime > self::MAX_WAIT_SECONDS) {
+            if (microtime(true) - $startTime > self::MAX_WAIT_SECONDS) {
                 $this->handleTimeoutAndRestartCron();
             }
 
