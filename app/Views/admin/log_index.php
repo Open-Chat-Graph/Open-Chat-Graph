@@ -124,12 +124,12 @@ $logDisplayNames = [
                 ランキングDB反映処理をバックグラウンドで開始
                 <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 75) ?>
             </li>
-            <li class="sub">最新24時間のランキング・人数推移履歴をDBに反映（バックグラウンド実行）</li>
+            <li class="sub">ランキングデータのストレージ保存を待機し、最新24時間のランキング・人数推移履歴をDBに反映（バックグラウンド実行）</li>
             <li>
                 LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・ランキング）
                 <?php echo githubLink('app/Services/OpenChat/OpenChatApiDbMerger.php', 54) ?>
             </li>
-            <li class="sub">各オープンチャットの最新情報を取得・DB保存（並列実行）</li>
+            <li class="sub">各オープンチャットの最新情報を取得・DB保存</li>
             <li>
                 バックグラウンドDB反映の完了を待機
                 <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 95) ?>
