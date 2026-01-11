@@ -53,12 +53,12 @@ class LogController
                 'name' => $key,
                 'path' => $path,
                 'exists' => file_exists($fullPath),
-                'size' => file_exists($fullPath) ? $this->formatBytes(filesize($fullPath)) : 'N/A',
+                'lastModified' => file_exists($fullPath) ? $this->getLastModifiedTime($fullPath) : '',
             ];
         }
 
-        $_meta = meta()->setTitle('データ更新ログ');
-        $desc = 'オプチャグラフのデータ更新処理（LINE公式サイトからのランキングデータ取得）の実行状況をリアルタイムで確認できます。';
+        $_meta = meta()->setTitle('サイト更新ログ');
+        $desc = 'オプチャグラフの自動更新処理（LINE公式サイトからのデータ取得）の実行状況をリアルタイムで確認できます。';
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
 
@@ -92,8 +92,8 @@ class LogController
         // 日本語版のみメタデータを設定
         $_meta = null;
         if ($type === 'ja-cron') {
-            $_meta = meta()->setTitle('データ更新ログ詳細');
-            $desc = 'オプチャグラフのデータ更新処理の実行ログ詳細。毎時・日次の処理状況を時系列で確認できます。';
+            $_meta = meta()->setTitle('サイト更新ログ詳細');
+            $desc = 'オプチャグラフの自動更新処理の実行ログ詳細。毎時・日次の処理状況を時系列で確認できます。';
             $_meta->setDescription($desc)->setOgpDescription($desc);
             $_meta->image_url = url(['urlRoot' => '', 'paths' => ['assets/ogp-log.png']]);
         }
@@ -467,19 +467,18 @@ class LogController
     }
 
     /**
-     * バイト数を人間が読みやすい形式に変換する
+     * ログファイルの最終更新時刻を取得する
      *
-     * @param int $bytes バイト数
-     * @return string フォーマット済み文字列（例: "1.5 MB"）
+     * @param string $filePath ファイルパス
+     * @return string フォーマット済みの日時文字列
      */
-    private function formatBytes(int $bytes): string
+    private function getLastModifiedTime(string $filePath): string
     {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $i = 0;
-        while ($bytes >= 1024 && $i < count($units) - 1) {
-            $bytes /= 1024;
-            $i++;
+        $timestamp = filemtime($filePath);
+        if ($timestamp === false) {
+            return '';
         }
-        return round($bytes, 2) . ' ' . $units[$i];
+
+        return date('Y/m/d H:i:s', $timestamp);
     }
 }

@@ -62,7 +62,7 @@ $logDisplayNames = [
 ];
 ?>
 <div class="container">
-    <h1>データ更新ログ</h1>
+    <h1>サイト更新ログ</h1>
 
     <ul class="log-list">
         <?php foreach ($logFiles as $key => $file): ?>
@@ -74,7 +74,7 @@ $logDisplayNames = [
                     <a href="<?php echo url('admin/log/' . $key) ?>"><?php echo $logDisplayNames[$key] ?? $key ?></a>
                 <?php endif; ?>
                 <div class="log-meta">
-                    <span class="log-exists">利用可能</span> | サイズ: <?php echo htmlspecialchars($file['size']) ?>
+                    <span class="log-exists">✓ 閲覧可能</span> | 最終更新: <?php echo htmlspecialchars($file['lastModified']) ?>
                 </div>
             <?php else: ?>
                 <span style="font-weight: bold; font-size: 18px; color: #999;"><?php echo $logDisplayNames[$key] ?? $key ?></span>
