@@ -28,6 +28,19 @@ class LogController
         'tw-cron' => '/storage/tw/logs/cron.log',
     ];
 
+    /** テーブル名の日本語変換マッピング */
+    private const TABLE_NAME_MAPPING = [
+        'openchat_master' => 'オープンチャット基本情報',
+        'growth_ranking_past_hour' => '1時間成長ランキング',
+        'growth_ranking_past_24_hours' => '24時間成長ランキング',
+        'growth_ranking_past_week' => '週間成長ランキング',
+        'daily_member_statistics' => '日別メンバー統計',
+        'line_official_activity_ranking_history' => 'LINE公式ランキング履歴',
+        'line_official_activity_trending_history' => 'LINE公式急上昇履歴',
+        'line_official_ranking_total_count' => 'LINE公式総件数履歴',
+        'open_chat_deleted' => '削除済みオープンチャット',
+    ];
+
     public function __construct(
         private AdminAuthService $adminAuthService
     ) {}
@@ -264,6 +277,9 @@ class LogController
                 $message = preg_replace('/\s+GitHub::[^\s]+:\d+\s*$/', '', $message);
             }
 
+            // テーブル名を日本語に変換（形式: インポート予定: table_name: 123件）
+            $message = $this->translateTableNamesInMessage($message);
+
             return [
                 'date' => $matches[1],
                 'processTag' => $processTag,
@@ -272,6 +288,26 @@ class LogController
             ];
         }
         return null;
+    }
+
+    /**
+     * メッセージ内のテーブル名を日本語に変換する
+     *
+     * @param string $message メッセージ
+     * @return string 変換後のメッセージ
+     */
+    private function translateTableNamesInMessage(string $message): string
+    {
+        // 「table_name: 数字件」のパターンを検出して変換（接頭辞は問わない）
+        return preg_replace_callback(
+            '/([a-z0-9_]+): (?=\d+件)/u',
+            function ($matches) {
+                $tableName = $matches[1];
+                $displayName = self::TABLE_NAME_MAPPING[$tableName] ?? $tableName;
+                return "{$displayName}: ";
+            },
+            $message
+        );
     }
 
     /**
