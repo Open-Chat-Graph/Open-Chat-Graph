@@ -13,6 +13,7 @@ enum SyncOpenChatStateType: string
     case isUpdateInvitationTicketActive = 'isUpdateInvitationTicketActive';
     case isUpdateRecommendStaticDataActive = 'isUpdateRecommendStaticDataActive';
     case rankingPersistenceBackground = 'rankingPersistenceBackground';
+    case ocreviewApiDataImportBackground = 'ocreviewApiDataImportBackground';
     case persistMemberStatsLastDate = 'persistMemberStatsLastDate';
     case filterCacheDate = 'filterCacheDate';
 }

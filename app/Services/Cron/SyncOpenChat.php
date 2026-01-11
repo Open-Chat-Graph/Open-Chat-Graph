@@ -20,6 +20,7 @@ use App\Services\Recommend\RecommendUpdater;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberColumnService;
 use App\Services\UpdateHourlyMemberRankingService;
+use Shared\MimimalCmsConfig;
 
 class SyncOpenChat
 {
@@ -145,6 +146,13 @@ class SyncOpenChat
                 $this->recommendUpdater->updateRecommendTables();
             }, 'おすすめ情報更新'],
         );
+
+        // アーカイブ用DBインポート処理をバックグラウンドで実行（日本のみ）
+        if (!MimimalCmsConfig::$urlRoot) {
+            $path = AppConfig::ROOT_PATH . 'batch/exec/ocreview_api_data_import_background.php';
+            exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
+            addVerboseCronLog('アーカイブ用DBインポート処理をバックグラウンドで開始');
+        }
     }
 
     private function retryHourlyTask()

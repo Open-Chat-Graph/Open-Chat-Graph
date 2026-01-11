@@ -28,18 +28,6 @@ try {
         isset($argv[2]) && $argv[2] == 'dailyTest',
         isset($argv[3]) && $argv[3] == 'retryDailyTest'
     );
-
-    if (!MimimalCmsConfig::$urlRoot) {
-        set_time_limit(3600);
-
-        // Create an instance of OcreviewApiDataImporter
-        $importer = app(\App\Services\Cron\OcreviewApiDataImporter::class);
-
-        addCronLog('アーカイブ用データベースにデータをインポート開始');
-        // インポート処理を実行
-        $importer->execute();
-        addCronLog('アーカイブ用データベースにデータをインポート完了');
-    }
 } catch (\Throwable $e) {
     // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
     $shouldNotify = true;
