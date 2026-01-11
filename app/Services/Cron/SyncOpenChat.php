@@ -16,7 +16,6 @@ use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastHourChecker;
-use App\Services\Recommend\RecommendUpdater;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberColumnService;
 use App\Services\UpdateHourlyMemberRankingService;
@@ -33,7 +32,6 @@ class SyncOpenChat
         private UpdateHourlyMemberColumnService $hourlyMemberColumn,
         private OpenChatImageUpdater $OpenChatImageUpdater,
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
-        private RecommendUpdater $recommendUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
     ) {
@@ -137,14 +135,6 @@ class SyncOpenChat
                 $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
             }, '参加URL一括取得'],
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'ランキングBAN情報更新'],
-            [function () {
-                if ($this->state->getBool(StateType::isDailyTaskActive)) {
-                    addCronLog('おすすめ情報更新をスキップ（日次処理中のため）');
-                    return;
-                }
-
-                $this->recommendUpdater->updateRecommendTables();
-            }, 'おすすめ情報更新'],
         );
 
         // アーカイブ用DBインポート処理をバックグラウンドで実行（日本のみ）
