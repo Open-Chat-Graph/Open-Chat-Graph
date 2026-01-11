@@ -220,6 +220,32 @@ class LogController
         if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.+)$/', $line, $matches)) {
             $message = $matches[2];
             $githubRef = null;
+            $processTag = null;
+
+            // プロセスタグを抽出（形式: [JA@17:02~893] または [JA@17:02~]）
+            if (preg_match('/^\s*\[([^\]]+)\]\s*/', $message, $tagMatches)) {
+                $tagContent = $tagMatches[1];
+
+                // タグ内容を解析（形式: JA@17:02~893 または JA@17:02~）
+                if (preg_match('/^([A-Z]+)@(\d{2}:\d{2})~(\d+)?$/', $tagContent, $tagParts)) {
+                    $processTag = [
+                        'lang' => $tagParts[1], // JA
+                        'time' => $tagParts[2], // 17:02
+                        'pid' => $tagParts[3] ?? null, // 893 または null
+                    ];
+                } else {
+                    // 形式が一致しない場合はそのまま表示
+                    $processTag = [
+                        'lang' => null,
+                        'time' => null,
+                        'pid' => null,
+                        'raw' => $tagContent,
+                    ];
+                }
+
+                // メッセージからプロセスタグ部分を削除
+                $message = preg_replace('/^\s*\[[^\]]+\]\s*/', '', $message);
+            }
 
             // GitHub参照を抽出（形式: GitHub::path/to/file.php:123）
             if (preg_match('/\s+GitHub::([^\s]+):(\d+)\s*$/', $message, $githubMatches)) {
@@ -240,6 +266,7 @@ class LogController
 
             return [
                 'date' => $matches[1],
+                'processTag' => $processTag,
                 'message' => $message,
                 'githubRef' => $githubRef,
             ];

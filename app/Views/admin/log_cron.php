@@ -1,6 +1,6 @@
 <?php
 $isJapanese = $type === 'ja-cron';
-$pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
+$pageTitle = $isJapanese ? 'サイト更新ログ詳細' : "Cron Log - {$type}";
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $isJapanese ? 'ja' : 'en' ?>">
@@ -48,6 +48,38 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
         .source-link a:hover { text-decoration: underline; }
         tr:hover { background: #f5f5f5; }
 
+        /* プロセスタグのスタイル */
+        .process-tag { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+        .process-tag-time {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .process-tag-pid {
+            display: inline-block;
+            background: #f5f5f5;
+            color: #757575;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .process-tag-lang {
+            display: inline-block;
+            background: #fff3e0;
+            color: #e65100;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
         /* スマホ向けレスポンシブ */
         @media screen and (max-width: 640px) {
             body { margin: 10px; }
@@ -56,6 +88,10 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
             .date-col { width: auto; min-width: 70px; }
             .date-col .date-part { display: block; }
             .source-link { font-size: 11px; }
+            .process-tag { display: inline-flex; margin-right: 4px; margin-bottom: 4px; }
+            .process-tag-time { font-size: 12px; padding: 2px 6px; }
+            .process-tag-pid { font-size: 10px; padding: 1px 4px; }
+            .process-tag-lang { font-size: 10px; padding: 1px 4px; }
         }
     </style>
 </head>
@@ -66,7 +102,7 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
         <a href="<?php echo url('admin/log') ?>">&larr; <?php echo $isJapanese ? 'ログ一覧に戻る' : 'Back to Log List' ?></a>
     </div>
 
-    <h1><?php echo $isJapanese ? 'データ更新ログ詳細' : "Cron Log: {$type}" ?></h1>
+    <h1><?php echo $isJapanese ? 'サイト更新ログ詳細' : "Cron Log: {$type}" ?></h1>
     <p><?php echo $isJapanese
         ? "ページ {$currentPage} / {$totalPages}（1ページ1000件、新しい順）"
         : "Page {$currentPage} / {$totalPages} (1000 items per page, newest first)"
@@ -125,6 +161,27 @@ $pageTitle = $isJapanese ? 'データ更新ログ詳細' : "Cron Log - {$type}";
                         <span class="date-part"><?php echo htmlspecialchars($dateHis) ?></span>
                     </td>
                     <td class="message-col">
+                        <?php if (!empty($log['processTag'])): ?>
+                            <?php if (!empty($log['processTag']['raw'])): ?>
+                                <!-- パースできなかった場合はそのまま表示 -->
+                                <span class="process-tag">
+                                    <span class="process-tag-time">[<?php echo htmlspecialchars($log['processTag']['raw']) ?>]</span>
+                                </span>
+                            <?php else: ?>
+                                <!-- パース成功：時刻、PID、言語コードの3要素で表示 -->
+                                <span class="process-tag">
+                                    <?php if (!empty($log['processTag']['time'])): ?>
+                                        <span class="process-tag-time"><?php echo htmlspecialchars($log['processTag']['time']) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($log['processTag']['pid'])): ?>
+                                        <span class="process-tag-pid">PID:<?php echo htmlspecialchars($log['processTag']['pid']) ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($log['processTag']['lang'])): ?>
+                                        <span class="process-tag-lang"><?php echo htmlspecialchars($log['processTag']['lang']) ?></span>
+                                    <?php endif; ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php endif; ?>
                         <?php echo htmlspecialchars($log['message']) ?>
                         <?php if (!empty($log['githubRef'])): ?>
                             <span class="source-link"><a href="<?php echo htmlspecialchars(buildGitHubUrl($log['githubRef'])) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($log['githubRef']['label']) ?></a></span>
