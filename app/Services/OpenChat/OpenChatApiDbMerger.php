@@ -50,14 +50,6 @@ class OpenChatApiDbMerger
         );
     }
 
-    private function formatElapsedTime(float $startTime): string
-    {
-        $elapsedSeconds = microtime(true) - $startTime;
-        $minutes = (int) floor($elapsedSeconds / 60);
-        $seconds = (int) round($elapsedSeconds - ($minutes * 60));
-        return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
-    }
-
     private function getCategoryLabel(string $category, AbstractRankingPositionStore $positionStore): string
     {
         $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
@@ -88,7 +80,7 @@ class OpenChatApiDbMerger
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
         } finally {
-            addVerboseCronLog("LINE公式APIからランキングデータを取得完了（{$this->formatElapsedTime($startTime)}）");
+            addVerboseCronLog("LINE公式APIからランキングデータを取得完了（" . formatElapsedTime($startTime) . "）");
         }
     }
 
@@ -119,7 +111,7 @@ class OpenChatApiDbMerger
                 $sinceLastCallback = $now - $lastCallbackTime;
                 if ($sinceLastCallback >= self::URL_FETCH_SLOW_THRESHOLD_SECONDS) {
                     $categoryElapsed = isset($startTimes[$currentCategory])
-                        ? $this->formatElapsedTime($startTimes[$currentCategory])
+                        ? formatElapsedTime($startTimes[$currentCategory])
                         : '不明';
                     $sinceLastFormatted = round($sinceLastCallback, 1);
                     addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
@@ -152,7 +144,7 @@ class OpenChatApiDbMerger
 
         $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
             $label = $this->getCategoryLabelWithCount($category, $positionStore, $positionStore->getCacheCount());
-            $elapsed = isset($startTimes[$category]) ? "（{$this->formatElapsedTime($startTimes[$category])}）" : '';
+            $elapsed = isset($startTimes[$category]) ? "（" . formatElapsedTime($startTimes[$category]) . "）" : '';
             addVerboseCronLog("{$label}取得完了{$elapsed}");
 
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);

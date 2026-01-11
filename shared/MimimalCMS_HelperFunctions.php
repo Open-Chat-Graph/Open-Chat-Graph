@@ -841,3 +841,27 @@ function getFilesWithExtension(string $dir, string $ext): \CallbackFilterIterato
     // Return a filtered iterator containing files matching the extension
     return new \CallbackFilterIterator($iterator, $filter);
 }
+
+/**
+ * 経過時間を分秒形式でフォーマット
+ *
+ * microtime(true)で取得した開始時刻からの経過時間を、
+ * 「X分Y秒」または「Y秒」の形式で返す。
+ *
+ * @param float $startTime microtime(true)で取得した開始時刻
+ * @return string フォーマットされた経過時間（例: "2分30秒", "45秒"）
+ *
+ * @example
+ * ```php
+ * $start = microtime(true);
+ * // ... 処理 ...
+ * echo formatElapsedTime($start); // "2分30秒"
+ * ```
+ */
+function formatElapsedTime(float $startTime): string
+{
+    $elapsedSeconds = microtime(true) - $startTime;
+    $minutes = (int) floor($elapsedSeconds / 60);
+    $seconds = (int) round($elapsedSeconds - ($minutes * 60));
+    return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
+}
