@@ -139,7 +139,7 @@ class RankingPositionHourPersistence
                 addVerboseCronLog(
                     'ストレージファイル待機中: ' . (time() - $startTime) . '秒経過、残り'
                         . count(array_filter($this->process->getProcessedState(), fn($p) => !$p['rising'] || !$p['ranking']))
-                        . 'カテゴリ'
+                        . 'カテゴリ（バックグラウンド）'
                 );
             }
 
