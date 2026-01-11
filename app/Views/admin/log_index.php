@@ -122,17 +122,17 @@ $logDisplayNames = [
             </li>
             <li>
                 ランキングDB反映処理をバックグラウンドで開始
-                <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 75) ?>
+                <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 50) ?>
             </li>
             <li class="sub">ランキングデータのストレージ保存を待機し、最新24時間のランキング・人数推移履歴をDBに反映（バックグラウンド実行）</li>
             <li>
                 LINE公式APIからランキングデータを取得（全24カテゴリ × 急上昇・ランキング）
-                <?php echo githubLink('app/Services/OpenChat/OpenChatApiDbMerger.php', 54) ?>
+                <?php echo githubLink('app/Services/OpenChat/OpenChatApiDbMerger.php', 69) ?>
             </li>
             <li class="sub">各オープンチャットの最新情報を取得・DB保存</li>
             <li>
                 バックグラウンドDB反映の完了を待機
-                <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 95) ?>
+                <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 70) ?>
             </li>
             <li>
                 各ルームのカバー画像を取得・更新
