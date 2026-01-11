@@ -23,6 +23,9 @@ use Shared\MimimalCmsConfig;
 
 class OpenChatApiDbMerger
 {
+    /** URL取得の遅延警告閾値（秒） */
+    private const URL_FETCH_SLOW_THRESHOLD_SECONDS = 10;
+
     private OpenChatApiRankingDownloader $rankingDownloader;
     private OpenChatApiRankingDownloader $risingDownloader;
 
@@ -99,9 +102,31 @@ class OpenChatApiDbMerger
             return $this->openChatApiDbMergerProcess->validateAndMapToOpenChatDtoCallback($apiDto);
         };
 
-        // API URL一件ずつの処理 
-        $callback = function (array $apiData) use ($processCallback): void {
+        // API URL一件ずつの処理時間計測用
+        $urlCount = 0;
+        $currentCategory = null;
+        $lastCallbackTime = null;
+
+        // API URL一件ずつの処理
+        $callback = function (array $apiData) use ($processCallback, &$urlCount, &$currentCategory, &$startTimes, &$lastCallbackTime): void {
             $this->checkKillFlag();
+
+            $now = microtime(true);
+            $urlCount++;
+
+            // 前回のコールバックからの経過時間をチェック
+            if ($lastCallbackTime !== null) {
+                $sinceLastCallback = $now - $lastCallbackTime;
+                if ($sinceLastCallback >= self::URL_FETCH_SLOW_THRESHOLD_SECONDS) {
+                    $categoryElapsed = isset($startTimes[$currentCategory])
+                        ? $this->formatElapsedTime($startTimes[$currentCategory])
+                        : '不明';
+                    $sinceLastFormatted = round($sinceLastCallback, 1);
+                    addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
+                }
+            }
+
+            $lastCallbackTime = $now;
 
             $errors = $this->openChatApiDtoFactory->validateAndMapToOpenChatDto($apiData, $processCallback);
 
@@ -112,9 +137,12 @@ class OpenChatApiDbMerger
 
         // API カテゴリごとの処理
         $startTimes = [];
-        
-        $callbackByCategoryBefore = function (string $category) use ($positionStore, &$startTimes): bool {
+
+        $callbackByCategoryBefore = function (string $category) use ($positionStore, &$startTimes, &$urlCount, &$currentCategory, &$lastCallbackTime): bool {
             $startTimes[$category] = microtime(true);
+            $currentCategory = $category;
+            $urlCount = 0; // カテゴリごとにリセット
+            $lastCallbackTime = null; // カテゴリごとにリセット
             addVerboseCronLog("{$this->getCategoryLabel($category, $positionStore)}を取得中");
 
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
@@ -126,7 +154,7 @@ class OpenChatApiDbMerger
             $label = $this->getCategoryLabelWithCount($category, $positionStore, $positionStore->getCacheCount());
             $elapsed = isset($startTimes[$category]) ? "（{$this->formatElapsedTime($startTimes[$category])}）" : '';
             addVerboseCronLog("{$label}取得完了{$elapsed}");
-            
+
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };
 

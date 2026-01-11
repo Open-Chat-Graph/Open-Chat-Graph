@@ -53,4 +53,20 @@ class SyncOpenChatStateRepository implements SyncOpenChatStateRepositoryInterfac
             ['type' => $type->value, 'value' => $value]
         );
     }
+
+    public function getArray(SyncOpenChatStateType $type): array
+    {
+        $json = $this->getString($type);
+        if (!$json) {
+            return [];
+        }
+
+        $result = json_decode($json, true);
+        return is_array($result) ? $result : [];
+    }
+
+    public function setArray(SyncOpenChatStateType $type, array $value): void
+    {
+        $this->setString($type, json_encode($value));
+    }
 }

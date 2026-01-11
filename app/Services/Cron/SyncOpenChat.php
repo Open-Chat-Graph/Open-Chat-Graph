@@ -88,7 +88,7 @@ class SyncOpenChat
             $this->retryHourlyTask();
         } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
             // この後の処理が重くなっており、既存のcron処理が終わっていない場合は二重に動いてしまう
-            $this->hourlyTaskAfterDbMerge(true);
+            $this->hourlyTaskAfterDbMerge();
         }
     }
 
@@ -98,24 +98,26 @@ class SyncOpenChat
 
         set_time_limit(1620);
 
+        // バックグラウンドでDB反映を開始
+        $this->rankingPositionHourPersistence->startBackgroundPersistence();
+
+        // ダウンロード処理（バックグラウンドと並列実行）
         $this->state->setTrue(StateType::isHourlyTaskActive);
         $this->merger->fetchOpenChatApiRankingAll();
         $this->state->setFalse(StateType::isHourlyTaskActive);
 
-        $this->hourlyTaskAfterDbMerge(
-            !$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()
-        );
+        // バックグラウンドDB反映の完了を待機
+        $this->rankingPositionHourPersistence->waitForBackgroundCompletion();
+
+        $this->hourlyTaskAfterDbMerge();
 
         addCronLog('【毎時処理】完了');
     }
 
-    private function hourlyTaskAfterDbMerge(bool $persistStorageFileToDb)
+    private function hourlyTaskAfterDbMerge()
     {
         $this->executeAndCronLog(
-            $persistStorageFileToDb ? [
-                fn() => $this->rankingPositionHourPersistence->persistStorageFileToDb(),
-                '毎時ランキングデータのDB保存'
-            ] : null,
+            // 毎時ランキングDB反映はバックグラウンドバッチに移行（persist_ranking_position_background.php）
             [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
             [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
             [fn() => $this->hourlyMemberRanking->update(), '毎時メンバーランキング関連の処理'],
