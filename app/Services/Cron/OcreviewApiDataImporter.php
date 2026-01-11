@@ -13,7 +13,6 @@ use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Admin\AdminTool;
 use PDO;
 use PDOStatement;
-use Shared\MimimalCmsConfig;
 
 /**
  * ocgraph_sqlapi データベース（SQLite）へのデータインポートサービス
@@ -54,6 +53,9 @@ class OcreviewApiDataImporter
     /** チャンクサイズ（SQLite一括処理） */
     private const CHUNK_SIZE_SQLITE = 10000;
 
+    /** 事前計算された差分データ（処理の重複を避けるため） */
+    private array $pendingCounts = [];
+
     public function __construct(
         private SQLiteInsertImporter $sqlImporter,
     ) {}
@@ -67,6 +69,9 @@ class OcreviewApiDataImporter
     public function execute(): void
     {
         $this->initializeConnections();
+
+        // 処理開始前に全テーブルのINSERT件数を計算してログ出力
+        $this->calculateAndLogPendingCounts();
 
         // オープンチャットマスターデータのインポート（差分同期）
         $this->importOpenChatMaster();
@@ -93,8 +98,6 @@ class OcreviewApiDataImporter
 
     /**
      * データベース接続を初期化
-     *
-     * テスト時にオーバーライド可能にするためprotectedに変更
      */
     protected function initializeConnections(): void
     {
@@ -119,6 +122,46 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * 処理開始前に全テーブルのINSERT予定件数を計算してログ出力
+     */
+    private function calculateAndLogPendingCounts(): void
+    {
+        $counts = [];
+
+        $counts = array_merge($counts, $this->calculatePendingCountsForOpenChatMaster());
+        $counts = array_merge($counts, $this->calculatePendingCountsForGrowthRankings());
+        $counts = array_merge($counts, $this->calculatePendingCountsForDailyMemberStatistics());
+        $counts = array_merge($counts, $this->calculatePendingCountsForLineOfficialActivityHistory());
+        $counts = array_merge($counts, $this->calculatePendingCountsForTotalCount());
+        $counts = array_merge($counts, $this->calculatePendingCountsForOpenChatDeleted());
+
+        // ログ出力（1回だけ）
+        if (!empty($counts)) {
+            addCronLog('【アーカイブ用データベース】インポート予定: ' . implode(', ', $counts));
+        } else {
+            addCronLog('【アーカイブ用データベース】インポート対象のデータはありません');
+        }
+    }
+
+    /**
+     * openchat_master の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForOpenChatMaster(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT MAX(last_updated_at) as max_updated FROM openchat_master");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $lastUpdated = $result['max_updated'] ?? '1970-01-01 00:00:00';
+        $stmt = $this->sourcePdo->prepare("SELECT COUNT(*) FROM open_chat WHERE updated_at >= ?");
+        $stmt->execute([$lastUpdated]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['openchat_master'] = ['last_updated' => $lastUpdated, 'count' => $count];
+
+        return $count > 0 ? ["openchat_master: {$count}件"] : [];
+    }
+
+    /**
      * オープンチャットマスターデータのインポート
      *
      * 【差分同期の仕組み】
@@ -127,21 +170,12 @@ class OcreviewApiDataImporter
      *
      * さらに、updated_at が更新されていなくてもメンバー数が変更されている場合は
      * syncMemberCountDifferences() で同期します。
-     *
-     * テスト時にアクセス可能にするためprotectedに変更
      */
     protected function importOpenChatMaster(): void
     {
-        // ターゲットDBから最終更新日時を取得（差分同期の起点）
-        $stmt = $this->targetPdo->query("SELECT MAX(last_updated_at) as max_updated FROM openchat_master");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $lastUpdated = $result['max_updated'] ?? '1970-01-01 00:00:00';
-
-        // ソースDBから差分レコード数を取得
-        $countQuery = "SELECT COUNT(*) FROM open_chat WHERE updated_at >= ?";
-        $countStmt = $this->sourcePdo->prepare($countQuery);
-        $countStmt->execute([$lastUpdated]);
-        $totalCount = $countStmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $lastUpdated = $this->pendingCounts['openchat_master']['last_updated'];
+        $totalCount = $this->pendingCounts['openchat_master']['count'];
 
         if ($totalCount === 0) {
             // updated_at が更新されていない場合でも、メンバー数の差分をチェック
@@ -332,6 +366,29 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * growth_ranking テーブル（3種類）の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForGrowthRankings(): array
+    {
+        $counts = [];
+        $rankings = [
+            'statistics_ranking_hour' => 'growth_ranking_past_hour',
+            'statistics_ranking_hour24' => 'growth_ranking_past_24_hours',
+            'statistics_ranking_week' => 'growth_ranking_past_week',
+        ];
+        foreach ($rankings as $sourceTable => $targetTable) {
+            $count = (int)$this->sourcePdo->query("SELECT COUNT(*) FROM $sourceTable")->fetchColumn();
+            $this->pendingCounts[$targetTable] = $count;
+            if ($count > 0) {
+                $counts[] = "{$targetTable}: {$count}件";
+            }
+        }
+        return $counts;
+    }
+
+    /**
      * 成長ランキングのインポート（1時間、24時間、1週間）
      *
      * 【差分同期の仕組み】
@@ -348,9 +405,8 @@ class OcreviewApiDataImporter
         ];
 
         foreach ($rankings as $sourceTable => $targetTable) {
-            // ソーステーブルのレコード数を取得
-            $countQuery = "SELECT COUNT(*) FROM $sourceTable";
-            $totalCount = $this->sourcePdo->query($countQuery)->fetchColumn();
+            // 事前計算した件数を再利用
+            $totalCount = $this->pendingCounts[$targetTable];
 
             if ($totalCount === 0) {
                 continue;
@@ -407,6 +463,24 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * daily_member_statistics の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForDailyMemberStatistics(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM daily_member_statistics");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+        $stmt = $this->sqliteStatisticsPdo->prepare("SELECT count(*) FROM statistics WHERE id > ?");
+        $stmt->execute([$maxId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['daily_member_statistics'] = ['max_id' => $maxId, 'count' => $count];
+
+        return $count > 0 ? ["daily_member_statistics: {$count}件"] : [];
+    }
+
+    /**
      * 日次メンバー統計のインポート
      *
      * 【差分同期の仕組み】
@@ -415,15 +489,9 @@ class OcreviewApiDataImporter
      */
     private function importDailyMemberStatistics(): void
     {
-        // ターゲットDBから最大レコードIDを取得（差分同期の起点）
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM daily_member_statistics");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
-
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sqliteStatisticsPdo->prepare("SELECT count(*) FROM statistics WHERE id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $maxId = $this->pendingCounts['daily_member_statistics']['max_id'];
+        $count = $this->pendingCounts['daily_member_statistics']['count'];
 
         if ($count === 0) {
             return;
@@ -478,6 +546,24 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * line_official_ranking_total_count の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForTotalCount(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM line_official_ranking_total_count");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxId = (int)$result['max_id'];
+        $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM total_count WHERE id > ?");
+        $stmt->execute([$maxId]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['line_official_ranking_total_count'] = ['max_id' => $maxId, 'count' => $count];
+
+        return $count > 0 ? ["line_official_ranking_total_count: {$count}件"] : [];
+    }
+
+    /**
      * LINE公式ランキング総数のインポート
      *
      * 【差分同期の仕組み】
@@ -486,15 +572,9 @@ class OcreviewApiDataImporter
      */
     private function importTotalCount(): void
     {
-        // ターゲットDBから最大レコードIDを取得（差分同期の起点）
-        $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM line_official_ranking_total_count");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxId = (int)$result['max_id'];
-
-        // ソースDBから差分レコード数を取得
-        $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM total_count WHERE id > ?");
-        $stmt->execute([$maxId]);
-        $count = $stmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $maxId = $this->pendingCounts['line_official_ranking_total_count']['max_id'];
+        $count = $this->pendingCounts['line_official_ranking_total_count']['count'];
 
         if ($count === 0) {
             return;
@@ -551,6 +631,33 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * line_official_activity_history（ランキング・急上昇の2テーブル）の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForLineOfficialActivityHistory(): array
+    {
+        $counts = [];
+        $tables = [
+            'ranking' => 'line_official_activity_ranking_history',
+            'rising' => 'line_official_activity_trending_history',
+        ];
+        foreach ($tables as $sourceTable => $targetTable) {
+            $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM $targetTable");
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $maxId = (int)$result['max_id'];
+            $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
+            $stmt->execute([$maxId]);
+            $count = (int)$stmt->fetchColumn();
+            $this->pendingCounts[$targetTable] = ['max_id' => $maxId, 'count' => $count];
+            if ($count > 0) {
+                $counts[] = "{$targetTable}: {$count}件";
+            }
+        }
+        return $counts;
+    }
+
+    /**
      * LINE公式アクティビティ履歴のインポート（ランキング・急上昇）
      *
      * 【差分同期の仕組み】
@@ -565,15 +672,9 @@ class OcreviewApiDataImporter
         ];
 
         foreach ($tables as $sourceTable => $targetTable) {
-            // ターゲットDBから最大レコードIDを取得（差分同期の起点）
-            $stmt = $this->targetPdo->query("SELECT COALESCE(MAX(record_id), 0) as max_id FROM $targetTable");
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            $maxId = (int)$result['max_id'];
-
-            // ソースDBから差分レコード数を取得
-            $stmt = $this->sqliteRankingPositionPdo->prepare("SELECT count(*) FROM {$sourceTable} WHERE id > ?");
-            $stmt->execute([$maxId]);
-            $count = $stmt->fetchColumn();
+            // 事前計算した差分データを再利用
+            $maxId = $this->pendingCounts[$targetTable]['max_id'];
+            $count = $this->pendingCounts[$targetTable]['count'];
 
             if ($count === 0) {
                 continue;
@@ -860,6 +961,24 @@ class OcreviewApiDataImporter
     }
 
     /**
+     * open_chat_deleted の差分件数を計算
+     *
+     * @return array ログ出力用の配列
+     */
+    private function calculatePendingCountsForOpenChatDeleted(): array
+    {
+        $stmt = $this->targetPdo->query("SELECT MAX(deleted_at) as max_deleted FROM open_chat_deleted");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $maxDeleted = $result['max_deleted'] ?? '1970-01-01 00:00:00';
+        $stmt = $this->sourcePdo->prepare("SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at > ?");
+        $stmt->execute([$maxDeleted]);
+        $count = (int)$stmt->fetchColumn();
+        $this->pendingCounts['open_chat_deleted'] = ['max_deleted' => $maxDeleted, 'count' => $count];
+
+        return $count > 0 ? ["open_chat_deleted: {$count}件"] : [];
+    }
+
+    /**
      * 削除されたオープンチャット履歴のインポート
      *
      * 【差分同期の仕組み】
@@ -872,16 +991,9 @@ class OcreviewApiDataImporter
      */
     private function importOpenChatDeleted(): void
     {
-        // ターゲットDBから最終削除日時を取得（差分同期の起点）
-        $stmt = $this->targetPdo->query("SELECT MAX(deleted_at) as max_deleted FROM open_chat_deleted");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $maxDeleted = $result['max_deleted'] ?? '1970-01-01 00:00:00';
-
-        // ソースDBから差分レコード数を取得
-        $countQuery = "SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at > ?";
-        $countStmt = $this->sourcePdo->prepare($countQuery);
-        $countStmt->execute([$maxDeleted]);
-        $totalCount = $countStmt->fetchColumn();
+        // 事前計算した差分データを再利用
+        $maxDeleted = $this->pendingCounts['open_chat_deleted']['max_deleted'];
+        $totalCount = $this->pendingCounts['open_chat_deleted']['count'];
 
         if ($totalCount === 0) {
             return;

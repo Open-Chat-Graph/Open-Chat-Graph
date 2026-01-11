@@ -648,9 +648,10 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 /**
  * Cronログを出力する
  *
- * 出力形式: 2025-01-07 05:33:01 [JA@05:30~] メッセージ GitHub::path/to/file.php:123
+ * 出力形式: 2025-01-07 05:33:01 [JA@05:30~12345] メッセージ GitHub::path/to/file.php:123
  * - JA/TH/TW: 言語コード（urlRootから判定）
  * - 05:30: Cron実行開始時刻
+ * - 12345: プロセスID（PID）
  *
  * @param string|array $log ログメッセージ
  * @param string $setProcessTag プロセスタグを設定（初回のみ有効）
@@ -659,7 +660,7 @@ function getStorageFileTime(string $filename, bool $fullPath = false): int|false
  */
 function addCronLog(string|array $log = '', string $setProcessTag = '', int $backtraceDepth = 1): string
 {
-    // セッション識別子を1回だけ生成: [言語コード@開始時刻~] 形式
+    // セッション識別子を1回だけ生成: [言語コード@開始時刻~PID] 形式
     static $processTag = null;
     if ($setProcessTag !== '' && is_null($processTag)) {
         $processTag = $setProcessTag;
@@ -673,7 +674,7 @@ function addCronLog(string|array $log = '', string $setProcessTag = '', int $bac
             default => 'JA',
         };
         $startTime = date('H:i');
-        $processTag = $langCode . '@' . $startTime . '~';
+        $processTag = $langCode . '@' . $startTime . '~' . getmypid();
     }
 
     if (is_string($log)) {
