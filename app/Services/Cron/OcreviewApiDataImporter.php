@@ -137,9 +137,9 @@ class OcreviewApiDataImporter
 
         // ログ出力（1回だけ）
         if (!empty($counts)) {
-            addCronLog('【アーカイブ用データベース】インポート予定: ' . implode(', ', $counts));
+            addCronLog('アーカイブ用データベース インポート予定: ' . implode(', ', $counts));
         } else {
-            addCronLog('【アーカイブ用データベース】インポート対象のデータはありません');
+            addCronLog('アーカイブ用データベース インポート対象のデータはありません');
         }
     }
 

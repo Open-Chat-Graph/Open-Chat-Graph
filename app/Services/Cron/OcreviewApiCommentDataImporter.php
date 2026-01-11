@@ -115,9 +115,9 @@ class OcreviewApiCommentDataImporter
 
         // ログ出力（1回だけ）
         if (!empty($counts)) {
-            AdminTool::sendDiscordNotify('【Comment Data Importer】処理予定: ' . implode(', ', $counts));
+            addCronLog('コメントアーカイブデータベース インポート予定: ' . implode(', ', $counts));
         } else {
-            AdminTool::sendDiscordNotify('【Comment Data Importer】処理対象のデータはありません');
+            addCronLog('コメントアーカイブデータベース インポート対象のデータはありません');
         }
     }
 
