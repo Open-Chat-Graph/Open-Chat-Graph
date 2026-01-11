@@ -153,7 +153,7 @@ class RankingPositionHourPersistenceProcess
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($expectedFileTime, $insertDtoArray);
         }
 
-        addVerboseCronLog("{$label}をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）", count($insertDtoArray) . $logSuffix);
+        addVerboseCronLog("{$label}" . count($insertDtoArray) . "件をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）" . $logSuffix);
         unset($insertDtoArray); // メモリ解放
 
         // 処理完了フラグを立てる
