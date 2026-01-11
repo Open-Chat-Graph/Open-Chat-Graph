@@ -34,6 +34,10 @@ class RankingPositionHourPersistence
     /** バックグラウンドプロセスの最大待機時間（秒） */
     private const MAX_WAIT_SECONDS = 2400; // 最大40分待機
 
+    /** ストレージファイル待機中のログ出力間隔（ループ回数）
+     * whileループは約1秒ごとに実行されるため、60回 ≒ 60秒 */
+    private const LOG_INTERVAL_LOOP_COUNT = 60;
+
     function __construct(
         private OpenChatDataForUpdaterWithCacheRepositoryInterface $openChatDataWithCache,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
@@ -185,8 +189,8 @@ class RankingPositionHourPersistence
                 break;
             }
 
-            // 10秒ごとに待機中のログを出力
-            if ($loopCount % 10 === 0) {
+            // 定期的に待機中のログを出力（60ループごと ≒ 60秒ごと）
+            if ($loopCount % self::LOG_INTERVAL_LOOP_COUNT === 0) {
                 $elapsed = time() - $startTime;
                 $remaining = count(array_filter($processed, fn($p) => !$p['rising'] || !$p['ranking']));
                 addVerboseCronLog("ストレージファイル待機中: {$elapsed}秒経過、残り{$remaining}カテゴリ");
@@ -222,7 +226,7 @@ class RankingPositionHourPersistence
         }
 
         // 最終処理：全体集計と古いデータ削除
-        addVerboseCronLog('全カテゴリのDB反映完了、最終処理を実行');
+        addVerboseCronLog('全カテゴリのDB反映完了、最終処理を実行（バックグラウンド）');
         $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
         addCronLog("毎時ランキング全データをデータベースに反映完了（{$expectedFileTime}）");
 
