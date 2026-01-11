@@ -130,7 +130,7 @@ class RankingPositionHourPersistence
             $loopCount++;
 
             // 1サイクル分の処理を実行
-            if ($this->process->processOneCycle($expectedFileTime)) {
+            if ($this->process->processOneCycle($expectedFileTime, '（バックグラウンド）')) {
                 break; // 全カテゴリ完了
             }
 

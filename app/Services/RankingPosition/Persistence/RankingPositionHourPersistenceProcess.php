@@ -75,9 +75,10 @@ class RankingPositionHourPersistenceProcess
      * ファイルが準備できているものから順次DB反映を行う。
      *
      * @param string $expectedFileTime 期待されるファイルタイムスタンプ
+     * @param string $logSuffix ログ出力時のサフィックス（必要に応じて指定）
      * @return bool すべて完了した場合true、未完了がある場合false
      */
-    function processOneCycle(string $expectedFileTime): bool
+    function processOneCycle(string $expectedFileTime, string $logSuffix = ''): bool
     {
         $allCompleted = true;
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
@@ -96,7 +97,7 @@ class RankingPositionHourPersistenceProcess
                 }
 
                 // ファイルが準備できていたら処理、まだならfalseが返る
-                if (!$this->processCategoryTarget($category, $key, $target, $expectedFileTime)) {
+                if (!$this->processCategoryTarget($category, $key, $target, $expectedFileTime, $logSuffix)) {
                     $allCompleted = false;
                 }
             }
@@ -117,10 +118,16 @@ class RankingPositionHourPersistenceProcess
      *         | array{ type: RankingType, store: RankingPositionStore, key: string }
      *        $target 処理対象情報（type, store, key）
      * @param string $expectedFileTime 期待されるファイルタイムスタンプ
+     * @param string $logSuffix ログ出力時のサフィックス（必要に応じて指定）
      * @return bool 処理が完了した場合true、まだファイルが準備できていない場合false
      */
-    private function processCategoryTarget(int $category, string $categoryName, array $target, string $expectedFileTime): bool
-    {
+    private function processCategoryTarget(
+        int $category,
+        string $categoryName,
+        array $target,
+        string $expectedFileTime,
+        string $logSuffix = ''
+    ): bool {
         $categoryStr = (string)$category;
 
         // ストレージファイルのタイムスタンプをチェック
@@ -131,7 +138,7 @@ class RankingPositionHourPersistenceProcess
         // DB反映処理を実行
         $label = "{$categoryName}の" . ($target['type'] === RankingType::Rising ? '急上昇' : 'ランキング');
         $perfStartTime = microtime(true);
-        addVerboseCronLog("{$label}をデータベースに反映中");
+        addVerboseCronLog("{$label}をデータベースに反映中" . $logSuffix);
 
         // ストレージからデータを取得してDTO配列に変換
         [, $ocDtoArray] = $target['store']->getStorageData($categoryStr);
@@ -146,7 +153,7 @@ class RankingPositionHourPersistenceProcess
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($expectedFileTime, $insertDtoArray);
         }
 
-        addVerboseCronLog("{$label}をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）", count($insertDtoArray));
+        addVerboseCronLog("{$label}をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）", count($insertDtoArray) . $logSuffix);
         unset($insertDtoArray); // メモリ解放
 
         // 処理完了フラグを立てる
