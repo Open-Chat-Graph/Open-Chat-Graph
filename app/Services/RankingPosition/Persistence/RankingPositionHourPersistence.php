@@ -211,7 +211,7 @@ class RankingPositionHourPersistence
         $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
         $parentPid = $bgState['parentPid'] ?? null;
         if ($parentPid) {
-            CronUtility::addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
+            CronUtility::addCronLog("親プロセス (PID: {$parentPid}) をkillします");
             CronUtility::killProcess($parentPid);
         }
 
@@ -220,7 +220,7 @@ class RankingPositionHourPersistence
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
             $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
             exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
-            CronUtility::addCronLog('毎時処理（cron_crawling.php）を再実行しました');
+            CronUtility::addCronLog('毎時処理を再実行しました');
 
             throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);
         } else {
