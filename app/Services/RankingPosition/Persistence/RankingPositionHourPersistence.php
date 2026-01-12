@@ -160,8 +160,8 @@ class RankingPositionHourPersistence
         $result = $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
         CronUtility::addCronLog(
             "毎時ランキング全データをデータベースに反映完了: ランキング総数"
-                . $result['total_count_all_category_ranking']
-                . "件、急上昇総数" . $result['total_count_all_category_rising']
+                . number_format($result['total_count_all_category_ranking'])
+                . "件、急上昇総数" . number_format($result['total_count_all_category_rising'])
                 . "件（" . $expectedFileTimeLog . "）"
         );
 
