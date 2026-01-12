@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Exceptions\InvalidMemberCountException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
 
 class OpenChatHourlyInvitationTicketUpdater
@@ -27,7 +28,7 @@ class OpenChatHourlyInvitationTicketUpdater
             $limit = AppConfig::$developmentEnvUpdateLimit['OpenChatHourlyInvitationTicketUpdater'] ?? 1;
             $ocArrayCount = count($ocArray);
             $ocArray = array_slice($ocArray, 0, $limit);
-            addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
+            CronUtility::addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
         }
 
         foreach ($ocArray as $oc) {

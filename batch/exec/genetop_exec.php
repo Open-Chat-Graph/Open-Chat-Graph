@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Config\AppConfig;
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\StaticData\StaticDataGenerator;
 use Shared\MimimalCmsConfig;
@@ -30,6 +31,6 @@ try {
     
     touch(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
 }

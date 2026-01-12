@@ -7,10 +7,11 @@ namespace App\Services\Cron;
 use App\Models\CommentRepositories\CommentDB;
 use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteInsertImporter;
-use App\Models\SQLite\SQLiteStatistics;
-use App\Models\SQLite\SQLiteRankingPosition;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
+use App\Models\SQLite\SQLiteRankingPosition;
+use App\Models\SQLite\SQLiteStatistics;
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use PDO;
 use PDOStatement;
 
@@ -137,9 +138,9 @@ class OcreviewApiDataImporter
 
         // ログ出力（1回だけ）
         if (!empty($counts)) {
-            addCronLog('アーカイブ用データベース インポート予定: ' . implode(', ', $counts));
+            CronUtility::addCronLog('アーカイブ用データベース インポート予定: ' . implode(', ', $counts));
         } else {
-            addCronLog('アーカイブ用データベース インポート対象のデータはありません');
+            CronUtility::addCronLog('アーカイブ用データベース インポート対象のデータはありません');
         }
     }
 

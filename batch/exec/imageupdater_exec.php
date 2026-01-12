@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\OpenChatImageUpdater;
 use Shared\MimimalCmsConfig;
 
@@ -24,6 +25,6 @@ try {
 
     AdminTool::sendDiscordNotify('imageUpdateAll done: ' . $result);
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
 }

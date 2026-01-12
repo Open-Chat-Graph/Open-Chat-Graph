@@ -2,21 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Services\Cron\Utility\CronUtility;
 use PHPUnit\Framework\TestCase;
 
 /**
- * getCronLogGitHubRef() と addCronLog() のGitHub参照機能のテスト
+ * CronUtility クラスのテスト
  *
  * 実行コマンド:
- *   docker compose exec app vendor/bin/phpunit app/Helpers/test/CronLogGitHubRefTest.php
+ *   docker compose exec app vendor/bin/phpunit app/Services/Cron/Utility/test/CronUtilityTest.php
  *
  * 特定のテストのみ実行:
- *   docker compose exec app vendor/bin/phpunit app/Helpers/test/CronLogGitHubRefTest.php --filter testGetCronLogGitHubRefFormat
+ *   docker compose exec app vendor/bin/phpunit app/Services/Cron/Utility/test/CronUtilityTest.php --filter testGetCronLogGitHubRefFormat
  */
-class CronLogGitHubRefTest extends TestCase
+class CronUtilityTest extends TestCase
 {
     /**
-     * getCronLogGitHubRef() が正しい形式のGitHub参照を生成するかテスト
+     * CronUtility::getCronLogGitHubRef() が正しい形式のGitHub参照を生成するかテスト
      *
      * Note: PHPUnitはフレームワーク経由で呼び出すため、backtraceの深さが異なる
      */
@@ -40,11 +41,11 @@ class CronLogGitHubRefTest extends TestCase
     private function simulateRealUsage(): string
     {
         // backtraceDepth=1 でこのメソッドを指す
-        return getCronLogGitHubRef(1);
+        return CronUtility::getCronLogGitHubRef(1);
     }
 
     /**
-     * getCronLogGitHubRef() が相対パスを返すかテスト
+     * CronUtility::getCronLogGitHubRef() が相対パスを返すかテスト
      */
     public function testGetCronLogGitHubRefReturnsRelativePath(): void
     {
@@ -71,7 +72,7 @@ class CronLogGitHubRefTest extends TestCase
     }
 
     /**
-     * getCronLogGitHubRef() が行番号を含むかテスト
+     * CronUtility::getCronLogGitHubRef() が行番号を含むかテスト
      */
     public function testGetCronLogGitHubRefIncludesLineNumber(): void
     {
@@ -86,7 +87,7 @@ class CronLogGitHubRefTest extends TestCase
     }
 
     /**
-     * addCronLog() がGitHub参照を含むログを出力するかテスト
+     * CronUtility::addCronLog() がGitHub参照を含むログを出力するかテスト
      * 実際にログファイルに書き込み、内容を検証する
      */
     public function testAddCronLogIncludesGitHubRef(): void
@@ -98,14 +99,14 @@ class CronLogGitHubRefTest extends TestCase
         $sizeBefore = file_exists($logFile) ? filesize($logFile) : 0;
 
         // addCronLogを呼び出し
-        $processTag = addCronLog($testMessage);
+        $processTag = CronUtility::addCronLog($testMessage);
 
         // プロセスタグが返されることを確認
         $this->assertNotEmpty($processTag, 'プロセスタグが返されるべき');
         $this->assertMatchesRegularExpression(
-            '/^[a-zA-Z0-9]+$/',
+            '/^[A-Z]{2}@\d{2}:\d{2}~\d+$/',
             $processTag,
-            'プロセスタグは英数字のみであるべき'
+            'プロセスタグは "JA@HH:MM~PID" 形式であるべき'
         );
 
         // ログファイルが更新されたことを確認
@@ -136,7 +137,7 @@ class CronLogGitHubRefTest extends TestCase
     }
 
     /**
-     * addVerboseCronLog() がAppConfig設定に従うかテスト
+     * CronUtility::addVerboseCronLog() がAppConfig設定に従うかテスト
      */
     public function testAddVerboseCronLogRespectsConfig(): void
     {
@@ -144,12 +145,12 @@ class CronLogGitHubRefTest extends TestCase
 
         // verboseCronLog = false の場合
         \App\Config\AppConfig::$verboseCronLog = false;
-        addVerboseCronLog('This should not be logged');
+        CronUtility::addVerboseCronLog('This should not be logged');
         $this->assertTrue(true, 'verboseCronLog=falseでもエラーにならない');
 
         // verboseCronLog = true の場合
         \App\Config\AppConfig::$verboseCronLog = true;
-        addVerboseCronLog('This should be logged');
+        CronUtility::addVerboseCronLog('This should be logged');
         $this->assertTrue(true, 'verboseCronLog=trueでもエラーにならない');
 
         // 元の値に戻す
@@ -159,7 +160,7 @@ class CronLogGitHubRefTest extends TestCase
     /**
      * backtraceDepthが正しく機能するかテスト
      *
-     * wrapper1 -> wrapper2 -> getCronLogGitHubRef(depth)
+     * wrapper1 -> wrapper2 -> CronUtility::getCronLogGitHubRef(depth)
      * depth=1: wrapper2を指す
      * depth=2: wrapper1を指す
      */
@@ -190,7 +191,7 @@ class CronLogGitHubRefTest extends TestCase
 
     private function wrapper2ForDepthTest(int $depth): string
     {
-        return getCronLogGitHubRef($depth);
+        return CronUtility::getCronLogGitHubRef($depth);
     }
 
     /**

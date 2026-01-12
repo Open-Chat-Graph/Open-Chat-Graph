@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use PDO;
 use PDOStatement;
 
@@ -115,9 +116,9 @@ class OcreviewApiCommentDataImporter
 
         // ログ出力（1回だけ）
         if (!empty($counts)) {
-            addCronLog('コメントアーカイブデータベース インポート予定: ' . implode(', ', $counts));
+            CronUtility::addCronLog('コメントアーカイブデータベース インポート予定: ' . implode(', ', $counts));
         } else {
-            addCronLog('コメントアーカイブデータベース インポート対象のデータはありません');
+            CronUtility::addCronLog('コメントアーカイブデータベース インポート対象のデータはありません');
         }
     }
 

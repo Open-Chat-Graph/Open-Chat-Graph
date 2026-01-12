@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourInsertDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\Store\RankingPositionStore;
 use App\Services\RankingPosition\Store\RisingPositionStore;
@@ -138,7 +139,7 @@ class RankingPositionHourPersistenceProcess
         // DB反映処理を実行
         $label = "{$categoryName}の" . ($target['type'] === RankingType::Rising ? '急上昇' : 'ランキング');
         $perfStartTime = microtime(true);
-        addVerboseCronLog("{$label}をデータベースに反映中" . $logSuffix);
+        CronUtility::addVerboseCronLog("{$label}をデータベースに反映中" . $logSuffix);
 
         // ストレージからデータを取得してDTO配列に変換
         [, $ocDtoArray] = $target['store']->getStorageData($categoryStr);
@@ -153,7 +154,7 @@ class RankingPositionHourPersistenceProcess
             $this->rankingPositionHourRepository->insertHourMemberFromDtoArray($expectedFileTime, $insertDtoArray);
         }
 
-        addVerboseCronLog("{$label}" . count($insertDtoArray) . "件をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）" . $logSuffix);
+        CronUtility::addVerboseCronLog("{$label}" . count($insertDtoArray) . "件をデータベースに反映完了（" . formatElapsedTime($perfStartTime) . "）" . $logSuffix);
         unset($insertDtoArray); // メモリ解放
 
         // 処理完了フラグを立てる
