@@ -853,3 +853,38 @@ function formatElapsedTime(float $startTime): string
     $seconds = (int) round($elapsedSeconds - ($minutes * 60));
     return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
 }
+
+/**
+ * プロセスを終了させる
+ *
+ * @param int $pid 終了させるプロセスのPID
+ * @param int $maxWaitSeconds SIGTERMでの最大待機時間（秒）
+ * @throws \RuntimeException プロセスを終了できなかった場合
+ */
+function killProcess(int $pid, int $maxWaitSeconds = 3): void
+{
+    if (posix_getpgid($pid) === false) {
+        return;
+    }
+
+    // SIGTERM送信
+    posix_kill($pid, SIGTERM);
+
+    // プロセスが終了するまで待機
+    for ($i = 0; $i < $maxWaitSeconds; $i++) {
+        sleep(1);
+        if (posix_getpgid($pid) === false) {
+            return;
+        }
+    }
+
+    // SIGKILLで強制終了
+    addCronLog("[警告] プロセス (PID: {$pid}) がSIGTERMで終了しないため、SIGKILL送信");
+    posix_kill($pid, SIGKILL);
+    sleep(1);
+
+    // それでも終了しない場合は例外
+    if (posix_getpgid($pid) !== false) {
+        throw new \RuntimeException("プロセス (PID: {$pid}) をSIGKILLでも終了できませんでした");
+    }
+}

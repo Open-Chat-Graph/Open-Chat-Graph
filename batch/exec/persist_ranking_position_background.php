@@ -8,7 +8,7 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use Shared\MimimalCmsConfig;
 
-set_time_limit(3600 * 2);
+set_time_limit(3600);
 
 try {
     if (isset($argv[1]) && $argv[1]) {
@@ -30,8 +30,7 @@ try {
         // 既存のプロセスが生きているか確認
         if (posix_getpgid((int)$existingPid) !== false) {
             addCronLog("既存のバックグラウンドDB反映プロセス (PID: {$existingPid}) を強制終了します");
-            exec("kill {$existingPid}");
-            sleep(1); // プロセスが終了するまで少し待機
+            killProcess($existingPid);
             addVerboseCronLog("新しいバックグラウンドプロセスを開始します");
         } else {
             // プロセスが死んでいる場合は古い状態をクリア

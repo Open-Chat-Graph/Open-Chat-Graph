@@ -6,7 +6,6 @@ namespace App\Services\Cron;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
@@ -15,7 +14,6 @@ use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
-use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceLastHourChecker;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateHourlyMemberColumnService;
 use App\Services\UpdateHourlyMemberRankingService;
@@ -27,7 +25,6 @@ class SyncOpenChat
         private OpenChatApiDbMerger $merger,
         private SitemapGenerator $sitemap,
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
-        private RankingPositionHourPersistenceLastHourChecker $rankingPositionHourChecker,
         private UpdateHourlyMemberRankingService $hourlyMemberRanking,
         private UpdateHourlyMemberColumnService $hourlyMemberColumn,
         private OpenChatImageUpdater $OpenChatImageUpdater,
@@ -60,8 +57,9 @@ class SyncOpenChat
     {
         checkLineSiteRobots();
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('[警告] 毎時処理が実行中または中断されました。リトライ処理を開始します。');
-            sleep(30);
+            addCronLog('[警告] 毎時処理が実行中または中断のためリトライ処理を開始します。');
+            OpenChatApiDbMerger::setKillFlagTrue();
+            sleep(5);
         }
 
         if ($this->state->getBool(StateType::isDailyTaskActive)) {
@@ -74,27 +72,11 @@ class SyncOpenChat
         return $this->state->getBool(StateType::isDailyTaskActive);
     }
 
-    // 毎時0分に実行
-    function handleHalfHourCheck()
-    {
-        if (AppConfig::$skipHandleHalfHourCheck) {
-            // 毎時処理の途中経過チェックをスキップ
-            return;
-        }
-
-        if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            $this->retryHourlyTask();
-        } elseif (!$this->rankingPositionHourChecker->isLastHourPersistenceCompleted()) {
-            // この後の処理が重くなっており、既存のcron処理が終わっていない場合は二重に動いてしまう
-            $this->hourlyTaskAfterDbMerge();
-        }
-    }
-
     private function hourlyTask()
     {
         addCronLog('【毎時処理】開始');
 
-        set_time_limit(1620);
+        set_time_limit(3600);
 
         // バックグラウンドでDB反映を開始
         $this->rankingPositionHourPersistence->startBackgroundPersistence();

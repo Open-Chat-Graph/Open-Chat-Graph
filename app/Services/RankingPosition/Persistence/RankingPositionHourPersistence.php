@@ -8,7 +8,6 @@ use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\MimimalCmsConfig;
@@ -130,6 +129,9 @@ class RankingPositionHourPersistence
         while (true) {
             $loopCount++;
 
+            // 親プロセスの生存確認（毎ループ）
+            $this->checkParentProcessAlive();
+
             // 1サイクル分の処理を実行
             if ($this->process->processOneCycle($expectedFileTime, '（バックグラウンド）')) {
                 break; // 全カテゴリ完了
@@ -174,6 +176,25 @@ class RankingPositionHourPersistence
     }
 
     /**
+     * 親プロセスの生存確認
+     *
+     * 親プロセスが停止している場合は例外を投げる
+     *
+     * @throws ApplicationException 親プロセスが停止している場合
+     */
+    private function checkParentProcessAlive(): void
+    {
+        $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
+        $parentPid = $bgState['parentPid'] ?? null;
+
+        if ($parentPid && posix_getpgid((int)$parentPid) === false) {
+            $errorMessage = "親プロセス (PID: {$parentPid}) が異常終了したことを検出。バックグラウンド処理を終了します。";
+            addCronLog($errorMessage);
+            throw new ApplicationException($errorMessage);
+        }
+    }
+
+    /**
      * タイムアウト処理を実行して親プロセスをkill、cron_crawling.phpを再実行
      *
      * @throws ApplicationException
@@ -189,8 +210,7 @@ class RankingPositionHourPersistence
 
         if ($parentPid) {
             addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
-            exec("kill {$parentPid}");
-            sleep(1);
+            killProcess($parentPid);
 
             // cron_crawling.phpを再実行
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
