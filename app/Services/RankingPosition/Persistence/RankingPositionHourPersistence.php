@@ -163,10 +163,10 @@ class RankingPositionHourPersistence
         CronUtility::addVerboseCronLog('ランキング掲載総数をデータベースに反映中（バックグラウンド）');
         $result = $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
         CronUtility::addCronLog(
-            "毎時ランキング全データをデータベースに反映完了: ランキング総件数: "
+            "毎時ランキング全データをデータベースに反映完了: ランキング総数"
                 . $result['total_count_all_category_ranking']
-                . "急上昇総件数: " . $result['total_count_all_category_rising']
-                . "（" . $expectedFileTimeLog . "）"
+                . "件、急上昇総数" . $result['total_count_all_category_rising']
+                . "件（" . $expectedFileTimeLog . "）"
         );
 
 

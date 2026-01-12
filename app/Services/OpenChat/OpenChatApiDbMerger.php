@@ -140,7 +140,6 @@ class OpenChatApiDbMerger
 
         /** @var array<string, string|float> $startTimes APIカテゴリごとの処理 */
         $startTimes = [];
-
         $callbackByCategoryBefore = function (string $category) use (
             $positionStore,
             &$startTimes,
