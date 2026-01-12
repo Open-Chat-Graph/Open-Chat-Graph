@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;

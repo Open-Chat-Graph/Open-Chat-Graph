@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Crawler;
 
+use App\Services\Cron\Utility\CronUtility;
 use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\BrowserKit\CookieJar;
@@ -18,8 +19,7 @@ class CrawlerFactory
 
     public function __construct(
         private CookieJar $cookieJar
-    ) {
-    }
+    ) {}
 
     /**
      * 指定されたURLにHTTPリクエストを送信し、HTTPレスポンスからCrawlerオブジェクトを生成する
@@ -88,6 +88,7 @@ class CrawlerFactory
             }
 
             $retryCount++;
+            CronUtility::addVerboseCronLog("[警告] HTTPエラー {$statusCode} 発生: {$url} （再試行 {$retryCount}/{$retryLimit}）");
             sleep($retryInterval);
         }
 
