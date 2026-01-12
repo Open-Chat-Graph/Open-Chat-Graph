@@ -6,18 +6,18 @@ services:
       context: "docker/app/"
     ports:
       - "${WEB_PORT:-8100}:80"
-      - "${HTTPS_PORT:-8443}:443"
+      - "${HTTPS_PORT:-8543}:443"
     working_dir: /var/www/html
     user: "1000:1000"
     volumes:
       - "./:/var/www/html"
       - "./docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf"
-      - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf"
-      - "./docker/app/apache2/sites-available/000-default-ssl.conf:/etc/apache2/sites-available/000-default-ssl.conf"
-      - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-enabled/000-default.conf"
-      - "./docker/app/apache2/sites-available/000-default-ssl.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
-      - "./docker/app/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem"
-      - "./docker/app/ssl/localhost+3-key.pem:/etc/ssl/certs/localhost+3-key.pem"
+      - "./docker/app/apache2/sites-available/000-default-mock.conf:/etc/apache2/sites-available/000-default.conf"
+      - "./docker/app/apache2/sites-available/000-default-mock.conf:/etc/apache2/sites-enabled/000-default.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
+      - "./docker/app/ssl-new/ocgraph.test+4.pem:/etc/ssl/certs/ocgraph.test+4.pem"
+      - "./docker/app/ssl-new/ocgraph.test+4-key.pem:/etc/ssl/certs/ocgraph.test+4-key.pem"
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
     depends_on:
       - mysql
@@ -29,6 +29,10 @@ services:
     networks:
       dev-network:
         ipv4_address: 172.30.0.2
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+      - APACHE_LOG_DIR=/var/log/apache2
 
   mysql:
     build:

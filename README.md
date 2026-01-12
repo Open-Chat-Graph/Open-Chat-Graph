@@ -10,28 +10,63 @@ LINE OpenChatのメンバー数推移を可視化し、トレンドを分析す�
 
 ## 🚀 開発環境のセットアップ
 
-### 通常環境
+### 必要なツール
+
+- Docker with Compose V2 (`docker compose` コマンド)
+- mkcert（SSL証明書生成用）
+
+### 初回セットアップ
 
 ```bash
-docker compose up -d
-docker compose exec app bash "/var/www/html/local-setup.default.sh"
+# SSL証明書生成 + 初期設定
+make init
+
+# 開発環境を起動
+make up-dev
 ```
 
-- Web: http://localhost:7000
-- phpMyAdmin: http://localhost:7070
-- MySQL: localhost:3307
+### 利用可能なコマンド
 
-### モックAPI環境（インターネット接続不要）
-
+**開発環境:**
 ```bash
-docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
-docker compose -f docker-compose.dev.yml exec app bash "/var/www/html/local-setup.default.sh"
+make up-dev       # 起動
+make down-dev     # 停止
+make restart-dev  # 再起動
+make rebuild-dev  # 再ビルドして起動
+make ssh-dev      # コンテナにログイン
 ```
 
-- Web: http://localhost:8100
+**通常環境:**
+```bash
+make up           # 起動
+make down         # 停止
+make restart      # 再起動
+make rebuild      # 再ビルドして起動
+make ssh          # コンテナにログイン
+```
+
+**ヘルプ:**
+```bash
+make help         # 全コマンド表示
+```
+
+### アクセスURL
+
+**開発環境:**
+- HTTPS: https://localhost:8543
 - phpMyAdmin: http://localhost:8180
 - MySQL: localhost:3308
 - LINE Mock API: http://localhost:9000 ([実装](docker/line-mock-api/public/index.php))
+
+**通常環境:**
+- HTTPS: https://localhost:8443
+- phpMyAdmin: http://localhost:8080
+- MySQL: localhost:3306
+
+**注意:**
+- HTTPアクセスは自動的にHTTPSにリダイレクトされます
+- SSL証明書は`mkcert`により自動生成されます
+- 開発環境はインターネット接続不要でLINE APIをモック化
 
 ---
 

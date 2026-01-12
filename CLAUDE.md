@@ -13,22 +13,79 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Environment
 
 ### Docker Setup
-```bash
-# Start development environment (PHP 8.3 + MySQL + phpMyAdmin)
-docker-compose up
 
-# Default ports:
-# - Web: http://localhost:8000
-# - MySQL: localhost:3306
-# - phpMyAdmin: http://localhost:8080
+**IMPORTANT**: Use `docker compose` (with space), not `docker-compose` (with hyphen). The hyphenated command is deprecated.
+
+This project uses Makefile for easy Docker management. Available commands:
+
+```bash
+# Initial setup (generates SSL certificates + runs local-setup.sh)
+make init
+
+# Development environment
+make up-dev       # Start
+make down-dev     # Stop
+make restart-dev  # Restart
+make rebuild-dev  # Rebuild and start
+make ssh-dev      # Login to container
+
+# Production environment
+make up           # Start
+make down         # Stop
+make restart      # Restart
+make rebuild      # Rebuild and start
+make ssh          # Login to container
+
+# Show all available commands
+make help
 ```
+
+**Direct docker compose usage:**
+```bash
+# Development environment
+docker compose -f docker-compose.dev.yml up -d
+
+# Production environment
+docker compose -f docker-compose.yml up -d
+```
+
+### Environment Details
+
+**Development Environment (docker-compose.dev.yml):**
+- Domain: `ocgraph-mock.test`
+- HTTP: http://localhost:8100
+- HTTPS: https://ocgraph-mock.test:8543 (or https://localhost:8543)
+- MySQL: localhost:3308
+- phpMyAdmin: http://localhost:8180
+- Includes LINE Mock API server for testing crawling
+
+**Production Environment (docker-compose.yml):**
+- Domain: `ocgraph.test`
+- HTTP: http://localhost:8000
+- HTTPS: https://ocgraph.test:8443 (or https://localhost:8443)
+- MySQL: localhost:3306
+- phpMyAdmin: http://localhost:8080
+
+**HTTPS Support:**
+- SSL certificates are auto-generated using `mkcert`
+- HTTP automatically redirects to HTTPS
+- Certificates valid for: `ocgraph.test`, `ocgraph-mock.test`, `localhost`, `127.0.0.1`, `::1`
+- First-time setup: run `make init` to generate certificates
 
 ### Initial Setup
 ```bash
-# Install PHP dependencies and setup local config
-composer install
-./local-setup.sh
+# Quick setup with Makefile (recommended)
+make init
+
+# Manual setup
+./docker/app/generate-ssl-certs.sh  # Generate SSL certificates
+composer install                     # Install PHP dependencies
+./local-setup.sh                     # Setup local configuration
 ```
+
+**Requirements:**
+- Docker with Compose V2 (`docker compose` command)
+- `mkcert` for SSL certificate generation (install from: https://github.com/FiloSottile/mkcert)
 
 ## Architecture
 

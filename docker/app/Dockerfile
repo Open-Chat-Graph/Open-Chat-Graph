@@ -63,8 +63,7 @@ RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 RUN pecl install xdebug-3.3.2 && \
     docker-php-ext-enable xdebug
 
-RUN mv /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled
-RUN /bin/sh -c a2enmod rewrite
+RUN a2enmod rewrite && a2enmod ssl
 
 RUN ln -sf  /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 

@@ -4,15 +4,25 @@ services:
       context: "docker/app/"
     ports:
       - "${WEB_PORT:-8000}:80"
+      - "${HTTPS_PORT:-8443}:443"
     working_dir: /var/www/html
     user: "1000:1000"
     volumes:
       - "./:/var/www/html"
       - "./docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf"
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf"
+      - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-enabled/000-default.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-prod.conf:/etc/apache2/sites-available/000-default-ssl.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-prod.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
+      - "./docker/app/ssl-new/ocgraph.test+4.pem:/etc/ssl/certs/ocgraph.test+4.pem"
+      - "./docker/app/ssl-new/ocgraph.test+4-key.pem:/etc/ssl/certs/ocgraph.test+4-key.pem"
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
     depends_on:
       - mysql
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+      - APACHE_LOG_DIR=/var/log/apache2
   mysql:
     build:
       context: "docker/mysql/"

@@ -55,3 +55,4 @@ prid-setup.sh
 
 # Docker SSL certificates
 /docker/app/ssl/*.pem
+/docker/app/ssl-new/*.pem
