@@ -25,10 +25,12 @@ use Shared\MimimalCmsConfig;
 class OpenChatApiDbMerger
 {
     /** URL取得の遅延警告閾値（秒） */
-    private const URL_FETCH_SLOW_THRESHOLD_SECONDS = 10;
+    private const URL_FETCH_SLOW_THRESHOLD_SECONDS = 5;
 
     private OpenChatApiRankingDownloader $rankingDownloader;
     private OpenChatApiRankingDownloader $risingDownloader;
+
+    private \DateTime $startTime;
 
     function __construct(
         private OpenChatApiDtoFactory $openChatApiDtoFactory,
@@ -49,6 +51,8 @@ class OpenChatApiDbMerger
             OpenChatApiRankingDownloader::class,
             ['openChatApiRankingDownloaderProcess' => $openChatApiRisingDownloaderProcess]
         );
+
+        $this->startTime = OpenChatServicesUtility::getModifiedCronTime('now');
     }
 
     /**
@@ -178,8 +182,13 @@ class OpenChatApiDbMerger
     /** @throws ApplicationException */
     private function checkKillFlag()
     {
-        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)
-            && throw new ApplicationException('OpenChatApiDbMerger: 強制終了しました');
+        if ($this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)) {
+            $message = "OpenChatApiDbMergerの処理が外部から中断されました。";
+            $message .= $this->startTime === OpenChatServicesUtility::getModifiedCronTime('now')
+                ? ''
+                : 'この時間帯のデータ更新は失敗しました。';
+            throw new ApplicationException($message);
+        }
     }
 
     static function setKillFlagTrue()

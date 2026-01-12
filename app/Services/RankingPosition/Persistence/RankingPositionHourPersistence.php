@@ -193,9 +193,7 @@ class RankingPositionHourPersistence
         $parentPid = $bgState['parentPid'] ?? null;
 
         if ($parentPid && posix_getpgid((int)$parentPid) === false) {
-            $errorMessage = "親プロセス (PID: {$parentPid}) が異常終了したことを検出。バックグラウンド処理を終了します。";
-            CronUtility::addCronLog($errorMessage);
-            throw new ApplicationException($errorMessage);
+            throw new \RuntimeException("親プロセス (PID: {$parentPid}) が異常終了したことを検出。バックグラウンド処理を終了します。");
         }
     }
 
