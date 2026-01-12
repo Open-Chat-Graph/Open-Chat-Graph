@@ -53,6 +53,17 @@ class OpenChatApiFromEmidDownloader
             return false;
         }
 
-        return $this->openChatApiFromEmidDtoFactory->validateAndMapToOpenChatApiFromEmidDto($response);
+        // レスポンスにinvitationTicketとsquareを含める構造に変換
+        if (isset($response['invitationTicket']) && isset($response['square'])) {
+            $data = [
+                'invitationTicket' => $response['invitationTicket'],
+                'square' => $response['square'],
+            ];
+        } else {
+            // 古い形式の場合（後方互換性）
+            $data = $response;
+        }
+
+        return $this->openChatApiFromEmidDtoFactory->validateAndMapToOpenChatApiFromEmidDto($data);
     }
 }

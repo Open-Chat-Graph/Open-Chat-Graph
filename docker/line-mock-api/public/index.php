@@ -273,26 +273,22 @@ try {
             exit;
         }
 
+        // invitationTicket生成（EMIDの先頭10文字を使用）
+        $invitationTicket = substr($room['emid'], 0, 10);
+
         echo json_encode([
-            'squares' => [
-                [
-                    'square' => [
-                        'emid' => $room['emid'],
-                        'name' => $room['name'],
-                        'desc' => $room['desc'],
-                        'profileImageObsHash' => $room['profileImageObsHash'],
-                        'emblems' => $room['emblem'] > 0 ? [$room['emblem']] : [],
-                        'joinMethodType' => $room['joinMethodType'],
-                        'squareState' => 0,
-                        'badges' => [],
-                        'invitationURL' => "https://line.me/ti/g2/{$room['emid']}",
-                    ],
-                    'rank' => 0,
-                    'memberCount' => $room['memberCount'],
-                    'latestMessageCreatedAt' => time() * 1000,
-                    'createdAt' => $room['createdAt'] * 1000,
-                ]
-            ]
+            'square' => [
+                'squareEmid' => $room['emid'],
+                'name' => $room['name'],
+                'desc' => $room['desc'],
+                'profileImageObsHash' => $room['profileImageObsHash'],
+                'memberCount' => $room['memberCount'],
+                'joinMethodType' => $room['joinMethodType'],
+            ],
+            'recommendedSquares' => [],
+            'noteCount' => 0,
+            'productKey' => 'square-seo-real',
+            'invitationTicket' => $invitationTicket,
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -334,8 +330,8 @@ try {
         exit;
     }
 
-    // 画像CDN
-    if (preg_match('#^/([a-zA-Z0-9_-]+)(/preview\.[0-9x]+)?$#', $requestUri, $matches)) {
+    // 画像CDN（画像ハッシュは通常50文字以上）
+    if (preg_match('#^/([a-zA-Z0-9_-]{30,})(/preview)?$#', $requestUri, $matches)) {
         $imageHash = $matches[1];
 
         header('Content-Type: image/jpeg');
