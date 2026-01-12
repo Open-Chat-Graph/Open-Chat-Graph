@@ -53,3 +53,6 @@ local-setup.sh
 prid-setup.sh
 .user.ini
 /password.openchat-review.me
+
+# Docker SSL certificates
+/docker/app/ssl/*.pem
