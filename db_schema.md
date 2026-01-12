@@ -346,7 +346,7 @@ CREATE UNIQUE INDEX total_count_time_IDX ON total_count (time,category);
 - `open_chat_deleted` - 削除履歴
 - `categories` - カテゴリマスター
 
-詳細: [`storage/ja/SQLite/template/sqlapi_schema.sql`](storage/ja/SQLite/template/sqlapi_schema.sql)
+詳細: [`setup/schema/sqlite/sqlapi.sql`](setup/schema/sqlite/sqlapi.sql)
 
 ---
 

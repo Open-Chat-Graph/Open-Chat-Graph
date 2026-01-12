@@ -86,7 +86,7 @@ class OcreviewApiCommentDataImporter
      */
     private function ensureCommentTablesExist(): void
     {
-        $schemaPath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/sqlapi_schema.sql';
+        $schemaPath = \App\Config\AppConfig::SQLITE_SCHEMA_SQLAPI;
 
         if (!file_exists($schemaPath)) {
             throw new \RuntimeException("Schema file not found: {$schemaPath}");

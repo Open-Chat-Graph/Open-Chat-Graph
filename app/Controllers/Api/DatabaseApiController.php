@@ -8,7 +8,6 @@ use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use Shared\Exceptions\ValidationException;
-use Shared\MimimalCmsConfig;
 
 class DatabaseApiController
 {
@@ -66,7 +65,7 @@ class DatabaseApiController
 
         try {
             // schema.sqlファイルの内容をそのまま返す
-            $schemaFilePath = \App\Config\AppConfig::ROOT_PATH . 'storage/ja/SQLite/template/sqlapi_schema.sql';
+            $schemaFilePath = \App\Config\AppConfig::SQLITE_SCHEMA_SQLAPI;
 
             if (!file_exists($schemaFilePath)) {
                 throw new \Exception('Schema file not found: ' . $schemaFilePath);

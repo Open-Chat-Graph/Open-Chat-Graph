@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # データベース初期構築スクリプト
-# 使い方: ./database/init-database.sh
+# 使い方: ./setup/init-database.sh
 
 set -e
 
-SCHEMA_DIR="$(cd "$(dirname "$0")/schema" && pwd)"
+SCHEMA_DIR="$(cd "$(dirname "$0")/schema/mysql" && pwd)"
 MYSQL_HOST="${MYSQL_HOST:-mysql}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-root}"

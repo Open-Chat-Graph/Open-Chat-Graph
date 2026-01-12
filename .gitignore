@@ -37,8 +37,7 @@ storage/*/ranking_position/*/*
 storage/*/ranking_position/filter.dat
 storage/*/ranking_position/filter_date.dat
 storage/*/static_data_top/*
-!storage/*/static_data_top/non_essential_cache_sample
-!storage/*/static_data_top/required_file_template
+!storage/*/static_data_top/non_essential_storage_file_sample
 storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 

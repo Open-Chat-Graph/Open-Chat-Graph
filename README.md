@@ -14,10 +14,7 @@ LINE OpenChatのメンバー数推移を可視化し、トレンドを分析す�
 
 ```bash
 docker compose up -d
-docker compose exec app bash
-cd /var/www/html
-./local-setup.default.sh
-./database/init-database.sh
+docker compose exec app bash "/var/www/html/local-setup.default.sh"
 ```
 
 - Web: http://localhost:7000
@@ -28,10 +25,7 @@ cd /var/www/html
 
 ```bash
 docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
-docker compose -f docker-compose.dev.yml exec app bash
-cd /var/www/html
-./local-setup.default.sh
-./database/init-database.sh
+docker compose -f docker-compose.dev.yml exec app bash "/var/www/html/local-setup.default.sh"
 ```
 
 - Web: http://localhost:8100
@@ -52,37 +46,19 @@ cd /var/www/html
 
 ```
 app/
-├── Config/         # ルーティング
+├── Config/         # ルーティング・設定
 ├── Controllers/    # HTTPハンドラー
 ├── Models/         # リポジトリ・DTO
 ├── Services/       # ビジネスロジック
 └── Views/          # テンプレート
 shadow/             # MimimalCMSフレームワーク
-batch/              # Cronジョブ
+batch/              # Cronジョブ・バッチ処理
 shared/             # DI設定
-storage/            # SQLite・ログ
-database/           # スキーマ・初期化スクリプト
+storage/            # SQLite・ログ・キャッシュ
+setup/              # データベーススキーマ・初期化スクリプト
+public/             # Webルート
+docker/             # Docker設定
 ```
-
-## 💻 主要ファイル
-
-**MVC**
-- リポジトリ: [`OpenChatRepositoryInterface`](app/Models/Repositories/OpenChatRepositoryInterface.php), [`OpenChatRepository`](app/Models/Repositories/OpenChatRepository.php)
-- コントローラー: [`IndexPageController`](app/Controllers/Pages/IndexPageController.php), [`OpenChatApiController`](app/Controllers/Api/OpenChatApiController.php)
-- DI設定: [`MimimalCmsConfig.php`](shared/MimimalCmsConfig.php)
-
-**クローリング**
-- スケジューラ: [`SyncOpenChat`](app/Services/Cron/SyncOpenChat.php)
-- API取得: [`OpenChatApiDbMerger`](app/Services/OpenChat/OpenChatApiDbMerger.php), [`OpenChatApiRankingDownloader`](app/Services/OpenChat/Crawler/OpenChatApiRankingDownloader.php)
-- 日次処理: [`DailyUpdateCronService`](app/Services/DailyUpdateCronService.php)
-
-**ランキング**
-- [`UpdateHourlyMemberRankingService`](app/Services/UpdateHourlyMemberRankingService.php)
-
-**データベース**
-- スキーマ詳細: [`db_schema.md`](db_schema.md)
-- スキーマファイル: [`database/schema/`](database/schema/)
-- 言語別接続: [`App\Models\Repositories\DB`](app/Models/Repositories/DB.php)
 
 ---
 
