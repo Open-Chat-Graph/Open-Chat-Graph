@@ -112,7 +112,7 @@ class CronUtility
         }
 
         // SIGTERM送信
-        posix_kill($pid, SIGTERM);
+        posix_kill($pid, 15);
 
         // プロセスが終了するまで待機
         for ($i = 0; $i < $maxWaitSeconds; $i++) {
@@ -124,7 +124,7 @@ class CronUtility
 
         // SIGKILLで強制終了
         self::addCronLog("[警告] プロセス (PID: {$pid}) がSIGTERMで終了しないため、SIGKILL送信");
-        posix_kill($pid, SIGKILL);
+        posix_kill($pid, 9);
         sleep(1);
 
         // それでも終了しない場合は例外
