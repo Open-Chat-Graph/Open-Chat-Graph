@@ -60,7 +60,7 @@ class OpenChatApiDbMerger
      */
     private function getCategoryLabel(string $category, AbstractRankingPositionStore $positionStore): string
     {
-        $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
+        $categoryName = getCategoryName((int)$category);
         $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
         return "{$categoryName}の{$typeLabel}";
     }
@@ -125,7 +125,8 @@ class OpenChatApiDbMerger
                         ? formatElapsedTime($startTimes[$currentCategory])
                         : '不明';
                     $sinceLastFormatted = round($sinceLastCallback, 1);
-                    CronUtility::addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
+                    $categoryName = getCategoryName((int)$currentCategory);
+                    CronUtility::addCronLog("URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（{$categoryName}の取得開始から{$categoryElapsed}経過）");
                 }
             }
 

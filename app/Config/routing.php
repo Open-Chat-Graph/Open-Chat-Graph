@@ -39,7 +39,7 @@ Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking']
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
         handleRequestWithETagAndCache("ranking/{$category}");
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
+        return !!getCategoryName($category);
     });
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
