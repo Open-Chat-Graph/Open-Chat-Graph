@@ -28,7 +28,7 @@ try {
 } catch (\Throwable $e) {
     // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
     $shouldNotify = true;
-    if ($e instanceof ApplicationException && $e->getCode() === AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
+    if ($e instanceof ApplicationException && $e->getCode() === ApplicationException::DAILY_UPDATE_EXCEPTION_ERROR_CODE) {
         if (isDailyCronWithinHours(20)) {
             $shouldNotify = false;
             $elapsedHours = getDailyCronElapsedHours();

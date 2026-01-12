@@ -78,7 +78,7 @@ class DailyUpdateCronService
         } catch (\Throwable $e) {
             $result = $e->getMessage();
             addCronLog("ランキング外オープンチャットのクローリングが中断されました: {$result} / " . count($outOfRankId) . "件中");
-            throw new ApplicationException('強制終了しました', AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
+            throw new ApplicationException('強制終了しました', ApplicationException::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
         }
 
         addCronLog('ランキング外オープンチャットのクローリング完了: ' . $result . '件');

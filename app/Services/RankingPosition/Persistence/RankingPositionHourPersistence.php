@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\RankingPosition\Persistence;
 
 use App\Config\AppConfig;
+use App\Exceptions\ApplicationException;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
@@ -170,20 +171,19 @@ class RankingPositionHourPersistence
     /**
      * タイムアウト処理を実行して親プロセスをkill、cron_crawling.phpを再実行
      *
-     * @throws \RuntimeException
+     * @throws ApplicationException
      */
     private function handleTimeoutAndRestartCron(): void
     {
         $message = "毎時ランキングDB反映バックグラウンド: タイムアウト（" . self::MAX_WAIT_SECONDS . "秒）";
         addCronLog($message);
-        AdminTool::sendDiscordNotify($message);
 
         // 親プロセスをkillしてcron_crawling.phpを再実行
         $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
         $parentPid = $bgState['parentPid'] ?? null;
 
         if ($parentPid) {
-            addCronLog("親プロセス (PID: {$parentPid}) をkillします");
+            addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
             exec("kill {$parentPid}");
             sleep(1);
 
@@ -191,9 +191,9 @@ class RankingPositionHourPersistence
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
             $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
             exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
-            addCronLog('cron_crawling.phpを再実行しました');
+            addCronLog('毎時処理（cron_crawling.php）を再実行しました');
         }
 
-        throw new \RuntimeException($message);
+        throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);
     }
 }
