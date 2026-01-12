@@ -12,7 +12,7 @@ CREATE TABLE `ban_room` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `type` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `ban_user`;
 CREATE TABLE `ban_user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -21,7 +21,7 @@ CREATE TABLE `ban_user` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `type` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `comment`;
 CREATE TABLE `comment` (
   `comment_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -33,7 +33,7 @@ CREATE TABLE `comment` (
   `time` datetime NOT NULL DEFAULT current_timestamp(),
   `flag` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`comment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3923 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `like`;
 CREATE TABLE `like` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -43,7 +43,7 @@ CREATE TABLE `like` (
   `time` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `comment_id` (`comment_id`,`user_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=6598 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `log`;
 CREATE TABLE `log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -53,4 +53,4 @@ CREATE TABLE `log` (
   `ip` text NOT NULL,
   `ua` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12231 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

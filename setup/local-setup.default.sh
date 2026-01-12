@@ -84,6 +84,9 @@ rm -f storage/*/SQLite/ocgraph_sqlapi/*.db*
 rm -f storage/*.log
 rm -f storage/*/*/*.log
 
+find public/oc-img* -mindepth 1 -maxdepth 1 ! -name 'default' ! -name 'preview' -exec rm -rf {} +
+find public/oc-img*/preview -mindepth 1 -maxdepth 1 ! -name 'default' -exec rm -rf {} +
+
 cp setup/template/static_data_top/* storage/ja/static_data_top/
 cp setup/template/static_data_top/* storage/tw/static_data_top/
 cp setup/template/static_data_top/* storage/th/static_data_top/

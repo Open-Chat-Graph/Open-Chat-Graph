@@ -17,7 +17,7 @@ CREATE TABLE `ads` (
   `ads_title_button` text NOT NULL,
   `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `ads_tag_map`;
 CREATE TABLE `ads_tag_map` (
   `tag` varchar(255) NOT NULL,
@@ -74,14 +74,14 @@ CREATE TABLE `open_chat` (
   UNIQUE KEY `emid` (`emid`),
   KEY `member` (`member`),
   KEY `updated_at` (`updated_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=399683 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `open_chat_deleted`;
 CREATE TABLE `open_chat_deleted` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `emid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `deleted_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=399468 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `ranking_ban`;
 CREATE TABLE `ranking_ban` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -94,7 +94,7 @@ CREATE TABLE `ranking_ban` (
   `update_items` text DEFAULT NULL,
   `end_datetime` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1162916 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
   `id` int(11) NOT NULL,
@@ -167,4 +167,4 @@ CREATE TABLE `user_log` (
   `ip` varchar(50) NOT NULL,
   `ua` varchar(512) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=112035 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

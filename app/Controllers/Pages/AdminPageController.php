@@ -201,15 +201,6 @@ class AdminPageController
     }
 
     /**
-     * ダウンロード済みのランキングJSONファイルを毎時統計DBに反映する
-     */
-    function positiondb(RankingPositionHourPersistence $rankingPositionHourPersistence)
-    {
-        $rankingPositionHourPersistence->persistStorageFileToDb();
-        echo 'done';
-    }
-
-    /**
      * 毎時メンバーランキング更新
      */
     function hourlygenerank(UpdateHourlyMemberRankingService $hourlyMemberRanking)

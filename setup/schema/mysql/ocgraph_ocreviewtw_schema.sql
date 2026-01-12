@@ -81,7 +81,7 @@ CREATE TABLE `open_chat` (
   UNIQUE KEY `emid` (`emid`),
   KEY `member` (`member`),
   KEY `updated_at` (`updated_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=345640 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `open_chat_deleted`;
 CREATE TABLE `open_chat_deleted` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -198,4 +198,4 @@ CREATE TABLE `user_log` (
   `ip` varchar(50) NOT NULL,
   `ua` varchar(512) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1098 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
