@@ -41,6 +41,10 @@ init: ## 初回セットアップ
 
 # 基本環境
 up: ## 基本環境を起動
+	@if docker network ls | grep -q oc-review-mock_mock-network; then \
+		echo "$(YELLOW)Mock環境から基本環境に切り替えています...$(NC)"; \
+		$(MAKE) down-mock; \
+	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)基本環境を起動しています...$(NC)"
 	@docker compose up -d
@@ -67,6 +71,10 @@ ssh: ## 基本環境にログイン
 
 # Mock付き環境
 up-mock: ## Mock付き環境を起動
+	@if docker ps --format '{{.Names}}' | grep -q oc-review-mock-mysql-1 && ! docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
+		$(MAKE) down; \
+	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています...$(NC)"
 	@docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
