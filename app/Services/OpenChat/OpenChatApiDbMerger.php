@@ -19,7 +19,6 @@ use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Store\AbstractRankingPositionStore;
 use App\Services\RankingPosition\Store\RankingPositionStore;
 use App\Services\RankingPosition\Store\RisingPositionStore;
-use Shared\MimimalCmsConfig;
 
 class OpenChatApiDbMerger
 {
