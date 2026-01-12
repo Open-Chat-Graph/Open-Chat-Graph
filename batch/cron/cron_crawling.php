@@ -45,8 +45,8 @@ try {
     }
 
     if ($shouldNotify) {
-        CronUtility::addCronLog($e->getMessage());
         ExceptionHandler::errorLog($e);
-        AdminTool::sendDiscordNotify($e->__toString());
+        $message = CronUtility::addCronLog($e->getMessage());
+        AdminTool::sendDiscordNotify($message);
     }
 }

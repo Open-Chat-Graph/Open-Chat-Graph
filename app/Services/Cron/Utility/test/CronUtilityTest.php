@@ -78,7 +78,7 @@ class CronUtilityTest extends TestCase
     {
         $result = $this->simulateRealUsage();
 
-        // 行番号を抽出
+        // 行番号を抽出 (:123 形式)
         preg_match('/:(\d+)$/', $result, $matches);
         $this->assertNotEmpty($matches, '行番号が含まれるべき');
 
@@ -99,14 +99,15 @@ class CronUtilityTest extends TestCase
         $sizeBefore = file_exists($logFile) ? filesize($logFile) : 0;
 
         // addCronLogを呼び出し
-        $processTag = CronUtility::addCronLog($testMessage);
+        $returnValue = CronUtility::addCronLog($testMessage);
 
-        // プロセスタグが返されることを確認
-        $this->assertNotEmpty($processTag, 'プロセスタグが返されるべき');
+        // 戻り値がログメッセージ全体（GitHub参照のみフルURL形式）であることを確認
+        $this->assertNotEmpty($returnValue, 'ログメッセージが返されるべき');
+        $this->assertStringContainsString($testMessage, $returnValue, '戻り値にテストメッセージが含まれるべき');
         $this->assertMatchesRegularExpression(
-            '/^[A-Z]{2}@\d{2}:\d{2}~\d+$/',
-            $processTag,
-            'プロセスタグは "JA@HH:MM~PID" 形式であるべき'
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \[.+\] .+ https:\/\/github\.com\/.+#L\d+$/',
+            $returnValue,
+            '戻り値は "YYYY-MM-DD HH:MM:SS [プロセスタグ] メッセージ https://github.com/...#L行番号" 形式であるべき'
         );
 
         // ログファイルが更新されたことを確認
@@ -123,11 +124,11 @@ class CronUtilityTest extends TestCase
         // テストメッセージが含まれることを確認
         $this->assertStringContainsString($testMessage, $newContent, 'テストメッセージがログに含まれるべき');
 
-        // GitHub参照が含まれることを確認（形式: GitHub::path/to/file.php:123）
+        // ログファイルには GitHub::path:line 形式で記録されていることを確認
         $this->assertMatchesRegularExpression(
             '/GitHub::[^\s]+\.php:\d+/',
             $newContent,
-            'GitHub参照がログに含まれるべき'
+            'ログファイルには "GitHub::path/to/file.php:line" 形式で記録されるべき'
         );
 
         // ログ出力を表示（HTML画面で確認用）
@@ -300,5 +301,45 @@ class CronUtilityTest extends TestCase
         );
 
         $this->assertEquals($expectedPattern, $result);
+    }
+
+    /**
+     * CronUtility::convertGitHubRefToFullUrl() が正しく変換するかテスト
+     */
+    public function testConvertGitHubRefToFullUrl(): void
+    {
+        $shortRef = 'GitHub::app/Services/Cron/SyncOpenChat.php:97';
+        $result = CronUtility::convertGitHubRefToFullUrl($shortRef);
+
+        // フルURL形式であること
+        $this->assertStringStartsWith('https://github.com/', $result);
+        $this->assertStringContainsString('/blob/', $result);
+        $this->assertStringContainsString('app/Services/Cron/SyncOpenChat.php', $result);
+        $this->assertStringEndsWith('#L97', $result);
+
+        // 期待されるURL
+        $expected = sprintf(
+            'https://github.com/%s/blob/%s/app/Services/Cron/SyncOpenChat.php#L97',
+            \App\Config\AppConfig::$githubRepo,
+            \App\Config\AppConfig::$githubBranch
+        );
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * convertGitHubRefToFullUrl() が空文字列や不正な形式を適切に処理するかテスト
+     */
+    public function testConvertGitHubRefToFullUrlEdgeCases(): void
+    {
+        // 空文字列
+        $this->assertEquals('', CronUtility::convertGitHubRefToFullUrl(''));
+
+        // GitHub::で始まらない文字列
+        $invalid = 'some random string';
+        $this->assertEquals($invalid, CronUtility::convertGitHubRefToFullUrl($invalid));
+
+        // コロンがない形式
+        $noColon = 'GitHub::path/to/file.php';
+        $this->assertEquals($noColon, CronUtility::convertGitHubRefToFullUrl($noColon));
     }
 }
