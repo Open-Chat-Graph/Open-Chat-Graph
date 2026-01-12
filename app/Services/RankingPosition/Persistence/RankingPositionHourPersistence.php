@@ -34,11 +34,15 @@ class RankingPositionHourPersistence
      * whileループは約1秒ごとに実行されるため、60回 ≒ 60秒 */
     private const LOG_INTERVAL_LOOP_COUNT = 60;
 
+    private \DateTime $startTime;
+
     function __construct(
         private RankingPositionHourPersistenceProcess $process,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private SyncOpenChatStateRepositoryInterface $state
-    ) {}
+    ) {
+        $this->startTime = OpenChatServicesUtility::getModifiedCronTime('now');
+    }
 
 
     /**
@@ -208,18 +212,21 @@ class RankingPositionHourPersistence
         // 親プロセスをkillしてcron_crawling.phpを再実行
         $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
         $parentPid = $bgState['parentPid'] ?? null;
-
         if ($parentPid) {
             CronUtility::addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
             CronUtility::killProcess($parentPid);
+        }
 
+        if ($parentPid && $this->startTime === OpenChatServicesUtility::getModifiedCronTime('now')) {
             // cron_crawling.phpを再実行
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
             $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
             exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
             CronUtility::addCronLog('毎時処理（cron_crawling.php）を再実行しました');
-        }
 
-        throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);
+            throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);
+        } else {
+            throw new \RuntimeException("[警告] 毎時ランキングDB反映バックグラウンド: 次の毎時処理が既に過ぎているため、この時間の再実行はスキップします");
+        }
     }
 }

@@ -7,7 +7,6 @@ use App\ServiceProvider\ApiOpenChatDeleterServiceProvider;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\SyncOpenChat;
 use App\Services\Cron\Utility\CronUtility;
-use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
@@ -20,8 +19,6 @@ try {
         app(ApiOpenChatDeleterServiceProvider::class)->register();
     }
 
-    $startTime = OpenChatServicesUtility::getModifiedCronTime('now');
-    
     /**
      * @var SyncOpenChat $syncOpenChat
      */
@@ -42,11 +39,9 @@ try {
         }
     }
 
+
     if ($e instanceof ApplicationException && $e->getCode() === ApplicationException::RANKING_PERSISTENCE_TIMEOUT) {
-        if ($startTime < OpenChatServicesUtility::getModifiedCronTime('now')) {
-            $shouldNotify = false;
-            CronUtility::addCronLog("毎時処理を中断");
-        }
+        CronUtility::addCronLog("毎時処理を中断");
     }
 
     if ($shouldNotify) {
