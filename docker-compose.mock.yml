@@ -4,16 +4,16 @@
 services:
   app:
     ports:
-      - "${HTTPS_PORT_MOCK:-8543}:8543"
+      - "${HTTPS_PORT_MOCK:-8543}:443"
     volumes:
       - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl-mock.conf"
       - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl-mock.conf"
     depends_on:
       - line-mock-api
     extra_hosts:
-      - "openchat.line.me:172.20.0.10"
-      - "line.me:172.20.0.10"
-      - "obs.line-scdn.net:172.20.0.10"
+      - "openchat.line.me:10.99.0.10"
+      - "line.me:10.99.0.10"
+      - "obs.line-scdn.net:10.99.0.10"
     networks:
       - default
       - mock-network
@@ -42,11 +42,11 @@ services:
       - LANG=ja_JP.UTF-8
     networks:
       mock-network:
-        ipv4_address: 172.20.0.10
+        ipv4_address: 10.99.0.10
 
 networks:
   mock-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 10.99.0.0/16
