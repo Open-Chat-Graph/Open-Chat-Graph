@@ -1,3 +1,5 @@
+name: oc-review-mock
+
 services:
   app:
     build:

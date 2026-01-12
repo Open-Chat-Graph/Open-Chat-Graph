@@ -1,12 +1,12 @@
-name: oc-review-mock
+name: oc-review-mock-dev
 
 services:
   app:
     build:
       context: "docker/app/"
     ports:
-      - "${WEB_PORT:-8100}:80"
-      - "${HTTPS_PORT:-8543}:443"
+      - "${WEB_PORT_DEV:-8100}:80"
+      - "${HTTPS_PORT_DEV:-8543}:443"
     working_dir: /var/www/html
     user: "1000:1000"
     volumes:
@@ -49,7 +49,7 @@ services:
       - mysql_data:/var/lib/mysql
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
     ports:
-      - "${MYSQL_PORT:-3308}:3306"
+      - "${MYSQL_PORT_DEV:-3308}:3306"
     networks:
       dev-network:
         ipv4_address: 172.30.0.3
@@ -57,7 +57,7 @@ services:
   phpmyadmin:
     image: phpmyadmin:latest
     ports:
-      - "${PHP_MY_ADMIN_PORT:-8180}:80"
+      - "${PHP_MY_ADMIN_PORT_DEV:-8180}:80"
     environment:
       - PMA_HOST=mysql
       - PMA_USER=root
@@ -73,7 +73,7 @@ services:
     build:
       context: "docker/line-mock-api/"
     ports:
-      - "${LINE_MOCK_PORT:-9000}:80"
+      - "${LINE_MOCK_PORT_DEV:-9000}:80"
     volumes:
       - "./docker/line-mock-api:/app"
       - "./storage:/var/www/html/storage"
