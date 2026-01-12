@@ -42,7 +42,10 @@ interface RankingPositionHourRepositoryInterface
 
     public function delete(\DateTime $dateTime): void;
 
-    public function insertTotalCount(string $fileTime): int;
+    /**
+     * @return array{total_count_all_category_rising:int, total_count_all_category_ranking:int}
+     */
+    public function insertTotalCount(string $fileTime): array;
 
     /**
      * @return string|false Y-m-d H:i:s

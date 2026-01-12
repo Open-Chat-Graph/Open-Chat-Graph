@@ -154,8 +154,13 @@ class RankingPositionHourPersistence
 
         // 最終処理：全体集計と古いデータ削除
         addVerboseCronLog('ランキング掲載総数をデータベースに反映中（バックグラウンド）');
-        $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
-        addCronLog("毎時ランキング全データをデータベースに反映完了（" . $expectedFileTimeLog . "）");
+        $result = $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
+        addCronLog(
+            "毎時ランキング全データをデータベースに反映完了: ランキング総件数: "
+                . $result['total_count_all_category_ranking']
+                . "急上昇総件数: " . $result['total_count_all_category_rising']
+                . "（" . $expectedFileTimeLog . "）"
+        );
 
 
         // 古いデータを削除（1日前より古いデータ）
