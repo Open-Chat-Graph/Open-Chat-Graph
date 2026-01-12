@@ -19,22 +19,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This project uses Makefile for easy Docker management. Available commands:
 
 ```bash
-# Initial setup (generates SSL certificates + runs local-setup.sh)
+# Initial setup (generates SSL certificates + runs setup script)
 make init
 
-# Development environment
-make up-dev       # Start
-make down-dev     # Stop
-make restart-dev  # Restart
-make rebuild-dev  # Rebuild and start
-make ssh-dev      # Login to container
-
-# Production environment
+# Basic environment (accesses real LINE servers)
 make up           # Start
 make down         # Stop
 make restart      # Restart
 make rebuild      # Rebuild and start
 make ssh          # Login to container
+
+# Mock environment (includes LINE Mock API)
+make up-mock      # Start
+make down-mock    # Stop
+make restart-mock # Restart
+make rebuild-mock # Rebuild and start
+make ssh-mock     # Login to container
 
 # Show all available commands
 make help
@@ -42,29 +42,35 @@ make help
 
 **Direct docker compose usage:**
 ```bash
-# Development environment
-docker compose -f docker-compose.dev.yml up -d
+# Basic environment
+docker compose up -d
 
-# Production environment
-docker compose -f docker-compose.yml up -d
+# Mock environment (overlays mock configuration)
+docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 ```
 
 ### Environment Details
 
-**Development Environment (docker-compose.dev.yml):**
-- Domain: `ocgraph-mock.test`
-- HTTP: http://localhost:8100
-- HTTPS: https://ocgraph-mock.test:8543 (or https://localhost:8543)
-- MySQL: localhost:3308
-- phpMyAdmin: http://localhost:8180
-- Includes LINE Mock API server for testing crawling
-
-**Production Environment (docker-compose.yml):**
-- Domain: `ocgraph.test`
-- HTTP: http://localhost:8000
-- HTTPS: https://ocgraph.test:8443 (or https://localhost:8443)
+**Basic Environment (docker-compose.yml):**
+- HTTPS: https://localhost:8443
 - MySQL: localhost:3306
 - phpMyAdmin: http://localhost:8080
+- Accesses external LINE servers (requires internet connection)
+
+**Mock Environment (docker-compose.yml + docker-compose.mock.yml):**
+- HTTPS (Basic): https://localhost:8443
+- HTTPS (Mock): https://localhost:8543
+- MySQL: localhost:3306 (shared with basic environment)
+- phpMyAdmin: http://localhost:8080
+- LINE Mock API: http://localhost:9000
+- Redirects LINE domains (openchat.line.me, etc.) to local Mock API
+- Works without internet connection
+
+**Key Features:**
+- Both environments share the same MySQL database
+- `extra_hosts` (LINE domain redirects) only apply when Mock environment is running
+- Switch between environments without losing data
+- Mock API runs in separate container, only starts with `make up-mock`
 
 **HTTPS Support:**
 - SSL certificates are auto-generated using `mkcert`
@@ -80,7 +86,7 @@ make init
 # Manual setup
 ./docker/app/generate-ssl-certs.sh  # Generate SSL certificates
 composer install                     # Install PHP dependencies
-./local-setup.sh                     # Setup local configuration
+./setup/local-setup.default.sh      # Setup local configuration
 ```
 
 **Requirements:**
