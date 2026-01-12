@@ -73,7 +73,7 @@ class OpenChatDailyCrawling
 
         // killフラグの時刻が自分の開始時刻より新しい場合、より新しいリトライが開始されたので終了
         if ($killFlagTime !== '' && $killFlagTime > $this->startTime) {
-            throw new ApplicationException((string)$key, AppConfig::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
+            throw new ApplicationException((string)$key, ApplicationException::DAILY_UPDATE_EXCEPTION_ERROR_CODE);
         }
     }
 

@@ -2,8 +2,9 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Services\Cron\SyncOpenChat;
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\SyncOpenChat;
+use App\Services\Cron\Utility\CronUtility;
 use Shared\MimimalCmsConfig;
 
 try {
@@ -17,8 +18,8 @@ try {
     $syncOpenChat = app(SyncOpenChat::class);
 
     $syncOpenChat->handle(retryDailyTest: true);
-    addCronLog('Done retry_daily_task');
+    CronUtility::addCronLog('Done retry_daily_task');
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
 }

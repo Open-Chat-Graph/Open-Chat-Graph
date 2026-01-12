@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Config\AppConfig;
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingBan\RankingBanTableUpdater;
 
@@ -23,6 +24,6 @@ try {
 
     AdminTool::sendDiscordNotify('RankingBanTableUpdater done');
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
 }

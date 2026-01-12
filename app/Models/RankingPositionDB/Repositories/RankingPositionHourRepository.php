@@ -289,10 +289,27 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         RankingPositionDB::execute("DELETE FROM member WHERE time between '{$timeStr2}' AND '{$timeStr}'");
     }
 
-    public function insertTotalCount(string $fileTime): int
+    /**
+     * @return array{total_count_all_category_rising:int, total_count_all_category_ranking:int}
+     */
+    public function insertTotalCount(string $fileTime): array
     {
         $totalCount = $this->getTotalCount(new \DateTime($fileTime), false);
-        return $this->inserter->import(RankingPositionDB::connect(), 'total_count', $totalCount);
+
+        $total_count_all_category_rising = 0;
+        $total_count_all_category_ranking = 0;
+
+        foreach ($totalCount as $row) {
+            $total_count_all_category_rising += (int)($row['total_count_rising'] ?? 0);
+            $total_count_all_category_ranking += (int)($row['total_count_ranking'] ?? 0);
+        }
+
+        $this->inserter->import(RankingPositionDB::connect(), 'total_count', $totalCount);
+
+        return [
+            'total_count_all_category_rising' => $total_count_all_category_rising,
+            'total_count_all_category_ranking' => $total_count_all_category_ranking,
+        ];
     }
 
     public function getLastHour(int $offset = 0): string|false

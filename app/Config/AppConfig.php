@@ -287,6 +287,4 @@ class AppConfig
         '4DceVI1KwU1k',
     ];
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
-
-    const DAILY_UPDATE_EXCEPTION_ERROR_CODE = 1001;
 }

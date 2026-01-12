@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace App\Services\OpenChat;
 
 use App\Config\AppConfig;
+use App\Exceptions\ApplicationException;
+use App\Models\Repositories\Log\LogRepositoryInterface;
+use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
 use App\Services\OpenChat\Crawler\OpenChatApiRisingDownloaderProcess;
-use App\Models\Repositories\Log\LogRepositoryInterface;
-use App\Services\RankingPosition\Store\RankingPositionStore;
-use App\Services\RankingPosition\Store\RisingPositionStore;
-use App\Services\RankingPosition\Store\AbstractRankingPositionStore;
-use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
-use App\Exceptions\ApplicationException;
-use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use App\Services\RankingPosition\Store\AbstractRankingPositionStore;
+use App\Services\RankingPosition\Store\RankingPositionStore;
+use App\Services\RankingPosition\Store\RisingPositionStore;
 use Shared\MimimalCmsConfig;
 
 class OpenChatApiDbMerger
@@ -70,7 +71,7 @@ class OpenChatApiDbMerger
     {
         $this->setKillFlagFalse();
         $startTime = microtime(true);
-        addVerboseCronLog("LINE公式APIからランキングデータを取得開始");
+        CronUtility::addVerboseCronLog("LINE公式APIからランキングデータを取得開始");
 
         try {
             $result1 = $this->fetchOpenChatApiRankingAllProcess($this->risingStore, $this->risingDownloader);
@@ -80,7 +81,7 @@ class OpenChatApiDbMerger
             $this->logRepository->logUpdateOpenChatError(0, $e->__toString());
             throw $e;
         } finally {
-            addVerboseCronLog("LINE公式APIからランキングデータを取得完了（" . formatElapsedTime($startTime) . "）");
+            CronUtility::addVerboseCronLog("LINE公式APIからランキングデータを取得完了（" . formatElapsedTime($startTime) . "）");
         }
     }
 
@@ -120,7 +121,7 @@ class OpenChatApiDbMerger
                         ? formatElapsedTime($startTimes[$currentCategory])
                         : '不明';
                     $sinceLastFormatted = round($sinceLastCallback, 1);
-                    addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
+                    CronUtility::addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
                 }
             }
 
@@ -153,11 +154,11 @@ class OpenChatApiDbMerger
             $isDownloadedCategory = $fileTime === $now;
 
             if ($isDownloadedCategory) {
-                addVerboseCronLog(
+                CronUtility::addVerboseCronLog(
                     $this->getCategoryLabel($category, $positionStore) . "は最新のためスキップ（取得日時: " . substr($fileTime, 0, -3) . "）"
                 );
             } else {
-                addVerboseCronLog($this->getCategoryLabel($category, $positionStore) . "を取得中");
+                CronUtility::addVerboseCronLog($this->getCategoryLabel($category, $positionStore) . "を取得中");
             }
 
             return $isDownloadedCategory;
@@ -166,7 +167,7 @@ class OpenChatApiDbMerger
         $callbackByCategoryAfter = function (string $category) use ($positionStore, &$startTimes): void {
             $label = $this->getCategoryLabel($category, $positionStore) . $positionStore->getCacheCount() . "件";
             $elapsed = isset($startTimes[$category]) ? "（" . formatElapsedTime($startTimes[$category]) . "）" : '';
-            addVerboseCronLog("{$label}取得完了{$elapsed}");
+            CronUtility::addVerboseCronLog("{$label}取得完了{$elapsed}");
 
             $positionStore->clearAllCacheDataAndSaveCurrentCategoryApiDataCache($category);
         };

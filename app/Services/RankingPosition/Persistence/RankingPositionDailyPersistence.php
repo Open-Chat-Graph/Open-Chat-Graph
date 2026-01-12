@@ -6,6 +6,7 @@ namespace App\Services\RankingPosition\Persistence;
 
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
 class RankingPositionDailyPersistence
@@ -22,7 +23,7 @@ class RankingPositionDailyPersistence
     function persistHourToDaily(): bool
     {
         if ($this->rankingPositionRepository->getLastDate() === $this->date) {
-            addVerboseCronLog('日次ランキングデータの永続化はスキップ（本日実行済み: ' . $this->date . '）');
+            CronUtility::addVerboseCronLog('日次ランキングデータの永続化はスキップ（本日実行済み: ' . $this->date . '）');
             return false;
         }
 
@@ -44,7 +45,7 @@ class RankingPositionDailyPersistence
             $this->rankingPositionHourRepository->getTotalCount($date)
         );
 
-        addVerboseCronLog('日次ランキングデータの永続化が完了: ' . $this->date);
+        CronUtility::addVerboseCronLog('日次ランキングデータの永続化が完了: ' . $this->date);
         return true;
     }
 

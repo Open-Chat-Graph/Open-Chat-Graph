@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\StaticData\StaticDataGenerator;
 
 class UpdateHourlyMemberRankingService
@@ -24,12 +25,12 @@ class UpdateHourlyMemberRankingService
         $time = $this->rankingPositionHourRepository->getLastHour();
         if (!$time) return;
 
-        addVerboseCronLog('毎時メンバーランキングテーブルを更新中');
+        CronUtility::addVerboseCronLog('毎時メンバーランキングテーブルを更新中');
         $this->hourMemberRankingUpdaterRepository->updateHourRankingTable(
             new \DateTime($time),
             $this->getCachedFilters($time)
         );
-        addVerboseCronLog('毎時メンバーランキングテーブル更新完了');
+        CronUtility::addVerboseCronLog('毎時メンバーランキングテーブル更新完了');
 
         $this->updateStaticData($time);
     }
@@ -46,9 +47,9 @@ class UpdateHourlyMemberRankingService
     {
         safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
 
-        addVerboseCronLog('ランキング静的データを生成中');
+        CronUtility::addVerboseCronLog('ランキング静的データを生成中');
         $this->staticDataGenerator->updateStaticData();
-        addVerboseCronLog('ランキング静的データ生成完了');
+        CronUtility::addVerboseCronLog('ランキング静的データ生成完了');
 
         // おすすめ静的データ生成とCDNキャッシュ削除をバックグラウンドで実行
         $this->executeRecommendStaticDataGeneratorInBackground();
@@ -59,6 +60,6 @@ class UpdateHourlyMemberRankingService
         $arg = escapeshellarg(\Shared\MimimalCmsConfig::$urlRoot);
         $path = AppConfig::ROOT_PATH . 'batch/exec/update_recommend_static_data.php';
         exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
-        addVerboseCronLog('おすすめ静的データ生成をバックグラウンドで開始');
+        CronUtility::addVerboseCronLog('おすすめ静的データ生成をバックグラウンドで開始');
     }
 }
