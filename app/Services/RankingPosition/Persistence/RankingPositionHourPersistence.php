@@ -215,7 +215,7 @@ class RankingPositionHourPersistence
             CronUtility::killProcess($parentPid);
         }
 
-        if ($parentPid && $this->startTime === OpenChatServicesUtility::getModifiedCronTime('now')) {
+        if ($parentPid && $this->startTime == OpenChatServicesUtility::getModifiedCronTime('now')) {
             // cron_crawling.phpを再実行
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
             $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';

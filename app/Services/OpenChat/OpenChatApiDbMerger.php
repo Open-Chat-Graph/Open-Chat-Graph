@@ -184,7 +184,7 @@ class OpenChatApiDbMerger
     {
         if ($this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)) {
             $message = "OpenChatApiDbMergerの処理が外部から中断されました。";
-            $message .= $this->startTime === OpenChatServicesUtility::getModifiedCronTime('now')
+            $message .= $this->startTime == OpenChatServicesUtility::getModifiedCronTime('now')
                 ? ''
                 : 'この時間帯のデータ更新は失敗しました。';
             throw new ApplicationException($message);
