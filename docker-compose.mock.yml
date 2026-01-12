@@ -1,0 +1,52 @@
+# Mock環境用の追加設定
+# 使い方: docker compose -f docker-compose.yml -f docker-compose.mock.yml up
+
+services:
+  app:
+    ports:
+      - "${HTTPS_PORT_MOCK:-8543}:8543"
+    volumes:
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl-mock.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl-mock.conf"
+    depends_on:
+      - line-mock-api
+    extra_hosts:
+      - "openchat.line.me:172.20.0.10"
+      - "line.me:172.20.0.10"
+      - "obs.line-scdn.net:172.20.0.10"
+    networks:
+      - default
+      - mock-network
+
+  mysql:
+    networks:
+      - default
+      - mock-network
+
+  phpmyadmin:
+    networks:
+      - default
+      - mock-network
+
+  # LINE公式サイトエミュレーションサーバー
+  line-mock-api:
+    build:
+      context: "docker/line-mock-api/"
+    ports:
+      - "${LINE_MOCK_PORT:-9000}:80"
+    volumes:
+      - "./docker/line-mock-api:/app"
+      - "./storage:/var/www/html/storage"
+    environment:
+      - TZ=Asia/Tokyo
+      - LANG=ja_JP.UTF-8
+    networks:
+      mock-network:
+        ipv4_address: 172.20.0.10
+
+networks:
+  mock-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

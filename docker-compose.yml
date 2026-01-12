@@ -41,6 +41,7 @@ services:
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
     ports:
       - "${MYSQL_PORT:-3306}:3306"
+
   phpmyadmin:
     image: phpmyadmin:latest
     ports:
@@ -51,6 +52,7 @@ services:
       - PMA_PASSWORD=test_root_pass
     depends_on:
       - mysql
+
 volumes:
   mysql_data:
   storage:

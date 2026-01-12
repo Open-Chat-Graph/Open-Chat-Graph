@@ -5,25 +5,28 @@
 
 set -e
 
+MYSQL_CONTAINER="oc-review-mock-mysql-1"
 SCHEMA_DIR="$(cd "$(dirname "$0")/schema/mysql" && pwd)"
-MYSQL_HOST="${MYSQL_HOST:-mysql}"
-MYSQL_PORT="${MYSQL_PORT:-3306}"
-MYSQL_USER="${MYSQL_USER:-root}"
-MYSQL_PASSWORD="${MYSQL_PASSWORD:-test_root_pass}"
+MYSQL_USER="root"
+MYSQL_PASSWORD="test_root_pass"
 
 echo "================================"
 echo "データベース初期構築"
 echo "================================"
-echo "Host: $MYSQL_HOST:$MYSQL_PORT"
+echo "Container: $MYSQL_CONTAINER"
 echo "User: $MYSQL_USER"
 echo ""
 
-# MySQLコマンド構築
-if [ -n "$MYSQL_PASSWORD" ]; then
-    MYSQL_CMD="mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD"
-else
-    MYSQL_CMD="mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER"
+# コンテナが起動しているか確認
+if ! docker ps --format '{{.Names}}' | grep -q "^${MYSQL_CONTAINER}$"; then
+    echo "エラー: コンテナ ${MYSQL_CONTAINER} が起動していません"
+    echo "先に環境を起動してください:"
+    echo "  make up"
+    exit 1
 fi
+
+# MySQLコマンド構築（Docker exec経由）
+MYSQL_CMD="docker exec -i $MYSQL_CONTAINER mysql -u$MYSQL_USER -p$MYSQL_PASSWORD"
 
 # スキーマファイルの順序（依存関係を考慮）
 SCHEMA_FILES=(
