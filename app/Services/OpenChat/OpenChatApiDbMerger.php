@@ -121,7 +121,7 @@ class OpenChatApiDbMerger
                         ? formatElapsedTime($startTimes[$currentCategory])
                         : '不明';
                     $sinceLastFormatted = round($sinceLastCallback, 1);
-                    CronUtility::addCronLog("[警告] URL1件の取得に{$sinceLastFormatted}秒: {$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
+                    CronUtility::addCronLog("[警告] URL1件（ランキング40件分）のデータ取得に{$sinceLastFormatted}秒: URL{$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
                 }
             }
 
