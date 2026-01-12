@@ -56,3 +56,7 @@ prid-setup.sh
 # Docker SSL certificates
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
+
+storage/ja/ranking_position/filter_member_change.dat
+storage/ja/ranking_position/filter_new_rooms.dat
+storage/ja/ranking_position/filter_weekly_update.dat
