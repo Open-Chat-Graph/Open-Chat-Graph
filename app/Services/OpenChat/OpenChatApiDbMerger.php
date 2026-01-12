@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -25,10 +24,12 @@ use Shared\MimimalCmsConfig;
 class OpenChatApiDbMerger
 {
     /** URL取得の遅延警告閾値（秒） */
-    private const URL_FETCH_SLOW_THRESHOLD_SECONDS = 10;
+    private const URL_FETCH_SLOW_THRESHOLD_SECONDS = 5;
 
     private OpenChatApiRankingDownloader $rankingDownloader;
     private OpenChatApiRankingDownloader $risingDownloader;
+
+    private \DateTime $startTime;
 
     function __construct(
         private OpenChatApiDtoFactory $openChatApiDtoFactory,
@@ -49,6 +50,8 @@ class OpenChatApiDbMerger
             OpenChatApiRankingDownloader::class,
             ['openChatApiRankingDownloaderProcess' => $openChatApiRisingDownloaderProcess]
         );
+
+        $this->startTime = OpenChatServicesUtility::getModifiedCronTime('now');
     }
 
     /**
@@ -56,7 +59,7 @@ class OpenChatApiDbMerger
      */
     private function getCategoryLabel(string $category, AbstractRankingPositionStore $positionStore): string
     {
-        $categoryName = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] ?? 'Unknown';
+        $categoryName = getCategoryName((int)$category);
         $typeLabel = str_contains(getClassSimpleName($positionStore), 'Rising') ? '急上昇' : 'ランキング';
         return "{$categoryName}の{$typeLabel}";
     }
@@ -121,7 +124,8 @@ class OpenChatApiDbMerger
                         ? formatElapsedTime($startTimes[$currentCategory])
                         : '不明';
                     $sinceLastFormatted = round($sinceLastCallback, 1);
-                    CronUtility::addCronLog("[警告] URL1件（ランキング40件分）のデータ取得に{$sinceLastFormatted}秒: URL{$urlCount}件目（カテゴリ開始から{$categoryElapsed}経過）");
+                    $categoryName = getCategoryName((int)$currentCategory);
+                    CronUtility::addCronLog("[警告] URL1件（ランキング40件分）のデータ取得に{$sinceLastFormatted}秒: {$urlCount}件目（{$categoryName}の取得開始から{$categoryElapsed}経過）");
                 }
             }
 
@@ -177,8 +181,13 @@ class OpenChatApiDbMerger
     /** @throws ApplicationException */
     private function checkKillFlag()
     {
-        $this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)
-            && throw new ApplicationException('OpenChatApiDbMerger: 強制終了しました');
+        if ($this->syncOpenChatStateRepository->getBool(SyncOpenChatStateType::openChatApiDbMergerKillFlag)) {
+            $message = "OpenChatApiDbMergerの処理が外部から中断されました。";
+            $message .= $this->startTime == OpenChatServicesUtility::getModifiedCronTime('now')
+                ? ''
+                : 'この時間帯のデータ更新は失敗しました。';
+            throw new ApplicationException($message);
+        }
     }
 
     static function setKillFlagTrue()

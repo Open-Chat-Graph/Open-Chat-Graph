@@ -30,7 +30,7 @@ class ReactRankingPageController
         $title1 = '';
         switch (!!$category) {
             case true:
-                $title1 = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] . '｜';
+                $title1 = getCategoryName($category) . '｜';
                 break;
             default:
                 $title1 = $title0 ? '' : t('【最新】');
@@ -94,7 +94,7 @@ class ReactRankingPageController
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             t('ランキング'),
             $category ? 'ranking' : '',
-            $category ? array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category] : '',
+            $category ? getCategoryName($category) : '',
         );
 
         return view('ranking_react_content', compact('_css', '_js', '_meta', '_argDto', '_breadcrumbsShema', 'category'));
