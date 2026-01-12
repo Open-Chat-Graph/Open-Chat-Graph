@@ -17,7 +17,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <h1 style="letter-spacing: 0px;">オプチャグラフとは？</h1>
                 <p>オプチャグラフはLINEオープンチャットの成長傾向をグラフやランキングで比較できるWEBサイトです。</p>
-                <p>LINE非公式の<a href="https://github.com/pika-0203/Open-Chat-Graph" target="_blank">オープンソースプロジェクト</a>により運営されています。 </p>
+                <p>LINE非公式の<a href="https://github.com/mimimiku778/Open-Chat-Graph" target="_blank">オープンソースプロジェクト</a>により運営されています。 </p>
                 <h2>サイトの目的</h2>
                 <p>・ユーザーがオープンチャットを見つけて参加する機会を作る</p>
                 <p>・オープンチャットの管理者が成長傾向を把握し、比較できる事で運営に役立つ</p>
@@ -146,7 +146,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
             <?php elseif (\Shared\MimimalCmsConfig::$urlRoot === '/tw') : ?>
                 <h1 style="letter-spacing: 0px;">關於LINE社群流量統計</h1>
                 <p>LINE社群流量統計是一個幫助使用者發現開放聊天室，並透過圖表和排名比較成長趨勢的網站。</p>
-                <p>這是一個由 <a href="https://github.com/pika-0203/Open-Chat-Graph" target="_blank">開源專案</a> （LINE非官方）營運。</p>
+                <p>這是一個由 <a href="https://github.com/mimimiku778/Open-Chat-Graph" target="_blank">開源專案</a> （LINE非官方）營運。</p>
                 <h2>網站的目標</h2>
                 <p>・為使用者提供機會找到並加入開放聊天室</p>
                 <p>・協助開放聊天室的管理員掌握成長趨勢並進行比較，對管理運營有所幫助</p>
@@ -199,7 +199,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
             <?php elseif (\Shared\MimimalCmsConfig::$urlRoot === '/th') : ?>
                 <h1 style="letter-spacing: 0px;">เกี่ยวกับ LINE OPENCHAT สถิติการเข้าชม</h1>
                 <p>LINE OPENCHAT สถิติการเข้าชม เป็นเว็บไซต์ที่ช่วยให้ผู้ใช้ค้นหา โอเพนแชท และเปรียบเทียบแนวโน้มการเติบโตผ่านกราฟและการจัดอันดับ</p>
-                <p>ดำเนินการโดย<a href="https://github.com/pika-0203/Open-Chat-Graph" target="_blank">โครงการโอเพนซอร์ส</a> (ไม่ใช่ทางการของ LINE)</p>
+                <p>ดำเนินการโดย<a href="https://github.com/mimimiku778/Open-Chat-Graph" target="_blank">โครงการโอเพนซอร์ส</a> (ไม่ใช่ทางการของ LINE)</p>
                 <h2>เป้าหมายของเว็บไซต์</h2>
                 <p>・สร้างโอกาสให้ผู้ใช้ค้นหาและเข้าร่วม โอเพนแชท</p>
                 <p>・ช่วยให้ผู้ดูแล โอเพนแชท เข้าใจแนวโน้มการเติบโตและเปรียบเทียบข้อมูลเพื่อสนับสนุนการจัดการ</p>

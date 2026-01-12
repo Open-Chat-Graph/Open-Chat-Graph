@@ -133,5 +133,5 @@ class MimimalCmsConfig
      * This constant is used to specify the GitHub URL for displaying the source code in the exception error trace.
      * The path name after the DOCUMENT_ROOT_NAME constant is concatenated with this URL.
      */
-    public static string $errorPageGitHubUrl = 'https://github.com/pika-0203/Open-Chat-Graph/blob/main/';
+    public static string $errorPageGitHubUrl = 'https://github.com/mimimiku778/Open-Chat-Graph/blob/main/';
 }
