@@ -8,6 +8,10 @@ RUN useradd -m -u 1000 -G www-data -s /bin/bash vscode && \
 COPY php.ini /usr/local/etc/php/php.ini
 RUN chmod 644 /usr/local/etc/php/php.ini
 
+# openssl.iniファイルを作成して書き込み可能にする
+RUN touch /usr/local/etc/php/conf.d/openssl.ini && \
+    chmod 666 /usr/local/etc/php/conf.d/openssl.ini
+
 RUN cd /usr/bin && curl -s http://getcomposer.org/installer | php && ln -s /usr/bin/composer.phar /usr/bin/composer
 
 RUN apt-get update && apt-get install -y \
@@ -60,8 +64,8 @@ RUN apt-get update && apt-get install -y \
 # vscodesudoers追加
 RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-RUN pecl install xdebug-3.3.2 && \
-    docker-php-ext-enable xdebug
+RUN pecl install xdebug-3.3.2
+# Xdebugはデフォルトで無効（環境変数ENABLE_XDEBUG=1で有効化）
 
 RUN a2enmod rewrite && a2enmod ssl
 

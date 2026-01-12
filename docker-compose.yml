@@ -19,6 +19,8 @@ services:
       - "./docker/app/ssl-new/ocgraph.test+4.pem:/etc/ssl/certs/ocgraph.test+4.pem"
       - "./docker/app/ssl-new/ocgraph.test+4-key.pem:/etc/ssl/certs/ocgraph.test+4-key.pem"
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
+      - "./docker/app/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
     depends_on:
       - mysql
     environment:

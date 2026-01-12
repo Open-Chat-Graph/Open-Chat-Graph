@@ -82,6 +82,49 @@ make help         # 全コマンド表示
 - SSL証明書は`mkcert`により自動生成されます
 - 両環境でMySQLデータベースは共有されます
 
+### Xdebugの有効化
+
+デフォルトでは**Xdebugは無効**です。デバッグが必要な場合のみ、以下のいずれかの方法で有効化してください：
+
+**方法1: 環境変数で起動時に有効化（推奨）**
+
+```bash
+# 基本環境
+ENABLE_XDEBUG=1 make up
+
+# Mock環境
+ENABLE_XDEBUG=1 make up-mock
+
+# または再起動時
+ENABLE_XDEBUG=1 make restart
+ENABLE_XDEBUG=1 make restart-mock
+```
+
+**方法2: docker-compose.ymlを編集して常に有効化**
+
+`docker-compose.yml`の`app`サービスの`environment`セクションに追加：
+
+```yaml
+services:
+  app:
+    environment:
+      - ENABLE_XDEBUG=1  # この行を追加
+```
+
+その後、コンテナを再起動：
+
+```bash
+make restart      # 基本環境
+make restart-mock # Mock環境
+```
+
+**Xdebug設定:**
+- モード: debug
+- クライアントホスト: host.docker.internal
+- ポート: 9003
+
+**⚠️ 注意:** Xdebugを有効化するとパフォーマンスが大幅に低下します。デバッグ時のみ使用してください。
+
 ---
 
 ## 🏗️ 技術スタック
