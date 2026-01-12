@@ -9,6 +9,7 @@ use App\Exceptions\ApplicationException;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\MimimalCmsConfig;
 
@@ -54,7 +55,7 @@ class RankingPositionHourPersistence
         $parentPidArg = escapeshellarg((string)$parentPid);
         $path = AppConfig::ROOT_PATH . 'batch/exec/persist_ranking_position_background.php';
         exec(PHP_BINARY . " {$path} {$arg} {$parentPidArg} >/dev/null 2>&1 &");
-        addVerboseCronLog('毎時ランキングDB反映をバックグラウンドで開始');
+        CronUtility::addVerboseCronLog('毎時ランキングDB反映をバックグラウンドで開始');
     }
 
     /**
@@ -69,7 +70,7 @@ class RankingPositionHourPersistence
      */
     function waitForBackgroundCompletion(): void
     {
-        addVerboseCronLog('バックグラウンドDB反映の完了を待機中');
+        CronUtility::addVerboseCronLog('バックグラウンドDB反映の完了を待機中');
 
         while (true) {
             // バックグラウンドプロセスの状態を取得
@@ -79,7 +80,7 @@ class RankingPositionHourPersistence
 
             // PIDがクリアされていたら正常終了
             if (!$pid) {
-                addVerboseCronLog('バックグラウンドDB反映完了を確認');
+                CronUtility::addVerboseCronLog('バックグラウンドDB反映完了を確認');
                 return;
             }
 
@@ -120,7 +121,7 @@ class RankingPositionHourPersistence
         // 現在時間をcron毎時実行時間に調整した値
         $expectedFileTime = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
         $expectedFileTimeLog = (new \DateTime($expectedFileTime))->format('Y-m-d H:i');
-        addVerboseCronLog("毎時ランキングをデータベースに反映するバックグラウンド処理を開始（対象時刻: " . $expectedFileTimeLog . "）");
+        CronUtility::addVerboseCronLog("毎時ランキングをデータベースに反映するバックグラウンド処理を開始（対象時刻: " . $expectedFileTimeLog . "）");
 
         // ストレージファイル監視ループ（ファイルが準備でき次第、順次処理）
         $startTime = microtime(true);
@@ -139,7 +140,7 @@ class RankingPositionHourPersistence
 
             // 定期的に待機中のログを出力（60ループごと ≒ 60秒ごと）
             if ($loopCount % self::LOG_INTERVAL_LOOP_COUNT === 0) {
-                addVerboseCronLog(
+                CronUtility::addVerboseCronLog(
                     'ストレージファイル待機中: ' . formatElapsedTime($startTime) . '経過、残り'
                         . count(array_filter($this->process->getProcessedState(), fn($p) => !$p['rising'] || !$p['ranking']))
                         . 'カテゴリ（バックグラウンド）'
@@ -155,9 +156,9 @@ class RankingPositionHourPersistence
         }
 
         // 最終処理：全体集計と古いデータ削除
-        addVerboseCronLog('ランキング掲載総数をデータベースに反映中（バックグラウンド）');
+        CronUtility::addVerboseCronLog('ランキング掲載総数をデータベースに反映中（バックグラウンド）');
         $result = $this->rankingPositionHourRepository->insertTotalCount($expectedFileTime);
-        addCronLog(
+        CronUtility::addCronLog(
             "毎時ランキング全データをデータベースに反映完了: ランキング総件数: "
                 . $result['total_count_all_category_ranking']
                 . "急上昇総件数: " . $result['total_count_all_category_rising']
@@ -169,7 +170,7 @@ class RankingPositionHourPersistence
         $deleteTime = new \DateTime($expectedFileTime);
         $deleteTime->modify('- 1day');
         $this->rankingPositionHourRepository->delete($deleteTime);
-        addCronLog('古いランキングデータを削除完了（' .  $deleteTime->format('Y-m-d H:i') . " 以前）");
+        CronUtility::addCronLog('古いランキングデータを削除完了（' .  $deleteTime->format('Y-m-d H:i') . " 以前）");
 
         // キャッシュをクリア
         $this->process->afterClearCache();
@@ -189,7 +190,7 @@ class RankingPositionHourPersistence
 
         if ($parentPid && posix_getpgid((int)$parentPid) === false) {
             $errorMessage = "親プロセス (PID: {$parentPid}) が異常終了したことを検出。バックグラウンド処理を終了します。";
-            addCronLog($errorMessage);
+            CronUtility::addCronLog($errorMessage);
             throw new ApplicationException($errorMessage);
         }
     }
@@ -202,21 +203,21 @@ class RankingPositionHourPersistence
     private function handleTimeoutAndRestartCron(): void
     {
         $message = "毎時ランキングDB反映バックグラウンド: タイムアウト（" . self::MAX_WAIT_SECONDS . "秒）";
-        addCronLog($message);
+        CronUtility::addCronLog($message);
 
         // 親プロセスをkillしてcron_crawling.phpを再実行
         $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
         $parentPid = $bgState['parentPid'] ?? null;
 
         if ($parentPid) {
-            addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
-            killProcess($parentPid);
+            CronUtility::addCronLog("親プロセス (PID: {$parentPid}, App\Services\OpenChat\OpenChatApiDbMerger::fetchOpenChatApiRankingAll) をkillします");
+            CronUtility::killProcess($parentPid);
 
             // cron_crawling.phpを再実行
             $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
             $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
             exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
-            addCronLog('毎時処理（cron_crawling.php）を再実行しました');
+            CronUtility::addCronLog('毎時処理（cron_crawling.php）を再実行しました');
         }
 
         throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);

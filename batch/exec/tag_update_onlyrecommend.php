@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\RecommendUpdater;
 use Shared\MimimalCmsConfig;
 
@@ -22,7 +23,7 @@ try {
     $recommendUpdater->updateRecommendTables(false, true);
     AdminTool::sendDiscordNotify('updateRecommendTables onlyRecommend done ' . $now);
 } catch (\Throwable $e) {
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
     AdminTool::sendDiscordNotify('updateRecommendTables failed ' . $now);
 }

@@ -6,6 +6,7 @@ namespace App\Services\OpenChat;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Updater\OpenChatImageStoreUpdater;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
@@ -48,7 +49,7 @@ class OpenChatImageUpdater
             $limit = AppConfig::$developmentEnvUpdateLimit['OpenChatImageUpdater'] ?? 1;
             $ocArrayCount = count($ocArray);
             $ocArray = array_slice($ocArray, 0, $limit);
-            addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
+            CronUtility::addCronLog("Development environment. Update limit: {$limit} / {$ocArrayCount}");
         }
 
         foreach ($ocArray as $oc) {

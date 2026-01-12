@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use ExceptionHandler\ExceptionHandler;
@@ -25,14 +26,14 @@ try {
     // 既に実行中の場合はkill
     if ($state->getBool(StateType::isUpdateRecommendStaticDataActive)) {
         $message = 'おすすめ静的データ生成: 既に実行中のため前回の処理をkill';
-        addCronLog($message);
+        CronUtility::addCronLog($message);
         AdminTool::sendDiscordNotify($message);
 
         // 自分以外のバックグラウンドプロセスをkill
         $myPid = getmypid();
         $cmd = "ps aux | grep update_recommend_static_data.php | grep -v grep | grep -v '{$myPid}' | awk '{print \$2}' | xargs -r kill";
         exec($cmd, $output, $returnCode);
-        addCronLog('kill結果: ' . implode(' ', $output) . ' (return code: ' . $returnCode . ')');
+        CronUtility::addCronLog('kill結果: ' . implode(' ', $output) . ' (return code: ' . $returnCode . ')');
 
         $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
         sleep(5); // プロセス終了を待つ
@@ -46,27 +47,27 @@ try {
      */
     $recommendUpdater = app(RecommendUpdater::class);
 
-    addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
+    CronUtility::addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
     $recommendUpdater->updateRecommendTables();
-    addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
+    CronUtility::addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
 
     /**
      * @var RecommendStaticDataGenerator $recommendStaticDataGenerator
      */
     $recommendStaticDataGenerator = app(RecommendStaticDataGenerator::class);
 
-    addVerboseCronLog('おすすめ静的データを生成中（バックグラウンド）');
+    CronUtility::addVerboseCronLog('おすすめ静的データを生成中（バックグラウンド）');
 
     $recommendStaticDataGenerator->updateStaticData();
 
-    addVerboseCronLog('おすすめ静的データ生成完了（バックグラウンド）');
+    CronUtility::addVerboseCronLog('おすすめ静的データ生成完了（バックグラウンド）');
 
     // CDNキャッシュ削除
-    addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
+    CronUtility::addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
     purgeCacheCloudFlare();
-    addVerboseCronLog('CDNキャッシュ削除完了（バックグラウンド）');
-    
-    addVerboseCronLog('【毎時処理】バックグラウンド処理完了');
+    CronUtility::addVerboseCronLog('CDNキャッシュ削除完了（バックグラウンド）');
+
+    CronUtility::addVerboseCronLog('【毎時処理】バックグラウンド処理完了');
     // 実行中フラグを下ろす
     $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
 } catch (\Throwable $e) {
@@ -75,7 +76,7 @@ try {
         $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
     }
 
-    addCronLog($e->__toString());
+    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
     ExceptionHandler::errorLog($e);
 }

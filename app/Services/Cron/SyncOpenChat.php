@@ -7,6 +7,7 @@ namespace App\Services\Cron;
 use App\Config\AppConfig;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
@@ -57,13 +58,13 @@ class SyncOpenChat
     {
         checkLineSiteRobots();
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('[警告] 毎時処理が実行中または中断のためリトライ処理を開始します。');
+            CronUtility::addCronLog('[警告] 毎時処理が実行中または中断のためリトライ処理を開始します。');
             OpenChatApiDbMerger::setKillFlagTrue();
             sleep(5);
         }
 
         if ($this->state->getBool(StateType::isDailyTaskActive)) {
-            addCronLog('日次処理が実行中です');
+            CronUtility::addCronLog('日次処理が実行中です');
         }
     }
 
@@ -74,7 +75,7 @@ class SyncOpenChat
 
     private function hourlyTask()
     {
-        addCronLog('【毎時処理】開始');
+        CronUtility::addCronLog('【毎時処理】開始');
 
         set_time_limit(3600);
 
@@ -91,7 +92,7 @@ class SyncOpenChat
 
         $this->hourlyTaskAfterDbMerge();
 
-        addCronLog('【毎時処理】完了');
+        CronUtility::addCronLog('【毎時処理】完了');
     }
 
     private function hourlyTaskAfterDbMerge()
@@ -105,7 +106,7 @@ class SyncOpenChat
             [function () {
                 if ($this->state->getBool(StateType::isUpdateInvitationTicketActive)) {
                     // 既に実行中の場合は1回だけスキップする
-                    addCronLog('参加URL取得をスキップ（実行中のため）');
+                    CronUtility::addCronLog('参加URL取得をスキップ（実行中のため）');
                     // スキップした場合は、次回実行時に実行するようにする
                     $this->state->setFalse(StateType::isUpdateInvitationTicketActive);
                     return;
@@ -122,23 +123,23 @@ class SyncOpenChat
         if (!MimimalCmsConfig::$urlRoot) {
             $path = AppConfig::ROOT_PATH . 'batch/exec/ocreview_api_data_import_background.php';
             exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
-            addVerboseCronLog('アーカイブ用DBインポート処理をバックグラウンドで開始');
+            CronUtility::addVerboseCronLog('アーカイブ用DBインポート処理をバックグラウンドで開始');
         }
     }
 
     private function retryHourlyTask()
     {
-        addCronLog('【毎時処理】リトライ開始');
+        CronUtility::addCronLog('【毎時処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         sleep(30);
 
         $this->handle();
-        addCronLog('【毎時処理】リトライ完了');
+        CronUtility::addCronLog('【毎時処理】リトライ完了');
     }
 
     private function dailyTask()
     {
-        addCronLog('【日次処理】開始');
+        CronUtility::addCronLog('【日次処理】開始');
 
         $this->state->setTrue(StateType::isDailyTaskActive);
         $this->hourlyTask();
@@ -156,18 +157,18 @@ class SyncOpenChat
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
         );
 
-        addCronLog('【日次処理】完了');
+        CronUtility::addCronLog('【日次処理】完了');
     }
 
     private function retryDailyTask()
     {
-        addCronLog('【日次処理】リトライ開始');
+        CronUtility::addCronLog('【日次処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
         sleep(30);
 
         $this->dailyTask();
-        addCronLog('【日次処理】リトライ完了');
+        CronUtility::addCronLog('【日次処理】リトライ完了');
     }
 
     /**
@@ -179,9 +180,9 @@ class SyncOpenChat
             if (!$task)
                 continue;
 
-            addCronLog($task[1] . 'を開始');
+            CronUtility::addCronLog($task[1] . 'を開始');
             $task[0]();
-            addCronLog($task[1] . 'が完了');
+            CronUtility::addCronLog($task[1] . 'が完了');
         }
     }
 }

@@ -6,13 +6,14 @@ namespace App\Services\RankingBan;
 
 use App\Config\AppConfig;
 use App\Models\Importer\SqlInsert;
+use App\Models\Repositories\DB;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
+use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Updater\OpenChatUpdaterFromApi;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use App\Models\Repositories\DB;
-use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use Shared\MimimalCmsConfig;
 
 class RankingBanTableUpdater
@@ -220,7 +221,7 @@ class RankingBanTableUpdater
             $openChatArrayCount = count($openChatArray);
             $openChatArray = array_slice($openChatArray, 0, $limit);
             $existsListArray = array_slice($existsListArray, 0, $limit);
-            addCronLog("Development environment. Update limit: {$limit} / {$openChatArrayCount}");
+            CronUtility::addCronLog("Development environment. Update limit: {$limit} / {$openChatArrayCount}");
         }
 
         [$insertOcArray, $deleteListArray] = $this->buildTableData($openChatArray, $this->time, $existsListArray);
