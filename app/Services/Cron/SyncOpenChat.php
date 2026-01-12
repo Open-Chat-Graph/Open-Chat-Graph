@@ -60,8 +60,7 @@ class SyncOpenChat
     {
         checkLineSiteRobots();
         if ($this->state->getBool(StateType::isHourlyTaskActive)) {
-            addCronLog('[警告] 毎時処理が実行中です');
-            AdminTool::sendDiscordNotify('SyncOpenChat: [Warning] hourlyTask is active');
+            addCronLog('[警告] 毎時処理が実行中または中断されました。リトライ処理を開始します。');
             sleep(30);
         }
 
