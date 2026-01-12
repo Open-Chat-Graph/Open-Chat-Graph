@@ -6,15 +6,15 @@ use App\Services\Cron\Utility\CronUtility;
 use PHPUnit\Framework\TestCase;
 
 /**
- * CronUtility::CronUtility::getCronLogGitHubRef() と CronUtility::CronUtility::addCronLog() のGitHub参照機能のテスト
+ * CronUtility クラスのテスト
  *
  * 実行コマンド:
- *   docker compose exec app vendor/bin/phpunit app/Helpers/test/CronLogGitHubRefTest.php
+ *   docker compose exec app vendor/bin/phpunit app/Services/Cron/Utility/test/CronUtilityTest.php
  *
  * 特定のテストのみ実行:
- *   docker compose exec app vendor/bin/phpunit app/Helpers/test/CronLogGitHubRefTest.php --filter testGetCronLogGitHubRefFormat
+ *   docker compose exec app vendor/bin/phpunit app/Services/Cron/Utility/test/CronUtilityTest.php --filter testGetCronLogGitHubRefFormat
  */
-class CronLogGitHubRefTest extends TestCase
+class CronUtilityTest extends TestCase
 {
     /**
      * CronUtility::getCronLogGitHubRef() が正しい形式のGitHub参照を生成するかテスト
@@ -104,9 +104,9 @@ class CronLogGitHubRefTest extends TestCase
         // プロセスタグが返されることを確認
         $this->assertNotEmpty($processTag, 'プロセスタグが返されるべき');
         $this->assertMatchesRegularExpression(
-            '/^[a-zA-Z0-9]+$/',
+            '/^[A-Z]{2}@\d{2}:\d{2}~\d+$/',
             $processTag,
-            'プロセスタグは英数字のみであるべき'
+            'プロセスタグは "JA@HH:MM~PID" 形式であるべき'
         );
 
         // ログファイルが更新されたことを確認

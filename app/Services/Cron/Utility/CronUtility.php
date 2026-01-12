@@ -9,6 +9,12 @@ use App\Config\AppConfig;
 class CronUtility
 {
     /**
+     * プロセスタグ（セッション識別子）
+     * 形式: [言語コード@開始時刻~PID] (例: JA@05:30~12345)
+     */
+    public static ?string $processTag = null;
+
+    /**
      * Cronログを出力する
      *
      * @param string|array $log ログメッセージ
@@ -19,20 +25,19 @@ class CronUtility
     public static function addCronLog(string|array $log = '', string $setProcessTag = '', int $backtraceDepth = 1): string
     {
         // セッション識別子を1回だけ生成: [言語コード@開始時刻~PID] 形式
-        static $processTag = null;
-        if ($setProcessTag !== '' && is_null($processTag)) {
-            $processTag = $setProcessTag;
-            return $processTag;
-        } elseif ($log === '' && is_string($processTag)) {
-            return $processTag;
-        } elseif (is_null($processTag)) {
+        if ($setProcessTag !== '' && is_null(self::$processTag)) {
+            self::$processTag = $setProcessTag;
+            return self::$processTag;
+        } elseif ($log === '' && is_string(self::$processTag)) {
+            return self::$processTag;
+        } elseif (is_null(self::$processTag)) {
             $langCode = match (\Shared\MimimalCmsConfig::$urlRoot) {
                 '/th' => 'TH',
                 '/tw' => 'TW',
                 default => 'JA',
             };
             $startTime = date('H:i');
-            $processTag = $langCode . '@' . $startTime . '~' . getmypid();
+            self::$processTag = $langCode . '@' . $startTime . '~' . getmypid();
         }
 
         if (is_string($log)) {
@@ -44,13 +49,13 @@ class CronUtility
 
         foreach ($log as $string) {
             error_log(
-                date('Y-m-d H:i:s') . ' [' . $processTag . '] ' . $string . ' ' . $githubRef . "\n",
+                date('Y-m-d H:i:s') . ' [' . self::$processTag . '] ' . $string . ' ' . $githubRef . "\n",
                 3,
                 AppConfig::getStorageFilePath('addCronLogDest')
             );
         }
 
-        return $processTag;
+        return self::$processTag;
     }
 
     /**
@@ -76,7 +81,7 @@ class CronUtility
      * @param int $backtraceDepth 1=直接の呼び出し元, 2=さらに上位の呼び出し元
      * @return string GitHub::path/to/file.php:123 形式の文字列
      */
-    private static function getCronLogGitHubRef(int $backtraceDepth = 1): string
+    public static function getCronLogGitHubRef(int $backtraceDepth = 1): string
     {
         // backtraceDepth + 1 フレームを取得（0から始まるため+1が必要）
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $backtraceDepth + 2);
