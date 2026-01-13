@@ -1,23 +1,121 @@
 <?php
 declare(strict_types=1);
 
+// 大量データ生成のためメモリ制限を上げる
+ini_set('memory_limit', '512M');
+
 /**
- * LINE公式API モックサーバー（シンプル版）
+ * LINE公式API モックサーバー（リアル挙動版）
  *
  * JSONベースで本物のAPIと同じ挙動をシミュレート:
- * - 約10万件のルームデータ
- * - 10%: タイトル・説明文変化
- * - 40%: メンバー数増減
- * - 70%: 既存固定ルーム（順位変動）
- * - 30%: 新規急上昇ルーム
+ * - データ件数（環境変数で制御可能）
+ *   - MOCK_RANKING_COUNT: ランキング件数（デフォルト: 10000）
+ *   - MOCK_RISING_COUNT: 急上昇件数（デフォルト: 1000）
+ * - ルーム出現パターン（EMIDベースで固定、クローリング対象判定テスト用）
+ *   - 60%: 通常ルーム（常に出現、メンバー数変動あり）
+ *   - 30%: 断続的ルーム（2～7日に1回出現）
+ *     → ランキング/急上昇に出ていない期間も詳細APIで情報更新あり
+ *     → 「情報更新あるがランキングから消えた＝アクティビティなし」判定可能
+ *   - 10%: 削除済みルーム（ランキング/急上昇には過去1回のみ出現）
+ *     - 80%（全体の8%）: 通常の削除済み（詳細API参照可能、内容固定、メンバー数固定）
+ *     - 10%（全体の1%）: 完全削除（詳細APIも招待ページも404で完全に抹消）
+ *     - 10%（全体の1%）: 更新ありの削除済み（詳細API参照可能、たまに内容が変わる）
+ * - 20%: タイトル・説明文・画像変化
+ * - 50%: メンバー数増減（1時間で数名～100名）
+ * - EMIDは固定（同じルームは同じEMIDを保持）
+ * - カテゴリ別件数は均等分布（最大3倍の差）
+ * - 多言語対応（日本語/繁体字中国語/タイ語）
+ *   - リクエストヘッダー x-lal で言語判定
+ *   - 言語別のカテゴリID・データファイル
+ * - レスポンス速度調整（時間帯により変動、HTMLページのみ即応答）
+ *   - ランキング/急上昇API: 20-45分相当（10万件取得時）
+ *   - スクエア詳細API: 100-300ms/件（時間帯により変動）
+ *   環境変数: MOCK_DELAY_ENABLED, MOCK_DELAY_MS, MOCK_DELAY_PER_ITEM_US
  */
 
-// データファイル
-$rankingDataFile = '/app/data/ranking.json';
-$risingDataFile = '/app/data/rising.json';
+// データ件数（環境変数から取得、デフォルト値を設定）
+$rankingCount = (int)($_ENV['MOCK_RANKING_COUNT'] ?? 10000);
+$risingCount = (int)($_ENV['MOCK_RISING_COUNT'] ?? 1000);
+
+// データファイル（言語別・件数別）
+// 件数をファイル名に含めることで、環境変数を変更したら自動的に新しいデータが生成される
+$rankingDataFile = "/app/data/ranking_{$rankingCount}_%s.json";
+$risingDataFile = "/app/data/rising_{$risingCount}_%s.json";
 
 // 時間ベースのシード値（10分ごとに変化）
 $crawlCycle = (int)(time() / 600); // 600秒 = 10分
+
+// リクエストヘッダーから言語を判定
+function getLanguageFromHeaders(): string
+{
+    $headers = getallheaders();
+    if (isset($headers['x-lal'])) {
+        $lang = strtolower($headers['x-lal']);
+        return in_array($lang, ['tw', 'th']) ? $lang : 'ja';
+    }
+    return 'ja';
+}
+
+$language = getLanguageFromHeaders();
+
+// レスポンス速度調整（環境変数で制御）
+// MOCK_DELAY_ENABLED: 遅延モード有効化（1で有効、0または未設定で無効）
+// MOCK_DELAY_MS: リクエスト全体の基本遅延時間（ミリ秒）※手動設定時のみ
+// MOCK_DELAY_PER_ITEM_US: 返却アイテム1件あたりの遅延時間（マイクロ秒）※手動設定時のみ
+$delayEnabled = (int)($_ENV['MOCK_DELAY_ENABLED'] ?? 0);
+$baseDelayMs = (int)($_ENV['MOCK_DELAY_MS'] ?? 0);
+$perItemDelayUs = (int)($_ENV['MOCK_DELAY_PER_ITEM_US'] ?? 0);
+
+// 遅延モードが有効な場合、時間帯に応じた遅延を自動計算
+if ($delayEnabled && $baseDelayMs === 0 && $perItemDelayUs === 0) {
+    $currentHour = (int)date('G'); // 0-23
+
+    // 時間帯による遅延設定
+    if ($currentHour >= 0 && $currentHour < 6) {
+        // 深夜（0-6時）: 最も遅い
+        // ランキング/急上昇: 2.0-2.2倍（40-45分）
+        $multiplier = mt_rand(200, 220) / 100;
+        // スクエア詳細: 250-300ms/件（約3.6件/秒）
+        $detailDelayMs = mt_rand(250, 300);
+    } elseif ($currentHour >= 6 && $currentHour < 9) {
+        // 早朝（6-9時）: やや速い
+        // ランキング/急上昇: 1.2-1.4倍（24-28分）
+        $multiplier = mt_rand(120, 140) / 100;
+        // スクエア詳細: 150-180ms/件（約6件/秒）
+        $detailDelayMs = mt_rand(150, 180);
+    } elseif ($currentHour >= 9 && $currentHour < 18) {
+        // 昼間（9-18時）: 最も速い
+        // ランキング/急上昇: 1.0-1.2倍（20-24分）
+        $multiplier = mt_rand(100, 120) / 100;
+        // スクエア詳細: 100-150ms/件（約8件/秒）
+        $detailDelayMs = mt_rand(100, 150);
+    } else {
+        // 夜間（18-24時）: 中速
+        // ランキング/急上昇: 1.5-1.7倍（30-34分）
+        $multiplier = mt_rand(150, 170) / 100;
+        // スクエア詳細: 180-220ms/件（約5件/秒）
+        $detailDelayMs = mt_rand(180, 220);
+    }
+
+    // ランキング/急上昇API用の遅延
+    $basePerItemDelay = 12000; // 基本: 12000μs/件（10万件を20分で処理）
+    $perItemDelayUs = (int)($basePerItemDelay * $multiplier);
+    $baseDelayMs = 50; // リクエスト全体の基本遅延
+} else {
+    // 遅延モード無効 or 手動設定時
+    $detailDelayMs = 0;
+}
+
+// 遅延を適用する関数
+function applyResponseDelay(int $baseDelayMs, int $perItemDelayUs, int $itemCount): void
+{
+    if ($baseDelayMs > 0) {
+        usleep($baseDelayMs * 1000);
+    }
+    if ($perItemDelayUs > 0 && $itemCount > 0) {
+        usleep($perItemDelayUs * $itemCount);
+    }
+}
 
 // ランダムテキスト生成
 function generateRandomTitle(int $seed): string
@@ -73,8 +171,99 @@ function generateRandomDescription(int $seed): string
     return sprintf($template, $topic);
 }
 
+// カテゴリ別件数分布（各カテゴリの差を3倍程度に調整）
+// 合計100%、最大と最小の差は約3倍
+function getCategoryDistribution(string $language): array
+{
+    // 日本語（ja） - 各カテゴリ均等分布（最大6.0% - 最小2.0% = 3倍）
+    $jaDistribution = [
+        17 => 6.0,   // ゲーム
+        22 => 5.5,   // アニメ・漫画
+        26 => 5.0,   // 芸能人・有名人
+        33 => 4.8,   // 音楽
+        8 => 4.6,    // 地域・暮らし
+        16 => 4.5,   // スポーツ
+        7 => 4.4,    // 同世代
+        5 => 4.3,    // 働き方・仕事
+        11 => 4.2,   // 研究・学習
+        2 => 4.1,    // 学校・同窓会
+        40 => 4.0,   // 金融・ビジネス
+        6 => 3.9,    // 団体
+        19 => 3.8,   // 乗り物
+        41 => 3.7,   // イラスト
+        23 => 3.6,   // 健康
+        20 => 3.5,   // ファッション・美容
+        28 => 3.4,   // 妊活・子育て
+        12 => 3.3,   // 料理・グルメ
+        27 => 3.2,   // 動物・ペット
+        18 => 3.0,   // 旅行
+        37 => 2.8,   // 写真
+        30 => 2.6,   // 映画・舞台
+        29 => 2.4,   // 本
+        24 => 2.2,   // TV・VOD
+        0 => 2.0,    // すべて (最小)
+    ];
+
+    // 繁体字中国語（tw） - 各カテゴリ均等分布
+    $twDistribution = [
+        17 => 6.0,   // 遊戲
+        42 => 5.8,   // 娛樂
+        35 => 5.6,   // 其他
+        20 => 5.4,   // 流行／美妝
+        11 => 5.2,   // 學習
+        18 => 5.0,   // 旅遊
+        6 => 4.8,    // 團體／組織
+        14 => 4.6,   // 興趣
+        4 => 4.4,    // 家庭／親子
+        23 => 4.3,   // 健康
+        43 => 4.2,   // 心情
+        12 => 4.1,   // 美食
+        40 => 4.0,   // 金融／商業
+        16 => 3.9,   // 運動／健身
+        2 => 3.8,    // 學校／校友
+        44 => 3.6,   // 工作
+        5 => 3.4,    // 公司／企業
+        22 => 3.2,   // 動畫／漫畫
+        27 => 3.0,   // 寵物
+        34 => 2.5,   // 科技
+        0 => 2.0,    // 全部 (最小)
+    ];
+
+    // タイ語（th） - 各カテゴリ均等分布
+    $thDistribution = [
+        17 => 6.0,   // เกม
+        33 => 5.5,   // เพลง
+        10 => 5.2,   // แฟนคลับ
+        18 => 5.0,   // ท่องเที่ยว
+        28 => 4.8,   // เด็ก
+        16 => 4.7,   // กีฬา
+        14 => 4.6,   // งานอดิเรก
+        34 => 4.5,   // เทคโนโลยี
+        2 => 4.4,    // โรงเรียน
+        8 => 4.3,    // ท้องถิ่น
+        22 => 4.2,   // อนิเมะ & การ์ตูน
+        12 => 4.1,   // อาหาร
+        19 => 4.0,   // รถยนต์
+        27 => 3.9,   // สัตว์เลี้ยง
+        40 => 3.7,   // การเงิน & ธุรกิจ
+        37 => 3.5,   // การถ่ายภาพ
+        11 => 3.3,   // การศึกษา
+        35 => 3.1,   // อื่นๆ
+        30 => 2.8,   // ภาพยนตร์
+        20 => 2.4,   // แฟชั่น & บิวตี้
+        24 => 2.2,   // รายการทีวี
+        0 => 2.0,    // ทั้งหมด (最小)
+    ];
+
+    return match ($language) {
+        'tw' => $twDistribution,
+        'th' => $thDistribution,
+        default => $jaDistribution,
+    };
+}
+
 // データ読み込み・初期化
-function loadOrInitializeData(string $dataFile, int $count): array
+function loadOrInitializeData(string $dataFile, int $count, string $language): array
 {
     if (file_exists($dataFile)) {
         $json = file_get_contents($dataFile);
@@ -83,79 +272,191 @@ function loadOrInitializeData(string $dataFile, int $count): array
 
     // 初期データ生成
     $rooms = [];
-    $categories = [0, 2, 5, 6, 7, 8, 11, 12, 16, 17, 18, 19, 20, 22, 23, 24, 26, 27, 28, 29, 30, 33, 37, 40, 41];
+    $categoryDistribution = getCategoryDistribution($language);
 
-    // 90%は固定EMID、10%はランダムEMID
-    $fixedCount = (int)($count * 0.9);
-    $randomCount = $count - $fixedCount;
+    // カテゴリ別件数を計算（±2%のランダム変動）
+    $categoryCounts = [];
+    $totalAssigned = 0;
 
-    // 固定EMID（シードベース生成 - 常に同じEMIDになる）
-    for ($i = 0; $i < $fixedCount; $i++) {
-        $categoryId = $categories[$i % count($categories)];
-
-        // シードベースで固定EMIDを生成
-        mt_srand($i + 1000);
-        $emidSeed = mt_rand();
-        $emid = substr(md5((string)$emidSeed), 0, 32);
-        $imageHash = substr(md5((string)($emidSeed + 1)), 0, 64);
-
-        $rooms[] = [
-            'emid' => $emid,
-            'name' => generateRandomTitle($emidSeed),
-            'desc' => generateRandomDescription($emidSeed + 100),
-            'profileImageObsHash' => $imageHash,
-            'memberCount' => rand(100, 10000),
-            'category' => $categoryId,
-            'emblem' => rand(0, 1),
-            'joinMethodType' => rand(0, 1),
-            'createdAt' => time() - rand(0, 365 * 24 * 3600),
-        ];
+    foreach ($categoryDistribution as $categoryId => $percentage) {
+        // ±2%の範囲でランダム変動（小さくして合計が100%に近づくように）
+        mt_srand($categoryId + 5000);
+        $variation = mt_rand(-200, 200) / 10000; // -0.02 ~ 0.02
+        $adjustedPercentage = ($percentage / 100) + $variation;
+        $adjustedPercentage = max(0.0001, $adjustedPercentage); // 最小0.01%
+        $categoryCounts[$categoryId] = (int)($count * $adjustedPercentage);
+        $totalAssigned += $categoryCounts[$categoryId];
     }
 
-    // ランダムEMID（新規ルーム）
-    for ($i = 0; $i < $randomCount; $i++) {
-        $categoryId = $categories[array_rand($categories)];
-        $emid = bin2hex(random_bytes(16));
-        $randomSeed = rand();
-
-        $rooms[] = [
-            'emid' => $emid,
-            'name' => generateRandomTitle($randomSeed),
-            'desc' => generateRandomDescription($randomSeed + 100),
-            'profileImageObsHash' => bin2hex(random_bytes(32)),
-            'memberCount' => rand(10, 1000),
-            'category' => $categoryId,
-            'emblem' => rand(0, 1),
-            'joinMethodType' => rand(0, 1),
-            'createdAt' => time() - rand(0, 7 * 24 * 3600), // 1週間以内
-        ];
+    // 端数調整（差分を最大カテゴリに加算または減算）
+    $diff = $count - $totalAssigned;
+    if ($diff != 0) {
+        arsort($categoryCounts);
+        $maxCategory = array_key_first($categoryCounts);
+        $categoryCounts[$maxCategory] += $diff;
     }
 
-    // 保存
-    file_put_contents($dataFile, json_encode($rooms, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    // 各カテゴリのルームを生成
+    foreach ($categoryCounts as $categoryId => $categoryCount) {
+        for ($i = 0; $i < $categoryCount; $i++) {
+            // シードベースで固定EMIDを生成
+            $uniqueSeed = ($categoryId * 100000) + $i + 1000;
+            mt_srand($uniqueSeed);
+            $emidSeed = mt_rand();
+            $emid = substr(md5((string)$emidSeed), 0, 32);
+            $imageHash = substr(md5((string)($emidSeed + 1)), 0, 64);
+
+            $rooms[] = [
+                'emid' => $emid,
+                'name' => generateRandomTitle($emidSeed),
+                'desc' => generateRandomDescription($emidSeed + 100),
+                'profileImageObsHash' => $imageHash,
+                'memberCount' => rand(100, 10000),
+                'category' => $categoryId,
+                'emblem' => rand(0, 1),
+                'joinMethodType' => rand(0, 1),
+                'createdAt' => time() - rand(0, 365 * 24 * 3600),
+            ];
+        }
+    }
+
+    // 保存（JSON_PRETTY_PRINTを削除してメモリ節約）
+    file_put_contents($dataFile, json_encode($rooms, JSON_UNESCAPED_UNICODE));
     return $rooms;
+}
+
+/**
+ * ルームの出現パターンを取得（EMIDベースで固定）
+ *
+ * @return array{type: string, deletedAtCycle?: int, subtype?: string, intervalCycles?: int}
+ */
+function getRoomAppearancePattern(string $emid): array
+{
+    $seed = crc32($emid);
+    mt_srand($seed);
+    $rand = mt_rand(0, 99);
+
+    if ($rand < 10) {
+        // 10%: 削除済みルーム（ランキング/急上昇には一度だけ出現）
+        // 削除された時刻は過去1～50サイクル前とする
+        $deletedAtCycle = mt_rand(1, 50);
+
+        // 削除済みルームのサブタイプを決定
+        $subRand = mt_rand(0, 9);
+        if ($subRand === 0) {
+            // 10%（全体の1%）: 完全削除（詳細APIも404）
+            $subtype = 'complete';
+        } elseif ($subRand === 1) {
+            // 10%（全体の1%）: 更新あり（たまに内容が変わる）
+            $subtype = 'updating';
+        } else {
+            // 80%（全体の8%）: 通常の削除済み（詳細API参照可能、内容固定）
+            $subtype = 'normal';
+        }
+
+        return [
+            'type' => 'deleted',
+            'deletedAtCycle' => $deletedAtCycle,
+            'subtype' => $subtype
+        ];
+    } elseif ($rand < 40) {
+        // 30%: 断続的ルーム（数日に一度出現）
+        // 2～7日に1回出現（1日=144サイクル、10分×144=24時間）
+        $intervalDays = mt_rand(2, 7);
+        return [
+            'type' => 'intermittent',
+            'intervalCycles' => $intervalDays * 144
+        ];
+    } else {
+        // 60%: 通常ルーム（常に出現）
+        return ['type' => 'normal'];
+    }
+}
+
+/**
+ * ルームが現在のサイクルで出現するかどうかを判定
+ */
+function shouldRoomAppear(array $room, int $currentCycle): bool
+{
+    $pattern = getRoomAppearancePattern($room['emid']);
+
+    switch ($pattern['type']) {
+        case 'deleted':
+            // 削除済み: 特定のサイクル以前のみ出現
+            return $currentCycle <= $pattern['deletedAtCycle'];
+
+        case 'intermittent':
+            // 断続的: 周期的に出現（EMIDベースのオフセットで出現タイミングをずらす）
+            $seed = crc32($room['emid']);
+            $offset = $seed % $pattern['intervalCycles'];
+            return ($currentCycle + $offset) % $pattern['intervalCycles'] === 0;
+
+        case 'normal':
+        default:
+            // 通常: 常に出現
+            return true;
+    }
 }
 
 // データを動的に変化させる
 function simulateDataChanges(array $rooms, int $seed): array
 {
-    mt_srand($seed);
+    $currentCycle = $seed;
+    $resultRooms = [];
 
-    foreach ($rooms as &$room) {
-        // 40%: メンバー数増減（1時間で10~100人程度 = 10分あたり2~17人）
-        if (mt_rand(1, 100) <= 40) {
-            $change = mt_rand(-20, 20); // ±20人/10分
-            $room['memberCount'] += $change;
-            $room['memberCount'] = max(1, $room['memberCount']);
+    foreach ($rooms as $room) {
+        // 出現判定
+        if (!shouldRoomAppear($room, $currentCycle)) {
+            continue; // このルームは今回出現しない
         }
 
-        // 10%: タイトル変化
-        if (mt_rand(1, 100) <= 10) {
-            $room['name'] .= ' 🔥';
+        $pattern = getRoomAppearancePattern($room['emid']);
+
+        // メンバー数変化（削除済みルームは固定）
+        if ($pattern['type'] !== 'deleted') {
+            // 通常のメンバー数変化処理
+            mt_srand($seed + crc32($room['emid']));
+            if (mt_rand(1, 100) <= 50) {
+                // -5～+17名のランダム変動（平均すると増加傾向）
+                $change = mt_rand(-5, 17);
+                $room['memberCount'] += $change;
+                $room['memberCount'] = max(1, $room['memberCount']);
+            }
         }
+
+        // 20%: タイトル・説明文・画像変化
+        mt_srand($seed + crc32($room['emid']) + 1000);
+        if (mt_rand(1, 100) <= 20) {
+            $changeType = mt_rand(1, 3);
+
+            switch ($changeType) {
+                case 1: // タイトル変化
+                    $suffixes = [' 🔥', ' ✨', ' 💡', ' 🎉', ' 👍', ' 🎊'];
+                    $room['name'] .= $suffixes[array_rand($suffixes)];
+                    break;
+
+                case 2: // 説明文変化
+                    $additions = [
+                        '初心者歓迎！',
+                        '新メンバー募集中！',
+                        '参加者急増！',
+                        'まったり雑談！',
+                        '気軽に参加OK！'
+                    ];
+                    $room['desc'] .= ' ' . $additions[array_rand($additions)];
+                    break;
+
+                case 3: // 画像ハッシュ変化（最後の文字を変更）
+                    $room['profileImageObsHash'] = substr($room['profileImageObsHash'], 0, -1)
+                        . dechex(mt_rand(0, 15));
+                    break;
+            }
+        }
+
+        $resultRooms[] = $room;
     }
 
-    return $rooms;
+    return $resultRooms;
 }
 
 // レスポンスヘッダー
@@ -179,11 +480,27 @@ try {
         $limit = (int)$matches[3];
         $ct = isset($matches[4]) ? urldecode($matches[4]) : '';
 
-        // データ読み込み（RANKINGは1万件、RISINGは1千件）※テスト用に削減
+        // デバッグログ
+        $debugLog = sprintf(
+            "[%s] %s Request - Category: %d, Sort: %s, Limit: %d, CT: %s, Language: %s\n",
+            date('Y-m-d H:i:s'),
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            $categoryId,
+            $sort,
+            $limit,
+            $ct === '' ? 'empty' : $ct,
+            $language
+        );
+        error_log($debugLog, 3, '/app/data/debug.log');
+
+        // データ読み込み（件数は環境変数で制御）
+        // 言語別のデータファイルを使用
         if ($sort === 'RANKING') {
-            $allRooms = loadOrInitializeData($rankingDataFile, 10000);
+            $dataFile = sprintf($rankingDataFile, $language);
+            $allRooms = loadOrInitializeData($dataFile, $rankingCount, $language);
         } else {
-            $allRooms = loadOrInitializeData($risingDataFile, 1000);
+            $dataFile = sprintf($risingDataFile, $language);
+            $allRooms = loadOrInitializeData($dataFile, $risingCount, $language);
         }
 
         // カテゴリでフィルター
@@ -198,7 +515,7 @@ try {
 
         // シャッフル（30%を新規急上昇としてランダム挿入）
         if ($sort === 'RISING') {
-            mt_srand($hourSeed);
+            mt_srand($crawlCycle + $categoryId);
             shuffle($categoryRooms);
         }
 
@@ -245,6 +562,23 @@ try {
             $response['continuationTokenMap'] = [(string)$categoryId => (string)$end];
         }
 
+        // デバッグログ（レスポンス）
+        $responseLog = sprintf(
+            "[%s] %s Response - Category: %d, Sort: %s, Total: %d, Returned: %d, HasNext: %s\n",
+            date('Y-m-d H:i:s'),
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            $categoryId,
+            $sort,
+            count($categoryRooms),
+            count($pageRooms),
+            isset($response['continuationTokenMap']) ? 'yes' : 'no'
+        );
+        error_log($responseLog, 3, '/app/data/debug.log');
+
+        // レスポンス速度調整（ランキング/急上昇API）
+        // 時間帯により20-45分相当の遅延（10万件取得時）
+        applyResponseDelay($baseDelayMs, $perItemDelayUs, count($pageRooms));
+
         echo json_encode($response, JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -253,10 +587,12 @@ try {
     if (preg_match('#^/api/square/([a-zA-Z0-9_-]+)\?limit=1$#', $requestUri, $matches)) {
         $emid = $matches[1];
 
-        // 両方のデータセットから検索
+        // 両方のデータセットから検索（言語別）
+        $rankingFile = sprintf($rankingDataFile, $language);
+        $risingFile = sprintf($risingDataFile, $language);
         $allRooms = array_merge(
-            loadOrInitializeData($rankingDataFile, 10000),
-            loadOrInitializeData($risingDataFile, 1000)
+            loadOrInitializeData($rankingFile, $rankingCount, $language),
+            loadOrInitializeData($risingFile, $risingCount, $language)
         );
 
         $room = null;
@@ -273,8 +609,51 @@ try {
             exit;
         }
 
+        $pattern = getRoomAppearancePattern($room['emid']);
+
+        // 完全削除された場合は404を返す
+        if ($pattern['type'] === 'deleted' && $pattern['subtype'] === 'complete' && !shouldRoomAppear($room, $crawlCycle)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Square not found']);
+            exit;
+        }
+
+        // 断続的ルーム: ランキング/急上昇に出ていない期間中も情報更新
+        if ($pattern['type'] === 'intermittent' && !shouldRoomAppear($room, $crawlCycle)) {
+            mt_srand(crc32($room['emid']) + $crawlCycle);
+            $updateType = mt_rand(1, 2);
+
+            if ($updateType === 1) {
+                $suffixes = [' [更新]', ' 【情報更新】', ' ※変更あり'];
+                $room['name'] .= $suffixes[array_rand($suffixes)];
+            } else {
+                $additions = ['※最近情報が更新されました', '管理者より更新', '新しい情報があります'];
+                $room['desc'] .= ' ' . $additions[array_rand($additions)];
+            }
+        }
+
+        // 削除済み（更新あり）: たまに内容が変わる
+        if ($pattern['type'] === 'deleted' && $pattern['subtype'] === 'updating') {
+            // 10サイクル（100分）に1回変更
+            mt_srand(crc32($room['emid']) + (int)($crawlCycle / 10));
+            $updateType = mt_rand(1, 2);
+
+            if ($updateType === 1) {
+                $suffixes = [' [変更]', ' ※更新', ' (編集済)'];
+                $room['name'] .= $suffixes[array_rand($suffixes)];
+            } else {
+                $additions = ['管理者による変更がありました', '情報が更新されています'];
+                $room['desc'] .= ' ' . $additions[array_rand($additions)];
+            }
+        }
+
         // invitationTicket生成（EMIDの先頭10文字を使用）
         $invitationTicket = substr($room['emid'], 0, 10);
+
+        // レスポンス速度調整（スクエア詳細API）
+        if ($detailDelayMs > 0) {
+            usleep($detailDelayMs * 1000);
+        }
 
         echo json_encode([
             'square' => [
@@ -295,12 +674,22 @@ try {
 
     // 招待ページHTML
     if (preg_match('#^/(jp|tw|th)?/?ti/g2/([a-zA-Z0-9_-]+)$#', $requestUri, $matches)) {
+        $langPrefix = $matches[1] ?? 'jp';
         $emid = $matches[2];
 
-        // 両方のデータセットから検索
+        // URLパスから言語を判定（jp/tw/th）
+        $pageLang = match($langPrefix) {
+            'tw' => 'tw',
+            'th' => 'th',
+            default => 'ja',
+        };
+
+        // 両方のデータセットから検索（言語別）
+        $rankingFile = sprintf($rankingDataFile, $pageLang);
+        $risingFile = sprintf($risingDataFile, $pageLang);
         $allRooms = array_merge(
-            loadOrInitializeData($rankingDataFile, 10000),
-            loadOrInitializeData($risingDataFile, 1000)
+            loadOrInitializeData($rankingFile, $rankingCount, $pageLang),
+            loadOrInitializeData($risingFile, $risingCount, $pageLang)
         );
 
         $room = null;
@@ -315,6 +704,43 @@ try {
             http_response_code(404);
             echo '<html><body>Not Found</body></html>';
             exit;
+        }
+
+        $pattern = getRoomAppearancePattern($room['emid']);
+
+        // 完全削除された場合は404を返す
+        if ($pattern['type'] === 'deleted' && $pattern['subtype'] === 'complete' && !shouldRoomAppear($room, $crawlCycle)) {
+            http_response_code(404);
+            echo '<html><body>Not Found</body></html>';
+            exit;
+        }
+
+        // 断続的ルーム: ランキング/急上昇に出ていない期間中も情報更新
+        if ($pattern['type'] === 'intermittent' && !shouldRoomAppear($room, $crawlCycle)) {
+            mt_srand(crc32($room['emid']) + $crawlCycle);
+            $updateType = mt_rand(1, 2);
+
+            if ($updateType === 1) {
+                $suffixes = [' [更新]', ' 【情報更新】', ' ※変更あり'];
+                $room['name'] .= $suffixes[array_rand($suffixes)];
+            } else {
+                $additions = ['※最近情報が更新されました', '管理者より更新', '新しい情報があります'];
+                $room['desc'] .= ' ' . $additions[array_rand($additions)];
+            }
+        }
+
+        // 削除済み（更新あり）: たまに内容が変わる
+        if ($pattern['type'] === 'deleted' && $pattern['subtype'] === 'updating') {
+            mt_srand(crc32($room['emid']) + (int)($crawlCycle / 10));
+            $updateType = mt_rand(1, 2);
+
+            if ($updateType === 1) {
+                $suffixes = [' [変更]', ' ※更新', ' (編集済)'];
+                $room['name'] .= $suffixes[array_rand($suffixes)];
+            } else {
+                $additions = ['管理者による変更がありました', '情報が更新されています'];
+                $room['desc'] .= ' ' . $additions[array_rand($additions)];
+            }
         }
 
         header('Content-Type: text/html; charset=utf-8');
