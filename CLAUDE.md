@@ -30,11 +30,20 @@ make rebuild      # Rebuild and start
 make ssh          # Login to container
 
 # Mock environment (includes LINE Mock API)
-make up-mock      # Start
-make down-mock    # Stop
-make restart-mock # Restart
-make rebuild-mock # Rebuild and start
-make ssh-mock     # Login to container
+make up-mock            # Start (10k items, no delay)
+make up-mock-slow       # Start (100k items, production-like delay)
+make up-mock-cron       # Start (10k items, with auto-crawling)
+make up-mock-slow-cron  # Start (100k items, delay + auto-crawling)
+make down-mock          # Stop
+make restart-mock       # Restart
+make rebuild-mock       # Rebuild and start
+make ssh-mock           # Login to container
+
+# Basic environment with cron
+make up-cron      # Start with auto-crawling
+
+# Show current configuration
+make show         # Display current mode and settings
 
 # Show all available commands
 make help
@@ -65,6 +74,18 @@ docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 - LINE Mock API: http://localhost:9000
 - Redirects LINE domains (openchat.line.me, etc.) to local Mock API
 - Works without internet connection
+
+**Mock API Features:**
+- Configurable data counts via environment variables (MOCK_RANKING_COUNT, MOCK_RISING_COUNT)
+- Room appearance patterns (60% normal / 30% intermittent / 10% deleted) for testing crawling logic
+- Production-like delay simulation (MOCK_DELAY_ENABLED) with time-based variation
+- Multi-language support (Japanese, Traditional Chinese, Thai)
+- Category distribution with 3x variance (realistic distribution)
+
+**Cron Auto-Execution (CRON=1):**
+- 30 min: Japanese crawling
+- 35 min: Traditional Chinese crawling (/tw)
+- 40 min: Thai crawling (/th)
 
 **Key Features:**
 - Both environments share the same MySQL database

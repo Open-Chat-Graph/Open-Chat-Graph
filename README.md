@@ -36,13 +36,15 @@ make up
 - LINE Mock APIを含む開発環境
 - LINEドメイン（openchat.line.me等）をローカルのMock APIにリダイレクト
 - インターネット接続不要でLINE APIをエミュレート
-- 基本環境とMock環境の両方のポートが使用可能
+- データ件数・遅延・Cron自動実行を制御可能
+- ルーム出現パターン: 60%通常/30%断続的/10%削除済み（クローリング対象判定テスト用）
 
 ### 利用可能なコマンド
 
 **基本環境:**
 ```bash
 make up           # 起動
+make up-cron      # 起動（Cron自動実行モード）
 make down         # 停止
 make restart      # 再起動
 make rebuild      # 再ビルドして起動
@@ -51,17 +53,26 @@ make ssh          # コンテナにログイン
 
 **Mock付き環境:**
 ```bash
-make up-mock      # 起動
-make down-mock    # 停止
-make restart-mock # 再起動
-make rebuild-mock # 再ビルドして起動
-make ssh-mock     # コンテナにログイン
+make up-mock            # 起動（1万件、遅延なし）
+make up-mock-slow       # 起動（10万件、本番並み遅延）
+make up-mock-cron       # 起動（1万件、Cron自動実行）
+make up-mock-slow-cron  # 起動（10万件、遅延+Cron）
+make down-mock          # 停止
+make restart-mock       # 再起動
+make rebuild-mock       # 再ビルドして起動
+make ssh-mock           # コンテナにログイン
 ```
 
-**ヘルプ:**
+**その他:**
 ```bash
+make show         # 現在の起動モード表示
 make help         # 全コマンド表示
 ```
+
+**Cron自動実行モード:**
+- 毎時30分: 日本語クローリング
+- 毎時35分: 繁体字中国語クローリング
+- 毎時40分: タイ語クローリング
 
 ### アクセスURL
 
