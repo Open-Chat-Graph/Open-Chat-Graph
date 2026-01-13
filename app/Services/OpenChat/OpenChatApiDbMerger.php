@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
+use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -151,9 +152,10 @@ class OpenChatApiDbMerger
             $urlCount = 0; // カテゴリごとにリセット
             $lastCallbackTime = null; // カテゴリごとにリセット
 
+            // 既に最新データが取得済みかどうかをチェック
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
-            $isDownloadedCategory = $fileTime === $now;
+            $isDownloadedCategory = $fileTime === $now && !AppConfig::$isMockEnvironment;
 
             if ($isDownloadedCategory) {
                 CronUtility::addVerboseCronLog(

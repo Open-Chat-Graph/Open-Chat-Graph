@@ -43,23 +43,6 @@ class RankingPositionHourPersistenceProcess
     }
 
     /**
-     * OpenChatデータのキャッシュを初期化（emid→id変換用）
-     */
-    function initializeCache(): void
-    {
-        $this->openChatDataWithCache->clearCache();
-        $this->openChatDataWithCache->cacheOpenChatData(true);
-    }
-
-    /**
-     * キャッシュをクリア
-     */
-    function afterClearCache(): void
-    {
-        $this->openChatDataWithCache->clearCache();
-    }
-
-    /**
      * 処理状態を取得（ログ出力用）
      *
      * @return array<string, array{rising: bool, ranking: bool}> カテゴリごとの処理状態
@@ -172,6 +155,9 @@ class RankingPositionHourPersistenceProcess
      */
     private function createInsertDtoArray(array $data): array
     {
+        // キャッシュを再初期化（並行実行中のAPI取得プロセスが追加したデータを反映するため）
+        $this->openChatDataWithCache->cacheOpenChatData(true);
+
         return array_values(array_filter(array_map(
             fn($dto, $key) => ($id = $this->openChatDataWithCache->getOpenChatIdByEmid($dto->emid))
                 ? new RankingPositionHourInsertDto($id, $key + 1, $dto->category ?? 0, $dto->memberCount)
