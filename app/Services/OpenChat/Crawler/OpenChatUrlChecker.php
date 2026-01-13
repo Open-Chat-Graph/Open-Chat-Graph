@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat\Crawler;
 
-use App\Config\OpenChatCrawlerConfigInterface;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
 use App\Services\Crawler\CrawlerFactory;
 
 class OpenChatUrlChecker

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat\Registration;
 
-use App\Config\OpenChatCrawlerConfigInterface;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\UpdateOpenChatRepositoryInterface;

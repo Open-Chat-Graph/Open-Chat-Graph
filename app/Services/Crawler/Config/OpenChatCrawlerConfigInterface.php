@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Config;
+namespace App\Services\Crawler\Config;
 
 interface OpenChatCrawlerConfigInterface
 {

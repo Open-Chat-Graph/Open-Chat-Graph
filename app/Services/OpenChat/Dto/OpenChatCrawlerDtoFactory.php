@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Dto;
 
 use Shadow\Kernel\Validator;
-use App\Config\OpenChatCrawlerConfigInterface;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
 
 class OpenChatCrawlerDtoFactory
 {

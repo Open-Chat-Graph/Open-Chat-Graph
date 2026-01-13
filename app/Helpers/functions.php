@@ -376,8 +376,12 @@ function isDailyCronWithinHours(float $withinHours, ?string $urlRoot = null, ?Da
     return getDailyCronElapsedHours($urlRoot, $currentTime) < $withinHours;
 }
 
-function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): string
+function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): void
 {
+    if (AppConfig::$isMockEnvironment) {
+        return;
+    }
+
     $retryCount = 0;
 
     while ($retryCount < $retryLimit) {
@@ -387,7 +391,7 @@ function checkLineSiteRobots(int $retryLimit = 3, int $retryInterval = 1): strin
                 throw new \RuntimeException('Robots.txt: 拒否 ' . $robots);
             }
 
-            return $robots;
+            return;
         } catch (\Throwable $e) {
             $retryCount++;
             if ($retryCount >= $retryLimit) {
@@ -763,4 +767,3 @@ function formatElapsedTime(float $startTime): string
     $seconds = (int) round($elapsedSeconds - ($minutes * 60));
     return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
 }
-

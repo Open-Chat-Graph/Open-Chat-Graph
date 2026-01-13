@@ -17,10 +17,6 @@ services:
       - CRON=${CRON:-0}
     depends_on:
       - line-mock-api
-    extra_hosts:
-      - "openchat.line.me:10.99.0.10"
-      - "line.me:10.99.0.10"
-      - "obs.line-scdn.net:10.99.0.10"
     networks:
       - default
       - mock-network

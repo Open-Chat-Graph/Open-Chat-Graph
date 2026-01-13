@@ -21,11 +21,6 @@ if (file_exists(__DIR__ . '/../local-secrets.php')) {
     require_once __DIR__ . '/../local-secrets.php';
 }
 
-// Mock環境の場合、OpenChatCrawlerConfigの実装をMock用に切り替える
-if (\App\Config\AppConfig::$isMockEnvironment) {
-    MimimalCmsConfig::$constructorInjectionMap[\App\Config\OpenChatCrawlerConfigInterface::class] = \App\Config\MockOpenChatCrawlerConfig::class;
-}
-
 date_default_timezone_set('Asia/Tokyo');
 
 $httpHost = 'openchat-review.me';

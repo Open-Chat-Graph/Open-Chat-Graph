@@ -1,36 +1,35 @@
 <?php
 
-namespace App\Config;
+namespace App\Services\Crawler\Config;
 
 class OpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 {
-    const LINE_INTERNAL_URL = 'https://line.me/ti/g2/';
+    protected const LINE_INTERNAL_URL = 'https://line.me/ti/g2/';
 
-    const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/mimimiku778/Open-Chat-Graph)';
+    protected const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/mimimiku778/Open-Chat-Graph)';
 
-    const LINE_URL_MATCH_PATTERN = [
+    public const LINE_URL_MATCH_PATTERN = [
         '' =>    '{(?<=https:\/\/openchat\.line\.me\/jp\/cover\/).+?(?=\?|$)}',
         '/tw' => '{(?<=https:\/\/openchat\.line\.me\/tw\/cover\/).+?(?=\?|$)}',
         '/th' => '{(?<=https:\/\/openchat\.line\.me\/th\/cover\/).+?(?=\?|$)}',
     ];
-    const LINE_IMG_URL = 'https://obs.line-scdn.net/';
-    const LINE_IMG_PREVIEW_PATH = '/preview';
-    const IMG_MIME_TYPE = [
+    protected const LINE_IMG_URL = 'https://obs.line-scdn.net/';
+    protected const LINE_IMG_PREVIEW_PATH = '/preview';
+    protected const IMG_MIME_TYPE = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'image/gif' => 'gif',
         'image/webp' => 'webp',
     ];
 
-    const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=https:\/\/line\.me\/ti\/g2\/).+?(?=\?|$)}';
-    const DOM_CLASS_NAME = '.MdMN04Txt';
-    const DOM_CLASS_MEMBER = '.MdMN05Txt';
-    const DOM_CLASS_DESCRIPTION = '.MdMN06Desc';
-    const DOM_CLASS_IMG = '.mdMN01Img';
+    protected const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=https:\/\/line\.me\/ti\/g2\/).+?(?=\?|$)}';
+    protected const DOM_CLASS_NAME = '.MdMN04Txt';
+    protected const DOM_CLASS_MEMBER = '.MdMN05Txt';
+    protected const DOM_CLASS_DESCRIPTION = '.MdMN06Desc';
+    protected const DOM_CLASS_IMG = '.mdMN01Img';
+    protected const STORE_IMG_QUALITY = 50;
 
-    const STORE_IMG_QUALITY = 50;
-
-    const OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER =
+    protected const OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER =
     [
         '' =>    [
             "x-line-seo-user: xc5c0f67600885ce88324a52e74ff6923",
