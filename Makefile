@@ -15,7 +15,7 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make down$(NC)        - 環境を停止（基本・Mock両対応）"
 	@echo "  $(GREEN)make restart$(NC)     - 基本環境を再起動"
 	@echo "  $(GREEN)make rebuild$(NC)     - 基本環境を再ビルドして起動"
-	@echo "  $(GREEN)make ssh$(NC)         - 基本環境のコンテナにログイン"
+	@echo "  $(GREEN)make ssh$(NC)         - コンテナにログイン（基本・Mock両対応）"
 	@echo ""
 	@echo "$(YELLOW)Mock付き環境:$(NC)"
 	@echo "  $(GREEN)make up-mock$(NC)               - Mock環境（1万件、遅延なし）"
@@ -26,7 +26,6 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make restart-mock-slow$(NC)     - Mock環境を再起動（10万件）"
 	@echo "  $(GREEN)make restart-mock-cron$(NC)     - Mock環境を再起動（Cron）"
 	@echo "  $(GREEN)make rebuild-mock$(NC)          - Mock環境を再ビルドして起動"
-	@echo "  $(GREEN)make ssh-mock$(NC)              - Mock環境のコンテナにログイン"
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
@@ -102,8 +101,12 @@ rebuild: down ## 基本環境を再ビルド
 	@echo "$(GREEN)ビルドが完了しました$(NC)"
 	@$(MAKE) up
 
-ssh: ## 基本環境にログイン
-	@docker compose exec app bash
+ssh: ## コンテナにログイン（基本・Mock両対応）
+	@if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app bash; \
+	else \
+		docker compose exec app bash; \
+	fi
 
 # Mock付き環境
 up-mock: ## Mock付き環境を起動（1万件、遅延なし）
@@ -215,8 +218,7 @@ rebuild-mock: down-mock ## Mock付き環境を再ビルド
 	@echo "$(GREEN)ビルドが完了しました$(NC)"
 	@$(MAKE) up-mock
 
-ssh-mock: ## Mock環境にログイン
-	@docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app bash
+ssh-mock: ssh ## Mock環境にログイン（sshと同じ）
 
 show: ## 現在の起動モードを表示
 	@echo "$(GREEN)========================================$(NC)"
