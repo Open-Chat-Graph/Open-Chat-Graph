@@ -36,6 +36,7 @@ help: ## ヘルプを表示
 init: ## 初回セットアップ
 	@echo "$(GREEN)初回セットアップを開始します...$(NC)"
 	@./docker/app/generate-ssl-certs.sh
+	@./docker/line-mock-api/generate-ssl-certs.sh
 	@if [ ! -f local-secrets.php ]; then \
 		echo "$(YELLOW)local-secrets.phpが存在しません。セットアップスクリプトを実行します$(NC)"; \
 		if [ -f local-setup.sh ]; then \
@@ -111,6 +112,7 @@ up-mock: ## Mock付き環境を起動（1万件、遅延なし）
 		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
+	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（1万件、遅延なし）...$(NC)"
 	@CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
@@ -131,6 +133,7 @@ up-mock-slow: ## Mock付き環境を起動（10万件、本番並み遅延）
 		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
+	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（10万件、本番並み遅延）...$(NC)"
 	@CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
@@ -161,6 +164,7 @@ up-mock-cron: ## Mock付き環境を起動（1万件、Cron自動実行）
 		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
+	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（1万件、Cron自動実行）...$(NC)"
 	@CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
@@ -187,6 +191,7 @@ up-mock-slow-cron: ## Mock付き環境を起動（10万件、遅延+Cron）
 		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
+	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（10万件、遅延+Cron）...$(NC)"
 	@CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"

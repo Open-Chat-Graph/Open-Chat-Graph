@@ -5,23 +5,24 @@ namespace App\Services\Crawler\Config;
 /**
  * Mock環境用のOpenChatクローラー設定
  * LINE APIの代わりにローカルのMock APIを使用
+ * HTTPSで通信（自己証明書）
  */
 class MockOpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 {
     // Mock APIのベースURL（docker-compose.mock.ymlで定義）
     // コンテナ内からはサービス名でアクセス、外部からはlocalhostでアクセス可能
-    const MOCK_API_BASE_URL = 'http://line-mock-api';
+    const MOCK_API_BASE_URL = 'https://line-mock-api';
 
-    const LINE_INTERNAL_URL = 'http://line-mock-api/ti/g2/';
+    const LINE_INTERNAL_URL = 'https://line-mock-api/ti/g2/';
 
     const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot-Mock; +https://github.com/mimimiku778/Open-Chat-Graph)';
 
     public const LINE_URL_MATCH_PATTERN = [
-        '' =>    '{(?<=http:\/\/line-mock-api\/jp\/cover\/).+?(?=\?|$)}',
-        '/tw' => '{(?<=http:\/\/line-mock-api\/tw\/cover\/).+?(?=\?|$)}',
-        '/th' => '{(?<=http:\/\/line-mock-api\/th\/cover\/).+?(?=\?|$)}',
+        '' =>    '{(?<=https:\/\/line-mock-api\/jp\/cover\/).+?(?=\?|$)}',
+        '/tw' => '{(?<=https:\/\/line-mock-api\/tw\/cover\/).+?(?=\?|$)}',
+        '/th' => '{(?<=https:\/\/line-mock-api\/th\/cover\/).+?(?=\?|$)}',
     ];
-    const LINE_IMG_URL = 'http://line-mock-api/obs/';
+    const LINE_IMG_URL = 'https://line-mock-api/obs/';
     const LINE_IMG_PREVIEW_PATH = '/preview';
     const IMG_MIME_TYPE = [
         'image/jpeg' => 'jpg',
@@ -30,7 +31,7 @@ class MockOpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
         'image/webp' => 'webp',
     ];
 
-    const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=http:\/\/line-mock-api\/ti\/g2\/).+?(?=\?|$)}';
+    const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=https:\/\/line-mock-api\/ti\/g2\/).+?(?=\?|$)}';
     const DOM_CLASS_NAME = '.MdMN04Txt';
     const DOM_CLASS_MEMBER = '.MdMN05Txt';
     const DOM_CLASS_DESCRIPTION = '.MdMN06Desc';

@@ -56,6 +56,7 @@ prid-setup.sh
 # Docker SSL certificates
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
+/docker/line-mock-api/ssl/*.pem
 
 # LINE Mock API data files
 /docker/line-mock-api/data/*.json

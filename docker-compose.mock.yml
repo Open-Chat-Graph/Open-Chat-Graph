@@ -41,8 +41,8 @@ services:
     volumes:
       - "./docker/line-mock-api:/app"
       - "./storage:/var/www/html/storage"
-      - "./docker/app/ssl-new/openchat.line.me+5.pem:/etc/ssl/certs/localhost+3.pem:ro"
-      - "./docker/app/ssl-new/openchat.line.me+5-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
+      - "./docker/line-mock-api/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem:ro"
+      - "./docker/line-mock-api/ssl/localhost+3-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
     environment:
       - TZ=Asia/Tokyo
       - LANG=ja_JP.UTF-8
