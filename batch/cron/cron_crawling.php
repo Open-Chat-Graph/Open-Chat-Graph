@@ -39,12 +39,6 @@ try {
         }
     }
 
-
-    if ($e instanceof ApplicationException && $e->getCode() === ApplicationException::RANKING_PERSISTENCE_TIMEOUT) {
-        $shouldNotify = false;
-        CronUtility::addCronLog("毎時処理を中断");
-    }
-
     if ($shouldNotify) {
         ExceptionHandler::errorLog($e);
         $message = CronUtility::addCronLog($e->getMessage());

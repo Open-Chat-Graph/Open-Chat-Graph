@@ -76,24 +76,31 @@ class OcreviewApiDataImporter
 
         // オープンチャットマスターデータのインポート（差分同期）
         $this->importOpenChatMaster();
+        AdminTool::sendDiscordNotify('オープンチャットマスターデータのインポートが完了しました。');
 
         // 成長ランキングのインポート（全件リフレッシュ）
         $this->importGrowthRankings();
+        AdminTool::sendDiscordNotify('成長ランキングデータのインポートが完了しました。');
 
         // 日次メンバー統計のインポート（差分同期）
         $this->importDailyMemberStatistics();
+        AdminTool::sendDiscordNotify('日次メンバー統計データのインポートが完了しました。');
 
         // LINE公式アクティビティ履歴のインポート（差分同期）
         $this->importLineOfficialActivityHistory();
+        AdminTool::sendDiscordNotify('LINE公式アクティビティ履歴データのインポートが完了しました。');
 
         // LINE公式ランキング総数のインポート（差分同期）
         $this->importTotalCount();
+        AdminTool::sendDiscordNotify('LINE公式ランキング総数データのインポートが完了しました。');
 
         // 削除されたオープンチャット履歴のインポート（差分同期）
         $this->importOpenChatDeleted();
+        AdminTool::sendDiscordNotify('削除されたオープンチャット履歴データのインポートが完了しました。');
 
         // コメント関連データのインポート（差分同期）
         $commentImporter = new OcreviewApiCommentDataImporter($this->sourceCommentPdo, $this->targetPdo);
+        AdminTool::sendDiscordNotify('コメント関連データのインポートを開始します。');
         $commentImporter->execute();
     }
 
