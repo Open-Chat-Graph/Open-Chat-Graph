@@ -28,16 +28,13 @@ make up
 ### 環境の種類
 
 **基本環境（make up）:**
-- 通常の開発環境
-- 外部の実際のLINEサーバーにアクセス
-- インターネット接続が必要
+- 実際のLINEサーバーにアクセス（インターネット接続必要）
 
 **Mock付き環境（make up-mock）:**
 - LINE Mock APIを含む開発環境
-- LINEドメイン（openchat.line.me等）をローカルのMock APIにリダイレクト
-- インターネット接続不要でLINE APIをエミュレート
+- Docker Composeのサービス名（line-mock-api）でMock APIにアクセス
+- インターネット接続不要
 - データ件数・遅延・Cron自動実行を制御可能
-- ルーム出現パターン: 60%通常/30%断続的/10%削除済み（クローリング対象判定テスト用）
 
 ### 利用可能なコマンド
 
@@ -86,55 +83,23 @@ make help         # 全コマンド表示
 - HTTPS（Mock）: https://localhost:8543
 - phpMyAdmin: http://localhost:8080
 - MySQL: localhost:3306（共有）
-- LINE Mock API: http://localhost:9000 ([実装](docker/line-mock-api/public/index.php))
+- LINE Mock API: http://localhost:9000
 
 **注意:**
-- HTTPアクセスは自動的にHTTPSにリダイレクトされます
-- SSL証明書は`mkcert`により自動生成されます
+- HTTPは自動的にHTTPSにリダイレクトされます
 - 両環境でMySQLデータベースは共有されます
 
 ### Xdebugの有効化
 
-デフォルトでは**Xdebugは無効**です。デバッグが必要な場合のみ、以下のいずれかの方法で有効化してください：
-
-**方法1: 環境変数で起動時に有効化（推奨）**
+デフォルトでは**Xdebugは無効**です。デバッグが必要な場合のみ有効化してください：
 
 ```bash
-# 基本環境
+# 起動時に有効化
 ENABLE_XDEBUG=1 make up
-
-# Mock環境
 ENABLE_XDEBUG=1 make up-mock
-
-# または再起動時
-ENABLE_XDEBUG=1 make restart
-ENABLE_XDEBUG=1 make restart-mock
 ```
 
-**方法2: docker-compose.ymlを編集して常に有効化**
-
-`docker-compose.yml`の`app`サービスの`environment`セクションに追加：
-
-```yaml
-services:
-  app:
-    environment:
-      - ENABLE_XDEBUG=1  # この行を追加
-```
-
-その後、コンテナを再起動：
-
-```bash
-make restart      # 基本環境
-make restart-mock # Mock環境
-```
-
-**Xdebug設定:**
-- モード: debug
-- クライアントホスト: host.docker.internal
-- ポート: 9003
-
-**⚠️ 注意:** Xdebugを有効化するとパフォーマンスが大幅に低下します。デバッグ時のみ使用してください。
+**⚠️ 注意:** Xdebugはパフォーマンスを大幅に低下させます。デバッグ時のみ使用してください。
 
 ---
 
@@ -153,14 +118,12 @@ app/
 ├── Controllers/    # HTTPハンドラー
 ├── Models/         # リポジトリ・DTO
 ├── Services/       # ビジネスロジック
+│   └── Crawler/    # クローラー関連（Config含む）
 └── Views/          # テンプレート
 shadow/             # MimimalCMSフレームワーク
 batch/              # Cronジョブ・バッチ処理
 shared/             # DI設定
 storage/            # SQLite・ログ・キャッシュ
-setup/              # データベーススキーマ・初期化スクリプト
-public/             # Webルート
-docker/             # Docker設定
 ```
 
 ---
