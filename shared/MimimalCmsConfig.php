@@ -30,6 +30,7 @@ class MimimalCmsConfig
         \App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRankingUpdaterRepository::class,
         \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsPageRepository::class,
 
+        \App\Services\Crawler\Config\OpenChatCrawlerConfigInterface::class => \App\Services\Crawler\Config\OpenChatCrawlerConfig::class,
         \App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionPageRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\RankingPositionHourRepository::class,
@@ -133,5 +134,5 @@ class MimimalCmsConfig
      * This constant is used to specify the GitHub URL for displaying the source code in the exception error trace.
      * The path name after the DOCUMENT_ROOT_NAME constant is concatenated with this URL.
      */
-    public static string $errorPageGitHubUrl = 'https://github.com/pika-0203/Open-Chat-Graph/blob/main/';
+    public static string $errorPageGitHubUrl = 'https://github.com/mimimiku778/Open-Chat-Graph/blob/main/';
 }

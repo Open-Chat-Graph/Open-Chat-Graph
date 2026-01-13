@@ -3,7 +3,8 @@
 use PHPUnit\Framework\TestCase;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\RankingPosition\Store\RankingPositionStore;
-use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
+use App\Services\OpenChat\Crawler\OpenChatApiDownloaderProcessFactory;
+use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
 class RankingPositionStoreTest extends TestCase
@@ -14,10 +15,8 @@ class RankingPositionStoreTest extends TestCase
     public function testfetchSaveOpenChatRankingApiData()
     {
         $this->rankingPositionStore = app(RankingPositionStore::class);
-        $this->openChatApiRankingDataDownloader = app(
-            OpenChatApiRankingDownloader::class,
-            ['openChatApiRankingDownloaderProcess' => app(OpenChatApiRankingDownloaderProcess::class)]
-        );
+        $factory = app(OpenChatApiDownloaderProcessFactory::class);
+        $this->openChatApiRankingDataDownloader = $factory->createDownloader(RankingType::Ranking);
 
         $this->openChatApiDtoFactory = app(OpenChatApiDtoFactory::class);
 

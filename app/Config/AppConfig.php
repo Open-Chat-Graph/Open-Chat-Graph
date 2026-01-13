@@ -15,7 +15,6 @@ class AppConfig
 
     const ETAG_ARG = [300, 3600 * 24, false];
 
-    const LINE_URL = 'https://line.me/ti/g2/';
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
@@ -142,10 +141,11 @@ class AppConfig
     ];
 
     static bool $isDevlopment = false;
+    static bool $isMockEnvironment = false;
     static bool $isStaging = false;
     static bool $disableStaticDataFile = false;
     static bool $disableAds = false;
-    static bool $verboseCronLog = false;
+    static bool $verboseCronLog = true;
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
@@ -197,6 +197,11 @@ class AppConfig
     /** SQLite ocgraph_sqlapi database path (Japanese only, not multi-language) */
     const SQLITE_OCGRAPH_SQLAPI_DB_PATH = __DIR__ . '/../../storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db';
 
+    /** SQLite schema files */
+    const SQLITE_SCHEMA_STATISTICS = __DIR__ . '/../../setup/schema/sqlite/statistics.sql';
+    const SQLITE_SCHEMA_RANKING_POSITION = __DIR__ . '/../../setup/schema/sqlite/ranking_position.sql';
+    const SQLITE_SCHEMA_SQLAPI = __DIR__ . '/../../setup/schema/sqlite/sqlapi.sql';
+
     private const STORAGE_DIR = [
         '' =>    __DIR__ . '/../../storage/ja',
         '/tw' => __DIR__ . '/../../storage/tw',
@@ -236,9 +241,9 @@ class AppConfig
 
     /** @var array<string,string> */
     static array $dbName = [
-        '' =>    'ocreview',
-        '/tw' => 'ocreviewtw',
-        '/th' => 'ocreviewth',
+        '' =>    'ocgraph_ocreview',
+        '/tw' => 'ocgraph_ocreviewtw',
+        '/th' => 'ocgraph_ocreviewth',
     ];
     const RANKING_HOUR_TABLE_NAME = 'statistics_ranking_hour';
     const RANKING_DAY_TABLE_NAME =  'statistics_ranking_hour24';
@@ -246,25 +251,25 @@ class AppConfig
 
     /** @var array<string,string> */
     static array $rankingPositionDbName = [
-        '' =>    'ranking',
-        '/tw' => 'rankingtw',
-        '/th' => 'rankingth',
+        '' =>    'ocgraph_ranking',
+        '/tw' => 'ocgraph_rankingtw',
+        '/th' => 'ocgraph_rankingth',
     ];
 
     // TODO:多言語対応
     /** @var array<string,string> */
     static array $userLogDbName = [
-        '' =>    'userlog',
-        '/tw' => 'userlog',
-        '/th' => 'userlog',
+        '' =>    'ocgraph_userlog',
+        '/tw' => 'ocgraph_userlog',
+        '/th' => 'ocgraph_userlog',
     ];
 
     // TODO:多言語対応
     /** @var array<string,string> */
     static array $commentDbName = [
-        '' =>    'comment',
-        '/tw' => 'commenttw',
-        '/th' => 'commentth',
+        '' =>    'ocgraph_comment',
+        '/tw' => 'ocgraph_commenttw',
+        '/th' => 'ocgraph_commentth',
     ];
 
     const DEFAULT_OPENCHAT_IMG_URL = [

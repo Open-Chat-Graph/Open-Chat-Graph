@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat\Crawler;
 
-use App\Config\OpenChatCrawlerConfig;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
 use App\Services\Crawler\FileDownloader;
 
 class OpenChatImgDownloader
 {
     function __construct(
-        private FileDownloader $fileDownloader
+        private FileDownloader $fileDownloader,
+        private OpenChatCrawlerConfigInterface $config
     ) {
     }
 
@@ -21,13 +22,13 @@ class OpenChatImgDownloader
      */
     function storeOpenChatImg(string $openChatImgIdentifier, string $destPath, string $previewDestPath): bool
     {
-        $url = OpenChatCrawlerConfig::LINE_IMG_URL . $openChatImgIdentifier;
-        $previewUrl = $url . OpenChatCrawlerConfig::LINE_IMG_PREVIEW_PATH;
+        $url = $this->config->getLineImgUrl() . $openChatImgIdentifier;
+        $previewUrl = $url . $this->config->getLineImgPreviewPath();
 
         $this->store(
             $url,
             $destPath,
-            OpenChatCrawlerConfig::STORE_IMG_QUALITY,
+            $this->config->getStoreImgQuality(),
         );
 
         $this->store(
@@ -42,7 +43,7 @@ class OpenChatImgDownloader
     private function store(string $url, string $destPath, int $quality): void
     {
         try {
-            $data = $this->fileDownloader->downloadFile($url, OpenChatCrawlerConfig::USER_AGENT);
+            $data = $this->fileDownloader->downloadFile($url, $this->config->getUserAgent());
             if ($data === false) {
                 throw new \RuntimeException('画像のダウンロードに失敗: 404');
             }

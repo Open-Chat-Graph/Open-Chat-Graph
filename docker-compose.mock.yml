@@ -1,0 +1,86 @@
+# Mock環境用の追加設定
+# 使い方: docker compose -f docker-compose.yml -f docker-compose.mock.yml up
+
+services:
+  app:
+    ports:
+      - "${HTTPS_PORT_MOCK:-8543}:443"
+    volumes:
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl-mock.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl-mock.conf"
+      - "./docker/app/ssl-new/rootCA.pem:/usr/local/share/ca-certificates/mkcert-rootCA.crt:ro"
+      - "./docker/app/entrypoint-mock.sh:/usr/local/bin/entrypoint-mock.sh:ro"
+    entrypoint: ["/usr/local/bin/entrypoint-mock.sh"]
+    environment:
+      # Cron自動実行モード（1で有効、0で無効）
+      # 有効にすると毎時30分/35分/40分に自動クローリングが実行される
+      - CRON=${CRON:-0}
+    depends_on:
+      - line-mock-api
+    networks:
+      - default
+      - mock-network
+
+  mysql:
+    networks:
+      - default
+      - mock-network
+
+  phpmyadmin:
+    networks:
+      - default
+      - mock-network
+
+  # LINE公式サイトエミュレーションサーバー
+  line-mock-api:
+    build:
+      context: "docker/line-mock-api/"
+    ports:
+      - "${LINE_MOCK_PORT:-9000}:80"
+      - "${LINE_MOCK_HTTPS_PORT:-9443}:443"
+    volumes:
+      - "./docker/line-mock-api:/app"
+      - "./storage:/var/www/html/storage"
+      - "./docker/line-mock-api/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem:ro"
+      - "./docker/line-mock-api/ssl/localhost+3-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
+    environment:
+      - TZ=Asia/Tokyo
+      - LANG=ja_JP.UTF-8
+      # 多言語対応（リクエストヘッダー x-lal で言語判定）
+      #   - ja（日本語）: x-lal ヘッダーなし
+      #   - tw（繁体字中国語）: x-lal: tw
+      #   - th（タイ語）: x-lal: th
+      # データ件数設定
+      # MOCK_RANKING_COUNT: ランキングデータ件数（デフォルト: 10000）
+      # MOCK_RISING_COUNT: 急上昇データ件数（デフォルト: 1000）
+      - MOCK_RANKING_COUNT=${MOCK_RANKING_COUNT:-10000}
+      - MOCK_RISING_COUNT=${MOCK_RISING_COUNT:-1000}
+      # レスポンス速度調整（本番環境並みの遅延）
+      # MOCK_DELAY_ENABLED: 遅延モード有効化（1で有効、0で無効）
+      #   有効時は時間帯により自動で遅延時間を調整:
+      #   【ランキング/急上昇API】全10万件取得時の処理時間
+      #     深夜（0-6時）:  40-45分相当（遅い）
+      #     早朝（6-9時）:  24-28分相当（やや速い）
+      #     昼間（9-18時）: 20-24分相当（速い）
+      #     夜間（18-24時）: 30-34分相当（中速）
+      #   【スクエア詳細API】1件あたりの処理時間
+      #     深夜（0-6時）:  250-300ms/件（約3.6件/秒）
+      #     早朝（6-9時）:  150-180ms/件（約6件/秒）
+      #     昼間（9-18時）: 100-150ms/件（約8件/秒）
+      #     夜間（18-24時）: 180-220ms/件（約5件/秒）
+      #   ※HTMLページは遅延なし
+      # MOCK_DELAY_MS: 手動設定用（ミリ秒）
+      # MOCK_DELAY_PER_ITEM_US: 手動設定用（マイクロ秒/件）
+      - MOCK_DELAY_ENABLED=${MOCK_DELAY_ENABLED:-0}
+      - MOCK_DELAY_MS=${MOCK_DELAY_MS:-0}
+      - MOCK_DELAY_PER_ITEM_US=${MOCK_DELAY_PER_ITEM_US:-0}
+    networks:
+      mock-network:
+        ipv4_address: 10.99.0.10
+
+networks:
+  mock-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.99.0.0/16

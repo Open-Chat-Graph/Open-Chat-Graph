@@ -31,13 +31,13 @@ storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
 storage/*/SQLite/ranking_position/ranking_position.db
 storage/*/SQLite/ocgraph_sqlapi/*.db
-storage/ja/SQLite/*/*.db-shm
-storage/ja/SQLite/*/*.db-wal
+storage/*/SQLite/*/*.db-shm
+storage/*/SQLite/*/*.db-wal
 storage/*/ranking_position/*/*
 storage/*/ranking_position/filter.dat
 storage/*/ranking_position/filter_date.dat
 storage/*/static_data_top/*
-!storage/*/static_data_top/template
+!storage/*/static_data_top/non_essential_storage_file_sample
 storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 
@@ -52,3 +52,16 @@ local-setup.sh
 prid-setup.sh
 .user.ini
 /password.openchat-review.me
+
+# Docker SSL certificates
+/docker/app/ssl/*.pem
+/docker/app/ssl-new/*.pem
+/docker/line-mock-api/ssl/*.pem
+
+# LINE Mock API data files
+/docker/line-mock-api/data/*.json
+/docker/line-mock-api/data/debug.log
+
+storage/*/ranking_position/filter_member_change.dat
+storage/*/ranking_position/filter_new_rooms.dat
+storage/*/ranking_position/filter_weekly_update.dat

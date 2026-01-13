@@ -10,7 +10,7 @@ use Shared\MimimalCmsConfig;
 class OpenChatApiRankingDownloader
 {
     function __construct(
-        private AbstractOpenChatApiRankingDownloaderProcess $openChatApiRankingDownloaderProcess
+        private OpenChatApiDownloaderProcess $openChatApiDownloaderProcess
     ) {
     }
 
@@ -52,7 +52,7 @@ class OpenChatApiRankingDownloader
         $ct = '';
 
         while ($ct !== false) {
-            $response = $this->openChatApiRankingDownloaderProcess->fetchOpenChatApiRankingProcess($category, $ct, $callback);
+            $response = $this->openChatApiDownloaderProcess->fetchOpenChatApiRankingProcess($category, $ct, $callback);
 
             if ($response === false) {
                 break;

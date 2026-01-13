@@ -23,6 +23,17 @@ class OpenChatPagination
         array $labelArray,
         int $limit
     ): array|false {
+        // totalRecordsが0の場合は空の結果を返す
+        if ($totalRecords === 0) {
+            return [
+                'pageNumber' => 1,
+                'maxPageNumber' => 1,
+                'openChatList' => [],
+                'totalRecords' => 0,
+                'labelArray' => [],
+            ];
+        }
+
         // ページの最大数を取得する
         $maxPageNumber = $this->calcMaxPages($totalRecords, $limit);
 
@@ -37,7 +48,7 @@ class OpenChatPagination
         }
 
         $repoArgs = [
-            $unmodifeidPageNumber === 0 ? $totalRecords - $limit : $this->calcOffset($pageNumber, $limit),
+            $unmodifeidPageNumber === 0 ? max(0, $totalRecords - $limit) : $this->calcOffset($pageNumber, $limit),
             $limit * $pageNumber
         ];
 

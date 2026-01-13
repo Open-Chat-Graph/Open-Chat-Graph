@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Crawler;
 
 use App\Services\Crawler\CrawlerFactory;
-use App\Config\OpenChatCrawlerConfig;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
+use App\Services\OpenChat\Enum\RankingType;
 use Shadow\Kernel\Validator;
 use Shared\MimimalCmsConfig;
 
-abstract class AbstractOpenChatApiRankingDownloaderProcess
+/**
+ * OpenChat API ランキング/急上昇データ取得プロセス
+ */
+class OpenChatApiDownloaderProcess
 {
-    /**
-     * @var \Closure $callableGenerateUrl `$callableGenerateUrl(string $category, string $ct)`
-     */
-    protected \Closure $callableGenerateUrl;
-
     function __construct(
-        protected CrawlerFactory $crawlerFactory
+        private CrawlerFactory $crawlerFactory,
+        private OpenChatCrawlerConfigInterface $config,
+        private RankingType $rankingType
     ) {}
 
     /**
@@ -25,10 +26,13 @@ abstract class AbstractOpenChatApiRankingDownloaderProcess
      */
     function fetchOpenChatApiRankingProcess(string $category, string $ct, \Closure $callback): array|false
     {
-        $generateUrl = $this->callableGenerateUrl;
-        $url = $generateUrl($category, $ct);
-        $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[MimimalCmsConfig::$urlRoot];
-        $ua = OpenChatCrawlerConfig::USER_AGENT;
+        $url = match ($this->rankingType) {
+            RankingType::Ranking => $this->config->generateOpenChatApiRankingDataUrl($category, $ct),
+            RankingType::Rising => $this->config->generateOpenChatApiRisingDataUrl($category, $ct),
+        };
+
+        $headers = $this->config->getOpenChatApiOcDataFromEmidDownloaderHeader()[MimimalCmsConfig::$urlRoot];
+        $ua = $this->config->getUserAgent();
 
         // 暫定的に500に対応
         try {

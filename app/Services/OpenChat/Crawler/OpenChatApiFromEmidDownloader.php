@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Crawler;
 
 use App\Services\Crawler\CrawlerFactory;
-use App\Config\OpenChatCrawlerConfig;
+use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
 use App\Services\OpenChat\Dto\OpenChatApiFromEmidDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use Shared\MimimalCmsConfig;
@@ -14,7 +14,8 @@ class OpenChatApiFromEmidDownloader
 {
     function __construct(
         private CrawlerFactory $crawlerFactory,
-        private OpenChatApiFromEmidDtoFactory $openChatApiFromEmidDtoFactory
+        private OpenChatApiFromEmidDtoFactory $openChatApiFromEmidDtoFactory,
+        private OpenChatCrawlerConfigInterface $config
     ) {
     }
 
@@ -25,9 +26,9 @@ class OpenChatApiFromEmidDownloader
      */
     private function fetchFromEmid(string $emid): array|false
     {
-        $url = OpenChatCrawlerConfig::generateOpenChatApiOcDataFromEmidUrl($emid);
-        $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[MimimalCmsConfig::$urlRoot];
-        $ua = OpenChatCrawlerConfig::USER_AGENT;
+        $url = $this->config->generateOpenChatApiOcDataFromEmidUrl($emid);
+        $headers = $this->config->getOpenChatApiOcDataFromEmidDownloaderHeader()[MimimalCmsConfig::$urlRoot];
+        $ua = $this->config->getUserAgent();
 
         $response = $this->crawlerFactory->createCrawler($url, $ua, customHeaders: $headers, getCrawler: false);
 
@@ -53,6 +54,17 @@ class OpenChatApiFromEmidDownloader
             return false;
         }
 
-        return $this->openChatApiFromEmidDtoFactory->validateAndMapToOpenChatApiFromEmidDto($response);
+        // レスポンスにinvitationTicketとsquareを含める構造に変換
+        if (isset($response['invitationTicket']) && isset($response['square'])) {
+            $data = [
+                'invitationTicket' => $response['invitationTicket'],
+                'square' => $response['square'],
+            ];
+        } else {
+            // 古い形式の場合（後方互換性）
+            $data = $response;
+        }
+
+        return $this->openChatApiFromEmidDtoFactory->validateAndMapToOpenChatApiFromEmidDto($data);
     }
 }

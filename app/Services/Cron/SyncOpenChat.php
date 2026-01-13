@@ -165,7 +165,7 @@ class SyncOpenChat
         CronUtility::addCronLog('【日次処理】リトライ開始');
         OpenChatApiDbMerger::setKillFlagTrue();
         OpenChatDailyCrawling::setKillFlagTrue();
-        sleep(30);
+        sleep(5);
 
         $this->dailyTask();
         CronUtility::addCronLog('【日次処理】リトライ完了');
