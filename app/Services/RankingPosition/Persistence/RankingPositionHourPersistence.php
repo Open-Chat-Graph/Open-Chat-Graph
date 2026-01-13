@@ -119,9 +119,6 @@ class RankingPositionHourPersistence
      */
     function persistAllCategoriesBackground(): void
     {
-        // OpenChatデータのキャッシュを初期化（emid→id変換用）
-        $this->process->initializeCache();
-
         // 現在時間をcron毎時実行時間に調整した値
         $expectedFileTime = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
         $expectedFileTimeLog = (new \DateTime($expectedFileTime))->format('Y-m-d H:i');
@@ -175,9 +172,6 @@ class RankingPositionHourPersistence
         $deleteTime->modify('- 1day');
         $this->rankingPositionHourRepository->delete($deleteTime);
         CronUtility::addCronLog('古いランキングデータを削除完了（' .  $deleteTime->format('Y-m-d H:i') . " 以前）");
-
-        // キャッシュをクリア
-        $this->process->afterClearCache();
     }
 
     /**

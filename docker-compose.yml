@@ -27,6 +27,8 @@ services:
       - APACHE_RUN_USER=www-data
       - APACHE_RUN_GROUP=www-data
       - APACHE_LOG_DIR=/var/log/apache2
+      # Cron自動実行モード（1で有効、0で無効）
+      - CRON=${CRON:-0}
   mysql:
     build:
       context: "docker/mysql/"

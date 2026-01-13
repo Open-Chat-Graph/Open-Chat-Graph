@@ -50,6 +50,7 @@ AppConfig::$disableAds = false;
 AppConfig::$disableStaticDataFile = false;
 
 AppConfig::$isDevlopment = true;
+AppConfig::$isMockEnvironment = false;
 
 AppConfig::$isStaging = false;
 AppConfig::$phpBinary = 'php';

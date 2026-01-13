@@ -57,6 +57,10 @@ prid-setup.sh
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
 
+# LINE Mock API data files
+/docker/line-mock-api/data/*.json
+/docker/line-mock-api/data/debug.log
+
 storage/ja/ranking_position/filter_member_change.dat
 storage/ja/ranking_position/filter_new_rooms.dat
 storage/ja/ranking_position/filter_weekly_update.dat
