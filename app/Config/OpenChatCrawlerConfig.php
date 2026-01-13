@@ -4,6 +4,8 @@ namespace App\Config;
 
 class OpenChatCrawlerConfig
 {
+    const LINE_INTERNAL_URL = 'https://line.me/ti/g2/';
+
     const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/mimimiku778/Open-Chat-Graph)';
 
     const LINE_URL_MATCH_PATTERN = [

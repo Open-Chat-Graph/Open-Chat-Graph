@@ -24,7 +24,7 @@ class OpenChatUrlChecker
      */
     public function isOpenChatUrlAvailable(string $invitationTicket): bool
     {
-        $url = AppConfig::LINE_URL . $invitationTicket;
+        $url = OpenChatCrawlerConfig::LINE_INTERNAL_URL . $invitationTicket;
         $ua = OpenChatCrawlerConfig::USER_AGENT;
 
         return $this->crawlerFactory->createCrawler($url, $ua, method: 'HEAD', getCrawler: false) !== false;

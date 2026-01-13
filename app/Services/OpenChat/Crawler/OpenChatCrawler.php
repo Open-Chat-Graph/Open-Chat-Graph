@@ -27,7 +27,7 @@ class OpenChatCrawler
          *  @var string $url オープンチャットの招待ページ
          *                   https://line.me/ti/g2/{$invitationTicket}
          */
-        $url = AppConfig::LINE_URL . $invitationTicket;
+        $url = OpenChatCrawlerConfig::LINE_INTERNAL_URL . $invitationTicket;
 
         /**
          *  @var string $ua クローリング用のユーザーエージェント
