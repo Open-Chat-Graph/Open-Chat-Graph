@@ -62,6 +62,6 @@ prid-setup.sh
 /docker/line-mock-api/data/*.json
 /docker/line-mock-api/data/debug.log
 
-storage/ja/ranking_position/filter_member_change.dat
-storage/ja/ranking_position/filter_new_rooms.dat
-storage/ja/ranking_position/filter_weekly_update.dat
+storage/*/ranking_position/filter_member_change.dat
+storage/*/ranking_position/filter_new_rooms.dat
+storage/*/ranking_position/filter_weekly_update.dat
