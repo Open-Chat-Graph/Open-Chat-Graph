@@ -11,8 +11,8 @@ use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
-use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
-use App\Services\OpenChat\Crawler\OpenChatApiRisingDownloaderProcess;
+use App\Services\OpenChat\Crawler\OpenChatApiDownloaderProcessFactory;
+use App\Services\OpenChat\Enum\RankingType;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Services\OpenChat\Updater\Process\OpenChatApiDbMergerProcess;
@@ -38,18 +38,10 @@ class OpenChatApiDbMerger
         private RankingPositionStore $rankingStore,
         private RisingPositionStore $risingStore,
         private SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository,
-        OpenChatApiRankingDownloaderProcess $openChatApiRankingDownloaderProcess,
-        OpenChatApiRisingDownloaderProcess $openChatApiRisingDownloaderProcess,
+        OpenChatApiDownloaderProcessFactory $downloaderFactory,
     ) {
-        $this->rankingDownloader = app(
-            OpenChatApiRankingDownloader::class,
-            ['openChatApiRankingDownloaderProcess' => $openChatApiRankingDownloaderProcess]
-        );
-
-        $this->risingDownloader = app(
-            OpenChatApiRankingDownloader::class,
-            ['openChatApiRankingDownloaderProcess' => $openChatApiRisingDownloaderProcess]
-        );
+        $this->rankingDownloader = $downloaderFactory->createDownloader(RankingType::Ranking);
+        $this->risingDownloader = $downloaderFactory->createDownloader(RankingType::Rising);
 
         $this->startTime = OpenChatServicesUtility::getModifiedCronTime('now');
     }

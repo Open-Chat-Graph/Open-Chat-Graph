@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat\Crawler;
 
-use App\Config\OpenChatCrawlerConfig;
-use App\Config\AppConfig;
+use App\Config\OpenChatCrawlerConfigInterface;
 use App\Services\Crawler\CrawlerFactory;
 
 class OpenChatUrlChecker
 {
     function __construct(
-        private CrawlerFactory $crawlerFactory
+        private CrawlerFactory $crawlerFactory,
+        private OpenChatCrawlerConfigInterface $config
     ) {
     }
 
@@ -24,8 +24,8 @@ class OpenChatUrlChecker
      */
     public function isOpenChatUrlAvailable(string $invitationTicket): bool
     {
-        $url = OpenChatCrawlerConfig::LINE_INTERNAL_URL . $invitationTicket;
-        $ua = OpenChatCrawlerConfig::USER_AGENT;
+        $url = $this->config->getLineInternalUrl() . $invitationTicket;
+        $ua = $this->config->getUserAgent();
 
         return $this->crawlerFactory->createCrawler($url, $ua, method: 'HEAD', getCrawler: false) !== false;
     }

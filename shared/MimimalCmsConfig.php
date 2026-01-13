@@ -18,6 +18,8 @@ class MimimalCmsConfig
         \Shadow\File\Image\ImageStoreInterface::class => \Shadow\File\Image\ImageStore::class,
         \Shadow\File\Image\GdImageFactoryInterface::class => \Shadow\File\Image\GdImageFactory::class,
 
+        \App\Config\OpenChatCrawlerConfigInterface::class => \App\Config\OpenChatCrawlerConfig::class,
+
         \App\Models\Repositories\Log\LogRepositoryInterface::class => \App\Models\Repositories\Log\LogRepository::class,
 
         \App\Models\Repositories\OpenChatRepositoryInterface::class => \App\Models\Repositories\OpenChatRepository::class,

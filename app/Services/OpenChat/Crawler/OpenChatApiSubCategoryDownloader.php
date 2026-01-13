@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Crawler;
 
 use App\Services\Crawler\CrawlerFactory;
-use App\Config\OpenChatCrawlerConfig;
+use App\Config\OpenChatCrawlerConfigInterface;
 use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
 
 class OpenChatApiSubCategoryDownloader
 {
     function __construct(
-        private CrawlerFactory $crawlerFactory
+        private CrawlerFactory $crawlerFactory,
+        private OpenChatCrawlerConfigInterface $config
     ) {
     }
 
@@ -23,9 +24,9 @@ class OpenChatApiSubCategoryDownloader
      */
     function fetchOpenChatApiSubCategory(string $category): array|false
     {
-        $url = OpenChatCrawlerConfig::generateOpenChatApiRankigDataUrl($category, '');
-        $headers = OpenChatCrawlerConfig::OPEN_CHAT_API_OC_DATA_FROM_EMID_DOWNLOADER_HEADER[MimimalCmsConfig::$urlRoot];
-        $ua = OpenChatCrawlerConfig::USER_AGENT;
+        $url = $this->config->generateOpenChatApiRankingDataUrl($category, '');
+        $headers = $this->config->getOpenChatApiOcDataFromEmidDownloaderHeader()[MimimalCmsConfig::$urlRoot];
+        $ua = $this->config->getUserAgent();
 
         $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
         if (!$response) {

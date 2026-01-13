@@ -1,18 +1,20 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloaderProcess;
+use App\Services\OpenChat\Crawler\OpenChatApiDownloaderProcessFactory;
+use App\Services\OpenChat\Enum\RankingType;
 
 class OpenChatApiRankingDownloaderTest extends TestCase
 {
     public function testfetchSaveOpenChatRankingApiData()
     {
         /**
-         * @var OpenChatApiRankingDownloaderProcess $openChatApiRankingDataDownloader
+         * @var OpenChatApiDownloaderProcessFactory $factory
          */
-        $openChatApiRankingDataDownloader = app(OpenChatApiRankingDownloaderProcess::class);
+        $factory = app(OpenChatApiDownloaderProcessFactory::class);
+        $openChatApiRankingDataDownloader = $factory->createDownloader(RankingType::Ranking);
 
-        $res = $openChatApiRankingDataDownloader->fetchOpenChatApiRankingProcess(2, '3', function ($apiData) {
+        $res = $openChatApiRankingDataDownloader->fetchOpenChatApiRanking('2', function ($apiData) {
             debug($apiData);
         });
 

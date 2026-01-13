@@ -2,18 +2,25 @@
 
 namespace App\Config;
 
-class OpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
+/**
+ * Mock環境用のOpenChatクローラー設定
+ * LINE APIの代わりにローカルのMock APIを使用
+ */
+class MockOpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 {
-    const LINE_INTERNAL_URL = 'https://line.me/ti/g2/';
+    // Mock APIのベースURL（docker-compose.mock.ymlで定義）
+    const MOCK_API_BASE_URL = 'http://localhost:9000';
 
-    const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/mimimiku778/Open-Chat-Graph)';
+    const LINE_INTERNAL_URL = 'http://localhost:9000/ti/g2/';
+
+    const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot-Mock; +https://github.com/mimimiku778/Open-Chat-Graph)';
 
     const LINE_URL_MATCH_PATTERN = [
         '' =>    '{(?<=https:\/\/openchat\.line\.me\/jp\/cover\/).+?(?=\?|$)}',
         '/tw' => '{(?<=https:\/\/openchat\.line\.me\/tw\/cover\/).+?(?=\?|$)}',
         '/th' => '{(?<=https:\/\/openchat\.line\.me\/th\/cover\/).+?(?=\?|$)}',
     ];
-    const LINE_IMG_URL = 'https://obs.line-scdn.net/';
+    const LINE_IMG_URL = 'http://localhost:9000/obs/';
     const LINE_IMG_PREVIEW_PATH = '/preview';
     const IMG_MIME_TYPE = [
         'image/jpeg' => 'jpg',
@@ -22,7 +29,7 @@ class OpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
         'image/webp' => 'webp',
     ];
 
-    const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=https:\/\/line\.me\/ti\/g2\/).+?(?=\?|$)}';
+    const LINE_INTERNAL_URL_MATCH_PATTERN = '{(?<=http:\/\/localhost:9000\/ti\/g2\/).+?(?=\?|$)}';
     const DOM_CLASS_NAME = '.MdMN04Txt';
     const DOM_CLASS_MEMBER = '.MdMN05Txt';
     const DOM_CLASS_DESCRIPTION = '.MdMN06Desc';
@@ -107,17 +114,17 @@ class OpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 
     public function generateOpenChatApiOcDataFromEmidUrl(string $emid): string
     {
-        return "https://openchat.line.me/api/square/{$emid}?limit=1";
+        return self::MOCK_API_BASE_URL . "/api/square/{$emid}?limit=1";
     }
 
     public function generateOpenChatApiRankingDataUrl(string $category, string $ct): string
     {
-        return "https://openchat.line.me/api/category/{$category}?sort=RANKING&limit=40&ct={$ct}";
+        return self::MOCK_API_BASE_URL . "/api/category/{$category}?sort=RANKING&limit=40&ct={$ct}";
     }
 
     public function generateOpenChatApiRisingDataUrl(string $category, string $ct): string
     {
-        return "https://openchat.line.me/api/category/{$category}?sort=RISING&limit=40&ct={$ct}";
+        return self::MOCK_API_BASE_URL . "/api/category/{$category}?sort=RISING&limit=40&ct={$ct}";
     }
 
     public function getOpenChatApiOcDataFromEmidDownloaderHeader(): array
