@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
         msmtp \
         msmtp-mta \
         sudo \
+        cron \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         gd \
@@ -70,5 +71,9 @@ RUN pecl install xdebug-3.3.2
 RUN a2enmod rewrite && a2enmod ssl
 
 RUN ln -sf  /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+# Cron設定スクリプトをコピー
+COPY setup-cron.sh /usr/local/bin/setup-cron.sh
+RUN chmod +x /usr/local/bin/setup-cron.sh
 
 CMD ["apache2-foreground"]

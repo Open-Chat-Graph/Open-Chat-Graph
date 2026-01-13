@@ -23,5 +23,26 @@ fi
 
 echo "Starting Apache..."
 
-# Apacheを起動
-exec apache2-foreground
+# Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）
+# rootユーザーとして実行（sudoが不要な場合は直接実行）
+if [ "$(id -u)" != "0" ]; then
+    sudo -E /usr/local/bin/setup-cron.sh
+else
+    /usr/local/bin/setup-cron.sh
+fi
+
+# CRON機能が有効な場合
+if [ "${CRON}" = "1" ]; then
+    # Apacheをバックグラウンドで起動し、cronログをフォロー
+    apache2-foreground &
+    APACHE_PID=$!
+
+    echo "Apache started (PID: $APACHE_PID), following cron log..."
+    tail -f /var/log/cron.log &
+
+    # Apacheプロセスを待機
+    wait $APACHE_PID
+else
+    # Apacheを起動
+    exec apache2-foreground
+fi
