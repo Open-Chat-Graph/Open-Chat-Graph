@@ -12,7 +12,7 @@ help: ## ヘルプを表示
 	@echo "$(YELLOW)基本環境:$(NC)"
 	@echo "  $(GREEN)make up$(NC)          - 基本環境を起動"
 	@echo "  $(GREEN)make up-cron$(NC)     - 基本環境を起動（Cron自動実行モード）"
-	@echo "  $(GREEN)make down$(NC)        - 基本環境を停止"
+	@echo "  $(GREEN)make down$(NC)        - 環境を停止（基本・Mock両対応）"
 	@echo "  $(GREEN)make restart$(NC)     - 基本環境を再起動"
 	@echo "  $(GREEN)make rebuild$(NC)     - 基本環境を再ビルドして起動"
 	@echo "  $(GREEN)make ssh$(NC)         - 基本環境のコンテナにログイン"
@@ -22,7 +22,6 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make up-mock-slow$(NC)          - Mock環境（10万件、本番並み遅延）"
 	@echo "  $(GREEN)make up-mock-cron$(NC)          - Mock環境（1万件、Cron自動実行）"
 	@echo "  $(GREEN)make up-mock-slow-cron$(NC)     - Mock環境（10万件、遅延+Cron）"
-	@echo "  $(GREEN)make down-mock$(NC)             - Mock環境を停止"
 	@echo "  $(GREEN)make restart-mock$(NC)          - Mock環境を再起動（1万件）"
 	@echo "  $(GREEN)make restart-mock-slow$(NC)     - Mock環境を再起動（10万件）"
 	@echo "  $(GREEN)make restart-mock-cron$(NC)     - Mock環境を再起動（Cron）"
@@ -85,10 +84,15 @@ up-cron: ## 基本環境を起動（Cron自動実行モード）
 	@echo "$(YELLOW)Cronログ確認:$(NC)"
 	@echo "  docker compose logs -f app"
 
-down: ## 基本環境を停止
-	@echo "$(RED)基本環境を停止しています...$(NC)"
-	@docker compose down
-	@echo "$(RED)基本環境が停止しました$(NC)"
+down: ## 環境を停止（基本環境・Mock環境どちらでも対応）
+	@echo "$(RED)環境を停止しています...$(NC)"
+	@if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+		echo "$(YELLOW)Mock環境を検出しました$(NC)"; \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml down; \
+	else \
+		docker compose down; \
+	fi
+	@echo "$(RED)環境が停止しました$(NC)"
 
 restart: down up ## 基本環境を再起動
 
@@ -145,10 +149,7 @@ up-mock-slow: ## Mock付き環境を起動（10万件、本番並み遅延）
 	@echo "  phpMyAdmin: http://localhost:8080"
 	@echo "  LINE Mock API: http://localhost:9000"
 
-down-mock: ## Mock付き環境を停止
-	@echo "$(RED)Mock付き環境を停止しています...$(NC)"
-	@docker compose -f docker-compose.yml -f docker-compose.mock.yml down
-	@echo "$(RED)Mock付き環境が停止しました$(NC)"
+down-mock: down ## Mock付き環境を停止（downと同じ）
 
 restart-mock: down-mock up-mock ## Mock付き環境を再起動
 
