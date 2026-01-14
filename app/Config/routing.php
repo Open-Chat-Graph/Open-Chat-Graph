@@ -31,7 +31,6 @@ use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
-use App\ServiceProvider\OpenChatCrawlerConfigServiceProvider;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
@@ -192,7 +191,6 @@ Route::path(
     ->middleware([VerifyCsrfToken::class])
     ->matchStr('url', 'post', regex: \App\Services\Crawler\Config\OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
     ->match(function() {
-        app(OpenChatCrawlerConfigServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '';
     });
 

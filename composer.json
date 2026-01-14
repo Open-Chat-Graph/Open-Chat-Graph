@@ -27,7 +27,8 @@
             "shared/MimimalCMS_Enums.php",
             "shared/MimimalCMS_ExceptionHandler.php",
             "shared/MimimalCMS_HelperFunctions.php",
-            "app/Helpers/functions.php"
+            "app/Helpers/functions.php",
+            "shared/bootstrap.php"
         ]
     }
 }

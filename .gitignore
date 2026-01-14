@@ -69,6 +69,7 @@ storage/*/open_chat_sub_categories/subcategories.json
 /docker/line-mock-api/ssl/*.pem
 /docker/line-mock-api/data/*.json
 /docker/line-mock-api/data/*.log
+/docker/line-mock-api/storage/*
 
 # 例外: .gitkeepは含める
 !*.gitkeep

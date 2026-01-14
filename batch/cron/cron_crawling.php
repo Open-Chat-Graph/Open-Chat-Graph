@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Exceptions\ApplicationException;
 use App\ServiceProvider\ApiOpenChatDeleterServiceProvider;
-use App\ServiceProvider\OpenChatCrawlerConfigServiceProvider;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\SyncOpenChat;
 use App\Services\Cron\Utility\CronUtility;
@@ -15,9 +14,6 @@ try {
     if (isset($argv[1]) && $argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
     }
-
-    // OpenChatCrawlerConfigの実装を環境に応じて切り替え
-    app(OpenChatCrawlerConfigServiceProvider::class)->register();
 
     if (!MimimalCmsConfig::$urlRoot) {
         app(ApiOpenChatDeleterServiceProvider::class)->register();

@@ -21,6 +21,19 @@ else
     rm -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini 2>/dev/null || true
 fi
 
+# PHPの設定を更新してmkcertのCA証明書を使用（Mock環境用）
+if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
+    echo "Found mkcert root CA certificate"
+    echo "Configuring PHP to trust mkcert CA..."
+
+    # 既存のCA証明書とmkcert CAを結合したファイルを作成
+    cat /etc/ssl/certs/ca-certificates.crt /usr/local/share/ca-certificates/mkcert-rootCA.crt > /tmp/combined-ca.crt
+
+    # PHPの設定を更新
+    echo "openssl.cafile=/tmp/combined-ca.crt" > /usr/local/etc/php/conf.d/openssl.ini
+    echo "PHP configured to trust mkcert CA"
+fi
+
 echo "Starting Apache..."
 
 # Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）

@@ -3,20 +3,8 @@
 
 services:
   app:
-    ports:
-      - "${HTTPS_PORT_MOCK:-8543}:443"
     volumes:
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl-mock.conf"
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl-mock.conf"
       - "./docker/app/ssl-new/rootCA.pem:/usr/local/share/ca-certificates/mkcert-rootCA.crt:ro"
-      - "./docker/app/entrypoint-mock.sh:/usr/local/bin/entrypoint-mock.sh:ro"
-    entrypoint: ["/usr/local/bin/entrypoint-mock.sh"]
-    environment:
-      # Cron自動実行モード（1で有効、0で無効）
-      # 有効にすると毎時30分/35分/40分に自動クローリングが実行される
-      - CRON=${CRON:-0}
-      # Xdebug有効化（1で有効、0で無効）
-      - ENABLE_XDEBUG=${ENABLE_XDEBUG:-0}
     depends_on:
       - line-mock-api
     networks:
@@ -42,7 +30,7 @@ services:
       - "${LINE_MOCK_HTTPS_PORT:-9443}:443"
     volumes:
       - "./docker/line-mock-api:/app"
-      - "./storage:/var/www/html/storage"
+      - "./docker/line-mock-api/storage:/var/www/html/storage"
       - "./docker/line-mock-api/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem:ro"
       - "./docker/line-mock-api/ssl/localhost+3-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
     environment:

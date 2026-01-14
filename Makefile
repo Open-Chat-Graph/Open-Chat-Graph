@@ -88,7 +88,7 @@ up: ## 基本環境を起動
 	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)基本環境を起動しています...$(NC)"
-	@APP_ENV=development CRON=0 docker compose up -d --no-deps --force-recreate app && APP_ENV=development CRON=0 docker compose up -d
+	@IS_MOCK_ENVIRONMENT=0 CRON=0 docker compose up -d --no-deps --force-recreate app && IS_MOCK_ENVIRONMENT=0 CRON=0 docker compose up -d
 	@echo "$(GREEN)基本環境が起動しました$(NC)"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
 	@echo "  https://localhost:8443"
@@ -254,9 +254,9 @@ show: ## 現在の起動モードを表示
 		echo ""; \
 		echo "$(YELLOW)App コンテナ環境変数:$(NC)"; \
 		if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
-			docker compose -f docker-compose.yml -f docker-compose.mock.yml exec -T app sh -c 'echo "  CRON=$$CRON"' 2>/dev/null || echo "  (取得失敗)"; \
+			docker compose -f docker-compose.yml -f docker-compose.mock.yml exec -T app sh -c 'echo "  IS_MOCK_ENVIRONMENT=$$IS_MOCK_ENVIRONMENT"; echo "  CRON=$$CRON"' 2>/dev/null || echo "  (取得失敗)"; \
 		else \
-			docker compose exec -T app sh -c 'echo "  CRON=$$CRON"' 2>/dev/null || echo "  (取得失敗)"; \
+			docker compose exec -T app sh -c 'echo "  IS_MOCK_ENVIRONMENT=$$IS_MOCK_ENVIRONMENT"; echo "  CRON=$$CRON"' 2>/dev/null || echo "  (取得失敗)"; \
 		fi; \
 		echo ""; \
 		if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
@@ -266,22 +266,12 @@ show: ## 現在の起動モードを表示
 		fi; \
 		echo "$(YELLOW)Cron状態:$(NC) $$CRON_STATUS"; \
 		if [ "$$CRON_STATUS" = "有効" ]; then \
-			echo "  毎時30分: 日本語（引数なし）"; \
-			echo "  毎時35分: 繁体字中国語（引数/tw）"; \
-			echo "  毎時40分: タイ語（引数/th）"; \
-		fi; \
-		echo ""; \
-		echo "$(YELLOW)AppConfig isMockEnvironment:$(NC)"; \
-		if [ -f local-secrets.php ]; then \
-			if grep -q 'AppConfig::\$$isMockEnvironment = true' local-secrets.php 2>/dev/null; then \
-				echo "  true (Mock環境用に設定)"; \
-			elif grep -q 'AppConfig::\$$isMockEnvironment = false' local-secrets.php 2>/dev/null; then \
-				echo "  false (基本環境用に設定)"; \
+			echo "$(YELLOW)スケジュール:$(NC)"; \
+			if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+				docker compose -f docker-compose.yml -f docker-compose.mock.yml exec -T app sh -c 'cat /etc/cron.d/openchat-crawling 2>/dev/null | grep -v "^#" | grep -v "^$$" | sed "s/^/  /"' 2>/dev/null || echo "  (取得失敗)"; \
 			else \
-				echo "  (設定なし)"; \
+				docker compose exec -T app sh -c 'cat /etc/cron.d/openchat-crawling 2>/dev/null | grep -v "^#" | grep -v "^$$" | sed "s/^/  /"' 2>/dev/null || echo "  (取得失敗)"; \
 			fi; \
-		else \
-			echo "  local-secrets.php が存在しません"; \
 		fi; \
 	else \
 		echo "$(RED)コンテナが起動していません$(NC)"; \
