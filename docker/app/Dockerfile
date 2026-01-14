@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
         zlib1g-dev \
         libcurl4-openssl-dev \
         libsqlite3-dev \
+        sqlite3 \
         libicu-dev \
         libssl-dev \
         git \
@@ -62,8 +63,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable \
         opcache
 
-# vscodesudoers追加
-RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# sudoers追加（vscodeとwww-data）
+RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    echo "www-data ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN pecl install xdebug-3.3.2
 # Xdebugはデフォルトで無効（環境変数ENABLE_XDEBUG=1で有効化）
