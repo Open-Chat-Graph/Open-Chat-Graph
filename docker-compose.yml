@@ -11,6 +11,7 @@ services:
     user: "33:33"
     volumes:
       - "./:/var/www/html"
+      - "./docker/app/logs:/var/log/app"
       - "./docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf"
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf"
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-enabled/000-default.conf"

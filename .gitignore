@@ -62,14 +62,13 @@ storage/*/static_data_top/*
 storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 
-# Docker SSL証明書
+# Docker関連
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
+/docker/app/logs/*.log
 /docker/line-mock-api/ssl/*.pem
-
-# LINE Mock API
 /docker/line-mock-api/data/*.json
-/docker/line-mock-api/data/debug.log
+/docker/line-mock-api/data/*.log
 
 # 例外: .gitkeepは含める
 !*.gitkeep
