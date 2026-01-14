@@ -30,6 +30,8 @@ services:
       - APACHE_LOG_DIR=/var/log/apache2
       # Cron自動実行モード（1で有効、0で無効）
       - CRON=${CRON:-0}
+      # Mock環境モード（1で有効、0で無効）
+      - IS_MOCK_ENVIRONMENT=${IS_MOCK_ENVIRONMENT:-0}
       # Xdebug有効化（1で有効、0で無効）
       - ENABLE_XDEBUG=${ENABLE_XDEBUG:-0}
   mysql:

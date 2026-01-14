@@ -169,7 +169,13 @@ AppConfig::$disableAds = false;
 AppConfig::$disableStaticDataFile = false;
 
 AppConfig::$isDevlopment = true;
-AppConfig::$isMockEnvironment = false;
+
+// 環境変数でisMockEnvironmentを制御
+if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+    AppConfig::$isMockEnvironment = filter_var($isMockEnv, FILTER_VALIDATE_BOOLEAN);
+} else {
+    AppConfig::$isMockEnvironment = false;
+}
 
 AppConfig::$isStaging = false;
 AppConfig::$phpBinary = 'php';

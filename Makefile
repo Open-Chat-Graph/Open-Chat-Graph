@@ -86,13 +86,9 @@ up: ## 基本環境を起動
 		echo "$(YELLOW)Mock環境から基本環境に切り替えています...$(NC)"; \
 		$(MAKE) down-mock; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = true;/AppConfig::\$$isMockEnvironment = false;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpを基本環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)基本環境を起動しています...$(NC)"
-	@CRON=0 docker compose up -d --no-deps --force-recreate app && CRON=0 docker compose up -d
+	@APP_ENV=development CRON=0 docker compose up -d --no-deps --force-recreate app && APP_ENV=development CRON=0 docker compose up -d
 	@echo "$(GREEN)基本環境が起動しました$(NC)"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
 	@echo "  https://localhost:8443"
@@ -103,13 +99,9 @@ up-cron: ## 基本環境を起動（Cron自動実行モード）
 		echo "$(YELLOW)Mock環境から基本環境に切り替えています...$(NC)"; \
 		$(MAKE) down-mock; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = true;/AppConfig::\$$isMockEnvironment = false;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpを基本環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)基本環境を起動しています（Cron自動実行モード）...$(NC)"
-	@CRON=1 docker compose up -d --no-deps --force-recreate app && CRON=1 docker compose up -d
+	@IS_MOCK_ENVIRONMENT=0 CRON=1 docker compose up -d --no-deps --force-recreate app && IS_MOCK_ENVIRONMENT=0 CRON=1 docker compose up -d
 	@echo "$(GREEN)基本環境が起動しました$(NC)"
 	@echo "$(YELLOW)Cronモード有効:$(NC) 毎時30分/35分/40分に自動クローリングが実行されます"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
@@ -149,14 +141,10 @@ up-mock: ## Mock付き環境を起動（1万件、遅延なし）
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = false;/AppConfig::\$$isMockEnvironment = true;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（1万件、遅延なし）...$(NC)"
-	@CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
+	@IS_MOCK_ENVIRONMENT=1 CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && IS_MOCK_ENVIRONMENT=1 CRON=0 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)データ件数:$(NC) ランキング1万件、急上昇1000件"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
@@ -170,14 +158,10 @@ up-mock-slow: ## Mock付き環境を起動（10万件、本番並み遅延）
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = false;/AppConfig::\$$isMockEnvironment = true;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（10万件、本番並み遅延）...$(NC)"
-	@CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
+	@IS_MOCK_ENVIRONMENT=1 CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && IS_MOCK_ENVIRONMENT=1 CRON=0 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)データ件数:$(NC) ランキング10万件、急上昇1万件"
 	@echo "$(YELLOW)遅延モード有効:$(NC) 時間帯により20分～45分の処理時間をシミュレート"
@@ -198,14 +182,10 @@ up-mock-cron: ## Mock付き環境を起動（1万件、Cron自動実行）
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = false;/AppConfig::\$$isMockEnvironment = true;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（1万件、Cron自動実行）...$(NC)"
-	@CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
+	@IS_MOCK_ENVIRONMENT=1 CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && IS_MOCK_ENVIRONMENT=1 CRON=1 MOCK_DELAY_ENABLED=0 MOCK_RANKING_COUNT=10000 MOCK_RISING_COUNT=1000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)Cronモード有効:$(NC) 毎時30分/35分/40分に自動クローリングが実行されます"
 	@echo "  30分: 日本語（引数なし）"
@@ -225,14 +205,10 @@ up-mock-slow-cron: ## Mock付き環境を起動（10万件、遅延+Cron）
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
-	@if [ -f local-secrets.php ]; then \
-		sed -i.bak 's/AppConfig::\$$isMockEnvironment = false;/AppConfig::\$$isMockEnvironment = true;/g' local-secrets.php && rm -f local-secrets.php.bak; \
-		echo "$(GREEN)local-secrets.phpをMock環境用に設定しました$(NC)"; \
-	fi
 	@./docker/app/generate-ssl-certs.sh
 	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています（10万件、遅延+Cron）...$(NC)"
-	@CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
+	@IS_MOCK_ENVIRONMENT=1 CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d --no-deps --force-recreate app line-mock-api && IS_MOCK_ENVIRONMENT=1 CRON=1 MOCK_DELAY_ENABLED=1 MOCK_RANKING_COUNT=100000 MOCK_RISING_COUNT=10000 docker compose -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)Cronモード有効:$(NC) 毎時30分/35分/40分に自動クローリングが実行されます"
 	@echo "$(YELLOW)データ件数:$(NC) ランキング10万件、急上昇1万件"
