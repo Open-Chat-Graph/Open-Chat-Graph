@@ -37,7 +37,6 @@ services:
   line-mock-api:
     build:
       context: "docker/line-mock-api/"
-    user: "33:33"
     ports:
       - "${LINE_MOCK_PORT:-9000}:80"
       - "${LINE_MOCK_HTTPS_PORT:-9443}:443"
