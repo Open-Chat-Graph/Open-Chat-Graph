@@ -8,9 +8,10 @@ services:
       - "${WEB_PORT:-8000}:80"
       - "${HTTPS_PORT:-8443}:443"
     working_dir: /var/www/html
-    user: "1000:1000"
+    user: "33:33"
     volumes:
       - "./:/var/www/html"
+      - "./docker/app/logs:/var/log/app"
       - "./docker/app/apache2/apache2.conf:/etc/apache2/apache2.conf"
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf"
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-enabled/000-default.conf"
@@ -29,6 +30,10 @@ services:
       - APACHE_LOG_DIR=/var/log/apache2
       # Cron自動実行モード（1で有効、0で無効）
       - CRON=${CRON:-0}
+      # Mock環境モード（1で有効、0で無効）
+      - IS_MOCK_ENVIRONMENT=${IS_MOCK_ENVIRONMENT:-0}
+      # Xdebug有効化（1で有効、0で無効）
+      - ENABLE_XDEBUG=${ENABLE_XDEBUG:-0}
   mysql:
     build:
       context: "docker/mysql/"

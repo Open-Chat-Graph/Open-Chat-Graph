@@ -1,16 +1,32 @@
-*.Identifier
+# エディタ・OS
 .DS_Store
 Thumbs.db
+*.Identifier
 /.vscode/sftp.json
 
-/.git
-/node_modules
+# 依存関係
 /vendor
+/node_modules
 
+# 設定ファイル
 local-secrets.php
 prod-secrets.php
 /shared/secrets.php
+*.env
+.user.ini
+.htaccess
 
+# セットアップスクリプト
+setup.sh
+prid-setup.sh
+setup/local-setup.sh
+/password.openchat-review.me
+
+# バッチ処理
+batch/sh/*.key
+batch/sh/sqldump
+
+# 画像ファイル
 /public/oc-img/*
 /public/oc-img-*/*
 !/public/oc-img/default
@@ -22,9 +38,11 @@ prod-secrets.php
 !/public/oc-img/preview/default
 !/public/oc-img-*/preview/default
 
+# サイトマップ
 public/sitemaps/**
 public/sitemap.xml
 
+# ストレージ
 storage/exception.log
 storage/furigana/**
 storage/*/logs/*
@@ -36,32 +54,21 @@ storage/*/SQLite/*/*.db-wal
 storage/*/ranking_position/*/*
 storage/*/ranking_position/filter.dat
 storage/*/ranking_position/filter_date.dat
+storage/*/ranking_position/filter_member_change.dat
+storage/*/ranking_position/filter_new_rooms.dat
+storage/*/ranking_position/filter_weekly_update.dat
 storage/*/static_data_top/*
 !storage/*/static_data_top/non_essential_storage_file_sample
 storage/*/static_data_recommend/*/*
 storage/*/open_chat_sub_categories/subcategories.json
 
-!*.gitkeep
-.htaccess
-
-*.env
-batch/sh/*.key
-batch/sh/sqldump
-setup.sh
-local-setup.sh
-prid-setup.sh
-.user.ini
-/password.openchat-review.me
-
-# Docker SSL certificates
+# Docker関連
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
+/docker/app/logs/*.log
 /docker/line-mock-api/ssl/*.pem
-
-# LINE Mock API data files
 /docker/line-mock-api/data/*.json
-/docker/line-mock-api/data/debug.log
+/docker/line-mock-api/data/*.log
 
-storage/*/ranking_position/filter_member_change.dat
-storage/*/ranking_position/filter_new_rooms.dat
-storage/*/ranking_position/filter_weekly_update.dat
+# 例外: .gitkeepは含める
+!*.gitkeep
