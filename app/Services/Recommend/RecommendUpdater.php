@@ -34,6 +34,18 @@ class RecommendUpdater
         }
     }
 
+    private function getOpenChatSubCategoriesTag(): array
+    {
+        $data = json_decode(
+            file_exists(AppConfig::getStorageFilePath($this->openChatSubCategoriesTagKey))
+                ? file_get_contents(AppConfig::getStorageFilePath($this->openChatSubCategoriesTagKey))
+                : '{}',
+            true
+        );
+
+        return is_array($data) ? $data : [];
+    }
+
     function updateRecommendTables(bool $betweenUpdateTime = true, bool $onlyRecommend = false)
     {
         $this->start = $betweenUpdateTime
@@ -147,10 +159,7 @@ class RecommendUpdater
             $this->recommendUpdaterTags->getNameStrongTags(),
             $this->recommendUpdaterTags->getDescStrongTags(),
             $this->recommendUpdaterTags->getAfterDescStrongTags(),
-            array_merge(...json_decode(
-                file_get_contents(AppConfig::getStorageFilePath($this->openChatSubCategoriesTagKey)),
-                true
-            ))
+            array_merge(...$this->getOpenChatSubCategoriesTag())
         );
 
         $tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
@@ -183,10 +192,7 @@ class RecommendUpdater
     {
         $tags = array_merge(
             $this->recommendUpdaterTags->getNameStrongTags(),
-            array_merge(...json_decode(
-                file_get_contents(AppConfig::getStorageFilePath($this->openChatSubCategoriesTagKey)),
-                true
-            ))
+            array_merge(...$this->getOpenChatSubCategoriesTag())
         );
 
         $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
@@ -241,7 +247,7 @@ class RecommendUpdater
     /** @return array{ string:string[] }  */
     protected function getReplacedTagsDesc(string $column): array
     {
-        $this->tags = json_decode((file_get_contents(AppConfig::getStorageFilePath($this->openChatSubCategoriesTagKey))), true);
+        $this->tags = $this->getOpenChatSubCategoriesTag();
 
         return [
             array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
