@@ -1,4 +1,4 @@
-.PHONY: help init up up-cron down restart rebuild ssh up-mock up-mock-slow up-mock-cron up-mock-slow-cron down-mock restart-mock restart-mock-slow restart-mock-cron rebuild-mock ssh-mock show
+.PHONY: help init init-y init-y-n _init up up-cron down restart rebuild ssh up-mock up-mock-slow up-mock-cron up-mock-slow-cron down-mock restart-mock restart-mock-slow restart-mock-cron rebuild-mock ssh-mock show
 
 # カラー定義
 GREEN := \033[0;32m
@@ -30,18 +30,53 @@ help: ## ヘルプを表示
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
 	@echo "  $(GREEN)make init$(NC)        - SSL証明書生成 + 環境初期化"
+	@echo "  $(GREEN)make init-y$(NC)      - 確認なしで初期化"
+	@echo "  $(GREEN)make init-y-n$(NC)    - 確認なしで初期化（local-secrets.phpは保持）"
 
 init: ## 初回セットアップ
+	@$(MAKE) _init ARGS=""
+
+init-y: ## 初回セットアップ（確認なし）
+	@$(MAKE) _init ARGS="-y"
+
+init-y-n: ## 初回セットアップ（確認なし、local-secrets.phpは保持）
+	@$(MAKE) _init ARGS="-y -n"
+
+_init:
 	@echo "$(GREEN)初回セットアップを開始します...$(NC)"
 	@./docker/app/generate-ssl-certs.sh
 	@./docker/line-mock-api/generate-ssl-certs.sh
-	@if [ ! -f local-secrets.php ]; then \
-		echo "$(YELLOW)local-secrets.phpが存在しません。セットアップスクリプトを実行します$(NC)"; \
+	@# コンテナが停止していれば起動、セットアップ後に停止（冪等性）
+	@CONTAINERS_WERE_STOPPED=0; \
+	if ! docker compose ps mysql 2>/dev/null | grep -q "Up" || ! docker compose ps app 2>/dev/null | grep -q "Up"; then \
+		echo "$(YELLOW)コンテナを起動します...$(NC)"; \
+		docker compose up -d mysql app; \
+		echo "$(YELLOW)MySQLの起動を待機しています...$(NC)"; \
+		for i in 1 2 3 4 5 6 7 8 9 10; do \
+			if docker compose exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then \
+				echo "$(GREEN)MySQLが起動しました$(NC)"; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+		CONTAINERS_WERE_STOPPED=1; \
+	else \
+		echo "$(GREEN)コンテナはすでに起動しています$(NC)"; \
+	fi; \
+	if [ ! -f local-secrets.php ] || [ -n "$(ARGS)" ]; then \
+		if [ ! -f local-secrets.php ]; then \
+			echo "$(YELLOW)local-secrets.phpが存在しません。セットアップスクリプトを実行します$(NC)"; \
+		fi; \
 		if [ -f local-setup.sh ]; then \
-			./local-setup.sh; \
+			./local-setup.sh $(ARGS); \
 		else \
-			./setup/local-setup.default.sh; \
-		fi \
+			./setup/local-setup.default.sh $(ARGS); \
+		fi; \
+	fi; \
+	if [ $$CONTAINERS_WERE_STOPPED -eq 1 ]; then \
+		echo "$(YELLOW)コンテナを停止します...$(NC)"; \
+		docker compose down; \
+		echo "$(GREEN)コンテナを停止しました$(NC)"; \
 	fi
 	@echo "$(GREEN)初回セットアップが完了しました$(NC)"
 
