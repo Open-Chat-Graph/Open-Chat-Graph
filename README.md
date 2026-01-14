@@ -25,6 +25,47 @@ make init
 make up
 ```
 
+#### `make init` の動作
+
+- SSL証明書を生成（mkcert）
+- `local-secrets.php` が存在しない場合、自動的にセットアップスクリプトを実行
+- MySQLコンテナが停止している場合、自動的に起動→セットアップ→停止
+- **初期状態**（データベースとSQLiteファイルが存在しない）の場合、確認なしで自動実行
+
+**引数を渡す:**
+```bash
+# 対話型（デフォルト）
+make init
+
+# 確認なしでDB・storage初期化、local-secrets.phpも作成
+make init-y
+
+# 確認なしでDB・storage初期化、local-secrets.phpは保持
+make init-y-n
+```
+
+#### セットアップスクリプトの手動実行
+
+既存の環境をリセットする場合や、カスタムセットアップが必要な場合：
+
+```bash
+# 対話型（既存データがある場合は確認プロンプト表示）
+./setup/local-setup.default.sh
+
+# DB・storage初期化を自動実行、local-secrets.phpも作成
+./setup/local-setup.default.sh -y
+
+# DB・storage初期化を自動実行、local-secrets.phpは保持
+./setup/local-setup.default.sh -y -n
+
+# ヘルプ表示
+./setup/local-setup.default.sh -h
+```
+
+**引数の説明:**
+- **第1引数**: DB・storage初期化（`-y`/`yes` = 自動実行、省略時 = 確認）
+- **第2引数**: local-secrets.php上書き（省略時 = 作成、`-n`/`no` = 保持）
+
 ### 環境の種類
 
 **基本環境（make up）:**
