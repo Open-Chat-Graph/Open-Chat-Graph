@@ -6,6 +6,7 @@ namespace App\Services\OpenChat\Crawler;
 
 use App\Services\Crawler\CrawlerFactory;
 use App\Services\Crawler\Config\OpenChatCrawlerConfigInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Enum\RankingType;
 use Shadow\Kernel\Validator;
 use Shared\MimimalCmsConfig;
@@ -39,6 +40,7 @@ class OpenChatApiDownloaderProcess
             $response = $this->crawlerFactory->createCrawler($url, $ua, getCrawler: false, customHeaders: $headers);
         } catch (\RuntimeException $e) {
             if ($e->getCode() === 500) {
+                CronUtility::addVerboseCronLog("[警告] HTTPエラー 500 発生によりスキップ: " . $e->getMessage());
                 return false;
             }
 
