@@ -199,11 +199,13 @@ else
 fi
 echo ""
 
-# テンプレートファイルをコピー
+# テンプレートファイルをコピー（Docker経由）
 echo "テンプレートファイルをコピーしています..."
-cp setup/template/static_data_top/* storage/ja/static_data_top/
-cp setup/template/static_data_top/* storage/tw/static_data_top/
-cp setup/template/static_data_top/* storage/th/static_data_top/
+docker compose exec -T app bash -c '
+    cp setup/template/static_data_top/* storage/ja/static_data_top/
+    cp setup/template/static_data_top/* storage/tw/static_data_top/
+    cp setup/template/static_data_top/* storage/th/static_data_top/
+'
 
 # スキーマファイルからSQLiteデータベースを生成（Docker経由）
 echo "スキーマファイルからSQLiteデータベースを生成しています..."
