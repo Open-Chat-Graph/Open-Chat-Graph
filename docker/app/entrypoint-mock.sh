@@ -34,12 +34,6 @@ if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
     echo "PHP configured to trust mkcert CA"
 fi
 
-
-# storageとpublicディレクトリの所有者をwww-dataに変更（Cron実行に必要）
-echo "Setting permissions for storage and public directories..."
-chown -R www-data:www-data /var/www/html/storage 2>/dev/null || true
-chown -R www-data:www-data /var/www/html/public 2>/dev/null || true
-echo "Permissions set (some files may be owned by host user)"
 echo "Starting Apache..."
 
 # Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）

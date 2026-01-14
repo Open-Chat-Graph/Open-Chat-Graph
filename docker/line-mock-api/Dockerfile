@@ -1,5 +1,8 @@
 FROM php:8.3-apache
 
+# PHP設定ファイルをコピー
+COPY php.ini /usr/local/etc/php/php.ini
+
 # 必要なPHP拡張をインストール
 RUN apt-get update && apt-get install -y \
     libpng-dev \
