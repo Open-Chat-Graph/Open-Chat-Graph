@@ -10,28 +10,32 @@ declare(strict_types=1);
  *
  * ### データ件数
  * - 各カテゴリごとに急上昇:80件、ランキング:80件を返す（固定）
- * - 日本語: 24時間分のテストデータ（23:30開始、翌23:30まで）
- * - 日本語以外（繁体字/タイ語）: 1時間分のテストデータ
+ * - 日本語: 25時間分のテストデータ（hourIndex: 0〜24、23:30開始、翌23:30まで）
+ * - 日本語以外（繁体字/タイ語）: 1時間分のテストデータ（hourIndex: 0のみ）
  *
  * ### ルーム構成（hourIndex=0の場合）
  *
  * #### カテゴリ0（すべて/全部/ทั้งหมด）
- * - 急上昇のみルーム: 16件（1時間目のみ、2時間目以降は消える）
+ * - 急上昇のみルーム: 16件（hourIndex=0のみランキングに出現）
+ *   - インデックス0: hourIndex>=1で詳細API/招待ページで404（削除された挙動）
+ *   - インデックス1-15: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
  * - 変動ルーム: 8件（内容・人数・順位が時間経過で変化）
  * - 静的ルーム: 56件（hourIndex=0で完全固定）
  *
  * #### カテゴリ1以降
- * - 人数固定ルーム: 16件（1時間目のみ出現、2時間目以降は消える）
- *   - メンバー数5: 8件
- *   - メンバー数10: 4件
- *   - メンバー数20: 4件
+ * - 人数固定ルーム: 16件（hourIndex=0のみランキングAPIに出現）
+ *   - メンバー数5 (インデックス0-7): hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
+ *   - メンバー数10 (インデックス8-11):
+ *     - インデックス8: hourIndex>=1で詳細API/招待ページで404（削除された挙動）
+ *     - インデックス9-11: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
+ *   - メンバー数20 (インデックス12-15): hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
  * - 変動ルーム: 8件（内容・人数・順位が時間経過で変化）
  * - 静的ルーム: 56件（hourIndex=0で完全固定）
  *
  * ### ルーム構成（hourIndex>=1の場合）
- * - 新規ルーム: 1件（hourIndexベース、人数10固定、タイトル: 【新規】）
- * - 変動ルーム: 8件（hourIndex=0ベース、人数・順位が決定論的に変化、タイトル: 【変動】）
- * - 静的ルーム: 71件（hourIndex=0で完全固定、内容・人数不変）
+ * - 変動ルーム: 8件（インデックス16-23、hourIndex=0ベース、EMIDは常に同じ、人数・順位が決定論的に変化、タイトル: 【変動】）
+ * - 新規ルーム: 1件（インデックス24、hourIndexベース、人数10固定、タイトル: 【新規】）
+ * - 静的ルーム: 71件（インデックス0-15, 25-79、hourIndex=0で完全固定、内容・人数不変）
  *
  * ### ルームIDの生成ルール
  * - カテゴリID + 時間 + ルームインデックスで決定的にEMIDを生成
@@ -284,10 +288,13 @@ function generateCategoryData(int $categoryId, string $sort, int $hourIndex, str
             }
         } elseif ($categoryId === 0 && $sort === 'RANKING') {
             // カテゴリ0ランキング: 変動ルーム8件 + 静的ルーム72件 = 80件
-            for ($i = 0; $i < 8; $i++) {
+            for ($i = 16; $i < 24; $i++) {
                 $rooms[] = generateRoom($categoryId, 0, $i, 'changing', $language, $currentTime, 0, $tags);
             }
-            for ($i = 8; $i < 80; $i++) {
+            for ($i = 0; $i < 16; $i++) {
+                $rooms[] = generateRoom($categoryId, 0, $i, 'static', $language, $currentTime, 0, $tags);
+            }
+            for ($i = 24; $i < 80; $i++) {
                 $rooms[] = generateRoom($categoryId, 0, $i, 'static', $language, $currentTime, 0, $tags);
             }
         } else {
@@ -312,20 +319,23 @@ function generateCategoryData(int $categoryId, string $sort, int $hourIndex, str
             }
         }
     } else {
-        // 2時間目以降: 新規ルーム1件 + 変動ルーム8件 + 静的ルーム71件 = 80件
-        // 新規ルーム1件（hourIndexベース、インデックス0）
-        $rooms[] = generateRoom($categoryId, $hourIndex, 0, 'new-room', $language, $currentTime, $hourIndex, $tags);
-
-        // 変動ルーム8件（インデックス1-8、hourIndex=0ベースでEMID固定、人数のみ変化）
-        for ($i = 1; $i <= 8; $i++) {
+        // 2時間目以降: 変動ルーム8件 + 新規ルーム1件 + 静的ルーム71件 = 80件
+        // 変動ルーム8件（インデックス16-23、hourIndex=0ベースでEMID固定、人数のみ変化）
+        for ($i = 16; $i < 24; $i++) {
             // 変動ルームに特別な値を設定
-            $emblem = ($i === 1) ? 1 : (($i === 2) ? 2 : 0);
-            $joinMethodType = ($i === 3) ? 1 : (($i === 4) ? 2 : 0);
+            $emblem = ($i === 16) ? 1 : (($i === 17) ? 2 : 0);
+            $joinMethodType = ($i === 18) ? 1 : (($i === 19) ? 2 : 0);
             $rooms[] = generateRoom($categoryId, 0, $i, 'changing', $language, $currentTime, $hourIndex, $tags, $emblem, $joinMethodType);
         }
 
-        // 静的ルーム71件（インデックス9-79、hourIndex=0で完全固定）
-        for ($i = 9; $i < 80; $i++) {
+        // 新規ルーム1件（hourIndexベース、インデックス24）
+        $rooms[] = generateRoom($categoryId, $hourIndex, 24, 'new-room', $language, $currentTime, $hourIndex, $tags);
+
+        // 静的ルーム71件（インデックス25-79とインデックス0-15、hourIndex=0で完全固定）
+        for ($i = 0; $i < 16; $i++) {
+            $rooms[] = generateRoom($categoryId, 0, $i, 'static', $language, $currentTime, 0, $tags);
+        }
+        for ($i = 25; $i < 80; $i++) {
             $rooms[] = generateRoom($categoryId, 0, $i, 'static', $language, $currentTime, 0, $tags);
         }
     }
@@ -465,16 +475,27 @@ try {
     if (preg_match('#^/api/square/([a-zA-Z0-9_-]+)\?limit=1$#', $requestUri, $matches)) {
         $emid = $matches[1];
 
+        // デバッグログ
+        error_log(sprintf(
+            "[%s] Square Detail API - EMID: %s, Language: %s\n",
+            date('Y-m-d H:i:s'),
+            $emid,
+            $language
+        ), 3, '/app/data/debug-square-detail.log');
+
         // すべてのカテゴリとすべての時間からルームを検索
         $room = null;
         $categoryIds = getCategoryIds($language);
 
-        // 最大24時間または1時間分を検索
-        $maxHours = $language === 'ja' ? 24 : 1;
+        // 最大25時間（hourIndex: 0〜24）または1時間分を検索
+        $maxHours = $language === 'ja' ? 25 : 1;
         $tags = $popularTags[$language] ?? $popularTags['ja'];
 
+        // 現在のhourIndexから検索開始（最新データを優先）
         foreach ($categoryIds as $categoryId) {
-            for ($h = 0; $h < $maxHours; $h++) {
+            for ($h = $hourIndex; $h >= 0; $h--) {
+                if ($h >= $maxHours) continue;  // maxHoursを超える場合はスキップ
+
                 // ランキングとソート両方から検索
                 foreach (['RANKING', 'RISING'] as $sort) {
                     $rooms = generateCategoryData($categoryId, $sort, $h, $language, $currentTime, $tags);
@@ -485,14 +506,80 @@ try {
                         }
                     }
                 }
+
+                // hourIndex=0: ランキングに出ないが詳細APIで取得可能なルーム
+                if ($h === 0 && !$room) {
+                    // カテゴリ0急上昇: rising-onlyルーム（1-15のみ取得可能、0は削除）
+                    if ($categoryId === 0) {
+                        for ($i = 1; $i < 16; $i++) {
+                            $r = generateRoom($categoryId, 0, $i, 'rising-only', $language, $currentTime, 0, $tags);
+                            if ($r['emid'] === $emid) {
+                                $room = $r;
+                                break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                            }
+                        }
+                    }
+
+                    // カテゴリ1以降: fixed系ルーム（インデックス8は削除）
+                    if ($categoryId !== 0) {
+                        // fixed-5 (0-7)
+                        for ($i = 0; $i < 8; $i++) {
+                            $emblem = ($i === 0) ? 1 : (($i === 1) ? 2 : 0);
+                            $joinMethodType = ($i === 2) ? 1 : (($i === 3) ? 2 : 0);
+                            $r = generateRoom($categoryId, 0, $i, 'fixed-5', $language, $currentTime, 0, $tags, $emblem, $joinMethodType);
+                            if ($r['emid'] === $emid) {
+                                $room = $r;
+                                break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                            }
+                        }
+                        // fixed-10 (9-11のみ、8は削除)
+                        if (!$room) {
+                            for ($i = 9; $i < 12; $i++) {
+                                $r = generateRoom($categoryId, 0, $i, 'fixed-10', $language, $currentTime, 0, $tags);
+                                if ($r['emid'] === $emid) {
+                                    $room = $r;
+                                    break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                                }
+                            }
+                        }
+                        // fixed-20 (12-15)
+                        if (!$room) {
+                            for ($i = 12; $i < 16; $i++) {
+                                $r = generateRoom($categoryId, 0, $i, 'fixed-20', $language, $currentTime, 0, $tags);
+                                if ($r['emid'] === $emid) {
+                                    $room = $r;
+                                    break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
         if (!$room) {
+            // デバッグログ
+            error_log(sprintf(
+                "[%s] Square NOT FOUND - EMID: %s, Searched categories: %d, Searched hours: %d\n",
+                date('Y-m-d H:i:s'),
+                $emid,
+                count($categoryIds),
+                $maxHours
+            ), 3, '/app/data/debug-square-detail.log');
+
             http_response_code(404);
-            echo json_encode(['error' => 'Square not found']);
+            echo json_encode(['error' => 'Square not found', 'emid' => $emid, 'searched_categories' => count($categoryIds), 'searched_hours' => $maxHours]);
             exit;
         }
+
+        // デバッグログ
+        error_log(sprintf(
+            "[%s] Square FOUND - EMID: %s, Category: %d, Type: %s\n",
+            date('Y-m-d H:i:s'),
+            $emid,
+            $room['category'] ?? 'unknown',
+            $room['type'] ?? 'unknown'
+        ), 3, '/app/data/debug-square-detail.log');
 
         // invitationTicket生成
         $invitationTicket = substr($room['emid'], 0, 10);
@@ -528,17 +615,68 @@ try {
         // すべてのカテゴリとすべての時間からルームを検索
         $room = null;
         $categoryIds = getCategoryIds($pageLang);
-        $maxHours = $pageLang === 'ja' ? 24 : 1;
+        $maxHours = $pageLang === 'ja' ? 25 : 1;
         $tags = $popularTags[$pageLang] ?? $popularTags['ja'];
 
+        // 現在のhourIndexから検索開始（最新データを優先）
         foreach ($categoryIds as $categoryId) {
-            for ($h = 0; $h < $maxHours; $h++) {
+            for ($h = $hourIndex; $h >= 0; $h--) {
+                if ($h >= $maxHours) continue;  // maxHoursを超える場合はスキップ
+
                 foreach (['RANKING', 'RISING'] as $sort) {
                     $rooms = generateCategoryData($categoryId, $sort, $h, $pageLang, $currentTime, $tags);
                     foreach ($rooms as $r) {
                         if ($r['emid'] === $emid) {
                             $room = $r;
                             break 4;
+                        }
+                    }
+                }
+
+                // hourIndex=0: ランキングに出ないが詳細APIで取得可能なルーム
+                if ($h === 0 && !$room) {
+                    // カテゴリ0急上昇: rising-onlyルーム（1-15のみ取得可能、0は削除）
+                    if ($categoryId === 0) {
+                        for ($i = 1; $i < 16; $i++) {
+                            $r = generateRoom($categoryId, 0, $i, 'rising-only', $pageLang, $currentTime, 0, $tags);
+                            if ($r['emid'] === $emid) {
+                                $room = $r;
+                                break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                            }
+                        }
+                    }
+
+                    // カテゴリ1以降: fixed系ルーム（インデックス8は削除）
+                    if ($categoryId !== 0) {
+                        // fixed-5 (0-7)
+                        for ($i = 0; $i < 8; $i++) {
+                            $emblem = ($i === 0) ? 1 : (($i === 1) ? 2 : 0);
+                            $joinMethodType = ($i === 2) ? 1 : (($i === 3) ? 2 : 0);
+                            $r = generateRoom($categoryId, 0, $i, 'fixed-5', $pageLang, $currentTime, 0, $tags, $emblem, $joinMethodType);
+                            if ($r['emid'] === $emid) {
+                                $room = $r;
+                                break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                            }
+                        }
+                        // fixed-10 (9-11のみ、8は削除)
+                        if (!$room) {
+                            for ($i = 9; $i < 12; $i++) {
+                                $r = generateRoom($categoryId, 0, $i, 'fixed-10', $pageLang, $currentTime, 0, $tags);
+                                if ($r['emid'] === $emid) {
+                                    $room = $r;
+                                    break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                                }
+                            }
+                        }
+                        // fixed-20 (12-15)
+                        if (!$room) {
+                            for ($i = 12; $i < 16; $i++) {
+                                $r = generateRoom($categoryId, 0, $i, 'fixed-20', $pageLang, $currentTime, 0, $tags);
+                                if ($r['emid'] === $emid) {
+                                    $room = $r;
+                                    break 3;  // $i, $h, $categoryIds の3つのループを抜ける
+                                }
+                            }
                         }
                     }
                 }
