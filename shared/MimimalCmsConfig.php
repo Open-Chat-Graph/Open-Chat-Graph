@@ -57,6 +57,8 @@ class MimimalCmsConfig
         \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
         \App\Views\Classes\Dto\CommentArgDtoFactoryInterface::class => \App\Views\Classes\Dto\CommentArgDtoFactory::class,
         \App\Views\Classes\CollapseKeywordEnumerationsInterface::class => \App\Views\Classes\CollapseKeywordEnumerations::class,
+
+        \App\Services\Storage\FileStorageInterface::class => \App\Services\Storage\FileStorageService::class,
     ];
 
     // URL root

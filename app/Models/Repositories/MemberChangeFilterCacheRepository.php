@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * メンバー数変動フィルターキャッシュのリポジトリ
@@ -29,6 +30,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
     function __construct(
         private StatisticsRepositoryInterface $statisticsRepository,
         private SyncOpenChatStateRepositoryInterface $syncStateRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     /**
@@ -124,7 +126,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
      */
     private function loadCache(string $key, string $date): ?array
     {
-        $path = AppConfig::getStorageFilePath($key);
+        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($key);
 
         if (!file_exists($path)) {
             return null;
@@ -136,7 +138,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
             return null;
         }
 
-        $cached = getUnserializedFile($path);
+        $cached = $this->fileStorage->getSerializedFile('@' . $key);
         return $cached === false ? null : $cached;
     }
 
@@ -145,7 +147,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
      */
     private function saveCache(string $key, string $date, array $data): void
     {
-        saveSerializedFile(AppConfig::getStorageFilePath($key), $data);
+        $this->fileStorage->saveSerializedFile('@' . $key, $data);
 
         // 日付も更新（DBに保存）
         $this->syncStateRepository->setString(SyncOpenChatStateType::filterCacheDate, $date);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\SubCategory;
 
 use App\Services\OpenChat\Crawler\OpenChatApiSubCategoryDownloader;
+use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Validator;
 use App\Config\AppConfig;
 
@@ -14,6 +15,7 @@ class OpenChatSubCategorySynchronizer
 
     function __construct(
         private OpenChatApiSubCategoryDownloader $openChatApiSubCategoryDownloader,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     /**
@@ -27,8 +29,8 @@ class OpenChatSubCategorySynchronizer
             $this->saveSubCategories(...)
         );
 
-        $result && safeFileRewrite(
-            AppConfig::getStorageFilePath('openChatSubCategories'),
+        $result && $this->fileStorage->safeFileRewrite(
+            '@openChatSubCategories',
             json_encode($this->fetchedSubcategories, JSON_UNESCAPED_UNICODE)
         );
 

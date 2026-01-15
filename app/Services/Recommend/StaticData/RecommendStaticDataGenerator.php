@@ -8,11 +8,11 @@ use App\Config\AppConfig;
 use App\Models\RecommendRepositories\CategoryRankingRepository;
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
-use App\Models\Repositories\DB;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 class RecommendStaticDataGenerator
@@ -23,6 +23,7 @@ class RecommendStaticDataGenerator
         private OfficialRoomRankingRepository $officialRoomRankingRepository,
         private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function getRecomendRanking(string $tag): RecommendListDto
@@ -73,8 +74,8 @@ class RecommendStaticDataGenerator
     {
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
-            saveSerializedFile(
-                AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
+            $this->fileStorage->saveSerializedFile(
+                \App\Services\Storage\FileStorageService::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
                 $this->getRecomendRanking($tag)
             );
         }
@@ -83,8 +84,8 @@ class RecommendStaticDataGenerator
     private function updateCategoryStaticData()
     {
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
-            saveSerializedFile(
-                AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
+            $this->fileStorage->saveSerializedFile(
+                \App\Services\Storage\FileStorageService::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
                 $this->getCategoryRanking($category)
             );
         }
@@ -93,8 +94,8 @@ class RecommendStaticDataGenerator
     private function updateOfficialStaticData()
     {
         foreach ([1, 2] as $emblem) {
-            saveSerializedFile(
-                AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
+            $this->fileStorage->saveSerializedFile(
+                \App\Services\Storage\FileStorageService::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
                 $this->getOfficialRanking($emblem)
             );
         }

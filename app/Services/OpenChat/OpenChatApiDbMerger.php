@@ -147,7 +147,7 @@ class OpenChatApiDbMerger
             // 既に最新データが取得済みかどうかをチェック
             $fileTime = $positionStore->getFileDateTime($category)->format('Y-m-d H:i:s');
             $now = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i:s');
-            $isDownloadedCategory = $fileTime === $now && !AppConfig::$isMockEnvironment;
+            $isDownloadedCategory = $fileTime === $now;
 
             if ($isDownloadedCategory) {
                 CronUtility::addVerboseCronLog(

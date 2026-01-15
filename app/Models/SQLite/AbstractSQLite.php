@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\SQLite;
 
 use App\Config\AppConfig;
+use App\Services\Storage\FileStorageService;
 use Shadow\DBInterface;
 use Shadow\DB;
 
@@ -34,7 +35,7 @@ abstract class AbstractSQLite extends DB implements DBInterface
             throw new \InvalidArgumentException('storageFileKey is required');
         }
 
-        $sqliteFilePath = AppConfig::getStorageFilePath($config['storageFileKey']);
+        $sqliteFilePath = FileStorageService::getStorageFilePath($config['storageFileKey']);
         $mode = $config['mode'] ?? '?mode=rwc';
 
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);

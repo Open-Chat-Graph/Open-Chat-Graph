@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron\Utility;
 
 use App\Config\AppConfig;
+use App\Services\Storage\FileStorageService;
 
 class CronUtility
 {
@@ -55,7 +56,7 @@ class CronUtility
             error_log(
                 $timestamp . ' ' . $logMessage . "\n",
                 3,
-                AppConfig::getStorageFilePath('addCronLogDest')
+                FileStorageService::getStorageFilePath('addCronLogDest')
             );
 
             // 戻り値用にはGitHub参照部分をフルURL形式に変換

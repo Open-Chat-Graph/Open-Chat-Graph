@@ -9,6 +9,7 @@ use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\StaticData\StaticDataGenerator;
+use App\Services\Storage\FileStorageInterface;
 
 class UpdateDailyRankingService
 {
@@ -16,6 +17,7 @@ class UpdateDailyRankingService
         private StaticDataGenerator $staticDataGenerator,
         private StatisticsRankingUpdaterRepositoryInterface $rankingUpdater,
         private OpenChatListRepositoryInterface $openChatListRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     /**
@@ -38,7 +40,7 @@ class UpdateDailyRankingService
 
     private function updateStaticData(string $date)
     {
-        safeFileRewrite(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'), $date);
+        $this->fileStorage->safeFileRewrite('@dailyCronUpdatedAtDate', $date);
         $this->staticDataGenerator->updateStaticData();
     }
 }

@@ -284,7 +284,7 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 0)
     ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1)
+    ->matchNum('limit', 'get', min: 1, max: 10)
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
@@ -308,7 +308,7 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 0)
     ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1)
+    ->matchNum('limit', 'get', min: 1, max: 10)
     ->match(function (string $user) {
         app(ApiCommentListControllerServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;

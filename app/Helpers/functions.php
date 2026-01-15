@@ -330,8 +330,20 @@ function isDailyUpdateTime(
         AppConfig::CRON_START_MINUTE[MimimalCmsConfig::$urlRoot]
     ];
 
-    $startTime = $nowStart->setTime(...$start);
+    // currentTimeの日付を基準にstartTimeを設定（faketimeに対応）
+    $baseDate = $currentTime->format('Y-m-d');
+    $startTime = (new DateTime($baseDate))->setTime(...$start);
     $endTime = (new DateTime($startTime->format('Y-m-d H:i:s')))->modify('+1 hour');
+
+    // 日次処理時刻が23時台の場合、日付跨ぎを考慮
+    // 例: 23:30開始の場合、23:30〜翌0:30が範囲
+    if ($start[0] >= 23) {
+        // 現在時刻が0時台かつ終了時刻より前なら、前日の開始時刻と比較
+        if ($currentTime->format('H') < $start[0] && $currentTime < $endTime) {
+            $startTime = (new DateTime($baseDate))->modify('-1 day')->setTime(...$start);
+            $endTime = (new DateTime($startTime->format('Y-m-d H:i:s')))->modify('+1 hour');
+        }
+    }
 
     if ($currentTime >= $startTime && $currentTime < $endTime) return true;
     return false;

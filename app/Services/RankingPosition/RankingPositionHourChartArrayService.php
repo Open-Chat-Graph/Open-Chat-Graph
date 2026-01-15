@@ -9,6 +9,7 @@ use App\Services\RankingPosition\Dto\RankingPositionHourChartDto;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourPageRepoDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 class RankingPositionHourChartArrayService
@@ -17,11 +18,12 @@ class RankingPositionHourChartArrayService
 
     function __construct(
         private RankingPositionHourPageRepositoryInterface $rankingPositionHourPageRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function getPositionHourChartArray(RankingType $type, int $open_chat_id, int $category): RankingPositionHourChartDto
     {
-        $updatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+        $updatedAt = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
         $endTime = new \DateTime($updatedAt);
 
         $repoDto = $this->rankingPositionHourPageRepository->getHourPosition(

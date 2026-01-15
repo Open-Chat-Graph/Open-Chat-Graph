@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Auth\AuthInterface;
+use App\Services\Storage\FileStorageInterface;
 use App\Services\User\MyOpenChatList;
 use App\Services\User\MyOpenChatListUserLogger;
 
@@ -16,6 +17,7 @@ class MyListApiController
         MyOpenChatList $myOpenChatList,
         AuthInterface $auth,
         MyOpenChatListUserLogger $myOpenChatListUserLogger,
+        FileStorageInterface $fileStorage,
     ) {
         if (!cookie()->has('myList')) {
             return false;
@@ -35,7 +37,7 @@ class MyListApiController
                 $myListIdArray
             );
 
-        $hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')));
+        $hourlyUpdatedAt = new \DateTime($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
 
         return view('components/myList', compact('myList', 'hourlyUpdatedAt'));
     }
