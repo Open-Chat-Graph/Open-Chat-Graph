@@ -13,6 +13,7 @@ use App\Models\CommentRepositories\Enum\CommentLogType;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\Auth\AuthInterface;
 use App\Services\Auth\GoogleReCaptcha;
+use App\Services\Storage\FileStorageInterface;
 
 class CommentPostApiController
 {
@@ -22,6 +23,7 @@ class CommentPostApiController
         OpenChatPageRepositoryInterface $openChatPageRepository,
         AuthInterface $auth,
         GoogleReCaptcha $googleReCaptcha,
+        FileStorageInterface $fileStorage,
         string $token,
         int $open_chat_id,
         string $name,
@@ -64,7 +66,7 @@ class CommentPostApiController
                 ]
             );
 
-            safeFileRewrite(AppConfig::getStorageFilePath('commentUpdatedAtMicrotime'), (string)microtime(true));
+            $fileStorage->safeFileRewrite('@commentUpdatedAtMicrotime', (string)microtime(true));
         } else {
             cookie(['comment_flag' => (string)$flag]);
         }

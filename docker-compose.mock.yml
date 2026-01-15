@@ -3,25 +3,19 @@
 
 services:
   app:
-    ports:
-      - "${HTTPS_PORT_MOCK:-8543}:443"
+    privileged: true  # システム時刻変更に必要
     volumes:
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl-mock.conf"
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl-mock.conf"
       - "./docker/app/ssl-new/rootCA.pem:/usr/local/share/ca-certificates/mkcert-rootCA.crt:ro"
-      - "./docker/app/entrypoint-mock.sh:/usr/local/bin/entrypoint-mock.sh:ro"
-    entrypoint: ["/usr/local/bin/entrypoint-mock.sh"]
-    environment:
-      # Cron自動実行モード（1で有効、0で無効）
-      # 有効にすると毎時30分/35分/40分に自動クローリングが実行される
-      - CRON=${CRON:-0}
-      # Xdebug有効化（1で有効、0で無効）
-      - ENABLE_XDEBUG=${ENABLE_XDEBUG:-0}
+      # Mock環境用のSSL設定（oc-imgをローカルファイルとして扱い、本番環境にアクセスしない）
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl.conf"
+      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
     depends_on:
       - line-mock-api
     networks:
       - default
       - mock-network
+    cap_add:
+      - SYS_TIME  # コンテナのシステム時刻を変更可能にする（テスト用）
 
   mysql:
     networks:
@@ -35,6 +29,7 @@ services:
 
   # LINE公式サイトエミュレーションサーバー
   line-mock-api:
+    privileged: true  # システム時刻変更に必要
     build:
       context: "docker/line-mock-api/"
     ports:
@@ -42,9 +37,13 @@ services:
       - "${LINE_MOCK_HTTPS_PORT:-9443}:443"
     volumes:
       - "./docker/line-mock-api:/app"
-      - "./storage:/var/www/html/storage"
+      - "./docker/line-mock-api/storage:/var/www/html/storage"
       - "./docker/line-mock-api/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem:ro"
       - "./docker/line-mock-api/ssl/localhost+3-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
+      - "./docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
+    cap_add:
+      - SYS_TIME  # コンテナのシステム時刻を変更可能にする（テスト用）
+    entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
     environment:
       - TZ=Asia/Tokyo
       - LANG=ja_JP.UTF-8
@@ -53,18 +52,25 @@ services:
       #   - tw（繁体字中国語）: x-lal: tw
       #   - th（タイ語）: x-lal: th
       # データ件数設定
-      # MOCK_RANKING_COUNT: ランキングデータ件数（デフォルト: 10000）
-      # MOCK_RISING_COUNT: 急上昇データ件数（デフォルト: 1000）
+      # MOCK_RANKING_COUNT: ランキングデータ生成件数（デフォルト: 10000）
+      #   ※出現パターンにより実際に返される件数は約9,000件:
+      #   - 通常ルーム85%（8,500件生成）: 常に出現 → 8,500件返却
+      #   - 断続的ルーム10%（1,000件生成）: 約50%出現 → 500件返却
+      #   - 削除済みルーム5%（500件生成）: 約6.25%出現（48時間で3回）→ 31件返却
+      #   合計: 約9,031件返却
+      #   ※カテゴリ分布（25カテゴリ）で各カテゴリ約360件
+      # MOCK_RISING_COUNT: 急上昇データ生成件数（デフォルト: 1000、RANKINGの1/10）
+      #   ※RISINGはほぼRANKINGに含まれる（カテゴリ0のみRISING専用）
       - MOCK_RANKING_COUNT=${MOCK_RANKING_COUNT:-10000}
       - MOCK_RISING_COUNT=${MOCK_RISING_COUNT:-1000}
       # レスポンス速度調整（本番環境並みの遅延）
       # MOCK_DELAY_ENABLED: 遅延モード有効化（1で有効、0で無効）
       #   有効時は時間帯により自動で遅延時間を調整:
-      #   【ランキング/急上昇API】全10万件取得時の処理時間
-      #     深夜（0-6時）:  40-45分相当（遅い）
-      #     早朝（6-9時）:  24-28分相当（やや速い）
-      #     昼間（9-18時）: 20-24分相当（速い）
-      #     夜間（18-24時）: 30-34分相当（中速）
+      #   【ランキング/急上昇API】実際に返却される件数はMOCK_RANKING_COUNTによる
+      #     深夜（0-6時）:  24-34分（変動遅延込みで最大40分以内）
+      #     早朝（6-9時）:  20-26分
+      #     昼間（9-18時）: 16-20分（最も速い）
+      #     夜間（18-24時）: 22-30分
       #   【スクエア詳細API】1件あたりの処理時間
       #     深夜（0-6時）:  250-300ms/件（約3.6件/秒）
       #     早朝（6-9時）:  150-180ms/件（約6件/秒）
@@ -76,6 +82,11 @@ services:
       - MOCK_DELAY_ENABLED=${MOCK_DELAY_ENABLED:-0}
       - MOCK_DELAY_MS=${MOCK_DELAY_MS:-0}
       - MOCK_DELAY_PER_ITEM_US=${MOCK_DELAY_PER_ITEM_US:-0}
+      # モックAPI切り替え（index.php / index-fixed.php）
+      # MOCK_API_TYPE: 使用するモックAPIの種類
+      #   - dynamic（デフォルト）: index.php - 時間経過でデータが動的に変化
+      #   - fixed: index-fixed.php - カテゴリテスト用の固定データ
+      - MOCK_API_TYPE=${MOCK_API_TYPE:-dynamic}
     networks:
       mock-network:
         ipv4_address: 10.99.0.10

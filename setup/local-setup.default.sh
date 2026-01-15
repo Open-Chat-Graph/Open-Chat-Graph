@@ -237,4 +237,6 @@ echo ""
 
 ./setup/init-database.sh
 
+rm -f docker/line-mock-api/data/hour_index.txt
+
 composer install

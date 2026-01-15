@@ -10,6 +10,7 @@ use App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryIn
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\StaticData\StaticDataGenerator;
+use App\Services\Storage\FileStorageInterface;
 
 class UpdateHourlyMemberRankingService
 {
@@ -18,6 +19,7 @@ class UpdateHourlyMemberRankingService
         private HourMemberRankingUpdaterRepositoryInterface $hourMemberRankingUpdaterRepository,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private MemberChangeFilterCacheRepositoryInterface $memberChangeFilterCacheRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function update()
@@ -45,7 +47,7 @@ class UpdateHourlyMemberRankingService
 
     private function updateStaticData(string $time)
     {
-        safeFileRewrite(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'), $time);
+        $this->fileStorage->safeFileRewrite('@hourlyCronUpdatedAtDatetime', $time);
 
         CronUtility::addVerboseCronLog('ランキング静的データを生成中');
         $this->staticDataGenerator->updateStaticData();

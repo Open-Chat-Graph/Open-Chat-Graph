@@ -7,12 +7,14 @@ namespace App\Controllers\Api;
 use App\Config\SecretsConfig;
 use App\Config\AppConfig;
 use App\Services\Furigana\YahooFuriganaService;
+use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
 
 class FuriganaApiController
 {
     function index(
         YahooFuriganaService $yahooFuriganaService,
+        FileStorageInterface $fileStorage,
         ?string $json,
     ) {
         Reception::$isJson = true;
@@ -27,11 +29,11 @@ class FuriganaApiController
 
         $hash = base62Hash(hash('md5', $json));
         $fileName = AppConfig::FURIGANA_CACHE_DIR . "/{$hash}.dat";
-        $data = getUnserializedFile($fileName);
+        $data = $fileStorage->getSerializedFile($fileName);
 
         if (!$data) {
             $data = $yahooFuriganaService->getFuriganaFromArray($strings, SecretsConfig::$yahooClientId, 2);
-            saveSerializedFile($fileName, $data);
+            $fileStorage->saveSerializedFile($fileName, $data);
         }
 
         return response($data);

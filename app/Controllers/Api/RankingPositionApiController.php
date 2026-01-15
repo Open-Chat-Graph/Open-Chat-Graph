@@ -9,18 +9,20 @@ use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\Dto\RankingPositionChartDto;
 use App\Services\RankingPosition\RankingPositionChartArrayService;
 use App\Services\RankingPosition\RankingPositionHourChartArrayService;
+use App\Services\Storage\FileStorageInterface;
 
 class RankingPositionApiController
 {
     function rankingPosition(
         RankingPositionChartArrayService $chart,
+        FileStorageInterface $fileStorage,
         int $open_chat_id,
         int $category,
         string $sort,
         string $start_date,
         string $end_date
     ) {
-        if (strtotime($start_date) > strtotime(file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate')))) {
+        if (strtotime($start_date) > strtotime($fileStorage->getContents('@dailyCronUpdatedAtDate'))) {
             return response(
                 get_object_vars(new RankingPositionChartDto) + [
                     'error' => 'Last Cron execution date is before start_date'

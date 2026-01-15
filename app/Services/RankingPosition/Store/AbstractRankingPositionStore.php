@@ -6,6 +6,7 @@ namespace App\Services\RankingPosition\Store;
 
 use App\Services\OpenChat\Dto\OpenChatDto;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use App\Services\Storage\FileStorageInterface;
 
 abstract class AbstractRankingPositionStore
 {
@@ -13,6 +14,10 @@ abstract class AbstractRankingPositionStore
      * @var OpenChatDto[] $apiDtoCache
      */
     protected array $apiDtoCache = [];
+
+    public function __construct(
+        protected FileStorageInterface $fileStorage
+    ) {}
 
     abstract function filePath(): string;
 
@@ -28,7 +33,7 @@ abstract class AbstractRankingPositionStore
 
     function clearAllCacheDataAndSaveCurrentCategoryApiDataCache(string $category): void
     {
-        saveSerializedFile(
+        $this->fileStorage->saveSerializedFile(
             $this->filePath() . "/{$category}.dat",
             $this->apiDtoCache,
         );
@@ -42,7 +47,7 @@ abstract class AbstractRankingPositionStore
     function getStorageData(string $category): array
     {
         $file = $this->filePath() . "/{$category}.dat";
-        $data = getUnserializedFile($file);
+        $data = $this->fileStorage->getSerializedFile($file);
         if (!is_array($data)) {
             throw new \RuntimeException('invalid ranking data file: ' . $file);
         }

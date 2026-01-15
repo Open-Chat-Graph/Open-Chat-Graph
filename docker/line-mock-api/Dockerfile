@@ -29,5 +29,9 @@ RUN a2ensite default-ssl
 # ポート80と443を公開
 EXPOSE 80 443
 
-# Apacheを起動
-CMD ["apache2-foreground"]
+# Entrypointスクリプトをコピー
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Apacheを起動（entrypointスクリプト経由）
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

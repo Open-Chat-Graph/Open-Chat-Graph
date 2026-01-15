@@ -6,24 +6,28 @@ namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Dto\RecommendListDto;
+use App\Services\Storage\FileStorageInterface;
+use App\Services\Storage\FileStorageService;
 
 class RecommendStaticDataFile
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage
+    ) {}
+
     private function checkUpdatedAt(RecommendListDto $data)
     {
         if (
             !$data->getCount()
-            || !$data->hourlyUpdatedAt === file_get_contents(
-                AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')
-            )
+            || !$data->hourlyUpdatedAt === $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
         )
             noStore();
     }
 
     function getCategoryRanking(int $category): RecommendListDto
     {
-        $data = getUnserializedFile(
-            AppConfig::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
+        $data = $this->fileStorage->getSerializedFile(
+            FileStorageService::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {
@@ -39,8 +43,8 @@ class RecommendStaticDataFile
     function getRecomendRanking(string $tag): RecommendListDto
     {
         $fileName = hash('crc32', $tag);
-        $data = getUnserializedFile(
-            AppConfig::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
+        $data = $this->fileStorage->getSerializedFile(
+            FileStorageService::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {
@@ -55,8 +59,8 @@ class RecommendStaticDataFile
 
     function getOfficialRanking(int $emblem): RecommendListDto
     {
-        $data = getUnserializedFile(
-            AppConfig::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
+        $data = $this->fileStorage->getSerializedFile(
+            FileStorageService::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {

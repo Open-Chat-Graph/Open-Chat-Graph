@@ -31,7 +31,6 @@ use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
-use App\ServiceProvider\OpenChatCrawlerConfigServiceProvider;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
@@ -192,7 +191,6 @@ Route::path(
     ->middleware([VerifyCsrfToken::class])
     ->matchStr('url', 'post', regex: \App\Services\Crawler\Config\OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
     ->match(function() {
-        app(OpenChatCrawlerConfigServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '';
     });
 
@@ -286,7 +284,7 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 0)
     ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1)
+    ->matchNum('limit', 'get', min: 1, max: 10)
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
@@ -310,7 +308,7 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 0)
     ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1)
+    ->matchNum('limit', 'get', min: 1, max: 10)
     ->match(function (string $user) {
         app(ApiCommentListControllerServiceProvider::class)->register();
         return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;

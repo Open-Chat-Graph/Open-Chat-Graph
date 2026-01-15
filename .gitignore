@@ -13,6 +13,7 @@ local-secrets.php
 prod-secrets.php
 /shared/secrets.php
 *.env
+.env.mock
 .user.ini
 .htaccess
 
@@ -67,8 +68,13 @@ storage/*/open_chat_sub_categories/subcategories.json
 /docker/app/ssl-new/*.pem
 /docker/app/logs/*.log
 /docker/line-mock-api/ssl/*.pem
-/docker/line-mock-api/data/*.json
-/docker/line-mock-api/data/*.log
+/docker/line-mock-api/data/
+/docker/line-mock-api/storage/*
+
+# テスト関連
+test-logs/
+check_*.php
+test-*-quick.sh
 
 # 例外: .gitkeepは含める
 !*.gitkeep

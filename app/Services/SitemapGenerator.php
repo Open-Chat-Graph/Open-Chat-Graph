@@ -10,6 +10,7 @@ use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
+use App\Services\Storage\FileStorageInterface;
 use App\Models\Repositories\DB;
 use Shared\MimimalCmsConfig;
 
@@ -26,6 +27,7 @@ class SitemapGenerator
     function __construct(
         private OpenChatListRepositoryInterface $ocRepo,
         private RecommendUpdater $recommendUpdater,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function generate()
@@ -38,7 +40,7 @@ class SitemapGenerator
             $this->generateEachLanguage($index);
         }
 
-        safeFileRewrite(self::INDEX_SITEMAP, $index->render(), 0755);
+        $this->fileStorage->safeFileRewrite(self::INDEX_SITEMAP, $index->render());
         MimimalCmsConfig::$urlRoot = $ccurrentUrlRoot;
         $this->cleanSitemapFiles(self::SITEMAP_DIR, $this->currentNum);
     }
@@ -54,8 +56,8 @@ class SitemapGenerator
 
     private function generateSitemap1(): string
     {
-        $date = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
-        $datetime = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+        $date = $this->fileStorage->getContents('@dailyCronUpdatedAtDate');
+        $datetime = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
         $sitemap = new Sitemap();
         $sitemap->addItem(rtrim($this->currentUrl, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
@@ -113,7 +115,7 @@ class SitemapGenerator
         $n = $this->currentNum;
 
         $fileName = "sitemap{$n}.xml";
-        safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render(), 0755);
+        $this->fileStorage->safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render());
 
         return self::SITEMAP_PATH . $fileName;
     }

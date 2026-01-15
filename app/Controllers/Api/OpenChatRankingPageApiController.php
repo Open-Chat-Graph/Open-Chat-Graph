@@ -28,7 +28,7 @@ class OpenChatRankingPageApiController
         Recp::$isJson = true;
 
         $this->args->page = Valid::num(Recp::input('page', 0), min: 0, e: $error);
-        $this->args->limit = Valid::num(Recp::input('limit'), min: 1, e: $error);
+        $this->args->limit = Valid::num(Recp::input('limit'), min: 1, max: 20, e: $error);
         $this->args->category = (int)Valid::str(Recp::input('category', '0'), regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot], e: $error);
 
         $this->args->list = Valid::str(Recp::input('list', 'daily'), regex: ['hourly', 'daily', 'weekly', 'all', 'ranking', 'rising'], e: $error);

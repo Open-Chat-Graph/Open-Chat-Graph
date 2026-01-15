@@ -7,17 +7,19 @@ namespace App\Controllers\Api;
 use App\Config\AppConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Auth\AuthInterface;
+use App\Services\Storage\FileStorageInterface;
 
 class RecentCommentApiController
 {
     function __construct(
         private RecentCommentListRepositoryInterface $recentCommentListRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function index(int $open_chat_id)
     {
         if (!$open_chat_id) {
-            $updatedAt = file_get_contents(AppConfig::getStorageFilePath('commentUpdatedAtMicrotime'));
+            $updatedAt = $this->fileStorage->getContents('@commentUpdatedAtMicrotime');
             handleRequestWithETagAndCache(
                 "recent-comment-api{$updatedAt}",
                 hourly: false

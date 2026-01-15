@@ -46,25 +46,7 @@ make init-y-n
 
 #### セットアップスクリプトの手動実行
 
-既存の環境をリセットする場合や、カスタムセットアップが必要な場合：
-
-```bash
-# 対話型（既存データがある場合は確認プロンプト表示）
-./setup/local-setup.default.sh
-
-# DB・storage初期化を自動実行、local-secrets.phpも作成
-./setup/local-setup.default.sh -y
-
-# DB・storage初期化を自動実行、local-secrets.phpは保持
-./setup/local-setup.default.sh -y -n
-
-# ヘルプ表示
-./setup/local-setup.default.sh -h
-```
-
-**引数の説明:**
-- **第1引数**: DB・storage初期化（`-y`/`yes` = 自動実行、省略時 = 確認）
-- **第2引数**: local-secrets.php上書き（省略時 = 作成、`-n`/`no` = 保持）
+既存の環境をリセットする場合：`./setup/local-setup.default.sh` (オプション: `-y` 確認なし、`-n` local-secrets.php保持、`-h` ヘルプ)
 
 ### 環境の種類
 
@@ -81,30 +63,24 @@ make init-y-n
 
 **基本環境:**
 ```bash
-make up           # 起動
-make up-cron      # 起動（Cron自動実行モード）
-make down         # 停止
-make restart      # 再起動
-make rebuild      # 再ビルドして起動
-make ssh          # コンテナにログイン
+make up        # 起動
+make down      # 停止
+make restart   # 再起動（基本・Mock自動判定）
+make rebuild   # 再ビルドして起動（基本・Mock自動判定）
+make ssh       # コンテナにログイン（基本・Mock両対応）
 ```
 
 **Mock付き環境:**
 ```bash
-make up-mock            # 起動（1万件、遅延なし）
-make up-mock-slow       # 起動（10万件、本番並み遅延）
-make up-mock-cron       # 起動（1万件、Cron自動実行）
-make up-mock-slow-cron  # 起動（10万件、遅延+Cron）
-make down-mock          # 停止
-make restart-mock       # 再起動
-make rebuild-mock       # 再ビルドして起動
-make ssh-mock           # コンテナにログイン
+make up-mock      # 起動（.env.mockの設定を使用）
+make cron         # Cron有効化（毎時30/35/40分に自動クローリング）
+make cron-stop    # Cron無効化
 ```
 
 **その他:**
 ```bash
-make show         # 現在の起動モード表示
-make help         # 全コマンド表示
+make show      # 現在の起動モード・設定表示
+make help      # 全コマンド表示
 ```
 
 **Cron自動実行モード:**
@@ -126,6 +102,8 @@ make help         # 全コマンド表示
 - MySQL: localhost:3306（共有）
 - LINE Mock API: http://localhost:9000
 
+MySQLコマンド例: `docker exec oc-review-mock-mysql-1 mysql -uroot -ptest_root_pass -e "SELECT 1"`
+
 **注意:**
 - HTTPは自動的にHTTPSにリダイレクトされます
 - 両環境でMySQLデータベースは共有されます
@@ -140,7 +118,37 @@ ENABLE_XDEBUG=1 make up
 ENABLE_XDEBUG=1 make up-mock
 ```
 
-**⚠️ 注意:** Xdebugはパフォーマンスを大幅に低下させます。デバッグ時のみ使用してください。
+### テストスクリプト
+
+Mock環境で時刻を進めながらクローリングをテスト：
+
+```bash
+# CI用（高速・効率的）
+./test-ci.sh
+# - 固定データ（80件/カテゴリ）、遅延なし
+# - 日常的なテスト・CI環境用
+# - クローリング完了後、自動的にデータ検証を実行
+
+# デバッグ用（本番環境に近い設定）
+./test-debug.sh
+# - 大量データ（10万件）、本番並み遅延
+# - 48時間テストに対応、本番環境の挙動を再現
+```
+
+**実行回数設定:** `.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
+
+**データ検証:** `./verify-test-data.sh` で以下を確認
+- MySQLテーブルのレコード数:
+  - `ocgraph_comment.open_chat`: 2000件以上
+  - `ocgraph_ocreviewth.open_chat`: 1000件以上
+  - `ocgraph_ocreviewtw.open_chat`: 1000件以上
+  - `ocgraph_ocreview.statistics_ranking_hour`: 10件以上
+  - `ocgraph_ocreview.statistics_ranking_hour24`: 10件以上
+  - `ocgraph_ocreview.user_log`: 0件
+  - `ocgraph_graph.recommend`: 500件以上
+- 画像ファイルの生成:
+  - `public/oc-img/0`: .webp画像10件以上
+  - `public/oc-img/preview/0`: .webp画像10件以上
 
 ---
 

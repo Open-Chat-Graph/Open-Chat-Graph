@@ -288,3 +288,4 @@ class AppConfig
     ];
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 }
+

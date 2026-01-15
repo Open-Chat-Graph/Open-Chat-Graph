@@ -10,6 +10,7 @@ use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\TopPageRecommendList;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
+use App\Services\Storage\FileStorageInterface;
 use App\Views\Dto\RankingArgDto;
 use Shared\MimimalCmsConfig;
 
@@ -19,6 +20,7 @@ class StaticDataGenerator
         private OpenChatListRepositoryInterface $openChatListRepository,
         private TopPageRecommendList $topPageRecommendList,
         private RecommendRankingRepository $recommendPageRepository,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     function getTopPageDataFromDB(): StaticTopPageDto
@@ -32,11 +34,11 @@ class StaticDataGenerator
         $dto->recentCommentList = [];
         $dto->recommendList = $this->topPageRecommendList->getList(30);
 
-        $dto->hourlyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime')));
-        $dto->dailyUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate')));
-        $dto->rankingUpdatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')));
+        $dto->hourlyUpdatedAt = new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $dto->dailyUpdatedAt = new \DateTime($this->fileStorage->getContents('@dailyCronUpdatedAtDate'));
+        $dto->rankingUpdatedAt = new \DateTime($this->fileStorage->getContents('@hourlyRealUpdatedAtDatetime'));
 
-        $tagList = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
+        $tagList = $this->fileStorage->getSerializedFile('@tagList');
         if (!$tagList)
             $tagList = $this->getTagList();
 
@@ -50,9 +52,9 @@ class StaticDataGenerator
         $_argDto = new RankingArgDto;
         $_argDto->urlRoot = MimimalCmsConfig::$urlRoot;
         $_argDto->baseUrl = url();
-        $_argDto->rankingUpdatedAt = convertDatetime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')), true);
-        $_argDto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-        $_argDto->modifiedUpdatedAtDate = file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
+        $_argDto->rankingUpdatedAt = convertDatetime($this->fileStorage->getContents('@hourlyRealUpdatedAtDatetime'), true);
+        $_argDto->hourlyUpdatedAt = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+        $_argDto->modifiedUpdatedAtDate = $this->fileStorage->getContents('@dailyCronUpdatedAtDate');
 
         $_argDto->openChatCategory = [];
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $name => $number) {
@@ -64,9 +66,10 @@ class StaticDataGenerator
                 $_argDto->openChatCategory[] = [$name, $number];
         }
 
+        $path = \App\Services\Storage\FileStorageService::getStorageFilePath('openChatSubCategories');
         $subCategories = json_decode(
-            file_exists(AppConfig::getStorageFilePath('openChatSubCategories'))
-                ? file_get_contents(AppConfig::getStorageFilePath('openChatSubCategories'))
+            file_exists($path)
+                ? $this->fileStorage->getContents('@openChatSubCategories')
                 : '{}',
             true
         );
@@ -102,12 +105,12 @@ class StaticDataGenerator
 
     function getRecommendPageDto(): StaticRecommendPageDto
     {
-        $tagList = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
+        $tagList = $this->fileStorage->getSerializedFile('@tagList');
         if (!$tagList)
             $tagList = $this->getTagList();
 
         $dto = new StaticRecommendPageDto;
-        $dto->hourlyUpdatedAt = file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+        $dto->hourlyUpdatedAt = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
         $dto->tagCount = array_sum(array_map(fn($el) => count($el), $tagList));
 
         $dto->tagRecordCounts = [];
@@ -126,10 +129,10 @@ class StaticDataGenerator
 
     function updateStaticData()
     {
-        safeFileRewrite(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime'), (new \DateTime)->format('Y-m-d H:i:s'));
-        saveSerializedFile(AppConfig::getStorageFilePath('tagList'), $this->getTagList());
-        saveSerializedFile(AppConfig::getStorageFilePath('topPageRankingData'), $this->getTopPageDataFromDB());
-        saveSerializedFile(AppConfig::getStorageFilePath('rankingArgDto'), $this->getRankingArgDto());
-        saveSerializedFile(AppConfig::getStorageFilePath('recommendPageDto'), $this->getRecommendPageDto());
+        $this->fileStorage->safeFileRewrite('@hourlyRealUpdatedAtDatetime', (new \DateTime)->format('Y-m-d H:i:s'));
+        $this->fileStorage->saveSerializedFile('@tagList', $this->getTagList());
+        $this->fileStorage->saveSerializedFile('@topPageRankingData', $this->getTopPageDataFromDB());
+        $this->fileStorage->saveSerializedFile('@rankingArgDto', $this->getRankingArgDto());
+        $this->fileStorage->saveSerializedFile('@recommendPageDto', $this->getRecommendPageDto());
     }
 }

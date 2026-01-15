@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Admin\AdminAuthService;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * ログ閲覧コントローラー
@@ -42,7 +43,8 @@ class LogController
     ];
 
     public function __construct(
-        private AdminAuthService $adminAuthService
+        private AdminAuthService $adminAuthService,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     /**
@@ -383,7 +385,7 @@ class LogController
         fclose($handle);
 
         // キャッシュを保存
-        file_put_contents($cacheFile, json_encode([
+        $this->fileStorage->putContents($cacheFile, json_encode([
             'size' => $fileSize,
             'mtime' => $fileMtime,
             'count' => $count,

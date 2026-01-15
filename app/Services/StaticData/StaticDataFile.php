@@ -7,10 +7,14 @@ namespace App\Services\StaticData;
 use App\Config\AppConfig;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
+use App\Services\Storage\FileStorageInterface;
 use App\Views\Dto\RankingArgDto;
 
 class StaticDataFile
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage
+    ) {}
     private function checkUpdatedAt(string $hourlyUpdatedAt)
     {
         if (!$hourlyUpdatedAt === getHouryUpdateTime())
@@ -19,7 +23,7 @@ class StaticDataFile
 
     function getTopPageData(): StaticTopPageDto
     {
-        $data = getUnserializedFile(AppConfig::getStorageFilePath('topPageRankingData'));
+        $data = $this->fileStorage->getSerializedFile('@topPageRankingData');
 
         /** @var StaticTopPageDto $data */
         if (!$data || AppConfig::$disableStaticDataFile) {
@@ -35,7 +39,7 @@ class StaticDataFile
     function getRankingArgDto(): RankingArgDto
     {
         /** @var RankingArgDto $data */
-        $data = getUnserializedFile(AppConfig::getStorageFilePath('rankingArgDto'));
+        $data = $this->fileStorage->getSerializedFile('@rankingArgDto');
         //$data = null;
         if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -50,7 +54,7 @@ class StaticDataFile
     function getRecommendPageDto(): StaticRecommendPageDto
     {
         /** @var StaticRecommendPageDto $data */
-        $data = getUnserializedFile(AppConfig::getStorageFilePath('recommendPageDto'));
+        $data = $this->fileStorage->getSerializedFile('@recommendPageDto');
         //$data = null;
         if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
@@ -66,14 +70,14 @@ class StaticDataFile
     function getTagList(): array
     {
         /** @var array $data */
-        $data = getUnserializedFile(AppConfig::getStorageFilePath('tagList'));
+        $data = $this->fileStorage->getSerializedFile('@tagList');
         if (!$data || AppConfig::$disableStaticDataFile) {
             /** @var StaticDataGenerator $staticDataGenerator */
             $staticDataGenerator = app(StaticDataGenerator::class);
             $data = $staticDataGenerator->getTagList();
         }
 
-        $time = getStorageFileTime(AppConfig::getStorageFilePath('tagList'));
+        $time = getStorageFileTime(\App\Services\Storage\FileStorageService::getStorageFilePath('tagList'));
         if (!$time || new \DateTime('@' . $time) < new \DateTime(getHouryUpdateTime()))
             noStore();
 

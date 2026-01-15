@@ -7,6 +7,7 @@ namespace App\Controllers\Pages;
 use App\Config\AppConfig;
 use App\Models\AdsRepositories\AdsRepository;
 use App\Services\StaticData\StaticDataFile;
+use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shared\MimimalCmsConfig;
 
@@ -15,6 +16,7 @@ class TagLabsPageController
     function index(
         StaticDataFile $staticDataGeneration,
         PageBreadcrumbsListSchema $pageBreadcrumbsListSchema,
+        FileStorageInterface $fileStorage,
         ?string $isAdminPage,
     ) {
         $_css = ['room_list', 'site_header', 'site_footer'];
@@ -37,7 +39,7 @@ class TagLabsPageController
         })($staticDataGeneration->getTagList());
 
         $categories = array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
-        $_updatedAt = new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyRealUpdatedAtDatetime')));
+        $_updatedAt = new \DateTime($fileStorage->getContents('@hourlyRealUpdatedAtDatetime'));
 
         if (isset($isAdminPage) && adminMode()) {
             /** @var AdsRepository $adsRepo */
