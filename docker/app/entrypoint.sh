@@ -3,6 +3,34 @@ set -e
 
 echo "Starting entrypoint.sh..."
 
+# Mock環境用：storageディレクトリをコピー（匿名ボリューム使用時）
+if [ ! -d "/var/www/html/storage/ja" ]; then
+    echo "Copying storage directory from host..."
+    # /var/www/html/storage-host から /var/www/html/storage にコピー
+    if [ -d "/var/www/html/storage-host" ]; then
+        if [ "$(id -u)" != "0" ]; then
+            # www-dataユーザーの場合はsudoで実行
+            sudo cp -a /var/www/html/storage-host/. /var/www/html/storage/
+            sudo chown -R www-data:www-data /var/www/html/storage
+        else
+            # rootユーザーの場合はそのまま実行
+            cp -a /var/www/html/storage-host/. /var/www/html/storage/
+            chown -R www-data:www-data /var/www/html/storage
+        fi
+        echo "Storage directory copied successfully"
+    else
+        echo "Warning: /var/www/html/storage-host not found, storage directory not initialized"
+    fi
+fi
+
+# ランキングファイルを削除（タイムスタンプ偽装のため、新規作成させる）
+# 匿名ボリュームに古いデータが残っている場合に備えて常に実行
+if [ -d "/var/www/html/storage-host" ]; then
+    echo "Removing old ranking files for timestamp manipulation..."
+    rm -f /var/www/html/storage/*/ranking_position/*.dat 2>/dev/null || true
+    rm -f /var/www/html/storage/*/rising_position/*.dat 2>/dev/null || true
+fi
+
 # Xdebug設定（環境変数ENABLE_XDEBUG=1で有効化）
 if [ "${ENABLE_XDEBUG}" = "1" ]; then
     echo "Enabling Xdebug..."

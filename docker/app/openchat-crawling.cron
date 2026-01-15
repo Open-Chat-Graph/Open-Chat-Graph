@@ -1,0 +1,7 @@
+# OpenChat クローリング自動実行 (JST)
+# 毎時30分: 日本語
+30 * * * * root /usr/local/bin/php /var/www/html/batch/cron/cron_crawling.php >> /var/log/cron.log 2>&1
+# 毎時35分: 繁体字中国語
+35 * * * * root /usr/local/bin/php /var/www/html/batch/cron/cron_crawling.php /tw >> /var/log/cron.log 2>&1
+# 毎時40分: タイ語
+40 * * * * root /usr/local/bin/php /var/www/html/batch/cron/cron_crawling.php /th >> /var/log/cron.log 2>&1
