@@ -24,7 +24,7 @@ if [ -f .env.mock ]; then
 fi
 
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）
-JA_HOURS=${TEST_JA_HOURS:-24}   # 日本語
+JA_HOURS=${TEST_JA_HOURS:-25}   # 日本語（hourIndex: 0〜24の25時間分）
 TW_HOURS=${TEST_TW_HOURS:-1}    # 繁体字中国語
 TH_HOURS=${TEST_TH_HOURS:-1}    # タイ語
 
@@ -33,6 +33,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # ログディレクトリ作成
@@ -54,6 +55,10 @@ log_warn() {
 
 log_info() {
     echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+}
+
+log_success() {
+    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
 }
 
 # コンテナが起動しているか確認
@@ -248,6 +253,16 @@ main() {
     log "ログファイル: ${LOG_FILE}"
     log "個別ログ: ${LOG_DIR}/"
     log "========================================="
+
+    # データ検証
+    log ""
+    log "データ検証を開始..."
+    if bash ./verify-test-data.sh; then
+        log "データ検証に成功しました"
+    else
+        log_error "データ検証に失敗しました"
+        exit 1
+    fi
 }
 
 # Ctrl+Cでの中断をハンドル

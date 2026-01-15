@@ -12,14 +12,25 @@
 #
 # ### データ件数
 # - 各カテゴリごとに急上昇:80件、ランキング:80件を返す（固定）
-# - 日本語: 複数日分のテストデータ（JA_HOURS設定による）
-# - 日本語以外（繁体字/タイ語）: 初回のみのテストデータ
+# - 日本語: 25時間分のテストデータ（hourIndex: 0〜24、23:30開始、翌23:30まで、JA_HOURS設定による）
+# - 日本語以外（繁体字/タイ語）: 1時間分のテストデータ（hourIndex: 0のみ）
 #
 # ### カテゴリ0（すべて/全部/ทั้งหมด）
-# - 急上昇のみに登場するルーム16件あり（ランキングには出ない）
+# - 急上昇のみルーム16件（hourIndex=0のみランキングに出現）
+#   - インデックス0（1位）: hourIndex>=1で詳細API/招待ページで404（削除された挙動）
+#   - インデックス1-15（2-16位）: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
 #
 # ### カテゴリ1以降
-# - 人数固定ルーム16件（5人×8、10人×4、20人×4）は最初の1回のみ出現
+# - 人数固定ルーム16件（hourIndex=0のみランキングに出現）
+#   - 5人×8（1-8位）: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
+#   - 10人×4（9-12位）:
+#     - 9位（インデックス8）: hourIndex>=1で詳細API/招待ページで404（削除された挙動）
+#     - 10-12位（インデックス9-11）: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
+#   - 20人×4（13-16位）: hourIndex>=1でも詳細API/招待ページで取得可能（削除されていない）
+#
+# ## オプション
+# - `-y`: 既存のhour_index.txtがある場合、自動的に次の時間から開始
+# - `-n`: 既存のhour_index.txtがある場合、自動的に次の23:30から開始
 
 set -e
 
@@ -28,13 +39,22 @@ APP_CONTAINER="oc-review-mock-app-1"
 MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
 LOG_DIR="./test-logs"
 
+# オプションの処理
+AUTO_CONTINUE=false
+AUTO_NEXT_2330=false
+if [[ "$1" == "-y" ]]; then
+    AUTO_CONTINUE=true
+elif [[ "$1" == "-n" ]]; then
+    AUTO_NEXT_2330=true
+fi
+
 # .env.mockから設定を読み込む
 if [ -f .env.mock ]; then
     source .env.mock
 fi
 
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）
-JA_HOURS=${TEST_JA_HOURS:-24}  # 日本語
+JA_HOURS=${TEST_JA_HOURS:-25}  # 日本語（hourIndex: 0〜24の25時間分）
 TW_HOURS=${TEST_TW_HOURS:-1}   # 繁体字中国語
 TH_HOURS=${TEST_TH_HOURS:-1}   # タイ語
 
@@ -160,11 +180,96 @@ main() {
     sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
     sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' .env.mock
 
-    # hourIndexを初期化
-    docker exec "$MOCK_CONTAINER" mkdir -p /app/data
-    echo "0" | docker exec -i "$MOCK_CONTAINER" tee /app/data/hour_index.txt > /dev/null
-
     log_success ".env.mockを設定しました（固定データモード、遅延なし）"
+
+    # hourIndexの処理（既存の値があれば継続するか確認）
+    docker exec "$MOCK_CONTAINER" mkdir -p /app/data
+    local existing_hour_index=0
+    if docker exec "$MOCK_CONTAINER" test -f /app/data/hour_index.txt 2>/dev/null; then
+        existing_hour_index=$(docker exec "$MOCK_CONTAINER" cat /app/data/hour_index.txt 2>/dev/null || echo "0")
+        existing_hour_index=$((existing_hour_index))
+
+        if [ $existing_hour_index -gt 0 ]; then
+            log_warn "既存のhour_index.txtが見つかりました（現在の値: ${existing_hour_index}）"
+
+            local start_from_next=false
+            local start_from_next_2330=false
+
+            if [ "$AUTO_CONTINUE" = true ]; then
+                # -yオプション: 自動的に次の時間から開始
+                log_info "-yオプションが指定されたため、次の時間（hourIndex: $((existing_hour_index + 1))）から自動的に開始します"
+                start_from_next=true
+            elif [ "$AUTO_NEXT_2330" = true ]; then
+                # -nオプション: 自動的に次の23:30から開始
+                log_info "-nオプションが指定されたため、次の23:30から自動的に開始します"
+                start_from_next_2330=true
+            else
+                # オプションなし: ユーザーに選択を求める
+                local tomorrow_date=$(date -d "+1 day" '+%Y-%m-%d')
+                local base_time=$(date -d "${tomorrow_date} 23:30:00" +%s)
+                local last_time=$((base_time + existing_hour_index * 3600))
+                local next_2330_hours=$(( 24 - (existing_hour_index % 24) ))
+                local next_2330_index=$((existing_hour_index + next_2330_hours))
+
+                echo ""
+                echo -e "${YELLOW}既存の進行状況が見つかりました:${NC}"
+                echo "  現在のhour_index: ${existing_hour_index}"
+                echo "  最後に実行した時刻: $(date -d "@$last_time" '+%Y-%m-%d %H:%M:%S')"
+                echo ""
+                echo "どのように開始しますか？"
+                echo "  1) 次の時間（hourIndex: $((existing_hour_index + 1))、時刻: $(date -d "@$((last_time + 3600))" '+%Y-%m-%d %H:%M:%S')）から継続"
+                echo "  2) 次の23:30（hourIndex: ${next_2330_index}、時刻: $(date -d "@$((base_time + next_2330_index * 3600))" '+%Y-%m-%d %H:%M:%S')）から継続"
+                echo "  3) 最初（hourIndex: 0、時刻: $(date -d "@$base_time" '+%Y-%m-%d %H:%M:%S')）からやり直し"
+                echo ""
+                read -p "選択してください [1-3]: " choice
+
+                case $choice in
+                    1)
+                        log_info "次の時間から継続します"
+                        start_from_next=true
+                        ;;
+                    2)
+                        log_info "次の23:30から継続します"
+                        start_from_next_2330=true
+                        ;;
+                    3)
+                        log_info "最初からやり直します"
+                        existing_hour_index=0
+                        ;;
+                    *)
+                        log_error "無効な選択です"
+                        exit 1
+                        ;;
+                esac
+            fi
+
+            if [ "$start_from_next" = true ]; then
+                # 次の時間から開始（hourIndexに1を加える）
+                existing_hour_index=$((existing_hour_index + 1))
+                log_info "hourIndexを${existing_hour_index}から開始します"
+            elif [ "$start_from_next_2330" = true ]; then
+                # 次の23:30から開始
+                # 既存のhour_indexが示す時刻から、次の23:30までの時間を計算
+                # existing_hour_indexは23:30を基準に何時間経過したかを示す
+                # 次の23:30は: 現在の経過時間に対して次の24の倍数
+                local hours_until_next_2330=$(( 24 - (existing_hour_index % 24) ))
+                existing_hour_index=$((existing_hour_index + hours_until_next_2330))
+                log_info "開始hourIndex: ${existing_hour_index}（${hours_until_next_2330}時間後の23:30）"
+            fi
+        else
+            log_info "hourIndexを初期化します（0から開始）"
+            existing_hour_index=0
+        fi
+    else
+        log_info "hourIndexを初期化します（0から開始）"
+        existing_hour_index=0
+    fi
+
+    # hourIndexを設定
+    echo "$existing_hour_index" | docker exec -i "$MOCK_CONTAINER" tee /app/data/hour_index.txt > /dev/null
+
+    # 開始hourIndexを保存（後で使用）
+    START_HOUR_INDEX=$existing_hour_index
 
     # コンテナチェック
     check_containers
@@ -178,15 +283,20 @@ main() {
 
     log_info "faketimeを使用してテストを実行します"
 
-    # 開始時刻を設定（現在時刻の翌日00:00:00 - 30分 = 当日23:30から開始）
+    # 開始時刻を設定
     # SSL証明書の有効期間を考慮して翌日以降に設定
     # 23:30から開始することで、1時間目に日次処理が実行される
     local tomorrow_date=$(date -d "+1 day" '+%Y-%m-%d')
-    CURRENT_TIME=$(date -d "${tomorrow_date} 23:30:00" +%s)
+    local base_time=$(date -d "${tomorrow_date} 23:30:00" +%s)
 
-    log "テスト開始時刻: $(date -d "@$CURRENT_TIME" '+%Y-%m-%d %H:%M:%S')"
+    # START_HOUR_INDEXに基づいて開始時刻を調整
+    CURRENT_TIME=$((base_time + START_HOUR_INDEX * 3600))
+
+    log "テスト開始時刻: $(date -d "@$CURRENT_TIME" '+%Y-%m-%d %H:%M:%S')（hourIndex: ${START_HOUR_INDEX}）"
     log_info "この時刻を基準に各言語の設定時間分進めます"
-    log_info "1時間目（00:00）に日次処理が実行されます"
+    if [ $START_HOUR_INDEX -eq 0 ]; then
+        log_info "1時間目（23:30）に日次処理が実行されます"
+    fi
 
     # 最大時間数を計算
     local max_hours=$JA_HOURS
@@ -199,19 +309,22 @@ main() {
 
     # 各時間ループ
     for hour in $(seq 1 $max_hours); do
+        # 実際のhourIndex（START_HOUR_INDEXからの相対位置）
+        local actual_hour_index=$((START_HOUR_INDEX + hour - 1))
+
         # 時刻を1時間進める
         if [ $hour -gt 1 ]; then
             CURRENT_TIME=$((CURRENT_TIME + 3600))
         fi
 
-        
+
 
         log "========================================="
-        log "第${hour}時間目 ($(date -d "@$CURRENT_TIME" '+%Y-%m-%d %H:%M:%S'))"
+        log "第${hour}時間目 (hourIndex: ${actual_hour_index}, $(date -d "@$CURRENT_TIME" '+%Y-%m-%d %H:%M:%S'))"
         log "========================================="
 
-        # hourIndexを更新（hour=1 → hourIndex=0）
-        local hour_index=$((hour - 1))
+        # hourIndexを更新
+        local hour_index=$actual_hour_index
         echo "$hour_index" | docker exec -i "$MOCK_CONTAINER" tee /app/data/hour_index.txt > /dev/null
 
         local jobs_executed=0
@@ -266,6 +379,16 @@ main() {
     log "ログファイル: ${LOG_FILE}"
     log "個別ログ: ${LOG_DIR}/"
     log "========================================="
+
+    # データ検証
+    log ""
+    log "データ検証を開始..."
+    if bash ./verify-test-data.sh; then
+        log_success "データ検証に成功しました"
+    else
+        log_error "データ検証に失敗しました"
+        exit 1
+    fi
 }
 
 # Ctrl+Cでの中断をハンドル

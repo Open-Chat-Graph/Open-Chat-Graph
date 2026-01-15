@@ -102,6 +102,8 @@ make help      # 全コマンド表示
 - MySQL: localhost:3306（共有）
 - LINE Mock API: http://localhost:9000
 
+MySQLコマンド例: `docker exec oc-review-mock-mysql-1 mysql -uroot -ptest_root_pass -e "SELECT 1"`
+
 **注意:**
 - HTTPは自動的にHTTPSにリダイレクトされます
 - 両環境でMySQLデータベースは共有されます
@@ -125,6 +127,7 @@ Mock環境で時刻を進めながらクローリングをテスト：
 ./test-ci.sh
 # - 固定データ（80件/カテゴリ）、遅延なし
 # - 日常的なテスト・CI環境用
+# - クローリング完了後、自動的にデータ検証を実行
 
 # デバッグ用（本番環境に近い設定）
 ./test-debug.sh
@@ -133,6 +136,19 @@ Mock環境で時刻を進めながらクローリングをテスト：
 ```
 
 **実行回数設定:** `.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
+
+**データ検証:** `./verify-test-data.sh` で以下を確認
+- MySQLテーブルのレコード数:
+  - `ocgraph_comment.open_chat`: 2000件以上
+  - `ocgraph_ocreviewth.open_chat`: 1000件以上
+  - `ocgraph_ocreviewtw.open_chat`: 1000件以上
+  - `ocgraph_ocreview.statistics_ranking_hour`: 10件以上
+  - `ocgraph_ocreview.statistics_ranking_hour24`: 10件以上
+  - `ocgraph_ocreview.user_log`: 0件
+  - `ocgraph_graph.recommend`: 500件以上
+- 画像ファイルの生成:
+  - `public/oc-img/0`: .webp画像10件以上
+  - `public/oc-img/preview/0`: .webp画像10件以上
 
 ---
 
