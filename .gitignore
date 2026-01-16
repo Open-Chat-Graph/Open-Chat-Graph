@@ -13,7 +13,7 @@ local-secrets.php
 prod-secrets.php
 /shared/secrets.php
 *.env
-.env.mock
+docker/line-mock-api/.env.mock
 .user.ini
 .htaccess
 !docker/line-mock-api/public/.htaccess

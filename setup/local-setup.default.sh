@@ -146,6 +146,8 @@ docker compose exec -T -u root app bash -c '
     rm -f storage/*/SQLite/ocgraph_sqlapi/*.db*
     rm -f storage/*.log
     rm -f storage/*/*/*.log
+    rm -f public/sitemaps/*.xml
+    rm -f public/sitemap.xml
 
     find public/oc-img* -mindepth 1 -maxdepth 1 ! -name "default" ! -name "preview" -exec rm -rf {} + 2>/dev/null || true
     find public/oc-img*/preview -mindepth 1 -maxdepth 1 ! -name "default" -exec rm -rf {} + 2>/dev/null || true

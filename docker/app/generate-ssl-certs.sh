@@ -51,7 +51,6 @@ if [ $? -eq 0 ]; then
     echo "SSL証明書の生成が完了しました"
 
     # ルートCA証明書をコピー
-    cd - > /dev/null
     copy_root_ca
 else
     echo "エラー: SSL証明書の生成に失敗しました"

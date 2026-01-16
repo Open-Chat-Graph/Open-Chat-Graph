@@ -61,7 +61,7 @@ GET /{imageHash}/preview
 ### デバッグ用テスト（本番環境に近い設定）
 
 ```bash
-./test-debug.sh
+./test-cron.sh
 ```
 
 - dynamicモードで24時間分のクローリングを実行（23:30開始→翌23:30まで）

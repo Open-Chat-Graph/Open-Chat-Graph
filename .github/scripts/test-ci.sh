@@ -4,7 +4,7 @@
 # - 少量データ（80件/カテゴリ）、遅延なし、高速実行
 # - 日常的なテスト・CI環境での使用を想定
 #
-# このスクリプトは .env.mock の設定を使用します:
+# このスクリプトは docker/line-mock-api/.env.mock の設定を使用します:
 # - TEST_JA_HOURS, TEST_TW_HOURS, TEST_TH_HOURS: 各言語の実行回数
 # - 自動設定: MOCK_API_TYPE=fixed, MOCK_DELAY_ENABLED=0
 #
@@ -37,6 +37,7 @@ set -e
 # 設定
 APP_CONTAINER="oc-review-mock-app-1"
 MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
+MYSQL_CONTAINER="oc-review-mock-mysql-1"
 LOG_DIR="./test-logs"
 
 # オプションの処理
@@ -48,9 +49,9 @@ elif [[ "$1" == "-n" ]]; then
     AUTO_NEXT_2330=true
 fi
 
-# .env.mockから設定を読み込む
-if [ -f .env.mock ]; then
-    source .env.mock
+# docker/line-mock-api/.env.mockから設定を読み込む
+if [ -f docker/line-mock-api/.env.mock ]; then
+    source docker/line-mock-api/.env.mock
 fi
 
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）
@@ -89,6 +90,15 @@ log_info() {
 
 log_success() {
     echo -e "${CYAN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
+}
+
+# MySQLのレコード数を取得
+get_mysql_count() {
+    local database=$1
+    local table=$2
+
+    docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN \
+        -e "SELECT COUNT(*) FROM ${database}.${table}" 2>/dev/null || echo "0"
 }
 
 # コンテナが起動しているか確認
@@ -165,27 +175,27 @@ main() {
     log_info "実行回数設定: 日本語=${JA_HOURS}回, 繁体字=${TW_HOURS}回, タイ語=${TH_HOURS}回"
     echo ""
 
-    # .env.mockを自動設定（固定データモード用）
-    log_info ".env.mockを固定データモード用に設定中..."
+    # docker/line-mock-api/.env.mockを自動設定（固定データモード用）
+    log_info "docker/line-mock-api/.env.mockを固定データモード用に設定中..."
 
-    # .env.mockが存在しない場合のみ.env.mock.exampleからコピー
-    if [ ! -f .env.mock ]; then
-        if [ ! -f .env.mock.example ]; then
-            log_error ".env.mock.exampleが見つかりません"
+    # docker/line-mock-api/.env.mockが存在しない場合のみdocker/line-mock-api/.env.mock.exampleからコピー
+    if [ ! -f docker/line-mock-api/.env.mock ]; then
+        if [ ! -f docker/line-mock-api/.env.mock.example ]; then
+            log_error "docker/line-mock-api/.env.mock.exampleが見つかりません"
             exit 1
         fi
-        cp .env.mock.example .env.mock
-        log_info ".env.mock.exampleから.env.mockを作成しました"
+        cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
+        log_info "docker/line-mock-api/.env.mock.exampleからdocker/line-mock-api/.env.mockを作成しました"
     else
-        log_info "既存の.env.mockを使用します（CI環境用の設定を維持）"
+        log_info "既存のdocker/line-mock-api/.env.mockを使用します（CI環境用の設定を維持）"
     fi
 
     # 必要な設定を上書き（sedを使用してコメントを保持）
     # ※TEST_JA_HOURS等は既存の設定を維持（CI環境で事前設定されている場合があるため）
-    sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
-    sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' .env.mock
+    sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
+    sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
 
-    log_success ".env.mockを設定しました（固定データモード、遅延なし）"
+    log_success "docker/line-mock-api/.env.mockを設定しました（固定データモード、遅延なし）"
 
     # hourIndexの処理（既存の値があれば継続するか確認）
     docker exec "$MOCK_CONTAINER" mkdir -p /app/data
@@ -373,9 +383,37 @@ main() {
             log_warn "この時間はすべての言語がスキップされました"
         fi
 
+        # バックグラウンドで起動したPHPプロセス（persist_ranking_position_background.phpなど）の終了を待機
+        log_info "バックグラウンドプロセスの終了を待機中..."
+        local wait_count=0
+        local max_wait=120  # 最大2分待機
+        while true; do
+            # コンテナ内のPHPバックグラウンドプロセスを確認（cron_crawling.php以外）
+            local php_processes=$(docker exec "$APP_CONTAINER" pgrep -f "php batch/" 2>/dev/null | wc -l)
+            if [ "$php_processes" -eq 0 ]; then
+                log_info "✓ すべてのバックグラウンドプロセスが完了しました"
+                break
+            fi
+
+            wait_count=$((wait_count + 1))
+            if [ $wait_count -ge $max_wait ]; then
+                log_warn "バックグラウンドプロセスの待機がタイムアウトしました（${php_processes}個のプロセスがまだ実行中）"
+                break
+            fi
+
+            sleep 1
+        done
+
         # 進捗表示
         local progress=$((hour * 100 / max_hours))
         log "進捗: ${hour}/${max_hours}時間 (${progress}%)"
+
+        # 現在のデータベースレコード数を表示
+        local ja_count=$(get_mysql_count "ocgraph_ocreview" "open_chat")
+        local tw_count=$(get_mysql_count "ocgraph_ocreviewtw" "open_chat")
+        local th_count=$(get_mysql_count "ocgraph_ocreviewth" "open_chat")
+        log_info "DB状況 - 日本語: ${ja_count}件, 繁体字: ${tw_count}件, タイ語: ${th_count}件"
+
         echo "" | tee -a "$LOG_FILE"
     done
 
@@ -388,7 +426,7 @@ main() {
     # データ検証
     log ""
     log "データ検証を開始..."
-    if bash ./verify-test-data.sh; then
+    if bash "$(dirname "$0")/verify-test-data.sh"; then
         log_success "データ検証に成功しました"
     else
         log_error "データ検証に失敗しました"

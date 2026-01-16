@@ -49,23 +49,22 @@ jobs:
       run: |
         ssh -p 10022 ocgraph@ocgraph.wpx.jp "cd /home/ocgraph/openchat-review.me/public_html && git pull"
 
-    # PRマージ時のみX投稿（手動デプロイ時は投稿しない）
     - name: Checkout repository
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-post')
       uses: actions/checkout@v4
 
     - name: Setup Node.js
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-post')
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
     - name: Install twitter-api-v2
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-post')
       run: npm install twitter-api-v2
 
     - name: Create post script
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-post')
       run: |
         cat > post-pr-merge.js << 'EOF'
         import { TwitterApi } from 'twitter-api-v2';
@@ -103,7 +102,7 @@ jobs:
         EOF
 
     - name: Post to X (Twitter)
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-post')
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}

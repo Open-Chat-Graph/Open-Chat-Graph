@@ -4,7 +4,7 @@
 # - 大量データ（10万件）、遅延あり、48時間テストに対応
 # - テストケースが多く、本番環境の挙動を再現
 #
-# このスクリプトは .env.mock の設定を使用します:
+# このスクリプトは docker/line-mock-api/.env.mock の設定を使用します:
 # - TEST_JA_HOURS, TEST_TW_HOURS, TEST_TH_HOURS: 各言語の実行回数
 # - 自動設定: MOCK_RANKING_COUNT=10000, MOCK_RISING_COUNT=1000, MOCK_DELAY_ENABLED=0, MOCK_API_TYPE=dynamic
 
@@ -18,9 +18,9 @@ MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
 LOG_DIR="./test-logs"
 TOTAL_HOURS=24
 
-# .env.mockから設定を読み込む
-if [ -f .env.mock ]; then
-    source .env.mock
+# docker/line-mock-api/.env.mockから設定を読み込む
+if [ -f docker/line-mock-api/.env.mock ]; then
+    source docker/line-mock-api/.env.mock
 fi
 
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）
@@ -162,24 +162,24 @@ main() {
     log_info "実行回数設定: 日本語=${JA_HOURS}回, 繁体字=${TW_HOURS}回, タイ語=${TH_HOURS}回"
     echo ""
 
-    # .env.mockを自動設定（高速テスト用）
-    log_info ".env.mockを高速テスト用に設定中..."
+    # docker/line-mock-api/.env.mockを自動設定（高速テスト用）
+    log_info "docker/line-mock-api/.env.mockを高速テスト用に設定中..."
 
-    # .env.mock.exampleから元のファイルをコピー
-    if [ ! -f .env.mock.example ]; then
-        log_error ".env.mock.exampleが見つかりません"
+    # docker/line-mock-api/.env.mock.exampleから元のファイルをコピー
+    if [ ! -f docker/line-mock-api/.env.mock.example ]; then
+        log_error "docker/line-mock-api/.env.mock.exampleが見つかりません"
         exit 1
     fi
 
-    cp .env.mock.example .env.mock
+    cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
 
     # 必要な設定を上書き（sedを使用してコメントを保持）
-    sed -i 's/^MOCK_RANKING_COUNT=.*/MOCK_RANKING_COUNT=10000/' .env.mock
-    sed -i 's/^MOCK_RISING_COUNT=.*/MOCK_RISING_COUNT=1000/' .env.mock
-    sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
-    sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=dynamic/' .env.mock
+    sed -i 's/^MOCK_RANKING_COUNT=.*/MOCK_RANKING_COUNT=10000/' docker/line-mock-api/.env.mock
+    sed -i 's/^MOCK_RISING_COUNT=.*/MOCK_RISING_COUNT=1000/' docker/line-mock-api/.env.mock
+    sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
+    sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=dynamic/' docker/line-mock-api/.env.mock
 
-    log_success ".env.mockを設定しました（1万件、遅延なし、動的データ）"
+    log_success "docker/line-mock-api/.env.mockを設定しました（1万件、遅延なし、動的データ）"
 
     # コンテナチェック
     check_containers
@@ -257,7 +257,7 @@ main() {
     # データ検証
     log ""
     log "データ検証を開始..."
-    if bash ./verify-test-data.sh; then
+    if bash ./.github/scripts/verify-test-data.sh; then
         log "データ検証に成功しました"
     else
         log_error "データ検証に失敗しました"

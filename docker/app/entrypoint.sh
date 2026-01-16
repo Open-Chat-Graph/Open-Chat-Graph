@@ -3,20 +3,31 @@ set -e
 
 echo "Starting entrypoint.sh..."
 
+# rootまたはsudoでコマンドを実行する関数
+run_as_root() {
+    if [ "$(id -u)" != "0" ]; then
+        sudo "$@"
+    else
+        "$@"
+    fi
+}
+
+# 環境変数を保持してrootまたはsudoでコマンドを実行する関数
+run_as_root_with_env() {
+    if [ "$(id -u)" != "0" ]; then
+        sudo -E "$@"
+    else
+        "$@"
+    fi
+}
+
 # Mock環境用：storageディレクトリをコピー（匿名ボリューム使用時）
 if [ ! -d "/var/www/html/storage/ja" ]; then
     echo "Copying storage directory from host..."
     # /var/www/html/storage-host から /var/www/html/storage にコピー
     if [ -d "/var/www/html/storage-host" ]; then
-        if [ "$(id -u)" != "0" ]; then
-            # www-dataユーザーの場合はsudoで実行
-            sudo cp -a /var/www/html/storage-host/. /var/www/html/storage/
-            sudo chown -R www-data:www-data /var/www/html/storage
-        else
-            # rootユーザーの場合はそのまま実行
-            cp -a /var/www/html/storage-host/. /var/www/html/storage/
-            chown -R www-data:www-data /var/www/html/storage
-        fi
+        run_as_root cp -a /var/www/html/storage-host/. /var/www/html/storage/
+        run_as_root chown -R www-data:www-data /var/www/html/storage
         echo "Storage directory copied successfully"
     else
         echo "Warning: /var/www/html/storage-host not found, storage directory not initialized"
@@ -55,16 +66,9 @@ if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
     echo "Configuring system and PHP to trust mkcert CA..."
 
     # CA証明書を直接ca-certificates.crtに追加（update-ca-certificatesが/usr/local/share/を処理しない問題を回避）
-    if [ "$(id -u)" != "0" ]; then
-        if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
-            sudo sh -c 'cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt'
-            echo "mkcert CA added to certificate store"
-        fi
-    else
-        if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
-            cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
-            echo "mkcert CA added to certificate store"
-        fi
+    if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
+        run_as_root sh -c 'cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt'
+        echo "mkcert CA added to certificate store"
     fi
 
     # PHPの設定も更新
@@ -75,12 +79,7 @@ fi
 echo "Starting Apache..."
 
 # Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）
-# rootユーザーとして実行（sudoが不要な場合は直接実行）
-if [ "$(id -u)" != "0" ]; then
-    sudo -E /usr/local/bin/setup-cron.sh
-else
-    /usr/local/bin/setup-cron.sh
-fi
+run_as_root_with_env /usr/local/bin/setup-cron.sh
 
 # CRON機能が有効な場合
 if [ "${CRON}" = "1" ]; then

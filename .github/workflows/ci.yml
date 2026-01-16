@@ -18,11 +18,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Install mkcert
+    - name: Setup environment
       run: |
+        # Docker Buildx (already available in ubuntu-latest)
+        docker buildx version
+
+        # Install mkcert
         sudo apt-get update
         sudo apt-get install -y libnss3-tools
         curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
@@ -30,122 +31,39 @@ jobs:
         sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
         mkcert -install
 
-    - name: Create .env.mock configuration
+        # Create .env.mock configuration for CI
+        cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
+        # CI environment requires fixed mock API type and no delay
+        sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
+        sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
+
+    - name: Run CI tests
+      run: make ci-test
+
+    - name: Handle test failure
+      if: failure()
       run: |
-        cp .env.mock.example .env.mock
-        # CI環境用の設定（高速化）
-        sed -i 's/^TEST_JA_HOURS=.*/TEST_JA_HOURS=2/' .env.mock
-        sed -i 's/^TEST_TW_HOURS=.*/TEST_TW_HOURS=1/' .env.mock
-        sed -i 's/^TEST_TH_HOURS=.*/TEST_TH_HOURS=1/' .env.mock
-        sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
-        sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' .env.mock
-        echo "=== .env.mock configuration ==="
-        cat .env.mock
-
-    - name: Start mock environment
-      run: |
-        echo "Starting mock environment..."
-        make up-mock
-
-    - name: Wait for services to be ready
-      run: |
-        echo "Waiting for MySQL to be ready..."
-        for i in {1..30}; do
-          if docker compose exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
-            echo "MySQL is ready"
-            break
-          fi
-          echo "Waiting for MySQL... ($i/30)"
-          sleep 2
-        done
-
-        echo "Waiting for App container to be ready..."
-        for i in {1..30}; do
-          if docker compose exec -T app php -v > /dev/null 2>&1; then
-            echo "App container is ready"
-            break
-          fi
-          echo "Waiting for App container... ($i/30)"
-          sleep 2
-        done
-
-        echo "Waiting for LINE Mock API to be ready..."
-        for i in {1..30}; do
-          if curl -k -s http://localhost:9000 > /dev/null 2>&1; then
-            echo "LINE Mock API is ready"
-            break
-          fi
-          echo "Waiting for LINE Mock API... ($i/30)"
-          sleep 2
-        done
-
-    - name: Initialize environment
-      run: |
-        echo "Initializing environment..."
-        # COMPOSE_FILE環境変数により、make init-y-nがMock環境を正しく参照
-        make init-y-n
-
-    - name: Restart containers after init
-      run: |
-        echo "Restarting containers after initialization..."
-        # make up-mockで環境変数を正しく設定してコンテナを起動
-        make up-mock
-        echo "Waiting for services to be ready..."
-        sleep 5
-        # MySQLの起動を確認
-        for i in {1..30}; do
-          if docker compose exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
-            echo "MySQL is ready"
-            break
-          fi
-          echo "Waiting for MySQL... ($i/30)"
-          sleep 2
-        done
-
-    - name: Show container status
-      run: |
-        echo "=== Docker containers ==="
-        docker compose ps
-        echo ""
         echo "=== Container logs (app) ==="
-        docker compose logs app --tail=50
+        docker compose logs app --tail=100
         echo ""
         echo "=== Container logs (line-mock-api) ==="
-        docker compose logs line-mock-api --tail=50
+        docker compose logs line-mock-api --tail=100
+        echo ""
+        echo "=== Exception log ==="
+        if [ -f storage/exception.log ]; then
+          cat storage/exception.log
+        else
+          echo "No exception.log found"
+        fi
 
-    - name: Run crawling test
-      run: |
-        echo "Running crawling test..."
-        chmod +x ./test-ci.sh
-        ./test-ci.sh -y
-
-    - name: Run URL tests
-      run: |
-        echo "Running URL tests..."
-        chmod +x ./test-urls.sh
-        ./test-urls.sh
-
-    - name: Check error logs
-      if: always()
-      run: |
-        echo "Checking error logs..."
-        chmod +x ./check-error-log.sh
-        ./check-error-log.sh
-
-    - name: Upload test logs on failure
+    - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: test-logs
-        path: test-logs/
-        retention-days: 7
-
-    - name: Upload exception log on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: exception-log
-        path: storage/exception.log
+        name: ci-logs
+        path: |
+          test-logs/
+          storage/exception.log
         retention-days: 7
         if-no-files-found: ignore
 
@@ -156,9 +74,3 @@ jobs:
         docker compose ps
         echo ""
         make show
-
-    - name: Cleanup
-      if: always()
-      run: |
-        echo "Cleaning up..."
-        docker compose down -v || true

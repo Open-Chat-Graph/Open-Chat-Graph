@@ -76,7 +76,7 @@ make ssh       # コンテナにログイン（基本・Mock両対応）
 
 **Mock付き環境:**
 ```bash
-make up-mock      # 起動（.env.mockの設定を使用）
+make up-mock      # 起動（docker/line-mock-api/.env.mockの設定を使用）
 make cron         # Cron有効化（毎時30/35/40分に自動クローリング）
 make cron-stop    # Cron無効化
 ```
@@ -134,14 +134,14 @@ Mock環境で時刻を進めながらクローリングをテスト：
 # - クローリング完了後、自動的にデータ検証を実行
 
 # デバッグ用（本番環境に近い設定）
-./test-debug.sh
+./test-cron.sh
 # - 大量データ（10万件）、本番並み遅延
 # - 48時間テストに対応、本番環境の挙動を再現
 ```
 
-**実行回数設定:** `.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
+**実行回数設定:** `docker/line-mock-api/.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
 
-**データ検証:** `./verify-test-data.sh` で以下を確認
+**データ検証:** `./.github/scripts/verify-test-data.sh` で以下を確認
 - MySQLテーブルのレコード数:
   - `ocgraph_comment.open_chat`: 2000件以上
   - `ocgraph_ocreviewth.open_chat`: 1000件以上

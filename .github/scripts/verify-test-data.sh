@@ -162,6 +162,14 @@ main() {
     count=$(get_mysql_count "ocgraph_ocreview" "user_log")
     test_result "ocgraph_ocreview.user_log" 0 "$count" "eq"
 
+    # user_logに記録がある場合、内容を表示
+    if [ "$count" -gt 0 ]; then
+        echo ""
+        log_warn "user_logに${count}件の記録があります。内容を確認してください："
+        docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -e "SELECT * FROM ocgraph_ocreview.user_log ORDER BY id DESC LIMIT 10" 2>/dev/null || true
+        echo ""
+    fi
+
     # ocgraph_ranking.ranking (500件以上)
     count=$(get_mysql_count "ocgraph_ranking" "ranking")
     test_result "ocgraph_ranking.ranking" 500 "$count" "ge"
