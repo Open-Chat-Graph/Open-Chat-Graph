@@ -4,11 +4,12 @@
 services:
   app:
     image: oc-review-mock-app:latest
-    build:
-      context: "docker/app/"
-      args:
-        INSTALL_XDEBUG: false
-        ENABLE_SSL: false
+    # CI環境ではプリビルドイメージを使用（.github/workflows/ci.ymlでpull/build）
+    # build:
+    #   context: "docker/app/"
+    #   args:
+    #     INSTALL_XDEBUG: false
+    #     ENABLE_SSL: false
     volumes:
       # HTTP専用のApache設定
       - "./docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-available/000-default.conf"
@@ -34,8 +35,9 @@ services:
   # LINE公式サイトエミュレーションサーバー
   line-mock-api:
     image: oc-review-mock-line-mock-api:latest
-    build:
-      context: "docker/line-mock-api/"
+    # CI環境ではプリビルドイメージを使用（.github/workflows/ci.ymlでpull/build）
+    # build:
+    #   context: "docker/line-mock-api/"
     ports:
       - "9000:80"
     volumes:

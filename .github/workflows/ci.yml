@@ -10,6 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: read  # paths-filterがPR時にREST APIでファイル一覧を取得するために必要
     env:
       # CI環境フラグ
       CI: true
@@ -20,33 +24,79 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Check for Docker-related changes
+      uses: dorny/paths-filter@v3
+      id: check_changes
+      with:
+        filters: |
+          docker:
+            - 'docker/**'
+            - 'composer.json'
+            - 'composer.lock'
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build app image
-      uses: docker/build-push-action@v6
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
       with:
-        context: ./docker/app/
-        file: ./docker/app/Dockerfile
-        push: false
-        load: true
-        tags: oc-review-mock-app:latest
-        build-args: |
-          INSTALL_XDEBUG=false
-          ENABLE_SSL=false
-        cache-from: type=gha,scope=app
-        cache-to: type=gha,scope=app,mode=max
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build LINE Mock API image
-      uses: docker/build-push-action@v6
-      with:
-        context: ./docker/line-mock-api/
-        file: ./docker/line-mock-api/Dockerfile
-        push: false
-        load: true
-        tags: oc-review-mock-line-mock-api:latest
-        cache-from: type=gha,scope=line-mock-api
-        cache-to: type=gha,scope=line-mock-api,mode=max
+    - name: Pull or build app image
+      run: |
+        # Docker関連ファイルに変更がある場合は必ずビルド
+        if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
+          echo "Building app image (Docker-related files changed)"
+          docker buildx build \
+            --build-arg INSTALL_XDEBUG=false \
+            --build-arg ENABLE_SSL=false \
+            --cache-from type=gha,scope=app \
+            --cache-to type=gha,scope=app,mode=max \
+            --load \
+            -t oc-review-mock-app:latest \
+            ./docker/app/
+        # 変更がない場合はプリビルドイメージを使用
+        elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest 2>/dev/null; then
+          echo "✓ Using prebuilt app image"
+          docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest oc-review-mock-app:latest
+        else
+          echo "Building app image (no prebuilt image found)"
+          docker buildx build \
+            --build-arg INSTALL_XDEBUG=false \
+            --build-arg ENABLE_SSL=false \
+            --cache-from type=gha,scope=app \
+            --cache-to type=gha,scope=app,mode=max \
+            --load \
+            -t oc-review-mock-app:latest \
+            ./docker/app/
+        fi
+
+    - name: Pull or build LINE Mock API image
+      run: |
+        # Docker関連ファイルに変更がある場合は必ずビルド
+        if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
+          echo "Building LINE Mock API image (Docker-related files changed)"
+          docker buildx build \
+            --cache-from type=gha,scope=line-mock-api \
+            --cache-to type=gha,scope=line-mock-api,mode=max \
+            --load \
+            -t oc-review-mock-line-mock-api:latest \
+            ./docker/line-mock-api/
+        # 変更がない場合はプリビルドイメージを使用
+        elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest 2>/dev/null; then
+          echo "✓ Using prebuilt LINE Mock API image"
+          docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest oc-review-mock-line-mock-api:latest
+        else
+          echo "Building LINE Mock API image (no prebuilt image found)"
+          docker buildx build \
+            --cache-from type=gha,scope=line-mock-api \
+            --cache-to type=gha,scope=line-mock-api,mode=max \
+            --load \
+            -t oc-review-mock-line-mock-api:latest \
+            ./docker/line-mock-api/
+        fi
 
     - name: Start mock environment
       run: |

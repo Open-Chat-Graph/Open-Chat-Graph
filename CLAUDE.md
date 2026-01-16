@@ -74,9 +74,17 @@ make show / help
 
 **GitHub Actions:**
 - `.github/workflows/ci.yml`: 自動テスト実行
+- `.github/workflows/build-images.yml`: プリビルドイメージのビルド＆プッシュ（main pushまたは手動実行）
+- プリビルドイメージ: GitHub Container Registry (ghcr.io) にCI用イメージを保存
+  - `ghcr.io/{owner}/oc-review-mock-app:latest`: アプリケーションイメージ
+  - `ghcr.io/{owner}/oc-review-mock-line-mock-api:latest`: LINE Mock APIイメージ
+- CI実行時の動作:
+  - Dockerfile/composer関連ファイルに変更がある場合: 必ずビルド（最新の変更を反映）
+  - 変更がない場合: プリビルドイメージをpull（高速化）
+  - プリビルドイメージが存在しない場合: ビルド（フォールバック）
 - Docker Layer Caching: `docker/build-push-action@v6`でGitHub Actionsキャッシュを使用
 - `cache-from/cache-to type=gha,scope={app|line-mock-api}`: 各イメージに一意のscopeを設定
-- 2回目以降のビルドで大幅な高速化
+- プリビルドイメージ使用でビルド時間を大幅短縮（34秒 → 5-10秒）
 
 **ローカルでCIテストを実行:**
 ```bash
