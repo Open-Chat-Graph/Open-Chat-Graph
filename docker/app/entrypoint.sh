@@ -65,10 +65,16 @@ if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
     echo "Found mkcert root CA certificate"
     echo "Configuring system and PHP to trust mkcert CA..."
 
+    # システムのCA証明書ストアを更新（Docker Layer Cachingで古い証明書が残っている場合に対応）
+    # update-ca-certificatesを使用して証明書を正しく更新
+    run_as_root update-ca-certificates --fresh >/dev/null 2>&1 || true
+
     # CA証明書を直接ca-certificates.crtに追加（update-ca-certificatesが/usr/local/share/を処理しない問題を回避）
-    if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
+    if ! grep -Fxq "$(cat /usr/local/share/ca-certificates/mkcert-rootCA.crt)" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
         run_as_root sh -c 'cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt'
         echo "mkcert CA added to certificate store"
+    else
+        echo "mkcert CA already in certificate store"
     fi
 
     # PHPの設定も更新

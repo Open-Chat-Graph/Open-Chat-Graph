@@ -11,8 +11,12 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# テスト用URL
-BASE_URL="https://localhost:8443"
+# テスト用URL（CI環境ではHTTPを使用）
+if [ "${CI}" = "true" ]; then
+    BASE_URL="http://localhost:8000"
+else
+    BASE_URL="https://localhost:8443"
+fi
 
 # ログディレクトリ
 LOG_DIR="./test-logs"
@@ -128,13 +132,24 @@ main() {
     test_url "${BASE_URL}/th" "トップページ（タイ語）"
     echo ""
 
-    # オープンチャット詳細ページ（DBから実際のIDを取得）
+    # オープンチャット詳細ページ（DBから実際のIDと日付を取得）
     log "オープンチャット詳細ページのテスト"
-    # MySQLから最初のopen_chat IDを取得
+    # MySQLから最初のopen_chat IDとcreated_atを取得
     local MYSQL_CONTAINER="oc-review-mock-mysql-1"
-    local JA_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
-    local TH_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewth.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
-    local TW_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewtw.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local JA_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local JA_OC_ID=$(echo "$JA_OC_DATA" | awk '{print $1}')
+    local JA_START_DATE=$(echo "$JA_OC_DATA" | awk '{print $2}')
+    local JA_END_DATE=$(date -d "$JA_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
+
+    local TH_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreviewth.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TH_OC_ID=$(echo "$TH_OC_DATA" | awk '{print $1}')
+    local TH_START_DATE=$(echo "$TH_OC_DATA" | awk '{print $2}')
+    local TH_END_DATE=$(date -d "$TH_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
+
+    local TW_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreviewtw.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TW_OC_ID=$(echo "$TW_OC_DATA" | awk '{print $1}')
+    local TW_START_DATE=$(echo "$TW_OC_DATA" | awk '{print $2}')
+    local TW_END_DATE=$(date -d "$TW_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
 
     if [ -n "$JA_OC_ID" ]; then
         test_url "${BASE_URL}/oc/${JA_OC_ID}" "OC詳細ページ (ID=${JA_OC_ID})"
@@ -161,24 +176,80 @@ main() {
     fi
     echo ""
 
-    # 各種ページ
-    log "各種ページのテスト"
-    test_url "${BASE_URL}/oc" "OC登録ページ"
-    test_url "${BASE_URL}/policy" "ポリシーページ"
-    test_url "${BASE_URL}/policy/term" "利用規約ページ"
-    test_url "${BASE_URL}/labs/live" "Labs Live"
-    test_url "${BASE_URL}/policy/privacy" "プライバシーポリシー"
-    test_url "${BASE_URL}/labs/publication-analytics" "公開分析"
-    test_url "${BASE_URL}/recently-registered" "最近登録"
-    test_url "${BASE_URL}/recently-registered/1" "最近登録（ページ1）"
-    test_url "${BASE_URL}/ranking" "ランキング"
+    # OC順位ページ（時間別・日別）のテスト
+    log "OC順位ページのテスト"
+    if [ -n "$JA_OC_ID" ] && [ -n "$JA_START_DATE" ] && [ -n "$JA_END_DATE" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=ranking&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/ranking/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=rising&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/rising/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=ranking&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/ranking/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=rising&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/rising/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=ranking&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/ranking/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=rising&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/rising/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=rising&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/rising/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=ranking&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/ranking/category=8）"
+    elif [ -n "$JA_OC_ID" ]; then
+        log_error "日本語のopen_chatから日付を取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 8))
+        TOTAL_TESTS=$((TOTAL_TESTS + 8))
+    fi
+
+    if [ -n "$TH_OC_ID" ] && [ -n "$TH_START_DATE" ] && [ -n "$TH_END_DATE" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=ranking&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/ranking/category=8）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=rising&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/rising/category=8）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=ranking&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/ranking/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=rising&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/rising/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=ranking&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/ranking/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=rising&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/rising/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=rising&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/rising/category=8）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=ranking&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/ranking/category=8）"
+    elif [ -n "$TH_OC_ID" ]; then
+        log_error "タイ語のopen_chatから日付を取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 8))
+        TOTAL_TESTS=$((TOTAL_TESTS + 8))
+    fi
+
+    if [ -n "$TW_OC_ID" ] && [ -n "$TW_START_DATE" ] && [ -n "$TW_END_DATE" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=ranking&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/ranking/category=8）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=rising&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/rising/category=8）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=ranking&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/ranking/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=rising&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/rising/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=ranking&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/ranking/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=rising&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/rising/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=rising&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/rising/category=8）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=ranking&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/ranking/category=8）"
+    elif [ -n "$TW_OC_ID" ]; then
+        log_error "繁体字のopen_chatから日付を取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 8))
+        TOTAL_TESTS=$((TOTAL_TESTS + 8))
+    fi
     echo ""
 
-    # OCリストページ（各種パラメータ）
-    log "OCリストページのテスト"
-    test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（hourly/increase/desc）"
-    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（繁体字/hourly）"
-    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（タイ語/hourly）"
+    # 各種ページ
+    log "各種ページのテスト（多言語）"
+    test_url "${BASE_URL}/policy" "ポリシーページ"
+    test_url "${BASE_URL}/tw/policy" "ポリシーページ（繁体字）"
+    test_url "${BASE_URL}/th/policy" "ポリシーページ（タイ語）"
+    test_url "${BASE_URL}/policy/privacy" "プライバシーポリシー"
+    test_url "${BASE_URL}/tw/policy/privacy" "プライバシーポリシー（繁体字）"
+    test_url "${BASE_URL}/th/policy/privacy" "プライバシーポリシー（タイ語）"
+    test_url "${BASE_URL}/ranking" "ランキング"
+    test_url "${BASE_URL}/tw/ranking" "ランキング（繁体字）"
+    test_url "${BASE_URL}/th/ranking" "ランキング（タイ語）"
+    echo ""
+
+    # 日本語のみのページ
+    log "日本語のみのページ"
+    test_url "${BASE_URL}/oc" "OC登録ページ"
+    test_url "${BASE_URL}/recently-registered" "最近登録"
+    test_url "${BASE_URL}/recently-registered/1" "最近登録（ページ1）"
+    test_url "${BASE_URL}/labs/publication-analytics" "公開分析"
+    test_url "${BASE_URL}/policy/term" "利用規約ページ"
+    test_url "${BASE_URL}/labs/live" "Labs Live"
+    echo ""
+
+    # OCリストページ（各種パラメータ）- 日本語
+    log "OCリストページのテスト（日本語）"
+    test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category%E3%83%95%E3%82%A9%E3%83%BC%E3%83%88%E3%83%8A%E3%82%A4%E3%83%88=&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（hourly/increase/desc）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=daily&sort=increase&order=desc" "OCリスト（daily）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=weekly&sort=increase&order=desc" "OCリスト（weekly）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=all&sort=member&order=desc" "OCリスト（all/member）"
@@ -188,12 +259,48 @@ main() {
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=17&sub_category=&keyword=&list=hourly&sort=rate&order=asc" "OCリスト（category=17）"
     echo ""
 
-    # キーワード検索
-    log "キーワード検索のテスト"
+    # OCリストページ（各種パラメータ）- 繁体字
+    log "OCリストページのテスト（繁体字）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=%E5%AF%B6%E5%8F%AF%E5%A4%A2&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（繁体字/hourly/increase/desc）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=daily&sort=increase&order=desc" "OCリスト（繁体字/daily）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=weekly&sort=increase&order=desc" "OCリスト（繁体字/weekly）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=all&sort=member&order=desc" "OCリスト（繁体字/all/member）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=increase&order=asc" "OCリスト（繁体字/hourly/asc）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=rate&order=desc" "OCリスト（繁体字/hourly/rate/desc）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=rate&order=asc" "OCリスト（繁体字/hourly/rate/asc）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=17&sub_category=&keyword=&list=hourly&sort=rate&order=asc" "OCリスト（繁体字/category=17）"
+    echo ""
+
+    # OCリストページ（各種パラメータ）- タイ語
+    log "OCリストページのテスト（タイ語）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=PUBG&keyword=&list=hourly&sort=increase&order=desc" "OCリスト（タイ語/hourly/increase/desc）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=daily&sort=increase&order=desc" "OCリスト（タイ語/daily）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=weekly&sort=increase&order=desc" "OCリスト（タイ語/weekly）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=all&sort=member&order=desc" "OCリスト（タイ語/all/member）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=increase&order=asc" "OCリスト（タイ語/hourly/asc）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=rate&order=desc" "OCリスト（タイ語/hourly/rate/desc）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=hourly&sort=rate&order=asc" "OCリスト（タイ語/hourly/rate/asc）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=17&sub_category=&keyword=&list=hourly&sort=rate&order=asc" "OCリスト（タイ語/category=17）"
+    echo ""
+
+    # キーワード検索 - 日本語
+    log "キーワード検索のテスト（日本語）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&list=all&sort=member&order=desc" "検索（ポケモン）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=17&sub_category=&keyword=%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3&list=all&sort=member&order=desc" "検索（ポケモン/category=17）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=badge%3A%E3%82%B9%E3%83%9A%E3%82%B7%E3%83%A3%E3%83%AB%E3%82%AA%E3%83%BC%E3%83%97%E3%83%B3%E3%83%81%E3%83%A3%E3%83%83%E3%83%88&list=all&sort=member&order=desc" "検索（badge:スペシャルオープンチャット）"
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=badge%3A%E5%85%AC%E5%BC%8F%E8%AA%8D%E8%A8%BC%E3%83%90%E3%83%83%E3%82%B8&list=all&sort=member&order=desc" "検索（badge:公式認証バッジ）"
+    echo ""
+
+    # キーワード検索 - 繁体字
+    log "キーワード検索のテスト（繁体字）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=0&sub_category=&keyword=%E5%AF%B6%E5%8F%AF%E5%A4%A2&list=all&sort=member&order=desc" "検索（寶可夢/原神）"
+    test_url "${BASE_URL}/tw/oclist?page=0&limit=20&category=17&sub_category=&keyword=%E5%8E%9F%E7%A5%9E&list=all&sort=member&order=desc" "検索（繁体字/原神/category=17）"
+    echo ""
+
+    # キーワード検索 - タイ語
+    log "キーワード検索のテスト（タイ語）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=0&sub_category=&keyword=PUBG&list=all&sort=member&order=desc" "検索（タイ語/PUBG）"
+    test_url "${BASE_URL}/th/oclist?page=0&limit=20&category=17&sub_category=&keyword=PUBG&list=all&sort=member&order=desc" "検索（タイ語/PUBG/category=17）"
     echo ""
 
     # 不正なパラメータのテスト（400エラーは期待される結果）
@@ -211,9 +318,26 @@ main() {
     fi
     echo ""
 
-    # レコメンドページ
-    log "レコメンドページのテスト"
+    # レコメンドページ - 日本語
+    log "レコメンドページのテスト（日本語）"
     test_url "${BASE_URL}/recommend/%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89" "レコメンド（ポケモン）"
+    echo ""
+
+    # レコメンドページ - 繁体字
+    log "レコメンドページのテスト（繁体字）"
+    test_url "${BASE_URL}/tw/recommend/%E5%AF%B6%E5%8F%AF%E5%A4%A2" "レコメンド（繁体字/寶可夢）"
+    echo ""
+
+    # レコメンドページ - タイ語
+    log "レコメンドページのテスト（タイ語）"
+    test_url "${BASE_URL}/th/recommend/PUBG" "レコメンド（タイ語/PUBG）"
+    echo ""
+
+    # oc-img
+    log "oc-img画像表示テスト"
+    test_url "${BASE_URL}/oc-img-th/0/2FQzEr3j9wRk.webp" "OC画像表示（タイ語）"
+    test_url "${BASE_URL}/oc-img/0/2kXFg71INCfE.webp" "OC画像表示（日本語）"
+    test_url "${BASE_URL}/oc-img-tw/0/2mZlq4yY47.webp" "OC画像表示（繁体字）"
     echo ""
 
     # コメントページ

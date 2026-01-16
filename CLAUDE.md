@@ -62,7 +62,26 @@ make show / help
 
 ### Requirements
 - Docker with Compose V2
-- `mkcert` for SSL certificate generation
+- `mkcert` for SSL certificate generation (not required for CI)
+
+### CI Environment
+
+**CI環境では専用の設定を使用:**
+- `docker-compose.ci.yml`: CI専用のオーバーライド設定
+- SSL証明書生成をスキップ（HTTP通信のみ）
+- Xdebugインストール無効
+- PHPMyAdmin除外
+
+**GitHub Actions:**
+- `.github/workflows/ci.yml`: 自動テスト実行
+- Docker Layer Caching: `docker/build-push-action@v6`でGitHub Actionsキャッシュを使用
+- `cache-from/cache-to type=gha,scope={app|line-mock-api}`: 各イメージに一意のscopeを設定
+- 2回目以降のビルドで大幅な高速化
+
+**ローカルでCIテストを実行:**
+```bash
+make ci-test
+```
 
 ## Architecture
 

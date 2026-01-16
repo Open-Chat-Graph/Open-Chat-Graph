@@ -39,6 +39,12 @@ APP_CONTAINER="oc-review-mock-app-1"
 MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
 MYSQL_CONTAINER="oc-review-mock-mysql-1"
 LOG_DIR="./test-logs"
+# CI環境判定
+if [ -n "$CI" ]; then
+    COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.ci.yml"
+else
+    COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.mock.yml"
+fi
 
 # オプションの処理
 AUTO_CONTINUE=false
@@ -49,15 +55,31 @@ elif [[ "$1" == "-n" ]]; then
     AUTO_NEXT_2330=true
 fi
 
+# コマンドラインから渡された環境変数を保存（.env.mockより優先）
+CMDLINE_TEST_JA_HOURS=${TEST_JA_HOURS:-}
+CMDLINE_TEST_TW_HOURS=${TEST_TW_HOURS:-}
+CMDLINE_TEST_TH_HOURS=${TEST_TH_HOURS:-}
+
 # docker/line-mock-api/.env.mockから設定を読み込む
 if [ -f docker/line-mock-api/.env.mock ]; then
     source docker/line-mock-api/.env.mock
 fi
 
+# コマンドラインから渡された環境変数を優先（空でなければ上書き）
+if [ -n "$CMDLINE_TEST_JA_HOURS" ]; then
+    TEST_JA_HOURS=$CMDLINE_TEST_JA_HOURS
+fi
+if [ -n "$CMDLINE_TEST_TW_HOURS" ]; then
+    TEST_TW_HOURS=$CMDLINE_TEST_TW_HOURS
+fi
+if [ -n "$CMDLINE_TEST_TH_HOURS" ]; then
+    TEST_TH_HOURS=$CMDLINE_TEST_TH_HOURS
+fi
+
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）
 JA_HOURS=${TEST_JA_HOURS:-25}  # 日本語（hourIndex: 0〜24の25時間分）
-TW_HOURS=${TEST_TW_HOURS:-1}   # 繁体字中国語
-TH_HOURS=${TEST_TH_HOURS:-1}   # タイ語
+TW_HOURS=${TEST_TW_HOURS:-25}   # 繁体字中国語
+TH_HOURS=${TEST_TH_HOURS:-25}   # タイ語
 
 # 色付き出力
 RED='\033[0;31m'
@@ -178,24 +200,28 @@ main() {
     # docker/line-mock-api/.env.mockを自動設定（固定データモード用）
     log_info "docker/line-mock-api/.env.mockを固定データモード用に設定中..."
 
-    # docker/line-mock-api/.env.mockが存在しない場合のみdocker/line-mock-api/.env.mock.exampleからコピー
-    if [ ! -f docker/line-mock-api/.env.mock ]; then
-        if [ ! -f docker/line-mock-api/.env.mock.example ]; then
-            log_error "docker/line-mock-api/.env.mock.exampleが見つかりません"
-            exit 1
+    # CI環境では.env.mockは不要（docker-compose.ci.ymlで環境変数を直接設定）
+    if [ -z "$CI" ]; then
+        # ローカル環境の場合
+        if [ ! -f docker/line-mock-api/.env.mock ]; then
+            if [ ! -f docker/line-mock-api/.env.mock.example ]; then
+                log_error "docker/line-mock-api/.env.mock.exampleが見つかりません"
+                exit 1
+            fi
+            cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
+            log_info "docker/line-mock-api/.env.mock.exampleからdocker/line-mock-api/.env.mockを作成しました"
+        else
+            log_info "既存のdocker/line-mock-api/.env.mockを使用します"
         fi
-        cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
-        log_info "docker/line-mock-api/.env.mock.exampleからdocker/line-mock-api/.env.mockを作成しました"
+
+        # 必要な設定を上書き（sedを使用してコメントを保持）
+        sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
+        sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
+
+        log_success "docker/line-mock-api/.env.mockを設定しました（固定データモード、遅延なし）"
     else
-        log_info "既存のdocker/line-mock-api/.env.mockを使用します（CI環境用の設定を維持）"
+        log_info "CI環境: docker-compose.ci.ymlの設定を使用（固定データモード、遅延なし）"
     fi
-
-    # 必要な設定を上書き（sedを使用してコメントを保持）
-    # ※TEST_JA_HOURS等は既存の設定を維持（CI環境で事前設定されている場合があるため）
-    sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
-    sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
-
-    log_success "docker/line-mock-api/.env.mockを設定しました（固定データモード、遅延なし）"
 
     # hourIndexの処理（既存の値があれば継続するか確認）
     docker exec "$MOCK_CONTAINER" mkdir -p /app/data

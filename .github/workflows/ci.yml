@@ -11,43 +11,105 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # Mock環境用のcomposeファイルを全ステップで使用
-      COMPOSE_FILE: docker-compose.yml:docker-compose.mock.yml
+      # CI環境フラグ
+      CI: true
+      # CI環境ではxdebugをインストールしない
+      INSTALL_XDEBUG: false
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup environment
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build app image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./docker/app/
+        file: ./docker/app/Dockerfile
+        push: false
+        load: true
+        tags: oc-review-mock-app:latest
+        build-args: |
+          INSTALL_XDEBUG=false
+          ENABLE_SSL=false
+        cache-from: type=gha,scope=app
+        cache-to: type=gha,scope=app,mode=max
+
+    - name: Build LINE Mock API image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./docker/line-mock-api/
+        file: ./docker/line-mock-api/Dockerfile
+        push: false
+        load: true
+        tags: oc-review-mock-line-mock-api:latest
+        cache-from: type=gha,scope=line-mock-api
+        cache-to: type=gha,scope=line-mock-api,mode=max
+
+    - name: Start mock environment
       run: |
-        # Docker Buildx (already available in ubuntu-latest)
-        docker buildx version
+        echo "Starting CI mock environment..."
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
 
-        # Install mkcert
-        sudo apt-get update
-        sudo apt-get install -y libnss3-tools
-        curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
-        chmod +x mkcert-v*-linux-amd64
-        sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
-        mkcert -install
+    - name: Wait for services
+      run: |
+        echo "Waiting for MySQL..."
+        for i in {1..30}; do
+          if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
+            echo "MySQL is ready"
+            break
+          fi
+          echo "Waiting for MySQL... ($i/30)"
+          sleep 2
+        done
 
-        # Create .env.mock configuration for CI
-        cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
-        # CI environment requires fixed mock API type and no delay
-        sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
-        sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
+        echo "Waiting for App container..."
+        for i in {1..30}; do
+          if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app php -v > /dev/null 2>&1; then
+            echo "App container is ready"
+            break
+          fi
+          echo "Waiting for App... ($i/30)"
+          sleep 2
+        done
+
+        echo "Waiting for LINE Mock API..."
+        for i in {1..30}; do
+          if curl -s http://localhost:9000 > /dev/null 2>&1; then
+            echo "LINE Mock API is ready"
+            break
+          fi
+          echo "Waiting for Mock API... ($i/30)"
+          sleep 2
+        done
+
+    - name: Install dependencies
+      run: |
+        echo "Installing Composer dependencies..."
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root -e COMPOSER_ALLOW_SUPERUSER=1 app composer install --no-dev --optimize-autoloader
+        echo "Fixing vendor directory permissions..."
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app chown -R www-data:www-data /var/www/html/vendor
+
+    - name: Initialize database and storage
+      run: |
+        echo "Initializing database and storage..."
+        ./setup/local-setup.default.sh -y -n
 
     - name: Run CI tests
-      run: make ci-test
+      run: |
+        chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
+        ./.github/scripts/test-ci.sh -y && ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 
     - name: Handle test failure
       if: failure()
       run: |
         echo "=== Container logs (app) ==="
-        docker compose logs app --tail=100
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app --tail=100
         echo ""
         echo "=== Container logs (line-mock-api) ==="
-        docker compose logs line-mock-api --tail=100
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml logs line-mock-api --tail=100
         echo ""
         echo "=== Exception log ==="
         if [ -f storage/exception.log ]; then
@@ -71,6 +133,4 @@ jobs:
       if: always()
       run: |
         echo "=== Final container status ==="
-        docker compose ps
-        echo ""
-        make show
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml ps

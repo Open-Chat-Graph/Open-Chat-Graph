@@ -81,6 +81,11 @@ make cron         # Cron有効化（毎時30/35/40分に自動クローリング
 make cron-stop    # Cron無効化
 ```
 
+**テスト・CI:**
+```bash
+make ci-test   # CI環境でテストを実行（ローカル専用）
+```
+
 **その他:**
 ```bash
 make show      # 現在の起動モード・設定表示
@@ -120,6 +125,18 @@ MySQLコマンド例: `docker exec oc-review-mock-mysql-1 mysql -uroot -ptest_ro
 # 起動時に有効化
 ENABLE_XDEBUG=1 make up
 ENABLE_XDEBUG=1 make up-mock
+```
+
+### CI環境
+
+**GitHub Actionsで自動テストを実行:**
+- `.github/workflows/ci.yml`: PRマージ前に自動実行
+- `docker-compose.ci.yml`: CI専用設定（SSL無効、Xdebug無効）
+- Docker Layer Caching: 2回目以降のビルドを高速化
+
+**ローカルでCIテストを実行:**
+```bash
+make ci-test
 ```
 
 ### テストスクリプト

@@ -18,9 +18,25 @@ MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
 LOG_DIR="./test-logs"
 TOTAL_HOURS=24
 
+# コマンドラインから渡された環境変数を保存（.env.mockより優先）
+CMDLINE_TEST_JA_HOURS=${TEST_JA_HOURS:-}
+CMDLINE_TEST_TW_HOURS=${TEST_TW_HOURS:-}
+CMDLINE_TEST_TH_HOURS=${TEST_TH_HOURS:-}
+
 # docker/line-mock-api/.env.mockから設定を読み込む
 if [ -f docker/line-mock-api/.env.mock ]; then
     source docker/line-mock-api/.env.mock
+fi
+
+# コマンドラインから渡された環境変数を優先（空でなければ上書き）
+if [ -n "$CMDLINE_TEST_JA_HOURS" ]; then
+    TEST_JA_HOURS=$CMDLINE_TEST_JA_HOURS
+fi
+if [ -n "$CMDLINE_TEST_TW_HOURS" ]; then
+    TEST_TW_HOURS=$CMDLINE_TEST_TW_HOURS
+fi
+if [ -n "$CMDLINE_TEST_TH_HOURS" ]; then
+    TEST_TH_HOURS=$CMDLINE_TEST_TH_HOURS
 fi
 
 # 言語ごとの実行回数設定（環境変数が設定されていればそれを使用、なければデフォルト値）

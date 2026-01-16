@@ -4,6 +4,8 @@ services:
   app:
     build:
       context: "docker/app/"
+      args:
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG:-true}
     ports:
       - "${WEB_PORT:-8000}:80"
       - "${HTTPS_PORT:-8443}:443"

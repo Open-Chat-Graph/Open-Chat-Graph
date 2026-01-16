@@ -56,8 +56,7 @@ init-y-n: ## 初回セットアップ（確認なし、local-secrets.phpは保�
 _init:
 	@echo "$(GREEN)初回セットアップを開始します...$(NC)"
 	@./docker/app/generate-ssl-certs.sh
-	@./docker/line-mock-api/generate-ssl-certs.sh
-	@# コンテナが停止していれば起動、セットアップ後に停止（冪等性）
+	@# コンテナが停止していれば起動、セットアップ後に停止
 	@CONTAINERS_WERE_STOPPED=0; \
 	if ! docker compose ps mysql 2>/dev/null | grep -q "Up" || ! docker compose ps app 2>/dev/null | grep -q "Up"; then \
 		echo "$(YELLOW)コンテナを起動します...$(NC)"; \
@@ -151,7 +150,6 @@ up-mock: ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定�
 		cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
-	@./docker/line-mock-api/generate-ssl-certs.sh
 	@echo "$(GREEN)Mock付き環境を起動しています...$(NC)"
 	@echo "$(YELLOW)docker/line-mock-api/.env.mockの設定:$(NC)"
 	@cat docker/line-mock-api/.env.mock | grep -v "^#" | grep -v "^$$" | sed 's/^/  /'
@@ -161,7 +159,6 @@ up-mock: ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定�
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
 	@echo "  https://localhost:8443 (基本環境)"
-	@echo "  https://localhost:8543 (Mock環境)"
 	@echo "  phpMyAdmin: http://localhost:8080"
 	@echo "  LINE Mock API: http://localhost:9000"
 	@echo ""
@@ -227,16 +224,16 @@ show: ## 現在の起動モードを表示
 	fi
 	@echo "$(GREEN)========================================$(NC)"
 
-ci-test: ## CIテストを実行（Mock環境でクローリング+URLテスト）
+ci-test: ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
 	@echo "$(GREEN)========================================"
-	@echo "  CIテスト開始"
+	@echo "  ローカルCIテスト開始"
 	@echo "========================================$(NC)"
-	@echo "$(YELLOW)[1/5] Mock環境を起動...$(NC)"
+	@echo "$(YELLOW)[1/4] Mock環境を起動...$(NC)"
 	@$(MAKE) up-mock > /dev/null 2>&1 || $(MAKE) up-mock
-	@echo "$(YELLOW)[2/5] サービス準備を待機...$(NC)"
+	@echo "$(YELLOW)[2/4] サービス準備を待機...$(NC)"
 	@$(MAKE) _wait-mysql
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
-		docker compose exec -T app php -v > /dev/null 2>&1 && break; \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec -T app php -v > /dev/null 2>&1 && break; \
 		sleep 2; \
 	done
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
@@ -244,15 +241,12 @@ ci-test: ## CIテストを実行（Mock環境でクローリング+URLテスト�
 		sleep 2; \
 	done
 	@echo "$(GREEN)✓ 準備完了$(NC)"
-	@echo "$(YELLOW)[3/5] 環境を初期化...$(NC)"
+	@echo "$(YELLOW)[3/4] 環境を初期化...$(NC)"
 	@$(MAKE) init-y-n > /dev/null 2>&1
-	@echo "$(YELLOW)[4/5] コンテナを再起動...$(NC)"
-	@$(MAKE) up-mock > /dev/null 2>&1
-	@sleep 5 && $(MAKE) _wait-mysql
-	@echo "$(GREEN)✓ 再起動完了$(NC)"
-	@echo "$(YELLOW)[5/5] テストを実行...$(NC)"
+	@echo "$(GREEN)✓ 初期化完了$(NC)"
+	@echo "$(YELLOW)[4/4] テストを実行...$(NC)"
 	@chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
 	@./.github/scripts/test-ci.sh -y && ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 	@echo "$(GREEN)========================================"
-	@echo "  CIテスト完了"
+	@echo "  ローカルCIテスト完了"
 	@echo "========================================$(NC)"

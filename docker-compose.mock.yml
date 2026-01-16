@@ -4,9 +4,12 @@
 services:
   app:
     privileged: true  # システム時刻変更に必要
+    build:
+      context: "docker/app/"
+      args:
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG:-true}
     volumes:
-      - "./docker/app/ssl-new/rootCA.pem:/usr/local/share/ca-certificates/mkcert-rootCA.crt:ro"
-      # Mock環境用のSSL設定（oc-imgをローカルファイルとして扱い、本番環境にアクセスしない）
+      # ローカルMock環境用のSSL設定（CI環境ではentrypoint.shで上書き）
       - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl.conf"
       - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
     depends_on:
@@ -34,12 +37,9 @@ services:
       context: "docker/line-mock-api/"
     ports:
       - "${LINE_MOCK_PORT:-9000}:80"
-      - "${LINE_MOCK_HTTPS_PORT:-9443}:443"
     volumes:
       - "./docker/line-mock-api:/app"
       - "./docker/line-mock-api/storage:/var/www/html/storage"
-      - "./docker/line-mock-api/ssl/localhost+3.pem:/etc/ssl/certs/localhost+3.pem:ro"
-      - "./docker/line-mock-api/ssl/localhost+3-key.pem:/etc/ssl/private/localhost+3-key.pem:ro"
       - "./docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
     cap_add:
       - SYS_TIME  # コンテナのシステム時刻を変更可能にする（テスト用）

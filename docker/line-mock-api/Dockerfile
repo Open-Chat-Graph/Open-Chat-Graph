@@ -13,21 +13,17 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Apacheのmod_rewriteとmod_sslを有効化
-RUN a2enmod rewrite ssl
+# Apacheのmod_rewriteを有効化
+RUN a2enmod rewrite
 
 # 作業ディレクトリを設定
 WORKDIR /app
 
 # Apache設定ファイルをコピー
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
-COPY apache-ssl.conf /etc/apache2/sites-available/default-ssl.conf
 
-# SSL設定を有効化
-RUN a2ensite default-ssl
-
-# ポート80と443を公開
-EXPOSE 80 443
+# ポート80を公開
+EXPOSE 80
 
 # Entrypointスクリプトをコピー
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -1,0 +1,59 @@
+# CI環境専用の設定
+# 使い方: docker compose -f docker-compose.yml -f docker-compose.ci.yml up
+
+services:
+  app:
+    image: oc-review-mock-app:latest
+    build:
+      context: "docker/app/"
+      args:
+        INSTALL_XDEBUG: false
+        ENABLE_SSL: false
+    volumes:
+      # HTTP専用のApache設定
+      - "./docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-available/000-default.conf"
+      - "./docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-enabled/000-default.conf"
+      # SSL設定を無効化
+      - "./docker/app/apache2/sites-available/000-default-ssl-disabled.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
+    depends_on:
+      - line-mock-api
+    networks:
+      - default
+      - mock-network
+    environment:
+      - CI=true
+      - IS_MOCK_ENVIRONMENT=1
+      - CRON=0
+      - ENABLE_XDEBUG=0
+
+  mysql:
+    networks:
+      - default
+      - mock-network
+
+  # LINE公式サイトエミュレーションサーバー
+  line-mock-api:
+    image: oc-review-mock-line-mock-api:latest
+    build:
+      context: "docker/line-mock-api/"
+    ports:
+      - "9000:80"
+    volumes:
+      - "./docker/line-mock-api:/app"
+      - "./docker/line-mock-api/storage:/var/www/html/storage"
+      - "./docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
+    entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
+    environment:
+      - TZ=Asia/Tokyo
+      - LANG=ja_JP.UTF-8
+      - MOCK_API_TYPE=${MOCK_API_TYPE:-fixed}
+    networks:
+      mock-network:
+        ipv4_address: 10.99.0.10
+
+networks:
+  mock-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.99.0.0/16
