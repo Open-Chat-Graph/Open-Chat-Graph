@@ -132,8 +132,8 @@ if ! docker compose ps app 2>/dev/null | grep -q "Up"; then
     sleep 2
 fi
 
-# Docker経由でファイル削除
-docker compose exec -T app bash -c '
+# Docker経由でファイル削除（rootユーザーとして実行）
+docker compose exec -T -u root app bash -c '
     rm -f storage/*/open_chat_sub_categories/subcategories.json
     rm -f storage/*/static_data_top/*.dat
     rm -f storage/*/static_data_recommend/*/*.dat
@@ -147,6 +147,12 @@ docker compose exec -T app bash -c '
 
     find public/oc-img* -mindepth 1 -maxdepth 1 ! -name "default" ! -name "preview" -exec rm -rf {} + 2>/dev/null || true
     find public/oc-img*/preview -mindepth 1 -maxdepth 1 ! -name "default" -exec rm -rf {} + 2>/dev/null || true
+'
+
+# Composerの依存関係インストール（Docker経由、vscodeユーザーとして実行）
+# vscodeユーザーはUID 1000でホストユーザーと同じため権限問題が発生しない
+docker compose exec -T -u vscode app bash -c '
+    composer install
 '
 
 # 一時起動したコンテナを停止
@@ -205,15 +211,15 @@ else
 fi
 echo ""
 
-# テンプレートファイルをコピー（Docker経由）
+# テンプレートファイルをコピー（Docker経由、rootユーザーとして実行）
 echo "テンプレートファイルをコピーしています..."
-docker compose exec -T app bash -c '
+docker compose exec -T -u root app bash -c '
     cp setup/template/static_data_top/* storage/ja/static_data_top/
     cp setup/template/static_data_top/* storage/tw/static_data_top/
     cp setup/template/static_data_top/* storage/th/static_data_top/
 '
 
-# スキーマファイルからSQLiteデータベースを生成（Docker経由）
+# スキーマファイルからSQLiteデータベースを生成（Docker経由、rootユーザーとして実行）
 echo "スキーマファイルからSQLiteデータベースを生成しています..."
 
 # 各言語のディレクトリに対して処理
@@ -221,22 +227,29 @@ for lang in ja tw th; do
     echo "  ${lang} のデータベースを生成中..."
 
     # statistics.db を生成
-    cat setup/schema/sqlite/statistics.sql | docker compose exec -T app sqlite3 "storage/${lang}/SQLite/statistics/statistics.db"
+    cat setup/schema/sqlite/statistics.sql | docker compose exec -T -u root app sqlite3 "storage/${lang}/SQLite/statistics/statistics.db"
 
     # ranking_position.db を生成
-    cat setup/schema/sqlite/ranking_position.sql | docker compose exec -T app sqlite3 "storage/${lang}/SQLite/ranking_position/ranking_position.db"
+    cat setup/schema/sqlite/ranking_position.sql | docker compose exec -T -u root app sqlite3 "storage/${lang}/SQLite/ranking_position/ranking_position.db"
 
     # sqlapi.db を生成（jaのみ）
     if [ "$lang" == "ja" ]; then
-        cat setup/schema/sqlite/sqlapi.sql | docker compose exec -T app sqlite3 "storage/${lang}/SQLite/ocgraph_sqlapi/sqlapi.db"
+        cat setup/schema/sqlite/sqlapi.sql | docker compose exec -T -u root app sqlite3 "storage/${lang}/SQLite/ocgraph_sqlapi/sqlapi.db"
     fi
 done
 
 echo "SQLiteデータベースの生成が完了しました。"
 echo ""
 
+# storageおよびpublic/oc-img*ディレクトリの権限を修正（www-dataが書き込めるようにする）
+echo "ディレクトリの権限を修正しています..."
+docker compose exec -T -u root app bash -c '
+    chown -R www-data:www-data storage/
+    chmod -R 775 storage/
+    chown -R www-data:www-data public/oc-img*
+    chmod -R 775 public/oc-img*
+'
+
 ./setup/init-database.sh
 
 rm -f docker/line-mock-api/data/hour_index.txt
-
-composer install

@@ -44,6 +44,10 @@ make init-y
 make init-y-n
 ```
 
+**起動時に ERROR: No such service: build が出た場合**
+以下のコマンドで再ビルド
+`docker compose -f docker-compose.yml -f docker-compose.mock.yml --verbose build --no-cache`
+
 #### セットアップスクリプトの手動実行
 
 既存の環境をリセットする場合：`./setup/local-setup.default.sh` (オプション: `-y` 確認なし、`-n` local-secrets.php保持、`-h` ヘルプ)

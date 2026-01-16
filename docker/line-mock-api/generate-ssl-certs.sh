@@ -25,6 +25,8 @@ echo "SSL証明書を生成しています..."
 cd "$SSL_DIR" && mkcert localhost 127.0.0.1 ::1 line-mock-api
 
 if [ $? -eq 0 ]; then
+    # Dockerコンテナ内のApacheが読み取れるよう秘密鍵の権限を変更
+    chmod 644 localhost+3-key.pem
     echo "SSL証明書の生成が完了しました"
 else
     echo "エラー: SSL証明書の生成に失敗しました"
