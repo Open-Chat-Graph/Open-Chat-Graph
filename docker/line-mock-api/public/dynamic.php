@@ -632,7 +632,7 @@ try {
             $ct === '' ? 'empty' : $ct,
             $language
         );
-        error_log($debugLog, 3, '/app/data/debug.log');
+        // デバッグログ削除済み
 
         // データ読み込み（件数は環境変数で制御）
         // 言語別のデータファイルを使用
@@ -720,7 +720,7 @@ try {
             count($pageRooms),
             isset($response['continuationTokenMap']) ? 'yes' : 'no'
         );
-        error_log($responseLog, 3, '/app/data/debug.log');
+        // デバッグログ削除済み
 
         // レスポンス速度調整（ランキング/急上昇API）
         // 時間帯により20-45分相当の遅延（10万件取得時）

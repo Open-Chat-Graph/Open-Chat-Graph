@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e  # エラー発生時にスクリプトを即座に終了する
+
 # 引数の解析
 # 第1引数: DB・storage初期化（-y/yes = 自動実行、省略時は確認）
 # 第2引数: local-secrets.php上書き（省略時はyes、-n/no = 上書きしない）
@@ -54,9 +56,9 @@ if ls storage/*/SQLite/statistics/*.db* >/dev/null 2>&1 || \
 fi
 
 # MySQLデータベースの存在確認（docker composeが起動している場合のみ）
-if [ "$has_existing_data" = false ] && docker compose ps mysql | grep -q "Up"; then
+if [ "$has_existing_data" = false ] && docker compose ps mysql 2>/dev/null | grep -q "Up"; then
     # MySQLコンテナが起動している場合、データベースの存在を確認
-    mysql_check=$(docker compose exec -T mysql mysql -uroot -ptest_root_pass -e "SHOW DATABASES LIKE 'ocgraph_%';" 2>/dev/null | grep -c "ocgraph_" || echo "0")
+    mysql_check=$(docker compose exec -T mysql mysql -uroot -ptest_root_pass -e "SHOW DATABASES LIKE 'ocgraph_%';" 2>/dev/null | grep -c "ocgraph_") || mysql_check=0
     if [ "$mysql_check" -gt 0 ]; then
         has_existing_data=true
     fi
@@ -149,20 +151,14 @@ docker compose exec -T -u root app bash -c '
     find public/oc-img*/preview -mindepth 1 -maxdepth 1 ! -name "default" -exec rm -rf {} + 2>/dev/null || true
 '
 
-# Composerの依存関係インストール（Docker経由、vscodeユーザーとして実行）
-# vscodeユーザーはUID 1000でホストユーザーと同じため権限問題が発生しない
-docker compose exec -T -u vscode app bash -c '
-    composer install
+# Composerの依存関係インストール（Docker経由、rootユーザーとして実行）
+# CI環境ではvscodeユーザーにvendor作成権限がないためrootで実行
+docker compose exec -T -u root app bash -c 'set -e
+    composer install --no-interaction
 '
 
-# 一時起動したコンテナを停止
-if [ $APP_WAS_STOPPED -eq 1 ]; then
-    echo "appコンテナを停止します..."
-    docker compose stop app >/dev/null 2>&1
-fi
-
-# local-secrets.phpの作成
-if [ "$overwrite_secrets" = true ]; then
+# local-secrets.phpの作成（ファイルが存在しない場合は-nフラグでも作成する）
+if [ "$overwrite_secrets" = true ] || [ ! -f "local-secrets.php" ]; then
     echo "local-secrets.php を作成しています..."
     cat << 'EOF' > local-secrets.php
 <?php
@@ -213,7 +209,8 @@ echo ""
 
 # テンプレートファイルをコピー（Docker経由、rootユーザーとして実行）
 echo "テンプレートファイルをコピーしています..."
-docker compose exec -T -u root app bash -c '
+docker compose exec -T -u root app bash -c 'set -e
+    mkdir -p storage/ja/static_data_top storage/tw/static_data_top storage/th/static_data_top
     cp setup/template/static_data_top/* storage/ja/static_data_top/
     cp setup/template/static_data_top/* storage/tw/static_data_top/
     cp setup/template/static_data_top/* storage/th/static_data_top/
@@ -241,15 +238,26 @@ done
 echo "SQLiteデータベースの生成が完了しました。"
 echo ""
 
-# storageおよびpublic/oc-img*ディレクトリの権限を修正（www-dataが書き込めるようにする）
+# storageおよび書き込み可能ディレクトリの権限を修正（www-dataが書き込めるようにする）
 echo "ディレクトリの権限を修正しています..."
-docker compose exec -T -u root app bash -c '
+docker compose exec -T -u root app bash -c 'set -e
     chown -R www-data:www-data storage/
     chmod -R 775 storage/
     chown -R www-data:www-data public/oc-img*
     chmod -R 775 public/oc-img*
+    chown -R www-data:www-data public/sitemaps
+    chmod -R 775 public/sitemaps
+    # sitemap.xmlはpublic/直下に作成されるため、publicディレクトリも書き込み可能にする
+    chown www-data:www-data public/
+    chmod 775 public/
 '
 
 ./setup/init-database.sh
 
 rm -f docker/line-mock-api/data/hour_index.txt
+
+# 一時起動したコンテナを停止
+if [ $APP_WAS_STOPPED -eq 1 ]; then
+    echo "appコンテナを停止します..."
+    docker compose stop app >/dev/null 2>&1
+fi

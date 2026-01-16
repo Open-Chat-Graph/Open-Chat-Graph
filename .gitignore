@@ -16,6 +16,7 @@ prod-secrets.php
 .env.mock
 .user.ini
 .htaccess
+!docker/line-mock-api/public/.htaccess
 
 # セットアップスクリプト
 setup.sh

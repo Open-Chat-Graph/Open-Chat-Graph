@@ -168,15 +168,20 @@ main() {
     # .env.mockを自動設定（固定データモード用）
     log_info ".env.mockを固定データモード用に設定中..."
 
-    # .env.mock.exampleから元のファイルをコピー
-    if [ ! -f .env.mock.example ]; then
-        log_error ".env.mock.exampleが見つかりません"
-        exit 1
+    # .env.mockが存在しない場合のみ.env.mock.exampleからコピー
+    if [ ! -f .env.mock ]; then
+        if [ ! -f .env.mock.example ]; then
+            log_error ".env.mock.exampleが見つかりません"
+            exit 1
+        fi
+        cp .env.mock.example .env.mock
+        log_info ".env.mock.exampleから.env.mockを作成しました"
+    else
+        log_info "既存の.env.mockを使用します（CI環境用の設定を維持）"
     fi
 
-    cp .env.mock.example .env.mock
-
     # 必要な設定を上書き（sedを使用してコメントを保持）
+    # ※TEST_JA_HOURS等は既存の設定を維持（CI環境で事前設定されている場合があるため）
     sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
     sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' .env.mock
 

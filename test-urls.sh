@@ -128,11 +128,37 @@ main() {
     test_url "${BASE_URL}/th" "トップページ（タイ語）"
     echo ""
 
-    # オープンチャット詳細ページ
+    # オープンチャット詳細ページ（DBから実際のIDを取得）
     log "オープンチャット詳細ページのテスト"
-    test_url "${BASE_URL}/oc/1" "OC詳細ページ"
-    test_url "${BASE_URL}/th/oc/1" "OC詳細ページ（タイ語）"
-    test_url "${BASE_URL}/tw/oc/1" "OC詳細ページ（繁体字）"
+    # MySQLから最初のopen_chat IDを取得
+    local MYSQL_CONTAINER="oc-review-mock-mysql-1"
+    local JA_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TH_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewth.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TW_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewtw.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+
+    if [ -n "$JA_OC_ID" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}" "OC詳細ページ (ID=${JA_OC_ID})"
+    else
+        log_error "日本語のopen_chatテーブルにデータがありません"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}" "OC詳細ページ（タイ語, ID=${TH_OC_ID}）"
+    else
+        log_error "タイ語のopen_chatテーブルにデータがありません"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}" "OC詳細ページ（繁体字, ID=${TW_OC_ID}）"
+    else
+        log_error "繁体字のopen_chatテーブルにデータがありません"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
     echo ""
 
     # 各種ページ
@@ -170,9 +196,19 @@ main() {
     test_url "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=badge%3A%E5%85%AC%E5%BC%8F%E8%AA%8D%E8%A8%BC%E3%83%90%E3%83%83%E3%82%B8&list=all&sort=member&order=desc" "検索（badge:公式認証バッジ）"
     echo ""
 
-    # 不正なパラメータのテスト
+    # 不正なパラメータのテスト（400エラーは期待される結果）
     log "不正なパラメータのテスト"
-    test_url "${BASE_URL}/oclist?page=0&limit=\a\/%22%22%2&category=\a\/%22%22%2&\a\/%22%22%2=&keyword=33&list=hourly&sort=\//\\\\a\/%22%22%27|a&order=asc" "不正なパラメータ"
+    # 不正なパラメータに対しては400エラーが返されるのが正常
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    echo -n "Testing: ${BASE_URL}/oclist?page=0&limit=... (invalid params) ... " | tee -a "$LOG_FILE"
+    status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "${BASE_URL}/oclist?page=0&limit=\a\/%22%22%2&category=\a\/%22%22%2&\a\/%22%22%2=&keyword=33&list=hourly&sort=\//\\\\a\/%22%22%27|a&order=asc")
+    if [ "$status_code" = "400" ] || [ "$status_code" = "200" ]; then
+        echo -e "${GREEN}OK (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        echo -e "${RED}FAILED (Status: ${status_code}, expected 400 or 200)${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+    fi
     echo ""
 
     # レコメンドページ

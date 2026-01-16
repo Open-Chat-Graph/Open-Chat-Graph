@@ -52,14 +52,24 @@ fi
 # PHPの設定を更新してmkcertのCA証明書を使用（Mock環境用）
 if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
     echo "Found mkcert root CA certificate"
-    echo "Configuring PHP to trust mkcert CA..."
+    echo "Configuring system and PHP to trust mkcert CA..."
 
-    # 既存のCA証明書とmkcert CAを結合したファイルを作成
-    cat /etc/ssl/certs/ca-certificates.crt /usr/local/share/ca-certificates/mkcert-rootCA.crt > /tmp/combined-ca.crt
+    # CA証明書を直接ca-certificates.crtに追加（update-ca-certificatesが/usr/local/share/を処理しない問題を回避）
+    if [ "$(id -u)" != "0" ]; then
+        if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
+            sudo sh -c 'cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt'
+            echo "mkcert CA added to certificate store"
+        fi
+    else
+        if ! grep -q "mkcert" /etc/ssl/certs/ca-certificates.crt 2>/dev/null; then
+            cat /usr/local/share/ca-certificates/mkcert-rootCA.crt >> /etc/ssl/certs/ca-certificates.crt
+            echo "mkcert CA added to certificate store"
+        fi
+    fi
 
-    # PHPの設定を更新
-    echo "openssl.cafile=/tmp/combined-ca.crt" > /usr/local/etc/php/conf.d/openssl.ini
-    echo "PHP configured to trust mkcert CA"
+    # PHPの設定も更新
+    echo "openssl.cafile=/etc/ssl/certs/ca-certificates.crt" > /usr/local/etc/php/conf.d/openssl.ini
+    echo "System CA store and PHP configured to trust mkcert CA"
 fi
 
 echo "Starting Apache..."

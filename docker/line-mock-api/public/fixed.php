@@ -415,7 +415,7 @@ try {
             $language,
             $hourIndex
         );
-        error_log($debugLog, 3, '/app/data/debug-fixed.log');
+        // デバッグログは削除（JSONレスポンスの前にWarningが出力されるのを防ぐ）
 
         // データ生成（言語に応じたタグを渡す）
         $tags = $popularTags[$language] ?? $popularTags['ja'];
@@ -475,13 +475,7 @@ try {
     if (preg_match('#^/api/square/([a-zA-Z0-9_-]+)\?limit=1$#', $requestUri, $matches)) {
         $emid = $matches[1];
 
-        // デバッグログ
-        error_log(sprintf(
-            "[%s] Square Detail API - EMID: %s, Language: %s\n",
-            date('Y-m-d H:i:s'),
-            $emid,
-            $language
-        ), 3, '/app/data/debug-square-detail.log');
+        // デバッグログ（削除済み - JSONレスポンスへのWarning出力を防ぐ）
 
         // すべてのカテゴリとすべての時間からルームを検索
         $room = null;
@@ -558,28 +552,10 @@ try {
         }
 
         if (!$room) {
-            // デバッグログ
-            error_log(sprintf(
-                "[%s] Square NOT FOUND - EMID: %s, Searched categories: %d, Searched hours: %d\n",
-                date('Y-m-d H:i:s'),
-                $emid,
-                count($categoryIds),
-                $maxHours
-            ), 3, '/app/data/debug-square-detail.log');
-
             http_response_code(404);
             echo json_encode(['error' => 'Square not found', 'emid' => $emid, 'searched_categories' => count($categoryIds), 'searched_hours' => $maxHours]);
             exit;
         }
-
-        // デバッグログ
-        error_log(sprintf(
-            "[%s] Square FOUND - EMID: %s, Category: %d, Type: %s\n",
-            date('Y-m-d H:i:s'),
-            $emid,
-            $room['category'] ?? 'unknown',
-            $room['type'] ?? 'unknown'
-        ), 3, '/app/data/debug-square-detail.log');
 
         // invitationTicket生成
         $invitationTicket = substr($room['emid'], 0, 10);

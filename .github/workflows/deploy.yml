@@ -14,6 +14,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # PRマージ時はCIテストが成功しているか確認
+    - name: Check CI status
+      if: github.event_name == 'pull_request'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
+
+        # PRのhead SHA を取得
+        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+        # CI Test ワークフローの結果を確認
+        CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
+          --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
+
+        echo "CI Test status: $CI_STATUS"
+
+        if [ "$CI_STATUS" != "success" ]; then
+          echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
+          exit 1
+        fi
+
+        echo "CI Test passed. Proceeding with deployment."
+
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh

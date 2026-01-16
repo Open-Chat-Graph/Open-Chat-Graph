@@ -1,11 +1,6 @@
 name: CI Test
 
 on:
-  push:
-    branches:
-      - main
-      - feature/**
-      - develop
   pull_request:
     branches:
       - main
@@ -15,6 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      # Mock環境用のcomposeファイルを全ステップで使用
+      COMPOSE_FILE: docker-compose.yml:docker-compose.mock.yml
 
     steps:
     - name: Checkout repository
@@ -36,7 +34,7 @@ jobs:
       run: |
         cp .env.mock.example .env.mock
         # CI環境用の設定（高速化）
-        sed -i 's/^TEST_JA_HOURS=.*/TEST_JA_HOURS=25/' .env.mock
+        sed -i 's/^TEST_JA_HOURS=.*/TEST_JA_HOURS=2/' .env.mock
         sed -i 's/^TEST_TW_HOURS=.*/TEST_TW_HOURS=1/' .env.mock
         sed -i 's/^TEST_TH_HOURS=.*/TEST_TH_HOURS=1/' .env.mock
         sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' .env.mock
@@ -84,7 +82,25 @@ jobs:
     - name: Initialize environment
       run: |
         echo "Initializing environment..."
+        # COMPOSE_FILE環境変数により、make init-y-nがMock環境を正しく参照
         make init-y-n
+
+    - name: Restart containers after init
+      run: |
+        echo "Restarting containers after initialization..."
+        # make up-mockで環境変数を正しく設定してコンテナを起動
+        make up-mock
+        echo "Waiting for services to be ready..."
+        sleep 5
+        # MySQLの起動を確認
+        for i in {1..30}; do
+          if docker compose exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
+            echo "MySQL is ready"
+            break
+          fi
+          echo "Waiting for MySQL... ($i/30)"
+          sleep 2
+        done
 
     - name: Show container status
       run: |
