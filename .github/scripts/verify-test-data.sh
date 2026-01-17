@@ -115,12 +115,41 @@ get_mysql_count() {
         -e "SELECT COUNT(*) FROM ${database}.${table}" 2>/dev/null || echo "0"
 }
 
+# MySQLのレコード数を条件付きで取得
+get_mysql_count_with_where() {
+    local database=$1
+    local table=$2
+    local where_clause=$3
+
+    docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN \
+        -e "SELECT COUNT(*) FROM ${database}.${table} WHERE ${where_clause}" 2>/dev/null || echo "0"
+}
+
+# MySQLで条件に一致しないレコード数を取得（検証用）
+get_mysql_invalid_count() {
+    local database=$1
+    local table=$2
+    local where_clause=$3
+
+    docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN \
+        -e "SELECT COUNT(*) FROM ${database}.${table} WHERE NOT (${where_clause})" 2>/dev/null || echo "0"
+}
+
 # ディレクトリ内のwebp画像数を取得
 get_webp_count() {
     local dir=$1
 
     docker exec "$APP_CONTAINER" bash -c \
         "find ${dir} -maxdepth 1 -name '*.webp' -type f 2>/dev/null | wc -l" || echo "0"
+}
+
+# SQLiteのレコード数を取得
+get_sqlite_count() {
+    local db_path=$1
+    local table=$2
+
+    docker exec "$APP_CONTAINER" bash -c \
+        "sqlite3 ${db_path} 'SELECT COUNT(*) FROM ${table}' 2>/dev/null" || echo "0"
 }
 
 # メイン処理
@@ -146,54 +175,148 @@ main() {
     log_info "MySQLテーブルのレコード数を確認中..."
     echo ""
 
-    # ocgraph_ocreview.open_chat (2000件以上)
-    # コメントテーブルはクローリングでは更新されないため、メインのopen_chatテーブルを確認
-    count=$(get_mysql_count "ocgraph_ocreview" "open_chat")
-    test_result "ocgraph_ocreview.open_chat" 2000 "$count" "ge"
+    # 多言語対応: JA, TW, TH
+    declare -A lang_configs=(
+        ["ja"]="ocgraph_ocreview:2000:ocgraph_ranking"
+        ["tw"]="ocgraph_ocreviewtw:1000:ocgraph_rankingtw"
+        ["th"]="ocgraph_ocreviewth:1000:ocgraph_rankingth"
+    )
 
-    # ocgraph_ocreviewth.open_chat (1000件以上)
-    count=$(get_mysql_count "ocgraph_ocreviewth" "open_chat")
-    test_result "ocgraph_ocreviewth.open_chat" 1000 "$count" "ge"
+    # 各言語のテーブルを確認
+    for lang in ja tw th; do
+        IFS=':' read -r db_name min_count ranking_db <<< "${lang_configs[$lang]}"
 
-    # ocgraph_ocreviewtw.open_chat (1000件以上)
-    count=$(get_mysql_count "ocgraph_ocreviewtw" "open_chat")
-    test_result "ocgraph_ocreviewtw.open_chat" 1000 "$count" "ge"
-
-    # ocgraph_ocreview.statistics_ranking_hour (10件以上)
-    count=$(get_mysql_count "ocgraph_ocreview" "statistics_ranking_hour")
-    test_result "ocgraph_ocreview.statistics_ranking_hour" 10 "$count" "ge"
-
-    # ocgraph_ocreview.statistics_ranking_hour24 (24時間ランキングはテスト時間では生成されないためスキップ)
-    # count=$(get_mysql_count "ocgraph_ocreview" "statistics_ranking_hour24")
-    # test_result "ocgraph_ocreview.statistics_ranking_hour24" 10 "$count" "ge"
-
-    # ocgraph_ocreview.user_log (0件)
-    count=$(get_mysql_count "ocgraph_ocreview" "user_log")
-    test_result "ocgraph_ocreview.user_log" 0 "$count" "eq"
-
-    # user_logに記録がある場合、内容を表示
-    if [ "$count" -gt 0 ]; then
+        log_info "--- ${lang^^} 言語のデータを確認 ---"
         echo ""
-        log_warn "user_logに${count}件の記録があります。内容を確認してください："
-        docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -e "SELECT * FROM ocgraph_ocreview.user_log ORDER BY id DESC LIMIT 10" 2>/dev/null || true
-        echo ""
-    fi
 
-    # ocgraph_ranking.ranking (500件以上)
-    count=$(get_mysql_count "ocgraph_ranking" "ranking")
-    test_result "ocgraph_ranking.ranking" 500 "$count" "ge"
+        # open_chat (メインテーブル)
+        count=$(get_mysql_count "$db_name" "open_chat")
+        test_result "${db_name}.open_chat" "$min_count" "$count" "ge"
+
+        # open_chat WHERE url IS NOT NULL (URLが存在するレコード)
+        count=$(get_mysql_count_with_where "$db_name" "open_chat" "url IS NOT NULL")
+        test_result "${db_name}.open_chat (url IS NOT NULL)" 100 "$count" "ge"
+
+        # statistics_ranking_hour (統計ランキング)
+        count=$(get_mysql_count "$db_name" "statistics_ranking_hour")
+        test_result "${db_name}.statistics_ranking_hour" 1000 "$count" "ge"
+
+        # statistics_ranking_hour24 (24時間統計ランキング)
+        count=$(get_mysql_count "$db_name" "statistics_ranking_hour24")
+        test_result "${db_name}.statistics_ranking_hour24" 1000 "$count" "ge"
+
+        # sync_open_chat_state (bool カラムが全て 0)
+        count=$(get_mysql_invalid_count "$db_name" "sync_open_chat_state" "bool = 0")
+        test_result "${db_name}.sync_open_chat_state (bool = 0)" 0 "$count" "eq"
+
+        # sync_open_chat_state (type が ocreviewApiDataImportBackground または rankingPersistenceBackground で extra が '[]' 以外のレコードが0件)
+        count=$(get_mysql_count_with_where "$db_name" "sync_open_chat_state" "type IN ('ocreviewApiDataImportBackground', 'rankingPersistenceBackground') AND extra != '[]'")
+        test_result "${db_name}.sync_open_chat_state (type指定で extra != '[]')" 0 "$count" "eq"
+
+        # recommend (おすすめテーブル)
+        count=$(get_mysql_count "$db_name" "recommend")
+        test_result "${db_name}.recommend" 3 "$count" "ge"
+
+        # oc_tag (タグテーブル)
+        count=$(get_mysql_count "$db_name" "oc_tag")
+        test_result "${db_name}.oc_tag" 3 "$count" "ge"
+
+        # user_log (エラーログ: 0件期待)
+        count=$(get_mysql_count "$db_name" "user_log")
+        test_result "${db_name}.user_log" 0 "$count" "eq"
+
+        # user_logに記録がある場合、内容を表示
+        if [ "$count" -gt 0 ]; then
+            echo ""
+            log_warn "user_logに${count}件の記録があります。内容を確認してください："
+            docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -e "SELECT * FROM ${db_name}.user_log ORDER BY id DESC LIMIT 10" 2>/dev/null || true
+            echo ""
+        fi
+
+        # ranking テーブル (500件以上)
+        count=$(get_mysql_count "$ranking_db" "ranking")
+        test_result "${ranking_db}.ranking" 500 "$count" "ge"
+
+        # SQLite: ranking_position.db
+        sqlite_ranking_path="/var/www/html/storage/${lang}/SQLite/ranking_position/ranking_position.db"
+
+        count=$(get_sqlite_count "$sqlite_ranking_path" "ranking")
+        test_result "storage/${lang}/SQLite/ranking_position.db (ranking)" 1000 "$count" "ge"
+
+        count=$(get_sqlite_count "$sqlite_ranking_path" "rising")
+        test_result "storage/${lang}/SQLite/ranking_position.db (rising)" 1000 "$count" "ge"
+
+        # SQLite: statistics.db
+        sqlite_stats_path="/var/www/html/storage/${lang}/SQLite/statistics/statistics.db"
+
+        count=$(get_sqlite_count "$sqlite_stats_path" "statistics")
+        test_result "storage/${lang}/SQLite/statistics.db (statistics)" 2000 "$count" "ge"
+
+        # SQLite: sqlapi.db (日本語のみ - 件数一致テスト)
+        if [ "$lang" = "ja" ]; then
+            sqlite_sqlapi_path="/var/www/html/storage/${lang}/SQLite/ocgraph_sqlapi/sqlapi.db"
+
+            # daily_member_statistics → storage/ja/SQLite/statistics.db の statistics テーブル以上
+            local statistics_count=$(get_sqlite_count "$sqlite_stats_path" "statistics")
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "daily_member_statistics")
+            test_result "sqlapi.db (daily_member_statistics) >= statistics.db (statistics)" "$statistics_count" "$count" "ge"
+
+            # growth_ranking_past_24_hours → ocgraph_ocreview.statistics_ranking_hour24 と件数が一致
+            local hour24_count=$(get_mysql_count "$db_name" "statistics_ranking_hour24")
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "growth_ranking_past_24_hours")
+            test_result "sqlapi.db (growth_ranking_past_24_hours) = ${db_name}.statistics_ranking_hour24" "$hour24_count" "$count" "eq"
+
+            # growth_ranking_past_hour → ocgraph_ocreview.statistics_ranking_hour と件数が一致
+            local hour_count=$(get_mysql_count "$db_name" "statistics_ranking_hour")
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "growth_ranking_past_hour")
+            test_result "sqlapi.db (growth_ranking_past_hour) = ${db_name}.statistics_ranking_hour" "$hour_count" "$count" "eq"
+
+            # line_official_ranking_total_count → storage/ja/SQLite/ranking_position.db の total_count テーブルと件数が一致
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "line_official_ranking_total_count")
+            local total_count_count=$(get_sqlite_count "$sqlite_ranking_path" "total_count")
+            test_result "sqlapi.db (line_official_ranking_total_count) = ranking_position.db (total_count)" "$total_count_count" "$count" "eq"
+
+            # open_chat_deleted → ocgraph_ocreview.open_chat_deleted と件数が一致
+            local deleted_count=$(get_mysql_count "$db_name" "open_chat_deleted")
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "open_chat_deleted")
+            test_result "sqlapi.db (open_chat_deleted) = ${db_name}.open_chat_deleted" "$deleted_count" "$count" "eq"
+
+            # openchat_master → ocgraph_ocreview.open_chat 以上
+            local open_chat_count=$(get_mysql_count "$db_name" "open_chat")
+            count=$(get_sqlite_count "$sqlite_sqlapi_path" "openchat_master")
+            test_result "sqlapi.db (openchat_master) >= ${db_name}.open_chat" "$open_chat_count" "$count" "ge"
+        fi
+
+        echo ""
+    done
 
     echo ""
     log_info "画像ファイルの存在を確認中..."
     echo ""
 
-    # public/oc-img/0 の .webp画像 (10件以上)
-    count=$(get_webp_count "/var/www/html/public/oc-img/0")
-    test_result "public/oc-img/0 の .webp画像" 10 "$count" "ge"
+    # 各言語の画像ディレクトリを確認
+    declare -A img_dirs=(
+        ["ja"]="oc-img"
+        ["tw"]="oc-img-tw"
+        ["th"]="oc-img-th"
+    )
 
-    # public/oc-img/preview/0 の .webp画像 (10件以上)
-    count=$(get_webp_count "/var/www/html/public/oc-img/preview/0")
-    test_result "public/oc-img/preview/0 の .webp画像" 10 "$count" "ge"
+    for lang in ja tw th; do
+        img_dir="${img_dirs[$lang]}"
+
+        log_info "--- ${lang^^} 言語の画像を確認 ---"
+        echo ""
+
+        # 通常画像
+        count=$(get_webp_count "/var/www/html/public/${img_dir}/0")
+        test_result "public/${img_dir}/0 の .webp画像" 10 "$count" "ge"
+
+        # プレビュー画像
+        count=$(get_webp_count "/var/www/html/public/${img_dir}/preview/0")
+        test_result "public/${img_dir}/preview/0 の .webp画像" 10 "$count" "ge"
+
+        echo ""
+    done
 
     echo ""
     log_info "========================================="

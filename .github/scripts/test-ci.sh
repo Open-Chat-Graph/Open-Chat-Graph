@@ -386,18 +386,18 @@ main() {
             log_info "日本語はスキップ（設定: ${JA_HOURS}回まで）"
         fi
 
-        # 毎時35分: 繁体字中国語（時刻を5分進める）
+        # 毎時35分: 繁体字中国語（時刻を1時間5分進める）
         if [ $hour -le $TW_HOURS ]; then
-            run_cron_job "$hour" "繁体字中国語" "/tw" "$((CURRENT_TIME + 300))" &
+            run_cron_job "$hour" "繁体字中国語" "/tw" "$((CURRENT_TIME + 3900))" &
             pids+=($!)
             jobs_executed=$((jobs_executed + 1))
         else
             log_info "繁体字中国語はスキップ（設定: ${TW_HOURS}回まで）"
         fi
 
-        # 毎時40分: タイ語（時刻を10分進める）
+        # 毎時40分: タイ語（時刻を2時間10分進める）
         if [ $hour -le $TH_HOURS ]; then
-            run_cron_job "$hour" "タイ語" "/th" "$((CURRENT_TIME + 600))" &
+            run_cron_job "$hour" "タイ語" "/th" "$((CURRENT_TIME + 7800))" &
             pids+=($!)
             jobs_executed=$((jobs_executed + 1))
         else
@@ -419,11 +419,21 @@ main() {
         local wait_count=0
         local max_wait=120  # 最大2分待機
         while true; do
-            # コンテナ内のPHPバックグラウンドプロセスを確認（cron_crawling.php以外）
-            local php_processes=$(docker exec "$APP_CONTAINER" pgrep -f "php batch/" 2>/dev/null | wc -l)
+            # コンテナ内のPHPバックグラウンドプロセスを確認
+            # ps aux で全プロセスを確認し、batch/ を含むPHPプロセスをカウント（ただしgrepプロセス自体は除外）
+            local php_processes=$(docker exec "$APP_CONTAINER" sh -c "ps aux | grep -E 'php.*batch/' | grep -v grep" 2>/dev/null | wc -l)
+
             if [ "$php_processes" -eq 0 ]; then
                 log_info "✓ すべてのバックグラウンドプロセスが完了しました"
                 break
+            fi
+
+            # 初回とタイムアウト前には実行中のプロセス詳細をログに出力
+            if [ $wait_count -eq 0 ] || [ $wait_count -eq $((max_wait - 5)) ]; then
+                log_info "実行中のバックグラウンドプロセス（${php_processes}個）:"
+                docker exec "$APP_CONTAINER" sh -c "ps aux | grep -E 'php.*batch/' | grep -v grep" 2>/dev/null | while read line; do
+                    log_info "  $line"
+                done
             fi
 
             wait_count=$((wait_count + 1))
@@ -446,6 +456,59 @@ main() {
         log_info "DB状況 - 日本語: ${ja_count}件, 繁体字: ${tw_count}件, タイ語: ${th_count}件"
 
         echo "" | tee -a "$LOG_FILE"
+    done
+
+    log "========================================="
+    log "APIデータインポート処理を実行"
+    log "========================================="
+
+    log_info "ocreview_api_data_import_background.phpを実行中..."
+    local import_start_time=$(date +%s)
+
+    # -i フラグで標準入力を開いたまま実行（プロセスが完全に終了するまで待機）
+    docker exec -i "$APP_CONTAINER" /usr/local/bin/php batch/exec/ocreview_api_data_import_background.php 2>&1 | tee "$LOG_DIR/api_data_import.log"
+
+    local import_exit_code=$?
+    local import_end_time=$(date +%s)
+    local import_duration=$((import_end_time - import_start_time))
+    local import_minutes=$((import_duration / 60))
+    local import_seconds=$((import_duration % 60))
+
+    if [ $import_exit_code -eq 0 ]; then
+        log_success "APIデータインポート完了（${import_minutes}分${import_seconds}秒）"
+    else
+        log_error "APIデータインポート失敗（終了コード: ${import_exit_code}）"
+        exit 1
+    fi
+
+    # 念のため、バックグラウンドプロセスがすべて終了するまで待機
+    log_info "すべてのバックグラウンドプロセスの終了を確認中..."
+    local wait_count=0
+    local max_wait=60  # 最大1分待機
+    while true; do
+        # ps aux で全プロセスを確認し、batch/ を含むPHPプロセスをカウント（ただしgrepプロセス自体は除外）
+        local php_processes=$(docker exec "$APP_CONTAINER" sh -c "ps aux | grep -E 'php.*batch/' | grep -v grep" 2>/dev/null | wc -l)
+
+        if [ "$php_processes" -eq 0 ]; then
+            log_info "✓ すべてのバックグラウンドプロセスが完了しました"
+            break
+        fi
+
+        # 初回とタイムアウト前には実行中のプロセス詳細をログに出力
+        if [ $wait_count -eq 0 ] || [ $wait_count -eq $((max_wait - 5)) ]; then
+            log_info "実行中のバックグラウンドプロセス（${php_processes}個）:"
+            docker exec "$APP_CONTAINER" sh -c "ps aux | grep -E 'php.*batch/' | grep -v grep" 2>/dev/null | while read line; do
+                log_info "  $line"
+            done
+        fi
+
+        wait_count=$((wait_count + 1))
+        if [ $wait_count -ge $max_wait ]; then
+            log_warn "バックグラウンドプロセスの待機がタイムアウトしました（${php_processes}個のプロセスがまだ実行中）"
+            break
+        fi
+
+        sleep 1
     done
 
     log "========================================="
