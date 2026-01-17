@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\SecretsConfig;
-use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Dto\CommentPostApiArgs;

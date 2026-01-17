@@ -7,6 +7,7 @@ use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\OcreviewApiDataImporter;
 use App\Services\Cron\Utility\CronUtility;
+use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600 * 2);
@@ -57,6 +58,5 @@ try {
 } catch (\Throwable $e) {
     CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
-
-    // エラー時は状態を残す（メインプロセスがプロセス死亡を検知できるように）
+    ExceptionHandler::errorLog($e);
 }
