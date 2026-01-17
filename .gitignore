@@ -54,11 +54,7 @@ storage/*/SQLite/ocgraph_sqlapi/*.db
 storage/*/SQLite/*/*.db-shm
 storage/*/SQLite/*/*.db-wal
 storage/*/ranking_position/*/*
-storage/*/ranking_position/filter.dat
-storage/*/ranking_position/filter_date.dat
-storage/*/ranking_position/filter_member_change.dat
-storage/*/ranking_position/filter_new_rooms.dat
-storage/*/ranking_position/filter_weekly_update.dat
+storage/*/ranking_position/*.dat
 storage/*/static_data_top/*
 !storage/*/static_data_top/non_essential_storage_file_sample
 storage/*/static_data_recommend/*/*
@@ -68,7 +64,6 @@ storage/*/open_chat_sub_categories/subcategories.json
 /docker/app/ssl/*.pem
 /docker/app/ssl-new/*.pem
 /docker/app/logs/*.log
-/docker/line-mock-api/ssl/*.pem
 /docker/line-mock-api/data/
 /docker/line-mock-api/storage/*
 
@@ -77,8 +72,6 @@ storage/*/open_chat_sub_categories/subcategories.json
 
 # テスト関連
 test-logs/
-check_*.php
-test-*-quick.sh
 
 # 例外: .gitkeepは含める
 !*.gitkeep

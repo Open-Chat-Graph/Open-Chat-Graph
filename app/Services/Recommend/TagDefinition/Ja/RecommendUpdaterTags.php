@@ -93,9 +93,10 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getNameStrongTags(): array
     {
         $tags = [
-            ["シール", ["シール_AND_情報", "シル活", "ポンポンドロップ", "シール_AND_共有", "シルパト"]],
+            ["シール", ["シール_AND_情報", "シル活", "ポンポンドロップ", "シール_AND_共有", "シルパト", "ドロップシール", "シール集め", "シール_AND_収集", "シール_AND_交換"]],
             "御朱印",
             "神社",
+            "ALD1",
             ["IVE", ["IVE_AND_シリアル", "IVE_AND_波", "IVE_AND_当選"]],
             ["ひとり旅", ["一人旅", "ひとり旅", "1人旅"]],
             "カブアンド",
@@ -319,6 +320,7 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getAfterDescStrongTags(): array
     {
         $tag = [
+            ["シール", ["シール_AND_情報", "シル活", "ポンポンドロップ", "シール_AND_共有", "シルパト", "ドロップシール", "シール集め", "シール_AND_収集", "シール_AND_交換"]],
             ["クーポン・無料配布", ["クーポン"]],
             ["KAUCHE（カウシェ）", ["カウシェ"]],
             "70代",
