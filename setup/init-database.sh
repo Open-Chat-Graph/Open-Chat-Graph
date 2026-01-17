@@ -5,7 +5,6 @@
 
 set -e
 
-MYSQL_CONTAINER="oc-review-mock-mysql-1"
 SCHEMA_DIR="$(cd "$(dirname "$0")/schema/mysql" && pwd)"
 MYSQL_USER="root"
 MYSQL_PASSWORD="test_root_pass"
@@ -13,20 +12,28 @@ MYSQL_PASSWORD="test_root_pass"
 echo "================================"
 echo "データベース初期構築"
 echo "================================"
-echo "Container: $MYSQL_CONTAINER"
-echo "User: $MYSQL_USER"
-echo ""
 
-# コンテナが起動しているか確認
-if ! docker ps --format '{{.Names}}' | grep -q "^${MYSQL_CONTAINER}$"; then
-    echo "エラー: コンテナ ${MYSQL_CONTAINER} が起動していません"
+# docker composeでMySQLサービスが起動しているか確認
+COMPOSE_FILES=""
+if [ -f "docker-compose.ci.yml" ] && docker compose -f docker-compose.yml -f docker-compose.ci.yml ps mysql 2>/dev/null | grep -q "Up"; then
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.ci.yml"
+elif docker compose -f docker-compose.yml -f docker-compose.mock.yml ps mysql 2>/dev/null | grep -q "Up"; then
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.mock.yml"
+elif docker compose ps mysql 2>/dev/null | grep -q "Up"; then
+    COMPOSE_FILES=""
+else
+    echo "エラー: MySQLコンテナが起動していません"
     echo "先に環境を起動してください:"
-    echo "  make up"
+    echo "  make up または make up-mock"
     exit 1
 fi
 
-# MySQLコマンド構築（Docker exec経由）
-MYSQL_CMD="docker exec -i $MYSQL_CONTAINER mysql -u$MYSQL_USER -p$MYSQL_PASSWORD"
+echo "MySQL: docker compose ${COMPOSE_FILES} exec mysql"
+echo "User: $MYSQL_USER"
+echo ""
+
+# MySQLコマンド構築（docker compose経由）
+MYSQL_CMD="docker compose ${COMPOSE_FILES} exec -T mysql mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}"
 
 # スキーマファイルの順序（依存関係を考慮）
 SCHEMA_FILES=(

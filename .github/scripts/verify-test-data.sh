@@ -4,9 +4,18 @@
 
 set -e
 
-# 設定
-APP_CONTAINER="oc-review-mock-app-1"
-MYSQL_CONTAINER="oc-review-mock-mysql-1"
+# CI環境判定とCompose設定
+if [ -n "$CI" ]; then
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.ci.yml"
+else
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.mock.yml"
+fi
+
+COMPOSE_CMD="docker compose ${COMPOSE_FILES}"
+
+# コンテナ名を動的に取得
+APP_CONTAINER=$(${COMPOSE_CMD} ps -q app 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
+MYSQL_CONTAINER=$(${COMPOSE_CMD} ps -q mysql 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
 
 # 色付き出力
 RED='\033[0;31m'

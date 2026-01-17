@@ -111,7 +111,7 @@ make help      # 全コマンド表示
 - MySQL: localhost:3306（共有）
 - LINE Mock API: http://localhost:9000
 
-MySQLコマンド例: `docker exec oc-review-mock-mysql-1 mysql -uroot -ptest_root_pass -e "SELECT 1"`
+MySQLコマンド例: `docker compose exec mysql mysql -uroot -ptest_root_pass -e "SELECT 1"`
 
 **注意:**
 - HTTPは自動的にHTTPSにリダイレクトされます

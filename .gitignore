@@ -72,6 +72,9 @@ storage/*/open_chat_sub_categories/subcategories.json
 /docker/line-mock-api/data/
 /docker/line-mock-api/storage/*
 
+# 別端末用のルートCA証明書（スマホ等でHTTPS接続する際に使用）
+*-rootCA.pem
+
 # テスト関連
 test-logs/
 check_*.php

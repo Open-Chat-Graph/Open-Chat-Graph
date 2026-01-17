@@ -4,6 +4,18 @@
 
 set -e
 
+# CI環境判定とCompose設定
+if [ -n "$CI" ]; then
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.ci.yml"
+else
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.mock.yml"
+fi
+
+COMPOSE_CMD="docker compose ${COMPOSE_FILES}"
+
+# コンテナ名を動的に取得
+MYSQL_CONTAINER=$(${COMPOSE_CMD} ps -q mysql 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
+
 # 色付き出力
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -135,7 +147,6 @@ main() {
     # オープンチャット詳細ページ（DBから実際のIDと日付を取得）
     log "オープンチャット詳細ページのテスト"
     # MySQLから最初のopen_chat IDとcreated_atを取得
-    local MYSQL_CONTAINER="oc-review-mock-mysql-1"
     local JA_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
     local JA_OC_ID=$(echo "$JA_OC_DATA" | awk '{print $1}')
     local JA_START_DATE=$(echo "$JA_OC_DATA" | awk '{print $2}')

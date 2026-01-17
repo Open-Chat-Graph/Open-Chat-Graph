@@ -10,13 +10,17 @@
 
 set -e
 
+# Compose設定
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.mock.yml"
+COMPOSE_CMD="docker compose ${COMPOSE_FILES}"
+
 # 設定
-COMPOSE_FILE="docker-compose.yml"
-MOCK_COMPOSE_FILE="docker-compose.mock.yml"
-APP_CONTAINER="oc-review-mock-app-1"
-MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
 LOG_DIR="./test-logs"
 TOTAL_HOURS=24
+
+# コンテナ名を動的に取得
+APP_CONTAINER=$(${COMPOSE_CMD} ps -q app 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
+MOCK_CONTAINER=$(${COMPOSE_CMD} ps -q line-mock-api 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
 
 # コマンドラインから渡された環境変数を保存（.env.mockより優先）
 CMDLINE_TEST_JA_HOURS=${TEST_JA_HOURS:-}

@@ -82,6 +82,13 @@ if [ -f /usr/local/share/ca-certificates/mkcert-rootCA.crt ]; then
     echo "System CA store and PHP configured to trust mkcert CA"
 fi
 
+# Apache設定ファイルのHTTPSポート番号を環境変数で置換
+HTTPS_PORT_VALUE=${HTTPS_PORT:-8443}
+if [ -f /etc/apache2/sites-enabled/000-default.conf ]; then
+    run_as_root sed -i "s/{{HTTPS_PORT}}/${HTTPS_PORT_VALUE}/g" /etc/apache2/sites-enabled/000-default.conf
+    echo "Apache HTTP config updated: HTTPS_PORT=${HTTPS_PORT_VALUE}"
+fi
+
 echo "Starting Apache..."
 
 # Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）

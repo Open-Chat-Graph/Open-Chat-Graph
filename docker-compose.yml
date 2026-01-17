@@ -1,5 +1,3 @@
-name: oc-review-mock
-
 services:
   app:
     build:
@@ -19,8 +17,8 @@ services:
       - "./docker/app/apache2/sites-available/000-default.conf:/etc/apache2/sites-enabled/000-default.conf"
       - "./docker/app/apache2/sites-available/000-default-ssl-prod.conf:/etc/apache2/sites-available/000-default-ssl.conf"
       - "./docker/app/apache2/sites-available/000-default-ssl-prod.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
-      - "./docker/app/ssl-new/ocgraph.test+4.pem:/etc/ssl/certs/ocgraph.test+4.pem"
-      - "./docker/app/ssl-new/ocgraph.test+4-key.pem:/etc/ssl/certs/ocgraph.test+4-key.pem"
+      - "./docker/app/ssl-new/localhost.pem:/etc/ssl/certs/localhost.pem"
+      - "./docker/app/ssl-new/localhost-key.pem:/etc/ssl/certs/localhost-key.pem"
       - "./docker/mysql/server.cnf:/etc/mysql/mariadb.conf.d/server.cnf"
       - "./docker/app/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
     entrypoint: ["/usr/local/bin/entrypoint.sh"]

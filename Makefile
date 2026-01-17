@@ -1,4 +1,14 @@
-.PHONY: help init init-y init-y-n _init up up-cron down restart rebuild ssh up-mock cron cron-stop show ci-test _wait-mysql _is-mock
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test _wait-mysql _is-mock
+
+# .envファイルを読み込み（存在しない場合はスキップ）
+-include .env
+
+# デフォルト値（.envで定義されていない場合に使用）
+HTTPS_PORT ?= 8443
+WEB_PORT ?= 8000
+PHP_MY_ADMIN_PORT ?= 8080
+LINE_MOCK_PORT ?= 9000
+MYSQL_PORT ?= 3306
 
 # カラー定義
 GREEN := \033[0;32m
@@ -8,7 +18,7 @@ NC := \033[0m
 
 # Mock環境かどうかを判定
 _is-mock:
-	@docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1
+	@docker compose ps -a -q line-mock-api 2>/dev/null | grep -q .
 
 # MySQLの準備を待機（内部用ヘルパー）
 _wait-mysql:
@@ -39,6 +49,7 @@ help: ## ヘルプを表示
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
+	@echo "  $(GREEN)make cert$(NC)        - SSL証明書を更新（LAN内ホスト/IPを追加可能）"
 	@echo "  $(GREEN)make init$(NC)        - SSL証明書生成 + 環境初期化"
 	@echo "  $(GREEN)make init-y$(NC)      - 確認なしで初期化"
 	@echo "  $(GREEN)make init-y-n$(NC)    - 確認なしで初期化（local-secrets.phpは保持）"
@@ -55,6 +66,18 @@ init-y-n: ## 初回セットアップ（確認なし、local-secrets.phpは保�
 
 _init:
 	@echo "$(GREEN)初回セットアップを開始します...$(NC)"
+	@# .envファイルがない場合は.env.exampleからコピー
+	@if [ ! -f .env ]; then \
+		if [ -f .env.example ]; then \
+			echo "$(YELLOW).envファイルが存在しません。.env.exampleからコピーします...$(NC)"; \
+			cp .env.example .env; \
+			echo "$(GREEN).envファイルを作成しました。必要に応じて編集してください$(NC)"; \
+		else \
+			echo "$(YELLOW)警告: .env.exampleが見つかりません$(NC)"; \
+		fi; \
+	else \
+		echo "$(GREEN).envファイルは既に存在します$(NC)"; \
+	fi
 	@./docker/app/generate-ssl-certs.sh
 	@# コンテナが停止していれば起動、セットアップ後に停止
 	@CONTAINERS_WERE_STOPPED=0; \
@@ -80,32 +103,32 @@ _init:
 	fi; \
 	if [ $$CONTAINERS_WERE_STOPPED -eq 1 ]; then \
 		echo "$(YELLOW)コンテナを停止します...$(NC)"; \
-		docker compose down; \
+		docker compose --profile dev down; \
 		echo "$(GREEN)コンテナを停止しました$(NC)"; \
 	fi
 	@echo "$(GREEN)初回セットアップが完了しました$(NC)"
 
 # 基本環境
 up: ## 基本環境を起動
-	@if docker network ls | grep -q oc-review-mock_mock-network; then \
+	@if docker compose ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)Mock環境から基本環境に切り替えています...$(NC)"; \
-		$(MAKE) down-mock; \
+		docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml down; \
 	fi
 	@./docker/app/generate-ssl-certs.sh
 	@echo "$(GREEN)基本環境を起動しています...$(NC)"
 	@IS_MOCK_ENVIRONMENT=0 CRON=0 docker compose --profile dev up -d --no-deps --force-recreate app && IS_MOCK_ENVIRONMENT=0 CRON=0 docker compose --profile dev up -d
 	@echo "$(GREEN)基本環境が起動しました$(NC)"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
-	@echo "  https://localhost:8443"
-	@echo "  phpMyAdmin: http://localhost:8080"
+	@echo "  https://localhost:${HTTPS_PORT}"
+	@echo "  phpMyAdmin: http://localhost:${PHP_MY_ADMIN_PORT}"
 
 down: ## 環境を停止（基本・Mock両対応）
 	@echo "$(RED)環境を停止しています...$(NC)"
-	@if docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+	@if docker compose ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)Mock環境を検出しました$(NC)"; \
-		docker compose -f docker-compose.yml -f docker-compose.mock.yml down; \
+		docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml down; \
 	else \
-		docker compose down; \
+		docker compose --profile dev down; \
 	fi
 	@echo "$(RED)環境が停止しました$(NC)"
 
@@ -119,7 +142,7 @@ restart: down ## 環境を再起動（基本・Mock自動判定）
 	fi
 
 rebuild: down ## 環境を再ビルド（基本・Mock自動判定）
-	@if docker ps --format '{{.Names}}' 2>/dev/null | grep -q oc-review-mock-line-mock-api-1 || [ -f docker/line-mock-api/.env.mock ]; then \
+	@if docker compose ps -a -q line-mock-api 2>/dev/null | grep -q . || [ -f docker/line-mock-api/.env.mock ]; then \
 		echo "$(GREEN)Mock環境をビルドしています...$(NC)"; \
 		docker compose -f docker-compose.yml -f docker-compose.mock.yml build; \
 		echo "$(GREEN)ビルドが完了しました$(NC)"; \
@@ -140,7 +163,7 @@ ssh: ## コンテナにログイン（基本・Mock両対応）
 
 # Mock付き環境
 up-mock: ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定を使用）
-	@if docker ps --format '{{.Names}}' | grep -q oc-review-mock-mysql-1 && ! docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1; then \
+	@if docker compose ps -a -q mysql 2>/dev/null | grep -q . && ! docker compose ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
@@ -158,15 +181,15 @@ up-mock: ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定�
 		IS_MOCK_ENVIRONMENT=1 CRON=0 docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml up -d
 	@echo "$(GREEN)Mock付き環境が起動しました$(NC)"
 	@echo "$(YELLOW)アクセスURL:$(NC)"
-	@echo "  https://localhost:8443 (基本環境)"
-	@echo "  phpMyAdmin: http://localhost:8080"
-	@echo "  LINE Mock API: http://localhost:9000"
+	@echo "  https://localhost:${HTTPS_PORT} (基本環境)"
+	@echo "  phpMyAdmin: http://localhost:${PHP_MY_ADMIN_PORT}"
+	@echo "  LINE Mock API: http://localhost:${LINE_MOCK_PORT}"
 	@echo ""
 	@echo "$(YELLOW)設定変更:$(NC) docker/line-mock-api/.env.mockを編集して make restart"
 
 # Cron管理
 cron: ## Cronを有効化（毎時30/35/40分に自動クローリング）
-	@if ! docker ps --format '{{.Names}}' | grep -q oc-review-mock-app-1; then \
+	@if ! docker compose ps -a -q app 2>/dev/null | grep -q .; then \
 		echo "$(RED)コンテナが起動していません$(NC)"; \
 		echo "$(YELLOW)まず 'make up' または 'make up-mock' を実行してください$(NC)"; \
 		exit 1; \
@@ -184,7 +207,7 @@ cron: ## Cronを有効化（毎時30/35/40分に自動クローリング）
 	@$(MAKE) show
 
 cron-stop: ## Cronを無効化
-	@if ! docker ps --format '{{.Names}}' | grep -q oc-review-mock-app-1; then \
+	@if ! docker compose ps -a -q app 2>/dev/null | grep -q .; then \
 		echo "$(RED)コンテナが起動していません$(NC)"; \
 		exit 1; \
 	fi
@@ -201,16 +224,16 @@ show: ## 現在の起動モードを表示
 	@echo "$(GREEN)========================================$(NC)"
 	@echo "$(GREEN)  現在の起動モード$(NC)"
 	@echo "$(GREEN)========================================$(NC)"
-	@if ! docker ps --format '{{.Names}}' | grep -q oc-review-mock-app-1; then \
+	@if ! docker compose ps -a -q app 2>/dev/null | grep -q .; then \
 		echo "$(RED)コンテナが起動していません$(NC)"; \
 		echo ""; \
 		echo "$(YELLOW)利用可能なコマンド:$(NC) make up | make up-mock"; \
 	else \
-		IS_MOCK=$$(docker ps --format '{{.Names}}' | grep -q oc-review-mock-line-mock-api-1 && echo "1" || echo "0"); \
-		DC_CMD=$$([ "$$IS_MOCK" = "1" ] && echo "docker compose -f docker-compose.yml -f docker-compose.mock.yml" || echo "docker compose"); \
+		IS_MOCK=$$(docker compose ps -a -q line-mock-api 2>/dev/null | grep -q . && echo "1" || echo "0"); \
+		DC_CMD=$$([ "$$IS_MOCK" = "1" ] && echo "docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml" || echo "docker compose --profile dev"); \
 		echo "$(YELLOW)環境:$(NC) $$([ "$$IS_MOCK" = "1" ] && echo "Mock付き" || echo "基本")"; \
 		echo "$(YELLOW)起動中:$(NC)"; \
-		docker ps --format '  {{.Names}}' | grep oc-review-mock; \
+		$$DC_CMD ps -a --format '  {{.Name}}'; \
 		echo ""; \
 		if [ "$$IS_MOCK" = "1" ] && [ -f docker/line-mock-api/.env.mock ]; then \
 			echo "$(YELLOW)docker/line-mock-api/.env.mock:$(NC)"; \
@@ -223,6 +246,21 @@ show: ## 現在の起動モードを表示
 		echo "$(YELLOW)Cron:$(NC) $$CRON_STATUS"; \
 	fi
 	@echo "$(GREEN)========================================$(NC)"
+
+cert: ## SSL証明書を更新（LAN内ホスト/IPを追加可能）
+	@./docker/app/generate-ssl-certs.sh --force
+	@echo ""
+	@if docker compose ps -q app 2>/dev/null | grep -q .; then \
+		echo "$(YELLOW)Apacheを再読み込みして証明書を反映します...$(NC)"; \
+		if docker compose ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
+			docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app apachectl graceful; \
+		else \
+			docker compose exec app apachectl graceful; \
+		fi; \
+		echo "$(GREEN)証明書の更新が完了しました$(NC)"; \
+	else \
+		echo "$(YELLOW)appコンテナが起動していないため、次回起動時に新しい証明書が使用されます$(NC)"; \
+	fi
 
 ci-test: ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
 	@echo "$(GREEN)========================================"

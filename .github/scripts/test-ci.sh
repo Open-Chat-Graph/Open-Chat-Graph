@@ -34,17 +34,22 @@
 
 set -e
 
-# 設定
-APP_CONTAINER="oc-review-mock-app-1"
-MOCK_CONTAINER="oc-review-mock-line-mock-api-1"
-MYSQL_CONTAINER="oc-review-mock-mysql-1"
-LOG_DIR="./test-logs"
-# CI環境判定
+# CI環境判定とCompose設定
 if [ -n "$CI" ]; then
-    COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.ci.yml"
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.ci.yml"
 else
-    COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.mock.yml"
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.mock.yml"
 fi
+
+COMPOSE_CMD="docker compose ${COMPOSE_FILES}"
+
+# 設定
+LOG_DIR="./test-logs"
+
+# コンテナ名を動的に取得
+APP_CONTAINER=$(${COMPOSE_CMD} ps -q app 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
+MOCK_CONTAINER=$(${COMPOSE_CMD} ps -q line-mock-api 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
+MYSQL_CONTAINER=$(${COMPOSE_CMD} ps -q mysql 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
 
 # オプションの処理
 AUTO_CONTINUE=false
