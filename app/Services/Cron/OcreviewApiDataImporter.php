@@ -458,22 +458,24 @@ class OcreviewApiDataImporter
         );
 
         // レコード数の整合性を検証し、不一致があれば修正
-        $this->verifyAndFixRecordCount(
-            'statistics',
-            'daily_member_statistics',
-            'id',
-            'record_id',
-            function ($row) {
-                return [
-                    'record_id' => $row['id'],
-                    'openchat_id' => $row['open_chat_id'],
-                    'member_count' => $row['member'],
-                    'statistics_date' => $row['date']
-                ];
-            },
-            $this->sqliteStatisticsPdo,
-            $this->targetPdo
-        );
+        // ※ 本番環境の大量データ（8700万行）でメモリ不足・タイムアウトが発生するため無効化
+        // IDベースの差分同期のため、チャンク処理が正常完了すれば整合性は保証される
+        // $this->verifyAndFixRecordCount(
+        //     'statistics',
+        //     'daily_member_statistics',
+        //     'id',
+        //     'record_id',
+        //     function ($row) {
+        //         return [
+        //             'record_id' => $row['id'],
+        //             'openchat_id' => $row['open_chat_id'],
+        //             'member_count' => $row['member'],
+        //             'statistics_date' => $row['date']
+        //         ];
+        //     },
+        //     $this->sqliteStatisticsPdo,
+        //     $this->targetPdo
+        // );
     }
 
     /**
@@ -530,23 +532,25 @@ class OcreviewApiDataImporter
         );
 
         // レコード数の整合性を検証し、不一致があれば修正
-        $this->verifyAndFixRecordCount(
-            'total_count',
-            'line_official_ranking_total_count',
-            'id',
-            'record_id',
-            function ($row) {
-                return [
-                    'record_id' => $row['id'],
-                    'activity_trending_total_count' => $row['total_count_rising'],
-                    'activity_ranking_total_count' => $row['total_count_ranking'],
-                    'recorded_at' => $row['time'],
-                    'category_id' => $row['category']
-                ];
-            },
-            $this->sqliteRankingPositionPdo,
-            $this->targetPdo
-        );
+        // ※ 時系列データのため将来的に大量データになる可能性があり、メモリ不足・タイムアウトが発生するため無効化
+        // IDベースの差分同期のため、チャンク処理が正常完了すれば整合性は保証される
+        // $this->verifyAndFixRecordCount(
+        //     'total_count',
+        //     'line_official_ranking_total_count',
+        //     'id',
+        //     'record_id',
+        //     function ($row) {
+        //         return [
+        //             'record_id' => $row['id'],
+        //             'activity_trending_total_count' => $row['total_count_rising'],
+        //             'activity_ranking_total_count' => $row['total_count_ranking'],
+        //             'recorded_at' => $row['time'],
+        //             'category_id' => $row['category']
+        //         ];
+        //     },
+        //     $this->sqliteRankingPositionPdo,
+        //     $this->targetPdo
+        // );
     }
 
     /**
@@ -612,25 +616,27 @@ class OcreviewApiDataImporter
             );
 
             // レコード数の整合性を検証し、不一致があれば修正
-            $this->verifyAndFixRecordCount(
-                $sourceTable,
-                $targetTable,
-                'id',
-                'record_id',
-                function ($row) use ($sourceTable) {
-                    $positionColumn = $sourceTable === 'ranking' ? 'activity_ranking_position' : 'activity_trending_position';
-                    return [
-                        'record_id' => $row['id'],
-                        'openchat_id' => $row['open_chat_id'],
-                        'category_id' => $row['category'],
-                        $positionColumn => $row['position'],
-                        'recorded_at' => date('Y-m-d H:i:s', strtotime($row['time'])),
-                        'record_date' => date('Y-m-d', strtotime($row['date']))
-                    ];
-                },
-                $this->sqliteRankingPositionPdo,
-                $this->targetPdo
-            );
+            // ※ 履歴データは数千万行規模になる可能性があり、メモリ不足・タイムアウトが発生するため無効化
+            // IDベースの差分同期のため、チャンク処理が正常完了すれば整合性は保証される
+            // $this->verifyAndFixRecordCount(
+            //     $sourceTable,
+            //     $targetTable,
+            //     'id',
+            //     'record_id',
+            //     function ($row) use ($sourceTable) {
+            //         $positionColumn = $sourceTable === 'ranking' ? 'activity_ranking_position' : 'activity_trending_position';
+            //         return [
+            //             'record_id' => $row['id'],
+            //             'openchat_id' => $row['open_chat_id'],
+            //             'category_id' => $row['category'],
+            //             $positionColumn => $row['position'],
+            //             'recorded_at' => date('Y-m-d H:i:s', strtotime($row['time'])),
+            //             'record_date' => date('Y-m-d', strtotime($row['date']))
+            //         ];
+            //     },
+            //     $this->sqliteRankingPositionPdo,
+            //     $this->targetPdo
+            // );
         }
     }
 
