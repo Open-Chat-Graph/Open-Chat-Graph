@@ -36,15 +36,18 @@ echo ""
 
 # リモートサーバーでのDB存在確認
 echo "リモートサーバーのデータベース存在確認中..."
-REMOTE_DB_CHECK=$(ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" <<EOF
-  for DB_NAME in ${!TABLE_MAP[@]}; do
-    DB_EXISTS=\$(mysql -u "${CONFIG_VARS[REMOTE_MYSQL_USER]}" -p"${CONFIG_VARS[REMOTE_MYSQL_PASS]}" \
-      -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '\$DB_NAME';" -sN)
-    if [ -z "\$DB_EXISTS" ]; then
-      echo "MISSING:\$DB_NAME"
+REMOTE_DB_CHECK=$(ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${!TABLE_MAP[@]}" <<'EOFREMOTE'
+  MYSQL_USER=$1
+  MYSQL_PASS=$2
+  shift 2
+  for DB_NAME in "$@"; do
+    DB_EXISTS=$(MYSQL_PWD="$MYSQL_PASS" mysql -u "$MYSQL_USER" \
+      -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$DB_NAME';" -sN)
+    if [ -z "$DB_EXISTS" ]; then
+      echo "MISSING:$DB_NAME"
     fi
   done
-EOF
+EOFREMOTE
 )
 
 if [ -n "$REMOTE_DB_CHECK" ]; then
@@ -89,21 +92,27 @@ TABLE_VALUES=$(echo "${TABLE_MAP[@]}" | tr ' ' '\n')
 
 # SSHでリモートサーバーに接続してダンプを実行
 echo "リモートサーバーに接続してダンプを実行中..."
-ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" <<EOF
+ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${CONFIG_VARS[REMOTE_DUMP_DIR]}" "$TABLE_KEYS" "$TABLE_VALUES" <<'EOFREMOTE'
+  MYSQL_USER=$1
+  MYSQL_PASS=$2
+  DUMP_DIR=$3
+  TABLE_KEYS=$4
+  TABLE_VALUES=$5
+
   # ダンプディレクトリの準備
-  mkdir -p ${CONFIG_VARS[REMOTE_DUMP_DIR]}
-  rm -rf ${CONFIG_VARS[REMOTE_DUMP_DIR]}/*
+  mkdir -p "$DUMP_DIR"
+  rm -rf "$DUMP_DIR"/*
 
   # テーブル名をループで処理
   TABLE_KEYS=($TABLE_KEYS)
   TABLE_VALUES=($TABLE_VALUES)
-  for i in \${!TABLE_KEYS[@]}; do
-    SOURCE_TABLE=\${TABLE_KEYS[\$i]}
-    FILE_NAME=\${TABLE_VALUES[\$i]}.sql
-    echo "  ダンプ中: \$SOURCE_TABLE"
-    mysqldump -u "${CONFIG_VARS[REMOTE_MYSQL_USER]}" -p"${CONFIG_VARS[REMOTE_MYSQL_PASS]}" --add-drop-table \$SOURCE_TABLE > "${CONFIG_VARS[REMOTE_DUMP_DIR]}/\$FILE_NAME"
+  for i in ${!TABLE_KEYS[@]}; do
+    SOURCE_TABLE=${TABLE_KEYS[$i]}
+    FILE_NAME=${TABLE_VALUES[$i]}.sql
+    echo "  ダンプ中: $SOURCE_TABLE"
+    MYSQL_PWD="$MYSQL_PASS" mysqldump -u "$MYSQL_USER" --add-drop-table $SOURCE_TABLE > "$DUMP_DIR/$FILE_NAME"
   done
-EOF
+EOFREMOTE
 
 if [ $? -ne 0 ]; then
   echo "Error: リモートサーバーでのダンプ実行に失敗しました。" >&2
