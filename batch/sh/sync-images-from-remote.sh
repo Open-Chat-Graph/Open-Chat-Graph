@@ -36,10 +36,6 @@ REMOTE_IMG_BASE="${CONFIG_VARS[REMOTE_IMG_BASE]}"
 # ローカルの画像ディレクトリパス
 LOCAL_IMG_BASE="${PROJECT_ROOT}/public"
 
-# 一時ディレクトリ
-TEMP_DIR="${PROJECT_ROOT}/batch/sh/tmp-images"
-mkdir -p "${TEMP_DIR}"
-
 # 同期する画像ディレクトリのリスト
 IMG_DIRS=(
   "oc-img"
@@ -47,64 +43,22 @@ IMG_DIRS=(
   "oc-img-tw"
 )
 
-echo "リモートサーバーで画像をzip圧縮中..."
-ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" <<EOF
-  cd ${REMOTE_IMG_BASE}
-  for DIR_NAME in ${IMG_DIRS[@]}; do
-    echo "  圧縮中: \$DIR_NAME"
-    zip -r -q "/tmp/\${DIR_NAME}.zip" "\$DIR_NAME" -x "*/preview/default/*" "*/default/*"
-  done
-EOF
-
-if [ $? -ne 0 ]; then
-  echo "Error: リモートサーバーでのzip圧縮に失敗しました。" >&2
-  exit 1
-fi
-
-echo "✓ リモートサーバーでの圧縮が完了しました。"
-echo ""
-
 for DIR_NAME in "${IMG_DIRS[@]}"; do
-  echo "SCPでzipファイルを取得中: ${DIR_NAME}.zip"
+  echo "同期中: ${DIR_NAME}"
 
-  # zipファイルをSCPで取得
-  scp -P "${CONFIG_VARS[REMOTE_PORT]}" -i "${CONFIG_VARS[REMOTE_KEY]}" \
-    "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}:/tmp/${DIR_NAME}.zip" \
-    "${TEMP_DIR}/"
-
-  if [ $? -ne 0 ]; then
-    echo "Warning: ${DIR_NAME}.zip の取得に失敗しました。" >&2
-    continue
-  fi
-
-  echo "✓ ${DIR_NAME}.zip を取得しました。"
-
-  # 解凍
-  echo "解凍中: ${DIR_NAME}"
-  unzip -q -o "${TEMP_DIR}/${DIR_NAME}.zip" -d "${LOCAL_IMG_BASE}/"
+  # SCPで直接ディレクトリを同期
+  scp -r -P "${CONFIG_VARS[REMOTE_PORT]}" -i "${CONFIG_VARS[REMOTE_KEY]}" \
+    "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}:${REMOTE_IMG_BASE}/${DIR_NAME}" \
+    "${LOCAL_IMG_BASE}/"
 
   if [ $? -ne 0 ]; then
-    echo "Warning: ${DIR_NAME}.zip の解凍に失敗しました。" >&2
+    echo "Warning: ${DIR_NAME} の同期に失敗しました。" >&2
   else
-    echo "✓ ${DIR_NAME} を解凍しました。"
+    echo "✓ ${DIR_NAME} を同期しました。"
   fi
-
-  # ローカルの一時ファイルを削除
-  rm -f "${TEMP_DIR}/${DIR_NAME}.zip"
 
   echo ""
 done
-
-# リモートの一時ファイルを削除
-echo "リモートサーバーの一時ファイルを削除中..."
-ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" <<EOF
-  for DIR_NAME in ${IMG_DIRS[@]}; do
-    rm -f "/tmp/\${DIR_NAME}.zip"
-  done
-EOF
-
-# ローカルの一時ディレクトリを削除
-rm -rf "${TEMP_DIR}"
 
 # ========================================
 # 完了

@@ -285,3 +285,24 @@ fix: 統計データ抽出クエリの重複実行を防止してDB負荷を軽�
 - dailyTask → オープンチャットの日次データ更新処理（毎日23:30実行）
 - hourlyTask → オープンチャットの毎時ランキング更新処理（毎時30分実行）
 - getMemberChangeWithinLastWeekCacheArray → 統計データ抽出処理（メンバー数が変動している部屋を取得）
+
+### Bypassing CI/CD
+
+**Skip CI Tests and Deployment:**
+For urgent fixes or trivial changes (typos, documentation updates) that don't need testing or production deployment:
+- Add `skip-ci` label to the PR
+- Or prefix the PR title with `skip-ci:`
+
+Example: `skip-ci: Fix typo in README`
+
+**Important**: When `skip-ci` is used:
+- CI tests are skipped
+- Production deployment is completely skipped
+- Changes are merged to main but NOT deployed to the live site
+
+**Skip Social Media Post:**
+To skip the automatic X (Twitter) post after merge (but still run CI and deploy):
+- Add `skip-post` label to the PR
+- Or prefix the PR title with `skip-post:`
+
+Example: `skip-post: Internal configuration update`

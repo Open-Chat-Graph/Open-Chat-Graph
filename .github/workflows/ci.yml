@@ -8,6 +8,12 @@ on:
 
 jobs:
   test:
+    # skip-ciラベルまたはタイトルプレフィックスがある場合はスキップ
+    # workflow_dispatch（手動実行）の場合は常に実行
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (!contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+       !startsWith(github.event.pull_request.title, 'skip-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

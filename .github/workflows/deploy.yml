@@ -10,7 +10,12 @@ on:
 jobs:
   deploy:
     # PRがマージされた場合、または手動実行時に実行
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    # ただし、skip-ciラベル/タイトルがある場合はスキップ
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+       !startsWith(github.event.pull_request.title, 'skip-ci'))
     runs-on: ubuntu-latest
 
     steps:
