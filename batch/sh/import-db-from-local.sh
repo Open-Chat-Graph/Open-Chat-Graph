@@ -2,7 +2,15 @@
 
 # ローカル開発環境用MySQLインポートスクリプト
 # batch/sh/sqldump/ 以下のSQLファイルをMySQLにインポート
-# appコンテナの内側から実行: docker compose exec app bash batch/sh/import-local-mysql.sh
+#
+# 使用方法:
+#   docker compose exec app bash batch/sh/import-db-from-local.sh
+#
+# 環境変数でオーバーライド:
+#   MYSQL_HOST=localhost MYSQL_USER=user MYSQL_PASS=pass bash batch/sh/import-db-from-local.sh
+#
+# 引数で指定:
+#   bash batch/sh/import-db-from-local.sh [HOST] [USER] [PASS]
 
 set -e  # エラーが発生したら即座に終了
 
@@ -12,10 +20,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# 設定
-MYSQL_HOST="mysql"  # docker-composeのサービス名
-MYSQL_USER="root"
-MYSQL_PASS="test_root_pass"
+# ========================================
+# 設定（引数 → 環境変数 → デフォルト値の優先順位）
+# ========================================
+MYSQL_HOST="${1:-${MYSQL_HOST:-mysql}}"  # 引数1 or 環境変数 or デフォルト
+MYSQL_USER="${2:-${MYSQL_USER:-root}}"   # 引数2 or 環境変数 or デフォルト
+MYSQL_PASS="${3:-${MYSQL_PASS:-test_root_pass}}"  # 引数3 or 環境変数 or デフォルト
 DUMP_DIR="batch/sh/sqldump"
 CHARSET="utf8mb4"
 COLLATION="utf8mb4_unicode_ci"
@@ -34,12 +44,21 @@ declare -a DATABASES=(
   "ocgraph_commentth"
 )
 
-# スクリプトのディレクトリを取得（appコンテナ内では /var/www/html がプロジェクトルート）
-PROJECT_ROOT="/var/www/html"
+# スクリプトのディレクトリを取得（batch/sh）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# プロジェクトルートを取得（batch/sh の2階層上）
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}MySQL Database Import Script${NC}"
 echo -e "${GREEN}========================================${NC}"
+echo ""
+
+# 設定値の表示
+echo -e "${YELLOW}Configuration:${NC}"
+echo -e "  Host: ${MYSQL_HOST}"
+echo -e "  User: ${MYSQL_USER}"
+echo -e "  Dump Directory: ${PROJECT_ROOT}/${DUMP_DIR}"
 echo ""
 
 # MySQLサーバーへの接続確認

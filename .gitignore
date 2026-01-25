@@ -12,6 +12,9 @@ Thumbs.db
 local-secrets.php
 prod-secrets.php
 /shared/secrets.php
+local-setup.sh
+prod-setup.sh
+local-setup-prod-sync.sh
 *.env
 docker/line-mock-api/.env.mock
 .user.ini
