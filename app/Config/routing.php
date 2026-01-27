@@ -61,7 +61,8 @@ Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
     ->match(fn() => handleRequestWithETagAndCache("official-ranking"));
  */
 
-Route::path('policy');
+Route::path('policy')
+    ->match(fn() => handleRequestWithETagAndCache('policy'));
 
 Route::path('/')
     ->match(fn() => handleRequestWithETagAndCache('index'));
@@ -125,7 +126,7 @@ Route::path(
     ->matchStr('start_date')
     ->matchStr('end_date')
     ->match(function (string $start_date, string $end_date, string $user) {
-        if(MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
             return false;
 
         $isValid = $start_date === date("Y-m-d", strtotime($start_date))

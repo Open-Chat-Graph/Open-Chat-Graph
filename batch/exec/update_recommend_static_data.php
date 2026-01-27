@@ -64,7 +64,23 @@ try {
 
     // CDNキャッシュ削除
     CronUtility::addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
-    purgeCacheCloudFlare();
+
+    purgeCacheCloudFlare(
+        files: [
+            ltrim(url(), "/"),
+        ],
+        prefixes: [
+            url('recommend'),
+            url('oc'),
+            url('ranking'),
+            url('oclist'),
+            url('recently-registered'),
+            url('labs'),
+            url('policy'),
+            url('furigana'),
+        ]
+    );
+
     CronUtility::addVerboseCronLog('CDNキャッシュ削除完了（バックグラウンド）');
 
     CronUtility::addVerboseCronLog('【毎時処理】バックグラウンド処理完了');

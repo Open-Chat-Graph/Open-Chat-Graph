@@ -200,7 +200,8 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
 function purgeCacheCloudFlare(
     ?string $zoneID = null,
     ?string $apiKey = null,
-    ?array $files = null
+    ?array $files = null,
+    ?array $prefixes = null
 ): string {
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
@@ -213,15 +214,20 @@ function purgeCacheCloudFlare(
     $ch = curl_init();
 
     // Cloudflare APIに送信するデータを設定
+    $payload = [];
     if ($files) {
-        $data = json_encode([
-            'files' => $files,
-        ]);
-    } else {
-        $data = json_encode([
-            'purge_everything' => true,
-        ]);
+        $payload['files'] = $files;
     }
+
+    if ($prefixes) {
+        $payload['prefixes'] = $prefixes;
+    }
+    
+    if (empty($payload)) {
+        $payload['purge_everything'] = true;
+    }
+
+    $data = json_encode($payload);
 
     curl_setopt($ch, CURLOPT_URL, "https://api.cloudflare.com/client/v4/zones/$zoneID/purge_cache");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
