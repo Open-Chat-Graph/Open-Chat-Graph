@@ -124,16 +124,6 @@ class SyncOpenChat
         }
     }
 
-    private function retryHourlyTask()
-    {
-        CronUtility::addCronLog('【毎時処理】リトライ開始');
-        OpenChatApiDbMerger::setKillFlagTrue();
-        sleep(30);
-
-        $this->handle();
-        CronUtility::addCronLog('【毎時処理】リトライ完了');
-    }
-
     private function dailyTask()
     {
         CronUtility::addCronLog('【日次処理】開始');

@@ -243,9 +243,6 @@ function purgeCacheCloudFlare(
         echo 'Error:' . curl_error($ch);
     }
 
-    // cURLセッションを終了
-    curl_close($ch);
-
     return $response;
 }
 
