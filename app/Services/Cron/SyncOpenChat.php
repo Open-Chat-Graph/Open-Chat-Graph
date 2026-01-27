@@ -140,7 +140,13 @@ class SyncOpenChat
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
         $this->executeAndCronLog(
-            [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
+            [fn() => purgeCacheCloudFlare(
+                prefixes: [
+                    url('oc'),
+                    url('ranking'),
+                    url('oclist'),
+                ]
+            ), 'CDNキャッシュ削除'],
         );
 
         CronUtility::addCronLog('【日次処理】完了');
