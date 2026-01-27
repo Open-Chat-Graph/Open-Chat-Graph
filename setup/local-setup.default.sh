@@ -177,6 +177,7 @@ AppConfig::$isDevlopment = true;
 // 環境変数でisMockEnvironmentを制御
 if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
     AppConfig::$isMockEnvironment = filter_var($isMockEnv, FILTER_VALIDATE_BOOLEAN);
+    AppConfig::$lineImageUrl = 'http://localhost:' . getenv('LINE_MOCK_PORT') . '/obs/';
 } else {
     AppConfig::$isMockEnvironment = false;
 }

@@ -27,7 +27,7 @@ class RankingBanPageRepository
             oc.id,
             oc.name,
             oc.description,
-            oc.local_img_url AS img_url,
+            oc.img_url,
             oc.emblem,
             oc.join_method_type,
             oc.category,

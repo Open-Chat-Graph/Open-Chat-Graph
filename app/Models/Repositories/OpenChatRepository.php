@@ -35,7 +35,6 @@ class OpenChatRepository implements OpenChatRepositoryInterface
                 open_chat (
                     name,
                     img_url,
-                    local_img_url,
                     description,
                     member,
                     created_at,
@@ -51,7 +50,6 @@ class OpenChatRepository implements OpenChatRepositoryInterface
                 (
                     :name,
                     :img_url,
-                    :local_img_url,
                     :description,
                     :member,
                     FROM_UNIXTIME(:created_at),
@@ -67,7 +65,6 @@ class OpenChatRepository implements OpenChatRepositoryInterface
                 'name' => $dto->name,
                 'description' => $dto->desc,
                 'img_url' => $dto->profileImageObsHash,
-                'local_img_url' => AppConfig::ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH,
                 'member' => $dto->memberCount,
                 'emid' => $dto->emid,
                 'created_at' => $dto->registered_created_at,

@@ -18,11 +18,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
-        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
-            <div class="anniv-banner" style="background: linear-gradient(-156deg, #0dc95a, #11d871 23.96%, #11d593 55.46%, #12cfcd 83.85%, #16c2c1);border-radius:8px;padding:12px 16px;margin:12px 12px 0;color:#fff;font-weight:700;font-size:16px;display:block;align-items:center;gap:.6em;">
-                <span>🎉オープンチャット６周年おめでとう！🎂 </span>
-            </div>
-        <?php endif ?>
 
         <div style="padding: 0 1rem; margin-bottom: 1rem;">
             <div style="margin: 1rem 0;">

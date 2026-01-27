@@ -259,30 +259,6 @@ function getDailyUpdateTime()
     return file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
 }
 
-function imgUrl(int $id, string $local_img_url): string
-{
-    return url(["urlRoot" => '', "paths" => [(in_array(
-        $local_img_url,
-        AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH
-    ) ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/default/{$local_img_url}.webp?id={$id}" : getImgPath($id, $local_img_url))]]);
-}
-
-function imgPreviewUrl(int $id, string $local_img_url): string
-{
-    return url(["urlRoot" => '', "paths" => [(
-        in_array($local_img_url, AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH)
-        ? AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/default/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp?id={$id}"
-        : getImgPreviewPath($id, $local_img_url)
-    )]]);
-}
-
-function apiImgUrl(int $id, string $local_img_url): string
-{
-    return in_array($local_img_url, AppConfig::DEFAULT_OPENCHAT_IMG_URL_HASH)
-        ? ("default/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp?id={$id}")
-        : (filePathNumById($id) . "/{$local_img_url}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp");
-}
-
 /**
  * @return string oc-img/{$idPath}/{$imgUrl}.webp
  */
@@ -301,14 +277,14 @@ function getImgPreviewPath(int $open_chat_id, string $imgUrl): string
     return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/{$subDir}/{$imgUrl}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp";
 }
 
-function lineImgUrl($img_url)
+function imgUrl($img_url)
 {
-    return AppConfig::LINE_IMG_URL . $img_url;
+    return AppConfig::$lineImageUrl . $img_url;
 }
 
-function linePreviewUrl($img_url)
+function imgPreviewUrl($img_url)
 {
-    return AppConfig::LINE_IMG_URL . $img_url . AppConfig::LINE_IMG_URL_PREVIEW_PATH;
+    return AppConfig::$lineImageUrl . $img_url . AppConfig::LINE_IMG_URL_PREVIEW_PATH;
 }
 
 function filePathNumById(int $id): string

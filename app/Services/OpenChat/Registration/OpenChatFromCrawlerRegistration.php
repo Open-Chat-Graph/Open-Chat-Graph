@@ -11,7 +11,6 @@ use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
 use App\Services\OpenChat\Crawler\OpenChatApiFromEmidDownloader;
 use App\Services\OpenChat\Crawler\OpenChatUrlChecker;
 use App\Services\OpenChat\Dto\OpenChatDto;
-use App\Services\OpenChat\Updater\OpenChatImageStoreUpdater;
 use Shared\Exceptions\ThrottleRequestsException;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\MimimalCmsConfig;
@@ -24,7 +23,6 @@ class OpenChatFromCrawlerRegistration
         private OpenChatApiFromEmidDownloader $openChatDtoFetcher,
         private OpenChatUrlChecker $openChatUrlChecker,
         private LogRepositoryInterface $logRepository,
-        private OpenChatImageStoreUpdater $openChatImageStoreUpdater,
         private OpenChatCrawlerConfigInterface $config,
     ) {
     }
@@ -89,8 +87,6 @@ class OpenChatFromCrawlerRegistration
         if (!$open_chat_id) {
             return $this->returnMessage('ネットワークエラーが発生しました');
         }
-
-        $this->openChatImageStoreUpdater->updateImage($open_chat_id, $ocDto->profileImageObsHash);
 
         $this->logRepository->logAddOpenChat($open_chat_id, getIP(), getUA());
 

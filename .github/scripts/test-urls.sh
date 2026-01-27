@@ -344,13 +344,6 @@ main() {
     test_url "${BASE_URL}/th/recommend/PUBG" "レコメンド（タイ語/PUBG）"
     echo ""
 
-    # oc-img
-    log "oc-img画像表示テスト"
-    test_url "${BASE_URL}/oc-img-th/0/2FQzEr3j9wRk.webp" "OC画像表示（タイ語）"
-    test_url "${BASE_URL}/oc-img/0/2kXFg71INCfE.webp" "OC画像表示（日本語）"
-    test_url "${BASE_URL}/oc-img-tw/0/2mZlq4yY47.webp" "OC画像表示（繁体字）"
-    echo ""
-
     # コメントページ
     log "コメントページのテスト"
     test_url "${BASE_URL}/comment/0?page=0&limit=10" "コメント（ID=0）"

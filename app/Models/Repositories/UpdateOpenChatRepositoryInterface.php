@@ -24,20 +24,7 @@ interface UpdateOpenChatRepositoryInterface
      */
     public function updateMemberColumn(array $oc): void;
 
-    public function updateLocalImgUrl(int $open_chat_id, string $local_img_url): void;
-
     public function updateUrl(int $open_chat_id, string $url): void;
-
-    /**
-     * @return array{ id:int, img_url:string, local_img_url:string }[]
-     */
-    public function getUpdatedOpenChatBetweenUpdatedAt(\DateTime $start, \DateTime $end): array;
-
-    /**
-     * @param null|string $date Y-m-d
-     * @return array{ id:int, img_url:string, local_img_url:string }[]
-     */
-    public function getOpenChatImgAll(?string $date = null): array;
 
     /**
      * @return array{ id:int, emid:string }[]

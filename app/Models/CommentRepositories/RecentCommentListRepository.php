@@ -51,7 +51,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             "SELECT
                 oc.id,
                 oc.name,
-                oc.local_img_url AS img_url,
+                oc.img_url,
                 oc.category,
                 oc.member,
                 oc.emblem

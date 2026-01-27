@@ -37,6 +37,8 @@ echo ""
 # リモートサーバーでのDB存在確認
 echo "リモートサーバーのデータベース存在確認中..."
 REMOTE_DB_CHECK=$(ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${!TABLE_MAP[@]}" <<'EOFREMOTE'
+  set -eo pipefail  # エラーが発生したら即座に終了
+
   MYSQL_USER=$1
   MYSQL_PASS=$2
   shift 2
@@ -86,38 +88,39 @@ echo "1/3: MySQLデータベースを同期中..."
 echo "----------------------------------------"
 echo ""
 
-# 配列をリモートサーバーに渡すために、キーと値をそれぞれエクスポート
-TABLE_KEYS=$(echo "${!TABLE_MAP[@]}" | tr ' ' '\n')
-TABLE_VALUES=$(echo "${TABLE_MAP[@]}" | tr ' ' '\n')
-
-# SSHでリモートサーバーに接続してダンプを実行
-echo "リモートサーバーに接続してダンプを実行中..."
-ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${CONFIG_VARS[REMOTE_DUMP_DIR]}" "$TABLE_KEYS" "$TABLE_VALUES" <<'EOFREMOTE'
-  MYSQL_USER=$1
-  MYSQL_PASS=$2
-  DUMP_DIR=$3
-  TABLE_KEYS=$4
-  TABLE_VALUES=$5
-
-  # ダンプディレクトリの準備
-  mkdir -p "$DUMP_DIR"
-  rm -rf "$DUMP_DIR"/*
-
-  # テーブル名をループで処理
-  TABLE_KEYS=($TABLE_KEYS)
-  TABLE_VALUES=($TABLE_VALUES)
-  for i in ${!TABLE_KEYS[@]}; do
-    SOURCE_TABLE=${TABLE_KEYS[$i]}
-    FILE_NAME=${TABLE_VALUES[$i]}.sql
-    echo "  ダンプ中: $SOURCE_TABLE"
-    MYSQL_PWD="$MYSQL_PASS" mysqldump -u "$MYSQL_USER" --add-drop-table $SOURCE_TABLE > "$DUMP_DIR/$FILE_NAME"
-  done
-EOFREMOTE
+# ダンプディレクトリの初期化（リモート）
+echo "リモートサーバーのダンプディレクトリを初期化中..."
+ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" \
+  "mkdir -p '${CONFIG_VARS[REMOTE_DUMP_DIR]}' && rm -rf '${CONFIG_VARS[REMOTE_DUMP_DIR]}'/*"
 
 if [ $? -ne 0 ]; then
-  echo "Error: リモートサーバーでのダンプ実行に失敗しました。" >&2
+  echo "Error: リモートサーバーのダンプディレクトリ初期化に失敗しました。" >&2
   exit 1
 fi
+
+# 各データベースを個別にダンプ
+for SOURCE_DB in "${!TABLE_MAP[@]}"; do
+  LOCAL_DB="${TABLE_MAP[$SOURCE_DB]}"
+  FILE_NAME="$LOCAL_DB.sql"
+
+  echo "  ダンプ中: $SOURCE_DB → $FILE_NAME"
+
+  ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" \
+    bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${SOURCE_DB}" "${CONFIG_VARS[REMOTE_DUMP_DIR]}" "${FILE_NAME}" <<'EOFREMOTE'
+set -eo pipefail
+MYSQL_USER=$1
+MYSQL_PASS=$2
+SOURCE_DB=$3
+DUMP_DIR=$4
+FILE_NAME=$5
+MYSQL_PWD="$MYSQL_PASS" mysqldump -u "$MYSQL_USER" --add-drop-table --databases "$SOURCE_DB" > "$DUMP_DIR/$FILE_NAME"
+EOFREMOTE
+
+  if [ $? -ne 0 ]; then
+    echo "Error: ${SOURCE_DB} のダンプに失敗しました。" >&2
+    exit 1
+  fi
+done
 
 echo "✓ リモートサーバーでのダンプが完了しました。"
 echo ""

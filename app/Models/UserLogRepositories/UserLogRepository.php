@@ -74,7 +74,7 @@ class UserLogRepository
             "SELECT
                 id,
                 name,
-                local_img_url AS img_url,
+                img_url,
                 description,
                 member,
                 category,

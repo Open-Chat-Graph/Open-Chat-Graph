@@ -25,7 +25,7 @@ class OcPageSchema
             ->publisher($this->schema->publisher())
             ->name($title)
             ->description(preg_replace('/\s+/', ' ', str_replace(["\n", "\r"], ' ', $description)))
-            ->image(imgUrl($oc['id'], $oc['img_url']))
+            ->image(imgUrl($oc['img_url']))
             ->datePublished($datePublished)
             ->dateModified($dateModified);
 
@@ -33,7 +33,7 @@ class OcPageSchema
         $webPage->about(
             Schema::discussionForumPosting()
                 ->headline($oc['name'])
-                ->image(imgUrl($oc['id'], $oc['img_url']))
+                ->image(imgUrl($oc['img_url']))
                 ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
                 ->author(
                     Schema::organization()

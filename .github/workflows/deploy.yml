@@ -48,11 +48,11 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        echo "[ocgraph.wpx.jp]:10022 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOhhZj6zmpEsTH6DqkbnA36UdjxT2KUgweZKik4KksOF" >> ~/.ssh/known_hosts
+        echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
     - name: Deploy
       run: |
-        ssh -p 10022 ocgraph@ocgraph.wpx.jp "cd /home/ocgraph/openchat-review.me/public_html && git pull"
+        ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && git fetch origin && git reset --hard origin/main"
 
     - name: Checkout repository
       if: |

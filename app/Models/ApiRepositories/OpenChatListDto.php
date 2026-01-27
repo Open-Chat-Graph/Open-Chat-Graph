@@ -12,7 +12,7 @@ class OpenChatListDto
         $this->name = $oc['name'];
         $this->desc = $oc['description'];
         $this->member = $oc['member'];
-        $this->img = apiImgUrl($oc['id'], $oc['img_url']);
+        $this->img = $oc['img_url'];
         $this->emblem = $oc['emblem'] ?? 0;
         $this->joinMethodType = $oc['join_method_type'] ?? 0;
         $this->category = $oc['emblem'] === null ? -1 : ($oc['category'] ?? 0);

@@ -135,14 +135,6 @@ get_mysql_invalid_count() {
         -e "SELECT COUNT(*) FROM ${database}.${table} WHERE NOT (${where_clause})" 2>/dev/null || echo "0"
 }
 
-# ディレクトリ内のwebp画像数を取得
-get_webp_count() {
-    local dir=$1
-
-    docker exec "$APP_CONTAINER" bash -c \
-        "find ${dir} -maxdepth 1 -name '*.webp' -type f 2>/dev/null | wc -l" || echo "0"
-}
-
 # SQLiteのレコード数を取得
 get_sqlite_count() {
     local db_path=$1
@@ -291,34 +283,7 @@ main() {
     done
 
     echo ""
-    log_info "画像ファイルの存在を確認中..."
-    echo ""
 
-    # 各言語の画像ディレクトリを確認
-    declare -A img_dirs=(
-        ["ja"]="oc-img"
-        ["tw"]="oc-img-tw"
-        ["th"]="oc-img-th"
-    )
-
-    for lang in ja tw th; do
-        img_dir="${img_dirs[$lang]}"
-
-        log_info "--- ${lang^^} 言語の画像を確認 ---"
-        echo ""
-
-        # 通常画像
-        count=$(get_webp_count "/var/www/html/public/${img_dir}/0")
-        test_result "public/${img_dir}/0 の .webp画像" 10 "$count" "ge"
-
-        # プレビュー画像
-        count=$(get_webp_count "/var/www/html/public/${img_dir}/preview/0")
-        test_result "public/${img_dir}/preview/0 の .webp画像" 10 "$count" "ge"
-
-        echo ""
-    done
-
-    echo ""
     log_info "========================================="
     log_info "検証結果: ${PASSED}/${TOTAL} 成功, ${FAILED}/${TOTAL} 失敗"
     log_info "========================================="

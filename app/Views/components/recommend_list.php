@@ -37,7 +37,7 @@ use App\Services\Recommend\Enum\RecommendListType;
             <?php foreach ($recommend->getList(false) as $roc) : ?>
                 <li class="<?php if ($roc['id'] === $id) echo 'selected' ?>">
                     <a class="rectangle" <?php if ($roc['id'] !== $id) echo 'href="' . url('/oc/' . $roc['id']) . ($roc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $roc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME ? '?limit=hour' : '') . '"' ?>>
-                        <img loading="lazy" alt="<?php echo $roc['name'] ?>" src="<?php echo imgPreviewUrl($roc['id'], $roc['img_url']) ?>" />
+                        <img loading="lazy" alt="<?php echo $roc['name'] ?>" src="<?php echo imgPreviewUrl($roc['img_url']) ?>" />
                         <h4>
                             <?php if (($roc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp" style="margin: 0; margin-right: -2px; margin-top: -3px; scale: 0.65;"></span><?php elseif (($roc['emblem'] ?? 0) === 2) : ?><span class="super-icon official" style="margin: 0; margin-right: -2px; margin-top: -3px; scale: 0.65;"></span><?php endif ?><?php if (($roc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><?php echo $roc['name'] ?>
                         </h4>

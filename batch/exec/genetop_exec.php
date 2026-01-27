@@ -31,6 +31,6 @@ try {
     
     touch(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 } catch (\Throwable $e) {
-    CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
+    CronUtility::addCronLog($e->__toString());
 }

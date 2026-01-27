@@ -12,7 +12,6 @@ use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
 use App\Services\OpenChat\OpenChatDailyCrawling;
 use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
-use App\Services\OpenChat\OpenChatImageUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
@@ -28,7 +27,6 @@ class SyncOpenChat
         private RankingPositionHourPersistence $rankingPositionHourPersistence,
         private UpdateHourlyMemberRankingService $hourlyMemberRanking,
         private UpdateHourlyMemberColumnService $hourlyMemberColumn,
-        private OpenChatImageUpdater $OpenChatImageUpdater,
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
@@ -99,7 +97,6 @@ class SyncOpenChat
     {
         $this->executeAndCronLog(
             // 毎時ランキングDB反映はバックグラウンドバッチに移行（persist_ranking_position_background.php）
-            [fn() => $this->OpenChatImageUpdater->hourlyImageUpdate(), '毎時画像更新'],
             [fn() => $this->hourlyMemberColumn->update(), '毎時メンバーカラム更新'],
             [fn() => $this->hourlyMemberRanking->update(), '毎時メンバーランキング関連の処理'],
             // CDNキャッシュ削除はバックグラウンドバッチに移行（update_recommend_static_data.php）
@@ -153,7 +150,6 @@ class SyncOpenChat
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
         $this->executeAndCronLog(
-            [fn() => $this->OpenChatImageUpdater->imageUpdateAll(), '日次画像更新'],
             [fn() => purgeCacheCloudFlare(), 'CDNキャッシュ削除'],
         );
 

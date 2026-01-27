@@ -23,7 +23,6 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
                 name,
                 description,
                 img_url,
-                local_img_url,
                 member,
                 api_created_at,
                 category,
@@ -83,19 +82,6 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
         );
     }
 
-    public function updateLocalImgUrl(int $open_chat_id, string $local_img_url): void
-    {
-        DB::execute(
-            "UPDATE 
-                open_chat 
-            SET 
-                local_img_url = :local_img_url
-            WHERE 
-                id = :open_chat_id",
-            compact('local_img_url', 'open_chat_id')
-        );
-    }
-
     public function updateUrl(int $open_chat_id, string $url): void
     {
         DB::execute(
@@ -128,39 +114,6 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
         $id = $oc['open_chat_id'];
 
         DB::$pdo->exec("UPDATE open_chat SET member = {$member} WHERE id = {$id}");
-    }
-
-    public function getUpdatedOpenChatBetweenUpdatedAt(\DateTime $start, \DateTime $end): array
-    {
-        $query =
-            "SELECT
-                id,
-                img_url,
-                local_img_url
-            FROM
-                open_chat
-            WHERE
-                updated_at BETWEEN :start AND :end";
-
-        return DB::fetchAll($query, [
-            'start' => $start->format('Y-m-d H:i:s'),
-            'end' => $end->format('Y-m-d H:i:s'),
-        ]);
-    }
-
-    public function getOpenChatImgAll(?string $date = null): array
-    {
-        $query =
-            "SELECT
-                id,
-                img_url,
-                local_img_url
-            FROM
-                open_chat
-            " . ($date ? "WHERE
-                updated_at >= '{$date}'" : "");
-
-        return DB::fetchAll($query);
     }
 
     public function getEmptyUrlOpenChatId(): array

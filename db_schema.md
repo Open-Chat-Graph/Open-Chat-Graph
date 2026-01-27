@@ -32,7 +32,6 @@ CREATE TABLE `open_chat` (
   `member` int(11) NOT NULL,
   `category` int(11) DEFAULT NULL,
   `img_url` varchar(128) NOT NULL,
-  `local_img_url` varchar(128) DEFAULT '',
   `emblem` int(11) DEFAULT NULL,
   `join_method_type` int(11) NOT NULL DEFAULT 0,
   `url` text DEFAULT NULL,

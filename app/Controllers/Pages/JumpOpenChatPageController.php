@@ -19,7 +19,7 @@ class JumpOpenChatPageController
         $_meta = meta()->setTitle(t('【参加確認】') . $oc['name'])
             ->setDescription(t('【参加確認】') . $oc['description'])
             ->setOgpDescription(t('【参加確認】') . $oc['description'])
-            ->setImageUrl(imgUrl($oc['id'], $oc['img_url']));
+            ->setImageUrl(imgUrl($oc['img_url']));
 
         $_css = [
             'room_list',
