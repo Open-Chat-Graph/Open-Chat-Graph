@@ -69,23 +69,26 @@ Route::path('/')
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (int $open_chat_id) {
-        if (MimimalCmsConfig::$urlRoot === '')
-            handleRequestWithETagAndCache($open_chat_id);
+        handleRequestWithETagAndCache($open_chat_id . MimimalCmsConfig::$urlRoot);
     });
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (int $open_chat_id) {
-        return MimimalCmsConfig::$urlRoot !== '/tw';
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        handleRequestWithETagAndCache($open_chat_id . MimimalCmsConfig::$urlRoot);
     });
 
 // TODO: test-api
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (string $user) {
+        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+            return false;
 
         app(ApiDbOpenChatControllerServiceProvider::class)->register();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
@@ -107,7 +110,7 @@ Route::path(
         if (!$isValid)
             return false;
 
-        handleRequestWithETagAndCache(json_encode($reception->input()));
+        handleRequestWithETagAndCache(json_encode($reception->input()) . MimimalCmsConfig::$urlRoot);
         return true;
     });
 
@@ -122,6 +125,9 @@ Route::path(
     ->matchStr('start_date')
     ->matchStr('end_date')
     ->match(function (string $start_date, string $end_date, string $user) {
+        if(MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+            return false;
+
         $isValid = $start_date === date("Y-m-d", strtotime($start_date))
             && $end_date === date("Y-m-d", strtotime($end_date))
             && strtotime($start_date) <= strtotime($end_date);
@@ -129,7 +135,18 @@ Route::path(
             return false;
 
         app(ApiRankingPositionPageRepositoryServiceProvider::class)->register();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
+    });
+
+
+Route::path(
+    'oc/{open_chat_id}/position_hour',
+    [RankingPositionApiController::class, 'rankingPositionHour']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('category', min: 0)
+    ->matchStr('sort', regex: ['ranking', 'rising'])
+    ->match(function (Reception $reception) {
+        handleRequestWithETagAndCache(json_encode($reception->input()) . MimimalCmsConfig::$urlRoot);
     });
 
 // TODO: test-api
@@ -145,17 +162,6 @@ Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
             'time' => ['00:00'],
             'totalCount' => [0],
         ]);
-    });
-
-Route::path(
-    'oc/{open_chat_id}/position_hour',
-    [RankingPositionApiController::class, 'rankingPositionHour']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->match(function (Reception $reception) {
-        handleRequestWithETagAndCache(json_encode($reception->input()));
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
@@ -179,7 +185,7 @@ Route::path('recommend')
 Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 1000)
     ->match(function (string $tag) {
-        handleRequestWithETagAndCache($tag);
+        handleRequestWithETagAndCache($tag . MimimalCmsConfig::$urlRoot);
         return ['tag' => urldecode($tag)];
     });
 
@@ -190,7 +196,7 @@ Route::path(
 )
     ->middleware([VerifyCsrfToken::class])
     ->matchStr('url', 'post', regex: \App\Services\Crawler\Config\OpenChatCrawlerConfig::LINE_URL_MATCH_PATTERN[MimimalCmsConfig::$urlRoot])
-    ->match(function() {
+    ->match(function () {
         return MimimalCmsConfig::$urlRoot === '';
     });
 
@@ -200,7 +206,7 @@ Route::path(
 )
     ->matchNum('page')
     ->match(function (int $page) {
-        handleRequestWithETagAndCache("recently-registered/{$page}");
+        handleRequestWithETagAndCache("recently-registered/{$page}" . MimimalCmsConfig::$urlRoot);
     });
 
 Route::path(
@@ -209,7 +215,7 @@ Route::path(
 )
     ->matchNum('page', emptyAble: true)
     ->match(function () {
-        handleRequestWithETagAndCache("recently-registered");
+        handleRequestWithETagAndCache("recently-registered" . MimimalCmsConfig::$urlRoot);
     });
 
 Route::path(
@@ -337,9 +343,9 @@ Route::path(
 Route::path('admin/cookie')
     ->match(function (AdminAuthService $adminAuthService, ?string $key) {
         sessionStart();
-        if (!$adminAuthService->registerAdminCookie($key)) {
+        if (!$adminAuthService->registerAdminCookie($key))
             return false;
-        }
+
         return redirect();
     });
 
@@ -360,9 +366,13 @@ Route::path('admin/log/exception', [LogController::class, 'exceptionLog'])
 Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetail'])
     ->matchNum('index', min: 0)
     ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        $adminAuthService->auth();
         noStore();
-        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth();
     });
+
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
@@ -478,8 +488,10 @@ Route::path('furigana@POST')
 
 Route::path('furigana/guideline')
     ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
         handleRequestWithETagAndCache('guideline');
-        return MimimalCmsConfig::$urlRoot === '';
     });
 
 Route::path(
@@ -487,8 +499,10 @@ Route::path(
     [FuriganaPageController::class, 'defamationGuideline']
 )
     ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
         handleRequestWithETagAndCache('defamationGuideline');
-        return MimimalCmsConfig::$urlRoot === '';
     });
 
 Route::path(
@@ -496,8 +510,10 @@ Route::path(
     [DatabaseApiController::class, 'index']
 )
     ->match(function (string $user) {
+        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+            return false;
+
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     })
     ->matchStr('stmt');
 
@@ -506,8 +522,10 @@ Route::path(
     [DatabaseApiController::class, 'schema']
 )
     ->match(function (string $user) {
+        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+            return false;
+
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     });
 
 Route::path(
@@ -515,8 +533,10 @@ Route::path(
     [DatabaseApiController::class, 'ban']
 )
     ->match(function (string $user) {
+        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+            return false;
+
         allowCORS();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
     })
     ->matchStr('date');
 
