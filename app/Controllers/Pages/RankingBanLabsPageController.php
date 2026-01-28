@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Config\AppConfig;
 use App\Services\RankingBan\RakingBanPageService;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\RankingBanSelectElementPagination;

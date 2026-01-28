@@ -197,6 +197,10 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
     header("ETag: $etag");
 }
 
+/**
+ * @return string 成功メッセージ
+ * @throws \RuntimeException 失敗時
+ */
 function purgeCacheCloudFlare(
     ?string $zoneID = null,
     ?string $apiKey = null,
@@ -206,8 +210,12 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (AppConfig::$isStaging || AppConfig::$isDevlopment || !AppConfig::$enableCloudflare) {
-        return 'is Development';
+    if (!AppConfig::$enableCloudflare) {
+        return 'Cloudflareは無効化されています';
+    }
+
+    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+        return 'Cloudflareキャッシュ削除はステージング・開発環境では実行されません';
     }
 
     // cURLセッションを初期化
@@ -222,7 +230,7 @@ function purgeCacheCloudFlare(
     if ($prefixes) {
         $payload['prefixes'] = $prefixes;
     }
-    
+
     if (empty($payload)) {
         $payload['purge_everything'] = true;
     }
@@ -244,55 +252,54 @@ function purgeCacheCloudFlare(
     // リクエストを実行し、レスポンスを取得
     $response = curl_exec($ch);
 
-    // エラーチェック
+    // cURLエラーチェック
     if (curl_errno($ch)) {
-        echo 'Error:' . curl_error($ch);
+        $error = curl_error($ch);
+        throw new \RuntimeException("CDNキャッシュ削除失敗（cURLエラー）: {$error}");
     }
 
-    return $response;
-}
+    // レスポンスをパース
+    $responseData = json_decode($response, true);
+    if (!is_array($responseData)) {
+        throw new \RuntimeException("CDNキャッシュ削除失敗: 不正なレスポンス形式 - {$response}");
+    }
 
-function getHouryUpdateTime()
-{
-    return file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-}
+    // successチェック
+    if (isset($responseData['success']) && $responseData['success'] === true) {
+        return 'CDNキャッシュ削除完了';
+    }
 
-function getDailyUpdateTime()
-{
-    return file_get_contents(AppConfig::getStorageFilePath('dailyCronUpdatedAtDate'));
-}
+    // エラーメッセージを抽出
+    $errorMessage = 'CDNキャッシュ削除失敗: ';
+    if (isset($responseData['errors']) && is_array($responseData['errors']) && !empty($responseData['errors'])) {
+        $messages = [];
+        foreach ($responseData['errors'] as $error) {
+            if (isset($error['message'])) {
+                $messages[] = $error['message'];
+            }
+        }
+        $errorMessage .= implode(', ', $messages);
+    } else {
+        $errorMessage .= 'success要素が存在しないか、falseです';
+    }
 
-/**
- * @return string oc-img/{$idPath}/{$imgUrl}.webp
- */
-function getImgPath(int $open_chat_id, string $imgUrl): string
-{
-    $subDir = filePathNumById($open_chat_id);
-    return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . "/{$subDir}/{$imgUrl}.webp";
-}
-
-/**
- * @return string oc-img/preview/{$idPath}/{$imgUrl}_p.webp
- */
-function getImgPreviewPath(int $open_chat_id, string $imgUrl): string
-{
-    $subDir = filePathNumById($open_chat_id);
-    return AppConfig::OPENCHAT_IMG_PATH[MimimalCmsConfig::$urlRoot] . '/' . AppConfig::OPENCHAT_IMG_PREVIEW_PATH . "/{$subDir}/{$imgUrl}" . AppConfig::OPENCHAT_IMG_PREVIEW_SUFFIX . ".webp";
+    throw new \RuntimeException($errorMessage);
 }
 
 function imgUrl($img_url)
 {
+    if (filter_var($img_url, FILTER_VALIDATE_URL))
+        return $img_url;
+
     return AppConfig::$lineImageUrl . $img_url;
 }
 
 function imgPreviewUrl($img_url)
 {
-    return AppConfig::$lineImageUrl . $img_url . AppConfig::LINE_IMG_URL_PREVIEW_PATH;
-}
+    if (filter_var($img_url, FILTER_VALIDATE_URL))
+        return $img_url;
 
-function filePathNumById(int $id): string
-{
-    return (string)floor($id / 1000);
+    return AppConfig::$lineImageUrl . $img_url . AppConfig::LINE_IMG_URL_PREVIEW_PATH;
 }
 
 function getCategoryName(int $category): string

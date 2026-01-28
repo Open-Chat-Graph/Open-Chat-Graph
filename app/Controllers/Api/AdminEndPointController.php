@@ -8,7 +8,9 @@ use App\Config\SecretsConfig;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
+use App\Services\Admin\AdminTool;
 use App\Services\OpenChatAdmin\AdminEndPoint;
+use ExceptionHandler\ExceptionHandler;
 use Shared\Exceptions\NotFoundException;
 
 class AdminEndPointController
@@ -24,14 +26,19 @@ class AdminEndPointController
     {
         $adminEndPoint->{$type}($id);
 
-        purgeCacheCloudFlare(
-            files: [
-                url("oc/{$id}"),
-                url("oc/{$id}?limit=hour"),
-                url("oc/{$id}?limit=month"),
-                url("oc/{$id}?limit=all"),
-            ]
-        );
+        try {
+            purgeCacheCloudFlare(
+                files: [
+                    url("oc/{$id}"),
+                    url("oc/{$id}?limit=hour"),
+                    url("oc/{$id}?limit=month"),
+                    url("oc/{$id}?limit=all"),
+                ]
+            );
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
 
         return redirect("oc/{$id}/admin");
     }
@@ -45,12 +52,17 @@ class AdminEndPointController
 
         if ($flag > 0) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
 
-        purgeCacheCloudFlare(
-            files: [
-                url('recent-comment-api'),
-                url('comments-timeline'),
-            ]
-        );
+        try {
+            purgeCacheCloudFlare(
+                files: [
+                    url('recent-comment-api'),
+                    url('comments-timeline'),
+                ]
+            );
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
 
         return redirect("oc/{$id}/admin");
     }
@@ -73,12 +85,17 @@ class AdminEndPointController
 
         $deleteCommentRepository->deleteCommentByUserIdAndIpAll($result['user_id'], $result['ip']);
 
-        purgeCacheCloudFlare(
-            files: [
-                url('recent-comment-api'),
-                url('comments-timeline'),
-            ]
-        );
+        try {
+            purgeCacheCloudFlare(
+                files: [
+                    url('recent-comment-api'),
+                    url('comments-timeline'),
+                ]
+            );
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
 
         return redirect("oc/{$id}/admin");
     }

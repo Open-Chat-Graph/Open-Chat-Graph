@@ -17,7 +17,7 @@ class StaticDataFile
     ) {}
     private function checkUpdatedAt(string $hourlyUpdatedAt)
     {
-        if (!$hourlyUpdatedAt === getHouryUpdateTime())
+        if (!$hourlyUpdatedAt === $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'))
             noStore();
     }
 
@@ -78,7 +78,7 @@ class StaticDataFile
         }
 
         $time = getStorageFileTime(\App\Services\Storage\FileStorageService::getStorageFilePath('tagList'));
-        if (!$time || new \DateTime('@' . $time) < new \DateTime(getHouryUpdateTime()))
+        if (!$time || new \DateTime('@' . $time) < new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')))
             noStore();
 
         return $data;

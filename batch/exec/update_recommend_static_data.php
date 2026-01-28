@@ -65,7 +65,7 @@ try {
     // CDNキャッシュ削除
     CronUtility::addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
 
-    purgeCacheCloudFlare(
+    $result = purgeCacheCloudFlare(
         files: [
             ltrim(url(), "/"),
         ],
@@ -81,7 +81,7 @@ try {
         ]
     );
 
-    CronUtility::addVerboseCronLog('CDNキャッシュ削除完了（バックグラウンド）');
+    CronUtility::addVerboseCronLog($result . '（バックグラウンド）');
 
     CronUtility::addVerboseCronLog('【毎時処理】バックグラウンド処理完了');
     // 実行中フラグを下ろす

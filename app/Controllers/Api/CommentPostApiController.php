@@ -10,9 +10,11 @@ use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Dto\CommentPostApiArgs;
 use App\Models\CommentRepositories\Enum\CommentLogType;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
+use App\Services\Admin\AdminTool;
 use App\Services\Auth\AuthInterface;
 use App\Services\Auth\GoogleReCaptcha;
 use App\Services\Storage\FileStorageInterface;
+use ExceptionHandler\ExceptionHandler;
 
 class CommentPostApiController
 {
@@ -58,12 +60,17 @@ class CommentPostApiController
         );
 
         if (!$flag) {
-            purgeCacheCloudFlare(
-                files: [
-                    url('recent-comment-api'),
-                    url('comments-timeline')
-                ]
-            );
+            try {
+                purgeCacheCloudFlare(
+                    files: [
+                        url('recent-comment-api'),
+                        url('comments-timeline')
+                    ]
+                );
+            } catch (\RuntimeException $e) {
+                AdminTool::sendDiscordNotify($e->getMessage());
+                ExceptionHandler::errorLog($e);
+            }
 
             $fileStorage->safeFileRewrite('@commentUpdatedAtMicrotime', (string)microtime(true));
         } else {

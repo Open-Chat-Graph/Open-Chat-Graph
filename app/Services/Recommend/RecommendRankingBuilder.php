@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\RecommendRepositories\AbstractRecommendRankingRepository;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 class RecommendRankingBuilder
@@ -15,6 +16,10 @@ class RecommendRankingBuilder
     // 関連タグ取得に関する値（台湾・タイのみ）
     private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = null;
     private const SORT_AND_UNIQUE_ARRAY_MIN_COUNT = 5;
+
+    public function __construct(
+        private FileStorageInterface $fileStorage
+    ) {}
 
     function getRanking(
         RecommendListType $type,
@@ -65,7 +70,7 @@ class RecommendRankingBuilder
             $ranking2,
             $ranking3,
             $ranking4,
-            file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))
+            $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
         );
 
         // 日本以外では関連タグを事前に取得しておく

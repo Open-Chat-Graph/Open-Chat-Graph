@@ -72,7 +72,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                     'id' => 0,
                     'user' => ($el['name'] ?: '匿名'),
                     'name' => 'オプチャグラフとは？',
-                    'img_url' => 'siteicon',
+                    'img_url' => fileUrl('assets/icon-192x192.png'),
                     'emblem' => 0,
                     'description' => $el['text'],
                     'time' => $el['time'],

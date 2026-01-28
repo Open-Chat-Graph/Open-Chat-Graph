@@ -23,10 +23,13 @@ use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
 use App\Views\Classes\Dto\CommentArgDtoFactoryInterface;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 class OpenChatPageController
 {
+    private FileStorageInterface $fileStorage;
+
     function index(
         OpenChatPageRepositoryInterface $ocRepo,
         OcPageMeta $meta,
@@ -40,9 +43,11 @@ class OpenChatPageController
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CommentArgDtoFactoryInterface $commentArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
+        FileStorageInterface $fileStorage,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
+        $this->fileStorage = $fileStorage;
         AppConfig::$listLimitTopRanking = 5;
 
         $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
@@ -207,7 +212,7 @@ class OpenChatPageController
         if (!isset($oc['rh_diff_member']) || $oc['rh_diff_member'] < AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR)
             return null;
 
-        $hourlyUpdatedAt =  new \DateTime(getHouryUpdateTime());
+        $hourlyUpdatedAt =  new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
         $hourlyTime = $hourlyUpdatedAt->format(\DateTime::ATOM);
         $hourlyUpdatedAt->modify('-1hour');
 

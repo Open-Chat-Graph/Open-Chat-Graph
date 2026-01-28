@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Config\AppConfig;
+use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
-use App\Services\Crawler\Config\OpenChatCrawlerConfig;
 use App\Services\OpenChat\SubCategory\OpenChatSubCategorySynchronizer;
 
 class OpenChatSubCategorySynchronizerTest extends TestCase
@@ -17,7 +16,9 @@ class OpenChatSubCategorySynchronizerTest extends TestCase
         $test = app(OpenChatSubCategorySynchronizer::class);
         $test->syncSubCategoriesAll();
 
-        $file = json_decode(file_get_contents(AppConfig::getStorageFilePath('openChatSubCategories')), true);
+        /** @var FileStorageInterface $fileStorage */
+        $fileStorage = app(FileStorageInterface::class);
+        $file = json_decode($fileStorage->getContents('@openChatSubCategories'), true);
         debug($file);
 
         $this->assertTrue(is_array($file) && !empty($file));
