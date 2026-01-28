@@ -144,9 +144,9 @@ class SyncOpenChat
                 function () {
                     $result = purgeCacheCloudFlare(
                         prefixes: [
-                            url('oc'),
-                            url('ranking'),
-                            url('oclist'),
+                            getSiteDomainUrl('oc'),
+                            getSiteDomainUrl('ranking'),
+                            getSiteDomainUrl('oclist'),
                         ]
                     );
                     CronUtility::addVerboseCronLog($result);

@@ -20,7 +20,7 @@ class purgeCacheCloudFlareTest extends TestCase
         $zoneID = null;  // または実際のzoneID文字列
         $apiKey = null;  // または実際のAPIキー文字列
         $files = [
-            'https://openchat-review.me/recent-comment-api'
+            getSiteDomainUrl('recent-comment-api')
         ];   // または ['https://example.com/file1.jpg', 'https://example.com/file2.css']
         $prefixes = null; // または ['https://example.com/prefix1/', 'https://example.com/prefix2/']
 
@@ -42,7 +42,7 @@ class purgeCacheCloudFlareTest extends TestCase
         $zoneID = 'invalid_zone_id';
         $apiKey = 'invalid_api_key';
         $files = [
-            'https://openchat-review.me/recent-comment-api'
+            getSiteDomainUrl('recent-comment-api')
         ];
 
         // RuntimeExceptionが投げられることを確認

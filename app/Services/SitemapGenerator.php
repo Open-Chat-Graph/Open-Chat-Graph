@@ -16,8 +16,7 @@ use Shared\MimimalCmsConfig;
 
 class SitemapGenerator
 {
-    const SITE_URL = 'https://openchat-review.me';
-    const SITEMAP_PATH = 'https://openchat-review.me/sitemaps/';
+    const SITEMAP_PATH = '/sitemaps/';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemaps/';
     const INDEX_SITEMAP = __DIR__ . '/../../public/sitemap.xml';
     const MINIMUM_LASTMOD = '2025-08-23 21:30:00';
@@ -36,7 +35,7 @@ class SitemapGenerator
         $index = new SitemapIndex();
         foreach (array_keys(AppConfig::$dbName) as $lang) {
             MimimalCmsConfig::$urlRoot = $lang;
-            $this->currentUrl = self::SITE_URL . $lang . '/';
+            $this->currentUrl = AppConfig::$siteDomain . $lang . '/';
             $this->generateEachLanguage($index);
         }
 
@@ -65,7 +64,7 @@ class SitemapGenerator
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
         }
-        
+
         $sitemap->addItem($this->currentUrl . 'policy');
         $sitemap->addItem($this->currentUrl . 'ranking', lastmod: $datetime);
         $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]), lastmod: $datetime);
@@ -117,7 +116,7 @@ class SitemapGenerator
         $fileName = "sitemap{$n}.xml";
         $this->fileStorage->safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render());
 
-        return self::SITEMAP_PATH . $fileName;
+        return AppConfig::$siteDomain . self::SITEMAP_PATH . $fileName;
     }
 
     /**

@@ -6,6 +6,9 @@ use Shared\MimimalCmsConfig;
 
 class AppConfig
 {
+    // サイトのURL（末尾にスラッシュなし）
+    static string $siteDomain = 'https://openchat-review.me';
+
     static string $phpBinary = '/usr/bin/php8.3';
 
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';

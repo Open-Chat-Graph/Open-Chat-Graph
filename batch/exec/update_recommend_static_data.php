@@ -67,17 +67,17 @@ try {
 
     $result = purgeCacheCloudFlare(
         files: [
-            ltrim(url(), "/"),
+            ltrim(getSiteDomainUrl(), "/"),
         ],
         prefixes: [
-            url('recommend'),
-            url('oc'),
-            url('ranking'),
-            url('oclist'),
-            url('recently-registered'),
-            url('labs'),
-            url('policy'),
-            url('furigana'),
+            getSiteDomainUrl('recommend'),
+            getSiteDomainUrl('oc'),
+            getSiteDomainUrl('ranking'),
+            getSiteDomainUrl('oclist'),
+            getSiteDomainUrl('recently-registered'),
+            getSiteDomainUrl('labs'),
+            getSiteDomainUrl('policy'),
+            getSiteDomainUrl('furigana'),
         ]
     );
 

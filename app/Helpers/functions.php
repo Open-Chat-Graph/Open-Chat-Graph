@@ -765,3 +765,34 @@ function formatElapsedTime(float $startTime): string
     $seconds = (int) round($elapsedSeconds - ($minutes * 60));
     return $minutes > 0 ? "{$minutes}分{$seconds}秒" : "{$seconds}秒";
 }
+
+/**
+ * Returns the full URL of the current website, including the domain and optional path.
+ *
+ * @param string|array{ urlRoot:string,paths:string|string[] } $paths [optional] path to append to the domain in the URL. 
+ * 
+ * @return string      The full URL of the current website domain.
+ * 
+ * * **Example :** Input: `getSiteDomainUrl("home", "article")`  Output: `https://exmaple.com/home/article`
+ * * **Example :** Input: `getSiteDomainUrl("/home", "/article")`  Output: `https://exmaple.com/home/article`
+ * * **Example :** Input: `getSiteDomainUrl("home/", "article/")`  Output: `https://exmaple.com/home//article/`
+ * * **Example :** Input: `getSiteDomainUrl(["urlRoot" => "/en", "paths" => ["home", "article"]])`  Output: `https://example.com/en/home/article`
+ * 
+ * @throws \InvalidArgumentException If the argument passed is an array and does not contain the required keys.
+ */
+function getSiteDomainUrl(string|array ...$paths): string
+{
+    if (isset($paths[0]) && is_array($paths[0])) {
+        $urlRoot = $paths[0]['urlRoot'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
+        $paths = $paths[0]['paths'] ?? throw new \InvalidArgumentException('Invalid argument passed to url() function.');
+    } else {
+        $urlRoot = MimimalCmsConfig::$urlRoot;
+    }
+
+    $uri = '';
+    foreach (is_array($paths) ? $paths : [$paths] as $path) {
+        $uri .= "/" . ltrim($path, "/");
+    }
+
+    return  AppConfig::$siteDomain . ($urlRoot ?? MimimalCmsConfig::$urlRoot) . $uri;
+}
