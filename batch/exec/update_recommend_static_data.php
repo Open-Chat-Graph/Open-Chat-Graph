@@ -70,14 +70,14 @@ try {
             ltrim(getSiteDomainUrl(), "/"),
         ],
         prefixes: [
-            getSiteDomainUrl('recommend'),
-            getSiteDomainUrl('oc'),
-            getSiteDomainUrl('ranking'),
-            getSiteDomainUrl('oclist'),
-            getSiteDomainUrl('recently-registered'),
-            getSiteDomainUrl('labs'),
-            getSiteDomainUrl('policy'),
-            getSiteDomainUrl('furigana'),
+            getCdnPrefixUrl('recommend'),
+            getCdnPrefixUrl('oc'),
+            getCdnPrefixUrl('ranking'),
+            getCdnPrefixUrl('oclist'),
+            getCdnPrefixUrl('recently-registered'),
+            getCdnPrefixUrl('labs'),
+            getCdnPrefixUrl('policy'),
+            getCdnPrefixUrl('furigana'),
         ]
     );
 

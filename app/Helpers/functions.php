@@ -796,3 +796,20 @@ function getSiteDomainUrl(string|array ...$paths): string
 
     return  AppConfig::$siteDomain . ($urlRoot ?? MimimalCmsConfig::$urlRoot) . $uri;
 }
+
+/**
+ * CloudFlare APIのprefixes用URLを生成する（スキームなし）
+ *
+ * CloudFlare APIの仕様:
+ * - files: フルURL必要（https://example.com/path）
+ * - prefixes: スキームなし（example.com/path）
+ *
+ * @param string|array ...$paths The paths to append to the site domain URL.
+ * @return string The site domain URL without scheme.
+ *
+ * * **Example :** Input: `getCdnPrefixUrl("ranking")`  Output: `openchat-review.me/ranking`
+ */
+function getCdnPrefixUrl(string|array ...$paths): string
+{
+    return preg_replace('#^https?://#', '', getSiteDomainUrl(...$paths));
+}
