@@ -135,10 +135,6 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/RankingPosition/Persistence/RankingPositionHourPersistence.php', 70) ?>
             </li>
             <li>
-                各ルームのカバー画像を取得・更新
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 122) ?>
-            </li>
-            <li>
                 メンバー数カラムの更新
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 123) ?>
             </li>
@@ -206,10 +202,6 @@ $logDisplayNames = [
             <li>
                 日次ランキング更新
                 <?php echo githubLink('app/Services/DailyUpdateCronService.php', 95) ?>
-            </li>
-            <li>
-                クローリングで更新された各ルームのカバー画像を取得・更新
-                <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 184) ?>
             </li>
             <li>
                 活動のある本日更新対象ルームを抽出するフィルターキャッシュを保存

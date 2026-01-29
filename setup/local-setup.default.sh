@@ -148,9 +148,6 @@ docker compose exec -T -u root app bash -c '
     rm -f storage/*/*/*.log
     rm -f public/sitemaps/*.xml
     rm -f public/sitemap.xml
-
-    find public/oc-img* -mindepth 1 -maxdepth 1 ! -name "default" ! -name "preview" -exec rm -rf {} + 2>/dev/null || true
-    find public/oc-img*/preview -mindepth 1 -maxdepth 1 ! -name "default" -exec rm -rf {} + 2>/dev/null || true
 '
 
 # Composerの依存関係インストール（Docker経由、rootユーザーとして実行）
@@ -246,8 +243,6 @@ echo "ディレクトリの権限を修正しています..."
 docker compose exec -T -u root app bash -c 'set -e
     chown -R www-data:www-data storage/
     chmod -R 775 storage/
-    chown -R www-data:www-data public/oc-img*
-    chmod -R 775 public/oc-img*
     chown -R www-data:www-data public/sitemaps
     chmod -R 775 public/sitemaps
     # sitemap.xmlはpublic/直下に作成されるため、publicディレクトリも書き込み可能にする

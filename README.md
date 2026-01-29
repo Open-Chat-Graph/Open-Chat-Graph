@@ -176,9 +176,6 @@ Mock環境で時刻を進めながらクローリングをテスト：
   - `ocgraph_ocreview.statistics_ranking_hour24`: 10件以上
   - `ocgraph_ocreview.user_log`: 0件
   - `ocgraph_graph.recommend`: 500件以上
-- 画像ファイルの生成:
-  - `public/oc-img/0`: .webp画像10件以上
-  - `public/oc-img/preview/0`: .webp画像10件以上
 
 ---
 

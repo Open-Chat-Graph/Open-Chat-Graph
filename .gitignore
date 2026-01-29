@@ -31,18 +31,6 @@ setup/local-setup.sh
 batch/sh/*.key
 batch/sh/sqldump
 
-# 画像ファイル
-/public/oc-img/*
-/public/oc-img-*/*
-!/public/oc-img/default
-!/public/oc-img-*/default
-!/public/oc-img/preview
-!/public/oc-img-*/preview
-/public/oc-img/preview/*
-/public/oc-img-*/preview/*
-!/public/oc-img/preview/default
-!/public/oc-img-*/preview/default
-
 # サイトマップ
 public/sitemaps/**
 public/sitemap.xml
