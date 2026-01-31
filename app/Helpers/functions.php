@@ -224,6 +224,91 @@ function etag(
 }
 
 /**
+ * Last-Modifiedヘッダーを使用したHTTPキャッシュ制御
+ *
+ * routing.phpのmatchクロージャで使用することを想定した関数。
+ * 指定された最終更新時刻を基にLast-Modifiedヘッダーを生成し、
+ * リクエストのIf-Modified-Sinceヘッダーと比較する。
+ * 更新されていない場合は304 Not Modifiedを返してexitする。
+ *
+ * この関数をコントローラー実行前に呼び出すことで：
+ * - データベースクエリをスキップ
+ * - ビュー生成をスキップ
+ * - レスポンス組み立てをスキップ
+ * → 真のパフォーマンス向上を実現
+ *
+ * Cloudflare環境での利点：
+ * - ETagと異なり、圧縮方法の影響を受けない
+ * - CloudflareとオリジンサーバーでLast-Modifiedヘッダーが一致する
+ * - Cloudflareキャッシュヒット時にCloudflareが304を返せる
+ *
+ * @param \DateTime|string|int $lastModifiedTime 最終更新時刻（DateTime、Y-m-d H:i:s形式の文字列、またはUNIXタイムスタンプ）
+ * @param int $maxAge ブラウザキャッシュの最大期間（秒）
+ * @param int $sMaxAge CDNキャッシュの最大期間（秒）
+ * @return void 304の場合はexit、そうでなければLast-Modifiedヘッダーを設定して続行
+ *
+ * @throws \InvalidArgumentException 時刻が無効な型の場合
+ */
+function checkLastModified(
+    \DateTime|string|int $lastModifiedTime,
+    int $maxAge = 0,
+    int $sMaxAge = 3600
+): void {
+    if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
+        cache();
+        return;
+    }
+
+    // 最終更新時刻をDateTimeオブジェクトに変換
+    if ($lastModifiedTime instanceof \DateTime) {
+        $dateTime = clone $lastModifiedTime;
+    } elseif (is_string($lastModifiedTime)) {
+        try {
+            $dateTime = new \DateTime($lastModifiedTime);
+        } catch (\Exception $e) {
+            throw new \InvalidArgumentException("Invalid datetime string: {$lastModifiedTime}");
+        }
+    } elseif (is_int($lastModifiedTime)) {
+        $dateTime = new \DateTime('@' . $lastModifiedTime);
+    } else {
+        throw new \InvalidArgumentException('lastModifiedTime must be DateTime, string, or int');
+    }
+
+    // UTCに変換
+    $dateTime->setTimezone(new \DateTimeZone('UTC'));
+
+    // Last-ModifiedヘッダーをRFC 7231形式で生成
+    $lastModifiedHeader = $dateTime->format('D, d M Y H:i:s') . ' GMT';
+
+    // Cache-Controlヘッダーを設定
+    header("Cache-Control: public, max-age={$maxAge}, must-revalidate");
+    header("Cloudflare-CDN-Cache-Control: max-age={$sMaxAge}");
+
+    // リクエストのIf-Modified-Sinceヘッダーを取得
+    $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? null;
+
+    // If-Modified-Sinceヘッダーがある場合、時刻を比較
+    if ($ifModifiedSince !== null) {
+        try {
+            $ifModifiedSinceTime = new \DateTime($ifModifiedSince);
+            $ifModifiedSinceTime->setTimezone(new \DateTimeZone('UTC'));
+
+            // 秒単位で比較（Last-Modifiedは秒精度）
+            if ($dateTime->getTimestamp() <= $ifModifiedSinceTime->getTimestamp()) {
+                header("HTTP/1.1 304 Not Modified");
+                header("Last-Modified: {$lastModifiedHeader}");
+                exit;
+            }
+        } catch (\Exception $e) {
+            // If-Modified-Sinceが不正な形式の場合は無視して続行
+        }
+    }
+
+    // Last-Modifiedヘッダーを設定
+    header("Last-Modified: {$lastModifiedHeader}");
+}
+
+/**
  * @return string 成功メッセージ
  * @throws \RuntimeException 失敗時
  */
