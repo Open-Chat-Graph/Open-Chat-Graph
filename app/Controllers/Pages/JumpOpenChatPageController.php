@@ -41,10 +41,10 @@ class JumpOpenChatPageController
                 break;
         }
 
-        return etag(view($view, compact(
+        return view($view, compact(
             '_meta',
             '_css',
             'oc',
-        )));
+        ));
     }
 }

@@ -33,19 +33,26 @@ use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
+use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
 
 Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', min: 1)
-    ->match(function (int $category) {
-        return !!getCategoryName($category);
+    ->match(function (int $category, FileStorageInterface $fileStorage) {
+        if (!getCategoryName($category)) {
+            return false;
+        }
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
-    ->matchNum('category', emptyAble: true);
+    ->matchNum('category', emptyAble: true)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 /* Route::path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
@@ -59,18 +66,28 @@ Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchNum('category', emptyAble: true);
  */
 
-Route::path('policy', [PolicyPageController::class, 'index']);
+Route::path('policy', [PolicyPageController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
-Route::path('/', [IndexPageController::class, 'index']);
+Route::path('/', [IndexPageController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
-    ->matchNum('open_chat_id', min: 1);
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(function (int $open_chat_id) {
+    ->match(function (int $open_chat_id, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 // TODO: test-api
@@ -83,7 +100,10 @@ Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'inde
         app(ApiDbOpenChatControllerServiceProvider::class)->register();
     });
 
-Route::path('oclist', [OpenChatRankingPageApiController::class, 'index']);
+Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'oc/{open_chat_id}/position',
@@ -94,13 +114,14 @@ Route::path(
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->matchStr('start_date')
     ->matchStr('end_date')
-    ->match(function (string $start_date, string $end_date, Reception $reception) {
+    ->match(function (string $start_date, string $end_date, Reception $reception, FileStorageInterface $fileStorage) {
         $isValid = $start_date === date("Y-m-d", strtotime($start_date))
             && $end_date === date("Y-m-d", strtotime($end_date))
             && strtotime($start_date) <= strtotime($end_date);
         if (!$isValid)
             return false;
 
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
         return true;
     });
 
@@ -114,7 +135,7 @@ Route::path(
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->matchStr('start_date')
     ->matchStr('end_date')
-    ->match(function (string $start_date, string $end_date, string $user) {
+    ->match(function (string $start_date, string $end_date, string $user, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
             return false;
 
@@ -124,6 +145,7 @@ Route::path(
         if (!$isValid)
             return false;
 
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
         app(ApiRankingPositionPageRepositoryServiceProvider::class)->register();
     });
 
@@ -134,7 +156,10 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 1)
     ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising']);
+    ->matchStr('sort', regex: ['ranking', 'rising'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 // TODO: test-api
 Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
@@ -152,10 +177,18 @@ Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    })
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
 Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'nocache'])
@@ -171,7 +204,8 @@ Route::path('recommend')
 
 Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 1000)
-    ->match(function (string $tag) {
+    ->match(function (string $tag, FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
         return ['tag' => urldecode($tag)];
     });
 
@@ -190,22 +224,29 @@ Route::path(
     'recently-registered/{page}@get',
     [RecentOpenChatPageController::class, 'index'],
 )
-    ->matchNum('page');
+    ->matchNum('page')
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'recently-registered@get',
     [RecentOpenChatPageController::class, 'index'],
 )
-    ->matchNum('page', emptyAble: true);
+    ->matchNum('page', emptyAble: true)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'comments-timeline/{page}@get',
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page')
-    ->match(function (int $page) {
+    ->match(function (int $page, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path(
@@ -213,22 +254,31 @@ Route::path(
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page', emptyAble: true)
-    ->match(function () {
+    ->match(function (FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path(
     'labs',
     [LabsPageController::class, 'index']
 )
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'labs/live',
     [LabsPageController::class, 'live']
 )
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 /* Route::path(
     'labs/tags',
@@ -249,9 +299,10 @@ Route::path(
     ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
-    ->match(function (Reception $reception) {
+    ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 // コメントAPI

@@ -65,7 +65,7 @@ class RecentCommentPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
-        return etag(view(
+        return view(
             'recent_comment',
             compact(
                 '_meta',
@@ -78,6 +78,6 @@ class RecentCommentPageController
                 'topPageDto',
                 'unmodifeidPageNumber',
             ) + $rankingList
-        ));
+        );
     }
 }

@@ -20,7 +20,7 @@ class PolicyPageController
 
         $_news = array_reverse(TopPageNews::getTopPageNews());
 
-        return etag(view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_news')));
+        return view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_news'));
     }
 
     function privacy(PageBreadcrumbsListSchema $breadcrumbsShema)
@@ -32,12 +32,12 @@ class PolicyPageController
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'), 'policy', t('プライバシーポリシー'));
 
-        return etag(view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema')));
+        return view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema'));
     }
 
     function term()
     {
-        return etag(view('term_content'));
+        return view('term_content');
     }
 
     function ads()
@@ -48,6 +48,6 @@ class PolicyPageController
         $desc = 'この広告は行動ターゲティング広告ではないため、クッキーの取得を行いません。サイト内のコンテンツに関連するアフィリエイトプログラム広告を自動的に表示しています。';
         $_meta->setDescription($desc)->setOgpDescription($desc);
 
-        return etag(view('ads_policy_content', compact('_meta', '_css')));
+        return view('ads_policy_content', compact('_meta', '_css'));
     }
 }

@@ -23,20 +23,20 @@ class RankingPositionApiController
         string $end_date
     ) {
         if (strtotime($start_date) > strtotime($fileStorage->getContents('@dailyCronUpdatedAtDate'))) {
-            return etag(response(
+            return response(
                 get_object_vars(new RankingPositionChartDto) + [
                     'error' => 'Last Cron execution date is before start_date'
                 ]
-            ));
+            );
         }
 
-        return etag(response($chart->getRankingPositionChartArray(
+        return response($chart->getRankingPositionChartArray(
             RankingType::from($sort),
             $open_chat_id,
             $category,
             new \DateTime($start_date),
             new \DateTime($end_date)
-        )));
+        ));
     }
 
     function rankingPositionHour(
@@ -45,10 +45,10 @@ class RankingPositionApiController
         int $category,
         string $sort
     ) {
-        return etag(response($chart->getPositionHourChartArray(
+        return response($chart->getPositionHourChartArray(
             RankingType::from($sort),
             $open_chat_id,
             $category
-        )));
+        ));
     }
 }
