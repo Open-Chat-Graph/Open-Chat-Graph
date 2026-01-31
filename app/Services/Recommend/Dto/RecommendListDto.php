@@ -49,6 +49,30 @@ class RecommendListDto
         return $result;
     }
 
+    /**
+     * URIベースの決定的シャッフル
+     * 同じURIなら常に同じ順序、異なるURIなら異なる順序を生成
+     *
+     * @param array &$array シャッフル対象の配列
+     */
+    private function seededShuffle(array &$array): void
+    {
+        $uri = getHostAndUri();
+        $seed = base62Hash($uri);
+
+        // Fisher-Yatesアルゴリズムで決定的にシャッフル
+        $count = count($array);
+        for ($i = $count - 1; $i > 0; $i--) {
+            // シードとインデックスから決定的な乱数を生成
+            $hash = md5($seed . $i);
+            $randomValue = hexdec(substr($hash, 0, 8));
+            $j = $randomValue % ($i + 1);
+
+            // スワップ
+            [$array[$i], $array[$j]] = [$array[$j], $array[$i]];
+        }
+    }
+
     /** @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[] */
     private function buildShuffledList(): array
     {
@@ -56,7 +80,7 @@ class RecommendListDto
             return $this->shuffledMergedElements;
 
         $hour = $this->hour;
-        shuffle($hour);
+        $this->seededShuffle($hour);
         $length = $this->getSliceLength(count($hour));
         if (!$length) {
             $this->shuffledMergedElements = $hour;
@@ -64,7 +88,7 @@ class RecommendListDto
         }
 
         $day = array_slice($this->day, 0, $length);
-        shuffle($day);
+        $this->seededShuffle($day);
         $length = $this->getSliceLength(count($hour) + count($day));
         if (!$length) {
             $this->shuffledMergedElements = array_merge($hour, $day);
@@ -72,20 +96,20 @@ class RecommendListDto
         };
 
         $week = array_slice($this->week, 0, $length);
-        shuffle($week);
+        $this->seededShuffle($week);
         $length = $this->getSliceLength(count($hour) + count($day) + count($week));
         if (!$length) {
             $result = array_merge($day, $week);
-            shuffle($result);
+            $this->seededShuffle($result);
             $this->shuffledMergedElements = array_merge($hour, $result);
             return $this->shuffledMergedElements;
         };
 
         $member = array_slice($this->member, 0, $length);
-        shuffle($member);
+        $this->seededShuffle($member);
 
         $result = array_merge($day, $week);
-        shuffle($result);
+        $this->seededShuffle($result);
 
         $this->shuffledMergedElements = array_merge($hour, $result, $member);
         return $this->shuffledMergedElements;

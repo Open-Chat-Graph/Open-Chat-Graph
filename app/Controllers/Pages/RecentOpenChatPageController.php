@@ -54,9 +54,9 @@ class RecentOpenChatPageController
 
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema('最近登録されたオープンチャット');
 
-        return view(
+        return etag(view(
             'recent_content',
             compact('_meta', '_css', '_select', '_label', 'path', 'isAdmin', '_breadcrumbsShema') + $rankingList
-        );
+        ));
     }
 }

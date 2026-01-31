@@ -102,4 +102,18 @@ class Response implements ResponseInterface
             echo json_encode($this->jsonData, JSON_THROW_ON_ERROR);
         }
     }
+
+    /**
+     * Get the response body content as a string.
+     * For JSON responses, returns the JSON-encoded string.
+     *
+     * @return string The response body content.
+     */
+    public function getBody(): string
+    {
+        if (isset($this->jsonData)) {
+            return json_encode($this->jsonData, JSON_THROW_ON_ERROR);
+        }
+        return '';
+    }
 }

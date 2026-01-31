@@ -30,7 +30,7 @@ interface ResponseInterface
 
     /**
      * Save input values to session, excluding specified names (if provided).
-     * 
+     *
      * @param string ...$exceptNames The names of form inputs to exclude from being flashed.
      */
     public function withInput(string ...$exceptNames): ResponseInterface;
@@ -40,4 +40,12 @@ interface ResponseInterface
      * Returns HTTP status code and response.
      */
     public function send();
+
+    /**
+     * Get the response body content as a string.
+     * For JSON responses, returns the JSON-encoded string.
+     *
+     * @return string The response body content.
+     */
+    public function getBody(): string;
 }

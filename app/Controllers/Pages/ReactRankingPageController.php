@@ -97,6 +97,6 @@ class ReactRankingPageController
             $category ? getCategoryName($category) : '',
         );
 
-        return view('ranking_react_content', compact('_css', '_js', '_meta', '_argDto', '_breadcrumbsShema', 'category'));
+        return etag(view('ranking_react_content', compact('_css', '_js', '_meta', '_argDto', '_breadcrumbsShema', 'category')));
     }
 }

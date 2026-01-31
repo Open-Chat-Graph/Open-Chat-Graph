@@ -39,6 +39,7 @@ class IndexPageController
             0,
             15,
         );
+
         $updatedAtHouryCron = $dto->rankingUpdatedAt;
 
         if (isset($dto->recentCommentList[0]['time'])) {
@@ -51,7 +52,7 @@ class IndexPageController
         $officialDto = $officialPageList->getListDto(1);
         $officialDto2 = $officialPageList->getListDto(2);
 
-        return view('top_content', compact(
+        return etag(view('top_content', compact(
             '_meta',
             '_css',
             '_schema',
@@ -59,6 +60,6 @@ class IndexPageController
             'dto',
             'officialDto',
             'officialDto2',
-        ));
+        )));
     }
 }

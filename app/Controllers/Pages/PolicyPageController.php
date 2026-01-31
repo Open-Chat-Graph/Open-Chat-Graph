@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Config\AppConfig;
 use App\Views\Content\TopPageNews;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
@@ -21,9 +20,7 @@ class PolicyPageController
 
         $_news = array_reverse(TopPageNews::getTopPageNews());
 
-        $view = view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_news'));
-        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
-        return $view;
+        return etag(view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_news')));
     }
 
     function privacy(PageBreadcrumbsListSchema $breadcrumbsShema)
@@ -35,16 +32,12 @@ class PolicyPageController
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'), 'policy', t('プライバシーポリシー'));
 
-        $view = view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema'));
-        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
-        return $view;
+        return etag(view('privacy_content', compact('_meta', '_css', '_breadcrumbsShema')));
     }
 
     function term()
     {
-        $view = view('term_content');
-        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
-        return $view;
+        return etag(view('term_content'));
     }
 
     function ads()
@@ -55,8 +48,6 @@ class PolicyPageController
         $desc = 'この広告は行動ターゲティング広告ではないため、クッキーの取得を行いません。サイト内のコンテンツに関連するアフィリエイトプログラム広告を自動的に表示しています。';
         $_meta->setDescription($desc)->setOgpDescription($desc);
 
-        $view = view('ads_policy_content', compact('_meta', '_css'));
-        handleRequestWithETagAndCache($view->getRenderCache(), ...AppConfig::ETAG_ARG);
-        return $view;
+        return etag(view('ads_policy_content', compact('_meta', '_css')));
     }
 }

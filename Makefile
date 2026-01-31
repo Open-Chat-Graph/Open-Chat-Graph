@@ -285,13 +285,6 @@ ci-test: ## ローカルでCIテストを実行（Mock環境でクローリン�
 	@echo "$(YELLOW)[4/4] テストを実行...$(NC)"
 	@chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
 	@./.github/scripts/test-ci.sh -y
-	@echo "$(YELLOW)storageディレクトリのパーミッションを修正中...$(NC)"
-	@if $(MAKE) _is-mock 2>/dev/null; then \
-		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec -T -u root app bash -c 'chown -R www-data:www-data /var/www/html/storage && find /var/www/html/storage -type f -exec chmod 664 {} \; && find /var/www/html/storage -type d -exec chmod 775 {} \;'; \
-	else \
-		docker compose exec -T -u root app bash -c 'chown -R www-data:www-data /var/www/html/storage && find /var/www/html/storage -type f -exec chmod 664 {} \; && find /var/www/html/storage -type d -exec chmod 775 {} \;'; \
-	fi
-	@echo "$(GREEN)✓ パーミッション修正完了$(NC)"
 	@./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 	@echo "$(GREEN)========================================"
 	@echo "  ローカルCIテスト完了"

@@ -167,26 +167,50 @@ function noStore()
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
-function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
-{
+/**
+ * 強いETagを生成してHTTPレスポンスヘッダーに含める
+ *
+ * ViewInterfaceまたはResponseInterfaceから実際のコンテンツを取得し、
+ * そのコンテンツのMD5ハッシュから強いETagを生成する。
+ * リクエストのETagと一致する場合は304 Not Modifiedを返して終了する。
+ *
+ * @param Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface $response レスポンスオブジェクト
+ * @param int $maxAge ブラウザキャッシュの最大期間（秒）
+ * @param int $sMaxAge CDNキャッシュの最大期間（秒）
+ * @return Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface 元のレスポンスをそのまま返す
+ *
+ * @throws \InvalidArgumentException レスポンスが無効な型の場合
+ */
+function etag(
+    Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface $response,
+    int $maxAge = 0,
+    int $sMaxAge = 3600
+): Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface {
     if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
         cache();
-        return;
+        return $response;
     }
 
-    // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
-    if ($hourly) {
-        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content . filemtime(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))) . '"';
+    // コンテンツを取得
+    if ($response instanceof Shadow\Kernel\ViewInterface) {
+        $content = $response->getRenderCache();
+    } elseif ($response instanceof Shadow\Kernel\ResponseInterface) {
+        $content = $response->getBody();
     } else {
-        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content) . '"';
+        throw new \InvalidArgumentException('Response must be ViewInterface or ResponseInterface');
     }
 
-    // max-ageと共にCache-Controlヘッダーを設定
+    // 強いETagを生成（コンテンツのMD5ハッシュのみ）
+    $etag = '"' . md5($content) . '"';
+
+    // Cache-Controlヘッダーを設定
     header("Cache-Control: public, max-age={$maxAge}, must-revalidate");
     header("Cloudflare-CDN-Cache-Control: max-age={$sMaxAge}");
 
-    // 現在のリクエストのETagを取得
-    $requestEtag = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? str_replace('-gzip', '', trim($_SERVER['HTTP_IF_NONE_MATCH'])) : '';
+    // 現在のリクエストのETagを取得（CDNが付与する-gzipサフィックスを削除）
+    $requestEtag = isset($_SERVER['HTTP_IF_NONE_MATCH'])
+        ? str_replace('-gzip', '', trim($_SERVER['HTTP_IF_NONE_MATCH']))
+        : '';
 
     // ETagが一致する場合は304 Not Modifiedを返して終了
     if ($requestEtag === $etag) {
@@ -195,6 +219,8 @@ function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sM
     }
 
     header("ETag: $etag");
+
+    return $response;
 }
 
 /**

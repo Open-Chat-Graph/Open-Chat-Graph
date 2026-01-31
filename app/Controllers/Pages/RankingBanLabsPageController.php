@@ -55,7 +55,7 @@ class RankingBanLabsPageController
         if (!$rankingBanData && $page === 1) {
             $totalRecords = 0;
             $maxPageNumber = 0;
-            return view(
+            return etag(view(
                 'ranking_ban_content',
                 compact(
                     '_meta',
@@ -66,7 +66,7 @@ class RankingBanLabsPageController
                     'totalRecords',
                     'maxPageNumber',
                 )
-            );
+            ));
         }
 
         $totalRecords = $rankingBanData['totalRecords'];
@@ -92,7 +92,7 @@ class RankingBanLabsPageController
             'maxPageNumber' => $maxPageNumber
         ];
 
-        return view(
+        return etag(view(
             'ranking_ban_content',
             compact(
                 '_meta',
@@ -107,6 +107,6 @@ class RankingBanLabsPageController
                 'titleValue',
                 'maxPageNumber',
             )
-        );
+        ));
     }
 }
