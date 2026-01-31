@@ -687,7 +687,7 @@ function adminMode(): true
 
 function isAdsAdmin(): bool
 {
-    if (AppConfig::$enableCloudflare) {
+    if (!AppConfig::$enableCloudflare) {
         /** @var AdminAuthService $adminAuthService */
         $adminAuthService = app(AdminAuthService::class);
         return $adminAuthService->auth();
