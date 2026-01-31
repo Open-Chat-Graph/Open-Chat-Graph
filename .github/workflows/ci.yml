@@ -141,13 +141,6 @@ jobs:
           sleep 2
         done
 
-    - name: Install dependencies
-      run: |
-        echo "Installing Composer dependencies..."
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root -e COMPOSER_ALLOW_SUPERUSER=1 app composer install --no-dev --optimize-autoloader
-        echo "Fixing vendor directory permissions..."
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u root app chown -R www-data:www-data /var/www/html/vendor
-
     - name: Initialize database and storage
       run: |
         echo "Initializing database and storage..."
@@ -156,7 +149,8 @@ jobs:
     - name: Run CI tests
       run: |
         chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
-        ./.github/scripts/test-ci.sh -y && ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
+        ./.github/scripts/test-ci.sh -y
+        ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 
     - name: Handle test failure
       if: failure()

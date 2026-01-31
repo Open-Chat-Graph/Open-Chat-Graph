@@ -8,7 +8,6 @@ services:
       - "${WEB_PORT:-8000}:80"
       - "${HTTPS_PORT:-8443}:443"
     working_dir: /var/www/html
-    user: "33:33"
     volumes:
       - "./:/var/www/html"
       - "./docker/app/logs:/var/log/app"

@@ -169,12 +169,12 @@ run_cron_job() {
 
     if [ -z "$lang_arg" ]; then
         # 日本語（引数なし）
-        docker exec "$APP_CONTAINER" bash -c \
+        docker exec -u www-data "$APP_CONTAINER" bash -c \
             "FAKETIME='@${readable_date}' LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1 /usr/local/bin/php batch/cron/cron_crawling.php" \
             2>&1 | tee "$job_log"
     else
         # 繁体字/タイ語（引数あり）
-        docker exec "$APP_CONTAINER" bash -c \
+        docker exec -u www-data "$APP_CONTAINER" bash -c \
             "FAKETIME='@${readable_date}' LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1 /usr/local/bin/php batch/cron/cron_crawling.php ${lang_arg}" \
             2>&1 | tee "$job_log"
     fi
@@ -321,7 +321,7 @@ main() {
     check_containers
 
     # faketimeが利用可能か確認
-    if ! docker exec "$APP_CONTAINER" which faketime > /dev/null 2>&1; then
+    if ! docker exec -u www-data "$APP_CONTAINER" which faketime > /dev/null 2>&1; then
         log_error "faketimeがインストールされていません"
         log_error "コンテナを再ビルドしてください: make rebuild-mock"
         exit 1
@@ -466,7 +466,7 @@ main() {
     local import_start_time=$(date +%s)
 
     # -i フラグで標準入力を開いたまま実行（プロセスが完全に終了するまで待機）
-    docker exec -i "$APP_CONTAINER" /usr/local/bin/php batch/exec/ocreview_api_data_import_background.php 2>&1 | tee "$LOG_DIR/api_data_import.log"
+    docker exec -i -u www-data "$APP_CONTAINER" /usr/local/bin/php batch/exec/ocreview_api_data_import_background.php 2>&1 | tee "$LOG_DIR/api_data_import.log"
 
     local import_exit_code=$?
     local import_end_time=$(date +%s)
@@ -510,6 +510,13 @@ main() {
 
         sleep 1
     done
+
+    # ディレクトリの権限を最初に修正（www-dataが書き込めるようにする）
+    echo "ディレクトリの権限を修正しています..."
+    docker compose exec -T -u root app bash -c 'set -e
+        chmod -R 777 storage/
+        chmod 777 public/sitemap.xml
+    '
 
     log "========================================="
     log "カテゴリ別クローリングテスト完了"
