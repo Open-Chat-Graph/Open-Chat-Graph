@@ -150,7 +150,7 @@ class OpenChatPageController
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
-        return view('oc_content', compact(
+        return etag(view('oc_content', compact(
             '_meta',
             '_css',
             'oc',
@@ -167,7 +167,7 @@ class OpenChatPageController
             'topPageDto',
             'formatedDescription',
             'formatedRowDescription',
-        ));
+        )));
     }
 
     private function getAdminDto(int $open_chat_id)
@@ -204,7 +204,7 @@ class OpenChatPageController
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
         http_response_code(404);
-        return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
+        return etag(view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto')));
     }
 
     private function buildHourlyRange(array $oc): ?string

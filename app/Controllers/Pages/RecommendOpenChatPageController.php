@@ -73,7 +73,7 @@ class RecommendOpenChatPageController
             $_schema = '';
             $_meta->setTitle(t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag));
             noStore();
-            return view('recommend_content', compact(
+            return etag(view('recommend_content', compact(
                 '_meta',
                 '_css',
                 'tag',
@@ -84,7 +84,7 @@ class RecommendOpenChatPageController
                 '_dto',
                 'topPageDto',
                 'canonical',
-            ));
+            )));
         }
 
         $recommendList = $recommend->getList(false);
@@ -103,7 +103,7 @@ class RecommendOpenChatPageController
             $tag
         );
 
-        return view('recommend_content', compact(
+        return etag(view('recommend_content', compact(
             '_meta',
             '_css',
             '_breadcrumbsShema',
@@ -116,6 +116,6 @@ class RecommendOpenChatPageController
             'topPageDto',
             'canonical',
             'hourlyUpdatedAt',
-        ));
+        )));
     }
 }
