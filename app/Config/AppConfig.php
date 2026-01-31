@@ -16,8 +16,6 @@ class AppConfig
 
     const GTM_ID = 'GTM-NTK2GPTF';
 
-    const ETAG_ARG = [300, 3600 * 24, false];
-
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
 
