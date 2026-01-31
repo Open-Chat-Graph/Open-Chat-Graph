@@ -16,9 +16,11 @@ use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\FuriganaPageController;
+use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
+use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
 use App\Controllers\Pages\RecentCommentPageController;
@@ -38,48 +40,37 @@ Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking']
     ->matchStr('list', default: 'all', emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
-        handleRequestWithETagAndCache("ranking/{$category}");
         return !!getCategoryName($category);
     });
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
-    ->matchNum('category', emptyAble: true)
-    ->match(fn() => handleRequestWithETagAndCache("ranking"));
+    ->matchNum('category', emptyAble: true);
 
 /* Route::path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category) {
-        handleRequestWithETagAndCache("official-ranking/{$category}");
         return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
     });
 
 Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'rising', emptyAble: true)
-    ->matchNum('category', emptyAble: true)
-    ->match(fn() => handleRequestWithETagAndCache("official-ranking"));
+    ->matchNum('category', emptyAble: true);
  */
 
-Route::path('policy')
-    ->match(fn() => handleRequestWithETagAndCache('policy'));
+Route::path('policy', [PolicyPageController::class, 'index']);
 
-Route::path('/')
-    ->match(fn() => handleRequestWithETagAndCache('index'));
+Route::path('/', [IndexPageController::class, 'index']);
 
 Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
-    ->matchNum('open_chat_id', min: 1)
-    ->match(function (int $open_chat_id) {
-        handleRequestWithETagAndCache($open_chat_id . MimimalCmsConfig::$urlRoot);
-    });
+    ->matchNum('open_chat_id', min: 1);
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (int $open_chat_id) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache($open_chat_id . MimimalCmsConfig::$urlRoot);
     });
 
 // TODO: test-api
@@ -92,8 +83,7 @@ Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'inde
         app(ApiDbOpenChatControllerServiceProvider::class)->register();
     });
 
-Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
-    ->match(fn(Reception $reception) => handleRequestWithETagAndCache(json_encode($reception->input())));
+Route::path('oclist', [OpenChatRankingPageApiController::class, 'index']);
 
 Route::path(
     'oc/{open_chat_id}/position',
@@ -111,7 +101,6 @@ Route::path(
         if (!$isValid)
             return false;
 
-        handleRequestWithETagAndCache(json_encode($reception->input()) . MimimalCmsConfig::$urlRoot);
         return true;
     });
 
@@ -145,10 +134,7 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 1)
     ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->match(function (Reception $reception) {
-        handleRequestWithETagAndCache(json_encode($reception->input()) . MimimalCmsConfig::$urlRoot);
-    });
+    ->matchStr('sort', regex: ['ranking', 'rising']);
 
 // TODO: test-api
 Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
@@ -186,7 +172,6 @@ Route::path('recommend')
 Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index'])
     ->matchStr('tag', maxLen: 1000)
     ->match(function (string $tag) {
-        handleRequestWithETagAndCache($tag . MimimalCmsConfig::$urlRoot);
         return ['tag' => urldecode($tag)];
     });
 
@@ -205,19 +190,13 @@ Route::path(
     'recently-registered/{page}@get',
     [RecentOpenChatPageController::class, 'index'],
 )
-    ->matchNum('page')
-    ->match(function (int $page) {
-        handleRequestWithETagAndCache("recently-registered/{$page}" . MimimalCmsConfig::$urlRoot);
-    });
+    ->matchNum('page');
 
 Route::path(
     'recently-registered@get',
     [RecentOpenChatPageController::class, 'index'],
 )
-    ->matchNum('page', emptyAble: true)
-    ->match(function () {
-        handleRequestWithETagAndCache("recently-registered" . MimimalCmsConfig::$urlRoot);
-    });
+    ->matchNum('page', emptyAble: true);
 
 Route::path(
     'comments-timeline/{page}@get',
@@ -227,8 +206,6 @@ Route::path(
     ->match(function (int $page) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache("recent-comments/{$page}");
     });
 
 Route::path(
@@ -239,8 +216,6 @@ Route::path(
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache("recent-comments");
     });
 
 Route::path(
@@ -263,8 +238,6 @@ Route::path(
     ->match(function () {
                 if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache("labs/tags");
     }); */
 
 Route::path(
@@ -279,8 +252,6 @@ Route::path(
     ->match(function (Reception $reception) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache(json_encode($reception->input()));
     });
 
 // コメントAPI
@@ -491,8 +462,6 @@ Route::path('furigana/guideline')
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache('guideline');
     });
 
 Route::path(
@@ -502,8 +471,6 @@ Route::path(
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-
-        handleRequestWithETagAndCache('defamationGuideline');
     });
 
 Route::path(
