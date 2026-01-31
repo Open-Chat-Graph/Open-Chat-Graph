@@ -52,7 +52,7 @@ class IndexPageController
         $officialDto = $officialPageList->getListDto(1);
         $officialDto2 = $officialPageList->getListDto(2);
 
-        return etag(view('top_content', compact(
+        return view('top_content', compact(
             '_meta',
             '_css',
             '_schema',
@@ -60,6 +60,6 @@ class IndexPageController
             'dto',
             'officialDto',
             'officialDto2',
-        )));
+        ));
     }
 }

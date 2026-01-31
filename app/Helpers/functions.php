@@ -168,59 +168,88 @@ function noStore()
 }
 
 /**
- * 強いETagを生成してHTTPレスポンスヘッダーに含める
+ * Last-Modifiedヘッダーを使用したHTTPキャッシュ制御
  *
- * ViewInterfaceまたはResponseInterfaceから実際のコンテンツを取得し、
- * そのコンテンツのMD5ハッシュから強いETagを生成する。
- * リクエストのETagと一致する場合は304 Not Modifiedを返して終了する。
+ * routing.phpのmatchクロージャで使用することを想定した関数。
+ * 指定された最終更新時刻を基にLast-Modifiedヘッダーを生成し、
+ * リクエストのIf-Modified-Sinceヘッダーと比較する。
+ * 更新されていない場合は304 Not Modifiedを返してexitする。
  *
- * @param Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface $response レスポンスオブジェクト
+ * この関数をコントローラー実行前に呼び出すことで：
+ * - データベースクエリをスキップ
+ * - ビュー生成をスキップ
+ * - レスポンス組み立てをスキップ
+ * → 真のパフォーマンス向上を実現
+ *
+ * Cloudflare環境での利点：
+ * - ETagと異なり、圧縮方法の影響を受けない
+ * - CloudflareとオリジンサーバーでLast-Modifiedヘッダーが一致する
+ * - Cloudflareキャッシュヒット時にCloudflareが304を返せる
+ *
+ * @param \DateTime|string|int $lastModifiedTime 最終更新時刻（DateTime、Y-m-d H:i:s形式の文字列、またはUNIXタイムスタンプ）
  * @param int $maxAge ブラウザキャッシュの最大期間（秒）
  * @param int $sMaxAge CDNキャッシュの最大期間（秒）
- * @return Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface 元のレスポンスをそのまま返す
+ * @return void 304の場合はexit、そうでなければLast-Modifiedヘッダーを設定して続行
  *
- * @throws \InvalidArgumentException レスポンスが無効な型の場合
+ * @throws \InvalidArgumentException 時刻が無効な型の場合
  */
-function etag(
-    Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface $response,
+function checkLastModified(
+    \DateTime|string|int $lastModifiedTime,
     int $maxAge = 0,
     int $sMaxAge = 3600
-): Shadow\Kernel\ViewInterface|Shadow\Kernel\ResponseInterface {
+): void {
     if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
         cache();
-        return $response;
+        return;
     }
 
-    // コンテンツを取得
-    if ($response instanceof Shadow\Kernel\ViewInterface) {
-        $content = $response->getRenderCache();
-    } elseif ($response instanceof Shadow\Kernel\ResponseInterface) {
-        $content = $response->getBody();
+    // 最終更新時刻をDateTimeオブジェクトに変換
+    if ($lastModifiedTime instanceof \DateTime) {
+        $dateTime = clone $lastModifiedTime;
+    } elseif (is_string($lastModifiedTime)) {
+        try {
+            $dateTime = new \DateTime($lastModifiedTime);
+        } catch (\Exception $e) {
+            throw new \InvalidArgumentException("Invalid datetime string: {$lastModifiedTime}");
+        }
+    } elseif (is_int($lastModifiedTime)) {
+        $dateTime = new \DateTime('@' . $lastModifiedTime);
     } else {
-        throw new \InvalidArgumentException('Response must be ViewInterface or ResponseInterface');
+        throw new \InvalidArgumentException('lastModifiedTime must be DateTime, string, or int');
     }
 
-    // 強いETagを生成（コンテンツのMD5ハッシュのみ）
-    $etag = '"' . md5($content) . '"';
+    // UTCに変換
+    $dateTime->setTimezone(new \DateTimeZone('UTC'));
+
+    // Last-ModifiedヘッダーをRFC 7231形式で生成
+    $lastModifiedHeader = $dateTime->format('D, d M Y H:i:s') . ' GMT';
 
     // Cache-Controlヘッダーを設定
     header("Cache-Control: public, max-age={$maxAge}, must-revalidate");
     header("Cloudflare-CDN-Cache-Control: max-age={$sMaxAge}");
 
-    // 現在のリクエストのETagを取得（CDNが付与する-gzipサフィックスを削除）
-    $requestEtag = isset($_SERVER['HTTP_IF_NONE_MATCH'])
-        ? str_replace('-gzip', '', trim($_SERVER['HTTP_IF_NONE_MATCH']))
-        : '';
+    // リクエストのIf-Modified-Sinceヘッダーを取得
+    $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? null;
 
-    // ETagが一致する場合は304 Not Modifiedを返して終了
-    if ($requestEtag === $etag) {
-        header("HTTP/1.1 304 Not Modified");
-        exit;
+    // If-Modified-Sinceヘッダーがある場合、時刻を比較
+    if ($ifModifiedSince !== null) {
+        try {
+            $ifModifiedSinceTime = new \DateTime($ifModifiedSince);
+            $ifModifiedSinceTime->setTimezone(new \DateTimeZone('UTC'));
+
+            // 秒単位で比較（Last-Modifiedは秒精度）
+            if ($dateTime->getTimestamp() <= $ifModifiedSinceTime->getTimestamp()) {
+                header("HTTP/1.1 304 Not Modified");
+                header("Last-Modified: {$lastModifiedHeader}");
+                exit;
+            }
+        } catch (\Exception $e) {
+            // If-Modified-Sinceが不正な形式の場合は無視して続行
+        }
     }
 
-    header("ETag: $etag");
-
-    return $response;
+    // Last-Modifiedヘッダーを設定
+    header("Last-Modified: {$lastModifiedHeader}");
 }
 
 /**

@@ -23,12 +23,12 @@ class LabsPageController
 
         $_recommendDto = $staticDataGeneration->getRecommendPageDto();
 
-        return etag(view('labs_content', compact(
+        return view('labs_content', compact(
             '_meta',
             '_css',
             '_breadcrumbsShema',
             '_recommendDto',
-        )));
+        ));
     }
 
     function live()
@@ -40,6 +40,6 @@ class LabsPageController
 
         $_css = ['room_page', 'site_header', 'site_footer', 'live_ana'];
 
-        return etag(view('live_content', compact('_meta', '_css')));
+        return view('live_content', compact('_meta', '_css'));
     }
 }

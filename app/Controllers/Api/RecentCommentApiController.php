@@ -16,7 +16,7 @@ class RecentCommentApiController
     function index(int $open_chat_id)
     {
         if (!$open_chat_id) {
-            return etag($this->response('', $open_chat_id));
+            return $this->response('', $open_chat_id);
         }
 
         noStore();

@@ -72,20 +72,20 @@ class OpenChatRankingPageApiController
         $time->modify('-1hour');
         $timeStr = $time->format('Y-m-d H:i:s');
 
-        return etag(response($repo->findOfficialRanking($this->args, $type, $timeStr)));
+        return response($repo->findOfficialRanking($this->args, $type, $timeStr));
     }
 
     function index(OpenChatStatsRankingApiRepository $repo)
     {
         switch ($this->args->list) {
             case 'hourly':
-                return etag(response($repo->findHourlyStatsRanking($this->args)));
+                return response($repo->findHourlyStatsRanking($this->args));
             case 'daily':
-                return etag(response($repo->findDailyStatsRanking($this->args)));
+                return response($repo->findDailyStatsRanking($this->args));
             case 'weekly':
-                return etag(response($repo->findWeeklyStatsRanking($this->args)));
+                return response($repo->findWeeklyStatsRanking($this->args));
             case 'all':
-                return etag(response($repo->findStatsAll($this->args)));
+                return response($repo->findStatsAll($this->args));
             case 'ranking':
                 return $this->officialRanking(RankingType::Ranking);
             case 'rising':
