@@ -137,7 +137,7 @@ function memberCount(int $count)
     <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script>
-        const admin = <?php echo isAdmin() ? 1 : 0; ?>;
+        const admin = <?php echo isAdsAdmin() ? 1 : 0; ?>;
     </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <?php if ($isAdminPage && isset($adsList)) : ?>

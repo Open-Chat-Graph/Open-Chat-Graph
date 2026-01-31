@@ -10,6 +10,7 @@ use Shadow\Kernel\Dispatcher\ReceptionInitializer;
 use Shadow\Kernel\Utility\KernelUtility;
 use Shared\Exceptions\NotFoundException;
 use Shared\MimimalCmsConfig;
+use Symfony\Component\HttpClient\RetryableHttpClient;
 
 /**
  * Inserts HTML line breaks before all newlines in a string.
@@ -198,7 +199,7 @@ function checkLastModified(
     int $maxAge = 0,
     int $sMaxAge = 3600
 ): void {
-    if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
+    if (!AppConfig::$enableCloudflare) {
         cache();
         return;
     }
@@ -684,11 +685,15 @@ function adminMode(): true
     return true;
 }
 
-function isAdmin(): bool
+function isAdsAdmin(): bool
 {
-    /** @var AdminAuthService $adminAuthService */
-    $adminAuthService = app(AdminAuthService::class);
-    return $adminAuthService->auth();
+    if (!AppConfig::$enableCloudflare) {
+        /** @var AdminAuthService $adminAuthService */
+        $adminAuthService = app(AdminAuthService::class);
+        return $adminAuthService->auth();
+    }
+
+    return false;
 }
 
 function getStorageFileTime(string $filename, bool $fullPath = false): int|false

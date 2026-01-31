@@ -20,7 +20,6 @@ class AdminAuthService
      */
     function auth(): bool
     {
-
         if (!cookie()->has('admin')) {
             if (cookie()->has('admin-enable')) {
                 cookie()->remove('admin-enable');

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Services\Admin\AdminAuthService;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\RecentComment;
 use App\Views\RecentCommentSelectElementPagination;
@@ -22,7 +21,6 @@ class RecentCommentPageController
     ) {}
 
     function index(
-        AdminAuthService $adminAuthService,
         StaticDataFile $staticDataGeneration,
     ) {
         $unmodifeidPageNumber = Reception::input('page');
@@ -40,7 +38,7 @@ class RecentCommentPageController
         $pageTitle = 'コメントのタイムライン';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
-        $isAdmin = $adminAuthService->auth();
+        $isAdmin = isAdsAdmin();
 
         // ページネーションのselect要素
         [$title, $_select, $_label] = $this->pagination->geneSelectElementPagerAsc(
