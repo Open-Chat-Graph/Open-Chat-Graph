@@ -167,36 +167,6 @@ function noStore()
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
-function handleRequestWithETagAndCache(string $content, int $maxAge = 0, int $sMaxAge = 3600, $hourly = true): void
-{
-    if (AppConfig::$isStaging || !AppConfig::$enableCloudflare) {
-        cache();
-        return;
-    }
-
-    // ETagを生成（ここではコンテンツのMD5ハッシュを使用）
-    if ($hourly) {
-        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content . filemtime(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))) . '"';
-    } else {
-        $etag = '"' . md5(MimimalCmsConfig::$urlRoot . $content) . '"';
-    }
-
-    // max-ageと共にCache-Controlヘッダーを設定
-    header("Cache-Control: public, max-age={$maxAge}, must-revalidate");
-    header("Cloudflare-CDN-Cache-Control: max-age={$sMaxAge}");
-
-    // 現在のリクエストのETagを取得
-    $requestEtag = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? str_replace('-gzip', '', trim($_SERVER['HTTP_IF_NONE_MATCH'])) : '';
-
-    // ETagが一致する場合は304 Not Modifiedを返して終了
-    if ($requestEtag === $etag) {
-        header("HTTP/1.1 304 Not Modified");
-        exit;
-    }
-
-    header("ETag: $etag");
-}
-
 /**
  * 強いETagを生成してHTTPレスポンスヘッダーに含める
  *
