@@ -64,6 +64,23 @@ make show / help
 - Docker with Compose V2
 - `mkcert` for SSL certificate generation (not required for CI)
 
+### GitHub Codespaces Environment
+
+**Codespaces環境はローカル開発環境と完全に同じ:**
+- 独立したUbuntuコンテナ内でDocker環境を起動
+- ローカルと同じMakefileコマンドが使用可能
+- `make ci-test`などの全てのスクリプトが正常に動作
+
+**セットアップ:**
+1. Codespacesが起動すると自動的に`make init-y`が実行される
+2. `make up-mock`でMock環境を起動
+3. ポート転送タブから各サービスにアクセス
+
+**構成:**
+- `.devcontainer/Dockerfile`: Ubuntu + Docker + mkcert
+- `.devcontainer/devcontainer.json`: シンプルなdevcontainer設定
+- `.devcontainer/post-create-command.sh`: 初期セットアップスクリプト
+
 ### CI Environment
 
 **CI環境では専用の設定を使用:**

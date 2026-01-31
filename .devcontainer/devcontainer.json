@@ -1,9 +1,17 @@
 {
-  "name": "My Project",
-  "dockerComposeFile": "../docker-compose.yml",
-  "service": "app",
-  "workspaceFolder": "/var/www/html",
-  "remoteUser": "vscode",
+  "name": "Open Chat Graph (Codespaces)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "ubuntu",
   "customizations": {
     "vscode": {
       "settings": {
@@ -13,20 +21,35 @@
         "steoates.autoimport",
         "formulahendry.code-runner",
         "mhutchie.git-graph",
-        "GitHub.vscode-pull-request-github",
-        "oderwat.indent-rainbow",
         "bmewburn.vscode-intelephense-client",
-        "emallin.phpunit",
         "Gruntfuggly.todo-tree",
         "PKief.material-icon-theme",
         "MS-CEINTL.vscode-language-pack-ja",
         "GitHub.codespaces",
         "formulahendry.auto-rename-tag",
         "formulahendry.auto-close-tag",
-        "xdebug.php-debug",
-        "GitHub.copilot"
+        "xdebug.php-debug"
       ]
     }
   },
-  "postCreateCommand": "sudo chown -R vscode:vscode /var/www/html/.devcontainer && /var/www/html/.devcontainer/post-create-command.sh"
+  "postCreateCommand": "bash .devcontainer/post-create-command.sh",
+  "forwardPorts": [
+    8443,
+    8080,
+    9000
+  ],
+  "portsAttributes": {
+    "8443": {
+      "label": "HTTPS (Basic)",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "phpMyAdmin",
+      "onAutoForward": "silent"
+    },
+    "9000": {
+      "label": "LINE Mock API",
+      "onAutoForward": "notify"
+    }
+  }
 }

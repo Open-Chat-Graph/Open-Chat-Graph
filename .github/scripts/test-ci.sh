@@ -312,7 +312,7 @@ main() {
     fi
 
     # hourIndexを設定
-    echo "$existing_hour_index" | docker exec -i "$MOCK_CONTAINER" tee /app/data/hour_index.txt > /dev/null
+    echo "$existing_hour_index" | docker exec -i "$MOCK_CONTAINER" sh -c 'tee /app/data/hour_index.txt > /dev/null && chmod 777 /app/data/hour_index.txt'
 
     # 開始hourIndexを保存（後で使用）
     START_HOUR_INDEX=$existing_hour_index
@@ -371,7 +371,7 @@ main() {
 
         # hourIndexを更新
         local hour_index=$actual_hour_index
-        echo "$hour_index" | docker exec -i "$MOCK_CONTAINER" tee /app/data/hour_index.txt > /dev/null
+        echo "$hour_index" | docker exec -i "$MOCK_CONTAINER" sh -c 'tee /app/data/hour_index.txt > /dev/null && chmod 777 /app/data/hour_index.txt'
 
         local jobs_executed=0
         local pids=()
@@ -510,13 +510,6 @@ main() {
 
         sleep 1
     done
-
-    # ディレクトリの権限を最初に修正（www-dataが書き込めるようにする）
-    echo "ディレクトリの権限を修正しています..."
-    docker compose exec -T -u root app bash -c 'set -e
-        chmod -R 777 storage/
-        chmod 777 public/sitemap.xml
-    '
 
     log "========================================="
     log "カテゴリ別クローリングテスト完了"
