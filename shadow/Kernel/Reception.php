@@ -21,7 +21,7 @@ class Reception implements ReceptionInterface
         self::$inputData = $data;
     }
 
-    public static function input(string $name = null, mixed $default = null): mixed
+    public static function input(?string $name = null, mixed $default = null): mixed
     {
         if ($name === null) {
             return self::$inputData ?? [];
@@ -41,7 +41,7 @@ class Reception implements ReceptionInterface
         return $data === null ? false : true;
     }
 
-    public static function getObject(string $name = null): \stdClass|null
+    public static function getObject(?string $name = null): \stdClass|null
     {
         $array = self::$inputData ?? [];
 
