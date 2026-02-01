@@ -140,9 +140,7 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
 
         applyTimeElapsedString()
     </script>
-    <script>
-        const admin = <?php echo isAdsAdmin() ? 1 : 0; ?>;
-    </script>
+
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <?php if ($enableAdsense): ?>
         <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>

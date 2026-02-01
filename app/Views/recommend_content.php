@@ -178,9 +178,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
 
-  <script>
-    const admin = <?php echo isAdsAdmin() ? 1 : 0; ?>;
-  </script>
   <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php if ($enableAdsense): ?>

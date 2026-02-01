@@ -38,8 +38,6 @@ class RecentCommentPageController
         $pageTitle = 'コメントのタイムライン';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
-        $isAdmin = isAdsAdmin();
-
         // ページネーションのselect要素
         [$title, $_select, $_label] = $this->pagination->geneSelectElementPagerAsc(
             $path,
@@ -71,7 +69,6 @@ class RecentCommentPageController
                 '_select',
                 '_label',
                 'path',
-                'isAdmin',
                 '_breadcrumbsShema',
                 'topPageDto',
                 'unmodifeidPageNumber',
