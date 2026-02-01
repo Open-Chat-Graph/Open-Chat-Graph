@@ -296,9 +296,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   ?>
     <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
   <?php endif ?>
-  <script>
-    const admin = <?php echo isAdsAdmin() ? 1 : 0; ?>;
-  </script>
+
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php if ($enableAdsense): ?>

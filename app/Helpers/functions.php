@@ -685,17 +685,6 @@ function adminMode(): true
     return true;
 }
 
-function isAdsAdmin(): bool
-{
-    if (!AppConfig::$enableCloudflare) {
-        /** @var AdminAuthService $adminAuthService */
-        $adminAuthService = app(AdminAuthService::class);
-        return $adminAuthService->auth();
-    }
-
-    return false;
-}
-
 function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 {
     $path = $fullPath === false ? (__DIR__ . '/../../storage/' . $filename) : $filename;

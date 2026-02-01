@@ -57,16 +57,14 @@
                     <label for="page-selector" class="unset"><span><?php echo $_label ?></span></label>
                 </form>
             </nav>
-            <?php viewComponent('open_chat_list', compact('openChatList', 'isAdmin')) ?>
+            <?php viewComponent('open_chat_list', compact('openChatList')) ?>
             <!-- 次のページ・前のページボタン -->
             <?php viewComponent('pager_nav', compact('pageNumber', 'maxPageNumber') + ['path' => $path]) ?>
         </article>
     </main>
     <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
-    <script>
-        const admin = <?php echo isAdsAdmin() ? 1 : 0; ?>;
-    </script>
+
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
         ;

@@ -35,8 +35,6 @@ class RecentOpenChatPageController
         $pageTitle = 'オプチャグラフに最近登録されたオープンチャット';
         $_css = ['room_list', 'site_header', 'site_footer'];
 
-        $isAdmin = isAdsAdmin();
-
         // ページネーションのselect要素
         [$title, $_select, $_label] = $this->pagination->geneSelectElementPagerAsc(
             $path,
@@ -55,7 +53,7 @@ class RecentOpenChatPageController
 
         return view(
             'recent_content',
-            compact('_meta', '_css', '_select', '_label', 'path', 'isAdmin', '_breadcrumbsShema') + $rankingList
+            compact('_meta', '_css', '_select', '_label', 'path', '_breadcrumbsShema') + $rankingList
         );
     }
 }
