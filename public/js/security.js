@@ -65,6 +65,9 @@ async function blockblock() {
     });
 }
 
+const admin = document.cookie.split('; ').find(row => row.startsWith('admin-enable='))?.split('=')[1];
+admin && console.log("admin:", admin);
+
 if (typeof admin === "undefined" || !admin) blockblock();
 
 function detectAdBlock() {
@@ -143,73 +146,3 @@ if (typeof admin === "undefined" || !admin) {
   setTimeout(() => clearInterval(checkInterval), 10000); // 10秒後に停止
   console.log("AdBlock検出の監視を開始しました");
 }
-/* 
-(() => {
-  const setAdHeight = (target) => {
-    const iframe = target.querySelector("iframe");
-    if (iframe) {
-      const iframeHeight = iframe.offsetHeight;
-      if (iframeHeight > 1) {
-        target.style.height = `${iframeHeight}px`;
-        target.style.setProperty("height", `${iframeHeight}px`, "important");
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const waitForValidHeight = (target) => {
-    const checkHeight = () => {
-      if (!setAdHeight(target)) {
-        // data-anchor-status が "displayed" になったら停止
-        if (target.getAttribute("data-anchor-status") === "displayed") {
-          return;
-        }
-        requestAnimationFrame(checkHeight);
-      }
-    };
-    checkHeight();
-  };
-
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (
-        mutation.type === "attributes" &&
-        mutation.attributeName === "data-anchor-status"
-      ) {
-        const target = mutation.target;
-        if (target.matches('ins.adsbygoogle[data-anchor-status="displayed"]')) {
-          setAdHeight(target);
-        } else if (
-          target.matches(
-            'ins.adsbygoogle[data-anchor-status="ready-to-display"]'
-          )
-        ) {
-          waitForValidHeight(target);
-        }
-      }
-    });
-  });
-
-  // 既存の要素をチェック
-  document
-    .querySelectorAll('ins.adsbygoogle[data-anchor-status="displayed"]')
-    .forEach((el) => {
-      setAdHeight(el);
-    });
-
-  document
-    .querySelectorAll('ins.adsbygoogle[data-anchor-status="ready-to-display"]')
-    .forEach((el) => {
-      waitForValidHeight(el);
-    });
-
-  // 新しく追加される要素を監視
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["data-anchor-status"],
-  });
-})();
- */
