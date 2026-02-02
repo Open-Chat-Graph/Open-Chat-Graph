@@ -16,7 +16,7 @@ $enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版の�
     <script defer="defer" src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
     <?php if ($enableAdsense): ?>
-        <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+        <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php endif ?>
 
 </head>

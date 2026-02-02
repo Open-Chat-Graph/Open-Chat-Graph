@@ -12,7 +12,7 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
 
 <body class="body">
     <?php if ($enableAdsense): ?>
-        <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+        <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php endif ?>
     <style>
         .list-title {

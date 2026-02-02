@@ -25,7 +25,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
 <body>
   <?php if ($enableAdsense): ?>
-    <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle'], true) ?>
   <?php endif ?>
 
