@@ -33,6 +33,8 @@ services:
       - IS_MOCK_ENVIRONMENT=${IS_MOCK_ENVIRONMENT:-0}
       # Xdebug有効化（1で有効、0で無効）
       - ENABLE_XDEBUG=${ENABLE_XDEBUG:-0}
+      - WEB_PORT=${WEB_PORT:-8000}
+      - HTTPS_PORT=${HTTPS_PORT:-8443}
   mysql:
     build:
       context: "docker/mysql/"

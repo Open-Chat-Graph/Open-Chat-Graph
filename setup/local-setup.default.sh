@@ -187,6 +187,22 @@ if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !=
     AppConfig::$isMockEnvironment = false;
 }
 
+// GitHub Codespaces環境対応
+if (
+    isset($_SERVER['HTTP_HOST'], $_SERVER["HTTP_X_FORWARDED_HOST"])
+    && str_contains($_SERVER["HTTP_X_FORWARDED_HOST"], 'github.dev')
+) {
+    $_SERVER['HTTP_HOST'] = $_SERVER["HTTP_X_FORWARDED_HOST"];
+    $_SERVER['HTTPS'] = 'on';
+
+    // モック環境の場合、LINE画像URLをCodespaces用に変更
+    if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+        $host = $_SERVER['HTTP_HOST'];
+        $host = str_replace(getenv('HTTPS_PORT'), getenv('LINE_MOCK_PORT'), $host);
+        AppConfig::$lineImageUrl = 'https://' . $host . '/obs/';
+    }
+}
+
 AppConfig::$isStaging = false;
 AppConfig::$phpBinary = 'php';
 

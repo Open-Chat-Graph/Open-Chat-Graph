@@ -12,19 +12,6 @@ sudo mv gh_2.63.2_linux_amd64/bin/gh /usr/local/bin/
 rm -rf gh_2.63.2_linux_amd64
 echo "✅ GitHub CLIのインストールが完了しました。"
 
-cat << 'EOF' > shared/secrets.php
-<?php
-
-if (
-    isset($_SERVER['HTTP_HOST'], $_SERVER["HTTP_X_FORWARDED_HOST"])
-    && str_contains($_SERVER["HTTP_X_FORWARDED_HOST"], 'github.dev')
-) {
-    $_SERVER['HTTP_HOST'] = $_SERVER["HTTP_X_FORWARDED_HOST"];
-    $_SERVER['HTTPS'] = 'on';
-}
-
-EOF
-
 # MySQL設定ファイルのパーミッションを修正（Codespaces環境でworld-writable警告を防ぐ）
 chmod 644 docker/mysql/server.cnf
 
