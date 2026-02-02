@@ -14,7 +14,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 <body>
   <?php viewComponent('site_header') ?>
   <?php if ($enableAdsense): ?>
-    <?php \App\Views\Ads\GoogleAdsense::gTag('bottom') ?>
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
   <?php endif ?>
 
