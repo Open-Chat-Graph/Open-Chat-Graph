@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\SecretsConfig;
-use App\Config\AppConfig;
 use App\Services\Auth\AuthInterface;
 use App\Services\Storage\FileStorageInterface;
 use App\Services\User\MyOpenChatList;
