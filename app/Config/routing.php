@@ -177,10 +177,11 @@ Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+
+        noStore();
     });
 
 Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
