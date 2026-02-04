@@ -23,7 +23,6 @@ class MyListApiController
             return false;
         }
 
-        sessionStart();
         [$expires, $myListIdArray, $myList] = $myOpenChatList->init();
         if (!$expires)
             return false;
