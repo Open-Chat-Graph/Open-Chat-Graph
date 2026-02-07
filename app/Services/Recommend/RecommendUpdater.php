@@ -10,6 +10,7 @@ use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\Repositories\DB;
 use App\Services\Recommend\TagDefinition\RecommendUpdaterTagsInterface;
 use App\Services\Storage\FileStorageInterface;
+use App\Services\Storage\FileStorageService;
 use Shared\MimimalCmsConfig;
 
 class RecommendUpdater
@@ -43,7 +44,7 @@ class RecommendUpdater
 
     private function getOpenChatSubCategoriesTag(): array
     {
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($this->openChatSubCategoriesTagKey);
+        $path = FileStorageService::getStorageFilePath($this->openChatSubCategoriesTagKey);
         $data = json_decode(
             file_exists($path)
                 ? $this->fileStorage->getContents('@' . $this->openChatSubCategoriesTagKey)

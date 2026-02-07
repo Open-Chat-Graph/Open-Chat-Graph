@@ -9,6 +9,7 @@ use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\Storage\FileStorageInterface;
+use App\Services\Storage\FileStorageService;
 
 /**
  * メンバー数変動フィルターキャッシュのリポジトリ
@@ -126,7 +127,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
      */
     private function loadCache(string $key, string $date): ?array
     {
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($key);
+        $path = FileStorageService::getStorageFilePath($key);
 
         if (!file_exists($path)) {
             return null;

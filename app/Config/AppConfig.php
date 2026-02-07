@@ -197,11 +197,12 @@ class AppConfig
     const SQLITE_SCHEMA_RANKING_POSITION = __DIR__ . '/../../setup/schema/sqlite/ranking_position.sql';
     const SQLITE_SCHEMA_SQLAPI = __DIR__ . '/../../setup/schema/sqlite/sqlapi.sql';
 
-    private const STORAGE_DIR = [
+    const STORAGE_DIR = [
         '' =>    __DIR__ . '/../../storage/ja',
         '/tw' => __DIR__ . '/../../storage/tw',
         '/th' => __DIR__ . '/../../storage/th',
     ];
+
     const STORAGE_FILES = [
         'addCronLogDest' =>               '/logs/cron.log',
         'sqliteStatisticsDb' =>           '/SQLite/statistics/statistics.db',
@@ -228,11 +229,6 @@ class AppConfig
         'categoryStaticDataDir' =>        '/static_data_recommend/category',
         'officialStaticDataDir' =>        '/static_data_recommend/official',
     ];
-
-    static function getStorageFilePath(string $storageFileName): string
-    {
-        return self::STORAGE_DIR[MimimalCmsConfig::$urlRoot] . self::STORAGE_FILES[$storageFileName];
-    }
 
     /** @var array<string,string> */
     static array $dbName = [

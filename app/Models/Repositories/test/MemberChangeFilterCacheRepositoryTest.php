@@ -20,6 +20,8 @@ use App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Config\AppConfig;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Storage\FileStorageInterface;
+use App\Services\Storage\FileStorageService;
 
 class MemberChangeFilterCacheRepositoryTest extends TestCase
 {
@@ -73,7 +75,8 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         $this->syncStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
         $this->repository = new MemberChangeFilterCacheRepository(
             $statisticsRepository,
-            $this->syncStateRepository
+            $this->syncStateRepository,
+            app(FileStorageInterface::class)
         );
 
         // SyncOpenChatStateの初期値をバックアップ
@@ -82,9 +85,9 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         );
 
         // キャッシュファイルパス
-        $this->filterMemberChangePath = AppConfig::getStorageFilePath('filterMemberChange');
-        $this->filterNewRoomsPath = AppConfig::getStorageFilePath('filterNewRooms');
-        $this->filterWeeklyUpdatePath = AppConfig::getStorageFilePath('filterWeeklyUpdate');
+        $this->filterMemberChangePath = FileStorageService::getStorageFilePath('filterMemberChange');
+        $this->filterNewRoomsPath = FileStorageService::getStorageFilePath('filterNewRooms');
+        $this->filterWeeklyUpdatePath = FileStorageService::getStorageFilePath('filterWeeklyUpdate');
 
         // 既存のファイルをバックアップ
         $this->backupFile($this->filterMemberChangePath, $this->originalMemberChange);

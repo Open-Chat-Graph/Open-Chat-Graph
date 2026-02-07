@@ -13,6 +13,7 @@ use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
+use App\Services\Storage\FileStorageService;
 use Shared\MimimalCmsConfig;
 
 class RecommendStaticDataGenerator
@@ -75,7 +76,7 @@ class RecommendStaticDataGenerator
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
             $this->fileStorage->saveSerializedFile(
-                \App\Services\Storage\FileStorageService::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
+                FileStorageService::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
                 $this->getRecomendRanking($tag)
             );
         }
@@ -85,7 +86,7 @@ class RecommendStaticDataGenerator
     {
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $this->fileStorage->saveSerializedFile(
-                \App\Services\Storage\FileStorageService::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
+                FileStorageService::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
                 $this->getCategoryRanking($category)
             );
         }
@@ -95,7 +96,7 @@ class RecommendStaticDataGenerator
     {
         foreach ([1, 2] as $emblem) {
             $this->fileStorage->saveSerializedFile(
-                \App\Services\Storage\FileStorageService::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
+                FileStorageService::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
                 $this->getOfficialRanking($emblem)
             );
         }
