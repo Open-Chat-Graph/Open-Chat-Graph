@@ -27,7 +27,7 @@ function nl2brReplace(string $string): string
 
 function gTag(string $id): string
 {
-    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+    if (AppConfig::$isDevlopment) {
         return '';
     }
 

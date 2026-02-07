@@ -10,8 +10,4 @@ class SecretsConfig
     static string $cloudFlareZoneId = '';
     static string $cloudFlareApiKey = '';
     static string $yahooClientId = '';
-
-    // もう使われていない
-    static string $apiDbUser = '';
-    static string $apiDbPassword = '';
 }

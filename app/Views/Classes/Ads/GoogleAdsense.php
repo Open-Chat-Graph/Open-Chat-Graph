@@ -111,7 +111,7 @@ class GoogleAdsense
      */
     static function output(array $adElement, bool $forceShow = false)
     {
-        if (AppConfig::$isStaging || AppConfig::$disableAds) return;
+        if (AppConfig::$isStaging) return;
 
         if (count($adElement) === 1) {
             self::responsive($adElement[0], 'responsive-google', $forceShow);
@@ -129,11 +129,9 @@ class GoogleAdsense
         <div class="{$cssClass}-parent">
         EOT;
 
-        if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
-            echo <<<EOT
+        echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-full-width-responsive="false"></ins>
         EOT;
-        }
 
         echo <<<EOT
         </div>
@@ -148,11 +146,9 @@ class GoogleAdsense
         <div class="{$cssClass}-parent">
         EOT;
 
-        if ($forceShow || !(AppConfig::$disableAdTags ?? false)) {
-            echo <<<EOT
+        echo <<<EOT
             <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="false"></ins>
         EOT;
-        }
 
         echo <<<EOT
         </div>
@@ -177,7 +173,7 @@ class GoogleAdsense
 
     static function gTag(?string $dataOverlays = null)
     {
-        if (AppConfig::$isStaging || AppConfig::$isDevlopment || AppConfig::$disableAds) return;
+        if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = self::AD_CLIENT;
