@@ -13,7 +13,7 @@
     </style>
     <?php viewComponent('site_header') ?>
     <main style="padding: 0 1rem;" style="overflow: hidden;">
-        <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
+        <?php \App\Views\Ads\GoogleAdsense::output('siteTopRectangle') ?>
 
         <h2>オプチャグラフにオープンチャットを手動で登録する</h2>
         <p>

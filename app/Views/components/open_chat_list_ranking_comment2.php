@@ -69,7 +69,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
       <?php if ($ads && $count1 < $listCount && $count1 % 10 === 0) : ?>
         <li class="unset" style="margin: 0 -1rem; display: block;">
           <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
-          <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive']) ?>
+          <?php GAd::output('recentCommentSeparatorResponsive') ?>
           <hr class="hr-top" style="margin: 8px 0 4px 0; padding: 0; width: 100%;">
         </li>
       <?php endif ?>

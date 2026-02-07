@@ -1,4 +1,4 @@
-<?php if (isset($adSlot) && $adSlot) \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS[$adSlot]) ?>
+<?php if (isset($adSlot) && $adSlot) \App\Views\Ads\GoogleAdsense::output($adSlot) ?>
 <footer class="footer-elem-outer" style="padding: 0;">
     <hr class="hr-top" style="margin-bottom: 11px;">
     <nav class="footer-link-box-outer">

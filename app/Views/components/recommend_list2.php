@@ -23,7 +23,7 @@ if ($recommend->type === RecommendListType::Category) {
 ?>
 
 <?php if (!isset($disableGAd) || !$disableGAd): ?>
-    <?php //GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
+    <?php //GAd::output('siteSeparatorRectangle') ?>
 <?php endif ?>
 
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">

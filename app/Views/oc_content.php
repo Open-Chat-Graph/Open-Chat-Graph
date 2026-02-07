@@ -15,7 +15,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   <?php viewComponent('site_header') ?>
   <?php if ($enableAdsense): ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
+    <?php GAd::output('ocTopRectangle', true) ?>
   <?php endif ?>
 
   <div class="unset openchat body" style="overflow: hidden;">
@@ -203,7 +203,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     </article>
 
     <?php if ($enableAdsense): ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocTopWide2'], true) ?>
+      <?php GAd::output('ocTopWide2', true) ?>
     <?php endif ?>
 
     <?php if ($recommend[0] || $recommend[3]) : ?>
@@ -237,7 +237,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </section>
     <?php endif ?>
     <?php if ($enableAdsense): ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
+      <?php GAd::output('ocSeparatorResponsive', true) ?>
     <?php endif ?>
 
     <?php viewComponent('footer_inner') ?>
