@@ -17,39 +17,36 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     </svg><span style="line-height: 2;">分析Labs</span>
                 </h1>
                 <p>試験運用版の分析機能をお試しいただけます。</p>
-                <?php viewComponent('update_news', ['_news' => array_reverse(LabsNews::getNews())]) ?>
 
                 <h2>ライブトーク利用時間分析ツール</h2>
                 <a href="<?php echo url('labs/live') ?>" aria-label="ライブトーク利用時間分析ツール">
                     <img src="/labs-img/livegraph.webp" alt="ライブトーク利用時間分析ツール" />
                 </a>
                 <p>ライブトークの利用時間を分析するツールです。トーク履歴から利用時間推移をグラフで表示します。</p>
-                <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/tags') ?>">
-                    <span class="ranking-readMore">ライブトーク利用時間分析ツールを開く<span class="small"></span>
+                <a class="readMore-btn top-ranking-readMore white-btn unset" style="m font-size: 16px" href="<?php echo url('labs/live') ?>">
+                    <span class="ranking-readMore" style="font-size: 16px">ライブトーク利用時間分析ツールを開く<span class="small"></span>
+                </a>
+                <h2>オプチャ公式ランキング掲載の分析</h2>
+                <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析">
+                <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
+                </a>
+                <p>この分析機能は、ルームの集客にとって重要な公式ランキングの可視性の傾向を分析することができます。</p>
+                <p>全オープンチャットの状況を追跡し、ランキングへの掲載状態（掲載・未掲載）、および内容変更の履歴を記録しています。
+                    <br>特定のルームがいつからランキングに未掲載となり、またいつ再掲載されたかを一目で確認できます。
+                    <br>これにより、ルーム内容の変更後に生じる掲載状態の変動（例えば、検索からの除外など）を把握することができます
+                </p>
+                <a class="readMore-btn top-ranking-readMore white-btn unset" style="margin:0;" href="<?php echo url('labs/publication-analytics') ?>">
+                    <span class="ranking-readMore" style="font-size: 16px">オプチャ公式ランキング掲載の分析を開く</span>
                 </a>
             </article>
-            <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
             <article class="terms" style="opacity: .5;">
                 <h2>(公開中止)タグで見るトレンド動向</h2>
                 <!-- <a href="<?php echo url('labs/tags') ?>" aria-label="タグで見るトレンド動向"> -->
                 <img src="/labs-img/tags.webp" alt="タグで見るトレンド動向" />
                 <!-- </a> -->
                 <p>タグによる分類を用いたトレンド分析では、グループごとに増減数や合計人数の集計を行います。これにより、各トピックの人気度やその変動を捉えることができます。</p>
-                <!-- <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/tags') ?>">
-                    <span class="ranking-readMore">タグで見るトレンド動向を開く<span class="small"></span>
-                </a> -->
-
-                <h2>(公開中止)オプチャ公式ランキング掲載の分析</h2>
-                <!-- <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析"> -->
-                <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />
-                <!-- </a> -->
-                <p>この分析機能は、ルームの集客にとって重要な公式ランキングの可視性の傾向を分析することができます。</p>
-                <p>全オープンチャットの状況を追跡し、ランキングへの掲載状態（掲載・未掲載）、および内容変更の履歴を記録しています。
-                    <br>特定のルームがいつからランキングに未掲載となり、またいつ再掲載されたかを一目で確認できます。
-                    <br>これにより、ルーム内容の変更後に生じる掲載状態の変動（例えば、検索からの除外など）を把握することができます
-                </p>
-                <!-- <a class="top-ranking-readMore unset" style="margin:0" href="<?php echo url('labs/publication-analytics') ?>">
-                    <span class="ranking-readMore">オプチャ公式ランキング掲載の分析を開く</span>
+                <!-- <a class="readMore-btn top-ranking-readMore white-btn unset" style="margin:0;" href="<?php echo url('labs/tags') ?>">
+                    <span class="ranking-readMore" style="font-size: 16px">タグで見るトレンド動向を開く<span class="small"></span>
                 </a> -->
             </article>
         </main>
