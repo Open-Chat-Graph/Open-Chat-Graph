@@ -131,7 +131,7 @@ class UpdateHourlyMemberRankingServiceCacheTest extends TestCase
         $this->assertFileDoesNotExist($this->tempCacheDateFile);
 
         // dailyTask時: キャッシュを保存
-        // 実際のメソッドではAppConfig::getStorageFilePath()を使うため、
+        // 実際のメソッドではFileStorageService::getStorageFilePath()を使うため、
         // ここでは手動でキャッシュ保存をシミュレート
         $filterIds = [1001, 1003, 1004];
         saveSerializedFile($this->tempCacheFile, $filterIds);

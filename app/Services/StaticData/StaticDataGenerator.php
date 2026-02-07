@@ -65,7 +65,7 @@ class StaticDataGenerator
                 $_argDto->openChatCategory[] = [$name, $number];
         }
 
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath('openChatSubCategories');
+        $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
         $subCategories = json_decode(
             file_exists($path)
                 ? $this->fileStorage->getContents('@openChatSubCategories')

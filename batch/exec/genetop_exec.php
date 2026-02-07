@@ -2,11 +2,11 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Config\AppConfig;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\StaticData\StaticDataGenerator;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 try {
@@ -29,7 +29,7 @@ try {
     $recommendStaticDataGenerator->updateStaticData();
     AdminTool::sendDiscordNotify('recommendStaticDataGenerator done');
     
-    touch(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'));
+    touch(app(FileStorageInterface::class)->getStorageFilePath('hourlyCronUpdatedAtDatetime'));
 } catch (\Throwable $e) {
     AdminTool::sendDiscordNotify($e->__toString());
     CronUtility::addCronLog($e->__toString());

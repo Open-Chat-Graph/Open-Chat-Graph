@@ -92,7 +92,7 @@ class CronUtilityTest extends TestCase
      */
     public function testAddCronLogIncludesGitHubRef(): void
     {
-        $logFile = \App\Config\AppConfig::getStorageFilePath('addCronLogDest');
+        $logFile = \App\Services\Storage\FileStorageService::getStorageFilePath('addCronLogDest');
         $testMessage = 'TEST_GITHUB_REF_' . uniqid();
 
         // ログファイルの現在のサイズを記録

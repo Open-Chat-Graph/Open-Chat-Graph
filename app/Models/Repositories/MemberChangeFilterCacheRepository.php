@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
@@ -126,7 +125,7 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
      */
     private function loadCache(string $key, string $date): ?array
     {
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($key);
+        $path = $this->fileStorage->getStorageFilePath($key);
 
         if (!file_exists($path)) {
             return null;

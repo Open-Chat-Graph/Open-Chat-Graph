@@ -77,7 +77,7 @@ class StaticDataFile
             $data = $staticDataGenerator->getTagList();
         }
 
-        $time = getStorageFileTime(\App\Services\Storage\FileStorageService::getStorageFilePath('tagList'));
+        $time = getStorageFileTime($this->fileStorage->getStorageFilePath('tagList'));
         if (!$time || new \DateTime('@' . $time) < new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')))
             noStore();
 

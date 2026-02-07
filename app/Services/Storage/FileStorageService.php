@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Storage;
 
-use App\Config\AppConfig;
+use App\Config\FileStorageServiceConfig;
+use Shared\MimimalCmsConfig;
 
 /**
  * ファイル書き込み操作の実装クラス
@@ -17,31 +18,15 @@ use App\Config\AppConfig;
 class FileStorageService implements FileStorageInterface
 {
     /**
-     * faketimeが有効かどうかをキャッシュ
-     */
-    private static ?bool $isFaketimeEnabled = null;
-
-    /**
-     * faketimeが有効かどうかを判定（初回のみチェック、以降はキャッシュを使用）
-     */
-    private static function isFaketimeEnabled(): bool
-    {
-        if (self::$isFaketimeEnabled === null) {
-            self::$isFaketimeEnabled = function_exists('getenv') && getenv('FAKETIME') !== false;
-        }
-
-        return self::$isFaketimeEnabled;
-    }
-
-    /**
      * ストレージファイルのパスを取得
      *
      * @param string $storageFileName ストレージファイルキー
      * @return string ファイルの絶対パス
      */
-    public static function getStorageFilePath(string $storageFileName): string
+    public function getStorageFilePath(string $storageFileName): string
     {
-        return AppConfig::getStorageFilePath($storageFileName);
+        return FileStorageServiceConfig::$storageDir[MimimalCmsConfig::$urlRoot]
+            . FileStorageServiceConfig::$storageFiles[$storageFileName];
     }
 
     /**
@@ -53,9 +38,17 @@ class FileStorageService implements FileStorageInterface
     private function resolvePath(string $filepath): string
     {
         if (str_starts_with($filepath, '@')) {
-            return self::getStorageFilePath(substr($filepath, 1));
+            return $this->getStorageFilePath(substr($filepath, 1));
         }
         return $filepath;
+    }
+
+    /**
+     * faketimeが有効かどうかを判定（初回のみチェック、以降はキャッシュを使用）
+     */
+    private function isFaketimeEnabled(): bool
+    {
+        return function_exists('getenv') && getenv('FAKETIME') !== false;
     }
 
     /**
@@ -79,7 +72,7 @@ class FileStorageService implements FileStorageInterface
         }
 
         // faketime使用時のみタイムスタンプを現在時刻に設定（偽装された時刻が適用される）
-        if (self::isFaketimeEnabled()) {
+        if ($this->isFaketimeEnabled()) {
             touch($tempFile);
         }
 
@@ -109,7 +102,7 @@ class FileStorageService implements FileStorageInterface
         }
 
         // faketime使用時のみタイムスタンプを現在時刻に設定（偽装された時刻が適用される）
-        if (self::isFaketimeEnabled()) {
+        if ($this->isFaketimeEnabled()) {
             touch($filepath);
         }
     }

@@ -19,7 +19,7 @@ class SQLiteOcgraphSqlapi extends AbstractSQLite implements DBInterface
      * Connect to ocgraph_sqlapi SQLite database
      *
      * Note: This database is Japanese-only and does not use multi-language paths.
-     * It connects to a fixed path instead of using AppConfig::getStorageFilePath().
+     * It connects to a fixed path instead of using FileStorageService::getStorageFilePath().
      *
      * Optimizations applied:
      * - WAL (Write-Ahead Logging) mode for better concurrent read/write performance

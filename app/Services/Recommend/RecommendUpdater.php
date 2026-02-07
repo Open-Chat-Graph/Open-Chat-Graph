@@ -43,7 +43,7 @@ class RecommendUpdater
 
     private function getOpenChatSubCategoriesTag(): array
     {
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($this->openChatSubCategoriesTagKey);
+        $path = $this->fileStorage->getStorageFilePath($this->openChatSubCategoriesTagKey);
         $data = json_decode(
             file_exists($path)
                 ? $this->fileStorage->getContents('@' . $this->openChatSubCategoriesTagKey)

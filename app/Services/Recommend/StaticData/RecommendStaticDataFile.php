@@ -7,7 +7,6 @@ namespace App\Services\Recommend\StaticData;
 use App\Config\AppConfig;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Storage\FileStorageInterface;
-use App\Services\Storage\FileStorageService;
 
 class RecommendStaticDataFile
 {
@@ -27,7 +26,7 @@ class RecommendStaticDataFile
     function getCategoryRanking(int $category): RecommendListDto
     {
         $data = $this->fileStorage->getSerializedFile(
-            FileStorageService::getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
+            $this->fileStorage->getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {
@@ -44,7 +43,7 @@ class RecommendStaticDataFile
     {
         $fileName = hash('crc32', $tag);
         $data = $this->fileStorage->getSerializedFile(
-            FileStorageService::getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
+            $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {
@@ -60,7 +59,7 @@ class RecommendStaticDataFile
     function getOfficialRanking(int $emblem): RecommendListDto
     {
         $data = $this->fileStorage->getSerializedFile(
-            FileStorageService::getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
+            $this->fileStorage->getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat"
         );
 
         if (!$data || AppConfig::$disableStaticDataFile) {
