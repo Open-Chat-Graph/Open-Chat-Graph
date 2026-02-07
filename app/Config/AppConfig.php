@@ -142,17 +142,17 @@ class AppConfig
     ];
 
     static bool $isDevlopment = false;
-    static bool $isMockEnvironment = false;
     static bool $isStaging = false;
+    static bool $isMockEnvironment = false;
+
     static bool $disableStaticDataFile = false;
-    static bool $disableAds = false;
     static bool $verboseCronLog = true;
+    
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
     static string $githubRepo = 'pika-0203/Open-Chat-Graph';
     static string $githubBranch = 'main';
-    static bool $disableAdTags = true;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [

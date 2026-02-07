@@ -7,11 +7,7 @@
         </div>
     </header>
     <div id="recent_comment">
-        <?php if (isset($recentCommentList)) : ?>
-            <?php viewComponent('open_chat_list_ranking_comment2', ['openChatList' => $recentCommentList]) ?>
-        <?php else: ?>
-            <?php viewComponent('open_chat_list_ranking_comment_dummy') ?>
-        <?php endif ?>
+        <?php viewComponent('open_chat_list_ranking_comment_dummy') ?>
     </div>
     <a class="top-ranking-readMore unset ranking-url" href="<?php echo url('comments-timeline') ?>">
         <span class="ranking-readMore">コメントのタイムラインを見る</span>
