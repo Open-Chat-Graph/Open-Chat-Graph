@@ -56,7 +56,7 @@
         <p class="page-desc small-font">iOS・Android版LINEで保存されたテキスト形式のトーク履歴に対応しています。</p>
         <p class="page-desc small-font">トーク履歴の保存方法は<a href="https://help.line.me/line/ios/sp?lang=ja&contentId=20007388" rel="external nofollow noopener">LINEヘルプ</a>を参照してください。</p>
         <div class="ko-wrapper" style="margin: 0 -1rem;">
-            <?php ///\App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
+            <?php ///\App\Views\Ads\GoogleAdsense::output('siteTopRectangle') ?>
         </div>
         <form class="file-form">
             <legend class="small-font">テキスト形式のトーク履歴を選択</legend>

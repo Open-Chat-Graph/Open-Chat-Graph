@@ -23,7 +23,7 @@ function memberCount(int $count)
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <main style="margin-bottom: 0; padding: 1rem;">
         <div style="position: absolute; top: -3.5rem;" aria-hidden="true" id="top"></div>
-        <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
+        <?php \App\Views\Ads\GoogleAdsense::output('siteTopRectangle') ?>
 
         <?php if (isset($isAdminPage) && isset($adsTagMap)) : ?>
             <p>
@@ -75,7 +75,7 @@ function memberCount(int $count)
         <?php foreach ($categories as $key => $category) : ?>
 
             <article class="top-ranking" style="padding-top: 1rem; margin-bottom: 1rem; position: relative;">
-                <?php \App\Views\Ads\GoogleAdsense::output(\App\Views\Ads\GoogleAdsense::AD_SLOTS['siteTopRectangle']) ?>
+                <?php \App\Views\Ads\GoogleAdsense::output('siteTopRectangle') ?>
 
                 <div style="position: absolute; top: -70px;" id="<?php echo $key ?>" aria-hidden="true"></div>
                 <div>

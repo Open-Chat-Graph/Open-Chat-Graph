@@ -14,7 +14,8 @@ class AppConfig
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
     const DEFAULT_OGP_IMAGE_FILE_PATH = 'assets/ogp.png';
 
-    const GTM_ID = 'GTM-NTK2GPTF';
+    // Google Tag Manager ID
+    static string $gtmId = 'GTM-NTK2GPTF';
 
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
@@ -142,17 +143,17 @@ class AppConfig
     ];
 
     static bool $isDevlopment = false;
-    static bool $isStaging = false;
     static bool $isMockEnvironment = false;
-
+    static bool $isStaging = false;
     static bool $disableStaticDataFile = false;
+    static bool $disableAds = false;
     static bool $verboseCronLog = true;
-    
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
     static string $githubRepo = 'pika-0203/Open-Chat-Graph';
     static string $githubBranch = 'main';
+    static bool $disableAdTags = true;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [
@@ -282,4 +283,3 @@ class AppConfig
     ];
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 }
-

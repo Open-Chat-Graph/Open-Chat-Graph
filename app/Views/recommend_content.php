@@ -26,7 +26,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 <body>
   <?php if ($enableAdsense): ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php GAd::output(GAd::AD_SLOTS['recommendTopRectangle'], true) ?>
+    <?php GAd::output('recommendTopRectangle', true) ?>
   <?php endif ?>
 
   <?php viewComponent('site_header') ?>
@@ -154,11 +154,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </li>
             <?php if ($key === 0) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'], true) ?>
+                <?php GAd::output('recommendSeparatorResponsive', true) ?>
               </li>
             <?php elseif ($listsLastKey !== $key) : ?>
               <li>
-                <?php GAd::output(GAd::AD_SLOTS['recommendSeparatorResponsive'], true) ?>
+                <?php GAd::output('recommendSeparatorResponsive', true) ?>
               </li>
             <?php endif ?>
           <?php endforeach ?>
