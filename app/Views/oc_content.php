@@ -234,15 +234,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <?php echo json_encode($_commentArgDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
         </script>
         <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0;">
-          <?php if ($topPageDto->recentCommentList): ?>
-            <hr class="hr-top" style="margin: 1rem 0;">
-            <?php viewComponent('top_ranking_recent_comments', [
-              'recentCommentList' => $topPageDto->recentCommentList,
-              'title' => '最近投稿された他ルームのコメント',
-            ]) ?>
-          <?php endif ?>
-        </aside>
       </section>
     <?php endif ?>
     <?php if ($enableAdsense): ?>
