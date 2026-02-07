@@ -8,7 +8,6 @@ use App\Config\AppConfig;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\Storage\FileStorageInterface;
-use App\Services\Storage\FileStorageService;
 use App\Views\Dto\RankingArgDto;
 
 class StaticDataFile
@@ -78,7 +77,7 @@ class StaticDataFile
             $data = $staticDataGenerator->getTagList();
         }
 
-        $time = getStorageFileTime(FileStorageService::getStorageFilePath('tagList'));
+        $time = getStorageFileTime($this->fileStorage->getStorageFilePath('tagList'));
         if (!$time || new \DateTime('@' . $time) < new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')))
             noStore();
 

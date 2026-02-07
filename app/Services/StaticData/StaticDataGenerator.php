@@ -11,7 +11,6 @@ use App\Services\Recommend\TopPageRecommendList;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\Storage\FileStorageInterface;
-use App\Services\Storage\FileStorageService;
 use App\Views\Dto\RankingArgDto;
 use Shared\MimimalCmsConfig;
 
@@ -66,7 +65,7 @@ class StaticDataGenerator
                 $_argDto->openChatCategory[] = [$name, $number];
         }
 
-        $path = FileStorageService::getStorageFilePath('openChatSubCategories');
+        $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
         $subCategories = json_decode(
             file_exists($path)
                 ? $this->fileStorage->getContents('@openChatSubCategories')
