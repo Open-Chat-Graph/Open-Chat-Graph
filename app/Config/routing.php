@@ -27,6 +27,7 @@ use App\Controllers\Pages\RecentCommentPageController;
 use App\Controllers\Pages\RecentOpenChatPageController;
 use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
+use App\Controllers\Pages\RobotsController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
@@ -70,6 +71,9 @@ Route::path('policy', [PolicyPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
+
+Route::path('robots.txt', [RobotsController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path('/', [IndexPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
