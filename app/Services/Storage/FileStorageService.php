@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Storage;
 
-use App\Config\AppConfig;
+use App\Config\FileStorageServiceConfig;
 use Shared\MimimalCmsConfig;
 
 /**
@@ -23,9 +23,10 @@ class FileStorageService implements FileStorageInterface
      * @param string $storageFileName ストレージファイルキー
      * @return string ファイルの絶対パス
      */
-    public static function getStorageFilePath(string $storageFileName): string
+    public function getStorageFilePath(string $storageFileName): string
     {
-        return AppConfig::STORAGE_DIR[MimimalCmsConfig::$urlRoot] . AppConfig::STORAGE_FILES[$storageFileName];
+        return FileStorageServiceConfig::$storageDir[MimimalCmsConfig::$urlRoot]
+            . FileStorageServiceConfig::$storageFiles[$storageFileName];
     }
 
     /**
@@ -37,7 +38,7 @@ class FileStorageService implements FileStorageInterface
     private function resolvePath(string $filepath): string
     {
         if (str_starts_with($filepath, '@')) {
-            return self::getStorageFilePath(substr($filepath, 1));
+            return $this->getStorageFilePath(substr($filepath, 1));
         }
         return $filepath;
     }
