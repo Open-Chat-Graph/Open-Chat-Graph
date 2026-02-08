@@ -84,17 +84,9 @@ fi
 echo "    - ${DB_PREFIX}_userlog"
 echo ""
 echo "  【SQLiteデータベース】"
-if [ -z "$LANG_FILTER" ]; then
-    echo "    - statistics.db (ja/tw/th)"
-    echo "    - ranking_position.db (ja/tw/th)"
-    echo "    - sqlapi.db (ja)"
-else
-    echo "    - statistics.db ($LANG_FILTER)"
-    echo "    - ranking_position.db ($LANG_FILTER)"
-    if [ "$LANG_FILTER" == "ja" ]; then
-        echo "    - sqlapi.db (ja)"
-    fi
-fi
+echo "    - statistics.db (ja/tw/th)"
+echo "    - ranking_position.db (ja/tw/th)"
+echo "    - sqlapi.db (ja)"
 echo ""
 echo "  【その他のデータ】"
 echo "    - 既存の.datファイル、ログファイル、サイトマップ"
@@ -262,17 +254,9 @@ echo "SQLiteデータベース初期化"
 echo "================================"
 echo ""
 
-# テンプレートファイルをコピー
+# テンプレートファイルをコピー（常に全言語分処理）
 echo "テンプレートファイルをコピーしています..."
-
-# 言語フィルタに応じて処理対象を決定
-if [ -z "$LANG_FILTER" ]; then
-    TARGET_LANGS=(ja tw th)
-else
-    TARGET_LANGS=("$LANG_FILTER")
-fi
-
-for lang in "${TARGET_LANGS[@]}"; do
+for lang in ja tw th; do
     echo "  → ${lang} のテンプレートをコピー中..."
     mkdir -p "$STORAGE_DIR/${lang}/static_data_top"
     cp -f "$TEMPLATE_DIR/static_data_top/"* "$STORAGE_DIR/${lang}/static_data_top/" 2>/dev/null || true
@@ -280,10 +264,10 @@ done
 echo "  ✓ 完了"
 echo ""
 
-# SQLiteデータベースを生成
+# SQLiteデータベースを生成（常に全言語分処理）
 echo "スキーマファイルからSQLiteデータベースを生成しています..."
 
-for lang in "${TARGET_LANGS[@]}"; do
+for lang in ja tw th; do
     echo "  → ${lang} のデータベースを生成中..."
 
     # ディレクトリ作成
