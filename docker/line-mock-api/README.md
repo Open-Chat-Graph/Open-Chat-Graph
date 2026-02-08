@@ -50,7 +50,7 @@ GET /{imageHash}/preview
 ### CI用テスト（高速・効率的）
 
 ```bash
-./test-ci.sh
+.github/scripts/test-ci.sh
 ```
 
 - fixedモードで24時間分のテストを実行（23:30開始→翌23:30まで）
