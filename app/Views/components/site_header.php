@@ -6,9 +6,9 @@
         <a class="<?php echo t('header_site_title') ?> unset" href="<?php echo url() ?>">
             <img src="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>" alt="">
             <?php if (strpos(path(), '/oc') === false || isset($titleP)) : ?>
-                <h1><?php echo t('サイトタイトル') ?></h1>
+                <h1><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: #888;">' . t(' (開発環境)') . '</span>'; ?></h1>
             <?php else : ?>
-                <p><?php echo t('サイトタイトル') ?></p>
+                <p><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: #888;">' . t(' (開発環境)') . '</span>'; ?></p>
             <?php endif ?>
         </a>
         <a class="category-button" href="<?php echo url('ranking') ?>">

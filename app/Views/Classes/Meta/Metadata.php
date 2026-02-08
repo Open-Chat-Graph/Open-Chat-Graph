@@ -32,7 +32,7 @@ class Metadata
         $this->site_name = $siteTitle;
 
         if (AppConfig::$isStaging) {
-            $this->title = t('[開発環境]') . ' ' . $siteTitle;
+            $this->title = $siteTitle . t(' (開発環境)');
         } else {
             $this->title = $siteTitle;
         }
@@ -46,8 +46,8 @@ class Metadata
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static
     {
-        $prefix = AppConfig::$isStaging ? t('[開発環境]') . ' ' : '';
-        $this->title = $prefix . h($title) . ($includeSiteTitle ? ('｜' . $this->site_name) : '');
+        $suffix = AppConfig::$isStaging ? t(' (開発環境)') : '';
+        $this->title = h($title) . ($includeSiteTitle ? ('｜' . $this->site_name) : '') . $suffix;
         return $this;
     }
 
