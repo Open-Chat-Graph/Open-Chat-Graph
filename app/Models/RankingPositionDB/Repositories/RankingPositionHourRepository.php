@@ -9,6 +9,7 @@ use App\Models\Importer\SqlInsert;
 use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\Repositories\RankingPosition\Dto\RankingPositionHourInsertDto;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Enum\RankingType;
 use Shared\MimimalCmsConfig;
 
@@ -16,8 +17,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
 {
     function __construct(
         private SqlInsert $inserter
-    ) {
-    }
+    ) {}
 
     /**
      * @param RankingPositionHourInsertDto[] $insertDtoArray
@@ -314,7 +314,12 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
 
     public function getLastHour(int $offset = 0): string|false
     {
-        $categoryCount = count(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]);
+        $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
+        if (AppConfig::$isStaging) {
+            $categories = \App\Services\Cron\Utility\CronUtility::filterCategoriesForStaging($categories);
+        }
+
+        $categoryCount = count($categories);
 
         return RankingPositionDB::fetchColumn(
             "SELECT
