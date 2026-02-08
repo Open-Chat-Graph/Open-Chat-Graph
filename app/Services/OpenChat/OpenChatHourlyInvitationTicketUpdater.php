@@ -24,7 +24,7 @@ class OpenChatHourlyInvitationTicketUpdater
         $ocArray = $this->updateOpenChatRepository->getEmptyUrlOpenChatId();
 
         // 開発環境の場合、更新制限をかける
-        if (AppConfig::$isDevlopment ?? false) {
+        if (AppConfig::$isDevlopment) {
             $limit = AppConfig::$developmentEnvUpdateLimit['OpenChatHourlyInvitationTicketUpdater'] ?? 1;
             $ocArrayCount = count($ocArray);
             $ocArray = array_slice($ocArray, 0, $limit);
