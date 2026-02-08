@@ -103,7 +103,7 @@ class ExceptionHandler
         if (
             class_exists($configClass)
             && class_exists($appConfigClass)
-            && (!($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false) || ($adminToolClass::$isStaging ?? false))
+            && (!($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false) || ($appConfigClass::$isStaging ?? false))
             && class_exists($adminToolClass)
         ) {
             try {
