@@ -65,9 +65,10 @@ class DailyUpdateCronService
 
         CronUtility::addCronLog('ランキング外オープンチャットのクローリング' . $title . ': 残り' . count($outOfRankId) . '件');
 
-        // 開発環境の場合、更新制限をかける
+        // 開発環境・ステージング環境の場合、更新制限をかける
         $isDevelopment = AppConfig::$isDevlopment ?? false;
-        if ($isDevelopment) {
+        $isStaging = AppConfig::$isStaging ?? false;
+        if ($isDevelopment || $isStaging) {
             $limit = AppConfig::$developmentEnvUpdateLimit['DailyUpdateCronService'] ?? 1;
             $outOfRankIdCount = count($outOfRankId);
             $outOfRankId = array_slice($outOfRankId, 0, $limit);
