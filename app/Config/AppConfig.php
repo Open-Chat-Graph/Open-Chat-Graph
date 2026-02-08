@@ -149,7 +149,7 @@ class AppConfig
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
-    static string $githubRepo = 'pika-0203/Open-Chat-Graph';
+    static string $githubRepo = 'mimimiku778/Open-Chat-Graph';
     static string $githubBranch = 'main';
     static bool $disableAdTags = true;
 

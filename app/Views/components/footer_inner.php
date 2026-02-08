@@ -30,6 +30,6 @@
                 <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?><span class="line-link-icon777"></span></span>
             </a>
         </aside>
-        <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/pika-0203" target="_blank">Project on GitHub @pika-0203</a><span class="line-link-icon777"></span></span></div>
+        <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/mimimiku778" target="_blank">Project on GitHub @mimimiku778</a><span class="line-link-icon777"></span></span></div>
     </nav>
 </footer>
