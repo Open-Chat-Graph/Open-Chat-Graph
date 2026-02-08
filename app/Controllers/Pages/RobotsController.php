@@ -24,12 +24,25 @@ class RobotsController
     }
 
     /**
-     * 開発環境用のrobots.txt（全クローラーをブロック）
+     * 開発環境用のrobots.txt（OGP取得クローラーのみ許可）
      */
     private function getDevelopmentRobotsTxt(): string
     {
         return <<<'TXT'
-# 開発環境 - 全てのクローラーをブロック
+# 開発環境 - OGP取得クローラーのみ許可
+# X (Twitter)
+User-agent: Twitterbot
+Allow: /
+
+# LINE
+User-agent: Linebot
+Allow: /
+
+# note.com
+User-agent: notebot
+Allow: /
+
+# その他すべてのクローラーをブロック
 User-agent: *
 Disallow: /
 TXT;
