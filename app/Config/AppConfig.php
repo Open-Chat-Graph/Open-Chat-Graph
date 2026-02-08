@@ -2,8 +2,6 @@
 
 namespace App\Config;
 
-use Shared\MimimalCmsConfig;
-
 class AppConfig
 {
     // サイトのURL（末尾にスラッシュなし）

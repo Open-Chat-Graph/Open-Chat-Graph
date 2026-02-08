@@ -5,6 +5,10 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^(.*)/$ /$1 [L,R=301]
 
+# アイコンファイルは常にPHPルーティングを通す（ステージング環境での切り替えのため）
+RewriteRule ^assets/icon-192x192\.png$ index.php [QSA,L]
+RewriteRule ^favicon\.ico$ index.php [QSA,L]
+
 # Send Requests To Front Controller...
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f

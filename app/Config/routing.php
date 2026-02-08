@@ -29,6 +29,7 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\RobotsController;
 use App\Controllers\Pages\AdsTxtController;
+use App\Controllers\Pages\StagingIconController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
@@ -74,10 +75,32 @@ Route::path('policy', [PolicyPageController::class, 'index'])
     });
 
 Route::path('robots.txt', [RobotsController::class, 'index'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path('ads.txt', [AdsTxtController::class, 'index'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path('assets/icon-192x192.png', [StagingIconController::class, 'icon192'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+    });
+
+Route::path('favicon.ico', [StagingIconController::class, 'favicon'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+    });
 
 Route::path('/', [IndexPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
@@ -92,9 +115,10 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(function (int $open_chat_id, FileStorageInterface $fileStorage) {
+    ->match(function (FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 

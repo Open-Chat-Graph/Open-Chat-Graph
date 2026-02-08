@@ -67,6 +67,10 @@ class RankingPositionHourPersistenceProcess
         $allCompleted = true;
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
 
+        if (AppConfig::$isStaging) {
+            $categories = CronUtility::filterCategoriesForStaging($categories);
+        }
+
         // 処理対象の定義（急上昇とランキングの2種類）
         $processTargets = [
             ['type' => RankingType::Rising, 'store' => $this->risingPositionStore, 'key' => 'rising'],

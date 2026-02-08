@@ -136,6 +136,23 @@ class CronUtility
     }
 
     /**
+     * ステージング環境用に、カテゴリ配列を特定カテゴリのみにフィルタリングする
+     *
+     * @param array<string, int> $categories カテゴリ配列
+     * @return array<string, int> フィルタリングされたカテゴリ配列
+     */
+    public static function filterCategoriesForStaging(array $categories): array
+    {
+        $targetCategory = match (\Shared\MimimalCmsConfig::$urlRoot) {
+            '/tw' => 34, // 科技
+            '/th' => 24, // รายการทีวี
+            default => 24, // TV・VOD
+        };
+
+        return array_filter($categories, fn($category) => $category === $targetCategory);
+    }
+
+    /**
      * プロセスを終了させる
      *
      * @param int $pid 終了させるプロセスのPID

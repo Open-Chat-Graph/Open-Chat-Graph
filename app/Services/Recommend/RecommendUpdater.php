@@ -65,7 +65,7 @@ class RecommendUpdater
             : '2033-10-16 00:00:00';
 
         // 開発環境の場合、更新制限をかける
-        $isMock = AppConfig::$isMockEnvironment ?? false;
+        $isMock = AppConfig::$isMockEnvironment;
         if ($isMock) {
             $limit = 10;
             $this->createTargetIdTable($limit);

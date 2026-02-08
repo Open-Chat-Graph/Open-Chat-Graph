@@ -216,7 +216,7 @@ class RankingBanTableUpdater
         );
 
         // 開発環境の場合、更新制限をかける
-        if (AppConfig::$isDevlopment ?? false) {
+        if (AppConfig::$isDevlopment) {
             $limit = AppConfig::$developmentEnvUpdateLimit['RankingBanTableUpdater'] ?? 1;
             $openChatArrayCount = count($openChatArray);
             $openChatArray = array_slice($openChatArray, 0, $limit);

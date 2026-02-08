@@ -28,8 +28,14 @@ class Metadata
         $this->site_url = url();
         $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
 
-        $this->title = t('オプチャグラフ');
-        $this->site_name = t('オプチャグラフ');
+        $siteTitle = t('オプチャグラフ');
+        $this->site_name = $siteTitle;
+
+        if (AppConfig::$isStaging) {
+            $this->title = $siteTitle . t(' (開発環境)');
+        } else {
+            $this->title = $siteTitle;
+        }
 
         $this->locale = t('ja');
 
@@ -40,7 +46,8 @@ class Metadata
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static
     {
-        $this->title = h($title) . ($includeSiteTitle ? ('｜' . $this->title) : '');
+        $suffix = AppConfig::$isStaging ? t(' (開発環境)') : '';
+        $this->title = h($title) . ($includeSiteTitle ? ('｜' . $this->site_name) : '') . $suffix;
         return $this;
     }
 
