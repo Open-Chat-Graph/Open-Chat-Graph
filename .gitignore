@@ -33,7 +33,7 @@ batch/sh/sqldump
 
 # サイトマップ
 public/sitemaps/**
-public/sitemap.xml
+public/sitemap*.xml
 
 # ストレージ
 storage/exception.log
