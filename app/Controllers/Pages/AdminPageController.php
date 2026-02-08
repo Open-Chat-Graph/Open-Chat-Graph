@@ -345,7 +345,8 @@ class AdminPageController
      */
     function testdiscord(?string $message)
     {
-        $result = AdminTool::sendDiscordNotify($message ?? 'テストメッセージ from AdminPageController');
-        return view('admin/admin_message_page', ['title' => 'Discord通知テスト', 'message' => nl2br(htmlspecialchars($result))]);
+        $message = $message ?? 'テストメッセージ from AdminPageController';
+        $result = AdminTool::sendDiscordNotify($message);
+        return view('admin/admin_message_page', ['title' => 'Discord通知テスト', 'message' => nl2br(htmlspecialchars($result . "\n" . '送信メッセージ: ' . $message))]);
     }
 }
