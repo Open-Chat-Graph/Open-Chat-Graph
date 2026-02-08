@@ -26,7 +26,19 @@ class OpenChatApiRankingDownloader
     function fetchOpenChatApiRankingAll(\Closure $callback, ?\Closure $callbackByCategoryBefore, ?\Closure $callbackByCategoryAfter): array
     {
         $result = [];
-        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $key => $category) {
+        $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
+
+        // ステージング環境では特定カテゴリのみを処理対象にする
+        if (AppConfig::$isStaging) {
+            $targetCategory = match (MimimalCmsConfig::$urlRoot) {
+                '/tw' => 34, // 科技
+                '/th' => 24, // รายการทีวี
+                default => 24, // TV・VOD
+            };
+            $categories = array_filter($categories, fn($category) => $category === $targetCategory);
+        }
+
+        foreach ($categories as $key => $category) {
             if ($callbackByCategoryBefore && $callbackByCategoryBefore((string)$category)) {
                 continue;
             }

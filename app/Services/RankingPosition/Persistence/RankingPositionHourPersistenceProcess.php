@@ -67,6 +67,16 @@ class RankingPositionHourPersistenceProcess
         $allCompleted = true;
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
 
+        // ステージング環境では特定カテゴリのみを処理対象にする
+        if (AppConfig::$isStaging) {
+            $targetCategory = match (MimimalCmsConfig::$urlRoot) {
+                '/tw' => 34, // 科技
+                '/th' => 24, // รายการทีวี
+                default => 24, // TV・VOD
+            };
+            $categories = array_filter($categories, fn($category) => $category === $targetCategory);
+        }
+
         // 処理対象の定義（急上昇とランキングの2種類）
         $processTargets = [
             ['type' => RankingType::Rising, 'store' => $this->risingPositionStore, 'key' => 'rising'],
