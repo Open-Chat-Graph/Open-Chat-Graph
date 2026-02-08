@@ -4,17 +4,19 @@
 # レンタルサーバー（SSH）、ステージング、開発環境などDocker以外の環境で使用
 #
 # 使い方:
-#   ./setup/init-remote.sh <mysql_user> <mysql_password> <mysql_host> [db_prefix]
+#   ./setup/init-remote.sh <mysql_user> <mysql_password> <mysql_host> [db_prefix] [lang_filter]
 #
 # 引数:
 #   mysql_user     : MySQLユーザー名
 #   mysql_password : MySQLパスワード
 #   mysql_host     : MySQLホスト（例: localhost）
 #   db_prefix      : データベース名の接頭辞（省略時: ocgraph）
+#   lang_filter    : インポートする言語を限定（ja/tw/th、省略時: 全て）
 #
 # 例:
 #   ./setup/init-remote.sh root password localhost
 #   ./setup/init-remote.sh myuser mypass localhost myprefix
+#   ./setup/init-remote.sh myuser mypass localhost myprefix ja
 
 set -e
 
@@ -22,17 +24,19 @@ set -e
 if [ $# -lt 3 ]; then
     echo "エラー: 引数が不足しています"
     echo ""
-    echo "使い方: $0 <mysql_user> <mysql_password> <mysql_host> [db_prefix]"
+    echo "使い方: $0 <mysql_user> <mysql_password> <mysql_host> [db_prefix] [lang_filter]"
     echo ""
     echo "引数:"
     echo "  mysql_user     : MySQLユーザー名"
     echo "  mysql_password : MySQLパスワード"
     echo "  mysql_host     : MySQLホスト（例: localhost）"
     echo "  db_prefix      : データベース名の接頭辞（省略時: ocgraph）"
+    echo "  lang_filter    : インポートする言語を限定（ja/tw/th、省略時: 全て）"
     echo ""
     echo "例:"
     echo "  $0 root password localhost"
     echo "  $0 myuser mypass localhost myprefix"
+    echo "  $0 myuser mypass localhost myprefix ja"
     exit 1
 fi
 
@@ -40,6 +44,7 @@ MYSQL_USER="$1"
 MYSQL_PASSWORD="$2"
 MYSQL_HOST="$3"
 DB_PREFIX="${4:-ocgraph}"  # デフォルトは ocgraph
+LANG_FILTER="${5:-}"       # 言語フィルタ（ja/tw/th、省略時は空文字列 = 全て）
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SCHEMA_DIR="$SCRIPT_DIR/schema/mysql"
@@ -54,25 +59,42 @@ echo "================================"
 echo "MySQL Host: $MYSQL_HOST"
 echo "MySQL User: $MYSQL_USER"
 echo "DB Prefix: $DB_PREFIX"
+if [ -n "$LANG_FILTER" ]; then
+    echo "言語フィルタ: $LANG_FILTER"
+fi
 echo ""
 echo "⚠️  警告: このスクリプトは以下のデータを完全に初期化します"
 echo ""
 echo "  【MySQLデータベース】"
-echo "    - ${DB_PREFIX}_ocreview_schema (ja)"
-echo "    - ${DB_PREFIX}_ocreviewtw_schema (tw)"
-echo "    - ${DB_PREFIX}_ocreviewth_schema (th)"
-echo "    - ${DB_PREFIX}_ranking_schema (ja)"
-echo "    - ${DB_PREFIX}_rankingtw_schema (tw)"
-echo "    - ${DB_PREFIX}_rankingth_schema (th)"
-echo "    - ${DB_PREFIX}_comment_schema (ja)"
-echo "    - ${DB_PREFIX}_commenttw_schema (tw)"
-echo "    - ${DB_PREFIX}_commentth_schema (th)"
+if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "ja" ]; then
+    echo "    - ${DB_PREFIX}_ocreview_schema (ja)"
+    echo "    - ${DB_PREFIX}_ranking_schema (ja)"
+    echo "    - ${DB_PREFIX}_comment_schema (ja)"
+fi
+if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "tw" ]; then
+    echo "    - ${DB_PREFIX}_ocreviewtw_schema (tw)"
+    echo "    - ${DB_PREFIX}_rankingtw_schema (tw)"
+    echo "    - ${DB_PREFIX}_commenttw_schema (tw)"
+fi
+if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "th" ]; then
+    echo "    - ${DB_PREFIX}_ocreviewth_schema (th)"
+    echo "    - ${DB_PREFIX}_rankingth_schema (th)"
+    echo "    - ${DB_PREFIX}_commentth_schema (th)"
+fi
 echo "    - ${DB_PREFIX}_userlog_schema"
 echo ""
 echo "  【SQLiteデータベース】"
-echo "    - statistics.db (ja/tw/th)"
-echo "    - ranking_position.db (ja/tw/th)"
-echo "    - sqlapi.db (ja)"
+if [ -z "$LANG_FILTER" ]; then
+    echo "    - statistics.db (ja/tw/th)"
+    echo "    - ranking_position.db (ja/tw/th)"
+    echo "    - sqlapi.db (ja)"
+else
+    echo "    - statistics.db ($LANG_FILTER)"
+    echo "    - ranking_position.db ($LANG_FILTER)"
+    if [ "$LANG_FILTER" == "ja" ]; then
+        echo "    - sqlapi.db (ja)"
+    fi
+fi
 echo ""
 echo "  【その他のデータ】"
 echo "    - 既存の.datファイル、ログファイル、サイトマップ"
@@ -131,9 +153,53 @@ check_database_exists() {
 echo "データベースの存在確認中..."
 echo ""
 
+# 言語フィルタが指定されている場合は対象データベースのみ処理
+should_process_db() {
+    local db_name="$1"
+
+    # userlog は常に処理
+    if [[ "$db_name" == *"userlog"* ]]; then
+        return 0
+    fi
+
+    # 言語フィルタが指定されていない場合は全て処理
+    if [ -z "$LANG_FILTER" ]; then
+        return 0
+    fi
+
+    # 言語フィルタに応じて判定
+    case "$LANG_FILTER" in
+        ja)
+            # jaの場合は、tw/th のサフィックスがないデータベースのみ
+            if [[ ! "$db_name" =~ tw && ! "$db_name" =~ th ]]; then
+                return 0
+            fi
+            ;;
+        tw)
+            # twの場合は、tw サフィックスのデータベースのみ
+            if [[ "$db_name" =~ tw ]]; then
+                return 0
+            fi
+            ;;
+        th)
+            # thの場合は、th サフィックスのデータベースのみ
+            if [[ "$db_name" =~ th ]]; then
+                return 0
+            fi
+            ;;
+    esac
+
+    return 1
+}
+
 # 各データベースの処理
 for db_name in "${!DB_SCHEMA_MAP[@]}"; do
     schema_file="${DB_SCHEMA_MAP[$db_name]}"
+
+    # 言語フィルタでスキップ判定
+    if ! should_process_db "$db_name"; then
+        continue
+    fi
 
     # スキーマファイルのパスを置換（ocgraph_ を DB_PREFIX に）
     original_schema_file="$schema_file"
@@ -197,7 +263,15 @@ echo ""
 
 # テンプレートファイルをコピー
 echo "テンプレートファイルをコピーしています..."
-for lang in ja tw th; do
+
+# 言語フィルタに応じて処理対象を決定
+if [ -z "$LANG_FILTER" ]; then
+    TARGET_LANGS=(ja tw th)
+else
+    TARGET_LANGS=("$LANG_FILTER")
+fi
+
+for lang in "${TARGET_LANGS[@]}"; do
     echo "  → ${lang} のテンプレートをコピー中..."
     mkdir -p "$STORAGE_DIR/${lang}/static_data_top"
     cp -f "$TEMPLATE_DIR/static_data_top/"* "$STORAGE_DIR/${lang}/static_data_top/" 2>/dev/null || true
@@ -208,7 +282,7 @@ echo ""
 # SQLiteデータベースを生成
 echo "スキーマファイルからSQLiteデータベースを生成しています..."
 
-for lang in ja tw th; do
+for lang in "${TARGET_LANGS[@]}"; do
     echo "  → ${lang} のデータベースを生成中..."
 
     # ディレクトリ作成
