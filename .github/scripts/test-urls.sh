@@ -85,15 +85,18 @@ test_sitemap_contains_url() {
 
     echo -n "Testing Sitemap: ${description} ... " | tee -a "$LOG_FILE"
 
+    # コンテナ内のパスに変換
+    local container_path="/var/www/html/${sitemap_dir}"
+
     # サイトマップディレクトリが存在するか確認
-    if [ ! -d "$sitemap_dir" ]; then
+    if ! ${COMPOSE_CMD} exec -T app test -d "${container_path}" 2>/dev/null; then
         echo -e "${RED}FAILED (Directory not found: ${sitemap_dir})${NC}" | tee -a "$LOG_FILE"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         return 1
     fi
 
-    # サイトマップファイルを全て検索してURLが含まれているか確認
-    if grep -rq "<loc>${expected_url}</loc>" "${sitemap_dir}" 2>/dev/null; then
+    # コンテナ経由でサイトマップファイルを検索してURLが含まれているか確認
+    if ${COMPOSE_CMD} exec -T app grep -rq "<loc>${expected_url}</loc>" "${container_path}" 2>/dev/null; then
         echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
