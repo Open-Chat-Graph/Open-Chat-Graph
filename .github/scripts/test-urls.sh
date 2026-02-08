@@ -75,6 +75,35 @@ test_url() {
     fi
 }
 
+# サイトマップにURLが含まれているかテスト
+test_sitemap_contains_url() {
+    local sitemap_dir="$1"
+    local expected_url="$2"
+    local description="$3"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+    echo -n "Testing Sitemap: ${description} ... " | tee -a "$LOG_FILE"
+
+    # サイトマップディレクトリが存在するか確認
+    if [ ! -d "$sitemap_dir" ]; then
+        echo -e "${RED}FAILED (Directory not found: ${sitemap_dir})${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+
+    # サイトマップファイルを全て検索してURLが含まれているか確認
+    if grep -rq "<loc>${expected_url}</loc>" "${sitemap_dir}" 2>/dev/null; then
+        echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    else
+        echo -e "${RED}FAILED (URL not found in sitemap)${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+}
+
 # POSTリクエストテスト関数
 test_post() {
     local url="$1"
@@ -182,6 +211,33 @@ main() {
         test_url "${BASE_URL}/tw/oc/${TW_OC_ID}" "OC詳細ページ（繁体字, ID=${TW_OC_ID}）"
     else
         log_error "繁体字のopen_chatテーブルにデータがありません"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+    echo ""
+
+    # サイトマップにOC URLが含まれているかのテスト
+    log "サイトマップのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/ja/" "https://openchat-review.me/oc/${JA_OC_ID}" "日本語サイトマップに OC ${JA_OC_ID} が含まれているか"
+    else
+        log_error "日本語のOC IDが取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/tw/" "https://openchat-review.me/tw/oc/${TW_OC_ID}" "繁体字サイトマップに OC ${TW_OC_ID} が含まれているか"
+    else
+        log_error "繁体字のOC IDが取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/th/" "https://openchat-review.me/th/oc/${TH_OC_ID}" "タイ語サイトマップに OC ${TH_OC_ID} が含まれているか"
+    else
+        log_error "タイ語のOC IDが取得できませんでした"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
     fi
