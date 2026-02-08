@@ -29,6 +29,7 @@ use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
 use App\Controllers\Pages\RobotsController;
 use App\Controllers\Pages\AdsTxtController;
+use App\Controllers\Pages\StagingIconController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
@@ -87,6 +88,18 @@ Route::path('ads.txt', [AdsTxtController::class, 'index'])
             return false;
 
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path('assets/icon-192x192.png', [StagingIconController::class, 'icon192'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+    });
+
+Route::path('favicon.ico', [StagingIconController::class, 'favicon'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
     });
 
 Route::path('/', [IndexPageController::class, 'index'])
