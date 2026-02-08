@@ -150,28 +150,6 @@ class SitemapGenerator
     }
 
     /**
-     * 指定ディレクトリのsitemapファイルを削除
-     *
-     * @param string $directory 対象ディレクトリ
-     * @param int $maxNumber 削除しない最大番号
-     */
-    private function cleanSitemapFiles(string $directory, int $maxNumber): void
-    {
-        // ディレクトリ内のファイルを取得
-        $files = scandir($directory);
-
-        foreach ($files as $file) {
-            // ファイル名が 'sitemap' で始まり '.xml' で終わるかを確認
-            if (
-                preg_match('/^sitemap(\d+)\.xml$/', $file, $matches)
-                && (int)$matches[1] > $maxNumber
-            ) {
-                unlink("{$directory}/{$file}");
-            }
-        }
-    }
-
-    /**
      * 言語コードを取得
      *
      * @param string $lang URL rootの言語コード ('', '/tw', '/th')
