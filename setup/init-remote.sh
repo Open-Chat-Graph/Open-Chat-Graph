@@ -67,21 +67,21 @@ echo "⚠️  警告: このスクリプトは以下のデータを完全に初�
 echo ""
 echo "  【MySQLデータベース】"
 if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "ja" ]; then
-    echo "    - ${DB_PREFIX}_ocreview_schema (ja)"
-    echo "    - ${DB_PREFIX}_ranking_schema (ja)"
-    echo "    - ${DB_PREFIX}_comment_schema (ja)"
+    echo "    - ${DB_PREFIX}_ocreview (ja)"
+    echo "    - ${DB_PREFIX}_ranking (ja)"
+    echo "    - ${DB_PREFIX}_comment (ja)"
 fi
 if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "tw" ]; then
-    echo "    - ${DB_PREFIX}_ocreviewtw_schema (tw)"
-    echo "    - ${DB_PREFIX}_rankingtw_schema (tw)"
-    echo "    - ${DB_PREFIX}_commenttw_schema (tw)"
+    echo "    - ${DB_PREFIX}_ocreviewtw (tw)"
+    echo "    - ${DB_PREFIX}_rankingtw (tw)"
+    echo "    - ${DB_PREFIX}_commenttw (tw)"
 fi
 if [ -z "$LANG_FILTER" ] || [ "$LANG_FILTER" == "th" ]; then
-    echo "    - ${DB_PREFIX}_ocreviewth_schema (th)"
-    echo "    - ${DB_PREFIX}_rankingth_schema (th)"
-    echo "    - ${DB_PREFIX}_commentth_schema (th)"
+    echo "    - ${DB_PREFIX}_ocreviewth (th)"
+    echo "    - ${DB_PREFIX}_rankingth (th)"
+    echo "    - ${DB_PREFIX}_commentth (th)"
 fi
-echo "    - ${DB_PREFIX}_userlog_schema"
+echo "    - ${DB_PREFIX}_userlog"
 echo ""
 echo "  【SQLiteデータベース】"
 if [ -z "$LANG_FILTER" ]; then
@@ -130,17 +130,18 @@ echo ""
 MYSQL_CMD="mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} -h${MYSQL_HOST}"
 
 # スキーマファイルと対応するデータベース名の配列
+# データベース名 => スキーマファイル名
 declare -A DB_SCHEMA_MAP=(
-    ["${DB_PREFIX}_ocreview_schema"]="ocgraph_ocreview_schema.sql"
-    ["${DB_PREFIX}_ocreviewtw_schema"]="ocgraph_ocreviewtw_schema.sql"
-    ["${DB_PREFIX}_ocreviewth_schema"]="ocgraph_ocreviewth_schema.sql"
-    ["${DB_PREFIX}_ranking_schema"]="ocgraph_ranking_schema.sql"
-    ["${DB_PREFIX}_rankingtw_schema"]="ocgraph_rankingtw_schema.sql"
-    ["${DB_PREFIX}_rankingth_schema"]="ocgraph_rankingth_schema.sql"
-    ["${DB_PREFIX}_comment_schema"]="ocgraph_comment_schema.sql"
-    ["${DB_PREFIX}_commenttw_schema"]="ocgraph_commenttw_schema.sql"
-    ["${DB_PREFIX}_commentth_schema"]="ocgraph_commentth_schema.sql"
-    ["${DB_PREFIX}_userlog_schema"]="ocgraph_userlog_schema.sql"
+    ["${DB_PREFIX}_ocreview"]="ocgraph_ocreview_schema.sql"
+    ["${DB_PREFIX}_ocreviewtw"]="ocgraph_ocreviewtw_schema.sql"
+    ["${DB_PREFIX}_ocreviewth"]="ocgraph_ocreviewth_schema.sql"
+    ["${DB_PREFIX}_ranking"]="ocgraph_ranking_schema.sql"
+    ["${DB_PREFIX}_rankingtw"]="ocgraph_rankingtw_schema.sql"
+    ["${DB_PREFIX}_rankingth"]="ocgraph_rankingth_schema.sql"
+    ["${DB_PREFIX}_comment"]="ocgraph_comment_schema.sql"
+    ["${DB_PREFIX}_commenttw"]="ocgraph_commenttw_schema.sql"
+    ["${DB_PREFIX}_commentth"]="ocgraph_commentth_schema.sql"
+    ["${DB_PREFIX}_userlog"]="ocgraph_userlog_schema.sql"
 )
 
 # データベースの存在確認関数
