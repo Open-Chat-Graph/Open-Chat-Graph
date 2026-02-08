@@ -12,6 +12,7 @@ use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
+use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\SitemapGenerator;
@@ -337,5 +338,14 @@ class AdminPageController
         // adminer-plugin.php内でadminer-5.4.1.phpも読み込まれる
         include AppConfig::ROOT_PATH . 'app/Services/Admin/adminer-plugin.php';
         exit;
+    }
+
+    /**
+     * Discord通知テスト
+     */
+    function testdiscord(?string $message)
+    {
+        $result = AdminTool::sendDiscordNotify($message ?? 'テストメッセージ from AdminPageController');
+        return view('admin/admin_message_page', ['title' => 'Discord通知テスト', 'message' => nl2br(htmlspecialchars($result))]);
     }
 }
