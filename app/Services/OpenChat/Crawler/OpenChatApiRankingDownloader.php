@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Crawler;
 
 use App\Config\AppConfig;
+use App\Services\Cron\Utility\CronUtility;
 use Shared\MimimalCmsConfig;
 
 class OpenChatApiRankingDownloader
@@ -28,14 +29,8 @@ class OpenChatApiRankingDownloader
         $result = [];
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
 
-        // ステージング環境では特定カテゴリのみを処理対象にする
         if (AppConfig::$isStaging) {
-            $targetCategory = match (MimimalCmsConfig::$urlRoot) {
-                '/tw' => 34, // 科技
-                '/th' => 24, // รายการทีวี
-                default => 24, // TV・VOD
-            };
-            $categories = array_filter($categories, fn($category) => $category === $targetCategory);
+            $categories = CronUtility::filterCategoriesForStaging($categories);
         }
 
         foreach ($categories as $key => $category) {
