@@ -23,10 +23,17 @@ class AllRoomStatsPageController
         $totalMembers = $repository->getTotalMemberCount();
         $trackingStartDate = $repository->getTrackingStartDate();
 
+        $newRoomsMonthly = $repository->getNewRoomCountSince('1 MONTH');
+        $newRoomsWeekly = $repository->getNewRoomCountSince('7 DAY');
+        $newRoomsDaily = $repository->getNewRoomCountSince('24 HOUR');
+        $newRoomsHourly = $repository->getNewRoomCountSince('1 HOUR');
+
+        $earliestDeletedDate = $repository->getEarliestDeletedDate();
         $deletedRoomsTotal = $repository->getDeletedRoomCount();
-        $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 HOUR');
-        $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 HOUR');
+        $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 MONTH');
         $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 DAY');
+        $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 HOUR');
+        $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 HOUR');
 
         $categoryStats = $repository->getCategoryStats();
         $hourlyIncrease = $repository->getHourlyMemberIncrease();
@@ -45,10 +52,16 @@ class AllRoomStatsPageController
             'totalRooms',
             'totalMembers',
             'trackingStartDate',
+            'newRoomsMonthly',
+            'newRoomsWeekly',
+            'newRoomsDaily',
+            'newRoomsHourly',
+            'earliestDeletedDate',
             'deletedRoomsTotal',
-            'deletedRoomsHourly',
-            'deletedRoomsDaily',
+            'deletedRoomsMonthly',
             'deletedRoomsWeekly',
+            'deletedRoomsDaily',
+            'deletedRoomsHourly',
             'categoryStats',
             'hourlyIncrease',
             'dailyIncrease',

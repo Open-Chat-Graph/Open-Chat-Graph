@@ -34,6 +34,29 @@
                     </tbody>
                 </table>
 
+                <h2>新規登録ルーム数</h2>
+                <p style="color: #666; font-size: 0.85em; margin-bottom: 0.5em;">各期間内に新しく登録されたルームの数</p>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5em;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1ヶ月</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($newRoomsMonthly) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1週間</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($newRoomsWeekly) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近24時間</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($newRoomsDaily) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1時間</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($newRoomsHourly) ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
                 <h2>新規参加者数の推移</h2>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5em;">
                     <tbody>
@@ -53,7 +76,7 @@
                 </table>
 
                 <h2>削除されたルーム数</h2>
-                <p style="color: #666; font-size: 0.85em; margin-bottom: 0.5em;"><?php echo $trackingStartDate ? date('Y年n月j日', strtotime($trackingStartDate)) . '以降に' : '' ?>オプチャグラフから削除されたルームの数</p>
+                <p style="color: #666; font-size: 0.85em; margin-bottom: 0.5em;"><?php echo $earliestDeletedDate ? date('Y年n月j日', strtotime($earliestDeletedDate)) . '以降に' : '' ?>オプチャグラフから削除されたルームの数</p>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5em;">
                     <tbody>
                         <tr>
@@ -61,16 +84,20 @@
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsTotal) ?></td>
                         </tr>
                         <tr>
-                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1時間</td>
-                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsHourly) ?></td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1ヶ月</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsMonthly) ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1週間</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsWeekly) ?></td>
                         </tr>
                         <tr>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近24時間</td>
                             <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsDaily) ?></td>
                         </tr>
                         <tr>
-                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1週間</td>
-                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsWeekly) ?></td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-weight: bold;">直近1時間</td>
+                            <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: right;"><?php echo number_format($deletedRoomsHourly) ?></td>
                         </tr>
                     </tbody>
                 </table>

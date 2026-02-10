@@ -20,6 +20,9 @@ validate_required_vars "REMOTE_SERVER" "REMOTE_USER" "REMOTE_PORT" "REMOTE_KEY" 
   "LOCAL_MYSQL_USER" "LOCAL_MYSQL_PASS" "LOCAL_MYSQL_HOST" \
   "LOCAL_IMPORT_DIR" "LOCAL_STORAGE_DIR"
 
+# SSHリモートコマンド用: 引数をシングルクォートでエスケープして結合
+_remote_args() { printf "'%s' " "$@"; }
+
 echo "========================================"
 echo "リモートサーバーからデータを同期"
 echo "========================================"
@@ -36,7 +39,7 @@ echo ""
 
 # リモートサーバーでのDB存在確認
 echo "リモートサーバーのデータベース存在確認中..."
-REMOTE_DB_CHECK=$(ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${!TABLE_MAP[@]}" <<'EOFREMOTE'
+REMOTE_DB_CHECK=$(ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" "bash -s $(_remote_args "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${!TABLE_MAP[@]}")" <<'EOFREMOTE'
   set -eo pipefail  # エラーが発生したら即座に終了
 
   MYSQL_USER=$1
@@ -106,7 +109,7 @@ for SOURCE_DB in "${!TABLE_MAP[@]}"; do
   echo "  ダンプ中: $SOURCE_DB → $FILE_NAME"
 
   ssh -i "${CONFIG_VARS[REMOTE_KEY]}" -p "${CONFIG_VARS[REMOTE_PORT]}" "${CONFIG_VARS[REMOTE_USER]}@${CONFIG_VARS[REMOTE_SERVER]}" \
-    bash -s "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${SOURCE_DB}" "${CONFIG_VARS[REMOTE_DUMP_DIR]}" "${FILE_NAME}" <<'EOFREMOTE'
+    "bash -s $(_remote_args "${CONFIG_VARS[REMOTE_MYSQL_USER]}" "${CONFIG_VARS[REMOTE_MYSQL_PASS]}" "${SOURCE_DB}" "${CONFIG_VARS[REMOTE_DUMP_DIR]}" "${FILE_NAME}")" <<'EOFREMOTE'
 set -eo pipefail
 MYSQL_USER=$1
 MYSQL_PASS=$2

@@ -29,6 +29,22 @@ class AllRoomStatsRepository
         return $result !== false ? (string) $result : null;
     }
 
+    public function getNewRoomCountSince(string $interval): int
+    {
+        return (int) DB::execute(
+            "SELECT COUNT(*) FROM open_chat WHERE created_at >= NOW() - INTERVAL {$interval}"
+        )->fetchColumn();
+    }
+
+    public function getEarliestDeletedDate(): ?string
+    {
+        $result = DB::execute(
+            'SELECT MIN(deleted_at) FROM open_chat_deleted'
+        )->fetchColumn();
+
+        return $result !== false ? (string) $result : null;
+    }
+
     public function getDeletedRoomCount(): int
     {
         return (int) DB::execute(
