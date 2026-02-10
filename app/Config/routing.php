@@ -18,6 +18,7 @@ use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
+use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\PolicyPageController;
@@ -322,6 +323,16 @@ Route::path(
                 if (MimimalCmsConfig::$urlRoot !== '')
             return false;
     }); */
+
+Route::path(
+    'labs/all-room-stats',
+    [AllRoomStatsPageController::class, 'index']
+)
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'labs/publication-analytics',

@@ -26,6 +26,14 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 <a class="readMore-btn top-ranking-readMore white-btn unset" style="m font-size: 16px" href="<?php echo url('labs/live') ?>">
                     <span class="ranking-readMore" style="font-size: 16px">ライブトーク利用時間分析ツールを開く<span class="small"></span>
                 </a>
+                <h2>オープンチャット全体統計</h2>
+                <a href="<?php echo url('labs/all-room-stats') ?>" aria-label="オープンチャット全体統計">
+                    <img src="/labs-img/all_room_stats.webp" alt="オープンチャット全体統計" />
+                </a>
+                <p>オプチャグラフに登録されている全オープンチャットの統計データ。総ルーム数・総参加者数・カテゴリー別のルーム数などを一覧表示します。</p>
+                <a class="readMore-btn top-ranking-readMore white-btn unset" style="margin:0;" href="<?php echo url('labs/all-room-stats') ?>">
+                    <span class="ranking-readMore" style="font-size: 16px">オープンチャット全体統計を開く</span>
+                </a>
                 <h2>オプチャ公式ランキング掲載の分析</h2>
                 <a href="<?php echo url('labs/publication-analytics') ?>" aria-label="オプチャ公式ランキング掲載の分析">
                 <img src="/labs-img/ranking.webp" alt="オプチャ公式ランキング掲載の分析" />

@@ -5,16 +5,15 @@
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></il>
-                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
                 <li><a class="unset" href="<?php echo url('policy/privacy') ?>"><?php echo t('プライバシーポリシー') ?></a></il>
                     <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></il>
                 <? endif ?>
             </ul>
             <ul class="footer-link-inner">
+                <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
                 <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
-                    <li><a class="unset" href="<?php echo url('labs/live') ?>">ライブトーク分析ツール</a></il>
-                    <li><a class="unset" href="<?php echo url('labs/publication-analytics') ?>">公式ランキング掲載の分析</a></il>
+                    <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></il>
                 <? endif ?>
             </ul>
         </section>
