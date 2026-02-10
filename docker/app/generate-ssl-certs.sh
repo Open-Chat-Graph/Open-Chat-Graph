@@ -44,6 +44,20 @@ if ! command -v mkcert &> /dev/null; then
     exit 1
 fi
 
+# mkcertのルートCAがシステムにインストールされているか確認
+MKCERT_CAROOT=$(mkcert -CAROOT 2>/dev/null)
+if [ -n "$MKCERT_CAROOT" ] && [ -f "${MKCERT_CAROOT}/rootCA.pem" ]; then
+    # ルートCAがシステムの信頼済み証明書ストアに登録されているか確認
+    ROOT_CA_HASH=$(openssl x509 -hash -noout -in "${MKCERT_CAROOT}/rootCA.pem" 2>/dev/null)
+    if [ -n "$ROOT_CA_HASH" ] && ! ls /etc/ssl/certs/${ROOT_CA_HASH}.* &>/dev/null; then
+        echo "mkcertのルートCAがシステムに登録されていません。インストールします..."
+        mkcert -install
+    fi
+else
+    echo "mkcertのルートCAを生成・インストールします..."
+    mkcert -install
+fi
+
 # SSLディレクトリを作成
 mkdir -p "${REPO_ROOT}/${SSL_DIR}"
 
