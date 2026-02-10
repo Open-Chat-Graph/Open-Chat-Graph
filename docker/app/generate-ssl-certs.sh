@@ -39,9 +39,24 @@ fi
 
 # mkcertがインストールされているか確認
 if ! command -v mkcert &> /dev/null; then
-    echo "エラー: mkcertがインストールされていません"
-    echo "インストール方法: https://github.com/FiloSottile/mkcert#installation"
-    exit 1
+    echo "mkcertがインストールされていません。"
+    read -p "インストールしますか？ (y/N): " INSTALL_MKCERT
+    if [ "$INSTALL_MKCERT" = "y" ] || [ "$INSTALL_MKCERT" = "Y" ]; then
+        sudo apt install -y mkcert
+    else
+        echo "mkcertがないためSSL証明書を生成できません"
+        exit 1
+    fi
+fi
+
+# libnss3-toolsがインストールされているか確認（Chrome/Firefoxの証明書ストアへの登録に必要）
+if ! command -v certutil &> /dev/null; then
+    echo "libnss3-toolsがインストールされていません。"
+    echo "未インストールの場合、Chrome/Firefoxで「保護されていない通信」と表示されます。"
+    read -p "インストールしますか？ (y/N): " INSTALL_NSS
+    if [ "$INSTALL_NSS" = "y" ] || [ "$INSTALL_NSS" = "Y" ]; then
+        sudo apt install -y libnss3-tools
+    fi
 fi
 
 # mkcertのルートCAがシステムにインストールされているか確認
