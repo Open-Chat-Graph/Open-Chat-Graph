@@ -71,6 +71,8 @@ class FileStorageService implements FileStorageInterface
             throw new \RuntimeException("Failed to write to temporary file: {$tempFile}");
         }
 
+        chmod($tempFile, 0644);
+
         // faketime使用時のみタイムスタンプを現在時刻に設定（偽装された時刻が適用される）
         if ($this->isFaketimeEnabled()) {
             touch($tempFile);
