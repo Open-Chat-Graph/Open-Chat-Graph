@@ -316,7 +316,7 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
     {
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
         if (AppConfig::$isStaging) {
-            $categories = \App\Services\Cron\Utility\CronUtility::filterCategoriesForStaging($categories);
+            $categories = CronUtility::filterCategoriesForStaging($categories);
         }
 
         $categoryCount = count($categories);
