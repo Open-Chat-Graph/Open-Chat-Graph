@@ -1,0 +1,135 @@
+name: Deploy to Staging
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - stg
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # PRがマージされた場合、または手動実行時に実行
+    # ただし、skip-ciラベル/タイトルがある場合はスキップ
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+       !startsWith(github.event.pull_request.title, 'skip-ci'))
+    runs-on: ubuntu-latest
+
+    steps:
+    # PRマージ時はCIテストが成功しているか確認
+    - name: Check CI status
+      if: github.event_name == 'pull_request'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
+
+        # PRのhead SHA を取得
+        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+        # CI Test ワークフローの結果を確認
+        CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
+          --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
+
+        echo "CI Test status: $CI_STATUS"
+
+        if [ "$CI_STATUS" != "success" ]; then
+          echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
+          exit 1
+        fi
+
+        echo "CI Test passed. Proceeding with deployment."
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.STG_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        echo "${{ secrets.STG_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+    - name: Deploy
+      run: |
+        ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
+
+    - name: Checkout repository
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+        !startsWith(github.event.pull_request.title, 'skip-post')
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+        !startsWith(github.event.pull_request.title, 'skip-post')
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install twitter-api-v2
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+        !startsWith(github.event.pull_request.title, 'skip-post')
+      run: npm install twitter-api-v2
+
+    - name: Create post script
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+        !startsWith(github.event.pull_request.title, 'skip-post')
+      run: |
+        cat > post-pr-merge.js << 'EOF'
+        import { TwitterApi } from 'twitter-api-v2';
+
+        const client = new TwitterApi({
+          appKey: process.env.TWITTER_API_KEY,
+          appSecret: process.env.TWITTER_API_SECRET,
+          accessToken: process.env.TWITTER_ACCESS_TOKEN,
+          accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+        });
+
+        async function postTweet() {
+          try {
+            const prNumber = process.env.PR_NUMBER;
+            const prTitle = process.env.PR_TITLE;
+            const prUrl = process.env.PR_URL;
+            const prAuthor = process.env.PR_AUTHOR;
+
+            const message = '🚀 プルリクエストがマージされ、開発環境に反映されました\n\n' +
+              '#' + prNumber + ': ' + prTitle + '\n' +
+              'By @' + prAuthor + '\n\n' +
+              '#オプチャグラフ https://openchat-review-dev.me' + '\n\n' +
+              prUrl;
+
+            const tweet = await client.v2.tweet(message);
+            console.log('Tweet posted: ' + tweet.data.id);
+
+          } catch (error) {
+            console.error('Error:', error);
+            process.exit(1);
+          }
+        }
+
+        postTweet();
+        EOF
+
+    - name: Post to X (Twitter)
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+        !startsWith(github.event.pull_request.title, 'skip-post')
+      env:
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      run: node post-pr-merge.js
