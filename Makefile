@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test _wait-mysql _is-mock
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -9,6 +9,16 @@ WEB_PORT ?= 8000
 PHP_MY_ADMIN_PORT ?= 8080
 LINE_MOCK_PORT ?= 9000
 MYSQL_PORT ?= 3306
+DATA_PROTECTION ?= false
+
+# データ保護チェック（内部用ヘルパー）
+_check-data-protection:
+	@if [ "$(DATA_PROTECTION)" = "true" ]; then \
+		echo "$(RED)エラー: データ保護モードが有効です$(NC)"; \
+		echo "$(YELLOW)このコマンドは DATA_PROTECTION=true の環境では実行できません$(NC)"; \
+		echo "$(YELLOW)無効にするには .env の DATA_PROTECTION を false に変更してください$(NC)"; \
+		exit 1; \
+	fi
 
 # カラー定義
 GREEN := \033[0;32m
@@ -55,13 +65,13 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make init-y-n$(NC)    - 確認なしで初期化（local-secrets.phpは保持）"
 	@echo "  $(GREEN)make ci-test$(NC)     - CIテストを実行（Mock環境でクローリング+URLテスト）"
 
-init: ## 初回セットアップ
+init: _check-data-protection ## 初回セットアップ
 	@$(MAKE) _init ARGS=""
 
-init-y: ## 初回セットアップ（確認なし）
+init-y: _check-data-protection ## 初回セットアップ（確認なし）
 	@$(MAKE) _init ARGS="-y"
 
-init-y-n: ## 初回セットアップ（確認なし、local-secrets.phpは保持）
+init-y-n: _check-data-protection ## 初回セットアップ（確認なし、local-secrets.phpは保持）
 	@$(MAKE) _init ARGS="-y -n"
 
 _init:
@@ -262,7 +272,7 @@ cert: ## SSL証明書を更新（LAN内ホスト/IPを追加可能）
 		echo "$(YELLOW)appコンテナが起動していないため、次回起動時に新しい証明書が使用されます$(NC)"; \
 	fi
 
-ci-test: ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
+ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
 	@echo "$(GREEN)========================================"
 	@echo "  ローカルCIテスト開始"
 	@echo "========================================$(NC)"

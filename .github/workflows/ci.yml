@@ -14,7 +14,8 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (!contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
-       !startsWith(github.event.pull_request.title, 'skip-ci'))
+       !startsWith(github.event.pull_request.title, 'skip-ci') &&
+       github.event.pull_request.head.ref != 'stg')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

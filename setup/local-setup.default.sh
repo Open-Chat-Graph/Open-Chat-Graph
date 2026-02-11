@@ -180,7 +180,7 @@ AppConfig::$isStaging = false;
 AppConfig::$disableStaticDataFile = false;
 
 // 環境変数でisMockEnvironmentを制御
-if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+if (function_exists('getenv') && ($isMockEnv = !!getenv('IS_MOCK_ENVIRONMENT'))) {
     AppConfig::$isMockEnvironment = filter_var($isMockEnv, FILTER_VALIDATE_BOOLEAN);
     AppConfig::$lineImageUrl = 'http://localhost:' . getenv('LINE_MOCK_PORT') . '/obs/';
 } else {
@@ -196,7 +196,7 @@ if (
     $_SERVER['HTTPS'] = 'on';
 
     // モック環境の場合、LINE画像URLをCodespaces用に変更
-    if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+    if (function_exists('getenv') && ($isMockEnv = !!getenv('IS_MOCK_ENVIRONMENT'))) {
         $host = $_SERVER['HTTP_HOST'];
         $host = str_replace(getenv('HTTPS_PORT'), getenv('LINE_MOCK_PORT'), $host);
         AppConfig::$lineImageUrl = 'https://' . $host . '/obs/';
