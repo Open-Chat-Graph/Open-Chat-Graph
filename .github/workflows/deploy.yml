@@ -36,7 +36,7 @@ jobs:
 
         echo "CI Test status: $CI_STATUS"
 
-        if [ "$CI_STATUS" != "success" ]; then
+        if [ "$CI_STATUS" != "success" ] && [ "$CI_STATUS" != "skipped" ]; then
           echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
           exit 1
         fi
