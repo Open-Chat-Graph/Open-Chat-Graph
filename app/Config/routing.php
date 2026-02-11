@@ -37,6 +37,7 @@ use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
+use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
 use Shared\MimimalCmsConfig;
@@ -218,10 +219,11 @@ Route::path('mylist-api', [MyListApiController::class, 'index'])
     });
 
 Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function (RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     })
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
@@ -277,10 +279,11 @@ Route::path(
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page')
-    ->match(function (int $page, FileStorageInterface $fileStorage) {
+    ->match(function (int $page, RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     });
 
 Route::path(
@@ -288,30 +291,31 @@ Route::path(
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page', emptyAble: true)
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function (RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     });
 
 Route::path(
     'labs',
     [LabsPageController::class, 'index']
 )
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/labs_content.php'));
     });
 
 Route::path(
     'labs/live',
     [LabsPageController::class, 'live']
 )
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/live_content.php'));
     });
 
 /* Route::path(

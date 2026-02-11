@@ -100,6 +100,12 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
         return $result;
     }
 
+    public function getLatestCommentTime(): string|false
+    {
+        $query = "SELECT MAX(time) FROM comment";
+        return CommentDB::fetchColumn($query);
+    }
+
     public function getRecordCount(
         string $adminId = '',
         string $user_id = '',
