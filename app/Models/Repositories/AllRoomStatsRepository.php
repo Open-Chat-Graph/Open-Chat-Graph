@@ -76,7 +76,7 @@ class AllRoomStatsRepository
             GROUP BY
                 category
             ORDER BY
-                room_count DESC,
+                total_members DESC,
                 category ASC'
         );
     }

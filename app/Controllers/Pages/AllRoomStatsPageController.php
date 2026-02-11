@@ -6,6 +6,7 @@ namespace App\Controllers\Pages;
 
 use App\Models\Repositories\AllRoomStatsRepository;
 use App\Models\Repositories\DB;
+use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
 class AllRoomStatsPageController
@@ -16,8 +17,11 @@ class AllRoomStatsPageController
     function index(
         AllRoomStatsRepository $repository,
         PageBreadcrumbsListSchema $breadcrumbsSchema,
+        FileStorageInterface $fileStorage,
     ) {
         DB::connect();
+
+        $updatedAt = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
         $totalRooms = $repository->getTotalRoomCount();
         $totalMembers = $repository->getTotalMemberCount();
@@ -49,6 +53,7 @@ class AllRoomStatsPageController
             '_meta',
             '_css',
             '_breadcrumbsSchema',
+            'updatedAt',
             'totalRooms',
             'totalMembers',
             'trackingStartDate',
