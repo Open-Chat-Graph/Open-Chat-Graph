@@ -75,7 +75,7 @@ export default function SettingButton() {
         aria-haspopup='true'
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
-        ariat-label={t('設定')}
+        aria-label={t('設定')}
       >
         <SettingsIcon />
       </IconButton>

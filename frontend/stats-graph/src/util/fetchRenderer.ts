@@ -108,7 +108,7 @@ export async function fetchChart(animation: boolean) {
     if (chart.getIsHour()) {
       loading.value = true
       await fetcher<RankingPositionChart>(
-        `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery('ranking', false)}`
+        `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery('ranking', true)}`
       ).then(renderMemberChart(animation, limit))
     } else {
       renderMemberChart(animation, limit)(statsDto)
@@ -122,19 +122,8 @@ export async function fetchChart(animation: boolean) {
 
   loading.value = true
   await fetcher<RankingPositionChart>(
-    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery(param, false)}`
+    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery(param, chart.getIsHour())}`
   ).then((data) => {
-    const isDefaultGraph =
-      limitSignal.value === defaultLimitNum &&
-      rankingRisingSignal.value === defaultBar &&
-      categorySignal.value === defaultCategory
-
-    if (!isDefaultGraph) {
-      setRenderPositionBtns(true)
-      renderChart(param, animation, limit)(data)
-      return
-    }
-
     setRenderPositionBtns(true)
     renderChart(param, animation, limit)(data)
   })
