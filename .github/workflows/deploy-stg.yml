@@ -103,8 +103,11 @@ jobs:
     - name: Deploy frontend assets
       if: steps.any_frontend.outputs.changed == 'true'
       run: |
-        scp -P ${{ vars.STG_SSH_PORT }} -r public/js/chart/ public/js/react/ public/js/comment/ \
-          ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }}:${{ vars.STG_SSH_PATH }}/public/js/
+        deploy() { scp -P ${{ vars.STG_SSH_PORT }} -r "$1" ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }}:${{ vars.STG_SSH_PATH }}/public/js/; }
+        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
+        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
+        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/
+        echo "Frontend deploy complete"
 
     - name: Install twitter-api-v2
       if: |
