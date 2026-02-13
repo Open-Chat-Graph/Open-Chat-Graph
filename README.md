@@ -206,6 +206,24 @@ cd frontend/stats-graph && npm install && npm run build
 
 デプロイ時はGitHub Actionsでビルドし、SCPで本番サーバーに配置します。
 
+### フロントエンド開発（HMR + プロキシ）
+
+バックエンド（`make up` または `make up-mock`）を起動した状態で、各フロントエンドを個別にdev serverで起動できます。
+Viteプロキシ/CRAプロキシによりAPIリクエストがバックエンド（`https://localhost:8443`）に転送されるため、CORSエラーは発生しません。
+
+```bash
+# コメント (Vite + React, http://localhost:5173)
+cd frontend/comments && npm install && npm run dev
+
+# グラフ (Vite + Preact, http://localhost:5173)
+cd frontend/stats-graph && npm install && npm run dev
+
+# ランキング (CRA, http://localhost:3000)
+cd frontend/ranking && npm install && npm start
+```
+
+プロキシ先のポートはリポジトリルートの `.env`（`HTTPS_PORT`）から自動的に読み取られます（docker-composeと同じ設定を共有）。
+
 ## 📁 ディレクトリ構造
 
 ```

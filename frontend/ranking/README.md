@@ -6,3 +6,5 @@ Swiper.js
 
 公開ページ  
 https://openchat-review.me/ranking  
+
+TODO: Viteに移行
