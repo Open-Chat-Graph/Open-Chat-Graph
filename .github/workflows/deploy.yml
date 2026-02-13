@@ -10,18 +10,18 @@ on:
 jobs:
   deploy:
     # PRがマージされた場合、または手動実行時に実行
-    # ただし、skip-ciラベル/タイトルがある場合はスキップ
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event.pull_request.merged == true &&
-       !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
-       !startsWith(github.event.pull_request.title, 'skip-ci'))
+      (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
 
     steps:
-    # PRマージ時はCIテストが成功しているか確認
+    # PRマージ時はCIテストが成功しているか確認（skip-ci時はスキップ）
     - name: Check CI status
-      if: github.event_name == 'pull_request'
+      if: |
+        github.event_name == 'pull_request' &&
+        !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+        !startsWith(github.event.pull_request.title, 'skip-ci')
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
