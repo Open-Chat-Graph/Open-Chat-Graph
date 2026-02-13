@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph _build-one-frontend _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -58,7 +58,10 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make cron-stop$(NC)     - Cronを無効化"
 	@echo ""
 	@echo "$(YELLOW)フロントエンド:$(NC)"
-	@echo "  $(GREEN)make build-frontend$(NC) - フロントエンドをビルド（frontend/*/）"
+	@echo "  $(GREEN)make build-frontend$(NC)          - フロントエンドを全てビルド"
+	@echo "  $(GREEN)make build-frontend:ranking$(NC)  - ランキングのみビルド"
+	@echo "  $(GREEN)make build-frontend:comments$(NC) - コメントのみビルド"
+	@echo "  $(GREEN)make build-frontend:graph$(NC)    - グラフのみビルド"
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
@@ -123,7 +126,17 @@ _init:
 	@echo "$(GREEN)初回セットアップが完了しました$(NC)"
 
 # フロントエンドビルド
-build-frontend: ## フロントエンドをビルド（frontend/*/）
+# 使い方: make build-frontend (全て) / make build-frontend:ranking / make build-frontend:comments / make build-frontend:graph
+_build-one-frontend:
+	@if [ -f "$(DIR)/package.json" ]; then \
+		echo "  $(YELLOW)ビルド: $(DIR)$(NC)"; \
+		(cd "$(DIR)" && npm install && npm run build); \
+	else \
+		echo "$(RED)エラー: $(DIR)/package.json が見つかりません$(NC)"; \
+		exit 1; \
+	fi
+
+build-frontend: ## フロントエンドを全てビルド（frontend/*/）
 	@echo "$(GREEN)フロントエンドをビルドしています...$(NC)"
 	@for dir in frontend/*/; do \
 		if [ -f "$$dir/package.json" ]; then \
@@ -132,6 +145,21 @@ build-frontend: ## フロントエンドをビルド（frontend/*/）
 		fi; \
 	done
 	@echo "$(GREEN)フロントエンドビルド完了$(NC)"
+
+build-frontend\:ranking: ## ランキングのみビルド
+	@echo "$(GREEN)ranking をビルドしています...$(NC)"
+	@$(MAKE) _build-one-frontend DIR=frontend/ranking
+	@echo "$(GREEN)ranking ビルド完了$(NC)"
+
+build-frontend\:comments: ## コメントのみビルド
+	@echo "$(GREEN)comments をビルドしています...$(NC)"
+	@$(MAKE) _build-one-frontend DIR=frontend/comments
+	@echo "$(GREEN)comments ビルド完了$(NC)"
+
+build-frontend\:graph: ## グラフのみビルド
+	@echo "$(GREEN)graph をビルドしています...$(NC)"
+	@$(MAKE) _build-one-frontend DIR=frontend/stats-graph
+	@echo "$(GREEN)graph ビルド完了$(NC)"
 
 # 基本環境
 up: ## 基本環境を起動
