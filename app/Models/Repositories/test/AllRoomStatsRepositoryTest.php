@@ -345,10 +345,10 @@ class AllRoomStatsRepositoryTest extends TestCase
     public function test_getDeletedMemberCountSince_ordering(): void
     {
         $total = $this->repository->getDeletedMemberCountTotal();
-        $monthly = $this->repository->getDeletedMemberCountSince('1 month');
-        $weekly = $this->repository->getDeletedMemberCountSince('7 days');
-        $daily = $this->repository->getDeletedMemberCountSince('24 hours');
-        $hourly = $this->repository->getDeletedMemberCountSince('1 hour');
+        $monthly = $this->repository->getDeletedMemberCountSince('1 MONTH');
+        $weekly = $this->repository->getDeletedMemberCountSince('7 DAY');
+        $daily = $this->repository->getDeletedMemberCountSince('24 HOUR');
+        $hourly = $this->repository->getDeletedMemberCountSince('1 HOUR');
 
         $this->assertLessThanOrEqual($total, $monthly);
         $this->assertLessThanOrEqual($monthly, $weekly);

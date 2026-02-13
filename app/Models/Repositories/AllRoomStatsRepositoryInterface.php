@@ -62,7 +62,7 @@ interface AllRoomStatsRepositoryInterface
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照）
      *
-     * @param string $interval PHP strtotime形式（例: '1 hour', '7 days', '1 month'）
+     * @param string $interval MySQL INTERVAL形式（例: '1 HOUR', '7 DAY', '1 MONTH'）
      */
     public function getDeletedMemberCountSince(string $interval): int;
 }

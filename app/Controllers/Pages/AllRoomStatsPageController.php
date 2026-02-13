@@ -40,10 +40,10 @@ class AllRoomStatsPageController
         $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 HOUR');
 
         $deletedMembersTotal = $repository->getDeletedMemberCountTotal();
-        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 month');
-        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 days');
-        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 hours');
-        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 hour');
+        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 MONTH');
+        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 DAY');
+        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 HOUR');
+        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 HOUR');
 
         $categoryStats = $repository->getCategoryStats();
         $hourlyIncrease = $repository->getHourlyMemberIncrease();
