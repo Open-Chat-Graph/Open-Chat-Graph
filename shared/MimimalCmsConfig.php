@@ -25,6 +25,7 @@ class MimimalCmsConfig
         \App\Models\Repositories\DeleteOpenChatRepositoryInterface::class => \App\Models\Repositories\DeleteOpenChatRepository::class,
         \App\Models\Repositories\SyncOpenChatStateRepositoryInterface::class => \App\Models\Repositories\SyncOpenChatStateRepository::class,
         \App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface::class => \App\Models\Repositories\MemberChangeFilterCacheRepository::class,
+        \App\Models\Repositories\AllRoomStatsRepositoryInterface::class => \App\Models\Repositories\AllRoomStatsRepository::class,
 
         \App\Models\Repositories\Statistics\StatisticsRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository::class,
         \App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRankingUpdaterRepository::class,

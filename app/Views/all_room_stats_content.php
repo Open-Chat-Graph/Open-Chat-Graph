@@ -35,20 +35,29 @@
 
                 <!-- 新規参加者数 -->
                 <h2>新規参加者数の推移</h2>
-                <p class="text-gray-500 text-xs mb-3">毎時更新。各期間内にメンバー数が増加したルームの増加数合計</p>
+                <p class="text-gray-500 text-xs mb-3">毎時更新。メンバー増加数から閉鎖ルームのメンバー数を差し引いた純増減数</p>
+                <?php
+                    $hourlyNet = $hourlyIncrease - $deletedMembersHourly;
+                    $dailyNet = $dailyIncrease - $deletedMembersDaily;
+                    $weeklyNet = $weeklyIncrease - $deletedMembersWeekly;
+                ?>
                 <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs sm:text-sm font-semibold text-emerald-500 mb-1">1時間</div>
-                        <div class="text-base sm:text-xl font-bold text-emerald-600">+<?php echo number_format($hourlyIncrease) ?></div>
+                    <?php foreach ([
+                        ['label' => '1時間', 'net' => $hourlyNet, 'increase' => $hourlyIncrease, 'decrease' => $deletedMembersHourly],
+                        ['label' => '24時間', 'net' => $dailyNet, 'increase' => $dailyIncrease, 'decrease' => $deletedMembersDaily],
+                        ['label' => '1週間', 'net' => $weeklyNet, 'increase' => $weeklyIncrease, 'decrease' => $deletedMembersWeekly],
+                    ] as $period): ?>
+                    <div class="rounded-xl <?php echo $period['net'] >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200' ?> border p-3 sm:p-4 text-center">
+                        <div class="text-xs sm:text-sm font-semibold <?php echo $period['net'] >= 0 ? 'text-emerald-500' : 'text-rose-400' ?> mb-1"><?php echo $period['label'] ?></div>
+                        <div class="text-base sm:text-xl font-bold <?php echo $period['net'] >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>"><?php echo ($period['net'] >= 0 ? '+' : '') . number_format($period['net']) ?></div>
+                        <div class="text-[10px] sm:text-xs text-gray-400 mt-1">
+                            <span class="text-emerald-500">+<?php echo number_format($period['increase']) ?></span>
+                            <?php if ($period['decrease'] > 0): ?>
+                            <span class="text-rose-400"> / -<?php echo number_format($period['decrease']) ?></span>
+                            <?php endif ?>
+                        </div>
                     </div>
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs sm:text-sm font-semibold text-emerald-500 mb-1">24時間</div>
-                        <div class="text-base sm:text-xl font-bold text-emerald-600">+<?php echo number_format($dailyIncrease) ?></div>
-                    </div>
-                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs sm:text-sm font-semibold text-emerald-500 mb-1">1週間</div>
-                        <div class="text-base sm:text-xl font-bold text-emerald-600">+<?php echo number_format($weeklyIncrease) ?></div>
-                    </div>
+                    <?php endforeach ?>
                 </div>
 
                 <!-- 新規登録ルーム数 -->
@@ -56,49 +65,54 @@
                 <p class="text-gray-500 text-xs mb-3"><?php echo $trackingStartDate ? date('Y年n月j日', strtotime($trackingStartDate)) . '以降のデータに基づく、' : '' ?>各期間内に新しく登録されたルームの数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-amber-500 mb-1">1ヶ月</div>
-                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsMonthly) ?></div>
-                    </div>
-                    <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-amber-500 mb-1">1週間</div>
-                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsWeekly) ?></div>
+                        <div class="text-xs font-semibold text-amber-500 mb-1">1時間</div>
+                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsHourly) ?></div>
                     </div>
                     <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
                         <div class="text-xs font-semibold text-amber-500 mb-1">24時間</div>
                         <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsDaily) ?></div>
                     </div>
                     <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-amber-500 mb-1">1時間</div>
-                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsHourly) ?></div>
+                        <div class="text-xs font-semibold text-amber-500 mb-1">1週間</div>
+                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsWeekly) ?></div>
+                    </div>
+                    <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
+                        <div class="text-xs font-semibold text-amber-500 mb-1">1ヶ月</div>
+                        <div class="text-base sm:text-lg font-bold text-amber-600"><?php echo number_format($newRoomsMonthly) ?></div>
                     </div>
                 </div>
 
-                <!-- 削除されたルーム数 -->
-                <h2>削除されたルーム数</h2>
-                <p class="text-gray-500 text-xs mb-3"><?php echo $earliestDeletedDate ? date('Y年n月j日', strtotime($earliestDeletedDate)) . '以降に' : '' ?>オプチャグラフから削除されたルームの数</p>
-                <div class="grid grid-cols-2 gap-2 sm:gap-3 mb-2">
+                <!-- 閉鎖されたルーム数 -->
+                <h2>閉鎖されたルーム数</h2>
+                <p class="text-gray-500 text-xs mb-3"><?php echo $earliestDeletedDate ? date('Y年n月j日', strtotime($earliestDeletedDate)) . '以降に' : '' ?>オプチャグラフに登録後、閉鎖されたルームの数</p>
+                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-2">
+                    <?php foreach ([
+                        ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly],
+                        ['label' => '24時間', 'rooms' => $deletedRoomsDaily, 'members' => $deletedMembersDaily],
+                        ['label' => '1週間', 'rooms' => $deletedRoomsWeekly, 'members' => $deletedMembersWeekly],
+                    ] as $period): ?>
                     <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1">全期間</div>
-                        <div class="text-base sm:text-xl font-bold text-rose-600"><?php echo number_format($deletedRoomsTotal) ?></div>
+                        <div class="text-xs font-semibold text-rose-400 mb-1"><?php echo $period['label'] ?></div>
+                        <div class="text-sm sm:text-lg font-bold text-rose-600"><?php echo number_format($period['rooms']) ?></div>
+                        <?php if ($period['members'] > 0): ?>
+                        <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['members']) ?>人</div>
+                        <?php endif ?>
                     </div>
-                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1">1ヶ月</div>
-                        <div class="text-base sm:text-xl font-bold text-rose-600"><?php echo number_format($deletedRoomsMonthly) ?></div>
-                    </div>
+                    <?php endforeach ?>
                 </div>
-                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
+                <div class="grid grid-cols-2 gap-2 sm:gap-3 mb-10">
+                    <?php foreach ([
+                        ['label' => '1ヶ月', 'rooms' => $deletedRoomsMonthly, 'members' => $deletedMembersMonthly],
+                        ['label' => '全期間', 'rooms' => $deletedRoomsTotal, 'members' => $deletedMembersTotal],
+                    ] as $period): ?>
                     <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1">1週間</div>
-                        <div class="text-sm sm:text-lg font-bold text-rose-600"><?php echo number_format($deletedRoomsWeekly) ?></div>
+                        <div class="text-xs font-semibold text-rose-400 mb-1"><?php echo $period['label'] ?></div>
+                        <div class="text-base sm:text-xl font-bold text-rose-600"><?php echo number_format($period['rooms']) ?></div>
+                        <?php if ($period['members'] > 0): ?>
+                        <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['members']) ?>人</div>
+                        <?php endif ?>
                     </div>
-                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1">24時間</div>
-                        <div class="text-sm sm:text-lg font-bold text-rose-600"><?php echo number_format($deletedRoomsDaily) ?></div>
-                    </div>
-                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1">1時間</div>
-                        <div class="text-sm sm:text-lg font-bold text-rose-600"><?php echo number_format($deletedRoomsHourly) ?></div>
-                    </div>
+                    <?php endforeach ?>
                 </div>
 
                 <!-- カテゴリー別統計 -->

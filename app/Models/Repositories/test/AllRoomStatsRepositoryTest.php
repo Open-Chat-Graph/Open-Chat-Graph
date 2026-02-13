@@ -17,6 +17,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 use App\Models\Repositories\AllRoomStatsRepository;
 use App\Models\Repositories\DB;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
 class AllRoomStatsRepositoryTest extends TestCase
 {
@@ -310,5 +311,48 @@ class AllRoomStatsRepositoryTest extends TestCase
         $actual = $this->repository->getWeeklyMemberIncrease();
 
         $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * getDeletedMemberCountTotal() が ocgraph_sqlapi の
+     * open_chat_deleted と openchat_master の JOIN 結果と一致することを検証
+     */
+    public function test_getDeletedMemberCountTotal_matches_direct_query(): void
+    {
+        $expected = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(om.current_member_count), 0)
+            FROM open_chat_deleted ocd
+            JOIN openchat_master om ON ocd.id = om.openchat_id"
+        );
+        $actual = $this->repository->getDeletedMemberCountTotal();
+
+        $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * getDeletedMemberCountTotal() が0以上であることを検証
+     */
+    public function test_getDeletedMemberCountTotal_is_non_negative(): void
+    {
+        $actual = $this->repository->getDeletedMemberCountTotal();
+        $this->assertGreaterThanOrEqual(0, $actual);
+    }
+
+    /**
+     * getDeletedMemberCountSince() の期間別件数が整合していることを検証
+     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 <= 全期間 の順でメンバー数が増えること
+     */
+    public function test_getDeletedMemberCountSince_ordering(): void
+    {
+        $total = $this->repository->getDeletedMemberCountTotal();
+        $monthly = $this->repository->getDeletedMemberCountSince('1 MONTH');
+        $weekly = $this->repository->getDeletedMemberCountSince('7 DAY');
+        $daily = $this->repository->getDeletedMemberCountSince('24 HOUR');
+        $hourly = $this->repository->getDeletedMemberCountSince('1 HOUR');
+
+        $this->assertLessThanOrEqual($total, $monthly);
+        $this->assertLessThanOrEqual($monthly, $weekly);
+        $this->assertLessThanOrEqual($weekly, $daily);
+        $this->assertLessThanOrEqual($daily, $hourly);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Models\Repositories\AllRoomStatsRepository;
+use App\Models\Repositories\AllRoomStatsRepositoryInterface;
 use App\Models\Repositories\DB;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
@@ -15,7 +15,7 @@ class AllRoomStatsPageController
     const Desc = 'オプチャグラフに登録されている全オープンチャットの統計データ。総ルーム数・総参加者数・カテゴリー別のルーム数などを一覧表示します。';
 
     function index(
-        AllRoomStatsRepository $repository,
+        AllRoomStatsRepositoryInterface $repository,
         PageBreadcrumbsListSchema $breadcrumbsSchema,
         FileStorageInterface $fileStorage,
     ) {
@@ -38,6 +38,12 @@ class AllRoomStatsPageController
         $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 DAY');
         $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 HOUR');
         $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 HOUR');
+
+        $deletedMembersTotal = $repository->getDeletedMemberCountTotal();
+        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 MONTH');
+        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 DAY');
+        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 HOUR');
+        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 HOUR');
 
         $categoryStats = $repository->getCategoryStats();
         $hourlyIncrease = $repository->getHourlyMemberIncrease();
@@ -67,6 +73,11 @@ class AllRoomStatsPageController
             'deletedRoomsWeekly',
             'deletedRoomsDaily',
             'deletedRoomsHourly',
+            'deletedMembersTotal',
+            'deletedMembersMonthly',
+            'deletedMembersWeekly',
+            'deletedMembersDaily',
+            'deletedMembersHourly',
             'categoryStats',
             'hourlyIncrease',
             'dailyIncrease',
