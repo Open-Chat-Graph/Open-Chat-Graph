@@ -46,19 +46,48 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Check for frontend changes
+      if: github.event_name == 'pull_request'
+      uses: dorny/paths-filter@v3
+      id: check_changes
+      with:
+        filters: |
+          frontend_ranking:
+            - 'frontend/ranking/**'
+          frontend_stats_graph:
+            - 'frontend/stats-graph/**'
+          frontend_comments:
+            - 'frontend/comments/**'
+
+    - name: Check if any frontend changed
+      id: any_frontend
+      run: |
+        if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
+           [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
+           [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
+           [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Setup Node.js
+      if: steps.any_frontend.outputs.changed == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '24'
 
     - name: Build frontend
+      if: steps.any_frontend.outputs.changed == 'true'
       run: |
-        for dir in frontend/*/; do
-          if [ -f "$dir/package.json" ]; then
-            echo "Building: $dir"
-            (cd "$dir" && npm ci && CI=false npm run build)
-          fi
-        done
+        build_frontend() {
+          echo "Building: $1"
+          (cd "$1" && npm ci && CI=false npm run build)
+        }
+        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
+        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
+        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
+        echo "Frontend build complete"
 
     - name: Setup SSH
       run: |
@@ -72,6 +101,7 @@ jobs:
         ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
 
     - name: Deploy frontend assets
+      if: steps.any_frontend.outputs.changed == 'true'
       run: |
         scp -P ${{ vars.STG_SSH_PORT }} -r public/js/chart/ public/js/react/ public/js/comment/ \
           ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }}:${{ vars.STG_SSH_PATH }}/public/js/
