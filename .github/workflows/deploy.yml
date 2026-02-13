@@ -56,7 +56,7 @@ jobs:
         for dir in frontend/*/; do
           if [ -f "$dir/package.json" ]; then
             echo "Building: $dir"
-            (cd "$dir" && npm ci && npm run build)
+            (cd "$dir" && npm ci && CI=false npm run build)
           fi
         done
 

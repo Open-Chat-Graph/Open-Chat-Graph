@@ -148,6 +148,20 @@ jobs:
         echo "Initializing database and storage..."
         ./setup/local-setup.default.sh -y -n
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Build frontend
+      run: |
+        for dir in frontend/*/; do
+          if [ -f "$dir/package.json" ]; then
+            echo "Building: $dir"
+            (cd "$dir" && npm ci && CI=false npm run build)
+          fi
+        done
+
     - name: Run CI tests
       run: |
         chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
