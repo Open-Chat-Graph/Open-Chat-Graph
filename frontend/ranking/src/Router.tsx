@@ -5,7 +5,7 @@ import { basePath } from './config/config'
 
 function RedirectTo404() {
   useEffect(() => {
-    window.location.replace('https://openchat-review.me/404')
+    window.location.replace('/404')
   }, [])
 
   return null
