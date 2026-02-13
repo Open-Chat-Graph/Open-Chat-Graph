@@ -7,7 +7,6 @@ import {
 } from '../signal/chartState'
 import { setRenderPositionBtns } from '../app'
 import fetcher from './fetcher'
-import { defaultBar, defaultCategory, defaultLimitNum } from './urlParam'
 import { t } from './translation'
 
 export const chatArgDto: RankingPositionChartArgDto = JSON.parse(
