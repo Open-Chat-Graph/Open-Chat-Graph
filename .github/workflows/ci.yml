@@ -9,30 +9,39 @@ on:
 
 jobs:
   test:
-    # skip-ciラベルまたはタイトルプレフィックスがある場合はスキップ
-    # workflow_dispatch（手動実行）の場合は常に実行
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (!contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
-       !startsWith(github.event.pull_request.title, 'skip-ci') &&
-       github.event.pull_request.head.ref != 'stg')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
       packages: read
-      pull-requests: read  # paths-filterがPR時にREST APIでファイル一覧を取得するために必要
+      pull-requests: read
     env:
-      # CI環境フラグ
       CI: true
-      # CI環境ではxdebugをインストールしない
       INSTALL_XDEBUG: false
 
     steps:
+    # skip-ci判定
+    - name: Check skip-ci
+      id: skip
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          TITLE='${{ github.event.pull_request.title }}'
+          HEAD='${{ github.event.pull_request.head.ref }}'
+          if echo "$LABELS" | grep -q "skip-ci" || [[ "$TITLE" == skip-ci* ]] || [ "$HEAD" = "stg" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "CI skipped"
+            exit 0
+          fi
+        fi
+        echo "skip=false" >> "$GITHUB_OUTPUT"
+
     - name: Checkout repository
+      if: steps.skip.outputs.skip != 'true'
       uses: actions/checkout@v4
 
     - name: Check for Docker-related changes
+      if: steps.skip.outputs.skip != 'true'
       uses: dorny/paths-filter@v3
       id: check_changes
       with:
@@ -43,9 +52,11 @@ jobs:
             - 'composer.lock'
 
     - name: Set up Docker Buildx
+      if: steps.skip.outputs.skip != 'true'
       uses: docker/setup-buildx-action@v3
 
     - name: Login to GitHub Container Registry
+      if: steps.skip.outputs.skip != 'true'
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
@@ -53,6 +64,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Pull or build app image
+      if: steps.skip.outputs.skip != 'true'
       run: |
         # Docker関連ファイルに変更がある場合は必ずビルド
         if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
@@ -82,6 +94,7 @@ jobs:
         fi
 
     - name: Pull or build LINE Mock API image
+      if: steps.skip.outputs.skip != 'true'
       run: |
         # Docker関連ファイルに変更がある場合は必ずビルド
         if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
@@ -107,11 +120,13 @@ jobs:
         fi
 
     - name: Start mock environment
+      if: steps.skip.outputs.skip != 'true'
       run: |
         echo "Starting CI mock environment..."
         docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
 
     - name: Wait for services
+      if: steps.skip.outputs.skip != 'true'
       run: |
         echo "Waiting for MySQL..."
         for i in {1..30}; do
@@ -144,16 +159,19 @@ jobs:
         done
 
     - name: Initialize database and storage
+      if: steps.skip.outputs.skip != 'true'
       run: |
         echo "Initializing database and storage..."
         ./setup/local-setup.default.sh -y -n
 
     - name: Setup Node.js
+      if: steps.skip.outputs.skip != 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '24'
 
     - name: Build frontend
+      if: steps.skip.outputs.skip != 'true'
       run: |
         for dir in frontend/*/; do
           if [ -f "$dir/package.json" ]; then
@@ -163,13 +181,14 @@ jobs:
         done
 
     - name: Run CI tests
+      if: steps.skip.outputs.skip != 'true'
       run: |
         chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
         ./.github/scripts/test-ci.sh -y
         ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 
     - name: Handle test failure
-      if: failure()
+      if: failure() && steps.skip.outputs.skip != 'true'
       run: |
         echo "=== Container logs (app) ==="
         docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app --tail=100
@@ -185,7 +204,7 @@ jobs:
         fi
 
     - name: Upload logs on failure
-      if: failure()
+      if: failure() && steps.skip.outputs.skip != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ci-logs
@@ -196,7 +215,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Show final status
-      if: always()
+      if: always() && steps.skip.outputs.skip != 'true'
       run: |
         echo "=== Final container status ==="
         docker compose -f docker-compose.yml -f docker-compose.ci.yml ps
