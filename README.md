@@ -183,8 +183,28 @@ Mock環境で時刻を進めながらクローリングをテスト：
 
 - PHP 8.3 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
 - MySQL/MariaDB + SQLite
-- React + TypeScript（事前ビルド済み）
-- 外部リポジトリ: [ランキング](https://github.com/mimimiku778/Open-Chat-Graph-Frontend) / [グラフ](https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph) / [コメント](https://github.com/mimimiku778/Open-Chat-Graph-Comments)
+- React + TypeScript + Vite / Create React App
+
+### フロントエンド
+
+ソースコードは `frontend/` 配下にあり、ビルド成果物は `public/js/` に出力されます（gitignored）。
+
+```
+frontend/
+├── stats-graph/  → public/js/chart/   (Vite + Preact, グラフ表示)
+├── ranking/      → public/js/react/   (Create React App, ランキング)
+└── comments/     → public/js/comment/ (Vite + React, コメント)
+```
+
+```bash
+# 全フロントエンドをビルド（make init でも自動実行）
+make build-frontend
+
+# 個別にビルド
+cd frontend/stats-graph && npm install && npm run build
+```
+
+デプロイ時はGitHub Actionsでビルドし、SCPで本番サーバーに配置します。
 
 ## 📁 ディレクトリ構造
 
@@ -196,6 +216,7 @@ app/
 ├── Services/       # ビジネスロジック
 │   └── Crawler/    # クローラー関連（Config含む）
 └── Views/          # テンプレート
+frontend/           # フロントエンドソース（ビルド → public/js/）
 shadow/             # MimimalCMSフレームワーク
 batch/              # Cronジョブ・バッチ処理
 shared/             # DI設定

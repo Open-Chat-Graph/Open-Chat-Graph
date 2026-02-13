@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -56,6 +56,9 @@ help: ## ヘルプを表示
 	@echo "$(YELLOW)Cron管理:$(NC)"
 	@echo "  $(GREEN)make cron$(NC)          - Cronを有効化（毎時30/35/40分に自動クローリング）"
 	@echo "  $(GREEN)make cron-stop$(NC)     - Cronを無効化"
+	@echo ""
+	@echo "$(YELLOW)フロントエンド:$(NC)"
+	@echo "  $(GREEN)make build-frontend$(NC) - フロントエンドをビルド（frontend/*/）"
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
@@ -116,7 +119,19 @@ _init:
 		docker compose --profile dev down; \
 		echo "$(GREEN)コンテナを停止しました$(NC)"; \
 	fi
+	@$(MAKE) build-frontend
 	@echo "$(GREEN)初回セットアップが完了しました$(NC)"
+
+# フロントエンドビルド
+build-frontend: ## フロントエンドをビルド（frontend/*/）
+	@echo "$(GREEN)フロントエンドをビルドしています...$(NC)"
+	@for dir in frontend/*/; do \
+		if [ -f "$$dir/package.json" ]; then \
+			echo "  $(YELLOW)ビルド: $$dir$(NC)"; \
+			(cd "$$dir" && npm install && npm run build); \
+		fi; \
+	done
+	@echo "$(GREEN)フロントエンドビルド完了$(NC)"
 
 # 基本環境
 up: ## 基本環境を起動
@@ -172,7 +187,7 @@ ssh: ## コンテナにログイン（基本・Mock両対応）
 	fi
 
 # Mock付き環境
-up-mock: ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定を使用）
+up-mock: _check-data-protection ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定を使用）
 	@if docker compose ps -a -q mysql 2>/dev/null | grep -q . && ! docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .; then \
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \

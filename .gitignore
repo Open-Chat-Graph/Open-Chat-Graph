@@ -7,6 +7,7 @@ Thumbs.db
 # 依存関係
 /vendor
 /node_modules
+frontend/*/node_modules/
 
 # 設定ファイル
 local-secrets.php
@@ -60,6 +61,12 @@ storage/*/open_chat_sub_categories/subcategories.json
 
 # 別端末用のルートCA証明書（スマホ等でHTTPS接続する際に使用）
 *-rootCA.pem
+
+# フロントエンドビルド成果物
+public/js/chart/
+public/js/react/
+public/js/comment/
+frontend/*/dist/
 
 # テスト関連
 test-logs/

@@ -43,6 +43,23 @@ jobs:
 
         echo "CI Test passed. Proceeding with deployment."
 
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build frontend
+      run: |
+        for dir in frontend/*/; do
+          if [ -f "$dir/package.json" ]; then
+            echo "Building: $dir"
+            (cd "$dir" && npm ci && npm run build)
+          fi
+        done
+
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
@@ -50,25 +67,14 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-    - name: Deploy
+    - name: Deploy code
       run: |
         ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && git fetch origin && git reset --hard origin/main"
 
-    - name: Checkout repository
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+    - name: Deploy frontend assets
+      run: |
+        scp -P ${{ vars.SSH_PORT }} -r public/js/chart/ public/js/react/ public/js/comment/ \
+          ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:${{ vars.SSH_PATH }}/public/js/
 
     - name: Install twitter-api-v2
       if: |
