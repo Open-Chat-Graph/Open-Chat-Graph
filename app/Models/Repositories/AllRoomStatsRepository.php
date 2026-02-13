@@ -6,7 +6,7 @@ namespace App\Models\Repositories;
 
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
-class AllRoomStatsRepository
+class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 {
     public function getTotalRoomCount(): int
     {

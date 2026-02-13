@@ -315,6 +315,7 @@ main() {
     test_url "${BASE_URL}/labs/publication-analytics" "公開分析"
     test_url "${BASE_URL}/policy/term" "利用規約ページ"
     test_url "${BASE_URL}/labs/live" "Labs Live"
+    test_url "${BASE_URL}/labs/all-room-stats" "全体統計"
     test_url "${BASE_URL}/labs" "labsページ"
     echo ""
 

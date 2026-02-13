@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Models\Repositories\AllRoomStatsRepository;
+use App\Models\Repositories\AllRoomStatsRepositoryInterface;
 use App\Models\Repositories\DB;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
@@ -15,7 +15,7 @@ class AllRoomStatsPageController
     const Desc = 'オプチャグラフに登録されている全オープンチャットの統計データ。総ルーム数・総参加者数・カテゴリー別のルーム数などを一覧表示します。';
 
     function index(
-        AllRoomStatsRepository $repository,
+        AllRoomStatsRepositoryInterface $repository,
         PageBreadcrumbsListSchema $breadcrumbsSchema,
         FileStorageInterface $fileStorage,
     ) {
