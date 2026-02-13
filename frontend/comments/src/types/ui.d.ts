@@ -1,0 +1,1 @@
+type FetchResultType = 'done' | 'fail' | 'unsent'
