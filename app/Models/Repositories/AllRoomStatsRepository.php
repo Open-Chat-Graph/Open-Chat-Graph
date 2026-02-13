@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
+
 class AllRoomStatsRepository
 {
     public function getTotalRoomCount(): int
@@ -100,5 +102,26 @@ class AllRoomStatsRepository
         return (int) DB::execute(
             'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
         )->fetchColumn();
+    }
+
+    public function getDeletedMemberCountTotal(): int
+    {
+        return (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(om.current_member_count), 0)
+            FROM open_chat_deleted ocd
+            JOIN openchat_master om ON ocd.id = om.openchat_id"
+        );
+    }
+
+    public function getDeletedMemberCountSince(string $phpInterval): int
+    {
+        $cutoff = date('Y-m-d H:i:s', strtotime("-{$phpInterval}"));
+        return (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(om.current_member_count), 0)
+            FROM open_chat_deleted ocd
+            JOIN openchat_master om ON ocd.id = om.openchat_id
+            WHERE ocd.deleted_at >= :cutoff",
+            ['cutoff' => $cutoff]
+        );
     }
 }
