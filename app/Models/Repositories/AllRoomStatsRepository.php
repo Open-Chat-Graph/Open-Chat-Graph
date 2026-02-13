@@ -113,9 +113,9 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         );
     }
 
-    public function getDeletedMemberCountSince(string $phpInterval): int
+    public function getDeletedMemberCountSince(string $interval): int
     {
-        $cutoff = date('Y-m-d H:i:s', strtotime("-{$phpInterval}"));
+        $cutoff = date('Y-m-d H:i:s', strtotime("-{$interval}"));
         return (int) SQLiteOcgraphSqlapi::fetchColumn(
             "SELECT COALESCE(SUM(om.current_member_count), 0)
             FROM open_chat_deleted ocd
