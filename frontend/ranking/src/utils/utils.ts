@@ -53,8 +53,8 @@ export function setTitle(params: ListParams, cateIndex?: number) {
 
   if (cateIndex === undefined) {
     const pathName = window.location.pathname
-    const pathSegments = pathName.split('/')
-    const category = parseInt((pathSegments.pop() || pathSegments.pop()) ?? '0')
+    const pathSegments = pathName.replace(/\/+$/, '').split('/')
+    const category = parseInt(pathSegments.pop() ?? '0')
     cateIndex = !Number.isNaN(category)
       ? OPEN_CHAT_CATEGORY.findIndex((el) => el[1] === category)
       : 0
