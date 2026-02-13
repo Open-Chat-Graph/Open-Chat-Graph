@@ -50,6 +50,12 @@ jobs:
             - 'docker/**'
             - 'composer.json'
             - 'composer.lock'
+          frontend_ranking:
+            - 'frontend/ranking/**'
+          frontend_stats_graph:
+            - 'frontend/stats-graph/**'
+          frontend_comments:
+            - 'frontend/comments/**'
 
     - name: Set up Docker Buildx
       if: steps.skip.outputs.skip != 'true'
@@ -164,21 +170,36 @@ jobs:
         echo "Initializing database and storage..."
         ./setup/local-setup.default.sh -y -n
 
-    - name: Setup Node.js
+    - name: Check if any frontend changed
       if: steps.skip.outputs.skip != 'true'
+      id: any_frontend
+      run: |
+        if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
+           [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
+           [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
+           [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Setup Node.js
+      if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: '24'
 
     - name: Build frontend
-      if: steps.skip.outputs.skip != 'true'
+      if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
       run: |
-        for dir in frontend/*/; do
-          if [ -f "$dir/package.json" ]; then
-            echo "Building: $dir"
-            (cd "$dir" && npm ci && CI=false npm run build)
-          fi
-        done
+        build_frontend() {
+          echo "Building: $1"
+          (cd "$1" && npm ci && CI=false npm run build)
+        }
+        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
+        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
+        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
+        echo "Frontend build complete"
 
     - name: Run CI tests
       if: steps.skip.outputs.skip != 'true'
