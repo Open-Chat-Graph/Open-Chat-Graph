@@ -69,8 +69,10 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         );
     }
 
-    public function getHourlyMemberTrend(string $hourModifier): array
+    public function getHourlyMemberTrend(string $interval): array
     {
+        $modifier = '-' . strtolower($interval);
+
         RankingPositionDB::connect();
 
         $latestTime = (string) RankingPositionDB::fetchColumn(
@@ -83,7 +85,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         }
 
         $pastDateTime = new \DateTime($latestTime);
-        $pastDateTime->modify($hourModifier);
+        $pastDateTime->modify($modifier);
         $pastTimeStr = $pastDateTime->format('Y-m-d H:i:s');
 
         $actualPastTime = (string) RankingPositionDB::fetchColumn(
@@ -117,8 +119,9 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         return ['net' => $totalNow - $totalPast, 'delisted_members' => $delistedMembers];
     }
 
-    public function getDailyMemberTrend(string $dateModifier): array
+    public function getDailyMemberTrend(string $interval): array
     {
+        $modifier = '-' . strtolower($interval);
         $today = date('Y-m-d');
 
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
@@ -130,14 +133,14 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 
         $totalPast = (int) SQLiteStatistics::fetchColumn(
             "SELECT COALESCE(SUM(member), 0) FROM statistics WHERE date = date(:today, :modifier)",
-            ['today' => $today, 'modifier' => $dateModifier]
+            ['today' => $today, 'modifier' => $modifier]
         );
 
         $delistedMembers = (int) SQLiteStatistics::fetchColumn(
             "SELECT COALESCE(SUM(member), 0) FROM statistics
             WHERE date = date(:past_today, :past_modifier)
             AND open_chat_id NOT IN (SELECT open_chat_id FROM statistics WHERE date = date(:now_today))",
-            ['past_today' => $today, 'past_modifier' => $dateModifier, 'now_today' => $today]
+            ['past_today' => $today, 'past_modifier' => $modifier, 'now_today' => $today]
         );
 
         SQLiteStatistics::$pdo = null;

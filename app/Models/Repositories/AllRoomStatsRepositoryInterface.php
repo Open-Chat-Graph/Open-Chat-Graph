@@ -44,18 +44,18 @@ interface AllRoomStatsRepositoryInterface
     /**
      * 時間単位のメンバー増減数を取得（RankingPositionDB member テーブルから）
      *
-     * @param string $hourModifier DateTime::modify() 形式（例: '-1hour', '-24hour'）
+     * @param string $interval MySQL INTERVAL形式（例: '1 HOUR', '24 HOUR'）
      * @return array{net: int, delisted_members: int}
      */
-    public function getHourlyMemberTrend(string $hourModifier): array;
+    public function getHourlyMemberTrend(string $interval): array;
 
     /**
      * 日単位のメンバー増減数を取得（SQLite statistics テーブルから）
      *
-     * @param string $dateModifier SQLite date() 修飾子（例: '-7 day', '-1 month'）
+     * @param string $interval MySQL INTERVAL形式（例: '7 DAY', '1 MONTH'）
      * @return array{net: int, delisted_members: int}
      */
-    public function getDailyMemberTrend(string $dateModifier): array;
+    public function getDailyMemberTrend(string $interval): array;
 
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照）

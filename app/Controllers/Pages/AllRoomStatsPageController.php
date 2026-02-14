@@ -44,10 +44,10 @@ class AllRoomStatsPageController
 
         $categoryStats = $repository->getCategoryStats();
 
-        $hourlyTrend = $repository->getHourlyMemberTrend('-1hour');
-        $dailyTrend = $repository->getHourlyMemberTrend('-24hour');
-        $weeklyTrend = $repository->getDailyMemberTrend('-7 day');
-        $monthlyTrend = $repository->getDailyMemberTrend('-1 month');
+        $hourlyTrend = $repository->getHourlyMemberTrend('1 HOUR');
+        $dailyTrend = $repository->getHourlyMemberTrend('24 HOUR');
+        $weeklyTrend = $repository->getDailyMemberTrend('7 DAY');
+        $monthlyTrend = $repository->getDailyMemberTrend('1 MONTH');
 
         $_css = ['site_header', 'site_footer', 'terms'];
         $_meta = meta()->setTitle(self::Title);
