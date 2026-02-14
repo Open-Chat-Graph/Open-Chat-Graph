@@ -15,7 +15,7 @@ class StatisticsChartArrayService
 
     /**
      * 日毎のメンバー数の統計を取得する
-     * 
+     *
      * @return array{ date: string, member: int }[] date: Y-m-d
      */
     function buildStatisticsChartArray(int $open_chat_id): StatisticsChartDto|false
@@ -63,24 +63,17 @@ class StatisticsChartArrayService
     private function generateChartArray(StatisticsChartDto $dto, array $dateArray, array $memberStats): StatisticsChartDto
     {
         $getMemberStatsCurDate = fn(int $key): string => $memberStats[$key]['date'] ?? '';
-
         $curKeyMemberStats = 0;
         $memberStatsCurDate = $getMemberStatsCurDate(0);
 
         foreach ($dateArray as $date) {
-            $matchMemberStats = $memberStatsCurDate === $date;
-
             $member = null;
-            if ($matchMemberStats) {
+            if ($memberStatsCurDate === $date) {
                 $member = $memberStats[$curKeyMemberStats]['member'];
                 $curKeyMemberStats++;
                 $memberStatsCurDate = $getMemberStatsCurDate($curKeyMemberStats);
             }
-
-            $dto->addValue(
-                $date,
-                $member,
-            );
+            $dto->addValue($date, $member);
         }
 
         return $dto;

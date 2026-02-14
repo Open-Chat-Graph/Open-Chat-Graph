@@ -100,10 +100,18 @@ jobs:
       run: |
         ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && git fetch origin && git reset --hard origin/main"
 
+    - name: Initialize SQLite databases
+      run: |
+        ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} 'cd ${{ vars.SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+
     - name: Deploy frontend assets
       if: steps.any_frontend.outputs.changed == 'true'
       run: |
-        deploy() { scp -P ${{ vars.SSH_PORT }} -r "$1" ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:${{ vars.SSH_PATH }}/public/js/; }
+        deploy() {
+          local dir=$(basename "$1")
+          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "rm -rf ${{ vars.SSH_PATH }}/public/js/$dir/"
+          scp -P ${{ vars.SSH_PORT }} -r "$1" ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:${{ vars.SSH_PATH }}/public/js/
+        }
         [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
         [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
         [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/

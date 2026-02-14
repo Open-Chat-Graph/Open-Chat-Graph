@@ -1,5 +1,5 @@
 #app {
-  min-height: 133px;
+  min-height: 181px;
 }
 
 .limit-btns.category-tab .MuiTab-root.MuiTab-textColorPrimary {
@@ -29,6 +29,15 @@
 
 .MuiChip-root.openchat-item-header-chip.graph {
   font-size: 0.875rem;
+}
+
+.MuiChip-root.openchat-item-header-chip.graph.chart-mode-toggle {
+  height: 23px;
+  font-size: 0.7rem;
+}
+
+.MuiChip-root.openchat-item-header-chip.graph.chart-mode-toggle .MuiChip-icon {
+  font-size: 0.85rem;
 }
 
 .MuiToggleButton-root.MuiToggleButton-standard {
@@ -107,6 +116,10 @@
 
   .MuiChip-root.openchat-item-header-chip.graph {
     font-size: 13px;
+  }
+
+  .MuiChip-root.openchat-item-header-chip.graph.chart-mode-toggle {
+    font-size: 0.75rem;
   }
 }
 

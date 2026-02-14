@@ -41,6 +41,8 @@ storage/exception.log
 storage/furigana/**
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
+storage/*/SQLite/statistics_ohlc/statistics_ohlc.db
+storage/*/SQLite/ranking_position_ohlc/ranking_position_ohlc.db
 storage/*/SQLite/ranking_position/ranking_position.db
 storage/*/SQLite/ocgraph_sqlapi/*.db
 storage/*/SQLite/*/*.db-shm
@@ -73,3 +75,4 @@ test-logs/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
+package-lock.json

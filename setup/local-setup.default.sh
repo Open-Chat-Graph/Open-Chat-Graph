@@ -142,7 +142,9 @@ docker compose exec -T -u root app bash -c '
     rm -f storage/*/ranking_position/*/*.dat
     rm -f storage/*/ranking_position/*.dat
     rm -f storage/*/SQLite/statistics/*.db*
+    rm -f storage/*/SQLite/statistics_ohlc/*.db*
     rm -f storage/*/SQLite/ranking_position/*.db*
+    rm -f storage/*/SQLite/ranking_position_ohlc/*.db*
     rm -f storage/*/SQLite/ocgraph_sqlapi/*.db*
     rm -f storage/*.log
     rm -f storage/*/*/*.log
@@ -251,6 +253,12 @@ for lang in ja tw th; do
 
     # ranking_position.db を生成
     cat setup/schema/sqlite/ranking_position.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position/ranking_position.db"
+
+    # ranking_position_ohlc.db を生成
+    cat setup/schema/sqlite/ranking_position_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position_ohlc/ranking_position_ohlc.db"
+
+    # statistics_ohlc.db を生成
+    cat setup/schema/sqlite/statistics_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/statistics_ohlc/statistics_ohlc.db"
 
     # sqlapi.db を生成（jaのみ）
     if [ "$lang" == "ja" ]; then

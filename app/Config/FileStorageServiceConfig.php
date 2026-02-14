@@ -15,6 +15,8 @@ class FileStorageServiceConfig
     static array $storageFiles = [
         'addCronLogDest' =>               '/logs/cron.log',
         'sqliteStatisticsDb' =>           '/SQLite/statistics/statistics.db',
+        'sqliteStatisticsOhlcDb' =>       '/SQLite/statistics_ohlc/statistics_ohlc.db',
+        'sqliteRankingPositionOhlcDb' =>  '/SQLite/ranking_position_ohlc/ranking_position_ohlc.db',
         'sqliteRankingPositionDb' =>      '/SQLite/ranking_position/ranking_position.db',
         'openChatSubCategories' =>        '/open_chat_sub_categories/subcategories.json',
         'openChatSubCategoriesSample' =>  '/open_chat_sub_categories/sample/subcategories.json',
