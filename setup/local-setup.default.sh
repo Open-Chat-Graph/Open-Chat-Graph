@@ -254,6 +254,12 @@ for lang in ja tw th; do
     # ranking_position.db を生成
     cat setup/schema/sqlite/ranking_position.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position/ranking_position.db"
 
+    # ranking_position_ohlc.db を生成
+    cat setup/schema/sqlite/ranking_position_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position_ohlc/ranking_position_ohlc.db"
+
+    # statistics_ohlc.db を生成
+    cat setup/schema/sqlite/statistics_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/statistics_ohlc/statistics_ohlc.db"
+
     # sqlapi.db を生成（jaのみ）
     if [ "$lang" == "ja" ]; then
         cat setup/schema/sqlite/sqlapi.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ocgraph_sqlapi/sqlapi.db"
