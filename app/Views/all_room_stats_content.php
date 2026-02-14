@@ -89,7 +89,7 @@
                         <?php endif ?>
                         <?php if ($period['delisted'] !== null && $period['delisted']['rooms'] > 0): ?>
                         <div class="border-t border-rose-200 mt-2 pt-2">
-                            <div class="text-[10px] sm:text-xs text-gray-400">掲載終了: <?php echo number_format($period['delisted']['rooms']) ?>室</div>
+                            <div class="text-[10px] sm:text-xs text-gray-400">掲載終了: <?php echo number_format($period['delisted']['rooms']) ?>ルーム</div>
                             <?php if ($period['delisted']['members'] > 0): ?>
                             <div class="text-[10px] sm:text-xs text-gray-400">-<?php echo number_format($period['delisted']['members']) ?>人</div>
                             <?php endif ?>

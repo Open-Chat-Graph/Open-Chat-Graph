@@ -114,6 +114,8 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 
         SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
 
+        $pastDate = date('Y-m-d', strtotime($modifier, strtotime($today)));
+
         $result = SQLiteOcgraphSqlapi::execute(
             "SELECT COUNT(DISTINCT openchat_id) AS rooms, COALESCE(SUM(member_count), 0) AS members
             FROM daily_member_statistics
@@ -121,8 +123,12 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             AND openchat_id NOT IN (
                 SELECT openchat_id FROM daily_member_statistics
                 WHERE statistics_date = :today
+            )
+            AND openchat_id NOT IN (
+                SELECT id FROM open_chat_deleted
+                WHERE deleted_at >= :past_date
             )",
-            ['today' => $today, 'modifier' => $modifier]
+            ['today' => $today, 'modifier' => $modifier, 'past_date' => $pastDate]
         )->fetch(\PDO::FETCH_ASSOC);
 
         SQLiteOcgraphSqlapi::$pdo = null;
