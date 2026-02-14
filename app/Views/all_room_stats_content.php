@@ -85,25 +85,12 @@
                 <!-- 閉鎖されたルーム数 -->
                 <h2>閉鎖されたルーム数</h2>
                 <p class="text-gray-500 text-xs mb-3"><?php echo $earliestDeletedDate ? date('Y年n月j日', strtotime($earliestDeletedDate)) . '以降に' : '' ?>オプチャグラフに登録後、閉鎖されたルームの数</p>
-                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-2">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
                         ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly],
                         ['label' => '24時間', 'rooms' => $deletedRoomsDaily, 'members' => $deletedMembersDaily],
                         ['label' => '1週間', 'rooms' => $deletedRoomsWeekly, 'members' => $deletedMembersWeekly],
-                    ] as $period): ?>
-                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
-                        <div class="text-xs font-semibold text-rose-400 mb-1"><?php echo $period['label'] ?></div>
-                        <div class="text-sm sm:text-lg font-bold text-rose-600"><?php echo number_format($period['rooms']) ?></div>
-                        <?php if ($period['members'] > 0): ?>
-                        <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['members']) ?>人</div>
-                        <?php endif ?>
-                    </div>
-                    <?php endforeach ?>
-                </div>
-                <div class="grid grid-cols-2 gap-2 sm:gap-3 mb-10">
-                    <?php foreach ([
                         ['label' => '1ヶ月', 'rooms' => $deletedRoomsMonthly, 'members' => $deletedMembersMonthly],
-                        ['label' => '全期間', 'rooms' => $deletedRoomsTotal, 'members' => $deletedMembersTotal],
                     ] as $period): ?>
                     <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
                         <div class="text-xs font-semibold text-rose-400 mb-1"><?php echo $period['label'] ?></div>

@@ -47,13 +47,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         return $result !== false ? (string) $result : null;
     }
 
-    public function getDeletedRoomCount(): int
-    {
-        return (int) DB::execute(
-            'SELECT COUNT(*) FROM open_chat_deleted'
-        )->fetchColumn();
-    }
-
     public function getDeletedRoomCountSince(string $interval): int
     {
         return (int) DB::execute(
@@ -102,15 +95,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         return (int) DB::execute(
             'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
         )->fetchColumn();
-    }
-
-    public function getDeletedMemberCountTotal(): int
-    {
-        return (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(om.current_member_count), 0)
-            FROM open_chat_deleted ocd
-            JOIN openchat_master om ON ocd.id = om.openchat_id"
-        );
     }
 
     public function getDeletedMemberCountSince(string $interval): int

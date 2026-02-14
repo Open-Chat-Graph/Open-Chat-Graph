@@ -30,9 +30,6 @@ interface AllRoomStatsRepositoryInterface
     /** 最も古い閉鎖記録の日時を取得（データなしの場合はnull） */
     public function getEarliestDeletedDate(): ?string;
 
-    /** 閉鎖されたルームの総数を取得 */
-    public function getDeletedRoomCount(): int;
-
     /**
      * 指定期間内に閉鎖されたルーム数を取得
      *
@@ -55,9 +52,6 @@ interface AllRoomStatsRepositoryInterface
 
     /** 直近1週間のメンバー増加数合計（増加したルームのみ）を取得 */
     public function getWeeklyMemberIncrease(): int;
-
-    /** 閉鎖された全ルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照） */
-    public function getDeletedMemberCountTotal(): int;
 
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照）
