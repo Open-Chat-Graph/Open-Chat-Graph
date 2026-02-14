@@ -24,14 +24,14 @@ interface AllRoomStatsRepositoryInterface
     /**
      * 指定期間内に新規登録されたルーム数を取得
      *
-     * @param string $interval MySQL INTERVAL形式（例: '1 HOUR', '7 DAY', '1 MONTH'）
+     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
      */
     public function getNewRoomCountSince(string $interval): int;
 
     /**
      * 指定期間内に閉鎖されたルーム数を取得
      *
-     * @param string $interval MySQL INTERVAL形式（例: '1 HOUR', '7 DAY', '1 MONTH'）
+     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
      */
     public function getDeletedRoomCountSince(string $interval): int;
 
@@ -56,7 +56,7 @@ interface AllRoomStatsRepositoryInterface
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite sqlapi.db参照）
      *
-     * @param string $interval MySQL INTERVAL形式（例: '1 HOUR', '7 DAY', '1 MONTH'）
+     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
      */
     public function getDeletedMemberCountSince(string $interval): int;
 
