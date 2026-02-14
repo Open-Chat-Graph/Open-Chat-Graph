@@ -185,6 +185,26 @@ Route::path(
 
 
 Route::path(
+    'oc/{open_chat_id}/member_ohlc',
+    [RankingPositionApiController::class, 'memberOhlc']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path(
+    'oc/{open_chat_id}/position_ohlc',
+    [RankingPositionApiController::class, 'rankingPositionOhlc']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('category', min: 0)
+    ->matchStr('sort', regex: ['ranking', 'rising'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path(
     'oc/{open_chat_id}/position_hour',
     [RankingPositionApiController::class, 'rankingPositionHour']
 )

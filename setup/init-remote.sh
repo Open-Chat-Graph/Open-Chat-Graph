@@ -272,12 +272,26 @@ for lang in ja tw th; do
 
     # ディレクトリ作成
     mkdir -p "$STORAGE_DIR/${lang}/SQLite/statistics"
+    mkdir -p "$STORAGE_DIR/${lang}/SQLite/statistics_ohlc"
+    mkdir -p "$STORAGE_DIR/${lang}/SQLite/ranking_position_ohlc"
     mkdir -p "$STORAGE_DIR/${lang}/SQLite/ranking_position"
 
     # statistics.db を生成
     if [ -f "$SQLITE_SCHEMA_DIR/statistics.sql" ]; then
         sqlite3 "$STORAGE_DIR/${lang}/SQLite/statistics/statistics.db" < "$SQLITE_SCHEMA_DIR/statistics.sql"
         echo "    ✓ statistics.db"
+    fi
+
+    # statistics_ohlc.db を生成
+    if [ -f "$SQLITE_SCHEMA_DIR/statistics_ohlc.sql" ]; then
+        sqlite3 "$STORAGE_DIR/${lang}/SQLite/statistics_ohlc/statistics_ohlc.db" < "$SQLITE_SCHEMA_DIR/statistics_ohlc.sql"
+        echo "    ✓ statistics_ohlc.db"
+    fi
+
+    # ranking_position_ohlc.db を生成
+    if [ -f "$SQLITE_SCHEMA_DIR/ranking_position_ohlc.sql" ]; then
+        sqlite3 "$STORAGE_DIR/${lang}/SQLite/ranking_position_ohlc/ranking_position_ohlc.db" < "$SQLITE_SCHEMA_DIR/ranking_position_ohlc.sql"
+        echo "    ✓ ranking_position_ohlc.db"
     fi
 
     # ranking_position.db を生成

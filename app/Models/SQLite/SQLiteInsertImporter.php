@@ -80,7 +80,7 @@ class SQLiteInsertImporter extends AbstractSqlImporter
         $columns = implode(',', $keys);
         $columns = "({$columns})";
 
-        $values = implode(',', array_map(fn ($row) => "(" . implode(",", array_map(fn ($value) => is_int($value) ? $value : "'{$value}'", $row)) . ")", $chunk));
+        $values = implode(',', array_map(fn ($row) => "(" . implode(",", array_map(fn ($value) => $value === null ? 'NULL' : (is_int($value) ? $value : "'{$value}'"), $row)) . ")", $chunk));
 
         $query = "INSERT OR IGNORE INTO {$tableName} {$columns} VALUES {$values}";
 

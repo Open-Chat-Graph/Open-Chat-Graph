@@ -142,7 +142,9 @@ docker compose exec -T -u root app bash -c '
     rm -f storage/*/ranking_position/*/*.dat
     rm -f storage/*/ranking_position/*.dat
     rm -f storage/*/SQLite/statistics/*.db*
+    rm -f storage/*/SQLite/statistics_ohlc/*.db*
     rm -f storage/*/SQLite/ranking_position/*.db*
+    rm -f storage/*/SQLite/ranking_position_ohlc/*.db*
     rm -f storage/*/SQLite/ocgraph_sqlapi/*.db*
     rm -f storage/*.log
     rm -f storage/*/*/*.log
