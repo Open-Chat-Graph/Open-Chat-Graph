@@ -91,6 +91,98 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         return RankingPositionDB::fetchAll($query);
     }
 
+    public function getDailyMemberOhlc(\DateTime $todayLastTime): array
+    {
+        $time = $todayLastTime->format('Y-m-d');
+
+        $query =
+            "SELECT
+                m.open_chat_id,
+                first_val.member AS open_member,
+                stats.high_member,
+                stats.low_member,
+                last_val.member AS close_member,
+                '{$time}' AS date
+            FROM
+                (SELECT DISTINCT open_chat_id FROM member WHERE DATE(time) = '{$time}') AS m
+            JOIN (
+                SELECT open_chat_id, MAX(member) AS high_member, MIN(member) AS low_member
+                FROM member WHERE DATE(time) = '{$time}'
+                GROUP BY open_chat_id
+            ) AS stats ON m.open_chat_id = stats.open_chat_id
+            JOIN (
+                SELECT m2.open_chat_id, m2.member
+                FROM member m2
+                JOIN (SELECT open_chat_id, MIN(time) AS min_time FROM member WHERE DATE(time) = '{$time}' GROUP BY open_chat_id) AS ft
+                ON m2.open_chat_id = ft.open_chat_id AND m2.time = ft.min_time
+            ) AS first_val ON m.open_chat_id = first_val.open_chat_id
+            JOIN (
+                SELECT m3.open_chat_id, m3.member
+                FROM member m3
+                JOIN (SELECT open_chat_id, MAX(time) AS max_time FROM member WHERE DATE(time) = '{$time}' GROUP BY open_chat_id) AS lt
+                ON m3.open_chat_id = lt.open_chat_id AND m3.time = lt.max_time
+            ) AS last_val ON m.open_chat_id = last_val.open_chat_id";
+
+        return RankingPositionDB::fetchAll($query);
+    }
+
+    /**
+     * 指定日の毎時ランキングデータからOHLCを集約する。
+     *
+     * - その日にランキングに一度でも掲載されたルームのみレコードを生成
+     *   （終日圏外のルームはレコードなし）
+     * - low_position: room_count < total_slots（一部の時間帯で圏外）の場合は NULL
+     */
+    public function getDailyPositionOhlc(RankingType $type, \DateTime $date): array
+    {
+        $time = $date->format('Y-m-d');
+        $tableName = $type->value;
+
+        $query =
+            "SELECT
+                r.open_chat_id,
+                r.category,
+                first_val.position AS open_position,
+                stats.max_position AS high_position,
+                CASE
+                    WHEN room_count.cnt < total_slots.cnt THEN NULL
+                    ELSE stats.min_position
+                END AS low_position,
+                last_val.position AS close_position,
+                '{$time}' AS date
+            FROM
+                (SELECT DISTINCT open_chat_id, category FROM {$tableName} WHERE DATE(time) = '{$time}') AS r
+            JOIN (
+                SELECT open_chat_id, category, MAX(position) AS max_position, MIN(position) AS min_position
+                FROM {$tableName} WHERE DATE(time) = '{$time}'
+                GROUP BY open_chat_id, category
+            ) AS stats ON r.open_chat_id = stats.open_chat_id AND r.category = stats.category
+            JOIN (
+                SELECT t2.open_chat_id, t2.category, t2.position
+                FROM {$tableName} t2
+                JOIN (SELECT open_chat_id, category, MIN(time) AS min_time FROM {$tableName} WHERE DATE(time) = '{$time}' GROUP BY open_chat_id, category) AS ft
+                ON t2.open_chat_id = ft.open_chat_id AND t2.category = ft.category AND t2.time = ft.min_time
+            ) AS first_val ON r.open_chat_id = first_val.open_chat_id AND r.category = first_val.category
+            JOIN (
+                SELECT t3.open_chat_id, t3.category, t3.position
+                FROM {$tableName} t3
+                JOIN (SELECT open_chat_id, category, MAX(time) AS max_time FROM {$tableName} WHERE DATE(time) = '{$time}' GROUP BY open_chat_id, category) AS lt
+                ON t3.open_chat_id = lt.open_chat_id AND t3.category = lt.category AND t3.time = lt.max_time
+            ) AS last_val ON r.open_chat_id = last_val.open_chat_id AND r.category = last_val.category
+            JOIN (
+                SELECT category, COUNT(DISTINCT time) AS cnt
+                FROM {$tableName} WHERE DATE(time) = '{$time}'
+                GROUP BY category
+            ) AS total_slots ON r.category = total_slots.category
+            JOIN (
+                SELECT open_chat_id, category, COUNT(*) AS cnt
+                FROM {$tableName} WHERE DATE(time) = '{$time}'
+                GROUP BY open_chat_id, category
+            ) AS room_count ON r.open_chat_id = room_count.open_chat_id AND r.category = room_count.category";
+
+        return RankingPositionDB::fetchAll($query);
+    }
+
     public function getHourlyMemberColumn(\DateTime $lastTime): array
     {
         $time = $lastTime->format('Y-m-d H:i:s');

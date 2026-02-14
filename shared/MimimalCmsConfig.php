@@ -30,10 +30,12 @@ class MimimalCmsConfig
         \App\Models\Repositories\Statistics\StatisticsRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository::class,
         \App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRankingUpdaterRepository::class,
         \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsPageRepository::class,
+        \App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsOhlcRepository::class,
 
         \App\Services\Crawler\Config\OpenChatCrawlerConfigInterface::class => \App\Services\Crawler\Config\OpenChatCrawlerConfig::class,
         \App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionPageRepository::class,
+        \App\Models\Repositories\RankingPosition\RankingPositionOhlcRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionOhlcRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\RankingPositionHourRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\RankingPositionHourPageRepository::class,
         \App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\HourMemberRankingUpdaterRepository::class,

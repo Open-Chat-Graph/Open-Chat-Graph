@@ -12,9 +12,17 @@ class FileStorageServiceConfig
     ];
 
     /** @var array<string,string> */
+    static array $sqliteSchemaFiles = [
+        'sqliteStatisticsOhlcDb' =>      __DIR__ . '/../../setup/schema/sqlite/statistics_ohlc.sql',
+        'sqliteRankingPositionOhlcDb' => __DIR__ . '/../../setup/schema/sqlite/ranking_position_ohlc.sql',
+    ];
+
+    /** @var array<string,string> */
     static array $storageFiles = [
         'addCronLogDest' =>               '/logs/cron.log',
         'sqliteStatisticsDb' =>           '/SQLite/statistics/statistics.db',
+        'sqliteStatisticsOhlcDb' =>       '/SQLite/statistics_ohlc/statistics_ohlc.db',
+        'sqliteRankingPositionOhlcDb' =>  '/SQLite/ranking_position_ohlc/ranking_position_ohlc.db',
         'sqliteRankingPositionDb' =>      '/SQLite/ranking_position/ranking_position.db',
         'openChatSubCategories' =>        '/open_chat_sub_categories/subcategories.json',
         'openChatSubCategoriesSample' =>  '/open_chat_sub_categories/sample/subcategories.json',
