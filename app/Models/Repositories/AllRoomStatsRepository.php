@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
+use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
+use App\Models\SQLite\SQLiteStatistics;
 
 class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 {
@@ -38,15 +40,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
-    public function getEarliestDeletedDate(): ?string
-    {
-        $result = DB::execute(
-            'SELECT MIN(deleted_at) FROM open_chat_deleted'
-        )->fetchColumn();
-
-        return $result !== false ? (string) $result : null;
-    }
-
     public function getDeletedRoomCountSince(string $interval): int
     {
         return (int) DB::execute(
@@ -76,25 +69,83 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         );
     }
 
-    public function getHourlyMemberIncrease(): int
+    public function getHourlyMemberTrend(string $interval): array
     {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour WHERE diff_member > 0'
-        )->fetchColumn();
+        $modifier = '-' . strtolower($interval);
+
+        RankingPositionDB::connect();
+
+        $latestTime = (string) RankingPositionDB::fetchColumn(
+            "SELECT MAX(time) FROM member"
+        );
+
+        if (!$latestTime) {
+            RankingPositionDB::$pdo = null;
+            return ['net' => 0, 'delisted_members' => 0];
+        }
+
+        $pastDateTime = new \DateTime($latestTime);
+        $pastDateTime->modify($modifier);
+        $pastTimeStr = $pastDateTime->format('Y-m-d H:i:s');
+
+        $actualPastTime = (string) RankingPositionDB::fetchColumn(
+            "SELECT MAX(time) FROM member WHERE time <= :past",
+            ['past' => $pastTimeStr]
+        );
+
+        if (!$actualPastTime) {
+            RankingPositionDB::$pdo = null;
+            return ['net' => 0, 'delisted_members' => 0];
+        }
+
+        $totalNow = (int) RankingPositionDB::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM member WHERE time = :time",
+            ['time' => $latestTime]
+        );
+
+        $totalPast = (int) RankingPositionDB::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM member WHERE time = :time",
+            ['time' => $actualPastTime]
+        );
+
+        $delistedMembers = (int) RankingPositionDB::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM member
+            WHERE time = :past AND open_chat_id NOT IN (SELECT open_chat_id FROM member WHERE time = :now)",
+            ['past' => $actualPastTime, 'now' => $latestTime]
+        );
+
+        RankingPositionDB::$pdo = null;
+
+        return ['net' => $totalNow - $totalPast, 'delisted_members' => $delistedMembers];
     }
 
-    public function getDailyMemberIncrease(): int
+    public function getDailyMemberTrend(string $interval): array
     {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour24 WHERE diff_member > 0'
-        )->fetchColumn();
-    }
+        $modifier = '-' . strtolower($interval);
+        $today = date('Y-m-d');
 
-    public function getWeeklyMemberIncrease(): int
-    {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
-        )->fetchColumn();
+        SQLiteStatistics::connect(['mode' => '?mode=ro']);
+
+        $totalNow = (int) SQLiteStatistics::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM statistics WHERE date = date(:today)",
+            ['today' => $today]
+        );
+
+        $totalPast = (int) SQLiteStatistics::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM statistics WHERE date = date(:today, :modifier)",
+            ['today' => $today, 'modifier' => $modifier]
+        );
+
+        $delistedMembers = (int) SQLiteStatistics::fetchColumn(
+            "SELECT COALESCE(SUM(member), 0) FROM statistics
+            WHERE date = date(:past_today, :past_modifier)
+            AND open_chat_id NOT IN (SELECT open_chat_id FROM statistics WHERE date = date(:now_today))",
+            ['past_today' => $today, 'past_modifier' => $modifier, 'now_today' => $today]
+        );
+
+        SQLiteStatistics::$pdo = null;
+
+        return ['net' => $totalNow - $totalPast, 'delisted_members' => $delistedMembers];
     }
 
     public function getDeletedMemberCountSince(string $interval): int

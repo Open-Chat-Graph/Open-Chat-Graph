@@ -32,7 +32,6 @@ class AllRoomStatsPageController
         $newRoomsDaily = $repository->getNewRoomCountSince('24 HOUR');
         $newRoomsHourly = $repository->getNewRoomCountSince('1 HOUR');
 
-        $earliestDeletedDate = $repository->getEarliestDeletedDate();
         $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 MONTH');
         $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 DAY');
         $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 HOUR');
@@ -44,9 +43,11 @@ class AllRoomStatsPageController
         $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 HOUR');
 
         $categoryStats = $repository->getCategoryStats();
-        $hourlyIncrease = $repository->getHourlyMemberIncrease();
-        $dailyIncrease = $repository->getDailyMemberIncrease();
-        $weeklyIncrease = $repository->getWeeklyMemberIncrease();
+
+        $hourlyTrend = $repository->getHourlyMemberTrend('1 HOUR');
+        $dailyTrend = $repository->getHourlyMemberTrend('24 HOUR');
+        $weeklyTrend = $repository->getDailyMemberTrend('7 DAY');
+        $monthlyTrend = $repository->getDailyMemberTrend('1 MONTH');
 
         $_css = ['site_header', 'site_footer', 'terms'];
         $_meta = meta()->setTitle(self::Title);
@@ -65,7 +66,6 @@ class AllRoomStatsPageController
             'newRoomsWeekly',
             'newRoomsDaily',
             'newRoomsHourly',
-            'earliestDeletedDate',
             'deletedRoomsMonthly',
             'deletedRoomsWeekly',
             'deletedRoomsDaily',
@@ -75,9 +75,10 @@ class AllRoomStatsPageController
             'deletedMembersDaily',
             'deletedMembersHourly',
             'categoryStats',
-            'hourlyIncrease',
-            'dailyIncrease',
-            'weeklyIncrease',
+            'hourlyTrend',
+            'dailyTrend',
+            'weeklyTrend',
+            'monthlyTrend',
         ));
     }
 }
