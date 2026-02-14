@@ -100,6 +100,10 @@ jobs:
       run: |
         ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
 
+    - name: Initialize SQLite databases
+      run: |
+        ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+
     - name: Deploy frontend assets
       if: steps.any_frontend.outputs.changed == 'true'
       run: |
