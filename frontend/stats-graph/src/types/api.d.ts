@@ -13,6 +13,14 @@ type StatisticsChartDto = {
   endDate: string
 }
 
+interface MemberOhlc {
+  date: string
+  open_member: number
+  high_member: number
+  low_member: number
+  close_member: number
+}
+
 interface ErrorResponse {
   error: {
     code: string
@@ -28,6 +36,14 @@ interface RankingPositionChart {
   totalCount: (number | null)[]
 }
 
+interface RankingPositionOhlc {
+  date: string
+  open_position: number
+  high_position: number
+  low_position: number | null
+  close_position: number
+}
+
 type ChartApiParam = 'ranking' | 'ranking_all' | 'rising' | 'rising_all'
 type ToggleChart = 'rising' | 'ranking' | 'none'
 type PotisionPath = 'position_hour' | 'position'
@@ -36,6 +52,7 @@ type urlParams = {
   category: 'in' | 'all'
   bar: ToggleChart
   limit: 'hour' | 'week' | 'month' | 'all'
+  chart: 'line' | 'candlestick'
 }
 
 type urlParamsName = keyof urlParams
