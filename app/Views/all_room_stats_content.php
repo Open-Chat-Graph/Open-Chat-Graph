@@ -74,7 +74,7 @@
 
                 <!-- 閉鎖されたルーム数 -->
                 <h2>閉鎖されたルーム数</h2>
-                <p class="text-gray-500 text-xs mb-3">オープンチャット上で利用できなくなったルームの数</p>
+                <p class="text-gray-500 text-xs mb-3">オプチャグラフに登録後、オープンチャット上で利用できなくなったルームの数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
                         ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly],
