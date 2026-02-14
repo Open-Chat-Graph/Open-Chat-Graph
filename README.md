@@ -179,6 +179,25 @@ Mock環境で時刻を進めながらクローリングをテスト：
 
 ---
 
+## ⚠️ トラブルシューティング
+
+### SQLiteファイルをコンテナ間でコピーした後に `SQLITE_READONLY` エラーが出る
+
+別のコンテナや環境からSQLiteの`.db`ファイルを`storage/`にコピーした場合、以下のエラーが発生することがある:
+
+```
+PDOException: SQLSTATE[HY000]: General error: 8 attempt to write a readonly database
+```
+
+**原因**: SQLiteはWALモードで動作しており、SELECTでも`-shm`/`-wal`ファイルをディレクトリに新規作成する必要がある。コピーしたファイルのownerがコンテナ内のPHPプロセスユーザー（`www-data`）と異なり、かつディレクトリに書き込み権限がないため、ファイル作成に失敗する。
+
+**対処法**: `.db`ファイルとディレクトリの両方にwww-dataの書き込み権限を付与する:
+```bash
+docker compose exec app sh -c 'find /var/www/html/storage -name "*.db" -exec chown www-data:www-data {} + && find /var/www/html/storage/*/SQLite -type d -exec chmod 777 {} +'
+```
+
+---
+
 ## 🏗️ 技術スタック
 
 - PHP 8.3 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
