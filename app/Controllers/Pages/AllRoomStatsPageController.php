@@ -27,28 +27,32 @@ class AllRoomStatsPageController
         $totalMembers = $repository->getTotalMemberCount();
         $trackingStartDate = $repository->getTrackingStartDate();
 
-        $newRoomsMonthly = $repository->getNewRoomCountSince('1 MONTH');
-        $newRoomsWeekly = $repository->getNewRoomCountSince('7 DAY');
-        $newRoomsDaily = $repository->getNewRoomCountSince('24 HOUR');
-        $newRoomsHourly = $repository->getNewRoomCountSince('1 HOUR');
+        $newRoomsMonthly = $repository->getNewRoomCountSince('1 month');
+        $newRoomsWeekly = $repository->getNewRoomCountSince('7 day');
+        $newRoomsDaily = $repository->getNewRoomCountSince('24 hour');
+        $newRoomsHourly = $repository->getNewRoomCountSince('1 hour');
 
-        $earliestDeletedDate = $repository->getEarliestDeletedDate();
-        $deletedRoomsTotal = $repository->getDeletedRoomCount();
-        $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 MONTH');
-        $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 DAY');
-        $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 HOUR');
-        $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 HOUR');
+        $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 month');
+        $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 day');
+        $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 hour');
+        $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 hour');
 
-        $deletedMembersTotal = $repository->getDeletedMemberCountTotal();
-        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 MONTH');
-        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 DAY');
-        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 HOUR');
-        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 HOUR');
+        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 month');
+        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 day');
+        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 hour');
+        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 hour');
 
         $categoryStats = $repository->getCategoryStats();
-        $hourlyIncrease = $repository->getHourlyMemberIncrease();
-        $dailyIncrease = $repository->getDailyMemberIncrease();
-        $weeklyIncrease = $repository->getWeeklyMemberIncrease();
+
+        // メンバー増減（sqlapi.db daily_member_statistics、日単位）
+        $dailyTrend = $repository->getMemberTrend('-1 day');
+        $weeklyTrend = $repository->getMemberTrend('-7 day');
+        $monthlyTrend = $repository->getMemberTrend('-1 month');
+
+        // 掲載終了ルーム（sqlapi.db、日単位）
+        $delistedDaily = $repository->getDelistedStats('-1 day');
+        $delistedWeekly = $repository->getDelistedStats('-7 day');
+        $delistedMonthly = $repository->getDelistedStats('-1 month');
 
         $_css = ['site_header', 'site_footer', 'terms'];
         $_meta = meta()->setTitle(self::Title);
@@ -67,21 +71,21 @@ class AllRoomStatsPageController
             'newRoomsWeekly',
             'newRoomsDaily',
             'newRoomsHourly',
-            'earliestDeletedDate',
-            'deletedRoomsTotal',
             'deletedRoomsMonthly',
             'deletedRoomsWeekly',
             'deletedRoomsDaily',
             'deletedRoomsHourly',
-            'deletedMembersTotal',
             'deletedMembersMonthly',
             'deletedMembersWeekly',
             'deletedMembersDaily',
             'deletedMembersHourly',
             'categoryStats',
-            'hourlyIncrease',
-            'dailyIncrease',
-            'weeklyIncrease',
+            'dailyTrend',
+            'weeklyTrend',
+            'monthlyTrend',
+            'delistedDaily',
+            'delistedWeekly',
+            'delistedMonthly',
         ));
     }
 }

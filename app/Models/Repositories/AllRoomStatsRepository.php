@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories;
 
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
+use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
 class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 {
@@ -38,22 +39,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
-    public function getEarliestDeletedDate(): ?string
-    {
-        $result = DB::execute(
-            'SELECT MIN(deleted_at) FROM open_chat_deleted'
-        )->fetchColumn();
-
-        return $result !== false ? (string) $result : null;
-    }
-
-    public function getDeletedRoomCount(): int
-    {
-        return (int) DB::execute(
-            'SELECT COUNT(*) FROM open_chat_deleted'
-        )->fetchColumn();
-    }
-
     public function getDeletedRoomCountSince(string $interval): int
     {
         return (int) DB::execute(
@@ -83,45 +68,74 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         );
     }
 
-    public function getHourlyMemberIncrease(): int
+    public function getMemberTrend(string $modifier): int
     {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour WHERE diff_member > 0'
-        )->fetchColumn();
-    }
+        $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
 
-    public function getDailyMemberIncrease(): int
-    {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour24 WHERE diff_member > 0'
-        )->fetchColumn();
-    }
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
 
-    public function getWeeklyMemberIncrease(): int
-    {
-        return (int) DB::execute(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
-        )->fetchColumn();
-    }
-
-    public function getDeletedMemberCountTotal(): int
-    {
-        return (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(om.current_member_count), 0)
-            FROM open_chat_deleted ocd
-            JOIN openchat_master om ON ocd.id = om.openchat_id"
+        $totalNow = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = :today",
+            ['today' => $today]
         );
+
+        $totalPast = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = date(:today, :modifier)",
+            ['today' => $today, 'modifier' => $modifier]
+        );
+
+        SQLiteOcgraphSqlapi::$pdo = null;
+
+        return $totalNow - $totalPast;
     }
 
     public function getDeletedMemberCountSince(string $interval): int
     {
         $cutoff = date('Y-m-d H:i:s', strtotime("-{$interval}"));
-        return (int) SQLiteOcgraphSqlapi::fetchColumn(
+
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+
+        $result = (int) SQLiteOcgraphSqlapi::fetchColumn(
             "SELECT COALESCE(SUM(om.current_member_count), 0)
             FROM open_chat_deleted ocd
             JOIN openchat_master om ON ocd.id = om.openchat_id
             WHERE ocd.deleted_at >= :cutoff",
             ['cutoff' => $cutoff]
         );
+
+        SQLiteOcgraphSqlapi::$pdo = null;
+
+        return $result;
+    }
+
+    public function getDelistedStats(string $modifier): array
+    {
+        $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
+
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+
+        $pastDate = date('Y-m-d', strtotime($modifier, strtotime($today)));
+
+        $result = SQLiteOcgraphSqlapi::execute(
+            "SELECT COUNT(DISTINCT openchat_id) AS rooms, COALESCE(SUM(member_count), 0) AS members
+            FROM daily_member_statistics
+            WHERE statistics_date = date(:today, :modifier)
+            AND openchat_id NOT IN (
+                SELECT openchat_id FROM daily_member_statistics
+                WHERE statistics_date = :today
+            )
+            AND openchat_id NOT IN (
+                SELECT id FROM open_chat_deleted
+                WHERE deleted_at >= :past_date
+            )",
+            ['today' => $today, 'modifier' => $modifier, 'past_date' => $pastDate]
+        )->fetch(\PDO::FETCH_ASSOC);
+
+        SQLiteOcgraphSqlapi::$pdo = null;
+
+        return [
+            'rooms' => (int) ($result['rooms'] ?? 0),
+            'members' => (int) ($result['members'] ?? 0),
+        ];
     }
 }

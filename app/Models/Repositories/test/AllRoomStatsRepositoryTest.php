@@ -17,7 +17,6 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 use App\Models\Repositories\AllRoomStatsRepository;
 use App\Models\Repositories\DB;
-use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
 class AllRoomStatsRepositoryTest extends TestCase
 {
@@ -73,53 +72,53 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getNewRoomCountSince('1 HOUR') が直近1時間以内に登録されたルーム数と一致することを検証
+     * getNewRoomCountSince('1 hour') が直近1時間以内に登録されたルーム数と一致することを検証
      */
     public function test_getNewRoomCountSince_hourly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat WHERE created_at >= NOW() - INTERVAL 1 HOUR'
         );
-        $actual = $this->repository->getNewRoomCountSince('1 HOUR');
+        $actual = $this->repository->getNewRoomCountSince('1 hour');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getNewRoomCountSince('24 HOUR') が直近24時間以内に登録されたルーム数と一致することを検証
+     * getNewRoomCountSince('24 hour') が直近24時間以内に登録されたルーム数と一致することを検証
      */
     public function test_getNewRoomCountSince_daily_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat WHERE created_at >= NOW() - INTERVAL 24 HOUR'
         );
-        $actual = $this->repository->getNewRoomCountSince('24 HOUR');
+        $actual = $this->repository->getNewRoomCountSince('24 hour');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getNewRoomCountSince('7 DAY') が直近1週間以内に登録されたルーム数と一致することを検証
+     * getNewRoomCountSince('7 day') が直近1週間以内に登録されたルーム数と一致することを検証
      */
     public function test_getNewRoomCountSince_weekly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat WHERE created_at >= NOW() - INTERVAL 7 DAY'
         );
-        $actual = $this->repository->getNewRoomCountSince('7 DAY');
+        $actual = $this->repository->getNewRoomCountSince('7 day');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getNewRoomCountSince('1 MONTH') が直近1ヶ月以内に登録されたルーム数と一致することを検証
+     * getNewRoomCountSince('1 month') が直近1ヶ月以内に登録されたルーム数と一致することを検証
      */
     public function test_getNewRoomCountSince_monthly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat WHERE created_at >= NOW() - INTERVAL 1 MONTH'
         );
-        $actual = $this->repository->getNewRoomCountSince('1 MONTH');
+        $actual = $this->repository->getNewRoomCountSince('1 month');
 
         $this->assertSame($expected, $actual);
     }
@@ -131,10 +130,10 @@ class AllRoomStatsRepositoryTest extends TestCase
     public function test_getNewRoomCountSince_ordering(): void
     {
         $total = $this->repository->getTotalRoomCount();
-        $monthly = $this->repository->getNewRoomCountSince('1 MONTH');
-        $weekly = $this->repository->getNewRoomCountSince('7 DAY');
-        $daily = $this->repository->getNewRoomCountSince('24 HOUR');
-        $hourly = $this->repository->getNewRoomCountSince('1 HOUR');
+        $monthly = $this->repository->getNewRoomCountSince('1 month');
+        $weekly = $this->repository->getNewRoomCountSince('7 day');
+        $daily = $this->repository->getNewRoomCountSince('24 hour');
+        $hourly = $this->repository->getNewRoomCountSince('1 hour');
 
         $this->assertLessThanOrEqual($total, $monthly);
         $this->assertLessThanOrEqual($monthly, $weekly);
@@ -143,94 +142,68 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getEarliestDeletedDate() が open_chat_deleted テーブルの MIN(deleted_at) と一致することを検証
-     * データが存在しない場合はnullが返る
-     */
-    public function test_getEarliestDeletedDate_matches_direct_query(): void
-    {
-        $result = DB::$pdo->query('SELECT MIN(deleted_at) FROM open_chat_deleted')->fetchColumn();
-        $expected = $result !== false ? (string) $result : null;
-        $actual = $this->repository->getEarliestDeletedDate();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDeletedRoomCount() が open_chat_deleted テーブルの全件数と一致することを検証
-     */
-    public function test_getDeletedRoomCount_matches_direct_query(): void
-    {
-        $expected = $this->queryInt('SELECT COUNT(*) FROM open_chat_deleted');
-        $actual = $this->repository->getDeletedRoomCount();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDeletedRoomCountSince('1 HOUR') が直近1時間以内に削除されたルーム数と一致することを検証
+     * getDeletedRoomCountSince('1 hour') が直近1時間以内に削除されたルーム数と一致することを検証
      */
     public function test_getDeletedRoomCountSince_hourly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 1 HOUR'
         );
-        $actual = $this->repository->getDeletedRoomCountSince('1 HOUR');
+        $actual = $this->repository->getDeletedRoomCountSince('1 hour');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getDeletedRoomCountSince('24 HOUR') が直近24時間以内に削除されたルーム数と一致することを検証
+     * getDeletedRoomCountSince('24 hour') が直近24時間以内に削除されたルーム数と一致することを検証
      */
     public function test_getDeletedRoomCountSince_daily_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 24 HOUR'
         );
-        $actual = $this->repository->getDeletedRoomCountSince('24 HOUR');
+        $actual = $this->repository->getDeletedRoomCountSince('24 hour');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getDeletedRoomCountSince('7 DAY') が直近1週間以内に削除されたルーム数と一致することを検証
+     * getDeletedRoomCountSince('7 day') が直近1週間以内に削除されたルーム数と一致することを検証
      */
     public function test_getDeletedRoomCountSince_weekly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 7 DAY'
         );
-        $actual = $this->repository->getDeletedRoomCountSince('7 DAY');
+        $actual = $this->repository->getDeletedRoomCountSince('7 day');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
-     * getDeletedRoomCountSince('1 MONTH') が直近1ヶ月以内に削除されたルーム数と一致することを検証
+     * getDeletedRoomCountSince('1 month') が直近1ヶ月以内に削除されたルーム数と一致することを検証
      */
     public function test_getDeletedRoomCountSince_monthly_matches_direct_query(): void
     {
         $expected = $this->queryInt(
             'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 1 MONTH'
         );
-        $actual = $this->repository->getDeletedRoomCountSince('1 MONTH');
+        $actual = $this->repository->getDeletedRoomCountSince('1 month');
 
         $this->assertSame($expected, $actual);
     }
 
     /**
      * 削除済みルーム数の期間別件数が整合していることを検証
-     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 <= 全期間 の順で件数が増えること
+     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 の順で件数が増えること
      */
-    public function test_getDeletedRoomCountSince_does_not_exceed_total(): void
+    public function test_getDeletedRoomCountSince_ordering(): void
     {
-        $total = $this->repository->getDeletedRoomCount();
-        $monthly = $this->repository->getDeletedRoomCountSince('1 MONTH');
-        $hourly = $this->repository->getDeletedRoomCountSince('1 HOUR');
-        $daily = $this->repository->getDeletedRoomCountSince('24 HOUR');
-        $weekly = $this->repository->getDeletedRoomCountSince('7 DAY');
+        $monthly = $this->repository->getDeletedRoomCountSince('1 month');
+        $hourly = $this->repository->getDeletedRoomCountSince('1 hour');
+        $daily = $this->repository->getDeletedRoomCountSince('24 hour');
+        $weekly = $this->repository->getDeletedRoomCountSince('7 day');
 
-        $this->assertLessThanOrEqual($total, $monthly);
         $this->assertLessThanOrEqual($monthly, $weekly);
         $this->assertLessThanOrEqual($weekly, $daily);
         $this->assertLessThanOrEqual($daily, $hourly);
@@ -272,87 +245,61 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getHourlyMemberIncrease() が statistics_ranking_hour テーブルの
-     * diff_member > 0 の合計と一致することを検証
+     * getMemberTrend() が整数を返すことを検証
      */
-    public function test_getHourlyMemberIncrease_matches_direct_query(): void
+    public function test_getMemberTrend_returns_int(): void
     {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getHourlyMemberIncrease();
+        $daily = $this->repository->getMemberTrend('-1 day');
+        $weekly = $this->repository->getMemberTrend('-7 day');
+        $monthly = $this->repository->getMemberTrend('-1 month');
 
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDailyMemberIncrease() が statistics_ranking_hour24 テーブルの
-     * diff_member > 0 の合計と一致することを検証
-     */
-    public function test_getDailyMemberIncrease_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour24 WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getDailyMemberIncrease();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getWeeklyMemberIncrease() が statistics_ranking_week テーブルの
-     * diff_member > 0 の合計と一致することを検証
-     */
-    public function test_getWeeklyMemberIncrease_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getWeeklyMemberIncrease();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDeletedMemberCountTotal() が ocgraph_sqlapi の
-     * open_chat_deleted と openchat_master の JOIN 結果と一致することを検証
-     */
-    public function test_getDeletedMemberCountTotal_matches_direct_query(): void
-    {
-        $expected = (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(om.current_member_count), 0)
-            FROM open_chat_deleted ocd
-            JOIN openchat_master om ON ocd.id = om.openchat_id"
-        );
-        $actual = $this->repository->getDeletedMemberCountTotal();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDeletedMemberCountTotal() が0以上であることを検証
-     */
-    public function test_getDeletedMemberCountTotal_is_non_negative(): void
-    {
-        $actual = $this->repository->getDeletedMemberCountTotal();
-        $this->assertGreaterThanOrEqual(0, $actual);
+        $this->assertIsInt($daily);
+        $this->assertIsInt($weekly);
+        $this->assertIsInt($monthly);
     }
 
     /**
      * getDeletedMemberCountSince() の期間別件数が整合していることを検証
-     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 <= 全期間 の順でメンバー数が増えること
+     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 の順でメンバー数が増えること
      */
     public function test_getDeletedMemberCountSince_ordering(): void
     {
-        $total = $this->repository->getDeletedMemberCountTotal();
-        $monthly = $this->repository->getDeletedMemberCountSince('1 MONTH');
-        $weekly = $this->repository->getDeletedMemberCountSince('7 DAY');
-        $daily = $this->repository->getDeletedMemberCountSince('24 HOUR');
-        $hourly = $this->repository->getDeletedMemberCountSince('1 HOUR');
+        $monthly = $this->repository->getDeletedMemberCountSince('1 month');
+        $weekly = $this->repository->getDeletedMemberCountSince('7 day');
+        $daily = $this->repository->getDeletedMemberCountSince('24 hour');
+        $hourly = $this->repository->getDeletedMemberCountSince('1 hour');
 
-        $this->assertLessThanOrEqual($total, $monthly);
         $this->assertLessThanOrEqual($monthly, $weekly);
         $this->assertLessThanOrEqual($weekly, $daily);
         $this->assertLessThanOrEqual($daily, $hourly);
+    }
+
+    /**
+     * getDelistedStats() が正しい構造の配列を返すことを検証
+     */
+    public function test_getDelistedStats_returns_correct_structure(): void
+    {
+        $result = $this->repository->getDelistedStats('-1 day');
+
+        $this->assertArrayHasKey('rooms', $result);
+        $this->assertArrayHasKey('members', $result);
+        $this->assertIsInt($result['rooms']);
+        $this->assertIsInt($result['members']);
+        $this->assertGreaterThanOrEqual(0, $result['rooms']);
+        $this->assertGreaterThanOrEqual(0, $result['members']);
+    }
+
+    /**
+     * getDelistedStats() の期間別件数が整合していることを検証
+     * 1日 <= 1週間 <= 1ヶ月 の順で件数が増えること
+     */
+    public function test_getDelistedStats_ordering(): void
+    {
+        $daily = $this->repository->getDelistedStats('-1 day');
+        $weekly = $this->repository->getDelistedStats('-7 day');
+        $monthly = $this->repository->getDelistedStats('-1 month');
+
+        $this->assertLessThanOrEqual($monthly['rooms'], $weekly['rooms']);
+        $this->assertLessThanOrEqual($weekly['rooms'], $daily['rooms']);
     }
 }
