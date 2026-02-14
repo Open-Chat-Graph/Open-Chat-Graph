@@ -294,6 +294,41 @@ main() {
     fi
     echo ""
 
+    # OC順位OHLCデータAPI（ローソク足チャート用）のテスト
+    log "OC順位OHLCデータAPIのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（ranking/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（rising/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=8" "OC順位OHLC（ranking/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=8" "OC順位OHLC（rising/category=8）"
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（タイ語/ranking/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（タイ語/rising/category=0）"
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（繁体字/ranking/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（繁体字/rising/category=0）"
+    fi
+    echo ""
+
+    # OCメンバーOHLCデータAPI（ローソク足チャート用）のテスト
+    log "OCメンバーOHLCデータAPIのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/member_ohlc" "OCメンバーOHLC"
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/member_ohlc" "OCメンバーOHLC（タイ語）"
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/member_ohlc" "OCメンバーOHLC（繁体字）"
+    fi
+    echo ""
+
     # 各種ページ
     log "各種ページのテスト（多言語）"
     test_url "${BASE_URL}/policy" "ポリシーページ"

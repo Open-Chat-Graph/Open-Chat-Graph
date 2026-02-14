@@ -244,6 +244,18 @@ main() {
         count=$(get_sqlite_count "$sqlite_stats_path" "statistics")
         test_result "storage/${lang}/SQLite/statistics.db (statistics)" 2000 "$count" "ge"
 
+        # SQLite: statistics_ohlc.db
+        sqlite_stats_ohlc_path="/var/www/html/storage/${lang}/SQLite/statistics_ohlc/statistics_ohlc.db"
+
+        count=$(get_sqlite_count "$sqlite_stats_ohlc_path" "statistics_ohlc")
+        test_result "storage/${lang}/SQLite/statistics_ohlc.db (statistics_ohlc)" 1 "$count" "ge"
+
+        # SQLite: ranking_position_ohlc.db
+        sqlite_ranking_ohlc_path="/var/www/html/storage/${lang}/SQLite/ranking_position_ohlc/ranking_position_ohlc.db"
+
+        count=$(get_sqlite_count "$sqlite_ranking_ohlc_path" "ranking_position_ohlc")
+        test_result "storage/${lang}/SQLite/ranking_position_ohlc.db (ranking_position_ohlc)" 1 "$count" "ge"
+
         # SQLite: sqlapi.db (日本語のみ - 件数一致テスト)
         if [ "$lang" = "ja" ]; then
             sqlite_sqlapi_path="/var/www/html/storage/${lang}/SQLite/ocgraph_sqlapi/sqlapi.db"
