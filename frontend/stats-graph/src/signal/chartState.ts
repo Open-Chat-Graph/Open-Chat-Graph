@@ -42,16 +42,19 @@ export function setChartStatesFromUrlParams() {
     const fixedLimit = getStoregeFixedLimitSetting()
     if (fixedLimit) {
       switch (fixedLimit) {
-        case "week": limitSignal.value = 8; break
-        case "month": limitSignal.value = 31; break
-        case "all": limitSignal.value = 0; break
+        case "hour":
+          limitSignal.value = 25
+          chart.setIsHour(true)
+          break
+        case "week": limitSignal.value = 8; chart.setIsHour(false); break
+        case "month": limitSignal.value = 31; chart.setIsHour(false); break
+        case "all": limitSignal.value = 0; chart.setIsHour(false); break
       }
-      chart.setIsHour(false)
     }
   }
 
-  // ローソク足モードの復元（OHLCデータが存在する場合のみ）
-  if (params.chart === 'candlestick' && hasOhlcData()) {
+  // ローソク足モードの復元（OHLCデータが存在する場合のみ、24時間モードでない場合）
+  if (params.chart === 'candlestick' && hasOhlcData() && limitSignal.value !== 25) {
     chartModeSignal.value = 'candlestick'
     chart.setMode('candlestick')
   }

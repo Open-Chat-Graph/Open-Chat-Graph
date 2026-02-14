@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
-use App\Config\AppConfig;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\DBInterface;
 use Shadow\DB;

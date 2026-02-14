@@ -34,6 +34,7 @@ const menuListChartMode: [string, urlParamsValue<'chart'>][] = [
 
 const menuListFixedLimit: [string, urlParamsValue<'limit'> | ''][] = [
   [t('固定しない'), ''],
+  [t('24時間'), 'hour'],
   [t('1週間'), 'week'],
   [t('1ヶ月'), 'month'],
   [t('全期間'), 'all'],
@@ -44,14 +45,16 @@ function CheckableMenuItem<T extends string>({
   value,
   selected,
   onSelect,
+  disabled,
 }: {
   label: string
   value: T
   selected: boolean
   onSelect: (value: T) => void
+  disabled?: boolean
 }) {
   return (
-    <MenuItem onClick={() => onSelect(value)}>
+    <MenuItem onClick={() => onSelect(value)} disabled={disabled}>
       {!selected && <ListItemText inset>{label}</ListItemText>}
       {selected && (
         <>
@@ -112,6 +115,7 @@ function DenseMenu({
           value={el[1]}
           selected={fixedLimit === el[1]}
           onSelect={handleSelectFixedLimit}
+          disabled={el[1] === 'hour' && chartMode === 'candlestick'}
         />
       ))}
     </MenuList>
@@ -142,6 +146,10 @@ export default function SettingButton() {
   const handleSelectChartMode = (mode: urlParamsValue<'chart'>) => {
     setStoregeChartSetting(mode)
     setChartMode(mode)
+    if (mode === 'candlestick' && fixedLimit === 'hour') {
+      setStoregeFixedLimitSetting('')
+      setFixedLimit('')
+    }
     handleClose()
   }
 
