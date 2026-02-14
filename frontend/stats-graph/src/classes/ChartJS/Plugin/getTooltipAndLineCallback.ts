@@ -76,9 +76,10 @@ export const getTooltipAndLineCallback = (ocChart: OpenChatChart): TooltipPositi
       }
     }
 
-    // 1週間表示時に棒グラフのデータがない場合は非表示にする
+    // 1週間表示時に棒グラフのデータがない場合は非表示にする（ローソク足モード時はスキップ）
     if (
-      (ocChart.limit === 8 || ocChart.zoomWeekday === 2)
+      ocChart.getMode() !== 'candlestick'
+      && (ocChart.limit === 8 || ocChart.zoomWeekday === 2)
       && (!ocChart.data.graph2.length)
     ) {
       isShow = false

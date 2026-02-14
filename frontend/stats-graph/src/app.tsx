@@ -6,6 +6,7 @@ import {
   chart,
   initDisplay,
   loading,
+  markInitialLoadComplete,
   setChartStatesFromUrlParams,
   setUrlParamsFromChartStates,
 } from "./signal/chartState";
@@ -29,6 +30,7 @@ const init = async () => {
     renderChartWithoutRanking();
   }
 
+  markInitialLoadComplete();
   renderTab.value = true;
   setUrlParamsFromChartStates();
 };
@@ -76,7 +78,7 @@ export function App() {
         {renderTab.value && <ChartLimitBtns />}
       </div>
       {renderPositionBtns.value && (
-        <div style="min-height: 84px;">
+        <div style={{ minHeight: "84px" }}>
           <ToggleButtons />
         </div>
       )}
