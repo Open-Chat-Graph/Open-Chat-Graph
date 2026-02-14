@@ -12,12 +12,6 @@ class FileStorageServiceConfig
     ];
 
     /** @var array<string,string> */
-    static array $sqliteSchemaFiles = [
-        'sqliteStatisticsOhlcDb' =>      __DIR__ . '/../../setup/schema/sqlite/statistics_ohlc.sql',
-        'sqliteRankingPositionOhlcDb' => __DIR__ . '/../../setup/schema/sqlite/ranking_position_ohlc.sql',
-    ];
-
-    /** @var array<string,string> */
     static array $storageFiles = [
         'addCronLogDest' =>               '/logs/cron.log',
         'sqliteStatisticsDb' =>           '/SQLite/statistics/statistics.db',
