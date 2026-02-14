@@ -27,9 +27,6 @@ interface AllRoomStatsRepositoryInterface
      */
     public function getNewRoomCountSince(string $interval): int;
 
-    /** 最も古い閉鎖記録の日時を取得（データなしの場合はnull） */
-    public function getEarliestDeletedDate(): ?string;
-
     /**
      * 指定期間内に閉鎖されたルーム数を取得
      *
@@ -44,14 +41,19 @@ interface AllRoomStatsRepositoryInterface
      */
     public function getCategoryStats(): array;
 
-    /** 直近1時間のメンバー増加数合計（増加したルームのみ）を取得 */
-    public function getHourlyMemberIncrease(): int;
+    /**
+     * 時間単位のメンバー純増数を取得（RankingPositionDB member テーブルから）
+     *
+     * @param string $hourModifier DateTime::modify() 形式（例: '-1hour', '-24hour'）
+     */
+    public function getHourlyMemberTrend(string $hourModifier): int;
 
-    /** 直近24時間のメンバー増加数合計（増加したルームのみ）を取得 */
-    public function getDailyMemberIncrease(): int;
-
-    /** 直近1週間のメンバー増加数合計（増加したルームのみ）を取得 */
-    public function getWeeklyMemberIncrease(): int;
+    /**
+     * 日単位のメンバー純増数を取得（SQLite statistics テーブルから）
+     *
+     * @param string $dateModifier SQLite date() 修飾子（例: '-7 day', '-1 month'）
+     */
+    public function getDailyMemberTrend(string $dateModifier): int;
 
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照）

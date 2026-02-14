@@ -35,27 +35,17 @@
 
                 <!-- 新規参加者数 -->
                 <h2>新規参加者数の推移</h2>
-                <p class="text-gray-500 text-xs mb-3">毎時更新。メンバー増加数から閉鎖ルームのメンバー数を差し引いた純増減数</p>
-                <?php
-                    $hourlyNet = $hourlyIncrease - $deletedMembersHourly;
-                    $dailyNet = $dailyIncrease - $deletedMembersDaily;
-                    $weeklyNet = $weeklyIncrease - $deletedMembersWeekly;
-                ?>
-                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
+                <p class="text-gray-500 text-xs mb-3">毎時更新。各期間における全ルーム合計メンバー数の純増減</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
-                        ['label' => '1時間', 'net' => $hourlyNet, 'increase' => $hourlyIncrease, 'decrease' => $deletedMembersHourly],
-                        ['label' => '24時間', 'net' => $dailyNet, 'increase' => $dailyIncrease, 'decrease' => $deletedMembersDaily],
-                        ['label' => '1週間', 'net' => $weeklyNet, 'increase' => $weeklyIncrease, 'decrease' => $deletedMembersWeekly],
+                        ['label' => '1時間', 'net' => $hourlyTrend],
+                        ['label' => '24時間', 'net' => $dailyTrend],
+                        ['label' => '1週間', 'net' => $weeklyTrend],
+                        ['label' => '1ヶ月', 'net' => $monthlyTrend],
                     ] as $period): ?>
                     <div class="rounded-xl <?php echo $period['net'] >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200' ?> border p-3 sm:p-4 text-center">
                         <div class="text-xs sm:text-sm font-semibold <?php echo $period['net'] >= 0 ? 'text-emerald-500' : 'text-rose-400' ?> mb-1"><?php echo $period['label'] ?></div>
                         <div class="text-base sm:text-xl font-bold <?php echo $period['net'] >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>"><?php echo ($period['net'] >= 0 ? '+' : '') . number_format($period['net']) ?></div>
-                        <div class="text-[10px] sm:text-xs text-gray-400 mt-1">
-                            <span class="text-emerald-500">+<?php echo number_format($period['increase']) ?></span>
-                            <?php if ($period['decrease'] > 0): ?>
-                            <span class="text-rose-400"> / -<?php echo number_format($period['decrease']) ?></span>
-                            <?php endif ?>
-                        </div>
                     </div>
                     <?php endforeach ?>
                 </div>
@@ -84,7 +74,7 @@
 
                 <!-- 閉鎖されたルーム数 -->
                 <h2>閉鎖されたルーム数</h2>
-                <p class="text-gray-500 text-xs mb-3"><?php echo $earliestDeletedDate ? date('Y年n月j日', strtotime($earliestDeletedDate)) . '以降に' : '' ?>オプチャグラフに登録後、閉鎖されたルームの数</p>
+                <p class="text-gray-500 text-xs mb-3">オープンチャット上で利用できなくなったルームの数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
                         ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly],

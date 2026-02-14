@@ -142,19 +142,6 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getEarliestDeletedDate() が open_chat_deleted テーブルの MIN(deleted_at) と一致することを検証
-     * データが存在しない場合はnullが返る
-     */
-    public function test_getEarliestDeletedDate_matches_direct_query(): void
-    {
-        $result = DB::$pdo->query('SELECT MIN(deleted_at) FROM open_chat_deleted')->fetchColumn();
-        $expected = $result !== false ? (string) $result : null;
-        $actual = $this->repository->getEarliestDeletedDate();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
      * getDeletedRoomCountSince('1 HOUR') が直近1時間以内に削除されたルーム数と一致することを検証
      */
     public function test_getDeletedRoomCountSince_hourly_matches_direct_query(): void
@@ -255,48 +242,6 @@ class AllRoomStatsRepositoryTest extends TestCase
         $totalRooms = $this->repository->getTotalRoomCount();
 
         $this->assertLessThanOrEqual($totalRooms, $totalFromCategories, 'カテゴリー別合計は総ルーム数以下であること');
-    }
-
-    /**
-     * getHourlyMemberIncrease() が statistics_ranking_hour テーブルの
-     * diff_member > 0 の合計と一致することを検証
-     */
-    public function test_getHourlyMemberIncrease_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getHourlyMemberIncrease();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDailyMemberIncrease() が statistics_ranking_hour24 テーブルの
-     * diff_member > 0 の合計と一致することを検証
-     */
-    public function test_getDailyMemberIncrease_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_hour24 WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getDailyMemberIncrease();
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getWeeklyMemberIncrease() が statistics_ranking_week テーブルの
-     * diff_member > 0 の合計と一致することを検証
-     */
-    public function test_getWeeklyMemberIncrease_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COALESCE(SUM(diff_member), 0) FROM statistics_ranking_week WHERE diff_member > 0'
-        );
-        $actual = $this->repository->getWeeklyMemberIncrease();
-
-        $this->assertSame($expected, $actual);
     }
 
     /**
