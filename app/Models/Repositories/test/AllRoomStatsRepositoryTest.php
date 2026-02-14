@@ -245,6 +245,20 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
+     * getMemberTrend() が整数を返すことを検証
+     */
+    public function test_getMemberTrend_returns_int(): void
+    {
+        $daily = $this->repository->getMemberTrend('-1 day');
+        $weekly = $this->repository->getMemberTrend('-7 day');
+        $monthly = $this->repository->getMemberTrend('-1 month');
+
+        $this->assertIsInt($daily);
+        $this->assertIsInt($weekly);
+        $this->assertIsInt($monthly);
+    }
+
+    /**
      * getDeletedMemberCountSince() の期間別件数が整合していることを検証
      * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 の順でメンバー数が増えること
      */
@@ -258,5 +272,34 @@ class AllRoomStatsRepositoryTest extends TestCase
         $this->assertLessThanOrEqual($monthly, $weekly);
         $this->assertLessThanOrEqual($weekly, $daily);
         $this->assertLessThanOrEqual($daily, $hourly);
+    }
+
+    /**
+     * getDelistedStats() が正しい構造の配列を返すことを検証
+     */
+    public function test_getDelistedStats_returns_correct_structure(): void
+    {
+        $result = $this->repository->getDelistedStats('-1 day');
+
+        $this->assertArrayHasKey('rooms', $result);
+        $this->assertArrayHasKey('members', $result);
+        $this->assertIsInt($result['rooms']);
+        $this->assertIsInt($result['members']);
+        $this->assertGreaterThanOrEqual(0, $result['rooms']);
+        $this->assertGreaterThanOrEqual(0, $result['members']);
+    }
+
+    /**
+     * getDelistedStats() の期間別件数が整合していることを検証
+     * 1日 <= 1週間 <= 1ヶ月 の順で件数が増えること
+     */
+    public function test_getDelistedStats_ordering(): void
+    {
+        $daily = $this->repository->getDelistedStats('-1 day');
+        $weekly = $this->repository->getDelistedStats('-7 day');
+        $monthly = $this->repository->getDelistedStats('-1 month');
+
+        $this->assertLessThanOrEqual($monthly['rooms'], $weekly['rooms']);
+        $this->assertLessThanOrEqual($weekly['rooms'], $daily['rooms']);
     }
 }

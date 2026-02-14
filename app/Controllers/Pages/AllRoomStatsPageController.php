@@ -44,10 +44,15 @@ class AllRoomStatsPageController
 
         $categoryStats = $repository->getCategoryStats();
 
-        $hourlyTrend = $repository->getHourlyMemberTrend('1 HOUR');
-        $dailyTrend = $repository->getHourlyMemberTrend('24 HOUR');
-        $weeklyTrend = $repository->getDailyMemberTrend('7 DAY');
-        $monthlyTrend = $repository->getDailyMemberTrend('1 MONTH');
+        // メンバー増減（sqlapi.db daily_member_statistics、日単位）
+        $dailyTrend = $repository->getMemberTrend('-1 day');
+        $weeklyTrend = $repository->getMemberTrend('-7 day');
+        $monthlyTrend = $repository->getMemberTrend('-1 month');
+
+        // 掲載終了ルーム（sqlapi.db、日単位）
+        $delistedDaily = $repository->getDelistedStats('-1 day');
+        $delistedWeekly = $repository->getDelistedStats('-7 day');
+        $delistedMonthly = $repository->getDelistedStats('-1 month');
 
         $_css = ['site_header', 'site_footer', 'terms'];
         $_meta = meta()->setTitle(self::Title);
@@ -75,10 +80,12 @@ class AllRoomStatsPageController
             'deletedMembersDaily',
             'deletedMembersHourly',
             'categoryStats',
-            'hourlyTrend',
             'dailyTrend',
             'weeklyTrend',
             'monthlyTrend',
+            'delistedDaily',
+            'delistedWeekly',
+            'delistedMonthly',
         ));
     }
 }

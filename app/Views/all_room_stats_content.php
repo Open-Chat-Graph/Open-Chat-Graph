@@ -35,27 +35,23 @@
 
                 <!-- 新規参加者数 -->
                 <h2>新規参加者数の推移</h2>
-                <p class="text-gray-500 text-xs mb-3">毎時更新。メンバー増加数からLINE公式サイト掲載終了ルームのメンバー数を差し引いた増減数</p>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
+                <p class="text-gray-500 text-xs mb-3">日次更新。各期間における全ルーム合計メンバー数の増減数</p>
+                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
-                        ['label' => '1時間', 'net' => $hourlyTrend['net'], 'delisted' => $hourlyTrend['delisted_members']],
-                        ['label' => '24時間', 'net' => $dailyTrend['net'], 'delisted' => $dailyTrend['delisted_members']],
-                        ['label' => '1週間', 'net' => $weeklyTrend['net'], 'delisted' => $weeklyTrend['delisted_members']],
-                        ['label' => '1ヶ月', 'net' => $monthlyTrend['net'], 'delisted' => $monthlyTrend['delisted_members']],
+                        ['label' => '1日', 'net' => $dailyTrend],
+                        ['label' => '1週間', 'net' => $weeklyTrend],
+                        ['label' => '1ヶ月', 'net' => $monthlyTrend],
                     ] as $period): ?>
                     <div class="rounded-xl <?php echo $period['net'] >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200' ?> border p-3 sm:p-4 text-center">
                         <div class="text-xs sm:text-sm font-semibold <?php echo $period['net'] >= 0 ? 'text-emerald-500' : 'text-rose-400' ?> mb-1"><?php echo $period['label'] ?></div>
                         <div class="text-base sm:text-xl font-bold <?php echo $period['net'] >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>"><?php echo ($period['net'] >= 0 ? '+' : '') . number_format($period['net']) ?></div>
-                        <?php if ($period['delisted'] > 0): ?>
-                        <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['delisted']) ?>人</div>
-                        <?php endif ?>
                     </div>
                     <?php endforeach ?>
                 </div>
 
                 <!-- 新規登録ルーム数 -->
                 <h2>新規登録ルーム数</h2>
-                <p class="text-gray-500 text-xs mb-3"><?php echo $trackingStartDate ? date('Y年n月j日', strtotime($trackingStartDate)) . '以降のデータに基づく、' : '' ?>各期間内に新しく登録されたルームの数</p>
+                <p class="text-gray-500 text-xs mb-3">各期間内に新しく登録されたルームの数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 sm:p-4 text-center">
                         <div class="text-xs font-semibold text-amber-500 mb-1">1時間</div>
@@ -80,16 +76,24 @@
                 <p class="text-gray-500 text-xs mb-3">オプチャグラフに登録後、オープンチャット上で利用できなくなったルームの数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
-                        ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly],
-                        ['label' => '24時間', 'rooms' => $deletedRoomsDaily, 'members' => $deletedMembersDaily],
-                        ['label' => '1週間', 'rooms' => $deletedRoomsWeekly, 'members' => $deletedMembersWeekly],
-                        ['label' => '1ヶ月', 'rooms' => $deletedRoomsMonthly, 'members' => $deletedMembersMonthly],
+                        ['label' => '1時間', 'rooms' => $deletedRoomsHourly, 'members' => $deletedMembersHourly, 'delisted' => null],
+                        ['label' => '24時間', 'rooms' => $deletedRoomsDaily, 'members' => $deletedMembersDaily, 'delisted' => $delistedDaily],
+                        ['label' => '1週間', 'rooms' => $deletedRoomsWeekly, 'members' => $deletedMembersWeekly, 'delisted' => $delistedWeekly],
+                        ['label' => '1ヶ月', 'rooms' => $deletedRoomsMonthly, 'members' => $deletedMembersMonthly, 'delisted' => $delistedMonthly],
                     ] as $period): ?>
                     <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 sm:p-4 text-center">
                         <div class="text-xs font-semibold text-rose-400 mb-1"><?php echo $period['label'] ?></div>
                         <div class="text-base sm:text-xl font-bold text-rose-600"><?php echo number_format($period['rooms']) ?></div>
                         <?php if ($period['members'] > 0): ?>
                         <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['members']) ?>人</div>
+                        <?php endif ?>
+                        <?php if ($period['delisted'] !== null && $period['delisted']['rooms'] > 0): ?>
+                        <div class="border-t border-rose-200 mt-2 pt-2">
+                            <div class="text-[10px] sm:text-xs text-gray-400">掲載終了: <?php echo number_format($period['delisted']['rooms']) ?>室</div>
+                            <?php if ($period['delisted']['members'] > 0): ?>
+                            <div class="text-[10px] sm:text-xs text-gray-400">-<?php echo number_format($period['delisted']['members']) ?>人</div>
+                            <?php endif ?>
+                        </div>
                         <?php endif ?>
                     </div>
                     <?php endforeach ?>

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
-use App\Models\SQLite\SQLiteStatistics;
+use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 
 class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 {
@@ -69,94 +68,68 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         );
     }
 
-    public function getHourlyMemberTrend(string $interval): array
+    public function getMemberTrend(string $modifier): int
     {
-        $modifier = '-' . strtolower($interval);
+        $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
 
-        RankingPositionDB::connect();
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
 
-        $latestTime = (string) RankingPositionDB::fetchColumn(
-            "SELECT MAX(time) FROM member"
-        );
-
-        if (!$latestTime) {
-            RankingPositionDB::$pdo = null;
-            return ['net' => 0, 'delisted_members' => 0];
-        }
-
-        $pastDateTime = new \DateTime($latestTime);
-        $pastDateTime->modify($modifier);
-        $pastTimeStr = $pastDateTime->format('Y-m-d H:i:s');
-
-        $actualPastTime = (string) RankingPositionDB::fetchColumn(
-            "SELECT MAX(time) FROM member WHERE time <= :past",
-            ['past' => $pastTimeStr]
-        );
-
-        if (!$actualPastTime) {
-            RankingPositionDB::$pdo = null;
-            return ['net' => 0, 'delisted_members' => 0];
-        }
-
-        $totalNow = (int) RankingPositionDB::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM member WHERE time = :time",
-            ['time' => $latestTime]
-        );
-
-        $totalPast = (int) RankingPositionDB::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM member WHERE time = :time",
-            ['time' => $actualPastTime]
-        );
-
-        $delistedMembers = (int) RankingPositionDB::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM member
-            WHERE time = :past AND open_chat_id NOT IN (SELECT open_chat_id FROM member WHERE time = :now)",
-            ['past' => $actualPastTime, 'now' => $latestTime]
-        );
-
-        RankingPositionDB::$pdo = null;
-
-        return ['net' => $totalNow - $totalPast, 'delisted_members' => $delistedMembers];
-    }
-
-    public function getDailyMemberTrend(string $interval): array
-    {
-        $modifier = '-' . strtolower($interval);
-        $today = date('Y-m-d');
-
-        SQLiteStatistics::connect(['mode' => '?mode=ro']);
-
-        $totalNow = (int) SQLiteStatistics::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM statistics WHERE date = date(:today)",
+        $totalNow = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = :today",
             ['today' => $today]
         );
 
-        $totalPast = (int) SQLiteStatistics::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM statistics WHERE date = date(:today, :modifier)",
+        $totalPast = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = date(:today, :modifier)",
             ['today' => $today, 'modifier' => $modifier]
         );
 
-        $delistedMembers = (int) SQLiteStatistics::fetchColumn(
-            "SELECT COALESCE(SUM(member), 0) FROM statistics
-            WHERE date = date(:past_today, :past_modifier)
-            AND open_chat_id NOT IN (SELECT open_chat_id FROM statistics WHERE date = date(:now_today))",
-            ['past_today' => $today, 'past_modifier' => $modifier, 'now_today' => $today]
-        );
+        SQLiteOcgraphSqlapi::$pdo = null;
 
-        SQLiteStatistics::$pdo = null;
-
-        return ['net' => $totalNow - $totalPast, 'delisted_members' => $delistedMembers];
+        return $totalNow - $totalPast;
     }
 
     public function getDeletedMemberCountSince(string $interval): int
     {
         $cutoff = date('Y-m-d H:i:s', strtotime("-{$interval}"));
-        return (int) SQLiteOcgraphSqlapi::fetchColumn(
+
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+
+        $result = (int) SQLiteOcgraphSqlapi::fetchColumn(
             "SELECT COALESCE(SUM(om.current_member_count), 0)
             FROM open_chat_deleted ocd
             JOIN openchat_master om ON ocd.id = om.openchat_id
             WHERE ocd.deleted_at >= :cutoff",
             ['cutoff' => $cutoff]
         );
+
+        SQLiteOcgraphSqlapi::$pdo = null;
+
+        return $result;
+    }
+
+    public function getDelistedStats(string $modifier): array
+    {
+        $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
+
+        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+
+        $result = SQLiteOcgraphSqlapi::execute(
+            "SELECT COUNT(DISTINCT openchat_id) AS rooms, COALESCE(SUM(member_count), 0) AS members
+            FROM daily_member_statistics
+            WHERE statistics_date = date(:today, :modifier)
+            AND openchat_id NOT IN (
+                SELECT openchat_id FROM daily_member_statistics
+                WHERE statistics_date = :today
+            )",
+            ['today' => $today, 'modifier' => $modifier]
+        )->fetch(\PDO::FETCH_ASSOC);
+
+        SQLiteOcgraphSqlapi::$pdo = null;
+
+        return [
+            'rooms' => (int) ($result['rooms'] ?? 0),
+            'members' => (int) ($result['members'] ?? 0),
+        ];
     }
 }
