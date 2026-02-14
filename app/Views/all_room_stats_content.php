@@ -35,17 +35,20 @@
 
                 <!-- 新規参加者数 -->
                 <h2>新規参加者数の推移</h2>
-                <p class="text-gray-500 text-xs mb-3">毎時更新。各期間における全ルーム合計メンバー数の純増減</p>
+                <p class="text-gray-500 text-xs mb-3">毎時更新。メンバー増加数からLINE公式サイト掲載終了ルームのメンバー数を差し引いた増減数</p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-10">
                     <?php foreach ([
-                        ['label' => '1時間', 'net' => $hourlyTrend],
-                        ['label' => '24時間', 'net' => $dailyTrend],
-                        ['label' => '1週間', 'net' => $weeklyTrend],
-                        ['label' => '1ヶ月', 'net' => $monthlyTrend],
+                        ['label' => '1時間', 'net' => $hourlyTrend['net'], 'delisted' => $hourlyTrend['delisted_members']],
+                        ['label' => '24時間', 'net' => $dailyTrend['net'], 'delisted' => $dailyTrend['delisted_members']],
+                        ['label' => '1週間', 'net' => $weeklyTrend['net'], 'delisted' => $weeklyTrend['delisted_members']],
+                        ['label' => '1ヶ月', 'net' => $monthlyTrend['net'], 'delisted' => $monthlyTrend['delisted_members']],
                     ] as $period): ?>
                     <div class="rounded-xl <?php echo $period['net'] >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200' ?> border p-3 sm:p-4 text-center">
                         <div class="text-xs sm:text-sm font-semibold <?php echo $period['net'] >= 0 ? 'text-emerald-500' : 'text-rose-400' ?> mb-1"><?php echo $period['label'] ?></div>
                         <div class="text-base sm:text-xl font-bold <?php echo $period['net'] >= 0 ? 'text-emerald-600' : 'text-rose-600' ?>"><?php echo ($period['net'] >= 0 ? '+' : '') . number_format($period['net']) ?></div>
+                        <?php if ($period['delisted'] > 0): ?>
+                        <div class="text-[10px] sm:text-xs text-rose-400 mt-1">-<?php echo number_format($period['delisted']) ?>人</div>
+                        <?php endif ?>
                     </div>
                     <?php endforeach ?>
                 </div>

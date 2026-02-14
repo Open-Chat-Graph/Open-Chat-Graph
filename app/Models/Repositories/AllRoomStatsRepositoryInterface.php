@@ -42,18 +42,20 @@ interface AllRoomStatsRepositoryInterface
     public function getCategoryStats(): array;
 
     /**
-     * 時間単位のメンバー純増数を取得（RankingPositionDB member テーブルから）
+     * 時間単位のメンバー増減数を取得（RankingPositionDB member テーブルから）
      *
      * @param string $hourModifier DateTime::modify() 形式（例: '-1hour', '-24hour'）
+     * @return array{net: int, delisted_members: int}
      */
-    public function getHourlyMemberTrend(string $hourModifier): int;
+    public function getHourlyMemberTrend(string $hourModifier): array;
 
     /**
-     * 日単位のメンバー純増数を取得（SQLite statistics テーブルから）
+     * 日単位のメンバー増減数を取得（SQLite statistics テーブルから）
      *
      * @param string $dateModifier SQLite date() 修飾子（例: '-7 day', '-1 month'）
+     * @return array{net: int, delisted_members: int}
      */
-    public function getDailyMemberTrend(string $dateModifier): int;
+    public function getDailyMemberTrend(string $dateModifier): array;
 
     /**
      * 指定期間内に閉鎖されたルームの合計メンバー数を取得（SQLite ocgraph_sqlapi参照）
