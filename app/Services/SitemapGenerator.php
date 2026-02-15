@@ -172,12 +172,25 @@ class SitemapGenerator
     {
         $mainIndex = new SitemapIndex();
 
+        // 各言語ディレクトリの個別サイトマップファイルを直接参照する
+        // （サイトマップインデックスのネストはSitemapsプロトコルで禁止）
         foreach (array_keys(AppConfig::$dbName) as $lang) {
             $langCode = $this->getLangCode($lang);
-            $indexFile = __DIR__ . "/../../public/sitemap-{$langCode}.xml";
+            $langDir = self::SITEMAP_DIR . "{$langCode}/";
 
-            if (file_exists($indexFile)) {
-                $url = AppConfig::$siteDomain . "/sitemap-{$langCode}.xml";
+            if (!is_dir($langDir)) {
+                continue;
+            }
+
+            $files = glob($langDir . "sitemap-*.xml");
+            if ($files === false) {
+                continue;
+            }
+
+            sort($files);
+            foreach ($files as $file) {
+                $fileName = basename($file);
+                $url = AppConfig::$siteDomain . self::SITEMAP_PATH . "{$langCode}/" . $fileName;
                 $mainIndex->addItem($url, new \DateTime);
             }
         }

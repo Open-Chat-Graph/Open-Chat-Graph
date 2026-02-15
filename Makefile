@@ -319,6 +319,12 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 	@echo "$(GREEN)========================================"
 	@echo "  ローカルCIテスト開始"
 	@echo "========================================$(NC)"
+	@# .env.mockをCIテスト用に設定（コンテナ起動前に設定することで環境変数に反映）
+	@if [ ! -f docker/line-mock-api/.env.mock ]; then \
+		cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock; \
+	fi
+	@sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
+	@sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
 	@echo "$(YELLOW)[1/4] Mock環境を起動...$(NC)"
 	@$(MAKE) up-mock > /dev/null 2>&1 || $(MAKE) up-mock
 	@echo "$(YELLOW)[2/4] サービス準備を待機...$(NC)"
