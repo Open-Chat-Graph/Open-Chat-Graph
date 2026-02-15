@@ -201,15 +201,6 @@ main() {
 
     log_success "docker/line-mock-api/.env.mockを設定しました（1万件、遅延なし、動的データ）"
 
-    # .env.mockの変更をコンテナに反映するため再起動
-    log_info "設定変更を反映するためMock環境を再起動中..."
-    make up-mock > /dev/null 2>&1 || make up-mock
-    log_success "Mock環境を再起動しました"
-
-    # コンテナ名を再取得（再起動でコンテナが変わる可能性があるため）
-    APP_CONTAINER=$(${COMPOSE_CMD} ps -q app 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
-    MOCK_CONTAINER=$(${COMPOSE_CMD} ps -q line-mock-api 2>/dev/null | xargs -r docker inspect --format='{{.Name}}' | sed 's/^.\{1\}//')
-
     # コンテナチェック
     check_containers
 

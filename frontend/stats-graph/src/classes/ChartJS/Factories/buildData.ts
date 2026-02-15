@@ -11,37 +11,6 @@ export const lineEasing = 'easeOutQuart'
 export const barEasing = 'easeOutCirc'
 
 export default function buildData(ocChart: OpenChatChart) {
-  if (ocChart.getMode() === 'candlestick') {
-    const datasets: any[] = [{
-      type: 'candlestick' as any,
-      label: t('メンバー数'),
-      data: ocChart.ohlcData,
-      color: { up: '#00c853', down: '#ff1744', unchanged: '#757575' },
-      backgroundColors: { up: 'rgba(0, 200, 83, 0.5)', down: 'rgba(255, 23, 68, 0.5)', unchanged: 'rgba(117, 117, 117, 0.5)' },
-      borderColors: { up: 'rgba(0, 200, 83, 0.7)', down: 'rgba(255, 23, 68, 0.7)', unchanged: 'rgba(117, 117, 117, 0.7)' },
-      datalabels: { display: false },
-      animation: false as const,
-      yAxisID: 'rainChart',
-    }]
-
-    if (ocChart.ohlcRankingData.length) {
-      datasets.push({
-        type: 'candlestick' as any,
-        label: `${ocChart.option.label2} | ${ocChart.option.category}`,
-        data: ocChart.ohlcRankingData,
-        color: { up: 'rgba(255, 109, 0, 0.3)', down: 'rgba(41, 121, 255, 0.3)', unchanged: 'rgba(158, 158, 158, 0.3)' },
-        backgroundColors: { up: 'rgba(255, 109, 0, 0.08)', down: 'rgba(41, 121, 255, 0.08)', unchanged: 'rgba(158, 158, 158, 0.08)' },
-        borderColors: { up: 'rgba(255, 109, 0, 0.3)', down: 'rgba(41, 121, 255, 0.3)', unchanged: 'rgba(158, 158, 158, 0.3)' },
-        borderWidth: 1,
-        datalabels: { display: false },
-        animation: false as const,
-        yAxisID: 'temperatureChart',
-      })
-    }
-
-    return { labels: ocChart.data.date, datasets }
-  }
-
   const firstIndex = ocChart.data.graph1.findIndex((v) => !!v)
   const lastIndex =
     ocChart.data.graph1.length -
