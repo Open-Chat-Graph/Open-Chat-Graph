@@ -68,6 +68,7 @@ storage/*/open_chat_sub_categories/subcategories.json
 public/js/chart/
 public/js/react/
 public/js/comment/
+public/js/all-room-stats/
 frontend/*/dist/
 
 # テスト関連
