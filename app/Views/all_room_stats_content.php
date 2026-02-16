@@ -159,7 +159,7 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600',
                                         class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-xs font-bold text-white tracking-wider">
                                         参加者数</th>
                                     <th
-                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-xs font-bold text-white tracking-wider leading-tight">
+                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-xs font-bold text-white tracking-wider leading-tight whitespace-nowrap">
                                         参加者<br>中央値</th>
                                     <th
                                         class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-xs font-bold text-white tracking-wider whitespace-nowrap">
@@ -181,7 +181,7 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600',
                                             class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 text-right tabular-nums border-b border-gray-100">
                                             <?php echo number_format($cat['total_members']) ?></td>
                                         <td
-                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 text-center tabular-nums border-b border-gray-100">
+                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 text-center tabular-nums border-b border-gray-100 whitespace-nowrap">
                                             <?php echo number_format($cat['median']) ?></td>
                                         <td
                                             class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold <?php echo trendColorClass($cat['monthly_trend']) ?> text-right tabular-nums border-b border-gray-100">
