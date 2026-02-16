@@ -143,71 +143,38 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getDeletedRoomCountSince('1 hour') が直近1時間以内に削除されたルーム数と一致することを検証
+     * getDisappearedRoomBreakdown() が正しい構造の配列を返すことを検証
      */
-    public function test_getDeletedRoomCountSince_hourly_matches_direct_query(): void
+    public function test_getDisappearedRoomBreakdown_returns_correct_structure(): void
     {
-        $expected = $this->queryInt(
-            'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 1 HOUR'
-        );
-        $actual = $this->repository->getDeletedRoomCountSince('1 hour');
+        $result = $this->repository->getDisappearedRoomBreakdown('-1 month');
 
-        $this->assertSame($expected, $actual);
+        $this->assertArrayHasKey('closed_rooms', $result);
+        $this->assertArrayHasKey('closed_members', $result);
+        $this->assertArrayHasKey('delisted_rooms', $result);
+        $this->assertArrayHasKey('delisted_members', $result);
+        $this->assertIsInt($result['closed_rooms']);
+        $this->assertIsInt($result['closed_members']);
+        $this->assertIsInt($result['delisted_rooms']);
+        $this->assertIsInt($result['delisted_members']);
+        $this->assertGreaterThanOrEqual(0, $result['closed_rooms']);
+        $this->assertGreaterThanOrEqual(0, $result['closed_members']);
+        $this->assertGreaterThanOrEqual(0, $result['delisted_rooms']);
+        $this->assertGreaterThanOrEqual(0, $result['delisted_members']);
     }
 
     /**
-     * getDeletedRoomCountSince('24 hour') が直近24時間以内に削除されたルーム数と一致することを検証
+     * getDisappearedRoomBreakdown() の合計がgetMemberTrendBreakdown()のlostと整合することを検証
+     * closed_members + delisted_members = -lost
      */
-    public function test_getDeletedRoomCountSince_daily_matches_direct_query(): void
+    public function test_getDisappearedRoomBreakdown_members_match_lost(): void
     {
-        $expected = $this->queryInt(
-            'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 24 HOUR'
-        );
-        $actual = $this->repository->getDeletedRoomCountSince('24 hour');
+        $disappeared = $this->repository->getDisappearedRoomBreakdown('-1 month');
+        $trend = $this->repository->getMemberTrendBreakdown('-1 month');
 
-        $this->assertSame($expected, $actual);
-    }
+        $totalDisappearedMembers = $disappeared['closed_members'] + $disappeared['delisted_members'];
 
-    /**
-     * getDeletedRoomCountSince('7 day') が直近1週間以内に削除されたルーム数と一致することを検証
-     */
-    public function test_getDeletedRoomCountSince_weekly_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 7 DAY'
-        );
-        $actual = $this->repository->getDeletedRoomCountSince('7 day');
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * getDeletedRoomCountSince('1 month') が直近1ヶ月以内に削除されたルーム数と一致することを検証
-     */
-    public function test_getDeletedRoomCountSince_monthly_matches_direct_query(): void
-    {
-        $expected = $this->queryInt(
-            'SELECT COUNT(*) FROM open_chat_deleted WHERE deleted_at >= NOW() - INTERVAL 1 MONTH'
-        );
-        $actual = $this->repository->getDeletedRoomCountSince('1 month');
-
-        $this->assertSame($expected, $actual);
-    }
-
-    /**
-     * 削除済みルーム数の期間別件数が整合していることを検証
-     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 の順で件数が増えること
-     */
-    public function test_getDeletedRoomCountSince_ordering(): void
-    {
-        $monthly = $this->repository->getDeletedRoomCountSince('1 month');
-        $hourly = $this->repository->getDeletedRoomCountSince('1 hour');
-        $daily = $this->repository->getDeletedRoomCountSince('24 hour');
-        $weekly = $this->repository->getDeletedRoomCountSince('7 day');
-
-        $this->assertLessThanOrEqual($monthly, $weekly);
-        $this->assertLessThanOrEqual($weekly, $daily);
-        $this->assertLessThanOrEqual($daily, $hourly);
+        $this->assertSame(-$trend['lost'], $totalDisappearedMembers, '消滅ルームのメンバー合計がlostと一致すること');
     }
 
     /**
@@ -269,32 +236,21 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getDelistedStats() が正しい構造の配列を返すことを検証
-     */
-    public function test_getDelistedStats_returns_correct_structure(): void
-    {
-        $result = $this->repository->getDelistedStats('-1 day');
-
-        $this->assertArrayHasKey('rooms', $result);
-        $this->assertArrayHasKey('members', $result);
-        $this->assertIsInt($result['rooms']);
-        $this->assertIsInt($result['members']);
-        $this->assertGreaterThanOrEqual(0, $result['rooms']);
-        $this->assertGreaterThanOrEqual(0, $result['members']);
-    }
-
-    /**
-     * getDelistedStats() の期間別件数が整合していることを検証
+     * getDisappearedRoomBreakdown() の期間別件数が整合していることを検証
      * 1日 <= 1週間 <= 1ヶ月 の順で件数が増えること
      */
-    public function test_getDelistedStats_ordering(): void
+    public function test_getDisappearedRoomBreakdown_ordering(): void
     {
-        $daily = $this->repository->getDelistedStats('-1 day');
-        $weekly = $this->repository->getDelistedStats('-7 day');
-        $monthly = $this->repository->getDelistedStats('-1 month');
+        $daily = $this->repository->getDisappearedRoomBreakdown('-1 day');
+        $weekly = $this->repository->getDisappearedRoomBreakdown('-7 day');
+        $monthly = $this->repository->getDisappearedRoomBreakdown('-1 month');
 
-        $this->assertLessThanOrEqual($monthly['rooms'], $weekly['rooms']);
-        $this->assertLessThanOrEqual($weekly['rooms'], $daily['rooms']);
+        $dailyTotal = $daily['closed_rooms'] + $daily['delisted_rooms'];
+        $weeklyTotal = $weekly['closed_rooms'] + $weekly['delisted_rooms'];
+        $monthlyTotal = $monthly['closed_rooms'] + $monthly['delisted_rooms'];
+
+        $this->assertLessThanOrEqual($monthlyTotal, $weeklyTotal);
+        $this->assertLessThanOrEqual($weeklyTotal, $dailyTotal);
     }
 
     /**

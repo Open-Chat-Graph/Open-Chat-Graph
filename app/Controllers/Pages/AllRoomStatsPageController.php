@@ -35,13 +35,11 @@ class AllRoomStatsPageController
 
         $newRoomsMonthly = $repository->getNewRoomCountSince('1 month');
 
-        $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 month');
-
         $categoryStats = $repository->getCategoryStatsWithTrend();
 
         $memberTrendBreakdown = $repository->getMemberTrendBreakdown('-1 month');
 
-        $delistedMonthly = $repository->getDelistedStats('-1 month');
+        $disappearedBreakdown = $repository->getDisappearedRoomBreakdown('-1 month');
 
         $memberDistribution = $repository->getMemberDistribution();
 
@@ -60,10 +58,9 @@ class AllRoomStatsPageController
             'trackingStartDate',
             'overallMedian',
             'newRoomsMonthly',
-            'deletedRoomsMonthly',
             'categoryStats',
             'memberTrendBreakdown',
-            'delistedMonthly',
+            'disappearedBreakdown',
             'memberDistribution',
         ));
     }

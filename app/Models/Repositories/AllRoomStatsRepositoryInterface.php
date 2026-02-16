@@ -29,13 +29,6 @@ interface AllRoomStatsRepositoryInterface
     public function getNewRoomCountSince(string $interval): int;
 
     /**
-     * 指定期間内に閉鎖されたルーム数を取得
-     *
-     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
-     */
-    public function getDeletedRoomCountSince(string $interval): int;
-
-    /**
      * メンバー増減の内訳を4分類で取得
      *
      * - increased: 現存ルームのうち増加したルームの合計（>= 0）
@@ -51,14 +44,16 @@ interface AllRoomStatsRepositoryInterface
     public function getMemberTrendBreakdown(string $modifier): array;
 
     /**
-     * 指定期間内にオプチャグラフから掲載終了となったルーム数と合計メンバー数を取得（SQLite sqlapi.db参照）
+     * 消滅ルーム（過去にあるが今日にない）を閉鎖/掲載終了に分割して取得
      *
-     * 過去日にdaily_member_statisticsがあるが今日にはないルーム = 掲載終了
+     * SQLiteのdaily_member_statisticsとopen_chat_deletedを使い、
+     * 消滅ルーム全体を「閉鎖（open_chat_deletedに存在）」と「掲載終了（存在しない）」に分割する。
+     * ルーム数と人数が同じ母集団から算出されるため、常に整合する。
      *
-     * @param string $modifier SQLite date modifier形式（例: '-1 day', '-7 day', '-1 month'）
-     * @return array{rooms: int, members: int}
+     * @param string $modifier SQLite date modifier形式（例: '-1 month'）
+     * @return array{closed_rooms: int, closed_members: int, delisted_rooms: int, delisted_members: int}
      */
-    public function getDelistedStats(string $modifier): array;
+    public function getDisappearedRoomBreakdown(string $modifier): array;
 
     /**
      * 参加者数の分布を8段階の人数帯で取得（MySQL open_chat テーブルから）
