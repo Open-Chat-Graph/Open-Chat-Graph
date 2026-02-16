@@ -78,28 +78,28 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600',
                         <div class="flex items-center justify-between">
                             <span class="text-xs sm:text-sm text-gray-600">参加者数の純増数</span>
                             <span
-                                class="text-sm sm:text-base font-bold <?php echo trendColorClass($netMemberChange) ?>"><?php echo ($netMemberChange >= 0 ? '+' : '') . number_format($netMemberChange) ?></span>
+                                class="text-sm sm:text-base font-bold <?php echo trendColorClass($netMemberChange) ?>"><?php echo ($netMemberChange >= 0 ? '+' : '') . number_format($netMemberChange) ?>人</span>
                         </div>
                         <div class="pl-4 space-y-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">既存ルームの増加</span>
                                 <span
-                                    class="text-xs font-semibold text-emerald-600">+<?php echo number_format($b['increased']) ?></span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400">新規ルーム分</span>
-                                <span
-                                    class="text-xs font-semibold text-emerald-600">+<?php echo number_format($b['gained']) ?></span>
+                                    class="text-xs font-semibold text-emerald-600">+<?php echo number_format($b['increased']) ?>人</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">既存ルームの減少</span>
                                 <span
-                                    class="text-xs font-semibold text-rose-600"><?php echo number_format($b['decreased']) ?></span>
+                                    class="text-xs font-semibold text-rose-600"><?php echo number_format($b['decreased']) ?>人</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400">消滅ルーム分</span>
+                                <span class="text-xs text-gray-400">新規ルーム分</span>
                                 <span
-                                    class="text-xs font-semibold text-rose-600"><?php echo number_format($b['lost']) ?></span>
+                                    class="text-xs font-semibold text-emerald-600">+<?php echo number_format($b['gained']) ?>人</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-400">削除されたルーム分</span>
+                                <span
+                                    class="text-xs font-semibold text-rose-600"><?php echo number_format($b['lost']) ?>人</span>
                             </div>
                         </div>
                         <div class="flex items-center justify-between border-t border-gray-100 pt-3">
@@ -111,18 +111,18 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600',
                         </div>
                         <div class="pl-4 space-y-1">
                             <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-400">LINE公式サイト掲載終了</span>
+                                <span
+                                    class="text-xs font-semibold text-gray-500"><?php echo number_format($d['delisted_rooms']) ?>部屋
+                                    <span
+                                        class="font-normal text-gray-400">(-<?php echo number_format($d['delisted_members']) ?>人)</span></span>
+                            </div>
+                            <div class="flex items-center justify-between">
                                 <span class="text-xs text-gray-400">閉鎖ルーム数</span>
                                 <span
                                     class="text-xs font-semibold text-gray-500"><?php echo number_format($d['closed_rooms']) ?>部屋
                                     <span
                                         class="font-normal text-gray-400">(-<?php echo number_format($d['closed_members']) ?>人)</span></span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span
-                                    class="text-xs font-semibold text-gray-500"><?php echo number_format($d['delisted_rooms']) ?>部屋
-                                    <span
-                                        class="font-normal text-gray-400">(-<?php echo number_format($d['delisted_members']) ?>人)</span></span>
-                                <span class="text-xs text-gray-400">LINE公式サイト掲載終了</span>
                             </div>
                         </div>
                     </div>
