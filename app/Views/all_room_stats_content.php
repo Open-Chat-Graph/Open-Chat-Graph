@@ -150,19 +150,19 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600',
                             <thead>
                                 <tr class="bg-slate-600">
                                     <th
-                                        class="py-2.5 sm:py-3 px-3 sm:px-4 text-left text-xs font-bold text-white tracking-wider">
+                                        class="py-2.5 sm:py-3 px-3 sm:px-4 text-left text-[10px] sm:text-xs font-bold text-white tracking-wider">
                                         カテゴリー</th>
                                     <th
-                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-xs font-bold text-white tracking-wider">
+                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-[10px] sm:text-xs font-bold text-white tracking-wider">
                                         ルーム数</th>
                                     <th
-                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-xs font-bold text-white tracking-wider">
+                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-[10px] sm:text-xs font-bold text-white tracking-wider">
                                         参加者数</th>
                                     <th
-                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-xs font-bold text-white tracking-wider leading-tight whitespace-nowrap">
+                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-center text-[10px] sm:text-xs font-bold text-white tracking-wider leading-tight whitespace-nowrap">
                                         参加者<br>中央値</th>
                                     <th
-                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-xs font-bold text-white tracking-wider whitespace-nowrap">
+                                        class="py-2.5 sm:py-3 px-2 sm:px-4 text-right text-[10px] sm:text-xs font-bold text-white tracking-wider whitespace-nowrap">
                                         1ヶ月増減</th>
                                 </tr>
                             </thead>
