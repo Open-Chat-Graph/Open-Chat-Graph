@@ -74,7 +74,7 @@ interface AllRoomStatsRepositoryInterface
      * SQLite: カテゴリー別 1ヶ月増減（openchat_master JOIN daily_member_statistics）
      * PHP側でマージして返す
      *
-     * @return array{ category: int, room_count: int, total_members: int, monthly_trend: int }[]
+     * @return array{ category: int, room_count: int, total_members: int, median: int, monthly_trend: int }[]
      */
     public function getCategoryStatsWithTrend(): array;
 }

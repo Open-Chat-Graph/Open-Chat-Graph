@@ -233,26 +233,35 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
     }
 
     /**
-     * カテゴリー別のルーム数・参加者数・1ヶ月増減を一括取得
+     * カテゴリー別のルーム数・参加者数・中央値・1ヶ月増減を一括取得
      *
-     * MySQL: カテゴリー別 room_count, total_members
+     * MySQL: カテゴリー別 room_count, total_members, median
      * SQLite: カテゴリー別 1ヶ月増減（openchat_master JOIN daily_member_statistics）
      * PHP側でマージして返す
      *
-     * @return array{ category: int, room_count: int, total_members: int, monthly_trend: int }[]
+     * @return array{ category: int, room_count: int, total_members: int, median: int, monthly_trend: int }[]
      */
     public function getCategoryStatsWithTrend(): array
     {
-        // MySQL: カテゴリー別 room_count, total_members
+        // MySQL: カテゴリー別 room_count, total_members, median
         $mysqlStats = DB::fetchAll(
-            "SELECT
-                category,
-                COUNT(*) AS room_count,
-                SUM(member) AS total_members
-            FROM open_chat
-            WHERE category IS NOT NULL
-            GROUP BY category
-            ORDER BY total_members DESC, category ASC"
+            "SELECT s.category, s.room_count, s.total_members, ROUND(AVG(m.member)) AS median
+            FROM (
+                SELECT category, COUNT(*) AS room_count, SUM(member) AS total_members
+                FROM open_chat
+                WHERE category IS NOT NULL
+                GROUP BY category
+            ) s
+            JOIN (
+                SELECT category, member,
+                    ROW_NUMBER() OVER (PARTITION BY category ORDER BY member) AS rn,
+                    COUNT(*) OVER (PARTITION BY category) AS total
+                FROM open_chat
+                WHERE category IS NOT NULL
+            ) m ON s.category = m.category
+                AND m.rn IN (FLOOR((m.total + 1) / 2), CEIL((m.total + 1) / 2))
+            GROUP BY s.category
+            ORDER BY s.total_members DESC, s.category ASC"
         );
 
         // SQLite: カテゴリー別 1ヶ月増減
@@ -286,6 +295,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             'category' => (int) $row['category'],
             'room_count' => (int) $row['room_count'],
             'total_members' => (int) $row['total_members'],
+            'median' => (int) $row['median'],
             'monthly_trend' => $trendByCategory[(int) $row['category']] ?? 0,
         ], $mysqlStats);
     }
