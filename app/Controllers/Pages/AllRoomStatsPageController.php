@@ -9,6 +9,11 @@ use App\Models\Repositories\DB;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
+/**
+ * 全体統計ページ (/labs/all-room-stats)
+ *
+ * MySQL + SQLiteから統計データを取得し、ビューに渡す
+ */
 class AllRoomStatsPageController
 {
     const Title = 'オープンチャット全体統計';
@@ -26,33 +31,17 @@ class AllRoomStatsPageController
         $totalRooms = $repository->getTotalRoomCount();
         $totalMembers = $repository->getTotalMemberCount();
         $trackingStartDate = $repository->getTrackingStartDate();
+        $overallMedian = $repository->getOverallMedian();
 
         $newRoomsMonthly = $repository->getNewRoomCountSince('1 month');
-        $newRoomsWeekly = $repository->getNewRoomCountSince('7 day');
-        $newRoomsDaily = $repository->getNewRoomCountSince('24 hour');
-        $newRoomsHourly = $repository->getNewRoomCountSince('1 hour');
 
-        $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 month');
-        $deletedRoomsWeekly = $repository->getDeletedRoomCountSince('7 day');
-        $deletedRoomsDaily = $repository->getDeletedRoomCountSince('24 hour');
-        $deletedRoomsHourly = $repository->getDeletedRoomCountSince('1 hour');
+        $categoryStats = $repository->getCategoryStatsWithTrend();
 
-        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 month');
-        $deletedMembersWeekly = $repository->getDeletedMemberCountSince('7 day');
-        $deletedMembersDaily = $repository->getDeletedMemberCountSince('24 hour');
-        $deletedMembersHourly = $repository->getDeletedMemberCountSince('1 hour');
+        $memberTrendBreakdown = $repository->getMemberTrendBreakdown('-1 month');
 
-        $categoryStats = $repository->getCategoryStats();
+        $disappearedBreakdown = $repository->getDisappearedRoomBreakdown('-1 month');
 
-        // メンバー増減（sqlapi.db daily_member_statistics、日単位）
-        $dailyTrend = $repository->getMemberTrend('-1 day');
-        $weeklyTrend = $repository->getMemberTrend('-7 day');
-        $monthlyTrend = $repository->getMemberTrend('-1 month');
-
-        // 掲載終了ルーム（sqlapi.db、日単位）
-        $delistedDaily = $repository->getDelistedStats('-1 day');
-        $delistedWeekly = $repository->getDelistedStats('-7 day');
-        $delistedMonthly = $repository->getDelistedStats('-1 month');
+        $memberDistribution = $repository->getMemberDistribution();
 
         $_css = ['site_header', 'site_footer', 'terms'];
         $_meta = meta()->setTitle(self::Title);
@@ -67,25 +56,12 @@ class AllRoomStatsPageController
             'totalRooms',
             'totalMembers',
             'trackingStartDate',
+            'overallMedian',
             'newRoomsMonthly',
-            'newRoomsWeekly',
-            'newRoomsDaily',
-            'newRoomsHourly',
-            'deletedRoomsMonthly',
-            'deletedRoomsWeekly',
-            'deletedRoomsDaily',
-            'deletedRoomsHourly',
-            'deletedMembersMonthly',
-            'deletedMembersWeekly',
-            'deletedMembersDaily',
-            'deletedMembersHourly',
             'categoryStats',
-            'dailyTrend',
-            'weeklyTrend',
-            'monthlyTrend',
-            'delistedDaily',
-            'delistedWeekly',
-            'delistedMonthly',
+            'memberTrendBreakdown',
+            'disappearedBreakdown',
+            'memberDistribution',
         ));
     }
 }
