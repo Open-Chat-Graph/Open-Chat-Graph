@@ -9,6 +9,11 @@ use App\Models\Repositories\DB;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
+/**
+ * 全体統計ページ (/labs/all-room-stats)
+ *
+ * MySQL + SQLiteから統計データを取得し、ビューに渡す
+ */
 class AllRoomStatsPageController
 {
     const Title = 'オープンチャット全体統計';
@@ -31,11 +36,10 @@ class AllRoomStatsPageController
         $newRoomsMonthly = $repository->getNewRoomCountSince('1 month');
 
         $deletedRoomsMonthly = $repository->getDeletedRoomCountSince('1 month');
-        $deletedMembersMonthly = $repository->getDeletedMemberCountSince('1 month');
 
-        $categoryStats = $repository->getCategoryStatsWithMedianAndTrend();
+        $categoryStats = $repository->getCategoryStatsWithTrend();
 
-        $monthlyTrend = $repository->getMemberTrend('-1 month');
+        $memberTrendBreakdown = $repository->getMemberTrendBreakdown('-1 month');
 
         $delistedMonthly = $repository->getDelistedStats('-1 month');
 
@@ -57,9 +61,8 @@ class AllRoomStatsPageController
             'overallMedian',
             'newRoomsMonthly',
             'deletedRoomsMonthly',
-            'deletedMembersMonthly',
             'categoryStats',
-            'monthlyTrend',
+            'memberTrendBreakdown',
             'delistedMonthly',
             'memberDistribution',
         ));

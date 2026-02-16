@@ -10,15 +10,21 @@ use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 {
     private const BAND_LABELS = [
-        1 => '1~50人',
-        2 => '51~100人',
-        3 => '101~200人',
-        4 => '201~500人',
-        5 => '501~1000人',
-        6 => '1001~3000人',
-        7 => '3001人以上',
+        1 => '1~10人',
+        2 => '11~20人',
+        3 => '21~50人',
+        4 => '51~100人',
+        5 => '101~200人',
+        6 => '201~500人',
+        7 => '501~1000人',
+        8 => '1001人以上',
     ];
 
+    // --- 基本統計 ---
+
+    /**
+     * 現在登録中の総ルーム数を取得
+     */
     public function getTotalRoomCount(): int
     {
         return (int) DB::execute(
@@ -26,6 +32,9 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
+    /**
+     * 現在登録中の全ルームの合計メンバー数を取得
+     */
     public function getTotalMemberCount(): int
     {
         return (int) DB::execute(
@@ -33,6 +42,9 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
+    /**
+     * 最も古いルームの登録日時を取得（データなしの場合はnull）
+     */
     public function getTrackingStartDate(): ?string
     {
         $result = DB::execute(
@@ -42,6 +54,13 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         return $result !== false ? (string) $result : null;
     }
 
+    // --- 期間別集計 ---
+
+    /**
+     * 指定期間内に新規登録されたルーム数を取得
+     *
+     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
+     */
     public function getNewRoomCountSince(string $interval): int
     {
         return (int) DB::execute(
@@ -49,6 +68,11 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
+    /**
+     * 指定期間内に閉鎖されたルーム数を取得
+     *
+     * @param string $interval MySQL INTERVAL形式（例: '1 hour', '7 day', '1 month'）
+     */
     public function getDeletedRoomCountSince(string $interval): int
     {
         return (int) DB::execute(
@@ -56,46 +80,83 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         )->fetchColumn();
     }
 
-    public function getMemberTrend(string $modifier): int
+    // --- 時系列比較 ---
+
+    /**
+     * メンバー増減の内訳を4分類で取得
+     *
+     * - increased: 現存ルームのうち増加したルームの合計（>= 0）
+     * - decreased: 現存ルームのうち減少したルームの合計（<= 0）
+     * - lost: 消滅ルーム（過去にあったが今日にない）の過去メンバー合計（<= 0）
+     * - gained: 新規ルーム（今日にあるが過去にない）の現在メンバー合計（>= 0）
+     *
+     * 純増数 = increased + decreased + lost + gained
+     *
+     * @param string $modifier SQLite date modifier形式（例: '-1 month'）
+     * @return array{increased: int, decreased: int, lost: int, gained: int}
+     */
+    public function getMemberTrendBreakdown(string $modifier): array
     {
         $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
 
         SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
 
-        $totalNow = (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = :today",
-            ['today' => $today]
+        // 現存ルーム（両方の日付にデータあり）の増減
+        $existing = SQLiteOcgraphSqlapi::execute(
+            "SELECT
+                COALESCE(SUM(CASE WHEN diff > 0 THEN diff END), 0) AS increased,
+                COALESCE(SUM(CASE WHEN diff < 0 THEN diff END), 0) AS decreased
+            FROM (
+                SELECT today.member_count - past.member_count AS diff
+                FROM daily_member_statistics today
+                JOIN daily_member_statistics past
+                    ON today.openchat_id = past.openchat_id
+                WHERE today.statistics_date = :today
+                  AND past.statistics_date = date(:today2, :modifier)
+            ) sub",
+            ['today' => $today, 'today2' => $today, 'modifier' => $modifier]
+        )->fetch(\PDO::FETCH_ASSOC);
+
+        // 消滅ルーム（過去にあるが今日にない）の過去メンバー合計
+        $lost = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT -COALESCE(SUM(member_count), 0)
+            FROM daily_member_statistics
+            WHERE statistics_date = date(:today, :modifier)
+              AND openchat_id NOT IN (
+                SELECT openchat_id FROM daily_member_statistics WHERE statistics_date = :today2
+              )",
+            ['today' => $today, 'modifier' => $modifier, 'today2' => $today]
         );
 
-        $totalPast = (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(member_count), 0) FROM daily_member_statistics WHERE statistics_date = date(:today, :modifier)",
-            ['today' => $today, 'modifier' => $modifier]
+        // 新規ルーム（今日にあるが過去にない）の現在メンバー合計
+        $gained = (int) SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT COALESCE(SUM(member_count), 0)
+            FROM daily_member_statistics
+            WHERE statistics_date = :today
+              AND openchat_id NOT IN (
+                SELECT openchat_id FROM daily_member_statistics WHERE statistics_date = date(:today2, :modifier)
+              )",
+            ['today' => $today, 'today2' => $today, 'modifier' => $modifier]
         );
 
         SQLiteOcgraphSqlapi::$pdo = null;
 
-        return $totalNow - $totalPast;
+        return [
+            'increased' => (int) ($existing['increased'] ?? 0),
+            'decreased' => (int) ($existing['decreased'] ?? 0),
+            'lost' => $lost,
+            'gained' => $gained,
+        ];
     }
 
-    public function getDeletedMemberCountSince(string $interval): int
-    {
-        $cutoff = date('Y-m-d H:i:s', strtotime("-{$interval}"));
-
-        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
-
-        $result = (int) SQLiteOcgraphSqlapi::fetchColumn(
-            "SELECT COALESCE(SUM(om.current_member_count), 0)
-            FROM open_chat_deleted ocd
-            JOIN openchat_master om ON ocd.id = om.openchat_id
-            WHERE ocd.deleted_at >= :cutoff",
-            ['cutoff' => $cutoff]
-        );
-
-        SQLiteOcgraphSqlapi::$pdo = null;
-
-        return $result;
-    }
-
+    /**
+     * 指定期間内にオプチャグラフから掲載終了となったルーム数と合計メンバー数を取得（SQLite sqlapi.db参照）
+     *
+     * 過去日にdaily_member_statisticsがあるが今日にはないルーム = 掲載終了
+     *
+     * @param string $modifier SQLite date modifier形式（例: '-1 day', '-7 day', '-1 month'）
+     * @return array{rooms: int, members: int}
+     */
     public function getDelistedStats(string $modifier): array
     {
         $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
@@ -127,7 +188,11 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         ];
     }
 
+    // --- 分布・カテゴリー ---
+
     /**
+     * 参加者数の分布を8段階の人数帯で取得（MySQL open_chat テーブルから）
+     *
      * @return array{ band_id: int, band_label: string, room_count: int, total_members: int }[]
      */
     public function getMemberDistribution(): array
@@ -135,13 +200,14 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         $rows = DB::fetchAll(
             "SELECT
                 CASE
-                    WHEN member <= 50 THEN 1
-                    WHEN member <= 100 THEN 2
-                    WHEN member <= 200 THEN 3
-                    WHEN member <= 500 THEN 4
-                    WHEN member <= 1000 THEN 5
-                    WHEN member <= 3000 THEN 6
-                    ELSE 7
+                    WHEN member <= 10 THEN 1
+                    WHEN member <= 20 THEN 2
+                    WHEN member <= 50 THEN 3
+                    WHEN member <= 100 THEN 4
+                    WHEN member <= 200 THEN 5
+                    WHEN member <= 500 THEN 6
+                    WHEN member <= 1000 THEN 7
+                    ELSE 8
                 END AS band_id,
                 COUNT(*) AS room_count,
                 SUM(member) AS total_members
@@ -158,6 +224,9 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         ], $rows);
     }
 
+    /**
+     * 全ルームの参加者数の中央値を取得（MySQL open_chat テーブルから）
+     */
     public function getOverallMedian(): int
     {
         return (int) DB::fetchColumn(
@@ -173,27 +242,24 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
     }
 
     /**
-     * @return array{ category: int, room_count: int, total_members: int, median: int, monthly_trend: int }[]
+     * カテゴリー別のルーム数・参加者数・1ヶ月増減を一括取得
+     *
+     * MySQL: カテゴリー別 room_count, total_members
+     * SQLite: カテゴリー別 1ヶ月増減（openchat_master JOIN daily_member_statistics）
+     * PHP側でマージして返す
+     *
+     * @return array{ category: int, room_count: int, total_members: int, monthly_trend: int }[]
      */
-    public function getCategoryStatsWithMedianAndTrend(): array
+    public function getCategoryStatsWithTrend(): array
     {
-        // MySQL: カテゴリー別 room_count, total_members, median
+        // MySQL: カテゴリー別 room_count, total_members
         $mysqlStats = DB::fetchAll(
-            "WITH ranked AS (
-                SELECT
-                    category,
-                    member,
-                    ROW_NUMBER() OVER (PARTITION BY category ORDER BY member) AS rn,
-                    COUNT(*) OVER (PARTITION BY category) AS cnt
-                FROM open_chat
-                WHERE category IS NOT NULL
-            )
-            SELECT
+            "SELECT
                 category,
-                MAX(cnt) AS room_count,
-                SUM(member) AS total_members,
-                ROUND(AVG(CASE WHEN rn IN (FLOOR((cnt + 1) / 2), CEIL((cnt + 1) / 2)) THEN member END)) AS median
-            FROM ranked
+                COUNT(*) AS room_count,
+                SUM(member) AS total_members
+            FROM open_chat
+            WHERE category IS NOT NULL
             GROUP BY category
             ORDER BY total_members DESC, category ASC"
         );
@@ -203,6 +269,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
 
         SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
 
+        // SQLiteのnamed parameterは同一名を複数回バインドできないため、today2~4を別名で渡す
         $trendRows = SQLiteOcgraphSqlapi::fetchAll(
             "SELECT
                 om.category_id,
@@ -228,7 +295,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             'category' => (int) $row['category'],
             'room_count' => (int) $row['room_count'],
             'total_members' => (int) $row['total_members'],
-            'median' => (int) $row['median'],
             'monthly_trend' => $trendByCategory[(int) $row['category']] ?? 0,
         ], $mysqlStats);
     }

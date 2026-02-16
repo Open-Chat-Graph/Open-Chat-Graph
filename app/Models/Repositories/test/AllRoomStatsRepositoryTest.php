@@ -211,12 +211,12 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getCategoryStatsWithMedianAndTrend() の返り値構造を検証
-     * 各行に category, room_count, total_members, median, monthly_trend が含まれること
+     * getCategoryStatsWithTrend() の返り値構造を検証
+     * 各行に category, room_count, total_members, monthly_trend が含まれること
      */
-    public function test_getCategoryStatsWithMedianAndTrend_returns_correct_structure(): void
+    public function test_getCategoryStatsWithTrend_returns_correct_structure(): void
     {
-        $stats = $this->repository->getCategoryStatsWithMedianAndTrend();
+        $stats = $this->repository->getCategoryStatsWithTrend();
 
         $this->assertNotEmpty($stats, 'カテゴリー統計が空でないこと');
 
@@ -224,30 +224,27 @@ class AllRoomStatsRepositoryTest extends TestCase
             $this->assertArrayHasKey('category', $row, "category キーが存在すること (index: {$i})");
             $this->assertArrayHasKey('room_count', $row, "room_count キーが存在すること (index: {$i})");
             $this->assertArrayHasKey('total_members', $row, "total_members キーが存在すること (index: {$i})");
-            $this->assertArrayHasKey('median', $row, "median キーが存在すること (index: {$i})");
             $this->assertArrayHasKey('monthly_trend', $row, "monthly_trend キーが存在すること (index: {$i})");
             $this->assertIsInt($row['category']);
             $this->assertIsInt($row['room_count']);
             $this->assertIsInt($row['total_members']);
-            $this->assertIsInt($row['median']);
             $this->assertIsInt($row['monthly_trend']);
             $this->assertGreaterThan(0, $row['room_count']);
             $this->assertGreaterThan(0, $row['total_members']);
-            $this->assertGreaterThan(0, $row['median']);
         }
     }
 
     /**
-     * getCategoryStatsWithMedianAndTrend() のルーム数・参加者数がMySQL直接クエリと一致することを検証
+     * getCategoryStatsWithTrend() のルーム数・参加者数がMySQL直接クエリと一致することを検証
      */
-    public function test_getCategoryStatsWithMedianAndTrend_matches_basic_stats(): void
+    public function test_getCategoryStatsWithTrend_matches_basic_stats(): void
     {
         $expected = DB::$pdo->query(
             'SELECT category, COUNT(*) AS room_count, SUM(member) AS total_members
              FROM open_chat WHERE category IS NOT NULL GROUP BY category ORDER BY total_members DESC, category ASC'
         )->fetchAll(\PDO::FETCH_ASSOC);
 
-        $actual = $this->repository->getCategoryStatsWithMedianAndTrend();
+        $actual = $this->repository->getCategoryStatsWithTrend();
 
         $this->assertSame(count($expected), count($actual), 'カテゴリー数が一致すること');
 
@@ -262,43 +259,13 @@ class AllRoomStatsRepositoryTest extends TestCase
      * カテゴリー別ルーム数の合計が総ルーム数を超えないことを検証
      * （カテゴリーがNULLのルームが存在する可能性があるため、合計 <= 総数）
      */
-    public function test_getCategoryStatsWithMedianAndTrend_room_count_sum_does_not_exceed_total(): void
+    public function test_getCategoryStatsWithTrend_room_count_sum_does_not_exceed_total(): void
     {
-        $stats = $this->repository->getCategoryStatsWithMedianAndTrend();
+        $stats = $this->repository->getCategoryStatsWithTrend();
         $totalFromCategories = array_sum(array_column($stats, 'room_count'));
         $totalRooms = $this->repository->getTotalRoomCount();
 
         $this->assertLessThanOrEqual($totalRooms, $totalFromCategories, 'カテゴリー別合計は総ルーム数以下であること');
-    }
-
-    /**
-     * getMemberTrend() が整数を返すことを検証
-     */
-    public function test_getMemberTrend_returns_int(): void
-    {
-        $daily = $this->repository->getMemberTrend('-1 day');
-        $weekly = $this->repository->getMemberTrend('-7 day');
-        $monthly = $this->repository->getMemberTrend('-1 month');
-
-        $this->assertIsInt($daily);
-        $this->assertIsInt($weekly);
-        $this->assertIsInt($monthly);
-    }
-
-    /**
-     * getDeletedMemberCountSince() の期間別件数が整合していることを検証
-     * 1時間 <= 24時間 <= 1週間 <= 1ヶ月 の順でメンバー数が増えること
-     */
-    public function test_getDeletedMemberCountSince_ordering(): void
-    {
-        $monthly = $this->repository->getDeletedMemberCountSince('1 month');
-        $weekly = $this->repository->getDeletedMemberCountSince('7 day');
-        $daily = $this->repository->getDeletedMemberCountSince('24 hour');
-        $hourly = $this->repository->getDeletedMemberCountSince('1 hour');
-
-        $this->assertLessThanOrEqual($monthly, $weekly);
-        $this->assertLessThanOrEqual($weekly, $daily);
-        $this->assertLessThanOrEqual($daily, $hourly);
     }
 
     /**
@@ -331,14 +298,14 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getMemberDistribution() が7つの人数帯を返すことを検証
+     * getMemberDistribution() が8つの人数帯を返すことを検証
      */
-    public function test_getMemberDistribution_returns_seven_bands(): void
+    public function test_getMemberDistribution_returns_eight_bands(): void
     {
         $distribution = $this->repository->getMemberDistribution();
 
         $this->assertNotEmpty($distribution, '分布データが空でないこと');
-        $this->assertLessThanOrEqual(7, count($distribution), '最大7バンドであること');
+        $this->assertLessThanOrEqual(8, count($distribution), '最大8バンドであること');
 
         foreach ($distribution as $band) {
             $this->assertArrayHasKey('band_id', $band);
@@ -350,9 +317,22 @@ class AllRoomStatsRepositoryTest extends TestCase
             $this->assertIsInt($band['room_count']);
             $this->assertIsInt($band['total_members']);
             $this->assertGreaterThanOrEqual(1, $band['band_id']);
-            $this->assertLessThanOrEqual(7, $band['band_id']);
+            $this->assertLessThanOrEqual(8, $band['band_id']);
             $this->assertGreaterThan(0, $band['room_count']);
             $this->assertGreaterThan(0, $band['total_members']);
+        }
+    }
+
+    /**
+     * getMemberDistribution() のband_idが1から連番であることを検証
+     */
+    public function test_getMemberDistribution_band_ids_are_sequential(): void
+    {
+        $distribution = $this->repository->getMemberDistribution();
+        $bandIds = array_column($distribution, 'band_id');
+
+        for ($i = 0; $i < count($bandIds); $i++) {
+            $this->assertSame($i + 1, $bandIds[$i], "band_idが連番であること (index: {$i})");
         }
     }
 
@@ -402,5 +382,40 @@ class AllRoomStatsRepositoryTest extends TestCase
 
         $this->assertGreaterThanOrEqual(1, $median);
         $this->assertLessThanOrEqual($maxMember, $median);
+    }
+
+    /**
+     * getOverallMedian() が平均値以下であることを検証
+     * メンバー数は右偏分布（少数の大規模ルームが平均を引き上げる）のため、中央値 <= 平均値
+     */
+    public function test_getOverallMedian_less_than_or_equal_to_average(): void
+    {
+        $median = $this->repository->getOverallMedian();
+        $totalMembers = $this->repository->getTotalMemberCount();
+        $totalRooms = $this->repository->getTotalRoomCount();
+        $average = (int) round($totalMembers / $totalRooms);
+
+        $this->assertLessThanOrEqual($average, $median, '右偏分布では中央値は平均値以下であること');
+    }
+
+    /**
+     * getMemberTrendBreakdown() が正しい構造の配列を返すことを検証
+     */
+    public function test_getMemberTrendBreakdown_returns_correct_structure(): void
+    {
+        $result = $this->repository->getMemberTrendBreakdown('-1 month');
+
+        $this->assertArrayHasKey('increased', $result);
+        $this->assertArrayHasKey('decreased', $result);
+        $this->assertArrayHasKey('lost', $result);
+        $this->assertArrayHasKey('gained', $result);
+        $this->assertIsInt($result['increased']);
+        $this->assertIsInt($result['decreased']);
+        $this->assertIsInt($result['lost']);
+        $this->assertIsInt($result['gained']);
+        $this->assertGreaterThanOrEqual(0, $result['increased'], '増加合計は0以上であること');
+        $this->assertLessThanOrEqual(0, $result['decreased'], '減少合計は0以下であること');
+        $this->assertLessThanOrEqual(0, $result['lost'], '消滅ルーム分は0以下であること');
+        $this->assertGreaterThanOrEqual(0, $result['gained'], '新規ルーム分は0以上であること');
     }
 }
