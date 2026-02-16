@@ -1,6 +1,0 @@
-{
-    "phpunit.command": "${workspaceFolder}/.vscode/phpunit-docker.sh",
-    "phpunit.paths": {
-        "${workspaceFolder}/": ""
-    }
-}
