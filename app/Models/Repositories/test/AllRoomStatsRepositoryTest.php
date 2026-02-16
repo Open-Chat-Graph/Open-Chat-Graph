@@ -10,6 +10,7 @@
  * - 各統計クエリの結果を直接SQLの結果と照合して正しさを検証
  * - カテゴリー別統計の構造・整合性を検証
  * - 削除済みルーム数の期間別フィルタリングの正しさを検証
+ * - 参加者分布・中央値の構造検証
  */
 
 declare(strict_types=1);
@@ -210,24 +211,50 @@ class AllRoomStatsRepositoryTest extends TestCase
     }
 
     /**
-     * getCategoryStats() の返り値が直接SQLの結果と完全一致することを検証
-     * カテゴリーID・ルーム数・参加者数を行ごとに照合する
+     * getCategoryStatsWithMedianAndTrend() の返り値構造を検証
+     * 各行に category, room_count, total_members, median, monthly_trend が含まれること
      */
-    public function test_getCategoryStats_matches_direct_query(): void
+    public function test_getCategoryStatsWithMedianAndTrend_returns_correct_structure(): void
+    {
+        $stats = $this->repository->getCategoryStatsWithMedianAndTrend();
+
+        $this->assertNotEmpty($stats, 'カテゴリー統計が空でないこと');
+
+        foreach ($stats as $i => $row) {
+            $this->assertArrayHasKey('category', $row, "category キーが存在すること (index: {$i})");
+            $this->assertArrayHasKey('room_count', $row, "room_count キーが存在すること (index: {$i})");
+            $this->assertArrayHasKey('total_members', $row, "total_members キーが存在すること (index: {$i})");
+            $this->assertArrayHasKey('median', $row, "median キーが存在すること (index: {$i})");
+            $this->assertArrayHasKey('monthly_trend', $row, "monthly_trend キーが存在すること (index: {$i})");
+            $this->assertIsInt($row['category']);
+            $this->assertIsInt($row['room_count']);
+            $this->assertIsInt($row['total_members']);
+            $this->assertIsInt($row['median']);
+            $this->assertIsInt($row['monthly_trend']);
+            $this->assertGreaterThan(0, $row['room_count']);
+            $this->assertGreaterThan(0, $row['total_members']);
+            $this->assertGreaterThan(0, $row['median']);
+        }
+    }
+
+    /**
+     * getCategoryStatsWithMedianAndTrend() のルーム数・参加者数がMySQL直接クエリと一致することを検証
+     */
+    public function test_getCategoryStatsWithMedianAndTrend_matches_basic_stats(): void
     {
         $expected = DB::$pdo->query(
             'SELECT category, COUNT(*) AS room_count, SUM(member) AS total_members
-             FROM open_chat WHERE category IS NOT NULL GROUP BY category ORDER BY room_count DESC, category ASC'
+             FROM open_chat WHERE category IS NOT NULL GROUP BY category ORDER BY total_members DESC, category ASC'
         )->fetchAll(\PDO::FETCH_ASSOC);
 
-        $actual = $this->repository->getCategoryStats();
+        $actual = $this->repository->getCategoryStatsWithMedianAndTrend();
 
         $this->assertSame(count($expected), count($actual), 'カテゴリー数が一致すること');
 
         foreach ($expected as $i => $row) {
-            $this->assertSame($row['category'], $actual[$i]['category'], "カテゴリーIDが一致すること (index: {$i})");
-            $this->assertSame($row['room_count'], $actual[$i]['room_count'], "ルーム数が一致すること (category: {$row['category']})");
-            $this->assertSame($row['total_members'], $actual[$i]['total_members'], "参加者数が一致すること (category: {$row['category']})");
+            $this->assertSame((int) $row['category'], $actual[$i]['category'], "カテゴリーIDが一致すること (index: {$i})");
+            $this->assertSame((int) $row['room_count'], $actual[$i]['room_count'], "ルーム数が一致すること (category: {$row['category']})");
+            $this->assertSame((int) $row['total_members'], $actual[$i]['total_members'], "参加者数が一致すること (category: {$row['category']})");
         }
     }
 
@@ -235,9 +262,9 @@ class AllRoomStatsRepositoryTest extends TestCase
      * カテゴリー別ルーム数の合計が総ルーム数を超えないことを検証
      * （カテゴリーがNULLのルームが存在する可能性があるため、合計 <= 総数）
      */
-    public function test_getCategoryStats_room_count_sum_does_not_exceed_total(): void
+    public function test_getCategoryStatsWithMedianAndTrend_room_count_sum_does_not_exceed_total(): void
     {
-        $stats = $this->repository->getCategoryStats();
+        $stats = $this->repository->getCategoryStatsWithMedianAndTrend();
         $totalFromCategories = array_sum(array_column($stats, 'room_count'));
         $totalRooms = $this->repository->getTotalRoomCount();
 
@@ -301,5 +328,79 @@ class AllRoomStatsRepositoryTest extends TestCase
 
         $this->assertLessThanOrEqual($monthly['rooms'], $weekly['rooms']);
         $this->assertLessThanOrEqual($weekly['rooms'], $daily['rooms']);
+    }
+
+    /**
+     * getMemberDistribution() が7つの人数帯を返すことを検証
+     */
+    public function test_getMemberDistribution_returns_seven_bands(): void
+    {
+        $distribution = $this->repository->getMemberDistribution();
+
+        $this->assertNotEmpty($distribution, '分布データが空でないこと');
+        $this->assertLessThanOrEqual(7, count($distribution), '最大7バンドであること');
+
+        foreach ($distribution as $band) {
+            $this->assertArrayHasKey('band_id', $band);
+            $this->assertArrayHasKey('band_label', $band);
+            $this->assertArrayHasKey('room_count', $band);
+            $this->assertArrayHasKey('total_members', $band);
+            $this->assertIsInt($band['band_id']);
+            $this->assertIsString($band['band_label']);
+            $this->assertIsInt($band['room_count']);
+            $this->assertIsInt($band['total_members']);
+            $this->assertGreaterThanOrEqual(1, $band['band_id']);
+            $this->assertLessThanOrEqual(7, $band['band_id']);
+            $this->assertGreaterThan(0, $band['room_count']);
+            $this->assertGreaterThan(0, $band['total_members']);
+        }
+    }
+
+    /**
+     * getMemberDistribution() のルーム数合計が総ルーム数と一致することを検証
+     */
+    public function test_getMemberDistribution_room_count_matches_total(): void
+    {
+        $distribution = $this->repository->getMemberDistribution();
+        $totalFromBands = array_sum(array_column($distribution, 'room_count'));
+        $totalRooms = $this->repository->getTotalRoomCount();
+
+        $this->assertSame($totalRooms, $totalFromBands, '分布のルーム数合計が総ルーム数と一致すること');
+    }
+
+    /**
+     * getMemberDistribution() の参加者数合計が総参加者数と一致することを検証
+     */
+    public function test_getMemberDistribution_member_count_matches_total(): void
+    {
+        $distribution = $this->repository->getMemberDistribution();
+        $totalFromBands = array_sum(array_column($distribution, 'total_members'));
+        $totalMembers = $this->repository->getTotalMemberCount();
+
+        $this->assertSame($totalMembers, $totalFromBands, '分布の参加者数合計が総参加者数と一致すること');
+    }
+
+    /**
+     * getOverallMedian() が正の整数を返すことを検証
+     */
+    public function test_getOverallMedian_returns_positive_int(): void
+    {
+        $median = $this->repository->getOverallMedian();
+
+        $this->assertIsInt($median);
+        $this->assertGreaterThan(0, $median, '中央値は正の整数であること');
+    }
+
+    /**
+     * getOverallMedian() が合理的な範囲内であることを検証
+     * 中央値は1以上かつ最大メンバー数以下であること
+     */
+    public function test_getOverallMedian_within_range(): void
+    {
+        $median = $this->repository->getOverallMedian();
+        $maxMember = $this->queryInt('SELECT MAX(member) FROM open_chat');
+
+        $this->assertGreaterThanOrEqual(1, $median);
+        $this->assertLessThanOrEqual($maxMember, $median);
     }
 }

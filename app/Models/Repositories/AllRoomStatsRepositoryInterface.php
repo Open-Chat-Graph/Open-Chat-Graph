@@ -36,13 +36,6 @@ interface AllRoomStatsRepositoryInterface
     public function getDeletedRoomCountSince(string $interval): int;
 
     /**
-     * カテゴリー別のルーム数・参加者数を取得
-     *
-     * @return array{ category: int, room_count: int, total_members: int }[]
-     */
-    public function getCategoryStats(): array;
-
-    /**
      * 全ルーム合計メンバー数の増減数を取得（SQLite sqlapi.db daily_member_statistics から）
      *
      * 計算式: SUM(member WHERE date=today) - SUM(member WHERE date=past)
@@ -69,4 +62,27 @@ interface AllRoomStatsRepositoryInterface
      * @return array{rooms: int, members: int}
      */
     public function getDelistedStats(string $modifier): array;
+
+    /**
+     * 参加者数の分布を7段階の人数帯で取得（MySQL open_chat テーブルから）
+     *
+     * @return array{ band_id: int, band_label: string, room_count: int, total_members: int }[]
+     */
+    public function getMemberDistribution(): array;
+
+    /**
+     * 全ルームの参加者数の中央値を取得（MySQL open_chat テーブルから）
+     */
+    public function getOverallMedian(): int;
+
+    /**
+     * カテゴリー別のルーム数・参加者数・中央値・1ヶ月増減を一括取得
+     *
+     * MySQL: カテゴリー別 room_count, total_members, median
+     * SQLite: カテゴリー別 1ヶ月増減（openchat_master JOIN daily_member_statistics）
+     * PHP側でマージして返す
+     *
+     * @return array{ category: int, room_count: int, total_members: int, median: int, monthly_trend: int }[]
+     */
+    public function getCategoryStatsWithMedianAndTrend(): array;
 }
