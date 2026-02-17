@@ -2,7 +2,13 @@ import { Box, Chip, Tab, Tabs } from '@mui/material'
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import { signal } from '@preact/signals'
-import { chartModeSignal, handleChangeChartMode, handleChangeLimit, hasOhlcData, limitSignal } from '../signal/chartState'
+import {
+  chartModeSignal,
+  handleChangeChartMode,
+  handleChangeLimit,
+  hasOhlcData,
+  limitSignal,
+} from '../signal/chartState'
 import { t } from '../util/translation'
 
 export const toggleDisplay24h = signal(true)
@@ -27,7 +33,7 @@ function CandlestickToggle() {
       icon={isCandlestick ? <ShowChartIcon /> : <CandlestickChartIcon />}
       label={isCandlestick ? t('折れ線グラフ') : t('ローソク足')}
       onClick={handleToggle}
-      size='small'
+      size="small"
       sx={{
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'default' : 'pointer',
@@ -50,10 +56,12 @@ export default function ChartLimitBtns() {
     <>
       <Box
         sx={{ borderBottom: 1, borderColor: '#efefef', width: '100%' }}
-        className='limit-btns category-tab'
+        className="limit-btns category-tab"
       >
-        <Tabs onChange={handleChange} variant='fullWidth' value={limitSignal.value}>
-          {toggleDisplay24h.value && chartModeSignal.value !== 'candlestick' && <Tab value={25} label={t('最新24時間')} />}
+        <Tabs onChange={handleChange} variant="fullWidth" value={limitSignal.value}>
+          {toggleDisplay24h.value && chartModeSignal.value !== 'candlestick' && (
+            <Tab value={25} label={t('最新24時間')} />
+          )}
           <Tab value={8} label={t('1週間')} />
           {toggleDisplayMonth.value && <Tab value={31} label={t('1ヶ月')} />}
           {toggleDisplayAll.value && <Tab value={0} label={t('全期間')} />}

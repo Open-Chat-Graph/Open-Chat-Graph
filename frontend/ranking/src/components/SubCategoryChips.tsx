@@ -34,14 +34,14 @@ const Chips = memo(function Chips({
   }, [])
 
   return (
-    <Stack direction='row' spacing={1}>
+    <Stack direction="row" spacing={1}>
       {existsProp &&
         rankingArgDto.subCategories[category as SubCategoryKey].map((el, i) =>
           sub_category === el ? (
             <Chip
               key={i}
               label={el}
-              className='openchat-item-header-chip category selected'
+              className="openchat-item-header-chip category selected"
               onClick={() => handleChange('')}
               ref={selectedRef}
             />
@@ -49,7 +49,7 @@ const Chips = memo(function Chips({
             <Chip
               key={i}
               label={el}
-              className='openchat-item-header-chip category'
+              className="openchat-item-header-chip category"
               onClick={() => handleChange(el)}
             />
           )
@@ -89,8 +89,8 @@ function SubCategoryChipsPC(props: SubCategoryChipsProps) {
       {isLeftScrollable && (
         <Box sx={{ ...chevronBradientBoxSx(90) }}>
           <Button
-            color='inherit'
-            aria-label='left scroll'
+            color="inherit"
+            aria-label="left scroll"
             onClick={onClickArrow(250)}
             sx={buttonSx}
           >
@@ -99,7 +99,7 @@ function SubCategoryChipsPC(props: SubCategoryChipsProps) {
         </Box>
       )}
       <Toolbar
-        className='hide-scrollbar-x'
+        className="hide-scrollbar-x"
         {...events}
         ref={ref}
         style={{ minHeight: 48, cursor: 'grab' }}
@@ -109,8 +109,8 @@ function SubCategoryChipsPC(props: SubCategoryChipsProps) {
       {isRightScrollable && (
         <Box sx={{ ...chevronBradientBoxSx(270), right: 0 }}>
           <Button
-            color='inherit'
-            aria-label='right scroll'
+            color="inherit"
+            aria-label="right scroll"
             onClick={onClickArrow(-250)}
             sx={buttonSx}
           >
@@ -139,7 +139,7 @@ function SubCategoryChipsSP2(props: SubCategoryChipsProps) {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
       <Toolbar
-        className='hide-scrollbar-x'
+        className="hide-scrollbar-x"
         ref={ref}
         style={{
           minHeight: 0,

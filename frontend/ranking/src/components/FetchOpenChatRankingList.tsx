@@ -26,12 +26,12 @@ const DummyList = memo(function DummyList({
   return (
     <>
       {((!data && !error) || isValidating) && (
-        <ol className='openchat-item-container' style={dummyContainerStyle}>
+        <ol className="openchat-item-container" style={dummyContainerStyle}>
           <DummyOpenChatListItem />
         </ol>
       )}
       {!(isValidating || isLastPage || error) && data && (
-        <ol className='openchat-item-container' style={dummyContainerStyle} ref={useInViewRef}>
+        <ol className="openchat-item-container" style={dummyContainerStyle} ref={useInViewRef}>
           <DummyOpenChatListItem />
         </ol>
       )}
@@ -63,7 +63,7 @@ const ListContext = memo(function ListContext({
   let curLen = items.current[1].length
 
   if (items.current[0] === query && curLen === dataLen) {
-    return <ol className='openchat-item-container'>{items.current[1]}</ol>
+    return <ol className="openchat-item-container">{items.current[1]}</ol>
   }
 
   if (items.current[0] !== query) {
@@ -74,7 +74,7 @@ const ListContext = memo(function ListContext({
 
   for (let i = curLen; i < dataLen; i++) {
     items.current[1][i] = (
-      <li key={`${cateIndex}/${i}`} className='OpenChatListItem-outer'>
+      <li key={`${cateIndex}/${i}`} className="OpenChatListItem-outer">
         <ListItem
           listParam={list}
           {...data[i]}
@@ -83,7 +83,7 @@ const ListContext = memo(function ListContext({
         />
         {(i + 1) % 10 === 0 && i + 1 < (totalCount ?? 0) && (
           <div style={{ marginBottom: '2rem' }}>
-            <div className='record-count middle'>
+            <div className="record-count middle">
               <KeyboardArrowDownIcon sx={{ fontSize: '14px', display: 'block' }} />
               <span>
                 {sprintfT(
@@ -99,7 +99,7 @@ const ListContext = memo(function ListContext({
     )
   }
 
-  return <ol className='openchat-item-container'>{items.current[1]}</ol>
+  return <ol className="openchat-item-container">{items.current[1]}</ol>
 })
 
 const TotalCount = memo(OCListTotalCount)
@@ -115,10 +115,10 @@ function FetchDummyList({ query, cateIndex }: { query: string; cateIndex: number
         totalCount={totalCount}
         cateIndex={cateIndex}
         keyword={params.keyword}
-        subCategory=''
+        subCategory=""
       />
-      <div className='OpenChatListItem-outer'>
-        <ol className='openchat-item-container' style={data ? undefined : dummyContainerStyle}>
+      <div className="OpenChatListItem-outer">
+        <ol className="openchat-item-container" style={data ? undefined : dummyContainerStyle}>
           {data ? (
             data.map((oc, i) => (
               <OpenChatListItem
@@ -150,9 +150,9 @@ export function DummyOpenChatRankingList({
   const params = useRecoilValue(listParamsState)
 
   return (
-    <div className='dummy-list' style={{ position: 'relative' }}>
+    <div className="dummy-list" style={{ position: 'relative' }}>
       <div
-        className='div-fetchOpenChatRankingList'
+        className="div-fetchOpenChatRankingList"
         style={{ position: 'absolute', top: `${window.scrollY}px`, width: '100%' }}
       >
         <ListTitleDesc
@@ -180,8 +180,8 @@ export function FetchOpenChatRankingList({
   const totalCount = data?.length === 0 ? 0 : data ? data[0].totalCount : undefined
 
   return (
-    <div className='ranking-list'>
-      <div className='div-fetchOpenChatRankingList'>
+    <div className="ranking-list">
+      <div className="div-fetchOpenChatRankingList">
         <ListTitleDesc cateIndex={cateIndex} isSearch={!!params.keyword} list={params.list} />
         <TotalCount
           totalCount={totalCount}

@@ -1,10 +1,10 @@
 React  
 MUI  
-Recoil   
+Recoil  
 SWR  
-Swiper.js  
+Swiper.js
 
 公開ページ  
-https://openchat-review.me/ranking  
+https://openchat-review.me/ranking
 
 TODO: Viteに移行

@@ -1,5 +1,5 @@
-import { Context } from 'chartjs-plugin-datalabels';
-import OpenChatChart from '../../OpenChatChart';
+import { Context } from 'chartjs-plugin-datalabels'
+import OpenChatChart from '../../OpenChatChart'
 
 export default function getDataLabelBarCallback(ocChart: OpenChatChart) {
   return (context: Context) => {

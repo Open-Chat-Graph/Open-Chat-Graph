@@ -1,10 +1,10 @@
-import { Chart as ChartJS } from 'chart.js/auto';
-import OpenChatChart from "../../OpenChatChart";
-import buildData from "./buildData";
-import buildOptions from "./buildOptions";
-import buildPlugin from "./buildPlugin";
-import getCandlestickRankingLabelPlugin from "../Plugin/getCandlestickRankingLabelPlugin";
-import getCandlestickMemberLabelPlugin from "../Plugin/getCandlestickMemberLabelPlugin";
+import { Chart as ChartJS } from 'chart.js/auto'
+import OpenChatChart from '../../OpenChatChart'
+import buildData from './buildData'
+import buildOptions from './buildOptions'
+import buildPlugin from './buildPlugin'
+import getCandlestickRankingLabelPlugin from '../Plugin/getCandlestickRankingLabelPlugin'
+import getCandlestickMemberLabelPlugin from '../Plugin/getCandlestickMemberLabelPlugin'
 
 export default function openChatChartJSFactory(ocChart: OpenChatChart) {
   /* @ts-ignore */

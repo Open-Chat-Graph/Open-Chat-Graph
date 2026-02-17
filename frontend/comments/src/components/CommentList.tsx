@@ -28,7 +28,8 @@ const swrOptions = {
 
 export default function CommentList({ limit }: { limit: number }) {
   const { data, setSize, size, isValidating } = useSWRInfinite<CommentItem[]>(
-    (i: number) => `${appInitTagDto.baseUrl}/comment/${appInitTagDto.openChatId}?page=${i}&limit=${limit}`,
+    (i: number) =>
+      `${appInitTagDto.baseUrl}/comment/${appInitTagDto.openChatId}?page=${i}&limit=${limit}`,
     fetchApi<CommentItem[]>,
     swrOptions
   )
@@ -39,7 +40,7 @@ export default function CommentList({ limit }: { limit: number }) {
     <>
       <ReportDialog />
       {data && (
-        <List sx={{ ...containerSx, gap: '2.4rem', p:0 }}>
+        <List sx={{ ...containerSx, gap: '2.4rem', p: 0 }}>
           {!postedItem.length && data[0].length === 0 && <EmptyListItem />}
           {<PostedItem postedItem={postedItem} lastId={data[0][0]?.comment.id} />}
           {data.flat().map((el) => (
@@ -48,7 +49,9 @@ export default function CommentList({ limit }: { limit: number }) {
         </List>
       )}
       {isValidating && <LinearProgress />}
-      {data && data[data.length - 1].length >= limit && <ReadMoreCommentButton onClick={() => setSize(size + 1)} />}
+      {data && data[data.length - 1].length >= limit && (
+        <ReadMoreCommentButton onClick={() => setSize(size + 1)} />
+      )}
     </>
   )
 }

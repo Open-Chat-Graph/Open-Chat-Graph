@@ -1,11 +1,15 @@
-import { signal } from "@preact/signals"
-import { chatArgDto, fetchChart, statsDto } from "../util/fetchRenderer"
-import OpenChatChart from "../classes/OpenChatChart"
-import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from "../util/urlParam"
-import { toggleDisplay24h, toggleDisplayAll, toggleDisplayMonth } from "../components/ChartLimitBtns"
-import { setRenderPositionBtns } from "../app"
+import { signal } from '@preact/signals'
+import { chatArgDto, fetchChart, statsDto } from '../util/fetchRenderer'
+import OpenChatChart from '../classes/OpenChatChart'
+import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
+import {
+  toggleDisplay24h,
+  toggleDisplayAll,
+  toggleDisplayMonth,
+} from '../components/ChartLimitBtns'
+import { setRenderPositionBtns } from '../app'
 
-export const chart = new OpenChatChart
+export const chart = new OpenChatChart()
 export const loading = signal(false)
 export const toggleShowCategorySignal = signal(true)
 export const rankingRisingSignal = signal<ToggleChart>('none')
@@ -22,17 +26,17 @@ export function setChartStatesFromUrlParams() {
   categorySignal.value = params.category
 
   switch (params.limit) {
-    case "hour":
+    case 'hour':
       limitSignal.value = 25
       chart.setIsHour(true)
       break
-    case "week":
+    case 'week':
       limitSignal.value = 8
       break
-    case "month":
+    case 'month':
       limitSignal.value = 31
       break
-    case "all":
+    case 'all':
       limitSignal.value = 0
       break
   }
@@ -42,13 +46,22 @@ export function setChartStatesFromUrlParams() {
     const fixedLimit = getStoregeFixedLimitSetting()
     if (fixedLimit) {
       switch (fixedLimit) {
-        case "hour":
+        case 'hour':
           limitSignal.value = 25
           chart.setIsHour(true)
           break
-        case "week": limitSignal.value = 8; chart.setIsHour(false); break
-        case "month": limitSignal.value = 31; chart.setIsHour(false); break
-        case "all": limitSignal.value = 0; chart.setIsHour(false); break
+        case 'week':
+          limitSignal.value = 8
+          chart.setIsHour(false)
+          break
+        case 'month':
+          limitSignal.value = 31
+          chart.setIsHour(false)
+          break
+        case 'all':
+          limitSignal.value = 0
+          chart.setIsHour(false)
+          break
       }
     }
   }
@@ -78,7 +91,12 @@ export function setUrlParamsFromChartStates() {
       break
   }
 
-  setUrlParams({ bar: rankingRisingSignal.value, category: categorySignal.value, limit, chart: chartModeSignal.value })
+  setUrlParams({
+    bar: rankingRisingSignal.value,
+    category: categorySignal.value,
+    limit,
+    chart: chartModeSignal.value,
+  })
 }
 
 export function initDisplay() {

@@ -5,7 +5,9 @@ import { Box, IconButton, useMediaQuery } from '@mui/material'
 
 export function HelpIcon() {
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
-  return <HelpOutlineIcon sx={{ color: 'rgba(0, 0, 0, 0.12)', fontSize: matches ? '24px' : '22px' }} />
+  return (
+    <HelpOutlineIcon sx={{ color: 'rgba(0, 0, 0, 0.12)', fontSize: matches ? '24px' : '22px' }} />
+  )
 }
 
 export default function OCListDescPopover({ children }: { children: React.ReactNode }) {

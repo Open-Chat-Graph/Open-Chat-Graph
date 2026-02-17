@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from 'react'
 
-export function useIsRightScrollable(useEffectTrigerValue: any): [boolean, React.MutableRefObject<HTMLInputElement>] {
+export function useIsRightScrollable(
+  useEffectTrigerValue: any
+): [boolean, React.MutableRefObject<HTMLInputElement>] {
   const [isRightScrollable, setIsRightScrollable] = useState(false)
   const ref = useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>
 
@@ -8,7 +10,9 @@ export function useIsRightScrollable(useEffectTrigerValue: any): [boolean, React
     if (ref.current) {
       const { scrollWidth, clientWidth, scrollLeft } = ref.current
       const correction = 10
-      setIsRightScrollable(scrollWidth !== clientWidth && scrollLeft < (scrollWidth - correction) - clientWidth)
+      setIsRightScrollable(
+        scrollWidth !== clientWidth && scrollLeft < scrollWidth - correction - clientWidth
+      )
     }
   }
 
@@ -25,7 +29,9 @@ export function useIsRightScrollable(useEffectTrigerValue: any): [boolean, React
   return [isRightScrollable, ref]
 }
 
-export function useIsLeftRightScrollable(useEffectTrigerValue: any): [boolean, boolean, React.MutableRefObject<HTMLInputElement>] {
+export function useIsLeftRightScrollable(
+  useEffectTrigerValue: any
+): [boolean, boolean, React.MutableRefObject<HTMLInputElement>] {
   const ref = useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>
   const [isLeftScrollable, setIsLeftScrollable] = useState(false)
   const [isRightScrollable, setIsRightScrollable] = useState(false)
@@ -35,7 +41,9 @@ export function useIsLeftRightScrollable(useEffectTrigerValue: any): [boolean, b
       const { scrollWidth, clientWidth, scrollLeft } = ref.current
       const correction = 10
       setIsLeftScrollable(scrollLeft > 10)
-      setIsRightScrollable(scrollWidth !== clientWidth && scrollLeft < (scrollWidth - correction) - clientWidth)
+      setIsRightScrollable(
+        scrollWidth !== clientWidth && scrollLeft < scrollWidth - correction - clientWidth
+      )
     }
   }
 

@@ -1,5 +1,5 @@
 export function updateURLSearchParams(params: { [key: string]: string }): URL {
-  const url = new URL(window.location.href);
+  const url = new URL(window.location.href)
   url.search = ''
 
   for (let k in params) {

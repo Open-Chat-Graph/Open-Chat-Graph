@@ -25,7 +25,9 @@ export default function ReportDialogUi({
       isLoading={isLoading}
       handleClose={isLoading ? undefined : handleClose}
     >
-      {result === 'unsent' && <DialogParagraph>削除すべき不適切なコメントとして通報しますか？</DialogParagraph>}
+      {result === 'unsent' && (
+        <DialogParagraph>削除すべき不適切なコメントとして通報しますか？</DialogParagraph>
+      )}
       {result === 'done' && <DialogParagraph>通報しました</DialogParagraph>}
       {result === 'fail' && (
         <DialogParagraph>

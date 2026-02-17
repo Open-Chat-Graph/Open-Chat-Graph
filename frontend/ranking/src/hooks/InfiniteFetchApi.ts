@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer'
 import { isSP } from '../utils/utils'
 import { rankingArgDto } from '../config/config'
 
-async function fetchApi<T,>(url: string) {
+async function fetchApi<T>(url: string) {
   const response = await fetch(url)
   const data: T | ErrorResponse = await response.json()
   if (!response.ok) {
@@ -23,15 +23,12 @@ const swrOptions = {
 }
 
 export const LIMIT_ITEMS = isSP() ? 10 : 20
-const ROOT_MARGIN = isSP() ? "100px" : "500px"
+const ROOT_MARGIN = isSP() ? '100px' : '500px'
 
-export default function useInfiniteFetchApi<T,>(query: string) {
-  const getKey = (i: number) => `${rankingArgDto.baseUrl}/oclist?page=${i}&limit=${LIMIT_ITEMS}${query ? '&' + query : ''}`
-  const { data, setSize, isValidating, error } = useSWRInfinite(
-    getKey,
-    fetchApi<T[]>,
-    swrOptions
-  )
+export default function useInfiniteFetchApi<T>(query: string) {
+  const getKey = (i: number) =>
+    `${rankingArgDto.baseUrl}/oclist?page=${i}&limit=${LIMIT_ITEMS}${query ? '&' + query : ''}`
+  const { data, setSize, isValidating, error } = useSWRInfinite(getKey, fetchApi<T[]>, swrOptions)
 
   const [page, setPage] = useState(1)
 
@@ -40,7 +37,7 @@ export default function useInfiniteFetchApi<T,>(query: string) {
   const { ref: useInViewRef, inView: isScrollEnd } = useInView({
     root: null,
     rootMargin: ROOT_MARGIN,
-    threshold: 0.0
+    threshold: 0.0,
   })
 
   useEffect(() => {

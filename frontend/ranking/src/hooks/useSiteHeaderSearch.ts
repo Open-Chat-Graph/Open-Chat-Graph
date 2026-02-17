@@ -101,10 +101,12 @@ export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => v
             sort: 'member',
             order: 'desc',
           }
-          navigate( '/' +(langCode === location.pathname.split('/')[1]
+          navigate(
+            '/' +
+              (langCode === location.pathname.split('/')[1]
                 ? location.pathname.split('/')[1] + '/' + location.pathname.split('/')[2]
-                : location.pathname.split('/')[1]
-              ) + `/?${new URLSearchParams(p).toString()}`,
+                : location.pathname.split('/')[1]) +
+              `/?${new URLSearchParams(p).toString()}`,
             { replace: true }
           )
           return p

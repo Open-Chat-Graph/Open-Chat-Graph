@@ -18,7 +18,7 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 function LinkTab(props: { label?: string; href?: string }) {
   return (
     <Tab
-      component='a'
+      component="a"
       onClick={(e: LinkEvent) => {
         if (samePageLinkNavi(e)) {
           e.preventDefault()
@@ -41,12 +41,9 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
     const q = url.searchParams.toString()
 
     setParams({ ...params, sub_category: '' })
-    navigate(
-      `${'/' + basePath}${category ? '/' + category : ''}${
-        q ? '?' + q : ''
-      }`,
-      { replace: true }
-    )
+    navigate(`${'/' + basePath}${category ? '/' + category : ''}${q ? '?' + q : ''}`, {
+      replace: true,
+    })
     setTitle({ ...params, sub_category: '' }, newValue)
     scrollToTop()
     scrollToTop('.hide-scrollbar-x')
@@ -76,14 +73,14 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
           <SiteHeaderVertical height={siteHeaderHeight} />
         </Box>
         <Tabs
-          className='category-tab-pc'
+          className="category-tab-pc"
           value={cateIndex}
           onChange={handleChange}
-          variant='scrollable'
-          scrollButtons='auto'
+          variant="scrollable"
+          scrollButtons="auto"
           allowScrollButtonsMobile={true}
           aria-label={t('オープンチャットのカテゴリータブ')}
-          orientation='vertical'
+          orientation="vertical"
           sx={{
             minWidth: tabsWidth,
             height: `calc(100% - ${siteHeaderHeight} - 2rem)`,
@@ -92,11 +89,7 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
           }}
         >
           {OPEN_CHAT_CATEGORY.map((el, i) => (
-            <LinkTab
-              label={el[0]}
-              href={`/${basePath}${el[1] ? '/' + el[1] : ''}`}
-              key={i}
-            />
+            <LinkTab label={el[0]} href={`/${basePath}${el[1] ? '/' + el[1] : ''}`} key={i} />
           ))}
         </Tabs>
       </Box>

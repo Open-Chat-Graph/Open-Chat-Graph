@@ -126,7 +126,9 @@ export default function SettingButton() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const [bar, setBar] = useState(defaultBar)
   const [chartMode, setChartMode] = useState(defaultChart)
-  const [fixedLimit, setFixedLimit] = useState<urlParamsValue<'limit'> | ''>(getStoregeFixedLimitSetting() ?? '')
+  const [fixedLimit, setFixedLimit] = useState<urlParamsValue<'limit'> | ''>(
+    getStoregeFixedLimitSetting() ?? ''
+  )
 
   const open = Boolean(anchorEl)
   const handleClick = (event: MouseEvent) => {
@@ -162,9 +164,9 @@ export default function SettingButton() {
   return (
     <div>
       <IconButton
-        id='basic-button'
+        id="basic-button"
         aria-controls={open ? 'basic-menu' : undefined}
-        aria-haspopup='true'
+        aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
         aria-label={t('設定')}
@@ -172,7 +174,7 @@ export default function SettingButton() {
         <SettingsIcon />
       </IconButton>
       <Menu
-        id='basic-menu'
+        id="basic-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}

@@ -1,4 +1,4 @@
-import OpenChatChart from "../../OpenChatChart"
+import OpenChatChart from '../../OpenChatChart'
 
 export default function getCandlestickRankingLabelPlugin(ocChart: OpenChatChart) {
   return {
@@ -31,9 +31,16 @@ export default function getCandlestickRankingLabelPlugin(ocChart: OpenChatChart)
 
       const isLimit8 = ocChart.limit === 8
       const fontSize = isLimit8
-        ? (ocChart.isPC ? 11.5 : (ocChart.isMiniMobile ? 10 : 11))
-        : ocChart.isPC ? (ocChart.limit === 31 ? 10 : 10.5)
-        : 10
+        ? ocChart.isPC
+          ? 11.5
+          : ocChart.isMiniMobile
+            ? 10
+            : 11
+        : ocChart.isPC
+          ? ocChart.limit === 31
+            ? 10
+            : 10.5
+          : 10
 
       const ctx = chart.ctx
       ctx.save()

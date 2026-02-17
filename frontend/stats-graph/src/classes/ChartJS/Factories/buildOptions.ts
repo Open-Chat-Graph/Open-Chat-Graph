@@ -27,17 +27,17 @@ export default function buildOptions(
     ? ocChart.isPC
       ? 12
       : ocChart.isMiniMobile
-      ? 11
-      : 11.5
+        ? 11
+        : 11.5
     : limit === 31
-    ? ocChart.isPC
-      ? ocChart.getIsHour()
-        ? 11.5
-        : 11
-      : ticksFontSizeMobile
-    : ocChart.isPC
-    ? 12
-    : ticksFontSizeMobile
+      ? ocChart.isPC
+        ? ocChart.getIsHour()
+          ? 11.5
+          : 11
+        : ticksFontSizeMobile
+      : ocChart.isPC
+        ? 12
+        : ticksFontSizeMobile
 
   const paddingX = 20
   const paddingY = isWeekly ? 0 : 5
@@ -109,7 +109,7 @@ export default function buildOptions(
 
   if (ocChart.getMode() === 'candlestick' && ocChart.ohlcRankingData.length) {
     // nullLow（圏外）のl値を除外して軸範囲を計算
-    const realRankValues = ocChart.ohlcRankingData.flatMap(d => {
+    const realRankValues = ocChart.ohlcRankingData.flatMap((d) => {
       const vals = [d.o, d.h, d.c]
       if (!ocChart.ohlcRankingNullLow.has(d.x)) vals.push(d.l)
       return vals
@@ -209,7 +209,7 @@ export default function buildOptions(
       const gridStep = Math.max(1, Math.ceil(dataLen / 20))
       options.scales!.x!.grid = {
         ...options.scales!.x!.grid,
-        color: (ctx: any) => ctx.index % gridStep === 0 ? '#efefef' : 'transparent',
+        color: (ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent'),
       }
     }
   }

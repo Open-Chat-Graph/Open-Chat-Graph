@@ -2,7 +2,7 @@ Preact + Vite
 MUI  
 Chart.js  
 chartjs-plugin-zoom  
-chartjs-plugin-datalabels  
+chartjs-plugin-datalabels
 
 PHPのページに埋め込んでいます
 

@@ -1,11 +1,11 @@
-import OpenChatChart from "../../OpenChatChart"
+import OpenChatChart from '../../OpenChatChart'
 
 /** @ts-ignore */
 export default function getIncreaseLegendSpacingPlugin(ocChart: OpenChatChart) {
   const paddingTop = ocChart.isPC ? 4 : 4
 
   return {
-    id: "increase-legend-spacing",
+    id: 'increase-legend-spacing',
     beforeInit(chart: any) {
       // Get reference to the original fit function
       const originalFit = chart.legend.fit
@@ -17,6 +17,6 @@ export default function getIncreaseLegendSpacingPlugin(ocChart: OpenChatChart) {
         // Change the height as suggested in another answers
         this.height += paddingTop
       }
-    }
+    },
   }
 }

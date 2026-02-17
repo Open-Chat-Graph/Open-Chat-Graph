@@ -1,16 +1,22 @@
-import { Chart as ChartJS } from 'chart.js/auto';
+import { Chart as ChartJS } from 'chart.js/auto'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 import zoomPlugin from 'chartjs-plugin-zoom'
-import { CandlestickController, CandlestickElement, OhlcController, OhlcElement } from 'chartjs-chart-financial'
+import {
+  CandlestickController,
+  CandlestickElement,
+  OhlcController,
+  OhlcElement,
+} from 'chartjs-chart-financial'
 import 'chartjs-adapter-luxon'
-import formatDates from "./ChartJS/Util/formatDates";
-import ModelFactory from "./ModelFactory.ts"
-import openChatChartJSFactory from "./ChartJS/Factories/openChatChartJSFactory.ts";
-import afterOpenChatChartJSFactory from './ChartJS/Factories/afterOpenChatChartJSFactory.ts'; import getIncreaseLegendSpacingPlugin from './ChartJS/Plugin/getIncreaseLegendSpacingPlugin.ts';
-import getEventCatcherPlugin from './ChartJS/Plugin/getEventCatcherPlugin.ts';
-import paddingArray from './ChartJS/Util/paddingArray.ts';
-import { statsDto } from '../util/fetchRenderer';
-import { t } from '../util/translation';
+import formatDates from './ChartJS/Util/formatDates'
+import ModelFactory from './ModelFactory.ts'
+import openChatChartJSFactory from './ChartJS/Factories/openChatChartJSFactory.ts'
+import afterOpenChatChartJSFactory from './ChartJS/Factories/afterOpenChatChartJSFactory.ts'
+import getIncreaseLegendSpacingPlugin from './ChartJS/Plugin/getIncreaseLegendSpacingPlugin.ts'
+import getEventCatcherPlugin from './ChartJS/Plugin/getEventCatcherPlugin.ts'
+import paddingArray from './ChartJS/Util/paddingArray.ts'
+import { statsDto } from '../util/fetchRenderer'
+import { t } from '../util/translation'
 
 export default class OpenChatChart implements ChartFactory {
   chart: ChartJS = null!
@@ -65,7 +71,9 @@ export default class OpenChatChart implements ChartFactory {
           return false
         }
 
-        this.canvas?.getContext('2d')?.clearRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight)
+        this.canvas
+          ?.getContext('2d')
+          ?.clearRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight)
         this.animationAll = false
         this.createChart(false)
         this.animationAll = true
@@ -81,7 +89,12 @@ export default class OpenChatChart implements ChartFactory {
     })
   }
 
-  render(data: ChartArgs, option: OpenChatChartOption, animation: boolean, limit: ChartLimit): void {
+  render(
+    data: ChartArgs,
+    option: OpenChatChartOption,
+    animation: boolean,
+    limit: ChartLimit
+  ): void {
     if (!this.canvas) {
       throw Error('HTMLCanvasElement is not defined')
     }
@@ -108,7 +121,7 @@ export default class OpenChatChart implements ChartFactory {
 
   updateEnableZoom(value: boolean) {
     if (!this.chart) return
-  
+
     this.enableZoom = value
     this.chart.destroy()
     this.createChart(false)
@@ -177,10 +190,10 @@ export default class OpenChatChart implements ChartFactory {
   }
 
   private enableAnimationOption() {
-    const anim = (this.chart.data.datasets[0] as any).animation;
+    const anim = (this.chart.data.datasets[0] as any).animation
     if (anim && typeof anim === 'object') {
-      anim.duration = undefined;
-      this.chart.update();
+      anim.duration = undefined
+      this.chart.update()
     }
   }
 
@@ -196,11 +209,11 @@ export default class OpenChatChart implements ChartFactory {
     }
 
     this.data = {
-      date: paddingArray<(string | string[])>(data.date, ''),
-      graph1: paddingArray<(number | null)>(data.graph1, null),
-      graph2: data.graph2.length ? paddingArray<(number | null)>(data.graph2, null) : [],
-      time: data.time.length ? paddingArray<(string | null)>(data.time, null) : [],
-      totalCount: data.totalCount.length ? paddingArray<(number | null)>(data.totalCount, null) : [],
+      date: paddingArray<string | string[]>(data.date, ''),
+      graph1: paddingArray<number | null>(data.graph1, null),
+      graph2: data.graph2.length ? paddingArray<number | null>(data.graph2, null) : [],
+      time: data.time.length ? paddingArray<string | null>(data.time, null) : [],
+      totalCount: data.totalCount.length ? paddingArray<number | null>(data.totalCount, null) : [],
     }
   }
 
@@ -224,14 +237,25 @@ export default class OpenChatChart implements ChartFactory {
     const ohlcData: { x: number; o: number; h: number; l: number; c: number }[] = []
     const allValues: number[] = []
     const ohlcDates: string[] = []
-    const apiOhlcMap = new Map(this.memberOhlcApiData.map(r => [r.date, r]))
+    const apiOhlcMap = new Map(this.memberOhlcApiData.map((r) => [r.date, r]))
 
     for (let i = startIdx; i < len; i++) {
       const record = apiOhlcMap.get(dates[i])
       if (record) {
         ohlcDates.push(dates[i])
-        ohlcData.push({ x: ohlcData.length, o: record.open_member, h: record.high_member, l: record.low_member, c: record.close_member })
-        allValues.push(record.open_member, record.high_member, record.low_member, record.close_member)
+        ohlcData.push({
+          x: ohlcData.length,
+          o: record.open_member,
+          h: record.high_member,
+          l: record.low_member,
+          c: record.close_member,
+        })
+        allValues.push(
+          record.open_member,
+          record.high_member,
+          record.low_member,
+          record.close_member
+        )
       }
     }
 
@@ -242,7 +266,7 @@ export default class OpenChatChart implements ChartFactory {
     const ohlcRankingNullLow = new Set<number>()
     const rankingOhlc = this.initData.rankingOhlc
     if (rankingOhlc?.length) {
-      const rankingMap = new Map(rankingOhlc.map(r => [r.date, r]))
+      const rankingMap = new Map(rankingOhlc.map((r) => [r.date, r]))
       for (let i = 0; i < ohlcDates.length; i++) {
         const r = rankingMap.get(ohlcDates[i])
         if (r) {
@@ -277,12 +301,18 @@ export default class OpenChatChart implements ChartFactory {
   }
 
   setGraph2Max(graph2: (number | null)[]) {
-    this.graph2Max = graph2.reduce((a, b) => Math.max(a === null ? 0 : a, b === null ? 0 : b), -Infinity) as number
-    this.graph2Min = (graph2.filter(v => v !== null && v !== 0) as number[]).reduce((a, b) => Math.min(a, b), Infinity) as number
+    this.graph2Max = graph2.reduce(
+      (a, b) => Math.max(a === null ? 0 : a, b === null ? 0 : b),
+      -Infinity
+    ) as number
+    this.graph2Min = (graph2.filter((v) => v !== null && v !== 0) as number[]).reduce(
+      (a, b) => Math.min(a, b),
+      Infinity
+    ) as number
   }
 
   getReverseGraph2(graph2: (number | null)[]) {
-    return graph2.map(v => {
+    return graph2.map((v) => {
       if (v === null) return v
       return v ? this.graph2Max + 1 - v : 0
     })
@@ -306,7 +336,8 @@ export default class OpenChatChart implements ChartFactory {
     ctx.clearRect(0, 0, w, h)
     ctx.save()
     ctx.fillStyle = '#888'
-    ctx.font = '14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    ctx.font =
+      '14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(t('OHLCデータがありません'), w / 2, h / 2)

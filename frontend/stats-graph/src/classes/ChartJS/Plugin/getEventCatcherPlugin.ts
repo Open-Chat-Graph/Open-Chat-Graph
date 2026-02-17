@@ -1,12 +1,12 @@
-import {  Chart as ChartJS } from 'chart.js/auto';
-import OpenChatChart from "../../OpenChatChart"
+import { Chart as ChartJS } from 'chart.js/auto'
+import OpenChatChart from '../../OpenChatChart'
 
 export const resetTooltip = (ocChart: OpenChatChart) => {
-  ocChart.chart.tooltip!.setActiveElements([], { x: 0, y: 0 });
+  ocChart.chart.tooltip!.setActiveElements([], { x: 0, y: 0 })
   ocChart.chart.update()
 }
 
-let inChartArea = false;
+let inChartArea = false
 
 /** @ts-ignore */
 export default function getEventCatcherPlugin(ocChart: OpenChatChart) {
@@ -21,6 +21,6 @@ export default function getEventCatcherPlugin(ocChart: OpenChatChart) {
 
       if (args.inChartArea) inChartArea = true
       if (!args.inChartArea) inChartArea = false
-    }
+    },
   }
 }

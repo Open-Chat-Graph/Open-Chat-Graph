@@ -53,7 +53,8 @@ export default function CommentForm() {
         setPostedItem(commentId, name, text, userId)
         setName('')
         setText('')
-      } catch {
+      } catch (error) {
+        console.error(error)
         setFailDialog((p) => ({ ...p, open: true, result: 'fail' }))
       } finally {
         setIsSending(false)
