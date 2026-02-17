@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph _build-one-frontend _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -62,7 +62,6 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make build-frontend:ranking$(NC)  - ランキングのみビルド"
 	@echo "  $(GREEN)make build-frontend:comments$(NC) - コメントのみビルド"
 	@echo "  $(GREEN)make build-frontend:graph$(NC)    - グラフのみビルド"
-	@echo "  $(GREEN)make build-frontend:all-room-stats$(NC) - 全体統計のみビルド"
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
@@ -161,11 +160,6 @@ build-frontend\:graph: ## グラフのみビルド
 	@echo "$(GREEN)graph をビルドしています...$(NC)"
 	@$(MAKE) _build-one-frontend DIR=frontend/stats-graph
 	@echo "$(GREEN)graph ビルド完了$(NC)"
-
-build-frontend\:all-room-stats: ## 全体統計のみビルド
-	@echo "$(GREEN)all-room-stats をビルドしています...$(NC)"
-	@$(MAKE) _build-one-frontend DIR=frontend/all-room-stats
-	@echo "$(GREEN)all-room-stats ビルド完了$(NC)"
 
 # 基本環境
 up: ## 基本環境を起動

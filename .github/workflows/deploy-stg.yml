@@ -58,8 +58,6 @@ jobs:
             - 'frontend/stats-graph/**'
           frontend_comments:
             - 'frontend/comments/**'
-          frontend_all_room_stats:
-            - 'frontend/all-room-stats/**'
 
     - name: Check if any frontend changed
       id: any_frontend
@@ -67,7 +65,6 @@ jobs:
         if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
            [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
            [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
            [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "changed=true" >> "$GITHUB_OUTPUT"
         else
@@ -90,7 +87,6 @@ jobs:
         [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
         [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
         [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
-        [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
         echo "Frontend build complete"
 
     - name: Setup SSH
@@ -119,7 +115,6 @@ jobs:
         [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
         [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
         [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/
-        [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
         echo "Frontend deploy complete"
 
     - name: Install twitter-api-v2
