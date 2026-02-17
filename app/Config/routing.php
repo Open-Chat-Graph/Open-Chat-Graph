@@ -392,9 +392,8 @@ Route::path(
                 return false;
 
             if (AppConfig::$isStaging && SecretsConfig::$stagingBasicAuthPassword) {
-                $user = $_SERVER['PHP_AUTH_USER'] ?? '';
-                $pass = $_SERVER['PHP_AUTH_PW'] ?? '';
-                if ($user !== SecretsConfig::$stagingBasicAuthUser || $pass !== SecretsConfig::$stagingBasicAuthPassword) {
+                $auth = getBasicAuthCredentials();
+                if ($auth['user'] !== SecretsConfig::$stagingBasicAuthUser || $auth['pass'] !== SecretsConfig::$stagingBasicAuthPassword) {
                     header('WWW-Authenticate: Basic realm="Staging Comment API"');
                     throw new UnauthorizedException(
                         'Basic authentication is required to post comments on staging environment.'
