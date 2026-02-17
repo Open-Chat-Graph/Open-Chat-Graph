@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
+use App\Config\SecretsConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
@@ -22,7 +23,6 @@ use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
-use App\Views\Classes\Dto\CommentArgDtoFactoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
@@ -41,7 +41,6 @@ class OpenChatPageController
         RecommendGenarator $recommendGenarator,
         RecentCommentListRepositoryInterface $recentCommentListRepository,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
-        CommentArgDtoFactoryInterface $commentArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
         int $open_chat_id,
@@ -144,7 +143,11 @@ class OpenChatPageController
         $_hourlyRange = $this->buildHourlyRange($oc);
 
         $_chartArgDto = $rankingPositionChartArgDtoFactory->create($oc, $categoryValue ?? t('すべて'));
-        $_commentArgDto = $commentArgDtoFactory->create($oc['id']);
+        $_commentArgDto = [
+            'openChatId' => $open_chat_id,
+            'recaptchaKey' => SecretsConfig::$googleRecaptchaSiteKey,
+        ];
+
         $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
