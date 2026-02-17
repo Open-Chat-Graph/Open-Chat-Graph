@@ -14,27 +14,27 @@ jobs:
   prefix:
     runs-on: ubuntu-latest
     steps:
-    - name: Add environment prefix to PR title
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        TITLE="${{ github.event.pull_request.title }}"
-        BASE="${{ github.event.pull_request.base.ref }}"
+      - name: Add environment prefix to PR title
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          BASE="${{ github.event.pull_request.base.ref }}"
 
-        # 既にプレフィックスがある場合はスキップ
-        if [[ "$TITLE" == "[PROD]"* ]] || [[ "$TITLE" == "[STG]"* ]]; then
-          echo "Title already has prefix: $TITLE"
-          exit 0
-        fi
+          # 既にプレフィックスがある場合はスキップ
+          if [[ "$TITLE" == "[PROD]"* ]] || [[ "$TITLE" == "[STG]"* ]]; then
+            echo "Title already has prefix: $TITLE"
+            exit 0
+          fi
 
-        if [ "$BASE" = "main" ]; then
-          NEW_TITLE="[PROD] $TITLE"
-        elif [ "$BASE" = "stg" ]; then
-          NEW_TITLE="[STG] $TITLE"
-        else
-          exit 0
-        fi
+          if [ "$BASE" = "main" ]; then
+            NEW_TITLE="[PROD] $TITLE"
+          elif [ "$BASE" = "stg" ]; then
+            NEW_TITLE="[STG] $TITLE"
+          else
+            exit 0
+          fi
 
-        echo "Updating title: $NEW_TITLE"
-        gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
-          -X PATCH -f title="$NEW_TITLE"
+          echo "Updating title: $NEW_TITLE"
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
+            -X PATCH -f title="$NEW_TITLE"

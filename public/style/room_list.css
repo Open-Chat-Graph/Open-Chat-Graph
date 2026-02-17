@@ -319,8 +319,15 @@
   letter-spacing: -0.3px;
   cursor: pointer;
   min-height: 58px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
 }
 
 .openchat-item.add-openchat-form-item {
@@ -454,7 +461,7 @@
 }
 
 .openchat-item-mui-chip-inner {
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-left: 7px;
@@ -530,7 +537,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
-  content: "🥇";
+  content: '🥇';
   font-style: normal;
   font-size: 24px;
   left: -31px;
@@ -539,7 +546,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
-  content: "🥈";
+  content: '🥈';
   font-style: normal;
   font-size: 22px;
   left: -30px;
@@ -548,7 +555,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
-  content: "🥉";
+  content: '🥉';
   font-style: normal;
   font-size: 20px;
   left: -29px;
@@ -748,7 +755,7 @@
 
 .white-btn .ranking-readMore::after {
   display: inline-block;
-  content: "";
+  content: '';
   margin-left: 6px;
   width: 6px;
   height: 6px;
@@ -818,7 +825,7 @@
 }
 
 .page-select label span::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   right: -7px;
@@ -868,7 +875,7 @@
 }
 
 .button01.next a::after {
-  content: "";
+  content: '';
   margin-left: 4px;
   width: 5px;
   height: 5px;
@@ -879,7 +886,7 @@
 }
 
 .button01.prev a::before {
-  content: "";
+  content: '';
   margin-right: 4px;
   width: 5px;
   height: 5px;
@@ -1057,7 +1064,7 @@
 .mylist .openchat-item::after {
   position: absolute;
   top: 76%;
-  content: "";
+  content: '';
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
@@ -1334,14 +1341,15 @@
   display: block;
   height: 36px;
   margin-left: auto;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
     rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
   border: 1px solid #06c755;
 }
 
 .tag-btn.open-btn::after {
   display: inline-flex;
-  content: "";
+  content: '';
   position: absolute;
   width: 6px;
   height: 6px;
@@ -1406,11 +1414,7 @@
 }
 
 .gradient-bottom {
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1)
-  );
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
   position: absolute;
   bottom: 0;
   left: 0;

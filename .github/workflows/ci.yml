@@ -20,227 +20,227 @@ jobs:
       INSTALL_XDEBUG: false
 
     steps:
-    # skip-ci判定
-    - name: Check skip-ci
-      id: skip
-      run: |
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
-          TITLE='${{ github.event.pull_request.title }}'
-          HEAD='${{ github.event.pull_request.head.ref }}'
-          if echo "$LABELS" | grep -q "skip-ci" || [[ "$TITLE" == skip-ci* ]] || [ "$HEAD" = "stg" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "CI skipped"
-            exit 0
+      # skip-ci判定
+      - name: Check skip-ci
+        id: skip
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+            TITLE='${{ github.event.pull_request.title }}'
+            HEAD='${{ github.event.pull_request.head.ref }}'
+            if echo "$LABELS" | grep -q "skip-ci" || [[ "$TITLE" == skip-ci* ]] || [ "$HEAD" = "stg" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "CI skipped"
+              exit 0
+            fi
           fi
-        fi
-        echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout repository
-      if: steps.skip.outputs.skip != 'true'
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        if: steps.skip.outputs.skip != 'true'
+        uses: actions/checkout@v4
 
-    - name: Check for Docker-related changes
-      if: steps.skip.outputs.skip != 'true'
-      uses: dorny/paths-filter@v3
-      id: check_changes
-      with:
-        filters: |
-          docker:
-            - 'docker/**'
-            - 'composer.json'
-            - 'composer.lock'
-          frontend_ranking:
-            - 'frontend/ranking/**'
-          frontend_stats_graph:
-            - 'frontend/stats-graph/**'
-          frontend_comments:
-            - 'frontend/comments/**'
-          frontend_all_room_stats:
-            - 'frontend/all-room-stats/**'
+      - name: Check for Docker-related changes
+        if: steps.skip.outputs.skip != 'true'
+        uses: dorny/paths-filter@v3
+        id: check_changes
+        with:
+          filters: |
+            docker:
+              - 'docker/**'
+              - 'composer.json'
+              - 'composer.lock'
+            frontend_ranking:
+              - 'frontend/ranking/**'
+            frontend_stats_graph:
+              - 'frontend/stats-graph/**'
+            frontend_comments:
+              - 'frontend/comments/**'
+            frontend_all_room_stats:
+              - 'frontend/all-room-stats/**'
 
-    - name: Set up Docker Buildx
-      if: steps.skip.outputs.skip != 'true'
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        if: steps.skip.outputs.skip != 'true'
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to GitHub Container Registry
-      if: steps.skip.outputs.skip != 'true'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        if: steps.skip.outputs.skip != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Pull or build app image
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        # Docker関連ファイルに変更がある場合は必ずビルド
-        if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
-          echo "Building app image (Docker-related files changed)"
-          docker buildx build \
-            --build-arg INSTALL_XDEBUG=false \
-            --build-arg ENABLE_SSL=false \
-            --cache-from type=gha,scope=app \
-            --cache-to type=gha,scope=app,mode=max \
-            --load \
-            -t oc-review-mock-app:latest \
-            ./docker/app/
-        # 変更がない場合はプリビルドイメージを使用
-        elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest 2>/dev/null; then
-          echo "✓ Using prebuilt app image"
-          docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest oc-review-mock-app:latest
-        else
-          echo "Building app image (no prebuilt image found)"
-          docker buildx build \
-            --build-arg INSTALL_XDEBUG=false \
-            --build-arg ENABLE_SSL=false \
-            --cache-from type=gha,scope=app \
-            --cache-to type=gha,scope=app,mode=max \
-            --load \
-            -t oc-review-mock-app:latest \
-            ./docker/app/
-        fi
-
-    - name: Pull or build LINE Mock API image
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        # Docker関連ファイルに変更がある場合は必ずビルド
-        if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
-          echo "Building LINE Mock API image (Docker-related files changed)"
-          docker buildx build \
-            --cache-from type=gha,scope=line-mock-api \
-            --cache-to type=gha,scope=line-mock-api,mode=max \
-            --load \
-            -t oc-review-mock-line-mock-api:latest \
-            ./docker/line-mock-api/
-        # 変更がない場合はプリビルドイメージを使用
-        elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest 2>/dev/null; then
-          echo "✓ Using prebuilt LINE Mock API image"
-          docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest oc-review-mock-line-mock-api:latest
-        else
-          echo "Building LINE Mock API image (no prebuilt image found)"
-          docker buildx build \
-            --cache-from type=gha,scope=line-mock-api \
-            --cache-to type=gha,scope=line-mock-api,mode=max \
-            --load \
-            -t oc-review-mock-line-mock-api:latest \
-            ./docker/line-mock-api/
-        fi
-
-    - name: Start mock environment
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        echo "Starting CI mock environment..."
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
-
-    - name: Wait for services
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        echo "Waiting for MySQL..."
-        for i in {1..30}; do
-          if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
-            echo "MySQL is ready"
-            break
+      - name: Pull or build app image
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          # Docker関連ファイルに変更がある場合は必ずビルド
+          if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
+            echo "Building app image (Docker-related files changed)"
+            docker buildx build \
+              --build-arg INSTALL_XDEBUG=false \
+              --build-arg ENABLE_SSL=false \
+              --cache-from type=gha,scope=app \
+              --cache-to type=gha,scope=app,mode=max \
+              --load \
+              -t oc-review-mock-app:latest \
+              ./docker/app/
+          # 変更がない場合はプリビルドイメージを使用
+          elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest 2>/dev/null; then
+            echo "✓ Using prebuilt app image"
+            docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest oc-review-mock-app:latest
+          else
+            echo "Building app image (no prebuilt image found)"
+            docker buildx build \
+              --build-arg INSTALL_XDEBUG=false \
+              --build-arg ENABLE_SSL=false \
+              --cache-from type=gha,scope=app \
+              --cache-to type=gha,scope=app,mode=max \
+              --load \
+              -t oc-review-mock-app:latest \
+              ./docker/app/
           fi
-          echo "Waiting for MySQL... ($i/30)"
-          sleep 2
-        done
 
-        echo "Waiting for App container..."
-        for i in {1..30}; do
-          if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app php -v > /dev/null 2>&1; then
-            echo "App container is ready"
-            break
+      - name: Pull or build LINE Mock API image
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          # Docker関連ファイルに変更がある場合は必ずビルド
+          if [ "${{ steps.check_changes.outputs.docker }}" = "true" ]; then
+            echo "Building LINE Mock API image (Docker-related files changed)"
+            docker buildx build \
+              --cache-from type=gha,scope=line-mock-api \
+              --cache-to type=gha,scope=line-mock-api,mode=max \
+              --load \
+              -t oc-review-mock-line-mock-api:latest \
+              ./docker/line-mock-api/
+          # 変更がない場合はプリビルドイメージを使用
+          elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest 2>/dev/null; then
+            echo "✓ Using prebuilt LINE Mock API image"
+            docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest oc-review-mock-line-mock-api:latest
+          else
+            echo "Building LINE Mock API image (no prebuilt image found)"
+            docker buildx build \
+              --cache-from type=gha,scope=line-mock-api \
+              --cache-to type=gha,scope=line-mock-api,mode=max \
+              --load \
+              -t oc-review-mock-line-mock-api:latest \
+              ./docker/line-mock-api/
           fi
-          echo "Waiting for App... ($i/30)"
-          sleep 2
-        done
 
-        echo "Waiting for LINE Mock API..."
-        for i in {1..30}; do
-          if curl -s http://localhost:9000 > /dev/null 2>&1; then
-            echo "LINE Mock API is ready"
-            break
+      - name: Start mock environment
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          echo "Starting CI mock environment..."
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+
+      - name: Wait for services
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          echo "Waiting for MySQL..."
+          for i in {1..30}; do
+            if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T mysql mysqladmin ping -uroot -ptest_root_pass --silent 2>/dev/null; then
+              echo "MySQL is ready"
+              break
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+          echo "Waiting for App container..."
+          for i in {1..30}; do
+            if docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T app php -v > /dev/null 2>&1; then
+              echo "App container is ready"
+              break
+            fi
+            echo "Waiting for App... ($i/30)"
+            sleep 2
+          done
+
+          echo "Waiting for LINE Mock API..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9000 > /dev/null 2>&1; then
+              echo "LINE Mock API is ready"
+              break
+            fi
+            echo "Waiting for Mock API... ($i/30)"
+            sleep 2
+          done
+
+      - name: Initialize database and storage
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          echo "Initializing database and storage..."
+          ./setup/local-setup.default.sh -y -n
+
+      - name: Check if any frontend changed
+        if: steps.skip.outputs.skip != 'true'
+        id: any_frontend
+        run: |
+          if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
+             [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "Waiting for Mock API... ($i/30)"
-          sleep 2
-        done
 
-    - name: Initialize database and storage
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        echo "Initializing database and storage..."
-        ./setup/local-setup.default.sh -y -n
+      - name: Setup Node.js
+        if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-    - name: Check if any frontend changed
-      if: steps.skip.outputs.skip != 'true'
-      id: any_frontend
-      run: |
-        if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
-           [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "changed=false" >> "$GITHUB_OUTPUT"
-        fi
+      - name: Build frontend
+        if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
+        run: |
+          build_frontend() {
+            echo "Building: $1"
+            (cd "$1" && npm ci && CI=false npm run build)
+          }
+          [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
+          [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
+          [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
+          [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
+          echo "Frontend build complete"
 
-    - name: Setup Node.js
-      if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
+      - name: Run CI tests
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
+          ./.github/scripts/test-ci.sh -y
+          ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
 
-    - name: Build frontend
-      if: steps.skip.outputs.skip != 'true' && steps.any_frontend.outputs.changed == 'true'
-      run: |
-        build_frontend() {
-          echo "Building: $1"
-          (cd "$1" && npm ci && CI=false npm run build)
-        }
-        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
-        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
-        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
-        [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
-        echo "Frontend build complete"
+      - name: Handle test failure
+        if: failure() && steps.skip.outputs.skip != 'true'
+        run: |
+          echo "=== Container logs (app) ==="
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app --tail=100
+          echo ""
+          echo "=== Container logs (line-mock-api) ==="
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs line-mock-api --tail=100
+          echo ""
+          echo "=== Exception log ==="
+          if [ -f storage/exception.log ]; then
+            cat storage/exception.log
+          else
+            echo "No exception.log found"
+          fi
 
-    - name: Run CI tests
-      if: steps.skip.outputs.skip != 'true'
-      run: |
-        chmod +x ./.github/scripts/test-ci.sh ./.github/scripts/test-urls.sh ./.github/scripts/check-error-log.sh
-        ./.github/scripts/test-ci.sh -y
-        ./.github/scripts/test-urls.sh && ./.github/scripts/check-error-log.sh
+      - name: Upload logs on failure
+        if: failure() && steps.skip.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: |
+            test-logs/
+            storage/exception.log
+          retention-days: 7
+          if-no-files-found: ignore
 
-    - name: Handle test failure
-      if: failure() && steps.skip.outputs.skip != 'true'
-      run: |
-        echo "=== Container logs (app) ==="
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app --tail=100
-        echo ""
-        echo "=== Container logs (line-mock-api) ==="
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml logs line-mock-api --tail=100
-        echo ""
-        echo "=== Exception log ==="
-        if [ -f storage/exception.log ]; then
-          cat storage/exception.log
-        else
-          echo "No exception.log found"
-        fi
-
-    - name: Upload logs on failure
-      if: failure() && steps.skip.outputs.skip != 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ci-logs
-        path: |
-          test-logs/
-          storage/exception.log
-        retention-days: 7
-        if-no-files-found: ignore
-
-    - name: Show final status
-      if: always() && steps.skip.outputs.skip != 'true'
-      run: |
-        echo "=== Final container status ==="
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml ps
+      - name: Show final status
+        if: always() && steps.skip.outputs.skip != 'true'
+        run: |
+          echo "=== Final container status ==="
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml ps
