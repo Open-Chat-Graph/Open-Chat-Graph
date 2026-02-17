@@ -40,6 +40,7 @@ use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
+use Shared\Exceptions\UnauthorizedException;
 use Shared\MimimalCmsConfig;
 
 Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
@@ -389,6 +390,16 @@ Route::path(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')
                 return false;
+
+            if (AppConfig::$isStaging && SecretsConfig::$stagingBasicAuthPassword) {
+                $auth = getBasicAuthCredentials();
+                if ($auth['user'] !== SecretsConfig::$stagingBasicAuthUser || $auth['pass'] !== SecretsConfig::$stagingBasicAuthPassword) {
+                    header('WWW-Authenticate: Basic realm="Staging Comment API"');
+                    throw new UnauthorizedException(
+                        'Basic authentication is required to post comments on staging environment.'
+                    );
+                }
+            }
 
             return removeAllZeroWidthCharacters($text)
                 ? ['name' => removeAllZeroWidthCharacters($name) ? $name : '']

@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import { fetchApi } from '../../utils/utils'
 import ReportDialogUi from './ReportDialogUi'
-import { appInitTagDto } from '../../config/appInitTagDto'
 
 export default function ReportDialog() {
   const [state, setState] = useRecoilState(reportDialogState)
@@ -25,7 +24,7 @@ export default function ReportDialog() {
       try {
         const token = await executeRecaptcha('report')
         const res = await fetchApi<{ sucsess: boolean }>(
-          `${appInitTagDto.baseUrl}/comment_report/${commentId.current}`,
+          `${window.location.origin}/comment_report/${commentId.current}`,
           'POST',
           { token }
         )
