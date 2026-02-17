@@ -1,4 +1,4 @@
 export const appInitTagDto: {
-  baseUrl: string
   openChatId: number
+  recaptchaKey: string
 } = JSON.parse(document.getElementById('comment-app-init-dto')!.textContent!)

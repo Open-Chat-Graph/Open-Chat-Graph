@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import LikeButtonUi from './LikeButtonUi'
 import { fetchApi } from '../../utils/utils'
-import { appInitTagDto } from '../../config/appInitTagDto'
 
 export type LikeBtnState = LikeBtnApi & { commentId: number }
 
@@ -18,7 +17,7 @@ export default function LikeButton(props: LikeBtnState) {
 
       try {
         const res = await fetchApi<LikeBtnApi>(
-          `${appInitTagDto.baseUrl}/comment_reaction/${state.commentId}`,
+          `${window.location.origin}/comment_reaction/${state.commentId}`,
           state.voted === '' ? 'POST' : 'DELETE',
           { type }
         )

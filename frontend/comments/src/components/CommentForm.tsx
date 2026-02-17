@@ -41,7 +41,7 @@ export default function CommentForm() {
       try {
         const token = await executeRecaptcha('comment')
         const { commentId, userId } = await fetchApi<{ commentId: number; userId: string }>(
-          `${appInitTagDto.baseUrl}/comment/${appInitTagDto.openChatId}`,
+          `${window.location.origin}/comment/${appInitTagDto.openChatId}`,
           'POST',
           {
             name,

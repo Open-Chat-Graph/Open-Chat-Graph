@@ -2,13 +2,13 @@
 <html lang="<?php echo t('ja') ?>">
 <?php
 
-use App\Views\Ads\GoogleAdsense as GAd;
+use App\Config\SecretsConfig;
 
 viewComponent('policy_head', compact('_css', '_meta')) ?>
 
 <body>
     <script type="application/json" id="comment-app-init-dto">
-        <?php echo json_encode(['openChatId' => 0, 'baseUrl' => url()], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
+        <?php echo json_encode(['openChatId' => 0, 'recaptchaKey' => SecretsConfig::$googleRecaptchaSiteKey], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
     </script>
     <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
