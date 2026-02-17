@@ -11,4 +11,6 @@ class SecretsConfig
     static string $cloudFlareZoneId = '';
     static string $cloudFlareApiKey = '';
     static string $yahooClientId = '';
+    static string $stagingBasicAuthUser = '';
+    static string $stagingBasicAuthPassword = '';
 }
