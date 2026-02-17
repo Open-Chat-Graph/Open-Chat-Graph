@@ -215,7 +215,10 @@ MimimalCmsConfig::$stringCryptorHkdfKey = 'HKDF_KEY';
 MimimalCmsConfig::$stringCryptorOpensslKey = 'OPEN_SSL_KEY';
 
 SecretsConfig::$adminApiKey = 'key';
+SecretsConfig::$googleRecaptchaSiteKey = '';
 SecretsConfig::$googleRecaptchaSecretKey = '';
+SecretsConfig::$stagingBasicAuthUser = 'ocgraph';
+SecretsConfig::$stagingBasicAuthPassword = 'ocgraph';
 SecretsConfig::$cloudFlareZoneId = '';
 SecretsConfig::$cloudFlareApiKey = '';
 SecretsConfig::$yahooClientId = '';

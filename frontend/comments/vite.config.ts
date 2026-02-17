@@ -8,7 +8,15 @@ export default defineConfig(({ mode }) => {
   const target = `https://localhost:${env.HTTPS_PORT || '8443'}`
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: 'inject-recaptcha-key',
+        transformIndexHtml(html) {
+          return html.replace('"recaptchaKey": ""', `"recaptchaKey": "${env.RECAPTCHA_SITE_KEY ?? ''}"`)
+        },
+      },
+    ],
     server: {
       proxy: {
         '/comment': {

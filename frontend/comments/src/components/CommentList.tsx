@@ -28,7 +28,8 @@ const swrOptions = {
 
 export default function CommentList({ limit }: { limit: number }) {
   const { data, setSize, size, isValidating } = useSWRInfinite<CommentItem[]>(
-    (i: number) => `${appInitTagDto.baseUrl}/comment/${appInitTagDto.openChatId}?page=${i}&limit=${limit}`,
+    (i: number) =>
+      `${window.location.origin}/comment/${appInitTagDto.openChatId}?page=${i}&limit=${limit}`,
     fetchApi<CommentItem[]>,
     swrOptions
   )
