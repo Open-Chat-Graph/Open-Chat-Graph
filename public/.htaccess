@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Pass Authorization header to PHP (required for Basic Auth in CGI/FastCGI environments like Xserver)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Redirect Trailing Slashes If Not A Folder...
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
