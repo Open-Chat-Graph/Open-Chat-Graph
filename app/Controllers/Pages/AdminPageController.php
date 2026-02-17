@@ -121,6 +121,14 @@ class AdminPageController
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
+    
+    /**
+     * $_SERVERの内容を出力
+     */
+    function server()
+    {
+        pre_var_dump($_SERVER);
+    }
 
     /**
      * タグ更新テストバッチ実行
