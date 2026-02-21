@@ -21,15 +21,18 @@ class DB extends \Shadow\DB implements DBInterface
 
     public static function execute(string $query, ?array $params = null): \PDOStatement
     {
-        try {
-            return parent::execute($query, $params);
-        } catch (\PDOException $e) {
-            if (($e->errorInfo[1] ?? null) === 2006) {
-                static::$pdo = null;
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
                 return parent::execute($query, $params);
-            }
+            } catch (\PDOException $e) {
+                if ($attempt < 2 && ($e->errorInfo[1] ?? null) === 2006) {
+                    static::$pdo = null;
+                    sleep(1);
+                    continue;
+                }
 
-            throw $e;
+                throw $e;
+            }
         }
     }
 }
