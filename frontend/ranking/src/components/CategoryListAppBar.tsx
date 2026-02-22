@@ -4,7 +4,7 @@ import { OCListSortMenu, allOptions2, rankingOptions2 } from './OCListSortMenu'
 import ListToggleChips, { officialButtons, toggleButtons } from './ListToggleChips'
 import { useParams } from 'react-router-dom'
 import SubCategoryChips from './SubCategoryChips'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { listParamsState } from '../store/atom'
 import KeywordChip from './KeywordChip'
 
@@ -23,7 +23,7 @@ function HideOnScroll({ children, matches }: { children: React.ReactElement; mat
 export const CategoryListAppBar = memo(function HideListAppBar() {
   const height = 44
   const { category } = useParams()
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
 
   function ToggleToolbar() {

@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { scrollToTop, validateStringNotEmpty } from '../utils/utils'
 import { useSetListParams } from './ListParamsHooks'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { keywordState } from '../store/atom'
 import { langCode } from '../config/config'
 
 export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => void) | undefined) {
   const [open, setOpen] = useState(false)
   const setParams = useSetListParams()
-  const keyword = useRecoilValue(keywordState)
+  const keyword = useAtomValue(keywordState)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hiddenRef = useRef<HTMLInputElement | null>(null)
   const buttonRef = useRef<HTMLButtonElement | null>(null)

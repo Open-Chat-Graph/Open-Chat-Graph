@@ -5,7 +5,7 @@ import { Box, Tabs, Tab } from '@mui/material'
 import FetchOpenChatRankingList from './FetchOpenChatRankingList'
 import { samePageLinkNavi, scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
 import { listParamsState } from '../store/atom'
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import { CategoryListAppBar } from './CategoryListAppBar'
 import SiteHeaderVertical from './SiteHeaderVertical'
 import SiteHeaderVerticalSearch from './SiteHeaderVerticalSearch'
@@ -31,7 +31,7 @@ function LinkTab(props: { label?: string; href?: string }) {
 
 export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: number }) {
   const navigate = useNavigate()
-  const [params, setParams] = useRecoilState(listParamsState)
+  const [params, setParams] = useAtom(listParamsState)
 
   const handleChange = (e: React.SyntheticEvent, newValue: number) => {
     if (e.type === 'click' && !samePageLinkNavi(e as LinkEvent)) return
