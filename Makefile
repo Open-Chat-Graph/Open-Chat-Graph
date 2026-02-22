@@ -340,7 +340,7 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 		sleep 2; \
 	done
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
-		curl -k -s http://localhost:9000 > /dev/null 2>&1 && break; \
+		curl -k -s http://localhost:$${LINE_MOCK_PORT:-9000} > /dev/null 2>&1 && break; \
 		sleep 2; \
 	done
 	@echo "$(GREEN)✓ 準備完了$(NC)"
