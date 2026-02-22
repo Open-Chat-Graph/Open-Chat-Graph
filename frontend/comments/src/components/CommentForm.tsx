@@ -40,7 +40,13 @@ export default function CommentForm() {
     ;(async () => {
       try {
         const token = await executeRecaptcha('comment')
-        const { commentId, userId } = await fetchApi<{ commentId: number; userId: string }>(
+        const { commentId, userId, userIdHash, uaHash, ipHash } = await fetchApi<{
+          commentId: number
+          userId: string
+          userIdHash: string
+          uaHash: string
+          ipHash: string
+        }>(
           `${window.location.origin}/comment/${appInitTagDto.openChatId}`,
           'POST',
           {
@@ -50,7 +56,7 @@ export default function CommentForm() {
           }
         )
 
-        setPostedItem(commentId, name, text, userId)
+        setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash)
         setName('')
         setText('')
       } catch (error) {
