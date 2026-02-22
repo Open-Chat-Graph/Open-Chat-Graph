@@ -1,6 +1,6 @@
 import React, { memo, useRef } from 'react'
 import useInfiniteFetchApi from '../hooks/InfiniteFetchApi'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { listParamsState } from '../store/atom'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import OpenChatListItem, { DummyOpenChatListItem } from './OpenChatListItem'
@@ -106,7 +106,7 @@ const TotalCount = memo(OCListTotalCount)
 
 function FetchDummyList({ query, cateIndex }: { query: string; cateIndex: number }) {
   const { data } = useInfiniteFetchApi<OpenChat>(query)
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
   const totalCount = data?.length === 0 ? 0 : data ? data[0].totalCount : undefined
 
   return (
@@ -147,7 +147,7 @@ export function DummyOpenChatRankingList({
   query: string
   cateIndex: number
 }) {
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
 
   return (
     <div className="dummy-list" style={{ position: 'relative' }}>
@@ -176,7 +176,7 @@ export function FetchOpenChatRankingList({
 }) {
   const { data, useInViewRef, isValidating, isLastPage, error } =
     useInfiniteFetchApi<OpenChat>(query)
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
   const totalCount = data?.length === 0 ? 0 : data ? data[0].totalCount : undefined
 
   return (

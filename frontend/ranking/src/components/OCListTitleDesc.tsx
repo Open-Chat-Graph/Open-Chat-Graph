@@ -1,4 +1,3 @@
-import React from 'react'
 import { Typography, useMediaQuery } from '@mui/material'
 import OCListDescPopover, { HelpIcon } from './OCListDescPopover'
 import { rankingArgDto } from '../config/config'
@@ -13,7 +12,7 @@ function ListDesc({
   isAll: boolean
   isSearch: boolean
 }) {
-  const p = { sx: { fontSize: 14 }, color: 'text.secondary' }
+  const p = { sx: { fontSize: 14 }, color: 'text.secondary' } as const
 
   switch (list) {
     case 'hourly':
@@ -151,12 +150,11 @@ export default function OCListTitleDesc({
     case 'hourly':
       return (
         <div style={outer}>
-          <Typography children={t('メンバー増加')} sx={{ ...p, mr: 1 }} />
+          <Typography sx={{ ...p, mr: 1 }}>{t('メンバー増加')}</Typography>
           <div style={inner}>
-            <Typography
-              children={`${t('1時間')} (${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
-              sx={p}
-            />
+            <Typography sx={p}>
+              {`${t('1時間')} (${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
+            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (
@@ -169,12 +167,11 @@ export default function OCListTitleDesc({
       past.setDate(past.getDate() - 1)
       return (
         <div style={outer}>
-          <Typography children={t('メンバー増加')} sx={{ ...p, mr: 1 }} />
+          <Typography sx={{ ...p, mr: 1 }}>{t('メンバー増加')}</Typography>
           <div style={inner}>
-            <Typography
-              children={`${t('過去24時間')} (${hourly.getHours()}:${hourly.getMinutes()})`}
-              sx={p}
-            />
+            <Typography sx={p}>
+              {`${t('過去24時間')} (${hourly.getHours()}:${hourly.getMinutes()})`}
+            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (
@@ -187,14 +184,13 @@ export default function OCListTitleDesc({
       past.setDate(past.getDate() - 7)
       return (
         <div style={outer}>
-          <Typography children={t('メンバー増加')} sx={{ ...p, mr: 1 }} />
+          <Typography sx={{ ...p, mr: 1 }}>{t('メンバー増加')}</Typography>
           <div style={inner}>
-            <Typography
-              children={`${t('1週間')} (${past.getMonth() + 1}/${past.getDate()}〜${
+            <Typography sx={p}>
+              {`${t('1週間')} (${past.getMonth() + 1}/${past.getDate()}〜${
                 updatedAt.getMonth() + 1
               }/${updatedAt.getDate()})`}
-              sx={p}
-            />
+            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (
@@ -208,9 +204,9 @@ export default function OCListTitleDesc({
         <div style={outer}>
           <div style={inner}>
             {!isSearch ? (
-              <Typography children={t('参加人数のランキング')} sx={p} />
+              <Typography sx={p}>{t('参加人数のランキング')}</Typography>
             ) : (
-              <Typography children={t('参加人数のランキング')} sx={p} />
+              <Typography sx={p}>{t('参加人数のランキング')}</Typography>
             )}
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
@@ -223,12 +219,11 @@ export default function OCListTitleDesc({
     case 'ranking':
       return (
         <div style={outer}>
-          <Typography children="公式ランキング" sx={{ ...p, mr: 1 }} />
+          <Typography sx={{ ...p, mr: 1 }}>公式ランキング</Typography>
           <div style={inner}>
-            <Typography
-              children={`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
-              sx={p}
-            />
+            <Typography sx={p}>
+              {`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
+            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (
@@ -240,12 +235,11 @@ export default function OCListTitleDesc({
     case 'rising':
       return (
         <div style={outer}>
-          <Typography children="公式急上昇" sx={{ ...p, mr: 1 }} />
+          <Typography sx={{ ...p, mr: 1 }}>公式急上昇</Typography>
           <div style={inner}>
-            <Typography
-              children={`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
-              sx={p}
-            />
+            <Typography sx={p}>
+              {`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
+            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (

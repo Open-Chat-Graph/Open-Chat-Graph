@@ -10,6 +10,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Language**: Primarily Japanese
 - **License**: MIT
 
+## 重要: 環境保護ルール
+
+- `.env` の `DATA_PROTECTION=true` のときは本番データを使用した環境であり、mock環境（`make up-mock`、`make ci-test` 等）を使ってはいけない
+- `DATA_PROTECTION=false` のときはテスト実行やmock環境の操作を自己判断で自由に行ってよい
+- `DATA_PROTECTION=true` のときは `make ci-test`、`make up-mock` 等をユーザーの明示的な指示なしに実行してはいけない（環境が破壊される）。テスト実行もユーザーの指示がある場合のみ
+
 ## Development Environment
 
 ### Docker Setup

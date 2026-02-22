@@ -1,22 +1,13 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
 export const listParamsState = atom<ListParams>({
-  key: 'listParams',
-  default: {
-    sub_category: '',
-    keyword: '',
-    order: 'asc',
-    sort: 'rank',
-    list: 'daily',
-  },
+  sub_category: '',
+  keyword: '',
+  order: 'asc',
+  sort: 'rank',
+  list: 'daily',
 })
 
-export const keywordState = atom<string>({
-  key: 'keyword',
-  default: '',
-})
+export const keywordState = atom<string>('')
 
-export const subCategoryChipsStackScrollLeft = atom<number>({
-  key: 'ubCategoryChipsStackScroll',
-  default: 0,
-})
+export const subCategoryChipsStackScrollLeft = atom<number>(0)

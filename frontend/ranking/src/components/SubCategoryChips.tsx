@@ -1,21 +1,21 @@
 import React, { memo, useEffect, useRef } from 'react'
 import { Box, Button, Chip, Stack, Toolbar } from '@mui/material'
 import { useParams } from 'react-router-dom'
-import { useDraggable } from 'react-use-draggable-scroll'
+import { useDraggableScroll } from '../hooks/useDraggableScroll'
 import { isSP } from '../utils/utils'
 import { ChevronLeft, ChevronRight } from '@mui/icons-material'
 import { useIsLeftRightScrollable, useIsRightScrollable } from '../hooks/ScrollableHooks'
 import { useSetListParams } from '../hooks/ListParamsHooks'
 import { rankingArgDto } from '../config/config'
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import { subCategoryChipsStackScrollLeft } from '../store/atom'
 
 const Chips = memo(function Chips({
   sub_category,
   stackParentRef,
-}: SubCategoryChipsProps & { stackParentRef: React.RefObject<HTMLDivElement> }) {
+}: SubCategoryChipsProps & { stackParentRef: React.RefObject<HTMLDivElement | null> }) {
   const selectedRef = useRef<null | HTMLDivElement>(null)
-  const [stackScrollLeft, setStackScrollLeft] = useRecoilState(subCategoryChipsStackScrollLeft)
+  const [stackScrollLeft, setStackScrollLeft] = useAtom(subCategoryChipsStackScrollLeft)
   const { category } = useParams()
   const setParams = useSetListParams()
   const existsProp = category && Object.hasOwn(rankingArgDto.subCategories, category)
@@ -72,10 +72,7 @@ function SubCategoryChipsPC(props: SubCategoryChipsProps) {
   const { category } = useParams()
   const [isLeftScrollable, isRightScrollable, ref] = useIsLeftRightScrollable(category)
 
-  const { events } = useDraggable(ref, {
-    applyRubberBandEffect: true,
-    decayRate: 0.95,
-  })
+  const { events } = useDraggableScroll(ref)
 
   const onClickArrow = (value: number) => () => {
     ref.current?.scrollTo({

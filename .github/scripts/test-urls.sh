@@ -23,11 +23,13 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# テスト用URL（CI環境ではHTTPを使用）
+# テスト用URL（CI環境ではHTTPを使用、ローカルでは.envのポート設定を参照）
 if [ "${CI}" = "true" ]; then
     BASE_URL="http://localhost:8000"
 else
-    BASE_URL="https://localhost:8443"
+    HTTPS_PORT=$(grep -E '^HTTPS_PORT=' .env 2>/dev/null | cut -d'=' -f2 || echo "8443")
+    HTTPS_PORT=${HTTPS_PORT:-8443}
+    BASE_URL="https://localhost:${HTTPS_PORT}"
 fi
 
 # ログディレクトリ
