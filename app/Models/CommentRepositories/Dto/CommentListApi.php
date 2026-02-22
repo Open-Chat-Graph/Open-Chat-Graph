@@ -35,6 +35,7 @@ class CommentListApi
                     0 => $this->userId === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($this->userId, 'fnv132'),
                     1 => '削除済',
                     2 => '通報により削除済',
+                    default => '削除済',
                 },
                 'userIdHash' => $this->userId === SecretsConfig::$adminApiKey ? '管理者' : substr(hash('sha256', $this->userId), 0, 7),
                 'uaHash' => $this->logUa !== null ? substr(hash('sha256', $this->logUa), 0, 7) : null,
