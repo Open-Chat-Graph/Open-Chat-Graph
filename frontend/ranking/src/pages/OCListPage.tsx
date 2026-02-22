@@ -1,16 +1,22 @@
-import React from 'react'
+import { useMemo } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import OcListMainTabs from '../components/OcListMainTabs'
 import { OPEN_CHAT_CATEGORY } from '../config/config'
-import { RecoilRoot } from 'recoil'
-import { useGetInitListParamsState } from '../hooks/ListParamsHooks'
+import { Provider, createStore } from 'jotai'
+import { useInitStoreFromURL } from '../hooks/ListParamsHooks'
 import { useMediaQuery } from '@mui/material'
 import OcListMainTabsVertical from '../components/OcListMainTabsVertical'
 
 export default function OCListPage() {
   const { category } = useParams()
-  const initializeState = useGetInitListParamsState()
+  const initStore = useInitStoreFromURL()
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
+
+  const store = useMemo(() => {
+    const s = createStore()
+    initStore(s)
+    return s
+  }, [initStore])
 
   const cateIndex =
     typeof category === 'string'
@@ -22,12 +28,12 @@ export default function OCListPage() {
   }
 
   return (
-    <RecoilRoot initializeState={initializeState}>
+    <Provider store={store}>
       {matches ? (
         <OcListMainTabsVertical cateIndex={cateIndex} />
       ) : (
         <OcListMainTabs cateIndex={cateIndex} />
       )}
-    </RecoilRoot>
+    </Provider>
   )
 }

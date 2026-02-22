@@ -15,7 +15,7 @@ import {
 } from '../utils/utils'
 import { CategoryListAppBar } from './CategoryListAppBar'
 import { listParamsState } from '../store/atom'
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import SiteHeader from './SiteHeader'
 import { useInView } from 'react-intersection-observer'
 import { t } from '../config/translation'
@@ -48,10 +48,10 @@ function OcListSwiper({
   swiperRef,
 }: {
   cateIndex: number
-  swiperRef: React.MutableRefObject<SwiperCore | null>
+  swiperRef: React.RefObject<SwiperCore | null>
 }) {
   const navigate = useNavigate()
-  const [params, setParams] = useRecoilState(listParamsState)
+  const [params, setParams] = useAtom(listParamsState)
   const initialIndex = useRef(cateIndex)
   const currentIndex = useRef(cateIndex)
   const scrollY = useRef(0)

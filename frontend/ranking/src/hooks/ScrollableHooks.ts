@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 export function useIsRightScrollable(
   useEffectTrigerValue: any
-): [boolean, React.MutableRefObject<HTMLInputElement>] {
+): [boolean, React.RefObject<HTMLDivElement | null>] {
   const [isRightScrollable, setIsRightScrollable] = useState(false)
-  const ref = useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>
+  const ref = useRef<HTMLDivElement>(null)
 
   const checkScrollButtons = () => {
     if (ref.current) {
@@ -31,8 +31,8 @@ export function useIsRightScrollable(
 
 export function useIsLeftRightScrollable(
   useEffectTrigerValue: any
-): [boolean, boolean, React.MutableRefObject<HTMLInputElement>] {
-  const ref = useRef<HTMLDivElement>() as React.MutableRefObject<HTMLInputElement>
+): [boolean, boolean, React.RefObject<HTMLDivElement | null>] {
+  const ref = useRef<HTMLDivElement>(null)
   const [isLeftScrollable, setIsLeftScrollable] = useState(false)
   const [isRightScrollable, setIsRightScrollable] = useState(false)
 

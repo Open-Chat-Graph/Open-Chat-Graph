@@ -4,7 +4,7 @@ import { Box, IconButton, Input } from '@mui/material'
 import useSiteHeaderSearch from '../hooks/useSiteHeaderSearch'
 import { rankingArgDto } from '../config/config'
 import { listParamsState } from '../store/atom'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { toggleButtons } from './ListToggleChips'
 import { t } from '../config/translation'
 
@@ -35,7 +35,7 @@ export default function SiteHeaderSearch({
     handleCompositionEnd,
   } = useSiteHeaderSearch(siperSlideTo)
 
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
   if (!toggleButtons.find((el) => el[0] === params.list))
     return (
       <header className="site_header_outer" id="site_header">
@@ -90,11 +90,13 @@ export default function SiteHeaderSearch({
               required
               autoComplete="off"
               placeholder={t('オープンチャットを検索')}
-              inputProps={{
-                'aria-label': 'weight',
-                sx: { pl: '2.1rem', pr: '3rem', m: '0.25rem 0' },
-                ref: inputRef,
-                onChange: onChange,
+              inputRef={inputRef}
+              slotProps={{
+                input: {
+                  'aria-label': 'weight',
+                  sx: { pl: '2.1rem', pr: '3rem', m: '0.25rem 0' },
+                  onChange: onChange,
+                },
               }}
               sx={{ width: '100%' }}
               onCompositionStart={handleCompositionStart}

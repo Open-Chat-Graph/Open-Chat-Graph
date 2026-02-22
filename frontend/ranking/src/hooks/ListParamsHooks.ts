@@ -1,4 +1,5 @@
-import { MutableSnapshot, useRecoilCallback, useSetRecoilState } from 'recoil'
+import { useCallback } from 'react'
+import { useSetAtom, useAtomValue, createStore } from 'jotai'
 import { keywordState, listParamsState } from '../store/atom'
 import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
 import { useLocation } from 'react-router-dom'
@@ -25,7 +26,7 @@ const paramsSortRanking: ListParams['sort'][] = ['rank', 'increase', 'rate']
 const paramsSortAll: ListParams['sort'][] = ['member', 'created_at']
 const paramsOrder: ListParams['order'][] = ['asc', 'desc']
 
-const getValidListParams = (params: URLSearchParams, location: any): ListParams => {
+export const getValidListParams = (params: URLSearchParams, location: any): ListParams => {
   const orderParam = (defaultValue: ListParams['order']) =>
     getValidParam<'order'>(params.get('order'), defaultValue, paramsOrder)
   const sortParam = (defaultValue: ListParams['sort'], paramsSort: ListParams['sort'][]) =>
@@ -57,25 +58,24 @@ const getValidListParams = (params: URLSearchParams, location: any): ListParams 
   return { sub_category, keyword, list, sort: sort, order: orderParam('desc') }
 }
 
-export const useGetInitListParamsState = () => {
+export const useInitStoreFromURL = () => {
   const location = useLocation()
 
-  const params = getValidListParams(new URLSearchParams(window.location.search), location)
-
-  return ({ set }: MutableSnapshot) => {
-    set(listParamsState, params)
-    set(keywordState, params.keyword)
+  return (store: ReturnType<typeof createStore>) => {
+    const params = getValidListParams(new URLSearchParams(window.location.search), location)
+    store.set(listParamsState, params)
+    store.set(keywordState, params.keyword)
   }
 }
 
 export function useSetListParams(): SetListParamsValue {
-  const setKeyword = useSetRecoilState(keywordState)
+  const setKeyword = useSetAtom(keywordState)
+  const setListParams = useSetAtom(listParamsState)
   const location = useLocation()
 
-  return useRecoilCallback(
-    ({ snapshot, set }) =>
-      async (getNewParams: (currentParams: ListParams) => ListParams) => {
-        const currentParams = await snapshot.getPromise(listParamsState)
+  return useCallback(
+    (getNewParams: (currentParams: ListParams) => ListParams) => {
+      setListParams((currentParams) => {
         const newParams = getValidListParams(
           new URLSearchParams(getNewParams(currentParams)),
           location
@@ -83,10 +83,12 @@ export function useSetListParams(): SetListParamsValue {
 
         window.history.replaceState(null, '', updateURLSearchParams(newParams))
         setTitle(newParams)
-        set(listParamsState, newParams)
         setKeyword(newParams.keyword)
         scrollToTop()
-      },
-    [window.location.pathname]
+
+        return newParams
+      })
+    },
+    [location, setKeyword, setListParams]
   )
 }

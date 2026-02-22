@@ -5,7 +5,7 @@ import useSiteHeaderSearch from '../hooks/useSiteHeaderSearch'
 import { rankingArgDto } from '../config/config'
 import { toggleButtons } from './ListToggleChips'
 import { listParamsState } from '../store/atom'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { t } from '../config/translation'
 
 export default function SiteHeaderVerticalSearch() {
@@ -25,7 +25,7 @@ export default function SiteHeaderVerticalSearch() {
     handleCompositionEnd,
   } = useSiteHeaderSearch()
 
-  const params = useRecoilValue(listParamsState)
+  const params = useAtomValue(listParamsState)
   if (!toggleButtons.find((el) => el[0] === params.list)) return null
 
   return (
@@ -76,11 +76,13 @@ export default function SiteHeaderVerticalSearch() {
                 required
                 autoComplete="off"
                 placeholder={t('オープンチャットを検索')}
-                inputProps={{
-                  'aria-label': 'weight',
-                  sx: { pl: '2.1rem', pr: '3rem', m: '0.25rem 0' },
-                  ref: inputRef,
-                  onChange: onChange,
+                inputRef={inputRef}
+                slotProps={{
+                  input: {
+                    'aria-label': 'weight',
+                    sx: { pl: '2.1rem', pr: '3rem', m: '0.25rem 0' },
+                    onChange: onChange,
+                  },
                 }}
                 sx={{ width: '100%' }}
                 onCompositionStart={handleCompositionStart}
