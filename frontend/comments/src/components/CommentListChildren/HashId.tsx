@@ -13,6 +13,7 @@ const chipSx = (color: string) => ({
   fontWeight: 600,
   color,
   borderColor: color,
+  opacity: 0.75,
   '& .MuiChip-label': {
     px: '6px',
     py: '1px',
