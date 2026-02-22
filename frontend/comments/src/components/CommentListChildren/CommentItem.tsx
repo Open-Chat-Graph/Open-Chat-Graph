@@ -8,6 +8,7 @@ import {
 } from '../../utils/utils'
 import ReportButton from '../Button/ReportButton'
 import HashId from './HashId'
+import { linkify } from '../../utils/linkify'
 
 const listItemSx: SxProps<Theme> = {
   p: 0,
@@ -52,7 +53,7 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
               color: text.length ? undefined : '#aaa',
             }}
           >
-            {text.length ? text.replace(/(\r?\n|\r){3,}/g, '\n\n') : '削除されたコメント😇'}
+            {text.length ? linkify(text.replace(/(\r?\n|\r){3,}/g, '\n\n')) : '削除されたコメント😇'}
           </Typography>
         }
       />
