@@ -1,11 +1,14 @@
 type ChartLimit = 0 | 8 | 31
 
+type ChartMode = 'line' | 'candlestick'
+
 type ChartArgs = {
   date: string[]
   graph1: (number | null)[]
   graph2: (number | null)[]
   time: (string | null)[]
   totalCount: (number | null)[]
+  rankingOhlc?: RankingPositionOhlc[]
 }
 
 type ChartData = {
@@ -24,7 +27,7 @@ type OpenChatChartOption = {
 }
 
 type labelRangeLine = {
-  dataMax: number;
-  dataMin: number;
-  stepSize: number|undefined;
+  dataMax: number
+  dataMin: number
+  stepSize: number | undefined
 }

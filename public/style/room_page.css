@@ -227,11 +227,7 @@ html {
 
 .talkroom_description_box .more-separater {
   width: 4rem;
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1)
-  );
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
 }
 
 /* オープンチャットの説明 */

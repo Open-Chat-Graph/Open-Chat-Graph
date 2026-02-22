@@ -36,23 +36,23 @@ function CategoryToggle() {
 
   return (
     <Stack
-      direction='row'
+      direction="row"
       spacing={1}
-      alignItems='center'
+      alignItems="center"
       sx={{ opacity: rankingRisingSignal.value === 'none' ? 0.2 : undefined }}
     >
       <ToggleButtonGroup
         value={categorySignal.value}
         exclusive
         onChange={handleChangeToggle}
-        size='small'
+        size="small"
       >
-        <ToggleButton value='all'>
-          <Typography variant='caption'>{t('すべて')}</Typography>
+        <ToggleButton value="all">
+          <Typography variant="caption">{t('すべて')}</Typography>
         </ToggleButton>
         {toggleShowCategorySignal.value && (
-          <ToggleButton value='in'>
-            <Typography variant='caption'>{t('カテゴリー内')}</Typography>
+          <ToggleButton value="in">
+            <Typography variant="caption">{t('カテゴリー内')}</Typography>
           </ToggleButton>
         )}
       </ToggleButtonGroup>
@@ -64,7 +64,7 @@ function SwitchLabels() {
   return (
     <FormGroup>
       <FormControlLabel
-        control={<Switch size='small' checked={zoomEnableSignal.value} />}
+        control={<Switch size="small" checked={zoomEnableSignal.value} />}
         label={t('グラフの移動・拡大')}
         sx={{ '.MuiFormControlLabel-label': { fontSize: '11.5px', textWrap: 'nowrap' } }}
         onChange={(e: React.TargetedEvent<HTMLInputElement>) =>
@@ -83,12 +83,12 @@ export default function ToggleButtons() {
   return (
     <Box>
       <Stack
-        minHeight='48px'
-        direction='row'
-        alignItems='center'
+        minHeight="48px"
+        direction="row"
+        alignItems="center"
         justifyContent={isPc ? 'space-around' : 'space-between'}
       >
-        <Typography variant='h3' fontSize='13px' fontWeight='bold' color='#111'>
+        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="#111">
           {t('ランキングの順位を表示')}
         </Typography>
         {limitSignal.value === 0 && !isPc && <SwitchLabels />}
@@ -100,15 +100,15 @@ export default function ToggleButtons() {
         <SettingButton />
       </Stack>
       <Stack
-        direction='row'
+        direction="row"
         spacing={1}
-        alignItems='center'
-        justifyContent='center'
+        alignItems="center"
+        justifyContent="center"
         m={isMiniMobile ? '0 -1rem' : '0'}
         gap={isMiniMobile ? '2px' : '1rem'}
       >
         <CategoryToggle />
-        <Stack direction='row' spacing={1} alignItems='center'>
+        <Stack direction="row" spacing={1} alignItems="center">
           {chips1.map(
             (chip) =>
               !(chip[1] === 'ranking' && !toggleShowCategorySignal.value) && (

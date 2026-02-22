@@ -9,7 +9,15 @@ import {
 } from 'chart.js'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 
-Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Title, ChartDataLabels)
+Chart.register(
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Title,
+  ChartDataLabels
+)
 
 interface BandData {
   band_id: number
@@ -34,7 +42,9 @@ const el = document.getElementById('distribution-data')
 if (el) {
   const data: BandData[] = JSON.parse(el.textContent ?? '[]')
   const roomCanvas = document.getElementById('distribution-room-chart') as HTMLCanvasElement | null
-  const memberCanvas = document.getElementById('distribution-member-chart') as HTMLCanvasElement | null
+  const memberCanvas = document.getElementById(
+    'distribution-member-chart'
+  ) as HTMLCanvasElement | null
   if (data.length > 0) {
     if (roomCanvas) renderRoomCountChart(roomCanvas, data)
     if (memberCanvas) renderMemberChart(memberCanvas, data)
@@ -151,7 +161,10 @@ function renderMemberChart(canvas: HTMLCanvasElement, data: BandData[]): void {
             title: (items) => items[0].label,
             label: (item) => {
               const num = item.raw as number
-              return '合計参加者数: ' + (num >= 10000 ? (num / 10000).toFixed(1) + '万' : num.toLocaleString())
+              return (
+                '合計参加者数: ' +
+                (num >= 10000 ? (num / 10000).toFixed(1) + '万' : num.toLocaleString())
+              )
             },
           },
         },

@@ -36,7 +36,13 @@ export default function CommentFormUi({
         autoComplete="off"
         onSubmit={onSubmit}
       >
-        <TextField label="ニックネーム（任意）" variant="standard" sx={textFieldSx} name="name" {...nameProps} />
+        <TextField
+          label="ニックネーム（任意）"
+          variant="standard"
+          sx={textFieldSx}
+          name="name"
+          {...nameProps}
+        />
         <TextField
           label={appInitTagDto.openChatId ? 'オープンチャットについてのコメント' : 'コメント'}
           variant="standard"

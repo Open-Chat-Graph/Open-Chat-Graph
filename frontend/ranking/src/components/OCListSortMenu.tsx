@@ -55,19 +55,19 @@ export const OCListSortMenu = memo(function OCListSortMenu({
   return (
     <Box sx={{ pl: under359 ? undefined : '8px', whiteSpace: 'nowrap' }}>
       <Button
-        id='sort-button'
+        id="sort-button"
         aria-controls={open ? 'sort-menu' : undefined}
-        aria-haspopup='true'
+        aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClickListItem}
         sx={{ fontSize: under359 ? '12.5px' : '14px', color: '#000', minWidth: 36, minHeight: 36 }}
-        color='success'
+        color="success"
       >
         {!under359 && <SortIcon sx={{ marginRight: '4px', fontSize: '20px', color: '#000' }} />}
         {isSP() || under359 ? `${options[selectedIndex][0][1]}` : options[selectedIndex][0][0]}
       </Button>
       <Menu
-        id='sort-menu'
+        id="sort-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}

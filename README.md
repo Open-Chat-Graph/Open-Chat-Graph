@@ -33,6 +33,7 @@ make up
 - **初期状態**（データベースとSQLiteファイルが存在しない）の場合、確認なしで自動実行
 
 **引数を渡す:**
+
 ```bash
 # 対話型（デフォルト）
 make init
@@ -55,9 +56,11 @@ make init-y-n
 ### 環境の種類
 
 **基本環境（make up）:**
+
 - 実際のLINEサーバーにアクセス（インターネット接続必要）
 
 **Mock付き環境（make up-mock）:**
+
 - LINE Mock APIを含む開発環境
 - Docker Composeのサービス名（line-mock-api）でMock APIにアクセス
 - インターネット接続不要
@@ -66,6 +69,7 @@ make init-y-n
 ### 利用可能なコマンド
 
 **基本環境:**
+
 ```bash
 make up        # 起動
 make down      # 停止
@@ -75,6 +79,7 @@ make ssh       # コンテナにログイン（基本・Mock両対応）
 ```
 
 **Mock付き環境:**
+
 ```bash
 make up-mock      # 起動（docker/line-mock-api/.env.mockの設定を使用）
 make cron         # Cron有効化（毎時30/35/40分に自動クローリング）
@@ -82,17 +87,20 @@ make cron-stop    # Cron無効化
 ```
 
 **テスト・CI:**
+
 ```bash
 make ci-test   # CI環境でテストを実行（ローカル専用）
 ```
 
 **その他:**
+
 ```bash
 make show      # 現在の起動モード・設定表示
 make help      # 全コマンド表示
 ```
 
 **Cron自動実行モード:**
+
 - 毎時30分: 日本語クローリング
 - 毎時35分: 繁体字中国語クローリング
 - 毎時40分: タイ語クローリング
@@ -100,11 +108,13 @@ make help      # 全コマンド表示
 ### アクセスURL
 
 **基本環境（make up）:**
+
 - HTTPS: https://localhost:8443
 - phpMyAdmin: http://localhost:8080
 - MySQL: localhost:3306
 
 **Mock付き環境（make up-mock）:**
+
 - HTTPS（基本）: https://localhost:8443
 - HTTPS（Mock）: https://localhost:8543
 - phpMyAdmin: http://localhost:8080
@@ -114,6 +124,7 @@ make help      # 全コマンド表示
 MySQLコマンド例: `docker compose exec mysql mysql -uroot -ptest_root_pass -e "SELECT 1"`
 
 **注意:**
+
 - HTTPは自動的にHTTPSにリダイレクトされます
 - 両環境でMySQLデータベースは共有されます
 
@@ -130,17 +141,20 @@ ENABLE_XDEBUG=1 make up-mock
 ### CI環境
 
 **GitHub Actionsで自動テストを実行:**
+
 - `.github/workflows/ci.yml`: PRマージ前に自動実行
 - `docker-compose.ci.yml`: CI専用設定（SSL無効、Xdebug無効）
 - Docker Layer Caching: 2回目以降のビルドを高速化
 
 **ローカルでCIテストを実行:**
+
 ```bash
 make ci-test
 ```
 
 **CIテストとデプロイをスキップ:**
 緊急修正やドキュメント更新など、CIテストとデプロイを実行せずにmainにマージしたい場合：
+
 - PRに `skip-ci` ラベルを付ける
 - またはPRタイトルの先頭に `skip-ci:` を追加
 
@@ -168,6 +182,7 @@ Mock環境で時刻を進めながらクローリングをテスト：
 **実行回数設定:** `docker/line-mock-api/.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
 
 **データ検証:** `./.github/scripts/verify-test-data.sh` で以下を確認
+
 - MySQLテーブルのレコード数:
   - `ocgraph_comment.open_chat`: 2000件以上
   - `ocgraph_ocreviewth.open_chat`: 1000件以上
@@ -176,6 +191,26 @@ Mock環境で時刻を進めながらクローリングをテスト：
   - `ocgraph_ocreview.statistics_ranking_hour24`: 10件以上
   - `ocgraph_ocreview.user_log`: 0件
   - `ocgraph_graph.recommend`: 500件以上
+
+---
+
+## ⚠️ トラブルシューティング
+
+### SQLiteファイルをコンテナ間でコピーした後に `SQLITE_READONLY` エラーが出る
+
+別のコンテナや環境からSQLiteの`.db`ファイルを`storage/`にコピーした場合、以下のエラーが発生することがある:
+
+```
+PDOException: SQLSTATE[HY000]: General error: 8 attempt to write a readonly database
+```
+
+**原因**: SQLiteはWALモードで動作しており、SELECTでも`-shm`/`-wal`ファイルをディレクトリに新規作成する必要がある。コピーしたファイルのownerがコンテナ内のPHPプロセスユーザー（`www-data`）と異なり、かつディレクトリに書き込み権限がないため、ファイル作成に失敗する。
+
+**対処法**: `.db`ファイルとディレクトリの両方にwww-dataの書き込み権限を付与する:
+
+```bash
+docker compose exec app sh -c 'find /var/www/html/storage -name "*.db" -exec chown www-data:www-data {} + && find /var/www/html/storage/*/SQLite -type d -exec chmod 777 {} +'
+```
 
 ---
 

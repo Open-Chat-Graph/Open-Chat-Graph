@@ -1,9 +1,9 @@
-const cache: { url: string[], data: any[] } = {
+const cache: { url: string[]; data: any[] } = {
   url: [],
-  data: []
+  data: [],
 }
 
-export default async function fetcher<T,>(url: string) {
+export default async function fetcher<T>(url: string) {
   const cacheIndex = cache.url.indexOf(url)
   if (cacheIndex !== -1) {
     return cache.data[cacheIndex] as T

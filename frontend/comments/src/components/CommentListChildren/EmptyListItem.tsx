@@ -1,4 +1,4 @@
-import { ListItem, ListItemText, Typography } from "@mui/material";
+import { ListItem, ListItemText, Typography } from '@mui/material'
 
 export default function EmptyListItem() {
   return (

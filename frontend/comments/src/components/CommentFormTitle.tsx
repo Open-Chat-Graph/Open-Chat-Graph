@@ -6,7 +6,11 @@ export default function CommentFormTitle() {
       <Typography variant="h3" sx={{ fontSize: '13px', fontWeight: 'bold' }}>
         コメントする
       </Typography>
-      <Typography sx={{ fontSize: '12px' }} color="text.secondary" className="comment-term-text-color">
+      <Typography
+        sx={{ fontSize: '12px' }}
+        color="text.secondary"
+        className="comment-term-text-color"
+      >
         ユーザー登録不要の匿名投稿
       </Typography>
     </Box>

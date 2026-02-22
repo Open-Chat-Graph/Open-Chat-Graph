@@ -1,7 +1,13 @@
-import { Chart as ChartJS } from 'chart.js/auto';
-import { ActiveElement, ChartTypeRegistry, Point, Tooltip, TooltipPositionerFunction } from "chart.js";
-import OpenChatChart from "../../OpenChatChart";
-import { resetTooltip } from './getEventCatcherPlugin';
+import { Chart as ChartJS } from 'chart.js/auto'
+import {
+  ActiveElement,
+  ChartTypeRegistry,
+  Point,
+  Tooltip,
+  TooltipPositionerFunction,
+} from 'chart.js'
+import OpenChatChart from '../../OpenChatChart'
+import { resetTooltip } from './getEventCatcherPlugin'
 
 const defaultVerticalLine = {
   color: 'black',
@@ -9,11 +15,15 @@ const defaultVerticalLine = {
   setLineDash: [6, 6],
 }
 
-const verticalLine = (chart: ChartJS, options: {
-  color: string;
-  lineWidth: number;
-  setLineDash: number[];
-}, x: number) => {
+const verticalLine = (
+  chart: ChartJS,
+  options: {
+    color: string
+    lineWidth: number
+    setLineDash: number[]
+  },
+  x: number
+) => {
   const ctx = chart.ctx
   const chartArea = chart.chartArea
 
@@ -34,13 +44,14 @@ let isShow = false
 let onPaning = false
 let onZooming = false
 
-export const getTooltipAndLineCallback = (ocChart: OpenChatChart): TooltipPositionerFunction<keyof ChartTypeRegistry> =>
+export const getTooltipAndLineCallback =
+  (ocChart: OpenChatChart): TooltipPositionerFunction<keyof ChartTypeRegistry> =>
   (items: readonly ActiveElement[], eventPosition: Point) => {
     /** @ts-ignore */
-    const pos = Tooltip.positioners.average(items, eventPosition);
+    const pos = Tooltip.positioners.average(items, eventPosition)
     if (pos === false) {
       isShow = false
-      return false;
+      return false
     }
 
     const index = items[0].index
@@ -76,10 +87,11 @@ export const getTooltipAndLineCallback = (ocChart: OpenChatChart): TooltipPositi
       }
     }
 
-    // 1週間表示時に棒グラフのデータがない場合は非表示にする
+    // 1週間表示時に棒グラフのデータがない場合は非表示にする（ローソク足モード時はスキップ）
     if (
-      (ocChart.limit === 8 || ocChart.zoomWeekday === 2)
-      && (!ocChart.data.graph2.length)
+      ocChart.getMode() !== 'candlestick' &&
+      (ocChart.limit === 8 || ocChart.zoomWeekday === 2) &&
+      !ocChart.data.graph2.length
     ) {
       isShow = false
       return false

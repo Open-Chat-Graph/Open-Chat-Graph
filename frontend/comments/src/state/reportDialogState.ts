@@ -1,4 +1,4 @@
-import { atom } from "recoil";
+import { atom } from 'recoil'
 
 export const reportDialogState = atom<{
   open: boolean
@@ -11,6 +11,6 @@ export const reportDialogState = atom<{
     open: false,
     result: 'unsent',
     commentId: 0,
-    id: 0
-  }
-});
+    id: 0,
+  },
+})

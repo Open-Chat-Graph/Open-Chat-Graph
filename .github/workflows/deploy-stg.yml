@@ -14,174 +14,173 @@ jobs:
       (github.event_name == 'workflow_dispatch') ||
       (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
-
     steps:
-    # PRマージ時はCIテストが成功しているか確認（skip-ci時はスキップ）
-    - name: Check CI status
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
-        !startsWith(github.event.pull_request.title, 'skip-ci')
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
+      # PRマージ時はCIテストが成功しているか確認（skip-ci時はスキップ）
+      - name: Check CI status
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+          !startsWith(github.event.pull_request.title, 'skip-ci')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
 
-        # PRのhead SHA を取得
-        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # PRのhead SHA を取得
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
 
-        # CI Test ワークフローの結果を確認
-        CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
-          --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
+          # CI Test ワークフローの結果を確認
+          CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
+            --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
 
-        echo "CI Test status: $CI_STATUS"
+          echo "CI Test status: $CI_STATUS"
 
-        if [ "$CI_STATUS" != "success" ]; then
-          echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
-          exit 1
-        fi
+          if [ "$CI_STATUS" != "success" ]; then
+            echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
+            exit 1
+          fi
 
-        echo "CI Test passed. Proceeding with deployment."
+          echo "CI Test passed. Proceeding with deployment."
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Check for frontend changes
-      if: github.event_name == 'pull_request'
-      uses: dorny/paths-filter@v3
-      id: check_changes
-      with:
-        filters: |
-          frontend_ranking:
-            - 'frontend/ranking/**'
-          frontend_stats_graph:
-            - 'frontend/stats-graph/**'
-          frontend_comments:
-            - 'frontend/comments/**'
-          frontend_all_room_stats:
-            - 'frontend/all-room-stats/**'
+      - name: Check for frontend changes
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        id: check_changes
+        with:
+          filters: |
+            frontend_ranking:
+              - 'frontend/ranking/**'
+            frontend_stats_graph:
+              - 'frontend/stats-graph/**'
+            frontend_comments:
+              - 'frontend/comments/**'
+            frontend_all_room_stats:
+              - 'frontend/all-room-stats/**'
 
-    - name: Check if any frontend changed
-      id: any_frontend
-      run: |
-        if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
-           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
-           [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "changed=false" >> "$GITHUB_OUTPUT"
-        fi
+      - name: Check if any frontend changed
+        id: any_frontend
+        run: |
+          if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
+             [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
-    - name: Setup Node.js
-      if: steps.any_frontend.outputs.changed == 'true'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
+      - name: Setup Node.js
+        if: steps.any_frontend.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-    - name: Build frontend
-      if: steps.any_frontend.outputs.changed == 'true'
-      run: |
-        build_frontend() {
-          echo "Building: $1"
-          (cd "$1" && npm ci && CI=false npm run build)
-        }
-        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
-        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
-        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
-        [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
-        echo "Frontend build complete"
-
-    - name: Setup SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.STG_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        echo "${{ secrets.STG_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-
-    - name: Deploy code
-      run: |
-        ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
-
-    - name: Initialize SQLite databases
-      run: |
-        ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
-
-    - name: Deploy frontend assets
-      if: steps.any_frontend.outputs.changed == 'true'
-      run: |
-        deploy() {
-          local dir=$(basename "$1")
-          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "rm -rf ${{ vars.STG_SSH_PATH }}/public/js/$dir/"
-          scp -P ${{ vars.STG_SSH_PORT }} -r "$1" ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }}:${{ vars.STG_SSH_PATH }}/public/js/
-        }
-        [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
-        [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
-        [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/
-        [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
-        echo "Frontend deploy complete"
-
-    - name: Install twitter-api-v2
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      run: npm install twitter-api-v2
-
-    - name: Create post script
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      run: |
-        cat > post-pr-merge.js << 'EOF'
-        import { TwitterApi } from 'twitter-api-v2';
-
-        const client = new TwitterApi({
-          appKey: process.env.TWITTER_API_KEY,
-          appSecret: process.env.TWITTER_API_SECRET,
-          accessToken: process.env.TWITTER_ACCESS_TOKEN,
-          accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-        });
-
-        async function postTweet() {
-          try {
-            const prNumber = process.env.PR_NUMBER;
-            const prTitle = process.env.PR_TITLE;
-            const prUrl = process.env.PR_URL;
-            const prAuthor = process.env.PR_AUTHOR;
-
-            const message = '🚀 プルリクエストがマージされ、開発環境に反映されました\n\n' +
-              '#' + prNumber + ': ' + prTitle + '\n' +
-              'By @' + prAuthor + '\n\n' +
-              '#オプチャグラフ https://openchat-review-dev.me' + '\n\n' +
-              prUrl;
-
-            const tweet = await client.v2.tweet(message);
-            console.log('Tweet posted: ' + tweet.data.id);
-
-          } catch (error) {
-            console.error('Error:', error);
-            process.exit(1);
+      - name: Build frontend
+        if: steps.any_frontend.outputs.changed == 'true'
+        run: |
+          build_frontend() {
+            echo "Building: $1"
+            (cd "$1" && npm ci && CI=false npm run build)
           }
-        }
+          [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
+          [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
+          [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
+          [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
+          echo "Frontend build complete"
 
-        postTweet();
-        EOF
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STG_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.STG_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-    - name: Post to X (Twitter)
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      env:
-        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
-        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
-        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_URL: ${{ github.event.pull_request.html_url }}
-        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-      run: node post-pr-merge.js
+      - name: Deploy code
+        run: |
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
+
+      - name: Initialize SQLite databases
+        run: |
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+
+      - name: Deploy frontend assets
+        if: steps.any_frontend.outputs.changed == 'true'
+        run: |
+          deploy() {
+            local dir=$(basename "$1")
+            ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "rm -rf ${{ vars.STG_SSH_PATH }}/public/js/$dir/"
+            scp -P ${{ vars.STG_SSH_PORT }} -r "$1" ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }}:${{ vars.STG_SSH_PATH }}/public/js/
+          }
+          [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
+          [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
+          [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/
+          [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
+          echo "Frontend deploy complete"
+
+      - name: Install twitter-api-v2
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        run: npm install twitter-api-v2
+
+      - name: Create post script
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        run: |
+          cat > post-pr-merge.js << 'EOF'
+          import { TwitterApi } from 'twitter-api-v2';
+
+          const client = new TwitterApi({
+            appKey: process.env.TWITTER_API_KEY,
+            appSecret: process.env.TWITTER_API_SECRET,
+            accessToken: process.env.TWITTER_ACCESS_TOKEN,
+            accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+          });
+
+          async function postTweet() {
+            try {
+              const prNumber = process.env.PR_NUMBER;
+              const prTitle = process.env.PR_TITLE;
+              const prUrl = process.env.PR_URL;
+              const prAuthor = process.env.PR_AUTHOR;
+
+              const message = '🚀 プルリクエストがマージされ、開発環境に反映されました\n\n' +
+                '#' + prNumber + ': ' + prTitle + '\n' +
+                'By @' + prAuthor + '\n\n' +
+                '#オプチャグラフ https://openchat-review-dev.me' + '\n\n' +
+                prUrl;
+
+              const tweet = await client.v2.tweet(message);
+              console.log('Tweet posted: ' + tweet.data.id);
+
+            } catch (error) {
+              console.error('Error:', error);
+              process.exit(1);
+            }
+          }
+
+          postTweet();
+          EOF
+
+      - name: Post to X (Twitter)
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node post-pr-merge.js

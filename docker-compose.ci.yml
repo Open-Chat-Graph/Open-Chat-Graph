@@ -12,10 +12,10 @@ services:
     #     ENABLE_SSL: false
     volumes:
       # HTTP専用のApache設定
-      - "./docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-available/000-default.conf"
-      - "./docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-enabled/000-default.conf"
+      - './docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-available/000-default.conf'
+      - './docker/app/apache2/sites-available/000-default-ci.conf:/etc/apache2/sites-enabled/000-default.conf'
       # SSL設定を無効化
-      - "./docker/app/apache2/sites-available/000-default-ssl-disabled.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
+      - './docker/app/apache2/sites-available/000-default-ssl-disabled.conf:/etc/apache2/sites-enabled/000-default-ssl.conf'
     depends_on:
       - line-mock-api
     networks:
@@ -39,12 +39,12 @@ services:
     # build:
     #   context: "docker/line-mock-api/"
     ports:
-      - "9000:80"
+      - '9000:80'
     volumes:
-      - "./docker/line-mock-api:/app"
-      - "./docker/line-mock-api/storage:/var/www/html/storage"
-      - "./docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
-    entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
+      - './docker/line-mock-api:/app'
+      - './docker/line-mock-api/storage:/var/www/html/storage'
+      - './docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro'
+    entrypoint: ['/bin/bash', '/usr/local/bin/entrypoint.sh']
     environment:
       - TZ=Asia/Tokyo
       - LANG=ja_JP.UTF-8

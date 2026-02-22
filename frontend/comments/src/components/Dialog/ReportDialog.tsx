@@ -31,7 +31,8 @@ export default function ReportDialog() {
 
         console.log(res)
         setState((p) => ({ ...p, result: 'done' }))
-      } catch {
+      } catch (error) {
+        console.error(error)
         setState((p) => ({ ...p, result: 'fail' }))
       } finally {
         setIsLoading(false)
@@ -44,6 +45,15 @@ export default function ReportDialog() {
   }, [setState])
 
   return (
-    <ReportDialogUi {...{ open: state.open, isLoading, result: state.result, handleClose, handleOk, id: state.id }} />
+    <ReportDialogUi
+      {...{
+        open: state.open,
+        isLoading,
+        result: state.result,
+        handleClose,
+        handleOk,
+        id: state.id,
+      }}
+    />
   )
 }

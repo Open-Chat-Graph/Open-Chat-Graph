@@ -52,7 +52,11 @@ export default memo(function LikeButtonUi(props: LikeBtnState & { handler: LikeB
   const { empathyCount, insightsCount: _insightsCount, negativeCount, voted, handler } = props
 
   const BtnWrapper = (props: BtnWrapper) => (
-    <Btn {...{ ...props, handler }} voted={voted === props.type} disabled={!!voted && voted !== props.type} />
+    <Btn
+      {...{ ...props, handler }}
+      voted={voted === props.type}
+      disabled={!!voted && voted !== props.type}
+    />
   )
 
   return (

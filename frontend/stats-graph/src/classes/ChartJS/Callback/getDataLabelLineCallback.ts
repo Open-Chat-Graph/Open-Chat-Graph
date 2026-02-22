@@ -1,4 +1,4 @@
-import { Context } from 'chartjs-plugin-datalabels';
+import { Context } from 'chartjs-plugin-datalabels'
 
 export default function getDataLabelLineCallback(firstIndex: number, lastIndex: number) {
   return (context: Context) => {

@@ -28,5 +28,5 @@ export default function App() {
         </Box>
       </GoogleReCaptchaProvider>
     </RecoilRoot>
-  );
+  )
 }

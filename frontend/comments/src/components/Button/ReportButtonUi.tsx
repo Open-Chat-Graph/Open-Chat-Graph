@@ -1,6 +1,10 @@
 import { Button } from '@mui/material'
 
-export default function ReportButtonUi({ onClick }: { onClick: React.MouseEventHandler<HTMLButtonElement> }) {
+export default function ReportButtonUi({
+  onClick,
+}: {
+  onClick: React.MouseEventHandler<HTMLButtonElement>
+}) {
   return (
     <Button
       color="inherit"
@@ -10,7 +14,7 @@ export default function ReportButtonUi({ onClick }: { onClick: React.MouseEventH
         minWidth: 0,
         ml: 1,
         fontSize: 'inherit',
-        lineHeight: "unset"
+        lineHeight: 'unset',
       }}
       onClick={onClick}
     >

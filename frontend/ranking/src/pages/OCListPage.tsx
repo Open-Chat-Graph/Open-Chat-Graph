@@ -12,7 +12,10 @@ export default function OCListPage() {
   const initializeState = useGetInitListParamsState()
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
 
-  const cateIndex = typeof category === 'string' ? OPEN_CHAT_CATEGORY.findIndex((el) => el[1] === Number(category)) : 0
+  const cateIndex =
+    typeof category === 'string'
+      ? OPEN_CHAT_CATEGORY.findIndex((el) => el[1] === Number(category))
+      : 0
 
   if (cateIndex === -1) {
     return <Navigate to="/404" />
@@ -20,7 +23,11 @@ export default function OCListPage() {
 
   return (
     <RecoilRoot initializeState={initializeState}>
-      {matches ? <OcListMainTabsVertical cateIndex={cateIndex} /> : <OcListMainTabs cateIndex={cateIndex} />}
+      {matches ? (
+        <OcListMainTabsVertical cateIndex={cateIndex} />
+      ) : (
+        <OcListMainTabs cateIndex={cateIndex} />
+      )}
     </RecoilRoot>
   )
 }

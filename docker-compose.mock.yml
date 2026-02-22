@@ -3,22 +3,22 @@
 
 services:
   app:
-    privileged: true  # システム時刻変更に必要
+    privileged: true # システム時刻変更に必要
     build:
-      context: "docker/app/"
+      context: 'docker/app/'
       args:
         INSTALL_XDEBUG: ${INSTALL_XDEBUG:-true}
     volumes:
       # ローカルMock環境用のSSL設定（CI環境ではentrypoint.shで上書き）
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl.conf"
-      - "./docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl.conf"
+      - './docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-available/000-default-ssl.conf'
+      - './docker/app/apache2/sites-available/000-default-ssl-mock.conf:/etc/apache2/sites-enabled/000-default-ssl.conf'
     depends_on:
       - line-mock-api
     networks:
       - default
       - mock-network
     cap_add:
-      - SYS_TIME  # コンテナのシステム時刻を変更可能にする（テスト用）
+      - SYS_TIME # コンテナのシステム時刻を変更可能にする（テスト用）
     environment:
       - LINE_MOCK_PORT=${LINE_MOCK_PORT:-9000}
 
@@ -34,18 +34,18 @@ services:
 
   # LINE公式サイトエミュレーションサーバー
   line-mock-api:
-    privileged: true  # システム時刻変更に必要
+    privileged: true # システム時刻変更に必要
     build:
-      context: "docker/line-mock-api/"
+      context: 'docker/line-mock-api/'
     ports:
-      - "${LINE_MOCK_PORT:-9000}:80"
+      - '${LINE_MOCK_PORT:-9000}:80'
     volumes:
-      - "./docker/line-mock-api:/app"
-      - "./docker/line-mock-api/storage:/var/www/html/storage"
-      - "./docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro"
+      - './docker/line-mock-api:/app'
+      - './docker/line-mock-api/storage:/var/www/html/storage'
+      - './docker/line-mock-api/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro'
     cap_add:
-      - SYS_TIME  # コンテナのシステム時刻を変更可能にする（テスト用）
-    entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
+      - SYS_TIME # コンテナのシステム時刻を変更可能にする（テスト用）
+    entrypoint: ['/bin/bash', '/usr/local/bin/entrypoint.sh']
     environment:
       - TZ=Asia/Tokyo
       - LANG=ja_JP.UTF-8

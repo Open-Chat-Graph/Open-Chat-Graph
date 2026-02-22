@@ -14,7 +14,7 @@ function HideOnScroll({ children, matches }: { children: React.ReactElement; mat
   return matches ? (
     <>{children}</>
   ) : (
-    <Slide appear={false} direction='down' in={!trigger}>
+    <Slide appear={false} direction="down" in={!trigger}>
       {children}
     </Slide>
   )
@@ -73,12 +73,14 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
         height:
           toggleButtons.find((el) => el[0] === params.list) && (category || params.keyword)
             ? height + (matches ? 53 + 4 : 38)
-            : (matches ? 53 : 38),
+            : matches
+              ? 53
+              : 38,
       }}
     >
       <HideOnScroll matches={matches}>
         <Box
-          color='inherit'
+          color="inherit"
           sx={{
             boxShadow: 0,
             zIndex: 1000,

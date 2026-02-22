@@ -1,18 +1,27 @@
-import OpenChatChart from "../../OpenChatChart"
+import OpenChatChart from '../../OpenChatChart'
 
 const incrementIfOdd = (n: number) => (n % 2 !== 0 ? n + 1 : n)
 const decrementIfOdd = (n: number) => (n % 2 !== 0 ? n - 1 : n)
 
-export default function getRankingBarLabelRange(ocChart: OpenChatChart, data: (number | null)[]): labelRangeLine {
-  const diffMaxConst = (ocChart.isPC ? 0.1 : 0.15)
+export default function getRankingBarLabelRange(
+  ocChart: OpenChatChart,
+  data: (number | null)[]
+): labelRangeLine {
+  const diffMaxConst = ocChart.isPC ? 0.1 : 0.15
 
   let stepSize = 2
-  const realMax = data.reduce((a, b) => Math.max(a === null ? 0 : a, b === null ? 0 : b), -Infinity) as number
-  const realMin = data.reduce((a, b) => Math.min(a === null ? 0 : a, b === null ? 0 : b), Infinity) as number
+  const realMax = data.reduce(
+    (a, b) => Math.max(a === null ? 0 : a, b === null ? 0 : b),
+    -Infinity
+  ) as number
+  const realMin = data.reduce(
+    (a, b) => Math.min(a === null ? 0 : a, b === null ? 0 : b),
+    Infinity
+  ) as number
   let maxNum = incrementIfOdd(realMax)
   let minNum = decrementIfOdd(realMin)
 
-  let dataDiffMax = incrementIfOdd(Math.ceil((maxNum - minNum)) * diffMaxConst)
+  let dataDiffMax = incrementIfOdd(Math.ceil(maxNum - minNum) * diffMaxConst)
 
   if (dataDiffMax === 0) {
     dataDiffMax = 2

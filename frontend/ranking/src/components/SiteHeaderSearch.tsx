@@ -38,9 +38,9 @@ export default function SiteHeaderSearch({
   const params = useRecoilValue(listParamsState)
   if (!toggleButtons.find((el) => el[0] === params.list))
     return (
-      <header className='site_header_outer' id='site_header'>
+      <header className="site_header_outer" id="site_header">
         <div
-          className='site_header'
+          className="site_header"
           style={{ ...headerInnerStyle, display: open ? 'none' : undefined }}
         >
           {children}
@@ -49,46 +49,46 @@ export default function SiteHeaderSearch({
     )
 
   return (
-    <header className='site_header_outer' id='site_header'>
+    <header className="site_header_outer" id="site_header">
       <div
-        className='site_header'
+        className="site_header"
         style={{ ...headerInnerStyle, display: open ? 'none' : undefined }}
       >
         {children}
-        <nav className='header-nav'>
+        <nav className="header-nav">
           <button
-            className='header-button'
-            id='search_button'
+            className="header-button"
+            id="search_button"
             aria-label={t('検索')}
             onClick={openSearch}
             ref={buttonRef}
           >
-            <span className='search-button-icon'></span>
+            <span className="search-button-icon"></span>
           </button>
         </nav>
       </div>
       <div hidden={!open}>
         <div
-          className='backdrop'
-          id='backdrop'
-          role='button'
+          className="backdrop"
+          id="backdrop"
+          role="button"
           aria-label={t('閉じる')}
           onClick={closeSearch}
         ></div>
         <form
-          className='search-form site_header'
+          className="search-form site_header"
           style={searchFormStyle}
-          method='GET'
+          method="GET"
           action={`${rankingArgDto.baseUrl}/search`}
           onSubmit={onSubmit}
         >
-          <Box className='search-form-inner' sx={{ pt: '0px' }}>
-            <label htmlFor='q' style={{ top: '10px' }}></label>
+          <Box className="search-form-inner" sx={{ pt: '0px' }}>
+            <label htmlFor="q" style={{ top: '10px' }}></label>
             <Input
               onKeyDown={onKeyDown}
-              id='q'
+              id="q"
               required
-              autoComplete='off'
+              autoComplete="off"
               placeholder={t('オープンチャットを検索')}
               inputProps={{
                 'aria-label': 'weight',
@@ -99,9 +99,9 @@ export default function SiteHeaderSearch({
               sx={{ width: '100%' }}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              className='search-input'
+              className="search-input"
             />
-            <input type='hidden' name='q' ref={hiddenRef} />
+            <input type="hidden" name="q" ref={hiddenRef} />
             {!inputEmpty && (
               <IconButton
                 sx={{ position: 'absolute', right: '5px', top: '7px', zIndex: 2004 }}

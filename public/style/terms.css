@@ -9,21 +9,21 @@ main {
   margin: auto;
 }
 
-.terms>section>p,
-.terms>p {
+.terms > section > p,
+.terms > p {
   font-size: 16px;
   line-height: 1.9;
 }
 
-.terms>section>p>a,
-.terms>p>a {
+.terms > section > p > a,
+.terms > p > a {
   color: inherit;
 }
 
 h1 {
   font-weight: 700;
   line-height: 1.5;
-  padding: .5rem 0;
+  padding: 0.5rem 0;
   font-size: 1.2rem;
   letter-spacing: 0.1em;
   margin: 0;
@@ -39,7 +39,7 @@ h1 {
   margin: auto;
 }
 
-.terms>h2 {
+.terms > h2 {
   padding-bottom: 0.3em;
   font-size: 21px;
   margin-top: 2.3em;
@@ -57,7 +57,7 @@ h1 {
   font-size: 18px;
 }
 
-.terms>ol p {
+.terms > ol p {
   margin: 0;
 }
 

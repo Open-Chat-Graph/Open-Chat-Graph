@@ -23,7 +23,7 @@ import { t } from '../config/translation'
 function LinkTab(props: { label?: string; href?: string }) {
   return (
     <Tab
-      component='a'
+      component="a"
       onClick={(e: LinkEvent) => {
         if (samePageLinkNavi(e)) {
           e.preventDefault()
@@ -72,12 +72,9 @@ function OcListSwiper({
       const category = OPEN_CHAT_CATEGORY[newValue][1]
       const url = updateURLSearchParams({ ...params, sub_category: '' })
       const q = url.searchParams.toString()
-      navigate(
-        `${'/' + basePath}${category ? '/' + category : ''}${
-          q ? '?' + q : ''
-        }`,
-        { replace: true }
-      )
+      navigate(`${'/' + basePath}${category ? '/' + category : ''}${q ? '?' + q : ''}`, {
+        replace: true,
+      })
       setTitle({ ...params, sub_category: '' }, newValue)
       return { ...params, sub_category: '' }
     })
@@ -180,23 +177,19 @@ export default function OcListMainTabs({ cateIndex }: { cateIndex: number }) {
 
   return (
     <Box>
-      <SiteHeader siperSlideTo={siperSlideTo} height='78px'>
+      <SiteHeader siperSlideTo={siperSlideTo} height="78px">
         <Tabs
-          className='fix-min-width category-tab'
+          className="fix-min-width category-tab"
           value={cateIndex}
           onChange={handleChange}
-          variant='scrollable'
+          variant="scrollable"
           scrollButtons={true}
           allowScrollButtonsMobile={!isSP()}
           aria-label={t('オープンチャットのカテゴリータブ')}
           sx={{ borderBottom: 1, borderColor: 'divider' }}
         >
           {OPEN_CHAT_CATEGORY.map((el, i) => (
-            <LinkTab
-              label={el[0]}
-              href={`/${basePath}${el[1] ? '/' + el[1] : ''}`}
-              key={i}
-            />
+            <LinkTab label={el[0]} href={`/${basePath}${el[1] ? '/' + el[1] : ''}`} key={i} />
           ))}
         </Tabs>
       </SiteHeader>
