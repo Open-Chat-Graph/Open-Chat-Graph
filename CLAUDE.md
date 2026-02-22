@@ -37,12 +37,14 @@ make show / help
 ### Environment Details
 
 **Basic Environment:**
+
 - HTTPS: https://localhost:8443
 - MySQL: localhost:3306
 - phpMyAdmin: http://localhost:8080
 - Accesses external LINE servers
 
 **Mock Environment:**
+
 - HTTPS (Basic): https://localhost:8443
 - HTTPS (Mock): https://localhost:8543
 - LINE Mock API: http://localhost:9000 (external access), http://line-mock-api (internal)
@@ -50,33 +52,39 @@ make show / help
 - phpMyAdmin: http://localhost:8080
 
 **Mock API Features:**
+
 - Uses Docker Compose service name (`line-mock-api`) for internal communication
 - Configurable data counts (MOCK_RANKING_COUNT, MOCK_RISING_COUNT)
 - Production-like delay simulation (MOCK_DELAY_ENABLED)
 - Multi-language support (Japanese, Traditional Chinese, Thai)
 
 **Cron Auto-Execution (CRON=1):**
+
 - 30 min: Japanese crawling
 - 35 min: Traditional Chinese (/tw)
 - 40 min: Thai (/th)
 
 ### Requirements
+
 - Docker with Compose V2
 - `mkcert` for SSL certificate generation (not required for CI)
 
 ### GitHub Codespaces Environment
 
 **Codespaces環境はローカル開発環境と完全に同じ:**
+
 - 独立したUbuntuコンテナ内でDocker環境を起動
 - ローカルと同じMakefileコマンドが使用可能
 - `make ci-test`などの全てのスクリプトが正常に動作
 
 **セットアップ:**
+
 1. Codespacesが起動すると自動的に`make init-y`が実行される
 2. `make up-mock`でMock環境を起動
 3. ポート転送タブから各サービスにアクセス
 
 **構成:**
+
 - `.devcontainer/Dockerfile`: Ubuntu + Docker + mkcert
 - `.devcontainer/devcontainer.json`: シンプルなdevcontainer設定
 - `.devcontainer/post-create-command.sh`: 初期セットアップスクリプト
@@ -84,12 +92,14 @@ make show / help
 ### CI Environment
 
 **CI環境では専用の設定を使用:**
+
 - `docker-compose.ci.yml`: CI専用のオーバーライド設定
 - SSL証明書生成をスキップ（HTTP通信のみ）
 - Xdebugインストール無効
 - PHPMyAdmin除外
 
 **GitHub Actions:**
+
 - `.github/workflows/ci.yml`: 自動テスト実行
 - `.github/workflows/build-images.yml`: プリビルドイメージのビルド＆プッシュ（main pushまたは手動実行）
 - プリビルドイメージ: GitHub Container Registry (ghcr.io) にCI用イメージを保存
@@ -104,6 +114,7 @@ make show / help
 - プリビルドイメージ使用でビルド時間を大幅短縮（34秒 → 5-10秒）
 
 **ローカルでCIテストを実行:**
+
 ```bash
 make ci-test
 ```
@@ -111,17 +122,20 @@ make ci-test
 ## Architecture
 
 ### Backend
+
 - **Framework**: Custom MimimalCMS (lightweight MVC framework)
 - **Language**: PHP 8.3
 - **Database**: MySQL/MariaDB for main data, SQLite for rankings/statistics
 - **Pattern**: Traditional MVC with dependency injection
 
 ### Frontend
+
 - Server-side PHP templating + embedded React components
 - TypeScript, JavaScript, React
 - Libraries: MUI, Chart.js, Swiper.js
 
 ### Key Directories
+
 - `/app/` - Main application (MVC structure)
   - `Config/` - Routing and application config
   - `Controllers/` - HTTP handlers (Api/ and Page/)
@@ -138,10 +152,12 @@ make ci-test
 ## Database Architecture
 
 ### MySQL/MariaDB
+
 - Primary storage for OpenChat data
 - Complex queries using raw SQL (no ORM)
 
 ### SQLite
+
 - Rankings and statistics data
 - Performance optimization for read-heavy operations
 - Separate databases per data type in `/storage/`
@@ -169,11 +185,13 @@ Note: Database configuration is loaded from `local-secrets.php`
 ## Development Patterns
 
 ### Dependency Injection
+
 - Interface-based DI configured in `/shared/MimimalCmsConfig.php`
 - Service providers in `/app/ServiceProvider/` for dynamic binding
 - Example: `OpenChatCrawlerConfigServiceProvider` switches between production and mock configs based on `AppConfig::$isMockEnvironment`
 
 ### Autoloading
+
 ```php
 "psr-4": {
     "Shadow\\": "shadow/",
@@ -183,6 +201,7 @@ Note: Database configuration is loaded from `local-secrets.php`
 ```
 
 ### Configuration
+
 - Environment-specific config in `local-secrets.php` (gitignored)
 - Framework config in `/shared/MimimalCMS_*.php` files
 - OpenChatCrawlerConfig in `/app/Services/Crawler/Config/`
@@ -190,11 +209,13 @@ Note: Database configuration is loaded from `local-secrets.php`
 ## Crawling System
 
 ### Configuration Classes
+
 - `OpenChatCrawlerConfig` - Production environment (uses real LINE URLs)
 - `MockOpenChatCrawlerConfig` - Mock environment (uses `line-mock-api` service)
 - Service provider automatically switches based on `AppConfig::$isMockEnvironment`
 
 ### User Agent
+
 ```
 Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/mimimiku778/Open-Chat-Graph)
 ```
@@ -202,24 +223,30 @@ Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) 
 ## Frontend Components
 
 ### Separate Repositories
+
 - Ranking pages: https://github.com/mimimiku778/Open-Chat-Graph-Frontend
 - Graph display: https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph
 - Comments: https://github.com/mimimiku778/Open-Chat-Graph-Comments
 
 ### Integration
+
 - React components embedded in PHP templates
 - Pre-built JavaScript bundles (no build process in main repo)
 
 ## Creating New Pages (MVC Pattern)
 
 ### 1. Add Route
+
 In `/app/Config/routing.php`:
+
 ```php
 Route::path('your-path', [\App\Controllers\Pages\YourController::class, 'method']);
 ```
 
 ### 2. Create Controller
+
 Controllers go in `/app/Controllers/Pages/`:
+
 ```php
 <?php
 declare(strict_types=1);
@@ -247,7 +274,9 @@ class YourController
 ```
 
 ### 3. Create View
+
 Views go in `/app/Views/`:
+
 - Use `.php` extension
 - Access variables directly: `$data`, `$_meta`
 - Helper functions: `url()`, `t()`, `fileUrl()`
@@ -259,18 +288,21 @@ Views go in `/app/Views/`:
 **IMPORTANT**: PR titles appear on social media and should be understandable by the general public.
 
 **❌ BAD:**
+
 ```
 perf: dailyTask処理時間の大幅短縮とタイムアウト問題の解決
 fix: getMemberChangeWithinLastWeekCacheArray()の重複実行を防止
 ```
 
 **✅ GOOD:**
+
 ```
 perf: 日次データ更新処理のタイムアウト問題を解決（9〜11時間→1〜2時間）
 fix: 統計データ抽出クエリの重複実行を防止してDB負荷を軽減
 ```
 
 **Guidelines:**
+
 - Avoid code terminology (class/method/variable names)
 - Include concrete numbers (processing time, data volume)
 - Explain business impact, not technical details
@@ -278,27 +310,34 @@ fix: 統計データ抽出クエリの重複実行を防止してDB負荷を軽�
 ### Writing Clear Descriptions
 
 **Structure:**
+
 1. Start with business/user impact
 2. Explain technical problem in plain language
 3. Link to specific code locations
 4. Provide implementation details
 
 **Example:**
+
 ```markdown
 ## 問題の概要
+
 オープンチャットの日次データ更新処理が9〜11時間かかり完了しない
 
 ### 具体的な問題
+
 全statisticsテーブル（8700万行）から「メンバー数が変動している部屋」を抽出する処理が、
 以下の2箇所で重複実行されている:
+
 - クローリング対象の絞り込み処理 ([`DailyUpdateCronService::getTargetOpenChatIdArray()`](link))
 - ランキング用キャッシュ保存処理 ([`UpdateHourlyMemberRankingService::saveFiltersCacheAfterDailyTask()`](link))
 
 ## 対処内容
+
 クエリ結果をプロパティに保存し、2回目で再利用
 ```
 
 ### Common Terms Translation
+
 - dailyTask → オープンチャットの日次データ更新処理（毎日23:30実行）
 - hourlyTask → オープンチャットの毎時ランキング更新処理（毎時30分実行）
 - getMemberChangeWithinLastWeekCacheArray → 統計データ抽出処理（メンバー数が変動している部屋を取得）
@@ -307,18 +346,21 @@ fix: 統計データ抽出クエリの重複実行を防止してDB負荷を軽�
 
 **Skip CI Tests and Deployment:**
 For urgent fixes or trivial changes (typos, documentation updates) that don't need testing or production deployment:
+
 - Add `skip-ci` label to the PR
 - Or prefix the PR title with `skip-ci:`
 
 Example: `skip-ci: Fix typo in README`
 
 **Important**: When `skip-ci` is used:
+
 - CI tests are skipped
 - Production deployment is completely skipped
 - Changes are merged to main but NOT deployed to the live site
 
 **Skip Social Media Post:**
 To skip the automatic X (Twitter) post after merge (but still run CI and deploy):
+
 - Add `skip-post` label to the PR
 - Or prefix the PR title with `skip-post:`
 

@@ -55,12 +55,8 @@
   opacity: 0.5;
 }
 
-.MuiStack-root
-  .css-14edfjq
-  .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
-.MuiStack-root
-  .css-14edfjq
-  .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
+.MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
+.MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
   color: #b7b7b7;
   background-color: #fff;
 }

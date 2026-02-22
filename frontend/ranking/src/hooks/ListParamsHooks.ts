@@ -1,7 +1,7 @@
 import { MutableSnapshot, useRecoilCallback, useSetRecoilState } from 'recoil'
 import { keywordState, listParamsState } from '../store/atom'
-import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils';
-import { useLocation } from 'react-router-dom';
+import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
+import { useLocation } from 'react-router-dom'
 
 const getValidParam = <T extends ListParamsKey>(
   value: string | null,
@@ -26,16 +26,27 @@ const paramsSortAll: ListParams['sort'][] = ['member', 'created_at']
 const paramsOrder: ListParams['order'][] = ['asc', 'desc']
 
 const getValidListParams = (params: URLSearchParams, location: any): ListParams => {
-  const orderParam = (defaultValue: ListParams['order']) => getValidParam<'order'>(params.get('order'), defaultValue, paramsOrder)
-  const sortParam = (defaultValue: ListParams['sort'], paramsSort: ListParams['sort'][]) => getValidParam<'sort'>(params.get('sort'), defaultValue, paramsSort)
-  const paramsList = location.pathname.split('/')[1] === 'ranking' || location.pathname.split('/')[2] === 'ranking' ? listParamsRanking : listParamsOfficial
+  const orderParam = (defaultValue: ListParams['order']) =>
+    getValidParam<'order'>(params.get('order'), defaultValue, paramsOrder)
+  const sortParam = (defaultValue: ListParams['sort'], paramsSort: ListParams['sort'][]) =>
+    getValidParam<'sort'>(params.get('sort'), defaultValue, paramsSort)
+  const paramsList =
+    location.pathname.split('/')[1] === 'ranking' || location.pathname.split('/')[2] === 'ranking'
+      ? listParamsRanking
+      : listParamsOfficial
 
   const keyword = params.get('keyword') ?? ''
   const sub_category = params.get('sub_category') ?? ''
 
   const list = getValidParam<'list'>(params.get('list'), paramsList.default, paramsList.list)
   if (list === 'all') {
-    return { sub_category, keyword, list, sort: sortParam('member', paramsSortAll), order: orderParam('desc') }
+    return {
+      sub_category,
+      keyword,
+      list,
+      sort: sortParam('member', paramsSortAll),
+      order: orderParam('desc'),
+    }
   }
 
   const sort = sortParam('increase', paramsSortRanking)
@@ -49,10 +60,7 @@ const getValidListParams = (params: URLSearchParams, location: any): ListParams 
 export const useGetInitListParamsState = () => {
   const location = useLocation()
 
-  const params = getValidListParams(
-    new URLSearchParams(window.location.search),
-    location
-  )
+  const params = getValidListParams(new URLSearchParams(window.location.search), location)
 
   return ({ set }: MutableSnapshot) => {
     set(listParamsState, params)
@@ -67,9 +75,10 @@ export function useSetListParams(): SetListParamsValue {
   return useRecoilCallback(
     ({ snapshot, set }) =>
       async (getNewParams: (currentParams: ListParams) => ListParams) => {
-        const currentParams = await snapshot.getPromise(listParamsState);
+        const currentParams = await snapshot.getPromise(listParamsState)
         const newParams = getValidListParams(
-          new URLSearchParams(getNewParams(currentParams)), location
+          new URLSearchParams(getNewParams(currentParams)),
+          location
         )
 
         window.history.replaceState(null, '', updateURLSearchParams(newParams))

@@ -1,16 +1,63 @@
-import { Chart as ChartJS } from 'chart.js/auto';
-import OpenChatChart from "../../OpenChatChart";
-import getVerticalLabelRange from "../Util/getVerticalLabelRange";
-import getRankingBarLabelRange from '../Util/getRankingBarLabelRange';
+import { Chart as ChartJS } from 'chart.js/auto'
+import OpenChatChart from '../../OpenChatChart'
+import getVerticalLabelRange from '../Util/getVerticalLabelRange'
+import getRankingBarLabelRange from '../Util/getRankingBarLabelRange'
 
 const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
   const min = chart.scales.x.min
   const max = chart.scales.x.max
-  const { dataMin, dataMax, stepSize } = getVerticalLabelRange(ocChart, ocChart.data.graph1.slice(min, max + 1))
+
+  if (ocChart.getMode() === 'candlestick') {
+    // メンバーOHLCのレンジ再計算
+    const visibleOhlc = ocChart.ohlcData.slice(min, max + 1)
+    const allValues = visibleOhlc.flatMap((d) => [d.o, d.h, d.l, d.c])
+    if (allValues.length) {
+      const { dataMin, dataMax, stepSize } = getVerticalLabelRange(ocChart, allValues)
+      chart.options!.scales!.rainChart!.min = dataMin
+      chart.options!.scales!.rainChart!.max = dataMax
+      ;(chart.options!.scales!.rainChart!.ticks as any).stepSize = stepSize
+    }
+
+    // ランキングOHLCのレンジ再計算
+    if (ocChart.ohlcRankingData.length && chart.options!.scales!.temperatureChart) {
+      const visibleRanking = ocChart.ohlcRankingData.filter((d) => d.x >= min && d.x <= max)
+      if (visibleRanking.length) {
+        const rankValues = visibleRanking.flatMap((d) => [d.o, d.h, d.l, d.c])
+        const rankMin = Math.min(...rankValues)
+        const rankMax = Math.max(...rankValues)
+        const padding = Math.max(1, Math.ceil((rankMax - rankMin) * 0.1))
+        chart.options!.scales!.temperatureChart!.min = Math.max(1, rankMin - padding)
+        chart.options!.scales!.temperatureChart!.max = rankMax + padding
+      }
+    }
+
+    // ラベル間引きを可視範囲に合わせて再計算
+    const range = max - min + 1
+    const maxLabels = range <= 8 ? range : range < 32 ? 15 : 20
+    const step = Math.max(1, Math.ceil(range / maxLabels))
+    chart.options!.scales!.x!.ticks!.callback = function (this: any, val: any, index: number) {
+      if (index % step !== 0) return ''
+      return this.getLabelForValue(val)
+    }
+
+    // グリッド間引き
+    const gridStep = Math.max(1, Math.ceil(range / 20))
+    chart.options!.scales!.x!.grid = {
+      ...chart.options!.scales!.x!.grid,
+      color: ((ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent')) as any,
+    }
+
+    return [min, max]
+  }
+
+  const { dataMin, dataMax, stepSize } = getVerticalLabelRange(
+    ocChart,
+    ocChart.data.graph1.slice(min, max + 1)
+  )
 
   chart.options!.scales!.rainChart!.min = dataMin
-  chart.options!.scales!.rainChart!.max = dataMax;
-  (chart.options!.scales!.rainChart!.ticks as any).stepSize = stepSize
+  chart.options!.scales!.rainChart!.max = dataMax
+  ;(chart.options!.scales!.rainChart!.ticks as any).stepSize = stepSize
 
   if (ocChart.data.graph2.length) {
     const graph2 = ocChart.data.graph2.slice(min, max + 1)
@@ -22,8 +69,8 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
     chart.data.datasets[1].data = ocChart.getReverseGraph2(ocChart.data.graph2)
 
     chart.options!.scales!.temperatureChart!.min = dataMin
-    chart.options!.scales!.temperatureChart!.max = dataMax;
-    (chart.options!.scales!.temperatureChart!.ticks as any).stepSize = stepSize
+    chart.options!.scales!.temperatureChart!.max = dataMax
+    ;(chart.options!.scales!.temperatureChart!.ticks as any).stepSize = stepSize
   }
 
   return [min, max]
@@ -64,7 +111,7 @@ export default function getZoomOption(ocChart: OpenChatChart) {
       },
       onPanComplete: () => {
         ocChart.onPaning = false
-        onZoomLabelRange(ocChart.chart, ocChart)
+        getOnZoomComplete(ocChart)
         ocChart.chart.update()
       },
     },

@@ -13,6 +13,7 @@ URLパス（`''`, `/tw`, `/th`）で自動切り替え - [`app/Models/Repositori
 **用途:** OpenChatの基本情報・ランキング・タグを管理
 
 **使用箇所:** [`app/Models/Repositories/`](app/Models/Repositories/)
+
 - [`OpenChatRepository.php`](app/Models/Repositories/OpenChatRepository.php)
 - [`OpenChatPageRepository.php`](app/Models/Repositories/OpenChatPageRepository.php)
 - [`OpenChatListRepository.php`](app/Models/Repositories/OpenChatListRepository.php)
@@ -43,7 +44,7 @@ CREATE TABLE `open_chat` (
 );
 ```
 
-### statistics_ranking_* - 成長ランキング
+### statistics*ranking*\* - 成長ランキング
 
 hour / hour24 / day / week の4テーブル
 
@@ -64,6 +65,7 @@ CREATE TABLE `statistics_ranking_hour` (
 ### recommend, oc_tag, oc_tag2 - タグシステム
 
 **使用箇所:** [`app/Models/RecommendRepositories/`](app/Models/RecommendRepositories/)
+
 - [`RecommendRankingRepository.php`](app/Models/RecommendRepositories/RecommendRankingRepository.php)
 - [`CategoryRankingRepository.php`](app/Models/RecommendRepositories/CategoryRankingRepository.php)
 - [`app/Services/Recommend/RecommendUpdater.php`](app/Services/Recommend/RecommendUpdater.php)
@@ -79,6 +81,7 @@ CREATE TABLE `recommend` (
 ### ranking_ban - ランキング除外
 
 **使用箇所:** [`app/Models/RankingBanRepositories/`](app/Models/RankingBanRepositories/)
+
 - [`RankingBanPageRepository.php`](app/Models/RankingBanRepositories/RankingBanPageRepository.php)
 - [`app/Services/RankingBan/RankingBanTableUpdater.php`](app/Services/RankingBan/RankingBanTableUpdater.php)
 
@@ -96,6 +99,7 @@ CREATE TABLE `ranking_ban` (
 ```
 
 **使用ファイル:**
+
 - [`RankingBanTableUpdater`](/app/Services/RankingBan/RankingBanTableUpdater.php)
 - [`RankingBanPageRepository`](/app/Models/RankingBanRepositories/RankingBanPageRepository.php)
 - [`RankingBanLabsPageController`](/app/Controllers/Pages/RankingBanLabsPageController.php)
@@ -128,6 +132,7 @@ CREATE TABLE `open_chat_deleted` (
 **用途:** メンバー数・ランキング位置の時系列データを保存
 
 **使用箇所:** [`app/Models/RankingPositionDB/Repositories/`](app/Models/RankingPositionDB/Repositories/)
+
 - [`RankingPositionHourRepository.php`](app/Models/RankingPositionDB/Repositories/RankingPositionHourRepository.php)
 
 ### member - メンバー数履歴
@@ -172,6 +177,7 @@ CREATE TABLE `total_count` (
 **用途:** ユーザーコメント・いいね・BAN管理
 
 **使用箇所:** [`app/Models/CommentRepositories/`](app/Models/CommentRepositories/)
+
 - [`CommentListRepository.php`](app/Models/CommentRepositories/CommentListRepository.php)
 - [`CommentPostRepository.php`](app/Models/CommentRepositories/CommentPostRepository.php)
 - [`CommentLogRepository.php`](app/Models/CommentRepositories/CommentLogRepository.php)
@@ -232,6 +238,7 @@ CREATE TABLE `log` (
 **用途:** ユーザーのマイリスト管理
 
 **使用箇所:** [`app/Models/UserLogRepositories/`](app/Models/UserLogRepositories/)
+
 - [`UserLogRepository.php`](app/Models/UserLogRepositories/UserLogRepository.php)
 
 ```sql
@@ -265,6 +272,7 @@ CREATE TABLE `oc_list_user_list_show_log` (
 **パス:** `/storage/{lang}/SQLite/statistics/statistics.db`
 
 **使用箇所:** [`app/Models/SQLite/Repositories/Statistics/`](app/Models/SQLite/Repositories/Statistics/)
+
 - [`SqliteStatisticsRepository.php`](app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRepository.php)
 - [`SqliteStatisticsPageRepository.php`](app/Models/SQLite/Repositories/Statistics/SqliteStatisticsPageRepository.php)
 - [`SqliteStatisticsRankingUpdaterRepository.php`](app/Models/SQLite/Repositories/Statistics/SqliteStatisticsRankingUpdaterRepository.php)
@@ -286,6 +294,7 @@ CREATE UNIQUE INDEX statistics2_open_chat_id_IDX ON "statistics" (open_chat_id,d
 **パス:** `/storage/{lang}/SQLite/ranking_position/ranking_position.db`
 
 **使用箇所:** [`app/Models/SQLite/Repositories/RankingPosition/`](app/Models/SQLite/Repositories/RankingPosition/)
+
 - [`SqliteRankingPositionRepository.php`](app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionRepository.php)
 - [`SqliteRankingPositionPageRepository.php`](app/Models/SQLite/Repositories/RankingPosition/SqliteRankingPositionPageRepository.php)
 
@@ -328,12 +337,14 @@ CREATE UNIQUE INDEX total_count_time_IDX ON total_count (time,category);
 **パス:** `/storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db`
 
 **使用箇所:**
+
 - [`app/Services/Cron/OcreviewApiDataImporter.php`](app/Services/Cron/OcreviewApiDataImporter.php)
 - [`app/Models/Repositories/Api/ApiOpenChatPageRepository.php`](app/Models/Repositories/Api/ApiOpenChatPageRepository.php)
 - [`app/Models/Repositories/Api/ApiStatisticsPageRepository.php`](app/Models/Repositories/Api/ApiStatisticsPageRepository.php)
 - [`app/Models/CommentRepositories/Api/ApiCommentListRepository.php`](app/Models/CommentRepositories/Api/ApiCommentListRepository.php)
 
 主要テーブル:
+
 - `openchat_master` - OpenChatマスター
 - `daily_member_statistics` - 日別メンバー統計（約6000万レコード）
 - `growth_ranking_past_hour/24_hours/week` - 成長ランキング

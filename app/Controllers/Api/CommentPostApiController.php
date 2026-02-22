@@ -79,7 +79,10 @@ class CommentPostApiController
 
         return response([
             'commentId' => $commentId,
-            'userId' => $args->user_id === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($args->user_id, 'fnv132')
+            'userId' => $args->user_id === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($args->user_id, 'fnv132'),
+            'userIdHash' => substr(hash('sha256', $args->user_id), 0, 7),
+            'uaHash' => substr(hash('sha256', getUA()), 0, 7),
+            'ipHash' => substr(hash('sha256', getIP()), 0, 7),
         ]);
     }
 }

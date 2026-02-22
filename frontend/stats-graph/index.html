@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <link rel="stylesheet" href="/style/mvp.css" />
@@ -11,9 +11,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + Preact + TS</title>
   </head>
-  <body>
+  <style>
+    #app {
+      min-height: 181px;
+    }
+
+    .limit-btns.category-tab .MuiTab-root.MuiTab-textColorPrimary {
+      min-width: 0;
+      padding: 0;
+      min-height: 48px;
+    }
+
+    .chart-canvas-box {
+      aspect-ratio: 1.8 / 1;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+      margin-bottom: -16px;
+    }
+
+    .chart-canvas-box canvas {
+      overflow: hidden;
+    }
+
+    #chart-preact-canvas {
+      aspect-ratio: 1.8 / 1;
+    }
+
+    .MuiChip-root.openchat-item-header-chip.graph {
+      font-size: 0.875rem;
+    }
+
+    .MuiToggleButton-root.MuiToggleButton-standard {
+      color: #b7b7b7;
+      border: 1px solid #efefef;
+    }
+
+    .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
+    .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
+      background-color: #f5f5f5;
+      border: 1px solid #efefef;
+    }
+
+    .MuiStack-root .css-14edfjq {
+      opacity: 0.5;
+    }
+
+    .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
+    .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
+      color: #b7b7b7;
+      background-color: #fff;
+    }
+
+    @media screen and (max-width: 511px) {
+      .chart-canvas-box {
+        aspect-ratio: 1.4 / 1;
+      }
+
+      #chart-preact-canvas {
+        aspect-ratio: 1.4 / 1;
+      }
+
+      .MuiChip-root.openchat-item-header-chip.graph:hover {
+        color: #111;
+        background-color: #f5f5f5;
+      }
+
+      .MuiChip-root.openchat-item-header-chip.graph.selected:hover {
+        color: #fff;
+        background-color: #111;
+      }
+    }
+
+    @media screen and (max-width: 359px) {
+      .chart-canvas-box {
+        margin: 0 -0.75rem;
+        width: calc(100% + 1.5rem);
+        aspect-ratio: 1.2 / 1;
+      }
+
+      #chart-preact-canvas {
+        aspect-ratio: 1.2 / 1;
+      }
+
+      .limit-btns .MuiTab-fullWidth {
+        font-size: 13px;
+      }
+
+      .MuiChip-root.openchat-item-header-chip.graph {
+        font-size: 13px;
+      }
+    }
+
+    @media screen and (min-width: 400px) {
+      #chart-preact-canvas {
+        width: calc(100% - 1px) !important;
+      }
+    }
+  </style>
+  <body style="margin: 0">
     <script type="application/json" id="chart-arg">
-      { "id": 124912, "categoryKey": 33, "categoryName": "\u97f3\u697d", "baseUrl": "", "urlRoot": "/th" }
+      {
+        "id": 228516,
+        "categoryKey": 33,
+        "categoryName": "\u97f3\u697d",
+        "baseUrl": "",
+        "urlRoot": ""
+      }
     </script>
     <script type="application/json" id="stats-dto">
       {
@@ -57,18 +164,174 @@
           "2024-01-31"
         ],
         "member": [
-          35, 670, 1397, 1710, 1859, 2027, 2521, 2929, 3280, 3645, 4024, 4301, 4332, 4277, 4201, 4456, 4532, 4572, 4531,
-          4794, 4746, 4568, 4491, 4413, 4340, 4244, 4301, 4206, 4164, 4186, 4171, 4218, 4214, 4161, 4108, 4074, 4104
+          35, 670, 1397, 1710, 1859, 2027, 2521, 2929, 3280, 3645, 4024, 4301, 4332, 4277, 4201,
+          4456, 4532, 4572, 4531, 4794, 4746, 4568, 4491, 4413, 4340, 4244, 4301, 4206, 4164, 4186,
+          4171, 4218, 4214, 4161, 4108, 4074, 4104
+        ],
+        "open": [
+          null,
+          35,
+          670,
+          1397,
+          1710,
+          1859,
+          2027,
+          2521,
+          2929,
+          3280,
+          3645,
+          4024,
+          4301,
+          4332,
+          4277,
+          4201,
+          4456,
+          4532,
+          4572,
+          4531,
+          4794,
+          4746,
+          4568,
+          4491,
+          4413,
+          4340,
+          4244,
+          4301,
+          4206,
+          4164,
+          4186,
+          4171,
+          4218,
+          4214,
+          4161,
+          4108,
+          4074
+        ],
+        "high": [
+          null,
+          680,
+          1420,
+          1730,
+          1870,
+          2050,
+          2550,
+          2960,
+          3310,
+          3680,
+          4060,
+          4340,
+          4350,
+          4340,
+          4290,
+          4480,
+          4560,
+          4600,
+          4590,
+          4820,
+          4800,
+          4760,
+          4580,
+          4500,
+          4430,
+          4350,
+          4320,
+          4310,
+          4220,
+          4200,
+          4200,
+          4230,
+          4230,
+          4220,
+          4170,
+          4110,
+          4120
+        ],
+        "low": [
+          null,
+          30,
+          650,
+          1380,
+          1700,
+          1840,
+          2010,
+          2500,
+          2910,
+          3260,
+          3620,
+          4000,
+          4280,
+          4260,
+          4180,
+          4180,
+          4430,
+          4510,
+          4510,
+          4510,
+          4730,
+          4540,
+          4470,
+          4390,
+          4320,
+          4220,
+          4230,
+          4190,
+          4150,
+          4150,
+          4160,
+          4160,
+          4200,
+          4150,
+          4090,
+          4060,
+          4060
+        ],
+        "close": [
+          null,
+          670,
+          1397,
+          1710,
+          1859,
+          2027,
+          2521,
+          2929,
+          3280,
+          3645,
+          4024,
+          4301,
+          4332,
+          4277,
+          4201,
+          4456,
+          4532,
+          4572,
+          4531,
+          4794,
+          4746,
+          4568,
+          4491,
+          4413,
+          4340,
+          4244,
+          4301,
+          4206,
+          4164,
+          4186,
+          4171,
+          4218,
+          4214,
+          4161,
+          4108,
+          4074,
+          4104
         ],
         "startDate": "2023-12-26",
         "endDate": "2024-01-31"
       }
     </script>
-    <div style="margin: 1rem; position: relative; transition: all 0.6s ease 0s; opacity: 0" id="graph-box">
+    <div style="margin: 1rem; position: relative" id="graph-box">
       <div class="chart-canvas-box" id="dummy-canvas"></div>
       <div id="app"></div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-    <span>test</span>
   </body>
 </html>

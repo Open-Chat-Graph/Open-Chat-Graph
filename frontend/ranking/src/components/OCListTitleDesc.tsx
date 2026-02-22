@@ -223,7 +223,7 @@ export default function OCListTitleDesc({
     case 'ranking':
       return (
         <div style={outer}>
-          <Typography children='公式ランキング' sx={{ ...p, mr: 1 }} />
+          <Typography children="公式ランキング" sx={{ ...p, mr: 1 }} />
           <div style={inner}>
             <Typography
               children={`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
@@ -240,7 +240,7 @@ export default function OCListTitleDesc({
     case 'rising':
       return (
         <div style={outer}>
-          <Typography children='公式急上昇' sx={{ ...p, mr: 1 }} />
+          <Typography children="公式急上昇" sx={{ ...p, mr: 1 }} />
           <div style={inner}>
             <Typography
               children={`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}

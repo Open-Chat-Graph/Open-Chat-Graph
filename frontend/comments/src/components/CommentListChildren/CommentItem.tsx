@@ -2,8 +2,13 @@ import { Theme } from '@emotion/react'
 import { ListItem, ListItemText, SxProps, Typography } from '@mui/material'
 import LikeButton from '../Button/LikeButton'
 import { memo } from 'react'
-import { convertTimeTagFormatFromMySql, formatDatetimeWithWeekdayFromMySql } from '../../utils/utils'
+import {
+  convertTimeTagFormatFromMySql,
+  formatDatetimeWithWeekdayFromMySql,
+} from '../../utils/utils'
 import ReportButton from '../Button/ReportButton'
+import HashId from './HashId'
+import { linkify } from '../../utils/linkify'
 
 const listItemSx: SxProps<Theme> = {
   p: 0,
@@ -12,19 +17,26 @@ const listItemSx: SxProps<Theme> = {
 }
 
 export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
-  const { id, commentId, name, time, text, userId, empathyCount, insightsCount, negativeCount, voted } = props
+  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted } = props
 
   return (
     <ListItem sx={listItemSx}>
       <ListItemText
         sx={{ m: 0 }}
         primary={
-          <Typography display="block" component="span" variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
+          <Typography
+            display="block"
+            component="span"
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontSize: '13px' }}
+          >
             {`${id}: `}
             <b>{text.length ? `${name ? name : '匿名'}` : '***'}</b>
             <time dateTime={convertTimeTagFormatFromMySql(time)}>{` ${formatDatetimeWithWeekdayFromMySql(time)}`}</time>
-            {text.length ? (userId ? ` ID:${userId}` : '') : userId ? ` ${userId}` : ' 削除済'}
+            {!text.length && (userId ? ` ${userId}` : ' 削除済')}
             {!!text.length && <ReportButton id={id} commentId={commentId} />}
+            <HashId userIdHash={userIdHash} uaHash={uaHash} ipHash={ipHash} />
           </Typography>
         }
         secondary={
@@ -33,7 +45,7 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
             component="span"
             variant="body1"
             color="text.primary"
-            margin={'8px 0'}
+            margin={'0 0 8px 0'}
             sx={{
               wordBreak: 'break-all',
               whiteSpace: 'pre-line',
@@ -41,11 +53,13 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
               color: text.length ? undefined : '#aaa',
             }}
           >
-            {text.length ? text.replace(/(\r?\n|\r){3,}/g, '\n\n') : '削除されたコメント😇'}
+            {text.length ? linkify(text.replace(/(\r?\n|\r){3,}/g, '\n\n')) : '削除されたコメント😇'}
           </Typography>
         }
       />
-      {!!text.length && <LikeButton {...{ empathyCount, insightsCount, negativeCount, voted, commentId }} />}
+      {!!text.length && (
+        <LikeButton {...{ empathyCount, insightsCount, negativeCount, voted, commentId }} />
+      )}
     </ListItem>
   )
 })

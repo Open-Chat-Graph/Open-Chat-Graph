@@ -1,34 +1,34 @@
 {
-    "name": "mimimiku778/minimalcms",
-    "description": "MimimalCMS",
-    "authors": [
-        {
-            "name": "mimimiku778",
-            "email": "0203.sub@gmail.com"
-        }
-    ],
-    "require": {
-        "fabpot/goutte": "^4.0.3",
-        "spatie/schema-org": "^3.14",
-        "asika/sitemap": "^2.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^9.6"
-    },
-    "autoload": {
-        "psr-4": {
-            "Shadow\\": "shadow/",
-            "App\\": "app/",
-            "Shared\\": "shared/",
-            "App\\Views\\": "app/Views/Classes"
-        },
-        "files": [
-            "shared/MimimalCMS_Settings.php",
-            "shared/MimimalCMS_Enums.php",
-            "shared/MimimalCMS_ExceptionHandler.php",
-            "shared/MimimalCMS_HelperFunctions.php",
-            "app/Helpers/functions.php",
-            "shared/bootstrap.php"
-        ]
+  "name": "mimimiku778/minimalcms",
+  "description": "MimimalCMS",
+  "authors": [
+    {
+      "name": "mimimiku778",
+      "email": "0203.sub@gmail.com"
     }
+  ],
+  "require": {
+    "fabpot/goutte": "^4.0.3",
+    "spatie/schema-org": "^3.14",
+    "asika/sitemap": "^2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Shadow\\": "shadow/",
+      "App\\": "app/",
+      "Shared\\": "shared/",
+      "App\\Views\\": "app/Views/Classes"
+    },
+    "files": [
+      "shared/MimimalCMS_Settings.php",
+      "shared/MimimalCMS_Enums.php",
+      "shared/MimimalCMS_ExceptionHandler.php",
+      "shared/MimimalCMS_HelperFunctions.php",
+      "app/Helpers/functions.php",
+      "shared/bootstrap.php"
+    ]
+  }
 }

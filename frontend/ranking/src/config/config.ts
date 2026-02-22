@@ -1,4 +1,4 @@
-const LINE_IMG_URL = 'https://obs.line-scdn.net/';
+const LINE_IMG_URL = 'https://obs.line-scdn.net/'
 
 export const rankingArgDto: RankingArgDto = JSON.parse(
   document.getElementById('arg-dto')!.textContent!

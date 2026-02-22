@@ -32,9 +32,12 @@ class CommentListRepository implements CommentListRepositoryInterface
                 IFNULL(l.empathy, 0) AS empathyCount,
                 IFNULL(l.insights, 0) AS insightsCount,
                 IFNULL(l.negative, 0) AS negativeCount,
-                IFNULL(l.voted, '') AS voted
+                IFNULL(l.voted, '') AS voted,
+                lg.ip AS logIp,
+                lg.ua AS logUa
             FROM
                 comment AS c
+                LEFT JOIN log AS lg ON lg.entity_id = c.comment_id AND lg.type = 'AddComment'
                 LEFT JOIN (
                     SELECT
                         comment_id,

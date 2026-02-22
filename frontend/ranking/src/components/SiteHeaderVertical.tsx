@@ -4,7 +4,10 @@ import { rankingArgDto } from '../config/config'
 
 export default function SiteHeaderVertical({ height }: { height: string }) {
   return (
-    <header className="site_header_outer" style={{ height, display: 'flex', flexDirection: 'column' }}>
+    <header
+      className="site_header_outer"
+      style={{ height, display: 'flex', flexDirection: 'column' }}
+    >
       <div className="site_header" style={{ margin: 'auto' }}>
         <SiteTitleBtn />
       </div>

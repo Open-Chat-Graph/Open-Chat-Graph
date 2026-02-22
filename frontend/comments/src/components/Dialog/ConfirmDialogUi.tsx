@@ -7,7 +7,13 @@ import DialogTitle from '@mui/material/DialogTitle'
 import { Box, Typography } from '@mui/material'
 import GradientCircularProgress from '../GradientCircularProgress'
 
-export function DialogParagraph({ children, fontSize = '12.5px' }: { children: React.ReactNode; fontSize?: string }) {
+export function DialogParagraph({
+  children,
+  fontSize = '12.5px',
+}: {
+  children: React.ReactNode
+  fontSize?: string
+}) {
   return (
     <Typography color="text.secondary" variant="body2" sx={{ fontSize }}>
       {children}
@@ -17,7 +23,13 @@ export function DialogParagraph({ children, fontSize = '12.5px' }: { children: R
 
 export function DialogSubTitle({ children }: { children: React.ReactNode }) {
   return (
-    <Typography color="error" variant="subtitle2" component="span" display="block" sx={{ fontSize: '13px' }}>
+    <Typography
+      color="error"
+      variant="subtitle2"
+      component="span"
+      display="block"
+      sx={{ fontSize: '13px' }}
+    >
       {children}
     </Typography>
   )

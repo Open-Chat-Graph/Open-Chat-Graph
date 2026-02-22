@@ -5,6 +5,9 @@ type CommentItemApi = {
   time: string
   text: string
   userId: string
+  userIdHash: string
+  uaHash: string | null
+  ipHash: string | null
 }
 
 type LikeBtnType = 'empathy' | 'insights' | 'negative'

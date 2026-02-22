@@ -38,7 +38,9 @@ class ApiCommentListRepository implements CommentListRepositoryInterface
                 IFNULL(l.empathy, 0) AS empathyCount,
                 IFNULL(l.insights, 0) AS insightsCount,
                 IFNULL(l.negative, 0) AS negativeCount,
-                IFNULL(l.voted, '') AS voted
+                IFNULL(l.voted, '') AS voted,
+                NULL AS logIp,
+                NULL AS logUa
             FROM
                 comment AS c
                 LEFT JOIN (
