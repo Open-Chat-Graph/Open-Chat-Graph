@@ -2,28 +2,39 @@
 
 declare(strict_types=1);
 
+/**
+ * docker compose exec app vendor/bin/phpunit app/Controllers/Api/test/CommentPostApiControllerTest.php
+ */
+
 use App\Controllers\Api\CommentPostApiController;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
-use App\Services\Auth\Auth;
+use App\Services\Auth\AuthInterface;
+use App\Services\Auth\GoogleReCaptcha;
+use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
 
 class CommentPostApiControllerTest extends TestCase
 {
-    private CommentPostApiController $inst;
     public function test()
     {
-        $this->inst = app(CommentPostApiController::class);
+        $inst = app(CommentPostApiController::class);
 
-        $stub = $this->createStub(Auth::class);
-        $stub->method('verifyCookieUserId')->willReturn('test_user_id');
+        $authStub = $this->createStub(AuthInterface::class);
+        $authStub->method('verifyCookieUserId')->willReturn('test_user_id');
 
-        $res = $this->inst->index(
+        $recaptchaStub = $this->createStub(GoogleReCaptcha::class);
+        $recaptchaStub->method('validate')->willReturn(0.9);
+
+        $res = $inst->index(
             app(CommentPostRepositoryInterface::class),
             app(CommentLogRepositoryInterface::class),
             app(OpenChatPageRepositoryInterface::class),
-            $stub,
+            $authStub,
+            $recaptchaStub,
+            app(FileStorageInterface::class),
+            'dummy_token',
             2,
             'テストユーザー',
             'テスト本文'

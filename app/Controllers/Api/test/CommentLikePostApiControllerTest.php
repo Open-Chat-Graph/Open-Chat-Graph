@@ -2,21 +2,30 @@
 
 declare(strict_types=1);
 
+/**
+ * docker compose exec app vendor/bin/phpunit app/Controllers/Api/test/CommentLikePostApiControllerTest.php
+ */
+
 use App\Controllers\Api\CommentLikePostApiController;
-use App\Services\Auth\Auth;
+use App\Models\CommentRepositories\CommentLogRepositoryInterface;
+use App\Models\CommentRepositories\LikePostRepositoryInterface;
+use App\Services\Auth\AuthInterface;
 use PHPUnit\Framework\TestCase;
 
 class CommentLikePostApiControllerTest extends TestCase
 {
-    private CommentLikePostApiController $inst;
-    public function test()
+    public function testAdd()
     {
-        $stub = $this->createStub(Auth::class);
+        $stub = $this->createStub(AuthInterface::class);
         $stub->method('verifyCookieUserId')->willReturn('test2');
-        
-        $this->inst = app(CommentLikePostApiController::class, ['auth' => $stub]);
 
-        $res = $this->inst->add(5, 'insights');
+        $inst = app(CommentLikePostApiController::class, [
+            'auth' => $stub,
+            'likePostRepository' => app(LikePostRepositoryInterface::class),
+            'commentLogRepository' => app(CommentLogRepositoryInterface::class),
+        ]);
+
+        $res = $inst->add(5, 'insights');
 
         debug($res);
 
@@ -25,12 +34,16 @@ class CommentLikePostApiControllerTest extends TestCase
 
     public function testDelete()
     {
-        $stub = $this->createStub(Auth::class);
+        $stub = $this->createStub(AuthInterface::class);
         $stub->method('verifyCookieUserId')->willReturn('test2');
 
-        $this->inst = app(CommentLikePostApiController::class, ['auth' => $stub]);
+        $inst = app(CommentLikePostApiController::class, [
+            'auth' => $stub,
+            'likePostRepository' => app(LikePostRepositoryInterface::class),
+            'commentLogRepository' => app(CommentLogRepositoryInterface::class),
+        ]);
 
-        $res = $this->inst->delete(5);
+        $res = $inst->delete(5);
 
         debug($res);
 
