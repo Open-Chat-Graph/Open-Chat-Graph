@@ -1,5 +1,5 @@
 import { basePath, OPEN_CHAT_CATEGORY } from '../config/config'
-import React, { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, Tabs, Tab } from '@mui/material'
 import { type Swiper as SwiperCore } from 'swiper'
@@ -63,6 +63,13 @@ function OcListSwiper({
   const onSwiper = useCallback((swiper: SwiperCore) => (swiperRef.current = swiper), [])
 
   currentIndex.current = cateIndex
+
+  useEffect(() => {
+    const swiper = swiperRef.current
+    if (swiper && swiper.activeIndex !== cateIndex) {
+      swiper.slideTo(cateIndex, 0)
+    }
+  }, [cateIndex, swiperRef])
 
   const onSlideChange = useCallback((swiper: SwiperCore) => {
     const newValue = swiper.activeIndex

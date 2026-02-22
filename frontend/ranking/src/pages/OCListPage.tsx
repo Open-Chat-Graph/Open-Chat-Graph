@@ -1,22 +1,27 @@
-import { useMemo } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { useRef } from 'react'
+import { Navigate, useLocation, useParams } from 'react-router-dom'
 import OcListMainTabs from '../components/OcListMainTabs'
 import { OPEN_CHAT_CATEGORY } from '../config/config'
 import { Provider, createStore } from 'jotai'
-import { useInitStoreFromURL } from '../hooks/ListParamsHooks'
+import { getValidListParams } from '../hooks/ListParamsHooks'
+import { listParamsState, keywordState } from '../store/atom'
 import { useMediaQuery } from '@mui/material'
 import OcListMainTabsVertical from '../components/OcListMainTabsVertical'
 
 export default function OCListPage() {
   const { category } = useParams()
-  const initStore = useInitStoreFromURL()
+  const location = useLocation()
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
 
-  const store = useMemo(() => {
+  const storeRef = useRef<ReturnType<typeof createStore> | null>(null)
+  if (!storeRef.current) {
     const s = createStore()
-    initStore(s)
-    return s
-  }, [initStore])
+    const params = getValidListParams(new URLSearchParams(window.location.search), location)
+    s.set(listParamsState, params)
+    s.set(keywordState, params.keyword)
+    storeRef.current = s
+  }
+  const store = storeRef.current
 
   const cateIndex =
     typeof category === 'string'

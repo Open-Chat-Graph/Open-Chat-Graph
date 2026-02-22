@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useSetAtom, useAtomValue, createStore } from 'jotai'
+import { useSetAtom } from 'jotai'
 import { keywordState, listParamsState } from '../store/atom'
 import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
 import { useLocation } from 'react-router-dom'
@@ -56,16 +56,6 @@ export const getValidListParams = (params: URLSearchParams, location: any): List
   }
 
   return { sub_category, keyword, list, sort: sort, order: orderParam('desc') }
-}
-
-export const useInitStoreFromURL = () => {
-  const location = useLocation()
-
-  return (store: ReturnType<typeof createStore>) => {
-    const params = getValidListParams(new URLSearchParams(window.location.search), location)
-    store.set(listParamsState, params)
-    store.set(keywordState, params.keyword)
-  }
 }
 
 export function useSetListParams(): SetListParamsValue {
