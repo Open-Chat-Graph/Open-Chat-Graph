@@ -1,11 +1,9 @@
 import {
   categorySignal,
   chart,
-  chartModeSignal,
   limitSignal,
   loading,
   rankingRisingSignal,
-  updateTabVisibility,
 } from '../signal/chartState'
 import { setRenderPositionBtns } from '../app'
 import fetcher from './fetcher'
@@ -99,56 +97,6 @@ export function renderChartWithoutRanking() {
 }
 
 export async function fetchChart(animation: boolean) {
-  if (chartModeSignal.value === 'candlestick') {
-    setRenderPositionBtns(true)
-
-    // メンバーOHLCをAPI経由で取得
-    loading.value = true
-    const memberOhlcData = await fetcher<MemberOhlc[]>(
-      `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/member_ohlc`
-    )
-    chart.memberOhlcApiData = memberOhlcData
-
-    // OHLCデータ数に基づいてタブ表示を更新
-    updateTabVisibility(memberOhlcData.length)
-    const limit: ChartLimit = limitSignal.value === 25 ? 31 : limitSignal.value
-
-    if (rankingRisingSignal.value !== 'none') {
-      const sort = rankingRisingSignal.value
-      const category = categorySignal.value === 'all' ? 0 : chatArgDto.categoryKey
-      const ohlcData = await fetcher<RankingPositionOhlc[]>(
-        `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/position_ohlc?sort=${sort}&category=${category}`
-      )
-      loading.value = false
-      const isRising = sort === 'rising'
-      chart.render(
-        {
-          date: statsDto.date,
-          graph1: statsDto.member,
-          graph2: [],
-          time: [],
-          totalCount: [],
-          rankingOhlc: ohlcData,
-        },
-        {
-          label1: t('メンバー数'),
-          label2: isRising ? t('急上昇') : t('ランキング'),
-          category: categorySignal.value === 'all' ? t('すべて') : chatArgDto.categoryName,
-          isRising,
-        },
-        animation,
-        limit
-      )
-    } else {
-      loading.value = false
-      renderMemberChart(animation, limit)(statsDto)
-    }
-    return
-  }
-
-  // 折れ線グラフモード: statsDto基準でタブ表示を復元
-  updateTabVisibility(statsDto.date.length)
-
   const path: PotisionPath = chart.getIsHour() ? 'position_hour' : 'position'
   const limit: ChartLimit = limitSignal.value === 25 ? 31 : limitSignal.value
 

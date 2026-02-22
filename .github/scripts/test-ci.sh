@@ -202,8 +202,31 @@ main() {
     log_info "実行回数設定: 日本語=${JA_HOURS}回, 繁体字=${TW_HOURS}回, タイ語=${TH_HOURS}回"
     echo ""
 
-    # .env.mockの設定はコンテナ起動前に行う必要がある（Makefileのci-testターゲットで設定済み）
-    # CI環境ではdocker-compose.ci.ymlで環境変数を直接設定
+    # docker/line-mock-api/.env.mockを自動設定（固定データモード用）
+    log_info "docker/line-mock-api/.env.mockを固定データモード用に設定中..."
+
+    # CI環境では.env.mockは不要（docker-compose.ci.ymlで環境変数を直接設定）
+    if [ -z "$CI" ]; then
+        # ローカル環境の場合
+        if [ ! -f docker/line-mock-api/.env.mock ]; then
+            if [ ! -f docker/line-mock-api/.env.mock.example ]; then
+                log_error "docker/line-mock-api/.env.mock.exampleが見つかりません"
+                exit 1
+            fi
+            cp docker/line-mock-api/.env.mock.example docker/line-mock-api/.env.mock
+            log_info "docker/line-mock-api/.env.mock.exampleからdocker/line-mock-api/.env.mockを作成しました"
+        else
+            log_info "既存のdocker/line-mock-api/.env.mockを使用します"
+        fi
+
+        # 必要な設定を上書き（sedを使用してコメントを保持）
+        sed -i 's/^MOCK_DELAY_ENABLED=.*/MOCK_DELAY_ENABLED=0/' docker/line-mock-api/.env.mock
+        sed -i 's/^MOCK_API_TYPE=.*/MOCK_API_TYPE=fixed/' docker/line-mock-api/.env.mock
+
+        log_success "docker/line-mock-api/.env.mockを設定しました（固定データモード、遅延なし）"
+    else
+        log_info "CI環境: docker-compose.ci.ymlの設定を使用（固定データモード、遅延なし）"
+    fi
 
     # hourIndexの処理（既存の値があれば継続するか確認）
     docker exec "$MOCK_CONTAINER" mkdir -p /app/data

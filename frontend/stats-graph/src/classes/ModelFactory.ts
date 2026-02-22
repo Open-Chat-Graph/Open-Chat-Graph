@@ -6,7 +6,6 @@ export default class ModelFactory {
       graph2: [],
       time: [],
       totalCount: [],
-      rankingOhlc: [],
     }
   }
 
