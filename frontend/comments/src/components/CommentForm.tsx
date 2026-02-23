@@ -66,6 +66,7 @@ export default function CommentForm() {
           formData
         )
 
+        try { localStorage.setItem('oc-my-user-id', userId) } catch {}
         setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash, images.map(f => ({ id: 0, filename: f })))
         setName('')
         setText('')
