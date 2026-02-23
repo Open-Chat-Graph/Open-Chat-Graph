@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -63,6 +63,9 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make build-frontend:comments$(NC) - コメントのみビルド"
 	@echo "  $(GREEN)make build-frontend:graph$(NC)    - グラフのみビルド"
 	@echo "  $(GREEN)make build-frontend:all-room-stats$(NC) - 全体統計のみビルド"
+	@echo ""
+	@echo "$(YELLOW)静的解析:$(NC)"
+	@echo "  $(GREEN)make phpstan$(NC)    - PHPStan静的解析を実行"
 	@echo ""
 	@echo "$(YELLOW)その他:$(NC)"
 	@echo "  $(GREEN)make show$(NC)        - 現在の起動モードを表示"
@@ -203,12 +206,12 @@ restart: down ## 環境を再起動（基本・Mock自動判定）
 rebuild: down ## 環境を再ビルド（基本・Mock自動判定）
 	@if docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q . || [ -f docker/line-mock-api/.env.mock ]; then \
 		echo "$(GREEN)Mock環境をビルドしています...$(NC)"; \
-		docker compose -f docker-compose.yml -f docker-compose.mock.yml build; \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml build --pull; \
 		echo "$(GREEN)ビルドが完了しました$(NC)"; \
 		$(MAKE) up-mock; \
 	else \
 		echo "$(GREEN)基本環境をビルドしています...$(NC)"; \
-		docker compose build; \
+		docker compose build --pull; \
 		echo "$(GREEN)ビルドが完了しました$(NC)"; \
 		$(MAKE) up; \
 	fi
@@ -319,6 +322,13 @@ cert: ## SSL証明書を更新（LAN内ホスト/IPを追加可能）
 		echo "$(GREEN)証明書の更新が完了しました$(NC)"; \
 	else \
 		echo "$(YELLOW)appコンテナが起動していないため、次回起動時に新しい証明書が使用されます$(NC)"; \
+	fi
+
+phpstan: ## PHPStan静的解析を実行
+	@if $(MAKE) _is-mock 2>/dev/null; then \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app vendor/bin/phpstan analyse; \
+	else \
+		docker compose exec app vendor/bin/phpstan analyse; \
 	fi
 
 ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
