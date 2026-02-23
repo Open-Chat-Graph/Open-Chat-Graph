@@ -89,10 +89,8 @@ jobs:
           filters: |
             frontend_ranking:
               - 'frontend/ranking/**'
-            frontend_stats_graph:
-              - 'frontend/stats-graph/**'
-            frontend_comments:
-              - 'frontend/comments/**'
+            frontend_oc_app:
+              - 'frontend/oc-app/**'
             frontend_all_room_stats:
               - 'frontend/all-room-stats/**'
 
@@ -100,8 +98,7 @@ jobs:
         id: any_frontend
         run: |
           if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
-             [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || \
-             [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || \
              [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
              [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -123,8 +120,7 @@ jobs:
             (cd "$1" && npm ci && CI=false npm run build)
           }
           [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
-          [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/stats-graph
-          [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/comments
+          [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/oc-app
           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
           echo "Frontend build complete"
 
@@ -166,8 +162,7 @@ jobs:
             scp -P ${{ steps.config.outputs.ssh_port }} -r "$1" ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }}:${{ steps.config.outputs.ssh_path }}/public/js/
           }
           [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
-          [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
-          [ "${{ steps.check_changes.outputs.frontend_comments }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/comment/
+          [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/oc-app/
           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
           echo "Frontend deploy complete"
 

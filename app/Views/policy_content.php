@@ -10,8 +10,8 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
     <script type="application/json" id="comment-app-init-dto">
         <?php echo json_encode(['openChatId' => 0, 'recaptchaKey' => SecretsConfig::$googleRecaptchaSiteKey], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
     </script>
-    <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/comment', 'main-*.css') ?>">
-    <script type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
+    <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/oc-app', 'comments-*.css') ?>">
+    <script type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'comments-*.js') ?>"></script>
     <?php viewComponent('site_header') ?>
     <main style="overflow: hidden;">
         <article class="terms">
