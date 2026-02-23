@@ -105,7 +105,7 @@ jobs:
 
       - name: Install composer dependencies
         run: |
-          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && composer install --no-dev --optimize-autoloader --no-interaction"
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && /usr/bin/php8.5 /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction"
 
       - name: Initialize SQLite databases
         run: |
