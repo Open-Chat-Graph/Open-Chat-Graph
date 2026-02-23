@@ -4,30 +4,13 @@ import { fetchApiFormData } from '../utils/utils'
 import useSetPostedItem from '../hooks/useSetPostedItem'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import CommentFormDialogUi from './Dialog/CommentFormDialogUi'
+import ErrorDialog from './Dialog/ErrorDialog'
 import { useRecoilState, useSetRecoilState } from 'recoil'
 import { inputTextState } from '../state/inputTextState'
 import { inputNameState } from '../state/inputNameState'
 import { appInitTagDto } from '../config/appInitTagDto'
-import { reportDialogState } from '../state/reportDialogState'
+import { errorDialogState } from '../state/errorDialogState'
 import { imageFilesState } from '../state/imageFilesState'
-import imageCompression from 'browser-image-compression'
-
-const MAX_SERVER_SIZE = 8 * 1024 * 1024 // 8MB
-
-async function compressImage(file: File): Promise<File> {
-  const compressed = await imageCompression(file, {
-    maxSizeMB: 5,
-    maxWidthOrHeight: 2000,
-    useWebWorker: true,
-    initialQuality: 0.85,
-  })
-
-  if (compressed.size > MAX_SERVER_SIZE) {
-    throw new Error('画像サイズを小さくしてください（8MB以下）')
-  }
-
-  return compressed
-}
 
 export default function CommentForm() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -37,7 +20,7 @@ export default function CommentForm() {
   const [imageFiles, setImageFiles] = useRecoilState(imageFilesState)
   const formRef = useRef<FormData | undefined>()
   const setPostedItem = useSetPostedItem()
-  const setFailDialog = useSetRecoilState(reportDialogState)
+  const setErrorDialog = useSetRecoilState(errorDialogState)
   const { executeRecaptcha } = useGoogleReCaptcha()
 
   const onSubmit: FormEventHandler<HTMLFormElement> = useCallback((e) => {
@@ -62,29 +45,22 @@ export default function CommentForm() {
       try {
         const token = await executeRecaptcha('comment')
 
-        // Compress images
-        const compressedImages: File[] = []
-        for (const file of currentImages) {
-          compressedImages.push(await compressImage(file))
-        }
-
         // Build FormData
         const formData = new FormData()
         formData.append('name', name)
         formData.append('text', text)
         formData.append('token', token)
-        compressedImages.forEach((file, i) => {
+        currentImages.forEach((file, i) => {
           formData.append(`image${i}`, file)
         })
 
-        const { commentId, userId, userIdHash, uaHash, ipHash, images, imageError } = await fetchApiFormData<{
+        const { commentId, userId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
           commentId: number
           userId: string
           userIdHash: string
           uaHash: string
           ipHash: string
           images: string[]
-          imageError?: boolean
         }>(
           `${window.location.origin}/comment/${appInitTagDto.openChatId}`,
           formData
@@ -94,18 +70,17 @@ export default function CommentForm() {
         setName('')
         setText('')
         setImageFiles([])
-
-        if (imageError) {
-          alert('コメントは投稿されましたが、画像の処理に失敗しました。')
-        }
       } catch (error) {
         console.error(error)
-        setFailDialog((p) => ({ ...p, open: true, result: 'fail' }))
+        setErrorDialog({
+          open: true,
+          message: error instanceof Error ? error.message : 'エラーが発生しました',
+        })
       } finally {
         setIsSending(false)
       }
     })()
-  }, [executeRecaptcha, imageFiles, setFailDialog, setImageFiles, setName, setPostedItem, setText])
+  }, [executeRecaptcha, imageFiles, setErrorDialog, setImageFiles, setName, setPostedItem, setText])
 
   const hadleDialogClose = useCallback(() => {
     formRef.current = undefined
@@ -116,6 +91,7 @@ export default function CommentForm() {
     <>
       <CommentFormUi onSubmit={onSubmit} isSending={isSending} />
       <CommentFormDialogUi open={dialogOpen} handleOk={handleOk} handleClose={hadleDialogClose} />
+      <ErrorDialog />
     </>
   )
 }

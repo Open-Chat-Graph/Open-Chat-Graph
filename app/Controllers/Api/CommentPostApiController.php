@@ -56,20 +56,24 @@ class CommentPostApiController
             $flag,
         );
 
-        $commentId = $commentPostRepository->addComment($args);
-
-        // 画像処理
+        // 画像処理（コメント挿入前に実行）
         $imageFiles = array_filter([$image0, $image1, $image2], fn(?array $f) => !empty($f['tmp_name']));
         $imageFilenames = [];
-        $imageError = false;
         if (!empty($imageFiles)) {
             try {
                 $imageFilenames = $commentImageService->processAndStore(array_values($imageFiles));
-                $commentImageRepository->addImages($commentId, $imageFilenames);
             } catch (\RuntimeException $e) {
                 ExceptionHandler::errorLog($e);
-                $imageError = true;
+                throw new \Shared\Exceptions\UploadException('画像のアップロードに失敗しました');
             }
+        }
+
+        // コメント挿入（画像処理成功後）
+        $commentId = $commentPostRepository->addComment($args);
+
+        // 画像レコード登録
+        if (!empty($imageFilenames)) {
+            $commentImageRepository->addImages($commentId, $imageFilenames);
         }
 
         $commentLogRepository->addLog(
@@ -105,7 +109,6 @@ class CommentPostApiController
             'uaHash' => substr(hash('sha256', getUA()), 0, 7),
             'ipHash' => substr(hash('sha256', getIP()), 0, 7),
             'images' => $imageFilenames,
-            'imageError' => $imageError,
         ]);
     }
 }
