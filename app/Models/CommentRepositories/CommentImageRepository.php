@@ -191,6 +191,25 @@ class CommentImageRepository implements CommentImageRepositoryInterface
         return $filename;
     }
 
+    function deleteImagesByIds(array $ids): void
+    {
+        if (empty($ids)) return;
+
+        $params = [];
+        $placeholders = [];
+        foreach (array_values($ids) as $i => $id) {
+            $key = "id_{$i}";
+            $placeholders[] = ":{$key}";
+            $params[$key] = $id;
+        }
+        $placeholderStr = implode(',', $placeholders);
+
+        CommentDB::execute(
+            "DELETE FROM comment_image WHERE id IN ({$placeholderStr})",
+            $params
+        );
+    }
+
     function getCommentIdByImageId(int $imageId): int|false
     {
         $query = "SELECT comment_id FROM comment_image WHERE id = :id";

@@ -180,9 +180,8 @@ class AdminEndPointController
         $filenames = array_column($images, 'filename');
         $commentImageService->deleteImages($filenames);
 
-        foreach ($images as $img) {
-            $commentImageRepository->deleteImageById($img['id']);
-        }
+        $ids = array_column($images, 'id');
+        $commentImageRepository->deleteImagesByIds($ids);
 
         $count = count($filenames);
         return view('admin/admin_message_page', ['title' => '画像一括削除', 'message' => "{$count}件の画像を削除しました"]);

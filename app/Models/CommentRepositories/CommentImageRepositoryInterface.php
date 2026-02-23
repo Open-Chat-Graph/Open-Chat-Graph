@@ -39,6 +39,9 @@ interface CommentImageRepositoryInterface
 
     function deleteImageById(int $imageId): string|false;
 
+    /** @param int[] $ids */
+    function deleteImagesByIds(array $ids): void;
+
     function getCommentIdByImageId(int $imageId): int|false;
 
     function getFilenameByImageId(int $imageId): string|false;
