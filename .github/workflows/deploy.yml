@@ -109,7 +109,7 @@ jobs:
 
       - name: Initialize MySQL tables
         run: |
-          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} 'cd ${{ vars.SSH_PATH }} && for db in ${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}; do mysql -u "${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; done'
+          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} 'cd ${{ vars.SSH_PATH }} && for db in ${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}; do if mysql -u "${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASS }}" -e "USE $db" 2>/dev/null; then mysql -u "${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; else echo "Skipped: $db (database not found)"; fi; done'
 
       - name: Deploy frontend assets
         if: steps.any_frontend.outputs.changed == 'true'
