@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/Crawler/test/CrawlerFactoryTest.php
+ */
+
 use PHPUnit\Framework\TestCase;
 use App\Services\Crawler\CrawlerFactory;
 

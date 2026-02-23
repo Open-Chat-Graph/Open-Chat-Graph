@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/OpenChat/Crawler/test/OpenChatApiSubCategoryDownloader.php
+ */
+
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;

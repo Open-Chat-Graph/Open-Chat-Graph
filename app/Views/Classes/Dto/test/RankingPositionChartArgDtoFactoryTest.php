@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Views/Classes/Dto/test/RankingPositionChartArgDtoFactoryTest.php
+ */
+
 declare(strict_types=1);
 
 namespace App\Views\Classes\Dto\test;

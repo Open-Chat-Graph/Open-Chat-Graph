@@ -1,10 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /**
- * docker compose exec app su -s /bin/bash www-data -c "vendor/bin/phpunit --do-not-cache-result app/Models/CommentRepositories/test/CommentImageRepositoryTest.php"
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/CommentRepositories/test/CommentImageRepositoryTest.php
  */
+
+declare(strict_types=1);
 
 use App\Models\CommentRepositories\CommentImageRepository;
 use PHPUnit\Framework\TestCase;

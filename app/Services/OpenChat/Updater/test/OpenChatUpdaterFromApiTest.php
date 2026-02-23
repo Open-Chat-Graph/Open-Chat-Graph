@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/OpenChat/Updater/test/OpenChatUpdaterFromApiTest.php
+ */
+
 declare(strict_types=1);
 
 namespace Shadow\File;

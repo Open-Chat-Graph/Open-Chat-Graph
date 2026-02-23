@@ -1,12 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 /**
- * docker compose exec app su -s /bin/bash www-data -c "vendor/bin/phpunit --do-not-cache-result app/Services/Comment/test/CommentImageServiceTest.php"
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/Comment/test/CommentImageServiceTest.php
  *
  * 実際のGdImageFactory・ImageStoreを使い、ファイルシステムへの書き込み・削除を検証する統合テスト
  */
+
+declare(strict_types=1);
 
 use App\Services\Comment\CommentImageService;
 use App\Services\Comment\CommentImageServiceInterface;

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/Repositories/Api/test/ApiOpenChatPageRepositoryTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\Repositories\Api\ApiOpenChatPageRepository;

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit batch/cron/test/cron_crawling_test_2.php
+ */
+
 declare(strict_types=1);
 
 use App\Config\AppConfig;
