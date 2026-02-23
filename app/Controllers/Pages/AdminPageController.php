@@ -6,7 +6,6 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
-use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
@@ -169,10 +168,10 @@ class AdminPageController
     /**
      * オープンチャット削除
      */
-    function deleteoc(?string $oc, DeleteOpenChatRepositoryInterface $deleteOpenChatRepository)
+    function deleteoc(?string $oc, \App\Services\OpenChat\Updater\OpenChatDeleter $openChatDeleter)
     {
         if (!($oc = Validator::num($oc))) return false;
-        $result = $deleteOpenChatRepository->deleteOpenChat($oc);
+        $result = $openChatDeleter->deleteOpenChatById($oc);
         return view('admin/admin_message_page', ['title' => 'オープンチャット削除', 'message' => $result ? '削除しました' : '削除されたオープンチャットはありません']);
     }
 

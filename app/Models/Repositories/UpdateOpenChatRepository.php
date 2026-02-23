@@ -10,11 +10,6 @@ use App\Services\OpenChat\Dto\OpenChatUpdaterDto;
 
 class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
 {
-    public function __construct(
-        private DeleteOpenChatRepositoryInterface $DeleteOpenChatRepository
-    ) {
-    }
-
     public function getOpenChatDataById(int $id): OpenChatRepositoryDto|false
     {
         $query =
@@ -43,11 +38,6 @@ class UpdateOpenChatRepository implements UpdateOpenChatRepositoryInterface
 
     public function updateOpenChatRecord(OpenChatUpdaterDto $dto): void
     {
-        if ($dto->delete_flag === true) {
-            $this->DeleteOpenChatRepository->deleteOpenChat($dto->open_chat_id);
-            return;
-        }
-
         $columnsToSet = [
             'updated_at' => $dto->updated_at ?? null,
             'emid' => $dto->emid ?? null,
