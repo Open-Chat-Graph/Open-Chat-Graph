@@ -190,6 +190,7 @@ export default class OpenChatChart implements ChartFactory {
   }
 
   private enableAnimationOption() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anim = (this.chart.data.datasets[0] as any).animation
     if (anim && typeof anim === 'object') {
       anim.duration = undefined

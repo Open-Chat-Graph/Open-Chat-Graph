@@ -13,6 +13,7 @@ const aspectRatio = (ocChart: OpenChatChart) => {
 
 export default function buildOptions(
   ocChart: OpenChatChart,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   plugins: any
 ): ChartConfiguration<'bar' | 'line', number[], string | string[]>['options'] {
   const hasPosition = !!ocChart.data.graph2.length || !!ocChart.ohlcRankingData.length
@@ -84,6 +85,7 @@ export default function buildOptions(
         max: labelRangeLine.dataMax,
         display: displayY,
         ticks: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           callback: (v: any) => {
             if (v === 0) return 1
             return v
@@ -135,6 +137,7 @@ export default function buildOptions(
       },
       ticks: {
         display: displayY,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         callback: (v: any) => {
           const tick = Math.round(v)
           if (tick !== v || tick < 1) return ''
@@ -168,9 +171,10 @@ export default function buildOptions(
       },
       ticks: {
         display: show,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         callback: (v: any) => {
           const value = ocChart.graph2Max - v + 1
-          let tick = Math.ceil(value)
+          const tick = Math.ceil(value)
 
           if (!tick || tick === lastTick) return ''
           lastTick = tick
@@ -198,6 +202,7 @@ export default function buildOptions(
     if (!isWeekly) {
       const maxLabels = limit === 31 ? 15 : 20
       const step = Math.max(1, Math.ceil(dataLen / maxLabels))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       options.scales!.x!.ticks!.callback = function (this: any, _val: any, index: number) {
         if (index % step !== 0) return ''
         return this.getLabelForValue(index)
@@ -209,6 +214,7 @@ export default function buildOptions(
       const gridStep = Math.max(1, Math.ceil(dataLen / 20))
       options.scales!.x!.grid = {
         ...options.scales!.x!.grid,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         color: (ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent'),
       }
     }

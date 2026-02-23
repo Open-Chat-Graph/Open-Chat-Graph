@@ -68,6 +68,7 @@ function SwitchLabels() {
         label={t('グラフの移動・拡大')}
         sx={{ '.MuiFormControlLabel-label': { fontSize: '11.5px', textWrap: 'nowrap' } }}
         onChange={(e: React.TargetedEvent<HTMLInputElement>) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           handleChangeEnableZoom((e.target as any).checked)
         }
       />

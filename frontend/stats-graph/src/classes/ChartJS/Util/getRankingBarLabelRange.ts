@@ -19,7 +19,7 @@ export default function getRankingBarLabelRange(
     Infinity
   ) as number
   let maxNum = incrementIfOdd(realMax)
-  let minNum = decrementIfOdd(realMin)
+  const minNum = decrementIfOdd(realMin)
 
   let dataDiffMax = incrementIfOdd(Math.ceil(maxNum - minNum) * diffMaxConst)
 
