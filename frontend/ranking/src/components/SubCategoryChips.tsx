@@ -140,10 +140,10 @@ function SubCategoryChipsSP2(props: SubCategoryChipsProps) {
         ref={ref}
         style={{
           minHeight: 0,
-          height: 44,
+          height: 48,
           paddingRight: 0,
-          paddingBottom: '8px',
-          marginTop: '8px',
+          paddingBottom: '12px',
+          marginTop: '10px',
         }}
       >
         <Chips {...{ stackParentRef: ref, ...props }} />
