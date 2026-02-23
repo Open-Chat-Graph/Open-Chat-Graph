@@ -71,16 +71,16 @@ class AdminEndPointController
 
         if ($flag > 0 && $flag < 4) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
 
-        // flag=4: 画像をpublic外に移動、flag=0: 画像をpublicに復元
-        if ($flag === 4 || $flag === 0) {
+        // flag=2,4: 画像をpublic外に移動、flag=0: 画像をpublicに復元
+        if (in_array($flag, [0, 2, 4], true)) {
             $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
             if ($comment_id) {
                 $images = $commentImageRepository->getImagesByCommentId($comment_id);
                 $filenames = array_column($images, 'filename');
                 if (!empty($filenames)) {
-                    $flag === 4
-                        ? $commentImageService->hideImages($filenames)
-                        : $commentImageService->restoreImages($filenames);
+                    $flag === 0
+                        ? $commentImageService->restoreImages($filenames)
+                        : $commentImageService->hideImages($filenames);
                 }
             }
         }
