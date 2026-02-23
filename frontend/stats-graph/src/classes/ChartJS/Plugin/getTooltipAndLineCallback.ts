@@ -98,13 +98,13 @@ export const getTooltipAndLineCallback =
     }
 
     // 1週間表示時以外
-    if (!(ocChart.limit === 8 || ocChart.zoomWeekday === 2)) {
+    if (!(ocChart.limit === 8 || ocChart.zoomWeekday === 2) && pos.x != null) {
       verticalLine(ocChart.chart, defaultVerticalLine, pos.x)
     }
 
     isShow = true
     return {
-      x: pos.x,
+      x: pos.x!,
       y: 0,
       yAlign: 'bottom',
     }
