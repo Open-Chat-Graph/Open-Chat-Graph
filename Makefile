@@ -326,9 +326,9 @@ cert: ## SSL証明書を更新（LAN内ホスト/IPを追加可能）
 
 phpstan: ## PHPStan静的解析を実行
 	@if $(MAKE) _is-mock 2>/dev/null; then \
-		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app vendor/bin/phpstan analyse; \
+		docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app vendor/bin/phpstan analyse --autoload-file=phpstan-bootstrap.php; \
 	else \
-		docker compose exec app vendor/bin/phpstan analyse; \
+		docker compose exec app vendor/bin/phpstan analyse --autoload-file=phpstan-bootstrap.php; \
 	fi
 
 ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
