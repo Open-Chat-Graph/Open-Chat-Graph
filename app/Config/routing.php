@@ -389,9 +389,9 @@ Route::path(
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
-    ->matchFile('image0', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 8192, emptyAble: true, requestMethod: 'post')
-    ->matchFile('image1', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 8192, emptyAble: true, requestMethod: 'post')
-    ->matchFile('image2', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image0', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image1', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image2', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
     ->match(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')

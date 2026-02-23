@@ -9,38 +9,58 @@ import CloseIcon from '@mui/icons-material/Close'
 const MAX_IMAGES = 3
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 const MAX_DIMENSION = 2000
-const WEBP_QUALITY = 0.7
+const MAX_OUTPUT_SIZE = 4 * 1024 * 1024 // 4MB
+const INITIAL_QUALITY = 0.85
+const MIN_QUALITY = 0.3
+const QUALITY_STEP = 0.1
 
 type PendingImage = { id: number; previewUrl: string }
 
 let nextId = 0
 
-function compressToWebp(file: File): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('画像の変換に失敗しました'))),
+      'image/jpeg',
+      quality
+    )
+  })
+}
+
+function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const img = new Image()
-    img.onload = () => {
+    img.onload = async () => {
       URL.revokeObjectURL(url)
-      let { width, height } = img
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        if (width > height) {
-          height = Math.round((height * MAX_DIMENSION) / width)
-          width = MAX_DIMENSION
-        } else {
-          width = Math.round((width * MAX_DIMENSION) / height)
-          height = MAX_DIMENSION
+      try {
+        let { width, height } = img
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIMENSION) / width)
+            width = MAX_DIMENSION
+          } else {
+            width = Math.round((width * MAX_DIMENSION) / height)
+            height = MAX_DIMENSION
+          }
         }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+
+        let quality = INITIAL_QUALITY
+        let blob = await canvasToBlob(canvas, quality)
+        while (blob.size > MAX_OUTPUT_SIZE && quality > MIN_QUALITY) {
+          quality -= QUALITY_STEP
+          blob = await canvasToBlob(canvas, Math.max(quality, MIN_QUALITY))
+        }
+        resolve(blob)
+      } catch (e) {
+        reject(e)
       }
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, width, height)
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('画像の変換に失敗しました'))),
-        'image/webp',
-        WEBP_QUALITY
-      )
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
@@ -77,23 +97,22 @@ export default function ImageAttachmentInput() {
         setPending((p) => [...p, { id, previewUrl }])
         ;(async () => {
           try {
-            const blob = await compressToWebp(file)
+            const blob = await compressImage(file)
             // Check if cancelled during compression
             if (!pendingRef.current.some((item) => item.id === id)) return
             URL.revokeObjectURL(previewUrl)
             setPending((p) => p.filter((item) => item.id !== id))
             setFiles((prev) => {
               if (prev.length >= MAX_IMAGES) return prev
-              return [...prev, new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' })]
+              return [...prev, blob]
             })
           } catch (e) {
             console.error(e)
             URL.revokeObjectURL(previewUrl)
             setPending((p) => p.filter((item) => item.id !== id))
-            setErrorDialog({
-              open: true,
-              message: e instanceof Error ? e.message : '画像の圧縮に失敗しました',
-            })
+            const msg = e instanceof Error ? e.message : '画像の圧縮に失敗しました'
+            const detail = e instanceof Error ? `[${e.name}]\n${e.stack ?? ''}` : String(e)
+            setErrorDialog({ open: true, message: msg, detail })
           }
         })()
       }
@@ -117,15 +136,9 @@ export default function ImageAttachmentInput() {
         return true
       })
       if (hasOversized) {
-        setErrorDialog({
-          open: true,
-          message: '画像のファイルサイズが大きすぎます（20MB以下にしてください）',
-        })
+        setErrorDialog({ open: true, message: '画像のファイルサイズが大きすぎます（20MB以下にしてください）', detail: '' })
       } else if (hasInvalidType) {
-        setErrorDialog({
-          open: true,
-          message: '画像ファイルのみ添付できます',
-        })
+        setErrorDialog({ open: true, message: '画像ファイルのみ添付できます', detail: '' })
       }
       if (arr.length === 0) return
 

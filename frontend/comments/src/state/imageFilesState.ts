@@ -1,6 +1,6 @@
 import { atom } from 'recoil'
 
-export const imageFilesState = atom<File[]>({
+export const imageFilesState = atom<Blob[]>({
   key: 'imageFilesState',
   default: [],
 })

@@ -1,6 +1,6 @@
 import { FormEventHandler, useCallback, useRef, useState } from 'react'
 import CommentFormUi from './CommentFormUi'
-import { fetchApiFormData } from '../utils/utils'
+import { fetchApiFormData, ApiError } from '../utils/utils'
 import useSetPostedItem from '../hooks/useSetPostedItem'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import CommentFormDialogUi from './Dialog/CommentFormDialogUi'
@@ -50,8 +50,8 @@ export default function CommentForm() {
         formData.append('name', name)
         formData.append('text', text)
         formData.append('token', token)
-        currentImages.forEach((file, i) => {
-          formData.append(`image${i}`, file)
+        currentImages.forEach((blob, i) => {
+          formData.append(`image${i}`, blob, `image${i}.jpg`)
         })
 
         const { commentId, userId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
@@ -72,10 +72,22 @@ export default function CommentForm() {
         setImageFiles([])
       } catch (error) {
         console.error(error)
-        setErrorDialog({
-          open: true,
-          message: error instanceof Error ? error.message : 'エラーが発生しました',
-        })
+        let message: string
+        let detail: string
+        if (error instanceof ApiError) {
+          message = error.message
+          detail = `[サーバーエラー] HTTP ${error.status}\ncode: ${error.serverCode}\nurl: ${error.url}`
+          if (error.responseBody) {
+            detail += `\n\n--- レスポンス ---\n${error.responseBody}`
+          }
+        } else if (error instanceof Error) {
+          message = error.message
+          detail = `[${error.name}]\n${error.stack ?? ''}`
+        } else {
+          message = 'エラーが発生しました'
+          detail = String(error)
+        }
+        setErrorDialog({ open: true, message, detail })
       } finally {
         setIsSending(false)
       }

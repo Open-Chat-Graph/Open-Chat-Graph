@@ -38,8 +38,6 @@ class CommentImageService implements CommentImageServiceInterface
         return MimimalCmsConfig::$publicDir . self::HIDDEN_PATH . '/' . self::getSubDir($filename) . '/' . $filename;
     }
 
-    private const RECOMPRESS_THRESHOLD = 2 * 1024 * 1024; // 2MB
-
     function processAndStore(array $files): array
     {
         $files = array_slice($files, 0, self::MAX_IMAGES);
@@ -54,25 +52,15 @@ class CommentImageService implements CommentImageServiceInterface
                 mkdir($destDir, 0775, true);
             }
 
-            $fileSize = filesize($file['tmp_name']);
-            $isWebp = isset($file['type']) && $file['type'] === 'image/webp';
-
-            if ($isWebp && $fileSize < self::RECOMPRESS_THRESHOLD) {
-                // クライアントで圧縮済みWebP — そのまま保存
-                copy($file['tmp_name'], $destDir . '/' . $filename . '.webp');
-            } else {
-                // 2MB以上または非WebP — GDで再圧縮
-                $gdImage = $this->gdImageFactory->createGdImage($file, 2000, 2000);
-                $this->imageStore->storeImageFromGdImage(
-                    $gdImage,
-                    $destDir,
-                    $filename,
-                    \ImageType::WEBP,
-                    80
-                );
-                imagedestroy($gdImage);
-            }
-
+            $gdImage = $this->gdImageFactory->createGdImage($file, 2000, 2000);
+            $this->imageStore->storeImageFromGdImage(
+                $gdImage,
+                $destDir,
+                $filename,
+                \ImageType::WEBP,
+                70
+            );
+            imagedestroy($gdImage);
             $filenames[] = $filename . '.webp';
         }
 
