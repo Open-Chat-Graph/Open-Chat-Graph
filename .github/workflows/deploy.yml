@@ -1,11 +1,18 @@
-name: Deploy to Production
+name: Deploy
 
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
+    branches: [main, stg]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'デプロイ先の環境'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
 
 jobs:
   deploy:
@@ -14,6 +21,8 @@ jobs:
       (github.event_name == 'workflow_dispatch') ||
       (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
+    env:
+      IS_STG: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stg') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging') }}
     steps:
       # PRマージ時はCIテストが成功しているか確認（skip-ci時はスキップ）
       - name: Check CI status
@@ -44,6 +53,33 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure deploy target
+        id: config
+        run: |
+          if [ "$IS_STG" = "true" ]; then
+            {
+              echo "branch=stg"
+              echo "ssh_port=${{ vars.STG_SSH_PORT }}"
+              echo "ssh_user=${{ vars.STG_SSH_USER }}"
+              echo "ssh_host=${{ vars.STG_SSH_HOST }}"
+              echo "ssh_path=${{ vars.STG_SSH_PATH }}"
+              echo "mysql_dbs=${{ vars.STG_MYSQL_DB_COMMENT }} ${{ vars.STG_MYSQL_DB_COMMENT_TW }} ${{ vars.STG_MYSQL_DB_COMMENT_TH }}"
+              echo "tweet_msg=開発環境に反映されました"
+              echo "tweet_url=https://openchat-review-dev.me"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "branch=main"
+              echo "ssh_port=${{ vars.SSH_PORT }}"
+              echo "ssh_user=${{ vars.SSH_USER }}"
+              echo "ssh_host=${{ vars.SSH_HOST }}"
+              echo "ssh_path=${{ vars.SSH_PATH }}"
+              echo "mysql_dbs=${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}"
+              echo "tweet_msg=サイトに反映されました"
+              echo "tweet_url=https://openchat-review.me"
+            } >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Check for frontend changes
         if: github.event_name == 'pull_request'
@@ -93,35 +129,41 @@ jobs:
           echo "Frontend build complete"
 
       - name: Setup SSH
+        env:
+          SSH_KEY: ${{ (env.IS_STG == 'true' && secrets.STG_SSH_PRIVATE_KEY) || secrets.SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ (env.IS_STG == 'true' && secrets.STG_SSH_KNOWN_HOSTS) || secrets.SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          echo "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
 
       - name: Deploy code
         run: |
-          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && git fetch origin && git reset --hard origin/main"
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "cd ${{ steps.config.outputs.ssh_path }} && git fetch origin && git reset --hard origin/${{ steps.config.outputs.branch }}"
 
       - name: Install composer dependencies
         run: |
-          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && composer install --no-dev --optimize-autoloader --no-interaction"
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "cd ${{ steps.config.outputs.ssh_path }} && /usr/bin/php8.5 /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction"
 
       - name: Initialize SQLite databases
         run: |
-          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} 'cd ${{ vars.SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
 
       - name: Initialize MySQL tables
+        env:
+          DB_USER: ${{ (env.IS_STG == 'true' && secrets.STG_MYSQL_USER) || secrets.MYSQL_USER }}
+          DB_PASS: ${{ (env.IS_STG == 'true' && secrets.STG_MYSQL_PASS) || secrets.MYSQL_PASS }}
         run: |
-          ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} 'cd ${{ vars.SSH_PATH }} && for db in ${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}; do if mysql -u "${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASS }}" -e "USE $db" 2>/dev/null; then mysql -u "${{ secrets.MYSQL_USER }}" -p"${{ secrets.MYSQL_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; else echo "Skipped: $db (database not found)"; fi; done'
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for db in ${{ steps.config.outputs.mysql_dbs }}; do if mysql -u "${{ env.DB_USER }}" -p"${{ env.DB_PASS }}" -e "USE $db" 2>/dev/null; then mysql -u "${{ env.DB_USER }}" -p"${{ env.DB_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; else echo "Skipped: $db (database not found)"; fi; done'
 
       - name: Deploy frontend assets
         if: steps.any_frontend.outputs.changed == 'true'
         run: |
           deploy() {
             local dir=$(basename "$1")
-            ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "rm -rf ${{ vars.SSH_PATH }}/public/js/$dir/"
-            scp -P ${{ vars.SSH_PORT }} -r "$1" ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:${{ vars.SSH_PATH }}/public/js/
+            ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "rm -rf ${{ steps.config.outputs.ssh_path }}/public/js/$dir/"
+            scp -P ${{ steps.config.outputs.ssh_port }} -r "$1" ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }}:${{ steps.config.outputs.ssh_path }}/public/js/
           }
           [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
           [ "${{ steps.check_changes.outputs.frontend_stats_graph }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/chart/
@@ -158,11 +200,13 @@ jobs:
               const prTitle = process.env.PR_TITLE;
               const prUrl = process.env.PR_URL;
               const prAuthor = process.env.PR_AUTHOR;
+              const tweetMsg = process.env.TWEET_MSG;
+              const siteUrl = process.env.SITE_URL;
 
-              const message = '🚀 プルリクエストがマージされ、サイトに反映されました\n\n' +
+              const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
                 'By @' + prAuthor + '\n\n' +
-                '#オプチャグラフ https://openchat-review.me' + '\n\n' +
+                '#オプチャグラフ ' + siteUrl + '\n\n' +
                 prUrl;
 
               const tweet = await client.v2.tweet(message);
@@ -191,4 +235,6 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
+          SITE_URL: ${{ steps.config.outputs.tweet_url }}
         run: node post-pr-merge.js
