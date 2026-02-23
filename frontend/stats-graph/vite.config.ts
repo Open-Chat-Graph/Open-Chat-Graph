@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: '../../public/js/chart',
       emptyOutDir: true,
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         input: 'src/main.tsx',
         output: {
