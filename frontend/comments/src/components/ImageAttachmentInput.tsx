@@ -2,6 +2,7 @@ import { useCallback, useRef, DragEvent, useState, useMemo, useEffect } from 're
 import { useRecoilState, useSetRecoilState } from 'recoil'
 import { imageFilesState } from '../state/imageFilesState'
 import { errorDialogState } from '../state/errorDialogState'
+import { imageCompressingState } from '../state/imageCompressingState'
 import { Box, Button, Badge, CircularProgress } from '@mui/material'
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
 import CloseIcon from '@mui/icons-material/Close'
@@ -78,6 +79,11 @@ export default function ImageAttachmentInput() {
   const [pending, setPending] = useState<PendingImage[]>([])
   const pendingRef = useRef(pending)
   pendingRef.current = pending
+  const setIsCompressing = useSetRecoilState(imageCompressingState)
+
+  useEffect(() => {
+    setIsCompressing(pending.length > 0)
+  }, [pending.length, setIsCompressing])
 
   const previewUrls = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files])
 

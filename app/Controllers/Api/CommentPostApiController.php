@@ -68,12 +68,18 @@ class CommentPostApiController
             }
         }
 
-        // コメント挿入（画像処理成功後）
-        $commentId = $commentPostRepository->addComment($args);
+        // コメント挿入 → 画像レコード登録（失敗時は保存済み画像を削除）
+        try {
+            $commentId = $commentPostRepository->addComment($args);
 
-        // 画像レコード登録
-        if (!empty($imageFilenames)) {
-            $commentImageRepository->addImages($commentId, $imageFilenames);
+            if (!empty($imageFilenames)) {
+                $commentImageRepository->addImages($commentId, $imageFilenames);
+            }
+        } catch (\Throwable $e) {
+            if (!empty($imageFilenames)) {
+                $commentImageService->deleteImages($imageFilenames);
+            }
+            throw $e;
         }
 
         $commentLogRepository->addLog(

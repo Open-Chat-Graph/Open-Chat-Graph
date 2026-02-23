@@ -7,6 +7,8 @@ import CommentTermText from './CommentTermText'
 import { inputNameState } from '../state/inputNameState'
 import { inputTextState } from '../state/inputTextState'
 import { FormEventHandler } from 'react'
+import { useRecoilValue } from 'recoil'
+import { imageCompressingState } from '../state/imageCompressingState'
 import { appInitTagDto } from '../config/appInitTagDto'
 import CommentFormTitle from './CommentFormTitle'
 import ImageAttachmentInput from './ImageAttachmentInput'
@@ -24,6 +26,7 @@ export default function CommentFormUi({
 }) {
   const nameProps = useValidateInput(20, inputNameState)
   const textProps = useValidateInput(1000, inputTextState)
+  const isCompressing = useRecoilValue(imageCompressingState)
 
   return (
     <div>
@@ -63,7 +66,7 @@ export default function CommentFormUi({
               <Button
                 type="submit"
                 variant="contained"
-                disabled={!isEmpty(textProps.value)}
+                disabled={!isEmpty(textProps.value) || isCompressing}
                 sx={{ m: 'auto', ml: 'auto', height: 'fit-content' }}
               >
                 投稿する
