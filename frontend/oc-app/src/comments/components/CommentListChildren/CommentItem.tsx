@@ -30,7 +30,7 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { 
             component="span"
             variant="body2"
             color="text.secondary"
-            sx={{ fontSize: '15px' }}
+            sx={{ fontSize: '14px' }}
           >
             {`${id}: `}
             <b>{text.length ? `${name ? name : '匿名'}` : '***'}</b>
