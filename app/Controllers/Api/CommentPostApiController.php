@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\SecretsConfig;
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Dto\CommentPostApiArgs;
@@ -13,6 +14,7 @@ use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Auth\AuthInterface;
 use App\Services\Auth\GoogleReCaptcha;
+use App\Services\Comment\CommentImageServiceInterface;
 use App\Services\Storage\FileStorageInterface;
 use ExceptionHandler\ExceptionHandler;
 
@@ -21,6 +23,8 @@ class CommentPostApiController
     function index(
         CommentPostRepositoryInterface $commentPostRepository,
         CommentLogRepositoryInterface $commentLogRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService,
         OpenChatPageRepositoryInterface $openChatPageRepository,
         AuthInterface $auth,
         GoogleReCaptcha $googleReCaptcha,
@@ -28,7 +32,10 @@ class CommentPostApiController
         string $token,
         int $open_chat_id,
         string $name,
-        string $text
+        string $text,
+        ?array $image0,
+        ?array $image1,
+        ?array $image2
     ) {
         $score = $googleReCaptcha->validate($token, 0.5);
 
@@ -50,6 +57,18 @@ class CommentPostApiController
         );
 
         $commentId = $commentPostRepository->addComment($args);
+
+        // 画像処理
+        $imageFiles = array_filter([$image0, $image1, $image2], fn(?array $f) => !empty($f['tmp_name']));
+        $imageFilenames = [];
+        if (!empty($imageFiles)) {
+            try {
+                $imageFilenames = $commentImageService->processAndStore(array_values($imageFiles));
+                $commentImageRepository->addImages($commentId, $imageFilenames);
+            } catch (\RuntimeException $e) {
+                ExceptionHandler::errorLog($e);
+            }
+        }
 
         $commentLogRepository->addLog(
             $commentId,
@@ -83,6 +102,7 @@ class CommentPostApiController
             'userIdHash' => substr(hash('sha256', $args->user_id), 0, 7),
             'uaHash' => substr(hash('sha256', getUA()), 0, 7),
             'ipHash' => substr(hash('sha256', getIP()), 0, 7),
+            'images' => $imageFilenames,
         ]);
     }
 }

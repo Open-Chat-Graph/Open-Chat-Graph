@@ -6,6 +6,7 @@ use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
+use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
@@ -386,6 +387,9 @@ Route::path(
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
+    ->matchFile('image0', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 5120, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image1', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 5120, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image2', ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], 5120, emptyAble: true, requestMethod: 'post')
     ->match(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')
@@ -441,6 +445,13 @@ Route::path(
     ->matchNum('comment_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
+
+// コメント画像サムネイルAPI
+Route::path(
+    'comment-img/thumb/{filename}@get',
+    [CommentImageThumbnailController::class, 'index']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path('admin/cookie')
     ->match(function (AdminAuthService $adminAuthService, ?string $key) {
@@ -501,7 +512,7 @@ Route::path(
     ->matchNum('id')
     ->matchNum('commentId')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
-    ->matchNum('flag', min: 0, max: 3);
+    ->matchNum('flag', min: 0, max: 4);
 
 Route::path(
     'admin-api/deleteuser@post',

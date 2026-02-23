@@ -107,6 +107,13 @@ jobs:
         run: |
           ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
 
+      - name: Initialize MySQL tables
+        run: |
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for db in ocgraph_comment ocgraph_commenttw ocgraph_commentth; do mysql -u "$MYSQL_USER" -p"$MYSQL_PASS" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; done'
+        env:
+          MYSQL_USER: ${{ secrets.STG_MYSQL_USER }}
+          MYSQL_PASS: ${{ secrets.STG_MYSQL_PASS }}
+
       - name: Deploy frontend assets
         if: steps.any_frontend.outputs.changed == 'true'
         run: |

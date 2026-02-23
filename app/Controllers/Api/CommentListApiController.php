@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\Dto\CommentListApi;
@@ -15,6 +16,7 @@ class CommentListApiController
     function index(
         CommentListRepositoryInterface $commentListRepository,
         CommentPostRepositoryInterface $commentPostRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
         AuthInterface $auth,
         int $page,
         int $limit,
@@ -33,6 +35,14 @@ class CommentListApiController
         if ($flag)
             cookie(['comment_flag' => (string)$flag], httpOnly: false);
 
-        return response(array_map(fn (CommentListApi $el) => $el->getResponseArray(), $list));
+        // 画像をバッチ取得
+        $commentIds = array_map(fn(CommentListApi $el) => $el->commentId, $list);
+        $imagesMap = $commentImageRepository->getImagesByCommentIds($commentIds);
+
+        return response(array_map(function (CommentListApi $el) use ($imagesMap) {
+            $data = $el->getResponseArray();
+            $data['images'] = $el->flag === 4 ? [] : ($imagesMap[$el->commentId] ?? []);
+            return $data;
+        }, $list));
     }
 }

@@ -15,17 +15,12 @@ class CommentListRepository implements CommentListRepositoryInterface
         "SELECT
                 c.id,
                 c.comment_id AS commentId,
-                CASE c.flag AND c.user_id != :user_id
-                    WHEN 0 THEN c.name
-                    ELSE 'Anonymous'
-                END AS name,
-                CASE c.flag AND c.user_id != :user_id
-                    WHEN 0 THEN c.text
-                    ELSE ''
-                END AS text,
+                CASE WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN 'Anonymous' ELSE c.name END AS name,
+                CASE WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN '' ELSE c.text END AS text,
                 c.time,
                 c.user_id AS userId,
                 CASE
+                    WHEN c.flag = 4 THEN 4
                     WHEN c.user_id = :user_id THEN 0
                     ELSE c.flag
                 END AS flag,
@@ -92,7 +87,8 @@ class CommentListRepository implements CommentListRepositoryInterface
                 name,
                 time,
                 text,
-                comment_id
+                comment_id,
+                user_id
             FROM
                 comment
             WHERE
