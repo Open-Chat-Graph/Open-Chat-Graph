@@ -18,7 +18,7 @@ const listItemSx: SxProps<Theme> = {
 }
 
 export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { images?: CommentImage[]; isOwn?: boolean }) {
-  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted, images, isOwn } = props
+  const { id, commentId, name, time, text, status, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted, images, isOwn } = props
 
   return (
     <ListItem sx={listItemSx}>
@@ -30,12 +30,12 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { 
             component="span"
             variant="body2"
             color="text.secondary"
-            sx={{ fontSize: '13px' }}
+            sx={{ fontSize: '15px' }}
           >
             {`${id}: `}
             <b>{text.length ? `${name ? name : '匿名'}` : '***'}</b>
             <time dateTime={convertTimeTagFormatFromMySql(time)}>{` ${formatDatetimeWithWeekdayFromMySql(time)}`}</time>
-            {!text.length && (userId ? ` ${userId}` : ' 削除済')}
+            {!text.length && ` ${status || '削除済'}`}
             {!!text.length && !isOwn && <ReportButton id={id} commentId={commentId} />}
             <HashId userIdHash={userIdHash} uaHash={uaHash} ipHash={ipHash} />
           </Typography>

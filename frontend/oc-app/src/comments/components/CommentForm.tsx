@@ -54,9 +54,8 @@ export default function CommentForm() {
           formData.append(`image${i}`, blob, `image${i}.jpg`)
         })
 
-        const { commentId, userId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
+        const { commentId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
           commentId: number
-          userId: string
           userIdHash: string
           uaHash: string
           ipHash: string
@@ -66,8 +65,8 @@ export default function CommentForm() {
           formData
         )
 
-        try { localStorage.setItem('oc-my-user-id', userId) } catch { /* ignore */ }
-        setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash, images.map(f => ({ id: 0, filename: f })))
+        try { localStorage.setItem('oc-my-user-id', userIdHash) } catch { /* ignore */ }
+        setPostedItem(commentId, name, text, userIdHash, uaHash, ipHash, images.map(f => ({ id: 0, filename: f })))
         setName('')
         setText('')
         setImageFiles([])

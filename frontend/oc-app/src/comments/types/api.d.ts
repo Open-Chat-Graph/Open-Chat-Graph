@@ -4,7 +4,7 @@ type CommentItemApi = {
   name: string
   time: string
   text: string
-  userId: string
+  status: string
   userIdHash: string
   uaHash: string | null
   ipHash: string | null

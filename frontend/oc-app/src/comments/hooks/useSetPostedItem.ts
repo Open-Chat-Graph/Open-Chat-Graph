@@ -6,14 +6,14 @@ import { useCallback } from 'react'
 export default function useSetPostedItem() {
   const setPostedItem = useSetAtom(postedItemState)
 
-  return useCallback((commentId: number, name: string, text: string, userId: string, userIdHash: string, uaHash: string, ipHash: string, images: CommentImage[] = []) => setPostedItem((p) => [{
+  return useCallback((commentId: number, name: string, text: string, userIdHash: string, uaHash: string, ipHash: string, images: CommentImage[] = []) => setPostedItem((p) => [{
     comment: {
       id: 0,
       commentId,
       name,
       time: getDatetimeString(),
       text,
-      userId,
+      status: '',
       userIdHash,
       uaHash,
       ipHash,

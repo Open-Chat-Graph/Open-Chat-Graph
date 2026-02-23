@@ -47,7 +47,7 @@ export default function CommentList({ limit }: { limit: number }) {
           {!postedItem.length && data[0].length === 0 && <EmptyListItem />}
           {<PostedItem postedItem={postedItem} lastId={data[0][0]?.comment.id} />}
           {data.flat().map((el) => (
-            <CommentItemUi {...{ ...el.comment, ...el.like, images: el.images }} isOwn={!!myUserId && el.comment.userId === myUserId} key={el.comment.id} />
+            <CommentItemUi {...{ ...el.comment, ...el.like, images: el.images }} isOwn={!!myUserId && el.comment.userIdHash === myUserId} key={el.comment.id} />
           ))}
         </List>
       )}
