@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/RankingBan/test/RankingBanTableUpdaterTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Config\AppConfig;

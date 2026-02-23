@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/Cron/test/OcreviewApiDataImporterTest.php
+ */
+
 use PHPUnit\Framework\TestCase;
 use App\Services\Cron\OcreviewApiDataImporter;
 use Shadow\DB;

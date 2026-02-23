@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Helpers/test/isDailyUpdateTimeTest.php
+ */
+
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;

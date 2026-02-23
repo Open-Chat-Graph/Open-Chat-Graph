@@ -96,7 +96,7 @@ class RankingPositionDailyUpdaterOhlcTest extends TestCase
     }
 
     /**
-     * @test updateYesterdayDailyDb が OHLC データを正しく永続化すること
+     *updateYesterdayDailyDb が OHLC データを正しく永続化すること
      * - 参照側（HourRepository, OpenChatRepository等）をモック、永続化側は実SQLite
      * - メンバー数OHLCが statistics_ohlc に保存されること
      * - ランキング順位OHLC（ranking/rising）が ranking_position_ohlc に保存されること
@@ -246,7 +246,7 @@ class RankingPositionDailyUpdaterOhlcTest extends TestCase
     }
 
     /**
-     * @test 同日に既に実行済みの場合はスキップされること
+     *同日に既に実行済みの場合はスキップされること
      * - syncState に当日日付が記録済み → insertOhlc が呼ばれないこと
      */
     public function testUpdateYesterdayDailyDbSkipsWhenAlreadyExecuted(): void

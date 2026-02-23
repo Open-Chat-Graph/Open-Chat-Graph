@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/RecommendRepositories/test/OfficialRoomRankingRepositoryTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;

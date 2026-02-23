@@ -77,7 +77,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test insertOhlc → getOhlcDateAsc の基本フロー
+     *insertOhlc → getOhlcDateAsc の基本フロー
      * - 1件挿入して1件返ること
      * - date, open_member, high_member, low_member, close_member が一致すること
      */
@@ -111,7 +111,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test insertOhlc に空配列を渡すと0件が返ること
+     *insertOhlc に空配列を渡すと0件が返ること
      */
     public function testInsertOhlcEmpty(): void
     {
@@ -120,7 +120,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 存在しない open_chat_id を指定すると空配列を返すこと
+     *存在しない open_chat_id を指定すると空配列を返すこと
      */
     public function testGetOhlcDateAscEmpty(): void
     {
@@ -133,7 +133,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 複数日のデータが日付昇順でソートされて返ること
+     *複数日のデータが日付昇順でソートされて返ること
      * - 挿入順が降順でも結果は昇順
      */
     public function testGetOhlcDateAscMultipleDaysSortedAsc(): void
@@ -177,7 +177,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 異なる open_chat_id のデータが混在しても指定IDのみ返すこと
+     *異なる open_chat_id のデータが混在しても指定IDのみ返すこと
      */
     public function testGetOhlcDateAscFiltersByOpenChatId(): void
     {
@@ -213,7 +213,7 @@ class SqliteStatisticsOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 同じ open_chat_id + date の重複挿入は INSERT OR IGNORE で無視されること
+     *同じ open_chat_id + date の重複挿入は INSERT OR IGNORE で無視されること
      * - 2回目の挿入後も1件のみ、最初の値が保持される
      */
     public function testInsertOhlcDuplicateDateIgnored(): void

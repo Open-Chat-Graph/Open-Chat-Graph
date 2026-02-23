@@ -1,10 +1,13 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Controllers/Api/test/CommentPostApiControllerTest.php
+ */
+
 declare(strict_types=1);
 
 /**
- * docker compose exec app su -s /bin/bash www-data -c "vendor/bin/phpunit app/Controllers/Api/test/CommentPostApiControllerTest.php"
- *
  * CommentPostApiControllerの統合テスト
  * - CommentImageService: 実物（実際にファイルを書き込む）
  * - CommentImageRepository: 実物（実際にDBに保存する）

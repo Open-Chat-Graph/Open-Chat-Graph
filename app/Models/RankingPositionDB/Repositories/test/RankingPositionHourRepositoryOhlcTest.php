@@ -120,7 +120,7 @@ class RankingPositionHourRepositoryOhlcTest extends TestCase
     }
 
     /**
-     * @test getDailyMemberOhlc: 時間別メンバー数からOHLCを正しく集計すること
+     *getDailyMemberOhlc: 時間別メンバー数からOHLCを正しく集計すること
      * - open=最初の時刻の値, high=MAX, low=MIN, close=最後の時刻の値
      * - 変動ありケース（100→120→110）と変動なしケース（200→200→200）を検証
      */
@@ -151,7 +151,7 @@ class RankingPositionHourRepositoryOhlcTest extends TestCase
     }
 
     /**
-     * @test getDailyMemberOhlc: データがない日付は空配列を返すこと
+     *getDailyMemberOhlc: データがない日付は空配列を返すこと
      */
     public function testGetDailyMemberOhlcEmptyDate(): void
     {
@@ -160,7 +160,7 @@ class RankingPositionHourRepositoryOhlcTest extends TestCase
     }
 
     /**
-     * @test getDailyPositionOhlc(Ranking): 順位OHLCが正しく集計されること
+     *getDailyPositionOhlc(Ranking): 順位OHLCが正しく集計されること
      * - open=最初の時刻の順位, high=MAX(position), low=MIN(position), close=最後の時刻の順位
      * - 全スロット出現時は low_position に MIN(position) が入ること
      */
@@ -188,7 +188,7 @@ class RankingPositionHourRepositoryOhlcTest extends TestCase
     }
 
     /**
-     * @test getDailyPositionOhlc(Rising): 圏外ありの場合 low_position が NULL になること
+     *getDailyPositionOhlc(Rising): 圏外ありの場合 low_position が NULL になること
      * - 全スロット中一部のみ出現（2/3スロット）→ low_position=NULL
      */
     public function testGetDailyPositionOhlcRisingWithOutOfRank(): void
@@ -213,7 +213,7 @@ class RankingPositionHourRepositoryOhlcTest extends TestCase
     }
 
     /**
-     * @test getDailyPositionOhlc: データがない日付は空配列を返すこと
+     *getDailyPositionOhlc: データがない日付は空配列を返すこと
      */
     public function testGetDailyPositionOhlcEmptyDate(): void
     {

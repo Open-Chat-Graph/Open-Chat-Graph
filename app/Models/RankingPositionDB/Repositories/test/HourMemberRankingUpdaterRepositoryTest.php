@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/RankingPositionDB/Repositories/test/HourMemberRankingUpdaterRepositoryTest.php
+ */
+
 use App\Models\RankingPositionDB\Repositories\HourMemberRankingUpdaterRepository;
 use App\Services\OpenChat\Enum\RankingType;
 use PHPUnit\Framework\TestCase;

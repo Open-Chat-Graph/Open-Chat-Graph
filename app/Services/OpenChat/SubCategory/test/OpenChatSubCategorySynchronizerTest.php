@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/OpenChat/SubCategory/test/OpenChatSubCategorySynchronizerTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Services\Storage\FileStorageInterface;

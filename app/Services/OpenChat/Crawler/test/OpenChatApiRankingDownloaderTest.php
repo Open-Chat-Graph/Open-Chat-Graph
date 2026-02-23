@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/OpenChat/Crawler/test/OpenChatApiRankingDownloaderTest.php
+ */
+
 use PHPUnit\Framework\TestCase;
 use App\Services\OpenChat\Crawler\OpenChatApiDownloaderProcessFactory;
 use App\Services\OpenChat\Enum\RankingType;
