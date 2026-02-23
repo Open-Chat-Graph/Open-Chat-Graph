@@ -15,10 +15,9 @@ import {
 import { t } from '../util/translation'
 
 function CandlestickToggle() {
-  if (!hasOhlcData()) return null
-
   const chartMode = useAtomValue(chartModeAtom)
   const limit = useAtomValue(limitAtom)
+  if (!hasOhlcData()) return null
   const isCandlestick = chartMode === 'candlestick'
   const isHourMode = limit === 25
   const disabled = isHourMode && !isCandlestick
