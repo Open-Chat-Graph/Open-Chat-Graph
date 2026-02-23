@@ -23,10 +23,24 @@ viewComponent('policy_head', compact('_css', '_meta'));
                 <h3 class="text-base font-semibold mb-2">統計</h3>
                 <div class="flex gap-6 text-sm">
                     <span>総画像数: <b><?php echo $stats['count'] ?></b>件</span>
-                    <span>全体容量: <b><?php echo number_format($storageSize['total_size'] / 1024 / 1024, 2) ?></b> MB</span>
-                    <span>削除済み容量: <b><?php echo number_format($storageSize['deleted_size'] / 1024 / 1024, 2) ?></b> MB</span>
+                    <span>全体容量: <b id="total-size">計算中...</b></span>
+                    <span>削除済み容量: <b id="deleted-size">計算中...</b></span>
                 </div>
             </section>
+            <script>
+                fetch('<?php echo url("admin-api/commentimagestorage") ?>', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(d => {
+                        document.getElementById('total-size').textContent =
+                            (d.total_size / 1024 / 1024).toFixed(2) + ' MB';
+                        document.getElementById('deleted-size').textContent =
+                            (d.deleted_size / 1024 / 1024).toFixed(2) + ' MB';
+                    })
+                    .catch(() => {
+                        document.getElementById('total-size').textContent = '取得失敗';
+                        document.getElementById('deleted-size').textContent = '取得失敗';
+                    });
+            </script>
 
             <section>
                 <div class="flex items-center gap-4 mb-4">

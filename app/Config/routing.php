@@ -552,6 +552,9 @@ Route::path(
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
+Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::class, 'commentImageStorageSize'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path(
     'admin-api/deletecommentimage@post',
     [AdminEndPointController::class, 'deleteCommentImage']

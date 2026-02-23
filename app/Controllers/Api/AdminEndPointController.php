@@ -157,6 +157,17 @@ class AdminEndPointController
         return view('admin/admin_message_page', ['title' => '画像削除', 'message' => "画像 {$filename} を削除しました"]);
     }
 
+    function commentImageStorageSize(
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService
+    ) {
+        $storageSize = $commentImageService->calculateStorageSize(
+            array_column($commentImageRepository->getDeletedCommentImages(999999), 'filename')
+        );
+
+        return response($storageSize);
+    }
+
     function deleteDeletedCommentImages(
         CommentImageRepositoryInterface $commentImageRepository,
         CommentImageServiceInterface $commentImageService

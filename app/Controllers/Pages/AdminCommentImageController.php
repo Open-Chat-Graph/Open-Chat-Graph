@@ -6,7 +6,6 @@ namespace App\Controllers\Pages;
 
 use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
-use App\Services\Comment\CommentImageServiceInterface;
 
 class AdminCommentImageController
 {
@@ -17,7 +16,6 @@ class AdminCommentImageController
      */
     function commentImages(
         CommentImageRepositoryInterface $commentImageRepository,
-        CommentImageServiceInterface $commentImageService,
         OpenChatPageRepositoryInterface $openChatPageRepository,
         string $tab,
         int $page
@@ -37,10 +35,6 @@ class AdminCommentImageController
 
         $totalPages = max(1, (int) ceil($totalCount / $perPage));
 
-        $storageSize = $commentImageService->calculateStorageSize(
-            array_column($commentImageRepository->getDeletedCommentImages(999999), 'filename')
-        );
-
         // 掲載中タブ: OpenChatタイトルを取得
         $openChatNames = [];
         if ($tab === 'active' && !empty($images)) {
@@ -51,7 +45,6 @@ class AdminCommentImageController
         return view('admin_comment_images_content', [
             'stats' => $stats,
             'images' => $images,
-            'storageSize' => $storageSize,
             'tab' => $tab,
             'page' => $page,
             'totalPages' => $totalPages,
