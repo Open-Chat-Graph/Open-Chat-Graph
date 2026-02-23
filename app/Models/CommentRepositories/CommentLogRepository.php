@@ -47,4 +47,19 @@ class CommentLogRepository implements CommentLogRepositoryInterface
             'data'
         ));
     }
+
+    function findAddCommentLog(int $comment_id): array|false
+    {
+        $query =
+            "SELECT
+                ip, ua
+            FROM
+                log
+            WHERE
+                entity_id = :comment_id
+                AND type = 'AddComment'
+            LIMIT 1";
+
+        return CommentDB::fetch($query, compact('comment_id'));
+    }
 }

@@ -9,6 +9,7 @@ import {
 import ReportButton from '../Button/ReportButton'
 import HashId from './HashId'
 import { linkify } from '../../utils/linkify'
+import CommentImageGallery from '../CommentImageGallery'
 
 const listItemSx: SxProps<Theme> = {
   p: 0,
@@ -16,8 +17,8 @@ const listItemSx: SxProps<Theme> = {
   alignItems: 'flex-start',
 }
 
-export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
-  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted } = props
+export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { images?: CommentImage[] }) {
+  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted, images } = props
 
   return (
     <ListItem sx={listItemSx}>
@@ -57,6 +58,9 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
           </Typography>
         }
       />
+      {!!text.length && images && images.length > 0 && (
+        <CommentImageGallery images={images} posterName={name || '匿名'} commentNo={id} />
+      )}
       {!!text.length && (
         <LikeButton {...{ empathyCount, insightsCount, negativeCount, voted, commentId }} />
       )}

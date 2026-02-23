@@ -51,13 +51,4 @@ class OpenChatUpdaterDtoFactory
 
         return $updaterDto;
     }
-
-    function mapToDeleteOpenChatDto(int $open_chat_id): OpenChatUpdaterDto
-    {
-        $updaterDto = new OpenChatUpdaterDto($open_chat_id);
-
-        $updaterDto->delete_flag = true;
-
-        return $updaterDto;
-    }
 }

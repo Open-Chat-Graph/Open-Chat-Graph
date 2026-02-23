@@ -10,4 +10,5 @@ enum CommentLogType: string
     case Report = 'Report';
     case AddLike = 'AddLike';
     case DeleteLike = 'DeleteLike';
+    case ImageReport = 'ImageReport';
 }

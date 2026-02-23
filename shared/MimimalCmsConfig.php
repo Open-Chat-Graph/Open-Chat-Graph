@@ -52,6 +52,9 @@ class MimimalCmsConfig
         \App\Models\CommentRepositories\DeleteCommentRepositoryInterface::class => \App\Models\CommentRepositories\DeleteCommentRepository::class,
         \App\Models\CommentRepositories\LikePostRepositoryInterface::class => \App\Models\CommentRepositories\LikePostRepository::class,
         \App\Models\CommentRepositories\RecentCommentListRepositoryInterface::class => \App\Models\CommentRepositories\RecentCommentListRepository::class,
+        \App\Models\CommentRepositories\CommentImageRepositoryInterface::class => \App\Models\CommentRepositories\CommentImageRepository::class,
+
+        \App\Services\Comment\CommentImageServiceInterface::class => \App\Services\Comment\CommentImageService::class,
         
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
         
@@ -82,7 +85,7 @@ class MimimalCmsConfig
 
     // Database configuration
     public static string $dbHost = '';
-    public static string $dbName = 'cf782105_ocreview';
+    public static string $dbName = '';
     public static string $dbUserName = '';
     public static string $dbPassword = '';
     public static bool $dbAttrPersistent = false;

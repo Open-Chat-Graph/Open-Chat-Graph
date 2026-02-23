@@ -146,6 +146,7 @@ class OpenChatPageController
         $_commentArgDto = [
             'openChatId' => $open_chat_id,
             'recaptchaKey' => SecretsConfig::$googleRecaptchaSiteKey,
+            'openChatName' => $oc['name'],
         ];
 
         $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;

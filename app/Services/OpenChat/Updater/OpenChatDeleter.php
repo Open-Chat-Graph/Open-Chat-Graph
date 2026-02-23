@@ -4,21 +4,36 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat\Updater;
 
-use App\Services\OpenChat\Dto\OpenChatUpdaterDtoFactory;
-use App\Models\Repositories\UpdateOpenChatRepositoryInterface;
+use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
+use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
+use App\Services\Comment\CommentImageServiceInterface;
 use App\Services\OpenChat\Dto\OpenChatRepositoryDto;
 
 class OpenChatDeleter implements OpenChatDeleterInterface
 {
     function __construct(
-        private OpenChatUpdaterDtoFactory $openChatUpdaterDtoFactory,
-        private UpdateOpenChatRepositoryInterface $updateRepository,
+        private DeleteOpenChatRepositoryInterface $deleteOpenChatRepository,
+        private DeleteCommentRepositoryInterface $deleteCommentRepository,
+        private CommentImageServiceInterface $commentImageService,
     ) {
+    }
+
+    /** 管理画面等からIDのみで削除する場合 */
+    function deleteOpenChatById(int $open_chat_id): bool
+    {
+        $filenames = $this->deleteCommentRepository->getCommentImageFilenames($open_chat_id);
+
+        $result = $this->deleteOpenChatRepository->deleteOpenChat($open_chat_id);
+
+        if (!empty($filenames)) {
+            $this->commentImageService->deleteImages($filenames);
+        }
+
+        return $result;
     }
 
     function deleteOpenChat(OpenChatRepositoryDto $repoDto): void
     {
-        $updaterDto = $this->openChatUpdaterDtoFactory->mapToDeleteOpenChatDto($repoDto->open_chat_id);
-        $this->updateRepository->updateOpenChatRecord($updaterDto);
+        $this->deleteOpenChatById($repoDto->open_chat_id);
     }
 }

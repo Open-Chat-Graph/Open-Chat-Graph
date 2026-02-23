@@ -29,6 +29,7 @@
         <select name="flag" id="delete-flag" style="width: 5rem; font-size:1rem">
             <option value="1">削除</option>
             <option value="2">通報</option>
+            <option value="4">画像削除</option>
             <option value="0">復元</option>
             <option value="3">完全削除</option>
         </select>

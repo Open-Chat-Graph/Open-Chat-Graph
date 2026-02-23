@@ -6,6 +6,8 @@ use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
+use App\Controllers\Api\CommentImageReportApiController;
+use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
@@ -15,6 +17,7 @@ use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
+use App\Controllers\Pages\AdminCommentImageController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -386,6 +389,9 @@ Route::path(
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
+    ->matchFile('image0', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image1', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image2', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
     ->match(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')
@@ -442,6 +448,22 @@ Route::path(
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
 
+// コメント画像サムネイルAPI
+Route::path(
+    'comment-img/thumb/{filename}@get',
+    [CommentImageThumbnailController::class, 'index']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// 画像通報API
+Route::path(
+    'comment_image_report/{image_id}@post',
+    [CommentImageReportApiController::class, 'index']
+)
+    ->matchNum('image_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('token');
+
 Route::path('admin/cookie')
     ->match(function (AdminAuthService $adminAuthService, ?string $key) {
         sessionStart();
@@ -483,6 +505,18 @@ Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
         return MimimalCmsConfig::$urlRoot === '';
     });
 
+// 管理者画像管理ページ
+Route::path('admin/comment-images', [AdminCommentImageController::class, 'commentImages'])
+    ->matchStr('tab', regex: ['deleted', 'active'], default: 'active', emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+    });
+
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
     ->match(function () {
@@ -501,7 +535,7 @@ Route::path(
     ->matchNum('id')
     ->matchNum('commentId')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
-    ->matchNum('flag', min: 0, max: 3);
+    ->matchNum('flag', min: 0, max: 4);
 
 Route::path(
     'admin-api/deleteuser@post',
@@ -517,6 +551,22 @@ Route::path(
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
+
+Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::class, 'commentImageStorageSize'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path(
+    'admin-api/deletecommentimage@post',
+    [AdminEndPointController::class, 'deleteCommentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('imageId');
+
+Route::path(
+    'admin-api/deletedcommentimages@post',
+    [AdminEndPointController::class, 'deleteDeletedCommentImages']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
     'oc/{open_chat_id}/admin',

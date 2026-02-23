@@ -53,3 +53,45 @@ export async function fetchApi<T>(url: string, method: string = 'GET', bodyData:
 
   return data as T
 }
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly serverCode: string,
+    public readonly url: string,
+    public readonly responseBody?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+export async function fetchApiFormData<T>(url: string, formData: FormData) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+    body: formData,
+  })
+
+  const rawText = await response.text()
+  let data: T | ErrorResponse
+  try {
+    data = JSON.parse(rawText)
+  } catch {
+    throw new ApiError(
+      `サーバーから不正なレスポンスが返されました (HTTP ${response.status})`,
+      response.status,
+      '',
+      url,
+      rawText
+    )
+  }
+
+  if (!response.ok) {
+    const err = (data as ErrorResponse).error
+    throw new ApiError(err.message, response.status, err.code, url)
+  }
+
+  return data as T
+}

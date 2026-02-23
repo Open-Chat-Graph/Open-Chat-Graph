@@ -116,6 +116,24 @@ for DB_NAME in "${DATABASES[@]}"; do
   echo ""
 done
 
+# コメントDBに comment_image テーブルが無ければ作成
+echo -e "${YELLOW}Ensuring comment_image table exists...${NC}"
+COMMENT_IMAGE_SQL="CREATE TABLE IF NOT EXISTS comment_image (
+  id int NOT NULL AUTO_INCREMENT,
+  comment_id int NOT NULL,
+  filename varchar(255) NOT NULL,
+  sort_order tinyint NOT NULL DEFAULT 0,
+  created_at datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (id),
+  KEY idx_comment_id (comment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
+
+for COMMENT_DB in ocgraph_comment ocgraph_commenttw ocgraph_commentth; do
+  mysql -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASS" "$COMMENT_DB" -e "$COMMENT_IMAGE_SQL" 2>/dev/null
+  echo -e "${GREEN}  ✓ ${COMMENT_DB}.comment_image${NC}"
+done
+echo ""
+
 # 完了メッセージ
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}All databases imported successfully!${NC}"

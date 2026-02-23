@@ -51,10 +51,44 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         return $this->deleteComment($comment_id, $flag);
     }
 
-    function deleteCommentsAll(int $open_chat_id): void
+    /** @return string[] image filenames associated with the open_chat_id */
+    function getCommentImageFilenames(int $open_chat_id): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT ci.filename FROM comment_image AS ci
+                 JOIN comment AS c ON ci.comment_id = c.comment_id
+                 WHERE c.open_chat_id = :open_chat_id",
+                compact('open_chat_id')
+            ),
+            'filename'
+        );
+    }
+
+    function deleteCommentsAll(int $open_chat_id): array
     {
         $id = compact('open_chat_id');
 
+        // 画像ファイル名を取得（物理削除用）
+        $filenames = array_column(
+            CommentDB::fetchAll(
+                "SELECT ci.filename FROM comment_image AS ci
+                 JOIN comment AS c ON ci.comment_id = c.comment_id
+                 WHERE c.open_chat_id = :open_chat_id",
+                $id
+            ),
+            'filename'
+        );
+
+        // comment_image レコード削除
+        CommentDB::execute(
+            "DELETE FROM comment_image WHERE comment_id IN (
+                SELECT comment_id FROM comment WHERE open_chat_id = :open_chat_id
+            )",
+            $id
+        );
+
+        // like 削除
         CommentDB::execute(
             "DELETE FROM
                 `like`
@@ -70,10 +104,13 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
             $id
         );
 
+        // comment 削除
         CommentDB::execute(
             "DELETE FROM comment WHERE open_chat_id = :open_chat_id",
             $id
         );
+
+        return $filenames;
     }
 
     function deleteLikeByUserIdAndIp(int $open_chat_id, string $user_id, string $ip): int
