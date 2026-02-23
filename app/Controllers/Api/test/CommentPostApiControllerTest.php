@@ -67,7 +67,6 @@ class CommentPostApiControllerTest extends TestCase
         $color = imagecolorallocate($gdImage, 255, 0, 0);
         imagefilledrectangle($gdImage, 0, 0, 99, 99, $color);
         imagejpeg($gdImage, $tmpFile, 80);
-        imagedestroy($gdImage);
         return $tmpFile;
     }
 
