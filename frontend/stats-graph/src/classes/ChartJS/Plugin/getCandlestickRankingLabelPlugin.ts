@@ -3,6 +3,7 @@ import OpenChatChart from '../../OpenChatChart'
 export default function getCandlestickRankingLabelPlugin(ocChart: OpenChatChart) {
   return {
     id: 'candlestick-ranking-labels',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     afterDatasetsDraw(chart: any) {
       if (ocChart.getMode() !== 'candlestick' || !ocChart.ohlcRankingData.length) return
 

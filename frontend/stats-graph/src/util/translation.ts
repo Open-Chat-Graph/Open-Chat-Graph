@@ -163,13 +163,13 @@ const sprintfTranslation = {
 
 export const sprintfT = (key: string, ...string: (string | number)[]): string => {
   return (
-    // @ts-ignore
+    // @ts-expect-error dynamic key access
     sprintfTranslation[key]?.[langCode ? langCode : 'ja'](...string) ?? key
   )
 }
 
 export const t = (string: string): string => {
-  // @ts-ignore
+  // @ts-expect-error dynamic key access
   return translation[string]?.[langCode] ?? string
 }
 

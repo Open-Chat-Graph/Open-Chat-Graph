@@ -23,6 +23,7 @@ export default tseslint.config(
       'react-hooks/static-components': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      '@typescript-eslint/no-unused-expressions': ['error', { allowShortCircuit: true }],
     },
   },
 )

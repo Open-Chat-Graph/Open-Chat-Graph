@@ -11,6 +11,7 @@ declare module 'chart.js' {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function buildPlugin(ocChart: OpenChatChart): any {
   const limit = ocChart.limit
   const isLimit8 = limit === 8
@@ -49,8 +50,10 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
         pointStyle: ocChart.getMode() === 'candlestick' ? 'rectRounded' : undefined,
         generateLabels:
           ocChart.getMode() === 'candlestick'
-            ? (chart: any) => {
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (chart: any) => {
                 const colors = ['#00c853', 'rgba(41, 121, 255, 0.35)']
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return chart.data.datasets.map((ds: any, i: number) => ({
                   text: ds.label,
                   fillStyle: colors[i] ?? '#999',
@@ -78,7 +81,8 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
       callbacks: {
         label:
           ocChart.getMode() === 'candlestick'
-            ? (tooltipItem: any) => {
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (tooltipItem: any) => {
                 const raw = tooltipItem.raw
                 if (!raw) return ''
                 const unit = tooltipItem.datasetIndex === 0 ? t('人') : t('位')

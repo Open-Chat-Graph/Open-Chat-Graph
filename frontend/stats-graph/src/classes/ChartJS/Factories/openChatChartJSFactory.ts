@@ -7,7 +7,7 @@ import getCandlestickRankingLabelPlugin from '../Plugin/getCandlestickRankingLab
 import getCandlestickMemberLabelPlugin from '../Plugin/getCandlestickMemberLabelPlugin'
 
 export default function openChatChartJSFactory(ocChart: OpenChatChart) {
-  /* @ts-ignore */
+  /* @ts-expect-error chart.js constructor type mismatch */
   return new ChartJS(ocChart.canvas!, {
     data: buildData(ocChart),
     options: buildOptions(ocChart, buildPlugin(ocChart)),

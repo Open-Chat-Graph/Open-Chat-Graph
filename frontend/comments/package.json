@@ -28,9 +28,9 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@eslint/js": "^9.27.0",
+    "@eslint/js": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.4",
-    "eslint": "^9.27.0",
+    "eslint": "^10.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.1",
     "globals": "^16.1.0",
@@ -39,5 +39,11 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "eslint-plugin-react-hooks": {
+      "eslint": "$eslint"
+    },
+    "minimatch": "^10.2.1"
   }
 }

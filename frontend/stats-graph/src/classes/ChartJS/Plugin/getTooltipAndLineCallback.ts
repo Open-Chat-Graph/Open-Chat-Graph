@@ -47,7 +47,7 @@ let onZooming = false
 export const getTooltipAndLineCallback =
   (ocChart: OpenChatChart): TooltipPositionerFunction<keyof ChartTypeRegistry> =>
   (items: readonly ActiveElement[], eventPosition: Point) => {
-    /** @ts-ignore */
+    /** @ts-expect-error Tooltip.positioners.average type */
     const pos = Tooltip.positioners.average(items, eventPosition)
     if (pos === false) {
       isShow = false

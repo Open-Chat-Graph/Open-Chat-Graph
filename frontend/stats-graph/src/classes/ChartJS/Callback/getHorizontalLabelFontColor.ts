@@ -2,6 +2,7 @@ import { langCode } from '../../../util/fetchRenderer'
 import { weekdays } from '../../../util/translation'
 import { isRecentString, isYestString } from './getHourTicksFormatterCallback'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function getHorizontalLabelFontColor(context: any) {
   let label = context.tick.label
   if (Array.isArray(label)) {
