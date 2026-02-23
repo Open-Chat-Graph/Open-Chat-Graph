@@ -300,21 +300,46 @@ class AdminPageController
      */
     function help()
     {
-        $reflection = new \ReflectionClass(self::class);
-        $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $controllers = [
+            'AdminPageController' => self::class,
+            'LogController' => LogController::class,
+            'AdminCommentImageController' => AdminCommentImageController::class,
+        ];
 
-        $helpText = "AdminPageController Help:\n\n";
-        foreach ($methods as $method) {
-            if ($method->isConstructor()) {
-                continue;
-            }
+        // メソッド名と実際のURLパスが異なるもののマッピング
+        $routeMap = [
+            'LogController' => [
+                'index' => 'admin/log',
+                'cronLog' => 'admin/log/{type}',
+                'exceptionLog' => 'admin/log/exception',
+                'exceptionDetail' => 'admin/log/exception/detail',
+            ],
+            'AdminCommentImageController' => [
+                'commentImages' => 'admin/comment-images',
+            ],
+        ];
 
-            $docComment = $method->getDocComment();
-            $helpText .= url("admin/" . $method->getName()) . "\n";
-            if ($docComment) {
-                $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
-            } else {
-                $helpText .= "No documentation available.\n";
+        $helpText = '';
+        foreach ($controllers as $name => $class) {
+            $reflection = new \ReflectionClass($class);
+            $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+            $helpText .= "{$name}:\n\n";
+            foreach ($methods as $method) {
+                if ($method->isConstructor()) {
+                    continue;
+                }
+
+                $methodName = $method->getName();
+                $path = $routeMap[$name][$methodName] ?? "admin/{$methodName}";
+                $docComment = $method->getDocComment();
+                $helpText .= url($path) . "\n";
+                if ($docComment) {
+                    $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
+                } else {
+                    $helpText .= "No documentation available.\n";
+                }
+                $helpText .= "\n";
             }
             $helpText .= "\n";
         }

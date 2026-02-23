@@ -94,4 +94,31 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
 
         return !!DB::fetchColumn($query, ['id' => $id]);
     }
+
+    public function getOpenChatNamesByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $params = [];
+        $placeholders = [];
+        foreach (array_values($ids) as $i => $id) {
+            $key = ":id{$i}";
+            $placeholders[] = $key;
+            $params[$key] = (int) $id;
+        }
+
+        $rows = DB::fetchAll(
+            "SELECT id, name FROM open_chat WHERE id IN (" . implode(',', $placeholders) . ")",
+            $params
+        );
+
+        $names = [];
+        foreach ($rows as $row) {
+            $names[$row['id']] = $row['name'];
+        }
+
+        return $names;
+    }
 }

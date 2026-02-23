@@ -17,6 +17,7 @@ use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
+use App\Controllers\Pages\AdminCommentImageController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -504,6 +505,18 @@ Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
         return MimimalCmsConfig::$urlRoot === '';
     });
 
+// 管理者画像管理ページ
+Route::path('admin/comment-images', [AdminCommentImageController::class, 'commentImages'])
+    ->matchStr('tab', regex: ['deleted', 'active'], default: 'active', emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+    });
+
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
     ->match(function () {
@@ -538,6 +551,19 @@ Route::path(
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
+
+Route::path(
+    'admin-api/deletecommentimage@post',
+    [AdminEndPointController::class, 'deleteCommentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('imageId');
+
+Route::path(
+    'admin-api/deletedcommentimages@post',
+    [AdminEndPointController::class, 'deleteDeletedCommentImages']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
     'oc/{open_chat_id}/admin',
