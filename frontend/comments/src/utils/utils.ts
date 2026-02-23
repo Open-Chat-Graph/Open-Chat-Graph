@@ -53,3 +53,20 @@ export async function fetchApi<T>(url: string, method: string = 'GET', bodyData:
 
   return data as T
 }
+
+export async function fetchApiFormData<T>(url: string, formData: FormData) {
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data: T | ErrorResponse = await response.json()
+
+  if (!response.ok) {
+    const errorMessage = (data as ErrorResponse).error.message
+    console.log(errorMessage)
+    throw new Error(errorMessage)
+  }
+
+  return data as T
+}

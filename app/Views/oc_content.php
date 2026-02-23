@@ -285,6 +285,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
   ?>
+    <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/comment', 'main-*.css') ?>">
     <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
   <?php endif ?>
 

@@ -1,20 +1,60 @@
 import { FormEventHandler, useCallback, useRef, useState } from 'react'
 import CommentFormUi from './CommentFormUi'
-import { fetchApi } from '../utils/utils'
+import { fetchApiFormData } from '../utils/utils'
 import useSetPostedItem from '../hooks/useSetPostedItem'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import CommentFormDialogUi from './Dialog/CommentFormDialogUi'
-import { useSetRecoilState } from 'recoil'
+import { useRecoilState, useSetRecoilState } from 'recoil'
 import { inputTextState } from '../state/inputTextState'
 import { inputNameState } from '../state/inputNameState'
 import { appInitTagDto } from '../config/appInitTagDto'
 import { reportDialogState } from '../state/reportDialogState'
+import { imageFilesState } from '../state/imageFilesState'
+import imageCompression from 'browser-image-compression'
+
+const MAX_SERVER_SIZE = 5 * 1024 * 1024 // 5MB
+
+async function compressImage(file: File): Promise<File> {
+  // First attempt: compress maintaining original resolution
+  let compressed = await imageCompression(file, {
+    maxSizeMB: 4,
+    useWebWorker: true,
+    initialQuality: 0.85,
+  })
+
+  if (compressed.size <= MAX_SERVER_SIZE) return compressed
+
+  // Fallback 1: limit to 4K
+  compressed = await imageCompression(file, {
+    maxSizeMB: 4,
+    maxWidthOrHeight: 3840,
+    useWebWorker: true,
+    initialQuality: 0.85,
+  })
+
+  if (compressed.size <= MAX_SERVER_SIZE) return compressed
+
+  // Fallback 2: limit to 2560px
+  compressed = await imageCompression(file, {
+    maxSizeMB: 4,
+    maxWidthOrHeight: 2560,
+    useWebWorker: true,
+    initialQuality: 0.85,
+  })
+
+  if (compressed.size > MAX_SERVER_SIZE) {
+    throw new Error('画像サイズを小さくしてください（5MB以下）')
+  }
+
+  return compressed
+}
 
 export default function CommentForm() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const setName = useSetRecoilState(inputNameState)
   const setText = useSetRecoilState(inputTextState)
+  const [imageFiles, setImageFiles] = useRecoilState(imageFilesState)
   const formRef = useRef<FormData | undefined>()
   const setPostedItem = useSetPostedItem()
   const setFailDialog = useSetRecoilState(reportDialogState)
@@ -36,29 +76,43 @@ export default function CommentForm() {
     setIsSending(true)
     const name = formRef.current.get('name') as string
     const text = formRef.current.get('text') as string
+    const currentImages = [...imageFiles]
     formRef.current = undefined
     ;(async () => {
       try {
         const token = await executeRecaptcha('comment')
-        const { commentId, userId, userIdHash, uaHash, ipHash } = await fetchApi<{
+
+        // Compress images
+        const compressedImages: File[] = []
+        for (const file of currentImages) {
+          compressedImages.push(await compressImage(file))
+        }
+
+        // Build FormData
+        const formData = new FormData()
+        formData.append('name', name)
+        formData.append('text', text)
+        formData.append('token', token)
+        compressedImages.forEach((file, i) => {
+          formData.append(`image${i}`, file)
+        })
+
+        const { commentId, userId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
           commentId: number
           userId: string
           userIdHash: string
           uaHash: string
           ipHash: string
+          images: string[]
         }>(
           `${window.location.origin}/comment/${appInitTagDto.openChatId}`,
-          'POST',
-          {
-            name,
-            text,
-            token,
-          }
+          formData
         )
 
-        setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash)
+        setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash, images.map(f => ({ id: 0, filename: f })))
         setName('')
         setText('')
+        setImageFiles([])
       } catch (error) {
         console.error(error)
         setFailDialog((p) => ({ ...p, open: true, result: 'fail' }))
@@ -66,7 +120,7 @@ export default function CommentForm() {
         setIsSending(false)
       }
     })()
-  }, [executeRecaptcha, setFailDialog, setName, setPostedItem, setText])
+  }, [executeRecaptcha, imageFiles, setFailDialog, setImageFiles, setName, setPostedItem, setText])
 
   const hadleDialogClose = useCallback(() => {
     formRef.current = undefined

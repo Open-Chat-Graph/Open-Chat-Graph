@@ -19,9 +19,15 @@ type LikeBtnApi = {
   voted: LikeBtnType | ''
 }
 
+type CommentImage = {
+  id: number
+  filename: string
+}
+
 type CommentItem = {
   comment: CommentItemApi
   like: LikeBtnApi
+  images: CommentImage[]
 }
 
 interface ErrorResponse {

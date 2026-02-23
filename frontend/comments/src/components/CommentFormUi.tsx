@@ -9,6 +9,7 @@ import { inputTextState } from '../state/inputTextState'
 import { FormEventHandler } from 'react'
 import { appInitTagDto } from '../config/appInitTagDto'
 import CommentFormTitle from './CommentFormTitle'
+import ImageAttachmentInput from './ImageAttachmentInput'
 
 const textFieldSx: SxProps<Theme> = {
   width: '100%',
@@ -52,6 +53,7 @@ export default function CommentFormUi({
           name="text"
           {...textProps}
         />
+        <ImageAttachmentInput />
         <Stack direction="row" spacing={2} justifyContent="flex-end" minHeight={'40px'}>
           <CommentTermText />
           <Box minWidth="100px" display="flex">

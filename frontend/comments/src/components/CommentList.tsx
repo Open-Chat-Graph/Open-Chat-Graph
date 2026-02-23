@@ -15,7 +15,7 @@ function PostedItem({ postedItem, lastId }: { postedItem: CommentItem[]; lastId:
     const n = postedItem.length - i
     const id = lastId ? lastId + n : n
 
-    return <CommentItemUi {...{ ...el.comment, id, ...el.like }} key={id} />
+    return <CommentItemUi {...{ ...el.comment, id, ...el.like, images: el.images }} key={id} />
   })
 }
 
@@ -44,7 +44,7 @@ export default function CommentList({ limit }: { limit: number }) {
           {!postedItem.length && data[0].length === 0 && <EmptyListItem />}
           {<PostedItem postedItem={postedItem} lastId={data[0][0]?.comment.id} />}
           {data.flat().map((el) => (
-            <CommentItemUi {...{ ...el.comment, ...el.like }} key={el.comment.id} />
+            <CommentItemUi {...{ ...el.comment, ...el.like, images: el.images }} key={el.comment.id} />
           ))}
         </List>
       )}
