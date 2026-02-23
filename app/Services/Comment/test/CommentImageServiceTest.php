@@ -32,7 +32,6 @@ class CommentImageServiceTest extends TestCase
         $red = imagecolorallocate($gdImage, 255, 0, 0);
         imagefilledrectangle($gdImage, 0, 0, 99, 99, $red);
         imagejpeg($gdImage, $tmpFile, 80);
-        imagedestroy($gdImage);
         return $tmpFile;
     }
 

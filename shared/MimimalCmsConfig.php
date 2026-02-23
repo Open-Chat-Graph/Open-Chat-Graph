@@ -89,6 +89,7 @@ class MimimalCmsConfig
     public static string $dbUserName = '';
     public static string $dbPassword = '';
     public static bool $dbAttrPersistent = false;
+    public static string $dbCharset = 'utf8mb4';
 
     // String cryptor configuration
     public static string $stringCryptorHkdfKey = '';

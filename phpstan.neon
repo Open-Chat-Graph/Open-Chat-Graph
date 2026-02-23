@@ -1,0 +1,12 @@
+parameters:
+    phpVersion: 80500
+    level: 0
+    paths:
+        - app
+        - shadow
+        - batch
+        - shared
+    excludePaths:
+        - app/Services/Admin/adminer-*.php
+        - '*/test/*'
+        - '*/vendor/*'

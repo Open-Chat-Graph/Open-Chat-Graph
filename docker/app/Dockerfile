@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.5-apache
 
 # ビルド引数
 ARG INSTALL_XDEBUG=true
@@ -39,34 +39,28 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # PHP拡張の設定とインストール（変更頻度低）
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
 
+## PHP 8.5: pdo, mbstring, xml, curl, opcache are bundled in core
 RUN docker-php-ext-install -j$(nproc) \
         gd \
-        pdo \
         pdo_mysql \
         pdo_pgsql \
         mysqli \
         zip \
-        mbstring \
         intl \
-        xml \
         soap \
         xsl \
-        curl \
-        opcache \
         bcmath \
         exif \
         pcntl \
         sockets \
         gettext
 
-RUN docker-php-ext-enable opcache
-
 # Composerインストール（変更頻度低）
 RUN cd /usr/bin && curl -s http://getcomposer.org/installer | php && ln -s /usr/bin/composer.phar /usr/bin/composer
 
 # Xdebugインストール（CI環境ではスキップ）
 RUN if [ "$INSTALL_XDEBUG" = "true" ]; then \
-        pecl install xdebug-3.3.2; \
+        pecl install xdebug; \
     fi
 # Xdebugはデフォルトで無効（環境変数ENABLE_XDEBUG=1で有効化）
 

@@ -23,7 +23,7 @@ class SqliteStatisticsRankingUpdaterRepository implements StatisticsRankingUpdat
     ) {
     }
 
-    public function updateCreateDailyRankingTable(string $date)
+    public function updateCreateDailyRankingTable(string $date): int
     {
         $result = SQLiteStatistics::fetchAll(
             file_get_contents(self::DAILY_RANKING_SQL),
@@ -31,9 +31,10 @@ class SqliteStatisticsRankingUpdaterRepository implements StatisticsRankingUpdat
         );
 
         $this->exportProcess('statistics_ranking_day', new DB, ...$this->buildData($result));
+        return count($result);
     }
 
-    public function updateCreatePastWeekRankingTable(string $date)
+    public function updateCreatePastWeekRankingTable(string $date): int
     {
         $result = SQLiteStatistics::fetchAll(
             file_get_contents(self::PAST_WEEK_RANKING_SQL),
@@ -41,6 +42,7 @@ class SqliteStatisticsRankingUpdaterRepository implements StatisticsRankingUpdat
         );
 
         $this->exportProcess('statistics_ranking_week', new DB, ...$this->buildData($result));
+        return count($result);
     }
 
     /**

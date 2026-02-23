@@ -60,7 +60,6 @@ class CommentImageService implements CommentImageServiceInterface
                 \ImageType::WEBP,
                 70
             );
-            imagedestroy($gdImage);
             $filenames[] = $filename . '.webp';
         }
 

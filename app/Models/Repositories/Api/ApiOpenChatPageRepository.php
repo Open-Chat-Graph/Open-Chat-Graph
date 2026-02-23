@@ -96,4 +96,31 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
             compact('id')
         );
     }
+
+    public function getOpenChatNamesByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $params = [];
+        $placeholders = [];
+        foreach (array_values($ids) as $i => $id) {
+            $key = ":id{$i}";
+            $placeholders[] = $key;
+            $params[$key] = (int) $id;
+        }
+
+        $rows = SQLiteOcgraphSqlapi::fetchAll(
+            "SELECT openchat_id AS id, display_name AS name FROM openchat_master WHERE openchat_id IN (" . implode(',', $placeholders) . ")",
+            $params
+        );
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row['id']] = $row['name'];
+        }
+
+        return $result;
+    }
 }

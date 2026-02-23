@@ -15,7 +15,7 @@ class CollapseKeywordEnumerations implements CollapseKeywordEnumerationsInterfac
         bool $returnRemovedOnly = false,
         int $embeddedMinItems = 3
     ): string {
-        return (new static)->collapseJa($text, $minItems, $keepFirst, $allowHashtags, $extraText, $returnRemovedOnly, $embeddedMinItems);
+        return (new self)->collapseJa($text, $minItems, $keepFirst, $allowHashtags, $extraText, $returnRemovedOnly, $embeddedMinItems);
     }
 
     function collapseJa(

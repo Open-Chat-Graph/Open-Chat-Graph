@@ -70,9 +70,8 @@ storage/comment-img-hidden/*
 !storage/comment-img-hidden/.gitkeep
 
 # フロントエンドビルド成果物
-public/js/chart/
 public/js/react/
-public/js/comment/
+public/js/oc-app/
 public/js/all-room-stats/
 frontend/*/dist/
 

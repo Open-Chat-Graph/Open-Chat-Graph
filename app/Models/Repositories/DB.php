@@ -33,6 +33,8 @@ class DB extends \Shadow\DB implements DBInterface
                 throw $e;
             }
         }
+
+        throw new \LogicException('Unreachable');
     }
 
     /**

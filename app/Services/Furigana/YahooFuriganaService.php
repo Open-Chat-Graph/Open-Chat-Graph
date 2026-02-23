@@ -82,8 +82,6 @@ class YahooFuriganaService
             throw new \RuntimeException('CURL Error: ' . curl_error($ch));
         }
 
-        curl_close($ch);
-
         return $this->processResult($result);
     }
 

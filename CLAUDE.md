@@ -130,7 +130,7 @@ make ci-test
 ### Backend
 
 - **Framework**: Custom MimimalCMS (lightweight MVC framework)
-- **Language**: PHP 8.3
+- **Language**: PHP 8.5
 - **Database**: MySQL/MariaDB for main data, SQLite for rankings/statistics
 - **Pattern**: Traditional MVC with dependency injection
 
