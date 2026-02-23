@@ -8,6 +8,7 @@ import { fetchApi } from '../utils/utils'
 import { useRecoilValue } from 'recoil'
 import { postedItemState } from '../state/postedItemState'
 import ReportDialog from './Dialog/ReportDialog'
+import ImageReportDialog from './Dialog/ImageReportDialog'
 import { appInitTagDto } from '../config/appInitTagDto'
 
 function PostedItem({ postedItem, lastId }: { postedItem: CommentItem[]; lastId: number }) {
@@ -39,6 +40,7 @@ export default function CommentList({ limit }: { limit: number }) {
   return (
     <>
       <ReportDialog />
+      <ImageReportDialog />
       {data && (
         <List sx={{ ...containerSx, gap: '2.4rem', p: 0 }}>
           {!postedItem.length && data[0].length === 0 && <EmptyListItem />}

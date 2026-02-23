@@ -6,6 +6,7 @@ use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
+use App\Controllers\Api\CommentImageReportApiController;
 use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
@@ -452,6 +453,15 @@ Route::path(
     [CommentImageThumbnailController::class, 'index']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// 画像通報API
+Route::path(
+    'comment_image_report/{image_id}@post',
+    [CommentImageReportApiController::class, 'index']
+)
+    ->matchNum('image_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('token');
 
 Route::path('admin/cookie')
     ->match(function (AdminAuthService $adminAuthService, ?string $key) {
