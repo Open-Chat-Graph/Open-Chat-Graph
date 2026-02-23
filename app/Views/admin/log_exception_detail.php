@@ -24,6 +24,7 @@
             word-break: break-all;
         }
     </style>
+    <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
 </head>
 
 <body>

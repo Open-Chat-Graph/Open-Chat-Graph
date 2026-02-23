@@ -50,6 +50,7 @@
             .flow-list li.sub { margin-left: 10px; }
         }
     </style>
+    <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
 </head>
 
 <body>
