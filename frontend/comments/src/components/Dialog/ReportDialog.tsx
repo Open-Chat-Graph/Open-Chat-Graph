@@ -1,4 +1,4 @@
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import { reportDialogState } from '../../state/reportDialogState'
 import { useCallback, useRef, useState } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
@@ -6,10 +6,10 @@ import { fetchApi } from '../../utils/utils'
 import ReportDialogUi from './ReportDialogUi'
 
 export default function ReportDialog() {
-  const [state, setState] = useRecoilState(reportDialogState)
+  const [state, setState] = useAtom(reportDialogState)
   const [isLoading, setIsLoading] = useState(false)
   const { executeRecaptcha } = useGoogleReCaptcha()
-  const commentId = useRef<number | undefined>()
+  const commentId = useRef<number | undefined>(undefined)
 
   commentId.current = state.commentId
 

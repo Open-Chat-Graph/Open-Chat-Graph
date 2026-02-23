@@ -1,8 +1,9 @@
 import React, { useCallback, useRef } from 'react'
-import { RecoilState, useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
+import type { PrimitiveAtom } from 'jotai'
 
-export default function useValidateInput(textLen: number, recoil: RecoilState<string>) {
-  const [value, setValue] = useRecoilState(recoil)
+export default function useValidateInput(textLen: number, atomState: PrimitiveAtom<string>) {
+  const [value, setValue] = useAtom(atomState)
   const isCompositionStart = useRef<boolean>(false)
 
   const commitStr = useCallback(() => {

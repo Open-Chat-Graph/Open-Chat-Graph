@@ -1,4 +1,4 @@
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import { imageReportDialogState } from '../../state/imageReportDialogState'
 import { useCallback, useRef, useState } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
@@ -6,7 +6,7 @@ import { fetchApi } from '../../utils/utils'
 import ConfirmDialogUi, { DialogParagraph } from './ConfirmDialogUi'
 
 export default function ImageReportDialog() {
-  const [state, setState] = useRecoilState(imageReportDialogState)
+  const [state, setState] = useAtom(imageReportDialogState)
   const [isLoading, setIsLoading] = useState(false)
   const { executeRecaptcha } = useGoogleReCaptcha()
   const imageId = useRef(0)

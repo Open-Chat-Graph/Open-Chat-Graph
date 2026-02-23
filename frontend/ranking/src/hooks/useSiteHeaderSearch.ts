@@ -38,7 +38,9 @@ export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => v
   }, [keyword])
 
   const closeSearch = useCallback(() => {
-    inputRef.current && (inputRef.current.value = '')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
     inputRef.current?.blur()
     setInputEmpty(true)
     setOpen(false)
@@ -52,12 +54,18 @@ export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => v
   }, [])
 
   const onChange = useCallback((e: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    hiddenRef.current && (hiddenRef.current.value = e.currentTarget.value)
-    !isCompositionStart.current && setInputEmpty(!e.currentTarget.value)
+    if (hiddenRef.current) {
+      hiddenRef.current.value = e.currentTarget.value
+    }
+    if (!isCompositionStart.current) {
+      setInputEmpty(!e.currentTarget.value)
+    }
   }, [])
 
   const deleteInput = useCallback(() => {
-    inputRef.current && (inputRef.current.value = '')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
     inputRef.current?.focus()
     setInputEmpty(true)
   }, [])

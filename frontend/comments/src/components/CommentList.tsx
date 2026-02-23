@@ -5,7 +5,7 @@ import useSWRInfinite from 'swr/infinite'
 import { LinearProgress, List } from '@mui/material'
 import { containerSx } from '../style/sx'
 import { fetchApi } from '../utils/utils'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { postedItemState } from '../state/postedItemState'
 import ReportDialog from './Dialog/ReportDialog'
 import ImageReportDialog from './Dialog/ImageReportDialog'
@@ -35,7 +35,7 @@ export default function CommentList({ limit }: { limit: number }) {
     swrOptions
   )
 
-  const postedItem = useRecoilValue(postedItemState)
+  const postedItem = useAtomValue(postedItemState)
   const myUserId = (() => { try { return localStorage.getItem('oc-my-user-id') } catch { return null } })()
 
   return (

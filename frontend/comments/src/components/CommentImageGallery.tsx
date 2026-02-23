@@ -32,7 +32,7 @@ export default function CommentImageGallery({ images, posterName, commentNo, isO
   const closingByPopstate = useRef(false)
   const pushedState = useRef(false)
   const imagesRef = useRef(images)
-  imagesRef.current = images
+  useEffect(() => { imagesRef.current = images }, [images])
   const isPC = useMemo(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches, [])
 
   const filenames = useMemo(() => images.map(img => img.filename), [images])
@@ -44,6 +44,7 @@ export default function CommentImageGallery({ images, posterName, commentNo, isO
       const idx = filenames.indexOf(match[1])
       if (idx >= 0) {
         isOpenRef.current = true
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLightboxIndex(idx)
       }
     }

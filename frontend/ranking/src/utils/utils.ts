@@ -38,8 +38,10 @@ export function updateURLSearchParams(params: { [key: string]: string }): URL {
   const url = new URL(window.location.href)
   url.search = ''
 
-  for (let k in params) {
-    params[k] && url.searchParams.set(k, params[k])
+  for (const k in params) {
+    if (params[k]) {
+      url.searchParams.set(k, params[k])
+    }
   }
 
   url.searchParams.sort()

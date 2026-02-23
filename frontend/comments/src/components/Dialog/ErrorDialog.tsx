@@ -1,11 +1,11 @@
-import { useRecoilState } from 'recoil'
+import { useAtom } from 'jotai'
 import { useCallback } from 'react'
 import { errorDialogState } from '../../state/errorDialogState'
 import ConfirmDialogUi, { DialogParagraph } from './ConfirmDialogUi'
 import { Box } from '@mui/material'
 
 export default function ErrorDialog() {
-  const [state, setState] = useRecoilState(errorDialogState)
+  const [state, setState] = useAtom(errorDialogState)
 
   const handleClose = useCallback(() => {
     setState({ open: false, message: '', detail: '' })

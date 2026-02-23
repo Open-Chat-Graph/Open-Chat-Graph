@@ -1,10 +1,10 @@
 import { memo, useCallback } from 'react'
 import { Button } from '@mui/material'
-import { useSetRecoilState } from 'recoil'
+import { useSetAtom } from 'jotai'
 import { imageReportDialogState } from '../../state/imageReportDialogState'
 
 export default memo(function ImageReportButton({ imageId, commentNo }: { imageId: number; commentNo: number }) {
-  const setDialog = useSetRecoilState(imageReportDialogState)
+  const setDialog = useSetAtom(imageReportDialogState)
 
   const onClick = useCallback(() => {
     setDialog({ imageId, commentNo, open: true, result: 'unsent' })

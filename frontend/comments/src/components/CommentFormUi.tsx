@@ -7,7 +7,7 @@ import CommentTermText from './CommentTermText'
 import { inputNameState } from '../state/inputNameState'
 import { inputTextState } from '../state/inputTextState'
 import { FormEventHandler } from 'react'
-import { useRecoilValue } from 'recoil'
+import { useAtomValue } from 'jotai'
 import { imageCompressingState } from '../state/imageCompressingState'
 import { appInitTagDto } from '../config/appInitTagDto'
 import CommentFormTitle from './CommentFormTitle'
@@ -26,7 +26,7 @@ export default function CommentFormUi({
 }) {
   const nameProps = useValidateInput(20, inputNameState)
   const textProps = useValidateInput(1000, inputTextState)
-  const isCompressing = useRecoilValue(imageCompressingState)
+  const isCompressing = useAtomValue(imageCompressingState)
 
   return (
     <div>
