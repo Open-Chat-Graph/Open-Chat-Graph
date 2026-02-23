@@ -94,13 +94,11 @@ class ReceptionInitializer implements ReceptionInitializerInterface
      * 
      * @param array $inputArray
      * 
-     * @return array Validated array
-     * 
      * @throws InvalidArgumentException
      * @throws ValidationException
      * @throws NotFoundException
      */
-    public function callRequestValidator()
+    public function callRequestValidator(): void
     {
         if (!empty($_FILES)) {
             $this->checkUploadError();

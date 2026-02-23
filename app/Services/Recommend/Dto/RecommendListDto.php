@@ -179,7 +179,7 @@ class RecommendListDto
 
         $tagsStr = array_map(fn($t) => RecommendUtility::extractTag($t), $tags);
 
-        uksort($tags, function ($a) use ($tagStr, $tagsStr, $tag, $tags) {
+        uksort($tags, function ($a) use ($tagStr, $tagsStr, $tag, $tags, $filteredTagSort) {
             return str_contains(
                 $tagsStr[$a],
                 $tagStr
