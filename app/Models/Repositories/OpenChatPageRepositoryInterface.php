@@ -11,4 +11,8 @@ interface OpenChatPageRepositoryInterface
     public function getOpenChatByIdWithTag(int $id): array|false;
 
     public function isExistsOpenChat(int $id): bool;
+
+    /** @param int[] $ids
+     *  @return array<int, string> [id => name] */
+    public function getOpenChatNamesByIds(array $ids): array;
 }

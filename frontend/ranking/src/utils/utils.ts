@@ -38,8 +38,10 @@ export function updateURLSearchParams(params: { [key: string]: string }): URL {
   const url = new URL(window.location.href)
   url.search = ''
 
-  for (let k in params) {
-    params[k] && url.searchParams.set(k, params[k])
+  for (const k in params) {
+    if (params[k]) {
+      url.searchParams.set(k, params[k])
+    }
   }
 
   url.searchParams.sort()
@@ -60,7 +62,7 @@ export function setTitle(params: ListParams, cateIndex?: number) {
       : 0
   }
 
-  let title0 = ''
+  let title0: string
   switch (!!keyword) {
     case true:
       title0 = sprintfT('「%s」の検索結果', keyword) + '｜'
@@ -69,7 +71,7 @@ export function setTitle(params: ListParams, cateIndex?: number) {
       title0 = ''
   }
 
-  let title1 = ''
+  let title1: string
   switch (!!cateIndex) {
     case true:
       title1 = OPEN_CHAT_CATEGORY[cateIndex][0] + '｜'
@@ -78,7 +80,7 @@ export function setTitle(params: ListParams, cateIndex?: number) {
       title1 = title0 ? '' : t('【最新】')
   }
 
-  let title3 = ''
+  let title3: string
   switch (!!subCategory) {
     case true:
       title3 = subCategory + '｜'

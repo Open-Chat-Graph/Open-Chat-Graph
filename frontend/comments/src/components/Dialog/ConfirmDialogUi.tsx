@@ -1,6 +1,6 @@
 import * as React from 'react'
 import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
+import Dialog, { type DialogProps } from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -44,6 +44,7 @@ export default function ConfirmDialogUi({
   handleClose,
   handleOk,
   children,
+  sx,
 }: {
   title: string
   cancelText?: string
@@ -53,6 +54,7 @@ export default function ConfirmDialogUi({
   handleClose?: () => void
   handleOk?: () => void
   children: React.ReactNode
+  sx?: DialogProps['sx']
 }) {
   const descriptionElementRef = React.useRef<HTMLElement>(null)
 
@@ -73,6 +75,7 @@ export default function ConfirmDialogUi({
         scroll={'paper'}
         aria-labelledby="scroll-dialog-title"
         aria-describedby="scroll-dialog-description"
+        sx={sx}
       >
         <DialogTitle id="scroll-dialog-title">{title}</DialogTitle>
         <DialogContent dividers>

@@ -47,7 +47,7 @@ let onZooming = false
 export const getTooltipAndLineCallback =
   (ocChart: OpenChatChart): TooltipPositionerFunction<keyof ChartTypeRegistry> =>
   (items: readonly ActiveElement[], eventPosition: Point) => {
-    /** @ts-ignore */
+    /** @ts-expect-error Tooltip.positioners.average type */
     const pos = Tooltip.positioners.average(items, eventPosition)
     if (pos === false) {
       isShow = false
@@ -98,13 +98,13 @@ export const getTooltipAndLineCallback =
     }
 
     // 1週間表示時以外
-    if (!(ocChart.limit === 8 || ocChart.zoomWeekday === 2)) {
+    if (!(ocChart.limit === 8 || ocChart.zoomWeekday === 2) && pos.x != null) {
       verticalLine(ocChart.chart, defaultVerticalLine, pos.x)
     }
 
     isShow = true
     return {
-      x: pos.x,
+      x: pos.x!,
       y: 0,
       yAlign: 'bottom',
     }

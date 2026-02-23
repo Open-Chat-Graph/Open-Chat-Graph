@@ -1,6 +1,3 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
-export const postedItemState = atom<CommentItem[]>({
-  key: 'postedItem',
-  default: [],
-})
+export const postedItemState = atom<CommentItem[]>([])

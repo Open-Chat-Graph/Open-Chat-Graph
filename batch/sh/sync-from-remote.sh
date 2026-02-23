@@ -165,6 +165,25 @@ done
 echo "✓ 全てのデータベースのインポートが完了しました。"
 echo ""
 
+# コメントDBに comment_image テーブルが無ければ作成
+echo "comment_image テーブルの存在を確認中..."
+COMMENT_IMAGE_SQL="CREATE TABLE IF NOT EXISTS comment_image (
+  id int NOT NULL AUTO_INCREMENT,
+  comment_id int NOT NULL,
+  filename varchar(255) NOT NULL,
+  sort_order tinyint NOT NULL DEFAULT 0,
+  created_at datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (id),
+  KEY idx_comment_id (comment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
+
+for COMMENT_DB in ocgraph_comment ocgraph_commenttw ocgraph_commentth; do
+  mysql -h"${CONFIG_VARS[LOCAL_MYSQL_HOST]}" -u"${CONFIG_VARS[LOCAL_MYSQL_USER]}" -p"${CONFIG_VARS[LOCAL_MYSQL_PASS]}" \
+    "$COMMENT_DB" -e "$COMMENT_IMAGE_SQL"
+  echo "  ✓ ${COMMENT_DB}.comment_image"
+done
+echo ""
+
 # ========================================
 # 2. storageファイルの同期
 # ========================================

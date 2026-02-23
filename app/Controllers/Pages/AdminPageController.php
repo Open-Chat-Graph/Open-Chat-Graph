@@ -6,7 +6,6 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
-use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
@@ -169,10 +168,10 @@ class AdminPageController
     /**
      * オープンチャット削除
      */
-    function deleteoc(?string $oc, DeleteOpenChatRepositoryInterface $deleteOpenChatRepository)
+    function deleteoc(?string $oc, \App\Services\OpenChat\Updater\OpenChatDeleter $openChatDeleter)
     {
         if (!($oc = Validator::num($oc))) return false;
-        $result = $deleteOpenChatRepository->deleteOpenChat($oc);
+        $result = $openChatDeleter->deleteOpenChatById($oc);
         return view('admin/admin_message_page', ['title' => 'オープンチャット削除', 'message' => $result ? '削除しました' : '削除されたオープンチャットはありません']);
     }
 
@@ -300,21 +299,46 @@ class AdminPageController
      */
     function help()
     {
-        $reflection = new \ReflectionClass(self::class);
-        $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $controllers = [
+            'AdminPageController' => self::class,
+            'LogController' => LogController::class,
+            'AdminCommentImageController' => AdminCommentImageController::class,
+        ];
 
-        $helpText = "AdminPageController Help:\n\n";
-        foreach ($methods as $method) {
-            if ($method->isConstructor()) {
-                continue;
-            }
+        // メソッド名と実際のURLパスが異なるもののマッピング
+        $routeMap = [
+            'LogController' => [
+                'index' => 'admin/log',
+                'cronLog' => 'admin/log/{type}',
+                'exceptionLog' => 'admin/log/exception',
+                'exceptionDetail' => 'admin/log/exception/detail',
+            ],
+            'AdminCommentImageController' => [
+                'commentImages' => 'admin/comment-images',
+            ],
+        ];
 
-            $docComment = $method->getDocComment();
-            $helpText .= url("admin/" . $method->getName()) . "\n";
-            if ($docComment) {
-                $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
-            } else {
-                $helpText .= "No documentation available.\n";
+        $helpText = '';
+        foreach ($controllers as $name => $class) {
+            $reflection = new \ReflectionClass($class);
+            $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+            $helpText .= "{$name}:\n\n";
+            foreach ($methods as $method) {
+                if ($method->isConstructor()) {
+                    continue;
+                }
+
+                $methodName = $method->getName();
+                $path = $routeMap[$name][$methodName] ?? "admin/{$methodName}";
+                $docComment = $method->getDocComment();
+                $helpText .= url($path) . "\n";
+                if ($docComment) {
+                    $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
+                } else {
+                    $helpText .= "No documentation available.\n";
+                }
+                $helpText .= "\n";
             }
             $helpText .= "\n";
         }

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/RankingPosition/Persistence/test/RankingPositionDailyPersistenceTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Services\RankingPosition\Persistence\RankingPositionDailyPersistence;

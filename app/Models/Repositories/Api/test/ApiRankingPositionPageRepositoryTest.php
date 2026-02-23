@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/Repositories/Api/test/ApiRankingPositionPageRepositoryTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\Repositories\Api\ApiRankingPositionPageRepository;

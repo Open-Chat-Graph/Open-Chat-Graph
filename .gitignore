@@ -64,6 +64,11 @@ storage/*/open_chat_sub_categories/subcategories.json
 # 別端末用のルートCA証明書（スマホ等でHTTPS接続する際に使用）
 *-rootCA.pem
 
+# コメント画像
+public/comment-img/*
+storage/comment-img-hidden/*
+!storage/comment-img-hidden/.gitkeep
+
 # フロントエンドビルド成果物
 public/js/chart/
 public/js/react/
@@ -73,6 +78,7 @@ frontend/*/dist/
 
 # テスト関連
 test-logs/
+.playwright-mcp
 
 # 例外: .gitkeepは含める
 !*.gitkeep

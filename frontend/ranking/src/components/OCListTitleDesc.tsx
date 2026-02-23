@@ -6,7 +6,6 @@ import { t } from '../config/translation'
 function ListDesc({
   list,
   isAll,
-  isSearch,
 }: {
   list: ListParams['list']
   isAll: boolean

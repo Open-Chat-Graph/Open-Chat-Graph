@@ -3,13 +3,13 @@ import CommentList from './components/CommentList'
 import CommentForm from './components/CommentForm'
 import RecaptchaText from './components/RecaptchaText'
 import { containerSx } from './style/sx'
-import { RecoilRoot } from 'recoil'
+import { Provider } from 'jotai'
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 import { appInitTagDto } from './config/appInitTagDto'
 
 export default function App() {
   return (
-    <RecoilRoot>
+    <Provider>
       <GoogleReCaptchaProvider
         reCaptchaKey={appInitTagDto.recaptchaKey}
         scriptProps={{ async: true }}
@@ -27,6 +27,6 @@ export default function App() {
           <RecaptchaText />
         </Box>
       </GoogleReCaptchaProvider>
-    </RecoilRoot>
+    </Provider>
   )
 }

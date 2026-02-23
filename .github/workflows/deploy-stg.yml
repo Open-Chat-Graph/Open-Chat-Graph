@@ -103,9 +103,17 @@ jobs:
         run: |
           ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && git fetch origin && git reset --hard origin/stg"
 
+      - name: Install composer dependencies
+        run: |
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} "cd ${{ vars.STG_SSH_PATH }} && composer install --no-dev --optimize-autoloader --no-interaction"
+
       - name: Initialize SQLite databases
         run: |
           ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+
+      - name: Initialize MySQL tables
+        run: |
+          ssh -p ${{ vars.STG_SSH_PORT }} ${{ vars.STG_SSH_USER }}@${{ vars.STG_SSH_HOST }} 'cd ${{ vars.STG_SSH_PATH }} && for db in ${{ vars.STG_MYSQL_DB_COMMENT }} ${{ vars.STG_MYSQL_DB_COMMENT_TW }} ${{ vars.STG_MYSQL_DB_COMMENT_TH }}; do if mysql -u "${{ secrets.STG_MYSQL_USER }}" -p"${{ secrets.STG_MYSQL_PASS }}" -e "USE $db" 2>/dev/null; then mysql -u "${{ secrets.STG_MYSQL_USER }}" -p"${{ secrets.STG_MYSQL_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; else echo "Skipped: $db (database not found)"; fi; done'
 
       - name: Deploy frontend assets
         if: steps.any_frontend.outputs.changed == 'true'

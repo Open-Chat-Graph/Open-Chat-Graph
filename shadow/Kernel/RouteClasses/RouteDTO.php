@@ -78,7 +78,8 @@ class RouteDTO
 
     public function __construct()
     {
-        $this->isJson = strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false;
+        $this->isJson = strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false
+            || strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
         $this->requestMethod = $_SERVER['REQUEST_METHOD'] ?? '';
     }
 

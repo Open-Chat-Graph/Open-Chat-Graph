@@ -8,11 +8,10 @@ export const resetTooltip = (ocChart: OpenChatChart) => {
 
 let inChartArea = false
 
-/** @ts-ignore */
 export default function getEventCatcherPlugin(ocChart: OpenChatChart) {
   return {
     id: 'myEventCatcher',
-    /** @ts-ignore */
+    /** @ts-expect-error chart.js plugin args type */
     beforeEvent(chart: ChartJS, args) {
       if (inChartArea && !args.inChartArea && !ocChart.isZooming) {
         // チャートエリア外イベントでツールチップ非表示

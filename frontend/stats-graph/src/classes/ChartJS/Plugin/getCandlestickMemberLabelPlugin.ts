@@ -3,6 +3,7 @@ import OpenChatChart from '../../OpenChatChart'
 export default function getCandlestickMemberLabelPlugin(ocChart: OpenChatChart) {
   return {
     id: 'candlestick-member-labels',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     afterDatasetsDraw(chart: any) {
       if (ocChart.getMode() !== 'candlestick') return
 

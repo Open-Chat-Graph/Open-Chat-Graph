@@ -12,8 +12,10 @@ export const barEasing = 'easeOutCirc'
 
 export default function buildData(ocChart: OpenChatChart) {
   if (ocChart.getMode() === 'candlestick') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const datasets: any[] = [
       {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: 'candlestick' as any,
         label: t('メンバー数'),
         data: ocChart.ohlcData,
@@ -36,6 +38,7 @@ export default function buildData(ocChart: OpenChatChart) {
 
     if (ocChart.ohlcRankingData.length) {
       datasets.push({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: 'candlestick' as any,
         label: `${ocChart.option.label2} | ${ocChart.option.category}`,
         data: ocChart.ohlcRankingData,
@@ -96,7 +99,7 @@ export default function buildData(ocChart: OpenChatChart) {
         borderWidth: 3,
         spanGaps: true,
         pointBackgroundColor: '#fff',
-        /* @ts-ignore */
+        /* @ts-expect-error lineTension not in type definition */
         lineTension: 0.4,
         datalabels: {
           display: getDataLabelLineCallback(firstIndex, lastIndex),

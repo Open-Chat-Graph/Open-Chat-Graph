@@ -1,11 +1,11 @@
 import OpenChatChart from '../../OpenChatChart'
 
-/** @ts-ignore */
 export default function getIncreaseLegendSpacingPlugin(ocChart: OpenChatChart) {
   const paddingTop = ocChart.isPC ? 4 : 4
 
   return {
     id: 'increase-legend-spacing',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     beforeInit(chart: any) {
       // Get reference to the original fit function
       const originalFit = chart.legend.fit

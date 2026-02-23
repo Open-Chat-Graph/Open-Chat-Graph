@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cache: { url: string[]; data: any[] } = {
   url: [],
   data: [],

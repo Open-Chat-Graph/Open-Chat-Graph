@@ -24,6 +24,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/comment-img': {
+          target,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/comment_image_report': {
+          target,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
     build: {

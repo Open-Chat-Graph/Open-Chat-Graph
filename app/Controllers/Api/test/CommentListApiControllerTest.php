@@ -1,12 +1,14 @@
 <?php
 
-declare(strict_types=1);
-
 /**
+ * テスト実行コマンド:
  * docker compose exec app vendor/bin/phpunit app/Controllers/Api/test/CommentListApiControllerTest.php
  */
 
+declare(strict_types=1);
+
 use App\Controllers\Api\CommentListApiController;
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Services\Auth\AuthInterface;
@@ -24,6 +26,7 @@ class CommentListApiControllerTest extends TestCase
         $res = $inst->index(
             app(CommentListRepositoryInterface::class),
             app(CommentPostRepositoryInterface::class),
+            app(CommentImageRepositoryInterface::class),
             $stub,
             1,
             2,

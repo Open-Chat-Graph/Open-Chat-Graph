@@ -7,8 +7,11 @@ import CommentTermText from './CommentTermText'
 import { inputNameState } from '../state/inputNameState'
 import { inputTextState } from '../state/inputTextState'
 import { FormEventHandler } from 'react'
+import { useAtomValue } from 'jotai'
+import { imageCompressingState } from '../state/imageCompressingState'
 import { appInitTagDto } from '../config/appInitTagDto'
 import CommentFormTitle from './CommentFormTitle'
+import ImageAttachmentInput from './ImageAttachmentInput'
 
 const textFieldSx: SxProps<Theme> = {
   width: '100%',
@@ -23,6 +26,7 @@ export default function CommentFormUi({
 }) {
   const nameProps = useValidateInput(20, inputNameState)
   const textProps = useValidateInput(1000, inputTextState)
+  const isCompressing = useAtomValue(imageCompressingState)
 
   return (
     <div>
@@ -52,6 +56,7 @@ export default function CommentFormUi({
           name="text"
           {...textProps}
         />
+        <ImageAttachmentInput />
         <Stack direction="row" spacing={2} justifyContent="flex-end" minHeight={'40px'}>
           <CommentTermText />
           <Box minWidth="100px" display="flex">
@@ -61,7 +66,7 @@ export default function CommentFormUi({
               <Button
                 type="submit"
                 variant="contained"
-                disabled={!isEmpty(textProps.value)}
+                disabled={!isEmpty(textProps.value) || isCompressing}
                 sx={{ m: 'auto', ml: 'auto', height: 'fit-content' }}
               >
                 投稿する

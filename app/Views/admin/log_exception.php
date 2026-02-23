@@ -36,6 +36,7 @@
         }
         .btn-detail:hover { background: #1557b0; }
     </style>
+    <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
 </head>
 
 <body>

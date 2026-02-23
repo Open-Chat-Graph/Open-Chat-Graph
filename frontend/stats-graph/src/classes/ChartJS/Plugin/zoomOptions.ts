@@ -15,6 +15,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
       const { dataMin, dataMax, stepSize } = getVerticalLabelRange(ocChart, allValues)
       chart.options!.scales!.rainChart!.min = dataMin
       chart.options!.scales!.rainChart!.max = dataMax
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(chart.options!.scales!.rainChart!.ticks as any).stepSize = stepSize
     }
 
@@ -35,6 +36,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
     const range = max - min + 1
     const maxLabels = range <= 8 ? range : range < 32 ? 15 : 20
     const step = Math.max(1, Math.ceil(range / maxLabels))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chart.options!.scales!.x!.ticks!.callback = function (this: any, val: any, index: number) {
       if (index % step !== 0) return ''
       return this.getLabelForValue(val)
@@ -44,6 +46,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
     const gridStep = Math.max(1, Math.ceil(range / 20))
     chart.options!.scales!.x!.grid = {
       ...chart.options!.scales!.x!.grid,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       color: ((ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent')) as any,
     }
 
@@ -57,6 +60,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
 
   chart.options!.scales!.rainChart!.min = dataMin
   chart.options!.scales!.rainChart!.max = dataMax
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(chart.options!.scales!.rainChart!.ticks as any).stepSize = stepSize
 
   if (ocChart.data.graph2.length) {
@@ -70,6 +74,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
 
     chart.options!.scales!.temperatureChart!.min = dataMin
     chart.options!.scales!.temperatureChart!.max = dataMax
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(chart.options!.scales!.temperatureChart!.ticks as any).stepSize = stepSize
   }
 

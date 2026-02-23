@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/RankingPositionDB/Repositories/test/HourMemberRankingUpdaterRepositoryTest2.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\RankingPositionDB\Repositories\HourMemberRankingUpdaterRepository;

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/Repositories/RankingPosition/test/RankingPositionHourPageRepositoryInterfaceTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface;

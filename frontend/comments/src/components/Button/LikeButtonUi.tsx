@@ -49,7 +49,7 @@ function Btn(props: BtnProps) {
 type BtnWrapper = { title: string; count: number; type: LikeBtnType }
 
 export default memo(function LikeButtonUi(props: LikeBtnState & { handler: LikeBtnHandler }) {
-  const { empathyCount, insightsCount: _insightsCount, negativeCount, voted, handler } = props
+  const { empathyCount, negativeCount, voted, handler } = props
 
   const BtnWrapper = (props: BtnWrapper) => (
     <Btn

@@ -43,7 +43,7 @@ export default function getVerticalLabelRange(
   if (trueDiff >= 100) stepSize = 10
   if (trueDiff >= 1000) stepSize = 100
 
-  let dataMin = 0
+  let dataMin: number
   if (ocChart.limit === 8) {
     dataMin = minNum - dataDiff8
   } else {

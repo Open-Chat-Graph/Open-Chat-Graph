@@ -71,7 +71,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test insertOhlc → getOhlcDateAsc の基本フロー
+     * insertOhlc → getOhlcDateAsc の基本フロー
      * - 1件挿入して1件返ること
      * - date, open/high/low/close_position が一致すること
      */
@@ -106,7 +106,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test low_position=NULL（圏外あり）のデータが正しく挿入・取得できること
+     * low_position=NULL（圏外あり）のデータが正しく挿入・取得できること
      * - 挿入時に null → SQLの NULL として保存
      * - 取得時に PHP の null として返ること
      */
@@ -138,7 +138,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test getOhlcDateAsc が category と type で正しくフィルタリングすること
+     * getOhlcDateAsc が category と type で正しくフィルタリングすること
      * - 同一 open_chat_id でも category/type 違いは別レコード
      */
     public function testGetOhlcDateAscFiltersByCategoryAndType(): void
@@ -196,7 +196,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test insertOhlc に空配列を渡すと0件が返ること
+     * insertOhlc に空配列を渡すと0件が返ること
      */
     public function testInsertOhlcEmpty(): void
     {
@@ -205,7 +205,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 存在しない open_chat_id を指定すると空配列を返すこと
+     * 存在しない open_chat_id を指定すると空配列を返すこと
      */
     public function testGetOhlcDateAscEmpty(): void
     {
@@ -218,7 +218,7 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
-     * @test 複数日のデータが日付昇順でソートされて返ること
+     * 複数日のデータが日付昇順でソートされて返ること
      * - 挿入順が降順でも結果は昇順
      */
     public function testGetOhlcDateAscSortedByDate(): void

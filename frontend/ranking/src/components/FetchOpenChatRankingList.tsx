@@ -18,7 +18,7 @@ const DummyList = memo(function DummyList({
   useInViewRef,
 }: {
   data: boolean
-  error: any
+  error: Error | undefined
   isValidating: boolean
   isLastPage: boolean
   useInViewRef: (node?: Element | null | undefined) => void
@@ -57,7 +57,7 @@ const ListContext = memo(function ListContext({
   data: OpenChat[]
   query: string
 }) {
-  const items = useRef<[String, React.JSX.Element[]]>(['', []])
+  const items = useRef<[string, React.JSX.Element[]]>(['', []])
 
   const dataLen = data.length
   let curLen = items.current[1].length

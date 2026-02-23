@@ -9,6 +9,7 @@ import {
 import ReportButton from '../Button/ReportButton'
 import HashId from './HashId'
 import { linkify } from '../../utils/linkify'
+import CommentImageGallery from '../CommentImageGallery'
 
 const listItemSx: SxProps<Theme> = {
   p: 0,
@@ -16,8 +17,8 @@ const listItemSx: SxProps<Theme> = {
   alignItems: 'flex-start',
 }
 
-export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
-  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted } = props
+export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { images?: CommentImage[]; isOwn?: boolean }) {
+  const { id, commentId, name, time, text, userId, userIdHash, uaHash, ipHash, empathyCount, insightsCount, negativeCount, voted, images, isOwn } = props
 
   return (
     <ListItem sx={listItemSx}>
@@ -35,7 +36,7 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
             <b>{text.length ? `${name ? name : '匿名'}` : '***'}</b>
             <time dateTime={convertTimeTagFormatFromMySql(time)}>{` ${formatDatetimeWithWeekdayFromMySql(time)}`}</time>
             {!text.length && (userId ? ` ${userId}` : ' 削除済')}
-            {!!text.length && <ReportButton id={id} commentId={commentId} />}
+            {!!text.length && !isOwn && <ReportButton id={id} commentId={commentId} />}
             <HashId userIdHash={userIdHash} uaHash={uaHash} ipHash={ipHash} />
           </Typography>
         }
@@ -57,6 +58,9 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi) {
           </Typography>
         }
       />
+      {!!text.length && images && images.length > 0 && (
+        <CommentImageGallery images={images} posterName={name || '匿名'} commentNo={id} isOwn={isOwn} />
+      )}
       {!!text.length && (
         <LikeButton {...{ empathyCount, insightsCount, negativeCount, voted, commentId }} />
       )}

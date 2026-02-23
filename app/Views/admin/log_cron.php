@@ -94,6 +94,7 @@ $pageTitle = $isJapanese ? 'サイト更新ログ詳細' : "Cron Log - {$type}";
             .process-tag-lang { font-size: 10px; padding: 1px 4px; }
         }
     </style>
+    <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
 </head>
 
 <body>
