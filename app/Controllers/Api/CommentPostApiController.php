@@ -61,12 +61,14 @@ class CommentPostApiController
         // 画像処理
         $imageFiles = array_filter([$image0, $image1, $image2], fn(?array $f) => !empty($f['tmp_name']));
         $imageFilenames = [];
+        $imageError = false;
         if (!empty($imageFiles)) {
             try {
                 $imageFilenames = $commentImageService->processAndStore(array_values($imageFiles));
                 $commentImageRepository->addImages($commentId, $imageFilenames);
             } catch (\RuntimeException $e) {
                 ExceptionHandler::errorLog($e);
+                $imageError = true;
             }
         }
 
@@ -103,6 +105,7 @@ class CommentPostApiController
             'uaHash' => substr(hash('sha256', getUA()), 0, 7),
             'ipHash' => substr(hash('sha256', getIP()), 0, 7),
             'images' => $imageFilenames,
+            'imageError' => $imageError,
         ]);
     }
 }
