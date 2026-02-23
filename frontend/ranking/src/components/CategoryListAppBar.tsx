@@ -21,7 +21,7 @@ function HideOnScroll({ children, matches }: { children: React.ReactElement; mat
 }
 
 export const CategoryListAppBar = memo(function HideListAppBar() {
-  const height = 44
+  const height = 48
   const { category } = useParams()
   const params = useAtomValue(listParamsState)
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
@@ -34,8 +34,8 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
             minHeight: 0,
             height: height,
             paddingRight: 0,
-            paddingTop: '8px',
-            marginBottom: '8px',
+            paddingTop: '12px',
+            marginBottom: '10px',
           }}
         >
           <ListToggleChips list={params.list} toggleButtons={toggleButtons} />
@@ -58,8 +58,8 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
           minHeight: 0,
           height: height,
           paddingRight: 0,
-          paddingTop: '8px',
-          marginBottom: '8px',
+          paddingTop: '12px',
+          marginBottom: '10px',
         }}
       >
         <ListToggleChips list={params.list} toggleButtons={officialButtons} />
@@ -72,10 +72,10 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
       sx={{
         height:
           toggleButtons.find((el) => el[0] === params.list) && (category || params.keyword)
-            ? height + (matches ? 53 + 4 : 38)
+            ? height + (matches ? 53 + 4 : 46)
             : matches
               ? 53
-              : 38,
+              : 44,
       }}
     >
       <HideOnScroll matches={matches}>
