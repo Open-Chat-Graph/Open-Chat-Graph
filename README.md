@@ -86,10 +86,11 @@ make cron         # Cron有効化（毎時30/35/40分に自動クローリング
 make cron-stop    # Cron無効化
 ```
 
-**テスト・CI:**
+**テスト・CI・静的解析:**
 
 ```bash
 make ci-test   # CI環境でテストを実行（ローカル専用）
+make phpstan   # PHPStan静的解析を実行
 ```
 
 **その他:**
@@ -216,7 +217,7 @@ docker compose exec app sh -c 'find /var/www/html/storage -name "*.db" -exec cho
 
 ## 🏗️ 技術スタック
 
-- PHP 8.3 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
+- PHP 8.5 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
 - MySQL/MariaDB + SQLite
 - React + TypeScript + Vite / Create React App
 

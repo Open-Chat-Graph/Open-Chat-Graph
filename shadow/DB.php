@@ -30,7 +30,7 @@ class DB implements DBInterface
         $userName = $config['dbUserName'] ?? MimimalCmsConfig::$dbUserName;
         $password = $config['dbPassword'] ?? MimimalCmsConfig::$dbPassword;
         $attrPersistent = $config['attrPersistent'] ?? (MimimalCmsConfig::$dbAttrPersistent ?? false);
-        $charset = $config['charset']  ?? (MimimalCmsConfig::$dbCharset ?? 'utf8mb4');
+        $charset = $config['charset'] ?? MimimalCmsConfig::$dbCharset;
 
         static::$pdo = new \PDO(
             'mysql:host=' . $host . ';dbname=' .$dbName . ';charset=' . $charset,

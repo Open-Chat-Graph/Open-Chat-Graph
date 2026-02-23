@@ -223,7 +223,7 @@ main() {
     # faketimeが利用可能か確認
     if ! docker exec "$APP_CONTAINER" which faketime > /dev/null 2>&1; then
         log_error "faketimeがインストールされていません"
-        log_error "コンテナを再ビルドしてください: make rebuild-mock"
+        log_error "コンテナを再ビルドしてください: make rebuild"
         exit 1
     fi
 

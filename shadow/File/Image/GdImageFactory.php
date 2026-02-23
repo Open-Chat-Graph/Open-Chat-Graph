@@ -31,8 +31,6 @@ class GdImageFactory implements GdImageFactoryInterface
 
         imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
 
-        imagedestroy($srcImage);
-
         return $dstImage;
     }
 

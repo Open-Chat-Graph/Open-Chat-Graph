@@ -53,12 +53,10 @@ class CommentImageThumbnailController
 
         $dstImage = imagecreatetruecolor($dstWidth, $dstHeight);
         imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
-        imagedestroy($srcImage);
 
         header('Content-Type: image/webp');
         header('Cache-Control: public, max-age=31536000, immutable');
         imagewebp($dstImage, null, self::THUMB_QUALITY);
-        imagedestroy($dstImage);
         exit;
     }
 }

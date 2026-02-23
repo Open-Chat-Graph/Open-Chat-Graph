@@ -160,7 +160,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'batch/cron/cron_half_check.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
