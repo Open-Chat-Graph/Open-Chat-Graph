@@ -1,5 +1,5 @@
 import { useCallback, useRef, DragEvent, useState, useMemo, useEffect } from 'react'
-import { useRecoilState, useSetRecoilState } from 'recoil'
+import { useAtom, useSetAtom } from 'jotai'
 import { imageFilesState } from '../state/imageFilesState'
 import { errorDialogState } from '../state/errorDialogState'
 import { imageCompressingState } from '../state/imageCompressingState'
@@ -72,14 +72,14 @@ function compressImage(file: File): Promise<Blob> {
 }
 
 export default function ImageAttachmentInput() {
-  const [files, setFiles] = useRecoilState(imageFilesState)
-  const setErrorDialog = useSetRecoilState(errorDialogState)
+  const [files, setFiles] = useAtom(imageFilesState)
+  const setErrorDialog = useSetAtom(errorDialogState)
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [pending, setPending] = useState<PendingImage[]>([])
   const pendingRef = useRef(pending)
   pendingRef.current = pending
-  const setIsCompressing = useSetRecoilState(imageCompressingState)
+  const setIsCompressing = useSetAtom(imageCompressingState)
 
   useEffect(() => {
     setIsCompressing(pending.length > 0)

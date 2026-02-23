@@ -1,6 +1,3 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
-export const imageCompressingState = atom<boolean>({
-  key: 'imageCompressingState',
-  default: false,
-})
+export const imageCompressingState = atom<boolean>(false)

@@ -13,7 +13,7 @@ class MockIntersectionObserver {
     return []
   }
 }
-globalThis.IntersectionObserver = MockIntersectionObserver as any
+globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
 // Setup the arg-dto JSON element that config.ts reads on module load
 const argDto = {

@@ -1,6 +1,3 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
-export const inputNameState = atom<string>({
-  key: 'inputName',
-  default: '',
-})
+export const inputNameState = atom<string>('')

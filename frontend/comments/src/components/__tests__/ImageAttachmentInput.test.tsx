@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { RecoilRoot } from 'recoil'
+import { Provider } from 'jotai'
 import ImageAttachmentInput from '../ImageAttachmentInput'
 
 let testKey = 0
@@ -9,9 +9,9 @@ let testKey = 0
 function renderComponent() {
   testKey++
   return render(
-    <RecoilRoot key={testKey}>
+    <Provider key={testKey}>
       <ImageAttachmentInput />
-    </RecoilRoot>
+    </Provider>
   )
 }
 

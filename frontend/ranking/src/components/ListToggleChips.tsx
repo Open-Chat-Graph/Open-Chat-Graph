@@ -26,7 +26,9 @@ const ListToggleChips = memo(function ListToggleButton({
 }) {
   const setParams = useSetListParams()
   const handleChange = (newList: ListParams['list']) => {
-    newList && setParams((params) => ({ ...params, list: newList, order: '', sort: '' }))
+    if (newList) {
+      setParams((params) => ({ ...params, list: newList, order: '', sort: '' }))
+    }
   }
 
   return (

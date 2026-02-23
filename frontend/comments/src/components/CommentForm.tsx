@@ -5,7 +5,7 @@ import useSetPostedItem from '../hooks/useSetPostedItem'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import CommentFormDialogUi from './Dialog/CommentFormDialogUi'
 import ErrorDialog from './Dialog/ErrorDialog'
-import { useRecoilState, useSetRecoilState } from 'recoil'
+import { useAtom, useSetAtom } from 'jotai'
 import { inputTextState } from '../state/inputTextState'
 import { inputNameState } from '../state/inputNameState'
 import { appInitTagDto } from '../config/appInitTagDto'
@@ -15,12 +15,12 @@ import { imageFilesState } from '../state/imageFilesState'
 export default function CommentForm() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
-  const setName = useSetRecoilState(inputNameState)
-  const setText = useSetRecoilState(inputTextState)
-  const [imageFiles, setImageFiles] = useRecoilState(imageFilesState)
-  const formRef = useRef<FormData | undefined>()
+  const setName = useSetAtom(inputNameState)
+  const setText = useSetAtom(inputTextState)
+  const [imageFiles, setImageFiles] = useAtom(imageFilesState)
+  const formRef = useRef<FormData | undefined>(undefined)
   const setPostedItem = useSetPostedItem()
-  const setErrorDialog = useSetRecoilState(errorDialogState)
+  const setErrorDialog = useSetAtom(errorDialogState)
   const { executeRecaptcha } = useGoogleReCaptcha()
 
   const onSubmit: FormEventHandler<HTMLFormElement> = useCallback((e) => {
@@ -66,6 +66,7 @@ export default function CommentForm() {
           formData
         )
 
+        try { localStorage.setItem('oc-my-user-id', userId) } catch { /* ignore */ }
         setPostedItem(commentId, name, text, userId, userIdHash, uaHash, ipHash, images.map(f => ({ id: 0, filename: f })))
         setName('')
         setText('')

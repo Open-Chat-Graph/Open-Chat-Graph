@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 export function useIsRightScrollable(
-  useEffectTrigerValue: any
+  useEffectTrigerValue: unknown
 ): [boolean, React.RefObject<HTMLDivElement | null>] {
   const [isRightScrollable, setIsRightScrollable] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -30,7 +30,7 @@ export function useIsRightScrollable(
 }
 
 export function useIsLeftRightScrollable(
-  useEffectTrigerValue: any
+  useEffectTrigerValue: unknown
 ): [boolean, boolean, React.RefObject<HTMLDivElement | null>] {
   const ref = useRef<HTMLDivElement>(null)
   const [isLeftScrollable, setIsLeftScrollable] = useState(false)

@@ -1,6 +1,3 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
-export const imageFilesState = atom<Blob[]>({
-  key: 'imageFilesState',
-  default: [],
-})
+export const imageFilesState = atom<Blob[]>([])

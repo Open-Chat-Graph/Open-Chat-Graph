@@ -25,14 +25,14 @@ function buildAlt(posterName: string, commentNo: number, index: number, total: n
   return `${room} コメントNo.${commentNo}の画像${num} - ${posterName}`
 }
 
-export default function CommentImageGallery({ images, posterName, commentNo }: { images: CommentImage[]; posterName: string; commentNo: number }) {
+export default function CommentImageGallery({ images, posterName, commentNo, isOwn }: { images: CommentImage[]; posterName: string; commentNo: number; isOwn?: boolean }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1)
   const [viewIndex, setViewIndex] = useState(-1)
   const isOpenRef = useRef(false)
   const closingByPopstate = useRef(false)
   const pushedState = useRef(false)
   const imagesRef = useRef(images)
-  imagesRef.current = images
+  useEffect(() => { imagesRef.current = images }, [images])
   const isPC = useMemo(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches, [])
 
   const filenames = useMemo(() => images.map(img => img.filename), [images])
@@ -44,6 +44,7 @@ export default function CommentImageGallery({ images, posterName, commentNo }: {
       const idx = filenames.indexOf(match[1])
       if (idx >= 0) {
         isOpenRef.current = true
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLightboxIndex(idx)
       }
     }
@@ -98,8 +99,12 @@ export default function CommentImageGallery({ images, posterName, commentNo }: {
   }, [])
 
   const handleView = useCallback(({ index }: { index: number }) => {
+    setLightboxIndex(index)
     setViewIndex(index)
-  }, [])
+    if (isOpenRef.current) {
+      history.replaceState(null, '', `#comment-img=${filenames[index]}`)
+    }
+  }, [filenames])
 
   if (!images.length) return null
 
@@ -153,7 +158,7 @@ export default function CommentImageGallery({ images, posterName, commentNo }: {
             buttonNext: () => null,
           }),
           slideFooter: () =>
-            currentImageId > 0 ? (
+            currentImageId > 0 && !isOwn ? (
               <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 1 }}>
                 <ImageReportButton imageId={currentImageId} commentNo={commentNo} />
               </div>

@@ -1,4 +1,4 @@
-import { atom } from 'recoil'
+import { atom } from 'jotai'
 
 export const reportDialogState = atom<{
   open: boolean
@@ -6,11 +6,8 @@ export const reportDialogState = atom<{
   commentId: number
   id: number
 }>({
-  key: 'reportDialog',
-  default: {
-    open: false,
-    result: 'unsent',
-    commentId: 0,
-    id: 0,
-  },
+  open: false,
+  result: 'unsent',
+  commentId: 0,
+  id: 0,
 })

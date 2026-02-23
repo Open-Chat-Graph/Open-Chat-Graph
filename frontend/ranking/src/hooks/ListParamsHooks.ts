@@ -26,7 +26,7 @@ const paramsSortRanking: ListParams['sort'][] = ['rank', 'increase', 'rate']
 const paramsSortAll: ListParams['sort'][] = ['member', 'created_at']
 const paramsOrder: ListParams['order'][] = ['asc', 'desc']
 
-export const getValidListParams = (params: URLSearchParams, location: any): ListParams => {
+export const getValidListParams = (params: URLSearchParams, location: { pathname: string }): ListParams => {
   const orderParam = (defaultValue: ListParams['order']) =>
     getValidParam<'order'>(params.get('order'), defaultValue, paramsOrder)
   const sortParam = (defaultValue: ListParams['sort'], paramsSort: ListParams['sort'][]) =>
