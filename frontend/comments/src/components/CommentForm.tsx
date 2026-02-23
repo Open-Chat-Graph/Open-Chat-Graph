@@ -12,38 +12,18 @@ import { reportDialogState } from '../state/reportDialogState'
 import { imageFilesState } from '../state/imageFilesState'
 import imageCompression from 'browser-image-compression'
 
-const MAX_SERVER_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_SERVER_SIZE = 8 * 1024 * 1024 // 8MB
 
 async function compressImage(file: File): Promise<File> {
-  // First attempt: compress maintaining original resolution
-  let compressed = await imageCompression(file, {
-    maxSizeMB: 4,
-    useWebWorker: true,
-    initialQuality: 0.85,
-  })
-
-  if (compressed.size <= MAX_SERVER_SIZE) return compressed
-
-  // Fallback 1: limit to 4K
-  compressed = await imageCompression(file, {
-    maxSizeMB: 4,
-    maxWidthOrHeight: 3840,
-    useWebWorker: true,
-    initialQuality: 0.85,
-  })
-
-  if (compressed.size <= MAX_SERVER_SIZE) return compressed
-
-  // Fallback 2: limit to 2560px
-  compressed = await imageCompression(file, {
-    maxSizeMB: 4,
-    maxWidthOrHeight: 2560,
+  const compressed = await imageCompression(file, {
+    maxSizeMB: 5,
+    maxWidthOrHeight: 2000,
     useWebWorker: true,
     initialQuality: 0.85,
   })
 
   if (compressed.size > MAX_SERVER_SIZE) {
-    throw new Error('画像サイズを小さくしてください（5MB以下）')
+    throw new Error('画像サイズを小さくしてください（8MB以下）')
   }
 
   return compressed
@@ -97,13 +77,14 @@ export default function CommentForm() {
           formData.append(`image${i}`, file)
         })
 
-        const { commentId, userId, userIdHash, uaHash, ipHash, images } = await fetchApiFormData<{
+        const { commentId, userId, userIdHash, uaHash, ipHash, images, imageError } = await fetchApiFormData<{
           commentId: number
           userId: string
           userIdHash: string
           uaHash: string
           ipHash: string
           images: string[]
+          imageError?: boolean
         }>(
           `${window.location.origin}/comment/${appInitTagDto.openChatId}`,
           formData
@@ -113,6 +94,10 @@ export default function CommentForm() {
         setName('')
         setText('')
         setImageFiles([])
+
+        if (imageError) {
+          alert('コメントは投稿されましたが、画像の処理に失敗しました。')
+        }
       } catch (error) {
         console.error(error)
         setFailDialog((p) => ({ ...p, open: true, result: 'fail' }))

@@ -44,7 +44,7 @@ class CommentImageService implements CommentImageServiceInterface
         $filenames = [];
 
         foreach ($files as $file) {
-            $gdImage = $this->gdImageFactory->createGdImage($file);
+            $gdImage = $this->gdImageFactory->createGdImage($file, 2000, 2000);
             $filename = bin2hex(random_bytes(16));
             $subDir = self::getSubDir($filename);
             $destDir = MimimalCmsConfig::$publicDir . self::DEST_PATH . '/' . $subDir;
