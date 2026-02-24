@@ -140,8 +140,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </span>
         </aside>
 
-        <div style="display: flex; flex-direction: column; width: 100%; margin: auto 0;">
-          <section class="open-btn sp-btn" style="width: 100%; margin: 0; padding: 0;">
+        <div style="display: flex; gap: 8px; width: 100%; margin: auto 0;">
+          <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+          <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
               <a href="<?php echo MimimalCmsConfig::$urlRoot === '' ? url('oc', $oc['id'], 'jump') : lineAppUrl($oc) ?>" class="openchat_link" style="font-size: 16px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
