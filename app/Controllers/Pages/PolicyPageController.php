@@ -18,7 +18,7 @@ class PolicyPageController
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'));
 
-        $_adminDto = $isAdmin && adminMode() ? app(AdminOpenChat::class)->getDto(0) : null;
+        $_adminDto = $isAdmin ? app(AdminOpenChat::class)->getDto(0) : null;
 
         return view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_adminDto'));
     }

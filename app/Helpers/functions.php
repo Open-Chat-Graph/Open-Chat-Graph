@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Config\SecretsConfig;
 use App\Config\AppConfig;
-use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shadow\Kernel\Dispatcher\ReceptionInitializer;
 use Shadow\Kernel\Utility\KernelUtility;
@@ -670,20 +669,6 @@ function sessionStart(): bool
     return session_start();
 }
 
-/**
- * @throws NotFoundException
- */
-function adminMode(): true
-{
-    noStore();
-
-    /** @var AdminAuthService $adminAuthService */
-    $adminAuthService = app(AdminAuthService::class);
-    if (!$adminAuthService->auth())
-        throw new NotFoundException;
-
-    return true;
-}
 
 function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 {
