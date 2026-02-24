@@ -623,6 +623,9 @@ Route::path(
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('filename');
 
+Route::path('oc/0/admin', [PolicyPageController::class, 'index'])
+    ->match(fn() => ['isAdmin' => true]);
+
 Route::path(
     'oc/{open_chat_id}/admin',
     [OpenChatPageController::class, 'index']

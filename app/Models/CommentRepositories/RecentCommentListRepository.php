@@ -71,15 +71,16 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             if ($el['open_chat_id'] === 0) {
                 $result[] = [
                     'id' => 0,
-                    'user' => ($el['name'] ?: '匿名'),
+                    'user' => in_array($el['flag'], [0, 4]) ? ($el['name'] ?: '匿名') : '***',
                     'name' => 'オプチャグラフとは？',
                     'img_url' => fileUrl('assets/icon-192x192.png'),
                     'emblem' => 0,
-                    'description' => $el['text'],
+                    'description' => in_array($el['flag'], [0, 4]) ? $el['text'] : '',
                     'time' => $el['time'],
                     'member' => 0,
                     'category' => 0,
                 ];
+                continue;
             }
 
             $key = array_search($el['open_chat_id'], $idArray);

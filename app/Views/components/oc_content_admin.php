@@ -51,7 +51,7 @@
     </form>
     <form action="/admin-api/restorecommentsall" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
-        <button type="submit" style="text-align: left;">削除を一斉復元<br>（シャドウ削除・通常削除）</button>
+        <button type="submit" style="text-align: left;">削除を一斉復元<br>（シャドウ削除・通常削除・通報・画像削除）</button>
     </form>
     <form action="/admin-api/harddeletecommentsall" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">

@@ -17,7 +17,7 @@ interface DeleteCommentRepositoryInterface
     function restoreDeletedComments(int $open_chat_id): int;
     /** @return string[] image filenames associated with flag=5 comments */
     function getSoftDeletedCommentImageFilenames(int $open_chat_id): array;
-    /** @return string[] image filenames associated with flag=1 or flag=5 comments */
+    /** @return string[] image filenames associated with flag=1,2,4,5 comments */
     function getDeletedCommentImageFilenames(int $open_chat_id): array;
     function deleteLikeByUserIdAndIp(int $open_chat_id, string $user_id, string $ip): int;
     function deleteCommentByUserIdAndIpAll(string $user_id, string $ip): void;
@@ -28,7 +28,7 @@ interface DeleteCommentRepositoryInterface
 
     /** @return int[] comment_ids with flag=5 */
     function getSoftDeletedCommentIds(int $openChatId): array;
-    /** @return int[] comment_ids with flag=1 or flag=5 */
+    /** @return int[] comment_ids with flag=1,2,4,5 */
     function getDeletedCommentIds(int $openChatId): array;
 
     function shadowDeleteAllComments(int $open_chat_id): int;
