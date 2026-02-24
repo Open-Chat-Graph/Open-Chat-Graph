@@ -535,7 +535,7 @@ Route::path(
     ->matchNum('id')
     ->matchNum('commentId')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
-    ->matchNum('flag', min: 0, max: 4);
+    ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
     'admin-api/deleteuser@post',
@@ -567,6 +567,20 @@ Route::path(
     [AdminEndPointController::class, 'deleteDeletedCommentImages']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path(
+    'admin-api/deletecommentsall@post',
+    [AdminEndPointController::class, 'deletecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/restorecommentsall@post',
+    [AdminEndPointController::class, 'restorecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
 
 Route::path(
     'oc/{open_chat_id}/admin',

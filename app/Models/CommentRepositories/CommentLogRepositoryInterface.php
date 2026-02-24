@@ -12,4 +12,7 @@ interface CommentLogRepositoryInterface
 
     /** @return array{ ip: string, ua: string }|false */
     function findAddCommentLog(int $comment_id): array|false;
+
+    /** @return string[] */
+    function findRecentNamesByUserIdOrIp(string $user_id, string $ip): array;
 }

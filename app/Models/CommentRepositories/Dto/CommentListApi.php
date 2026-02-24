@@ -33,7 +33,7 @@ class CommentListApi
                 'time' => $this->time,
                 'status' => match ($this->flag) {
                     0, 4 => '',
-                    1 => '削除済',
+                    1, 5 => '削除済',
                     2 => '通報により削除済',
                     default => '削除済',
                 },

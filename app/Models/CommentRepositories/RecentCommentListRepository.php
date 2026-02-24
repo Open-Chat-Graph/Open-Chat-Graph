@@ -26,6 +26,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                 time,
                 name,
                 CASE
+                    WHEN flag = 5 THEN 5
                     WHEN user_id = :user_id THEN 0
                     ELSE flag
                 END AS flag,

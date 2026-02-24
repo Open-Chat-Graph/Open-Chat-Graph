@@ -1,5 +1,5 @@
 <?php
-$enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示 
+$enableAdsense = true;
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
