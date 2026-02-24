@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Action Log</title>
+    <title>Shadow Ban Users</title>
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
         h1 { color: #333; margin-bottom: 5px; }
         .back-link { margin-bottom: 20px; }
-        .back-link a { color: #1a73e8; text-decoration: none; }
+        .back-link a { color: #1a73e8; text-decoration: none; margin-right: 16px; }
         .back-link a:hover { text-decoration: underline; }
         .pagination { margin: 20px 0; }
         .pagination select { padding: 5px; font-size: 14px; }
@@ -19,19 +19,13 @@
         th { background: #f9f9f9; font-weight: bold; position: sticky; top: 0; }
         tr:hover { background: #f5f5f5; }
         .date-col { width: 130px; white-space: nowrap; font-family: monospace; font-size: 10px; }
-        .oc-col { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
-        .text-col {
-            max-width: 250px;
-            font-size: 13px;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-        }
-        .type-col { font-size: 12px; white-space: nowrap; }
-        .btn-detail {
+        .id-col { width: 50px; font-family: monospace; font-size: 12px; }
+        .uid-col { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 11px; }
+        .ip-col { font-family: monospace; font-size: 11px; white-space: nowrap; }
+        .name-col { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .btn-unban {
             padding: 4px 10px;
-            background: #1a73e8;
+            background: #e53935;
             color: #fff;
             border: none;
             border-radius: 3px;
@@ -39,7 +33,7 @@
             text-decoration: none;
             font-size: 12px;
         }
-        .btn-detail:hover { background: #1557b0; }
+        .btn-unban:hover { background: #c62828; }
 
         @media (max-width: 768px) {
             body { margin: 10px; }
@@ -65,24 +59,23 @@
                 display: block;
                 margin-bottom: 2px;
             }
-            .text-col { max-width: 100%; }
-            .oc-col { max-width: 100%; white-space: normal; }
+            .uid-col { max-width: 100%; }
+            .name-col { max-width: 100%; white-space: normal; }
         }
     </style>
     <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
 </head>
 
-<?php use App\Models\CommentRepositories\Enum\CommentLogType; ?>
-
 <body>
     <div class="back-link">
         <a href="<?php echo url('admin/log') ?>">&larr; Back to Log List</a>
-        <a href="<?php echo url('admin/ban-users') ?>" style="margin-left: 16px;">Shadow Ban Users</a>
+        <a href="<?php echo url('admin/log/admin-action') ?>">Admin Action Log</a>
     </div>
 
-    <h1>Admin Action Log</h1>
+    <h1>Shadow Ban Users</h1>
     <p>Page <?php echo $currentPage ?> / <?php echo $totalPages ?> (<?php echo $totalCount ?>件, 50件/ページ)</p>
 
+    <?php if ($totalPages > 1): ?>
     <form method="get" class="pagination">
         <label>Page:
             <?php if ($totalPages <= 100): ?>
@@ -97,40 +90,32 @@
         </label>
         <button type="submit">Go</button>
     </form>
+    <?php endif; ?>
 
     <table>
         <thead>
             <tr>
-                <th class="date-col">日時</th>
-                <th class="type-col">操作</th>
-                <th class="oc-col">ルーム</th>
-                <th class="text-col">コメント</th>
-                <th>詳細</th>
+                <th class="id-col">ID</th>
+                <th class="uid-col">user_id</th>
+                <th class="ip-col">IP</th>
+                <th class="date-col">バン日時</th>
+                <th class="name-col">ユーザー名</th>
+                <th>操作</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (empty($logs)): ?>
-                <tr><td colspan="5">操作ログはありません。</td></tr>
+            <?php if (empty($banUsers)): ?>
+                <tr><td colspan="6">バンユーザーはいません。</td></tr>
             <?php else: ?>
-                <?php foreach ($logs as $log):
-                    $ocId = $log['open_chat_id'] ?? null;
-                    $ocNameDisplay = $ocId ? ($ocNames[$ocId] ?? "ID:{$ocId}") : '-';
-                    $typeEnum = CommentLogType::tryFrom($log['type']);
-                    $typeLabel = $typeEnum ? $typeEnum->adminLabel($log['flag']) : $log['type'];
-                ?>
+                <?php foreach ($banUsers as $ban): ?>
                 <tr>
-                    <td class="date-col" data-label="日時"><?php echo htmlspecialchars($log['data']) ?></td>
-                    <td class="type-col" data-label="操作"><?php echo htmlspecialchars($typeLabel) ?></td>
-                    <td class="oc-col" data-label="ルーム" title="<?php echo htmlspecialchars($ocNameDisplay) ?>">
-                        <?php if ($ocId): ?>
-                            <a href="<?php echo url("oc/{$ocId}/admin") ?>" target="_blank"><?php echo htmlspecialchars($ocNameDisplay) ?></a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                    </td>
-                    <td class="text-col" data-label="コメント"><?php echo htmlspecialchars($log['text'] ?? ($log['flag'] === null ? '(完全削除済み)' : '')) ?></td>
-                    <td data-label="詳細">
-                        <a class="btn-detail" href="<?php echo url('admin/log/admin-action/detail') ?>?id=<?php echo $log['id'] ?>" target="_blank">View</a>
+                    <td class="id-col" data-label="ID"><?php echo $ban['id'] ?></td>
+                    <td class="uid-col" data-label="user_id" title="<?php echo htmlspecialchars($ban['user_id']) ?>"><?php echo htmlspecialchars(mb_strimwidth($ban['user_id'], 0, 16, '...')) ?></td>
+                    <td class="ip-col" data-label="IP"><?php echo htmlspecialchars($ban['ip']) ?></td>
+                    <td class="date-col" data-label="バン日時"><?php echo htmlspecialchars($ban['created_at']) ?></td>
+                    <td class="name-col" data-label="ユーザー名" title="<?php echo htmlspecialchars($ban['name']) ?>"><?php echo htmlspecialchars($ban['name'] ?: '-') ?></td>
+                    <td data-label="操作">
+                        <a class="btn-unban" href="<?php echo url('admin-api/unbanuser') ?>?banId=<?php echo $ban['id'] ?>">解除</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -138,6 +123,7 @@
         </tbody>
     </table>
 
+    <?php if ($totalPages > 1): ?>
     <form method="get" class="pagination">
         <label>Page:
             <?php if ($totalPages <= 100): ?>
@@ -152,6 +138,7 @@
         </label>
         <button type="submit">Go</button>
     </form>
+    <?php endif; ?>
 </body>
 
 </html>

@@ -264,6 +264,30 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         )->rowCount();
     }
 
+    function restoreCommentsByUserIdAndIp(string $user_id, string $ip): int
+    {
+        return CommentDB::execute(
+            "UPDATE
+                comment
+            SET
+                flag = 0
+            WHERE
+                flag = 1
+                AND comment_id IN (
+                    SELECT
+                        t1.comment_id
+                    FROM
+                        (SELECT * FROM comment WHERE flag = 1) AS t1
+                        JOIN `log` AS lt ON t1.comment_id = lt.entity_id
+                        AND lt.type = 'AddComment'
+                    WHERE
+                        t1.user_id = :user_id
+                        OR lt.ip = :ip
+                )",
+            compact('user_id', 'ip')
+        )->rowCount();
+    }
+
     function deleteCommentByUserIdAndIpAll(string $user_id, string $ip): void
     {
         CommentDB::execute(

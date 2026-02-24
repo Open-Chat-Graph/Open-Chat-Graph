@@ -32,4 +32,5 @@ interface DeleteCommentRepositoryInterface
     function getDeletedCommentIds(int $openChatId): array;
 
     function shadowDeleteAllComments(int $open_chat_id): int;
+    function restoreCommentsByUserIdAndIp(string $user_id, string $ip): int;
 }
