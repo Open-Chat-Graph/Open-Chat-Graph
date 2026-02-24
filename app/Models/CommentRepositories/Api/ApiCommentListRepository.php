@@ -21,12 +21,21 @@ class ApiCommentListRepository implements CommentListRepositoryInterface
         "SELECT
                 c.id,
                 c.comment_id AS commentId,
-                CASE WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN 'Anonymous' ELSE c.name END AS name,
-                CASE WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN '' ELSE c.text END AS text,
+                CASE
+                    WHEN c.flag = 5 THEN 'Anonymous'
+                    WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN 'Anonymous'
+                    ELSE c.name
+                END AS name,
+                CASE
+                    WHEN c.flag = 5 THEN ''
+                    WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN ''
+                    ELSE c.text
+                END AS text,
                 c.time,
                 c.user_id AS userId,
                 CASE
                     WHEN c.flag = 4 THEN 4
+                    WHEN c.flag = 5 THEN 5
                     WHEN c.user_id = :user_id THEN 0
                     ELSE c.flag
                 END AS flag,

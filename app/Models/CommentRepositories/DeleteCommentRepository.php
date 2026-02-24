@@ -113,6 +113,25 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         return $filenames;
     }
 
+    function softDeleteAllComments(int $open_chat_id): int
+    {
+        $id = compact('open_chat_id');
+
+        // いいね削除
+        CommentDB::execute(
+            "DELETE FROM `like` WHERE comment_id IN (
+                SELECT comment_id FROM comment WHERE open_chat_id = :open_chat_id
+            )",
+            $id
+        );
+
+        // 全コメントをflag=5に更新
+        return CommentDB::execute(
+            "UPDATE comment SET flag = 5 WHERE open_chat_id = :open_chat_id AND flag NOT IN (1, 2, 4)",
+            $id
+        )->rowCount();
+    }
+
     function deleteLikeByUserIdAndIp(int $open_chat_id, string $user_id, string $ip): int
     {
         return CommentDB::execute(

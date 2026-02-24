@@ -41,7 +41,7 @@ class CommentListApiController
 
         return response(array_map(function (CommentListApi $el) use ($imagesMap) {
             $data = $el->getResponseArray();
-            $data['images'] = $el->flag === 4 ? [] : ($imagesMap[$el->commentId] ?? []);
+            $data['images'] = in_array($el->flag, [4, 5], true) ? [] : ($imagesMap[$el->commentId] ?? []);
             return $data;
         }, $list));
     }
