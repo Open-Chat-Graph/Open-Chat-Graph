@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:comments build-frontend\:graph build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -60,8 +60,7 @@ help: ## ヘルプを表示
 	@echo "$(YELLOW)フロントエンド:$(NC)"
 	@echo "  $(GREEN)make build-frontend$(NC)          - フロントエンドを全てビルド"
 	@echo "  $(GREEN)make build-frontend:ranking$(NC)  - ランキングのみビルド"
-	@echo "  $(GREEN)make build-frontend:comments$(NC) - コメントのみビルド"
-	@echo "  $(GREEN)make build-frontend:graph$(NC)    - グラフのみビルド"
+	@echo "  $(GREEN)make build-frontend:oc-app$(NC)   - コメント・グラフ等のみビルド"
 	@echo "  $(GREEN)make build-frontend:all-room-stats$(NC) - 全体統計のみビルド"
 	@echo ""
 	@echo "$(YELLOW)静的解析:$(NC)"
@@ -155,15 +154,10 @@ build-frontend\:ranking: ## ランキングのみビルド
 	@$(MAKE) _build-one-frontend DIR=frontend/ranking
 	@echo "$(GREEN)ranking ビルド完了$(NC)"
 
-build-frontend\:comments: ## コメントのみビルド
-	@echo "$(GREEN)comments をビルドしています...$(NC)"
-	@$(MAKE) _build-one-frontend DIR=frontend/comments
-	@echo "$(GREEN)comments ビルド完了$(NC)"
-
-build-frontend\:graph: ## グラフのみビルド
-	@echo "$(GREEN)graph をビルドしています...$(NC)"
-	@$(MAKE) _build-one-frontend DIR=frontend/stats-graph
-	@echo "$(GREEN)graph ビルド完了$(NC)"
+build-frontend\:oc-app: ## コメント・グラフ等をビルド
+	@echo "$(GREEN)oc-app をビルドしています...$(NC)"
+	@$(MAKE) _build-one-frontend DIR=frontend/oc-app
+	@echo "$(GREEN)oc-app ビルド完了$(NC)"
 
 build-frontend\:all-room-stats: ## 全体統計のみビルド
 	@echo "$(GREEN)all-room-stats をビルドしています...$(NC)"

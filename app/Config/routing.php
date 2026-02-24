@@ -551,7 +551,7 @@ Route::path(
     ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post',
+    'admin-api/deleteuser@post@get',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
@@ -559,8 +559,15 @@ Route::path(
     ->matchNum('commentId');
 
 Route::path(
-    'admin-api/commentbanroom@post',
+    'admin-api/commentbanroom@post@get',
     [AdminEndPointController::class, 'commentbanroom']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/commentunbanroom@post@get',
+    [AdminEndPointController::class, 'commentunbanroom']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
@@ -569,28 +576,42 @@ Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::clas
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentimage@post',
+    'admin-api/deletecommentimage@post@get',
     [AdminEndPointController::class, 'deleteCommentImage']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('imageId');
 
 Route::path(
-    'admin-api/deletedcommentimages@post',
+    'admin-api/deletedcommentimages@post@get',
     [AdminEndPointController::class, 'deleteDeletedCommentImages']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentsall@post',
+    'admin-api/deletecommentsall@post@get',
     [AdminEndPointController::class, 'deletecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/restorecommentsall@post',
+    'admin-api/restorecommentsall@post@get',
     [AdminEndPointController::class, 'restorecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/harddeletecommentsall@post@get',
+    [AdminEndPointController::class, 'harddeletecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/bulkshadowban@post@get',
+    [AdminEndPointController::class, 'bulkshadowban']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');

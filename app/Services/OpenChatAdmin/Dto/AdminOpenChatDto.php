@@ -11,4 +11,5 @@ class AdminOpenChatDto
     public string|false $modifyTag;
     /** @var int[] $commentIdArray */
     public array $commentIdArray;
+    public ?int $commentBanRemainingDays = null;
 }

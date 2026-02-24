@@ -71,6 +71,11 @@ const admin = document.cookie
   ?.split('=')[1]
 admin && console.log('admin:', admin)
 
+if (admin) {
+  const gearBtn = document.getElementById('admin-gear-btn')
+  if (gearBtn) gearBtn.style.display = 'flex'
+}
+
 if (typeof admin === 'undefined' || !admin) blockblock()
 
 function detectAdBlock() {

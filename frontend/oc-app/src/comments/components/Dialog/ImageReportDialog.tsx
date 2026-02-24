@@ -55,7 +55,7 @@ export default function ImageReportDialog() {
       {state.result === 'unsent' && (
         <DialogParagraph>削除すべき不適切な画像として通報しますか？</DialogParagraph>
       )}
-      {state.result === 'done' && <DialogParagraph>通報しました</DialogParagraph>}
+      {state.result === 'done' && <DialogParagraph>通報情報が管理者の端末に送信されました<br />（管理者個人のスマートフォンのDiscordに通知済み）</DialogParagraph>}
       {state.result === 'fail' && (
         <DialogParagraph>
           サーバーとの通信に失敗しました。連続アクセスを防止しているため、しばらく待ってから再度お試しください。

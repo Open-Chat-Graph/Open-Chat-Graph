@@ -28,7 +28,7 @@ export default function ReportDialogUi({
       {result === 'unsent' && (
         <DialogParagraph>削除すべき不適切なコメントとして通報しますか？</DialogParagraph>
       )}
-      {result === 'done' && <DialogParagraph>通報しました</DialogParagraph>}
+      {result === 'done' && <DialogParagraph>通報情報が管理者の端末に送信されました<br />（管理者個人のスマートフォンのDiscordに通知済み）</DialogParagraph>}
       {result === 'fail' && (
         <DialogParagraph>
           サーバーとの通信に失敗しました。連続アクセスを防止しているため、しばらく待ってから再度お試しください。
