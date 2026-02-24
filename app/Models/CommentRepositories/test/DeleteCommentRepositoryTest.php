@@ -28,6 +28,7 @@ class DeleteCommentRepositoryTest extends TestCase
             CREATE TABLE comment (
                 comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 open_chat_id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT 0,
                 user_id TEXT NOT NULL DEFAULT '',
                 flag INTEGER NOT NULL DEFAULT 0,
                 name TEXT NOT NULL DEFAULT '',
@@ -417,21 +418,6 @@ class DeleteCommentRepositoryTest extends TestCase
 
     public function testGetCommentId_returnsCommentId(): void
     {
-        // id列はcomment_idのエイリアスとして使うためテーブルにid列を追加
-        // 実DBではopen_chat_id内の連番だが、テストでは comment_id を使用
-        $this->pdo->exec("DROP TABLE comment");
-        $this->pdo->exec("
-            CREATE TABLE comment (
-                comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                open_chat_id INTEGER NOT NULL,
-                id INTEGER NOT NULL DEFAULT 0,
-                user_id TEXT NOT NULL DEFAULT '',
-                flag INTEGER NOT NULL DEFAULT 0,
-                name TEXT NOT NULL DEFAULT '',
-                text TEXT NOT NULL DEFAULT ''
-            )
-        ");
-
         $stmt = $this->pdo->prepare(
             "INSERT INTO comment (open_chat_id, id, user_id, flag) VALUES (?, ?, ?, ?)"
         );
