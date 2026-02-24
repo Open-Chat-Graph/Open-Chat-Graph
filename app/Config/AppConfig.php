@@ -45,6 +45,15 @@ class AppConfig
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;
 
+    const COMMENT_FLAG_LABELS = [
+        0 => '復元',
+        1 => 'シャドウ削除',
+        2 => '通報',
+        3 => '完全削除',
+        4 => '画像削除',
+        5 => '通常削除',
+    ];
+
     const OFFICIAL_EMBLEMS = [
         '' => [
             1 => 'スペシャルオープンチャット',
@@ -152,6 +161,9 @@ class AppConfig
     static string $githubRepo = 'mimimiku778/Open-Chat-Graph';
     static string $githubBranch = 'main';
     static bool $disableAdTags = true;
+
+    // 重複通報の受付をスキップ（管理者が既に対応している通報をさらに通報されるのを防止）
+    static bool $skipDuplicateReport = false;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [

@@ -60,4 +60,24 @@ class ApiCommentPostRepository implements CommentPostRepositoryInterface
 
         return SQLiteOcgraphSqlapi::fetchColumn($query, compact('user_id', 'ip'));
     }
+
+    function addBanUsersInRoom(int $open_chat_id): int
+    {
+        throw new \RuntimeException('Write operation not supported in API repository');
+    }
+
+    function removeBanRoom(int $open_chat_id): bool
+    {
+        throw new \RuntimeException('Write operation not supported in API repository');
+    }
+
+    function getBanRoomExpiry(int $open_chat_id): string|false
+    {
+        return SQLiteOcgraphSqlapi::fetchColumn(
+            "SELECT created_at FROM ban_room
+             WHERE open_chat_id = :open_chat_id AND created_at >= datetime('now', '-7 days')
+             ORDER BY created_at DESC LIMIT 1",
+            compact('open_chat_id')
+        );
+    }
 }

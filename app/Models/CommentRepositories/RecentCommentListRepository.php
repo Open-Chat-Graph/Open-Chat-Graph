@@ -71,15 +71,16 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             if ($el['open_chat_id'] === 0) {
                 $result[] = [
                     'id' => 0,
-                    'user' => ($el['name'] ?: '匿名'),
+                    'user' => in_array($el['flag'], [0, 4]) ? ($el['name'] ?: '匿名') : '***',
                     'name' => 'オプチャグラフとは？',
                     'img_url' => fileUrl('assets/icon-192x192.png'),
                     'emblem' => 0,
-                    'description' => $el['text'],
+                    'description' => in_array($el['flag'], [0, 4]) ? $el['text'] : '',
                     'time' => $el['time'],
                     'member' => 0,
                     'category' => 0,
                 ];
+                continue;
             }
 
             $key = array_search($el['open_chat_id'], $idArray);
@@ -103,7 +104,10 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
 
     public function getLatestCommentTime(): string|false
     {
-        $query = "SELECT MAX(time) FROM comment";
+        $query = "SELECT GREATEST(
+            COALESCE((SELECT MAX(time) FROM comment), '0'),
+            COALESCE((SELECT data FROM `log` WHERE `type` LIKE 'Admin%' ORDER BY id DESC LIMIT 1), '0')
+        )";
         return CommentDB::fetchColumn($query) ?? false;
     }
 

@@ -6,7 +6,6 @@ use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
-use App\Controllers\Api\CommentImageReportApiController;
 use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
@@ -18,6 +17,8 @@ use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
+use App\Controllers\Pages\AdminBanUserController;
+use App\Controllers\Pages\AdminCommentLogController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -442,7 +443,7 @@ Route::path(
 // 通報API
 Route::path(
     'comment_report/{comment_id}@post',
-    [CommentReportApiController::class, 'index']
+    [CommentReportApiController::class, 'reportComment']
 )
     ->matchNum('comment_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -458,7 +459,7 @@ Route::path(
 // 画像通報API
 Route::path(
     'comment_image_report/{image_id}@post',
-    [CommentImageReportApiController::class, 'index']
+    [CommentReportApiController::class, 'reportImage']
 )
     ->matchNum('image_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -497,6 +498,19 @@ Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetai
         noStore();
     });
 
+// 管理者操作ログ
+Route::path('admin/log/admin-action', [AdminCommentLogController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
+Route::path('admin/log/admin-action/detail', [AdminCommentLogController::class, 'detail'])
+    ->matchNum('id', min: 1)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
@@ -515,6 +529,13 @@ Route::path('admin/comment-images', [AdminCommentImageController::class, 'commen
         if (!$adminAuthService->auth())
             return false;
         noStore();
+    });
+
+// シャドウバンユーザー一覧
+Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
 // Adminer Database Tool
@@ -538,7 +559,7 @@ Route::path(
     ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post',
+    'admin-api/deleteuser@post@get',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
@@ -546,8 +567,15 @@ Route::path(
     ->matchNum('commentId');
 
 Route::path(
-    'admin-api/commentbanroom@post',
+    'admin-api/commentbanroom@post@get',
     [AdminEndPointController::class, 'commentbanroom']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/commentunbanroom@post@get',
+    [AdminEndPointController::class, 'commentunbanroom']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
@@ -556,38 +584,79 @@ Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::clas
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentimage@post',
+    'admin-api/deletecommentimage@post@get',
     [AdminEndPointController::class, 'deleteCommentImage']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('imageId');
 
 Route::path(
-    'admin-api/deletedcommentimages@post',
+    'admin-api/deletedcommentimages@post@get',
     [AdminEndPointController::class, 'deleteDeletedCommentImages']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentsall@post',
+    'admin-api/deletecommentsall@post@get',
     [AdminEndPointController::class, 'deletecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/restorecommentsall@post',
+    'admin-api/restorecommentsall@post@get',
     [AdminEndPointController::class, 'restorecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
+    'admin-api/harddeletecommentsall@post@get',
+    [AdminEndPointController::class, 'harddeletecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/bulkshadowban@post@get',
+    [AdminEndPointController::class, 'bulkshadowban']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/unbanuser@post@get',
+    [AdminEndPointController::class, 'unbanuser']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('banId');
+
+Route::path(
+    'admin-api/comment-image@get',
+    [AdminEndPointController::class, 'commentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('filename');
+
+Route::path('oc/0/admin', [PolicyPageController::class, 'index'])
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdmin' => true];
+    });
+
+Route::path(
     'oc/{open_chat_id}/admin',
     [OpenChatPageController::class, 'index']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn() => ['isAdminPage' => '1']);
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdminPage' => '1'];
+    });
 
 /* Route::path(
     'ads/register@post',

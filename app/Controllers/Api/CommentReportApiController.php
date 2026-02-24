@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Config\AppConfig;
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
@@ -15,110 +17,186 @@ use App\Services\Auth\GoogleReCaptcha;
 
 class CommentReportApiController
 {
-    function index(
-        CommentPostRepositoryInterface $commentPostRepository,
-        CommentListRepositoryInterface $commentListRepository,
-        CommentLogRepositoryInterface $commentLogRepository,
-        AuthInterface $auth,
-        GoogleReCaptcha $googleReCaptcha,
-        OpenChatPageRepositoryInterface $ocRepo,
+    function __construct(
+        private CommentPostRepositoryInterface $commentPostRepository,
+        private CommentListRepositoryInterface $commentListRepository,
+        private CommentLogRepositoryInterface $commentLogRepository,
+        private OpenChatPageRepositoryInterface $ocRepo,
+        private AuthInterface $auth,
+        private GoogleReCaptcha $googleReCaptcha,
+    ) {}
+
+    function reportComment(string $token, int $comment_id)
+    {
+        $reportUserId = $this->validateReporter($token);
+        if ($reportUserId === false) return response(['success' => false]);
+
+        $comment = $this->commentListRepository->findCommentById($comment_id);
+        if (!$comment) return false;
+
+        return $this->handleReport($comment_id, CommentLogType::Report, $reportUserId, $comment);
+    }
+
+    function reportImage(
         string $token,
-        int $comment_id
+        int $image_id,
+        CommentImageRepositoryInterface $commentImageRepository,
     ) {
-        $score = $googleReCaptcha->validate($token, 0.5);
-        $report_user_id = $auth->loginCookieUserId();
+        $reportUserId = $this->validateReporter($token);
+        if ($reportUserId === false) return response(['success' => false]);
 
-        if ($commentPostRepository->getBanUser($report_user_id, getIP())) {
+        $commentId = $commentImageRepository->getCommentIdByImageId($image_id);
+        if ($commentId === false) return false;
+
+        $comment = $this->commentListRepository->findCommentById($commentId);
+        if (!$comment) return false;
+
+        $imageFilename = $commentImageRepository->getFilenameByImageId($image_id);
+        $imageUrl = $imageFilename
+            ? url('comment-img/' . substr($imageFilename, 0, 2) . '/' . $imageFilename)
+            : '';
+
+        return $this->handleReport($image_id, CommentLogType::ImageReport, $reportUserId, $comment, $imageUrl);
+    }
+
+    private function handleReport(
+        int $entityId,
+        CommentLogType $logType,
+        string $reportUserId,
+        array $comment,
+        string $imageUrl = '',
+    ) {
+        if ($this->isDuplicateReport($entityId, $logType, $reportUserId)) {
             return response(['success' => false]);
         }
 
-        $comment = $commentListRepository->findCommentById($comment_id);
-        if (!$comment) {
-            return false;
-        }
-
-        $existsReport = $commentLogRepository->findReportLog(
-            $comment_id,
-            CommentLogType::Report,
-            json_encode(compact('report_user_id'))
-        );
-
-        if ($existsReport) {
-            return response(['success' => false]);
-        }
-
-        $logId = $commentLogRepository->addLog(
-            $comment_id,
-            CommentLogType::Report,
-            getIP(),
-            getUA(),
-            json_encode(compact('report_user_id'))
+        $this->commentLogRepository->addLog(
+            $entityId, $logType, getIP(), getUA(),
+            json_encode(['report_user_id' => $reportUserId])
         );
 
         $id = $comment['id'];
         $ocId = $comment['open_chat_id'];
-        $commentText = $comment['text'];
-        $reporterHash = substr(hash('sha256', $report_user_id), 0, 7);
-        $posterHash = substr(hash('sha256', $comment['user_id'] ?? ''), 0, 7);
+        $reporter = $this->buildUserInfo($reportUserId);
+        $poster = $this->buildPosterInfo($comment);
+        $roomInfo = $this->buildRoomInfo($ocId);
 
-        // 部屋情報を取得
-        $oc = $ocRepo->getOpenChatById($ocId);
-        $roomInfo = $oc
-            ? "{$oc['name']} (ID: {$ocId}, 👥{$oc['member']}人, " . getCategoryName((int)($oc['category'] ?? 0)) . ")"
-            : "ID: {$ocId}";
+        $base = "admin-api/deletecomment?openExternalBrowser=1&id={$ocId}&commentId={$id}";
+        $isImage = $logType === CommentLogType::ImageReport;
 
-        // コメント投稿者のIP/UAをlogテーブルから取得
-        $posterLog = $commentLogRepository->findAddCommentLog($comment['comment_id']);
-        $posterIp = $posterLog ? $posterLog['ip'] : '不明';
-        $posterUa = $posterLog ? $posterLog['ua'] : '不明';
-        $posterIpHash = substr(hash('sha256', $posterIp), 0, 7);
-        $posterUaHash = substr(hash('sha256', $posterUa), 0, 7);
-
-        // 投稿者の他の名前を取得
-        $posterNames = $commentLogRepository->findRecentNamesByUserIdOrIp($comment['user_id'] ?? '', $posterIp);
-        $posterNameStr = '**' . ($comment['name'] ?: '匿名') . '**';
-        $otherPosterNames = array_filter($posterNames, fn($n) => $n !== $comment['name']);
-        if (!empty($otherPosterNames)) {
-            $posterNameStr .= ', ' . implode(', ', $otherPosterNames);
-        }
-
-        $reporterIp = getIP();
-        $reporterUa = getUA();
-        $reporterIpHash = substr(hash('sha256', $reporterIp), 0, 7);
-        $reporterUaHash = substr(hash('sha256', $reporterUa), 0, 7);
-
-        // 通報者の最近の書き込みから名前を取得
-        $reporterNames = $commentLogRepository->findRecentNamesByUserIdOrIp($report_user_id, $reporterIp);
-        $reporterNameStr = !empty($reporterNames) ? implode(', ', $reporterNames) : '';
-
-        $deleteUrl = url(
-            "admin-api/deletecomment?openExternalBrowser=1&id={$ocId}&commentId={$id}&flag=2"
-        );
-        $roomUrl = url("oc/{$ocId}/admin?openExternalBrowser=1");
+        $deleteImageLine = $isImage
+            ? "> 🖼️ [画像のみ削除](" . url("{$base}&flag=4") . ")\n"
+            : '';
 
         AdminTool::sendDiscordNotify(
-            "📢 **コメント通報**\n"
-            . "\n**ルーム**\n"
-            . "{$roomInfo}\n"
-            . "\n**コメント #{$id}**\n"
-            . "{$commentText}\n"
-            . "\n**投稿者**\n"
-            . "- 名前: {$posterNameStr}\n"
-            . "- ID: {$posterHash}\n"
-            . "- IP-hash: {$posterIpHash}\n"
-            . "  - IP: {$posterIp}\n"
-            . "- UA-hash: {$posterUaHash}\n"
-            . "  - UA: {$posterUa}\n"
-            . "\n**通報者**\n"
-            . ($reporterNameStr ? "- 名前: {$reporterNameStr}\n" : '')
-            . "- ID: {$reporterHash}\n"
-            . "- IP-hash: {$reporterIpHash}\n"
-            . "  - IP: {$reporterIp}\n"
-            . "- UA-hash: {$reporterUaHash}\n"
-            . "  - UA: {$reporterUa}\n"
-            . "\n🔗 [削除する]({$deleteUrl}) | [ルーム管理]({$roomUrl})"
+            ($isImage ? "🖼️ **画像通報**" : "📢 **コメント通報**") . "\n"
+            . "\n**ルーム**\n{$roomInfo}\n"
+            . "\n**コメント #{$id}**\n{$comment['text']}\n"
+            . $this->formatPosterSection($poster)
+            . $this->formatReporterSection($reporter)
+            . "\n{$deleteImageLine}"
+            . "> 🔇 [シャドウ削除](" . url("{$base}&flag=1") . ")\n"
+            . "> 🗑️ [通常削除](" . url("{$base}&flag=5") . ")\n"
+            . "> ❌ [完全削除](" . url("{$base}&flag=3") . ")\n"
+            . "> 🚫 [ユーザーシャドウバン](" . url("admin-api/deleteuser?openExternalBrowser=1&id={$ocId}&commentId={$id}") . ")\n"
+            . "> 🏠 [ルーム管理](" . url("oc/{$ocId}/admin?openExternalBrowser=1") . ")\n"
+            . "> 📋 [操作ログ](" . url("admin/log/admin-action?openExternalBrowser=1") . ")"
+            . ($imageUrl ? "\n{$imageUrl}" : '')
         );
 
         return response(['success' => true]);
+    }
+
+    private function validateReporter(string $token): string|false
+    {
+        $this->googleReCaptcha->validate($token, 0.5);
+        $reportUserId = $this->auth->loginCookieUserId();
+
+        if ($this->commentPostRepository->getBanUser($reportUserId, getIP())) {
+            return false;
+        }
+
+        return $reportUserId;
+    }
+
+    private function isDuplicateReport(int $entityId, CommentLogType $type, string $reportUserId): bool
+    {
+        if (!AppConfig::$skipDuplicateReport) {
+            return false;
+        }
+
+        return $this->commentLogRepository->findReportLog(
+            $entityId, $type, json_encode(['report_user_id' => $reportUserId])
+        );
+    }
+
+    private function buildUserInfo(string $userId): array
+    {
+        $ip = getIP();
+        $ua = getUA();
+        $names = $this->commentLogRepository->findRecentNamesByUserIdOrIp($userId, $ip);
+
+        return [
+            'hash' => substr(hash('sha256', $userId), 0, 7),
+            'ipHash' => substr(hash('sha256', $ip), 0, 7),
+            'uaHash' => substr(hash('sha256', $ua), 0, 7),
+            'ip' => $ip,
+            'ua' => $ua,
+            'nameStr' => !empty($names) ? implode(', ', $names) : '',
+        ];
+    }
+
+    private function buildPosterInfo(array $comment): array
+    {
+        $posterLog = $this->commentLogRepository->findAddCommentLog($comment['comment_id']);
+        $ip = $posterLog ? $posterLog['ip'] : '不明';
+        $ua = $posterLog ? $posterLog['ua'] : '不明';
+        $userId = $comment['user_id'] ?? '';
+
+        $names = $this->commentLogRepository->findRecentNamesByUserIdOrIp($userId, $ip);
+        $nameStr = '**' . ($comment['name'] ?: '匿名') . '**';
+        $otherNames = array_filter($names, fn($n) => $n !== $comment['name']);
+        if (!empty($otherNames)) {
+            $nameStr .= ', ' . implode(', ', $otherNames);
+        }
+
+        return [
+            'hash' => substr(hash('sha256', $userId), 0, 7),
+            'ipHash' => substr(hash('sha256', $ip), 0, 7),
+            'uaHash' => substr(hash('sha256', $ua), 0, 7),
+            'ip' => $ip,
+            'ua' => $ua,
+            'nameStr' => $nameStr,
+        ];
+    }
+
+    private function buildRoomInfo(int $ocId): string
+    {
+        $oc = $this->ocRepo->getOpenChatById($ocId);
+        return $oc
+            ? "{$oc['name']} (ID: {$ocId}, 👥{$oc['member']}人, " . getCategoryName((int)($oc['category'] ?? 0)) . ")"
+            : "ID: {$ocId}";
+    }
+
+    private function formatPosterSection(array $info): string
+    {
+        return "\n**投稿者**\n"
+            . "- 名前: {$info['nameStr']}\n"
+            . "- ID: {$info['hash']}\n"
+            . "- IP-hash: {$info['ipHash']}\n"
+            . "  - IP: {$info['ip']}\n"
+            . "- UA-hash: {$info['uaHash']}\n"
+            . "  - UA: {$info['ua']}\n";
+    }
+
+    private function formatReporterSection(array $info): string
+    {
+        return "\n**通報者**\n"
+            . ($info['nameStr'] ? "- 名前: {$info['nameStr']}\n" : '')
+            . "- ID: {$info['hash']}\n"
+            . "- IP-hash: {$info['ipHash']}\n"
+            . "  - IP: {$info['ip']}\n"
+            . "- UA-hash: {$info['uaHash']}\n"
+            . "  - UA: {$info['ua']}\n";
     }
 }

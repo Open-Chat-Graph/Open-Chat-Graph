@@ -125,9 +125,9 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
             $id
         );
 
-        // 全コメントをflag=5に更新
+        // 全コメントをflag=5に更新（flag=2通報,4画像削除は除外、flag=5は既に対象状態）
         return CommentDB::execute(
-            "UPDATE comment SET flag = 5 WHERE open_chat_id = :open_chat_id AND flag NOT IN (1, 2, 4)",
+            "UPDATE comment SET flag = 5 WHERE open_chat_id = :open_chat_id AND flag NOT IN (2, 4, 5)",
             $id
         )->rowCount();
     }
@@ -140,6 +140,14 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         )->rowCount();
     }
 
+    function restoreDeletedComments(int $open_chat_id): int
+    {
+        return CommentDB::execute(
+            "UPDATE comment SET flag = 0 WHERE open_chat_id = :open_chat_id AND flag IN (1, 2, 4, 5)",
+            compact('open_chat_id')
+        )->rowCount();
+    }
+
     function getSoftDeletedCommentImageFilenames(int $open_chat_id): array
     {
         return array_column(
@@ -147,6 +155,19 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
                 "SELECT ci.filename FROM comment_image AS ci
                  JOIN comment AS c ON ci.comment_id = c.comment_id
                  WHERE c.open_chat_id = :open_chat_id AND c.flag = 5",
+                compact('open_chat_id')
+            ),
+            'filename'
+        );
+    }
+
+    function getDeletedCommentImageFilenames(int $open_chat_id): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT ci.filename FROM comment_image AS ci
+                 JOIN comment AS c ON ci.comment_id = c.comment_id
+                 WHERE c.open_chat_id = :open_chat_id AND c.flag IN (1, 2, 4, 5)",
                 compact('open_chat_id')
             ),
             'filename'
@@ -173,6 +194,97 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
                         OR lt.ip = :ip
                 )",
             compact('open_chat_id', 'user_id', 'ip')
+        )->rowCount();
+    }
+
+    /** @return int[] */
+    function getCommentIdsByOpenChatId(int $openChatId, array $excludeFlags): array
+    {
+        $params = ['openChatId' => $openChatId];
+
+        if (empty($excludeFlags)) {
+            $query = "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId";
+        } else {
+            $placeholders = [];
+            foreach (array_values($excludeFlags) as $i => $flag) {
+                $key = "flag{$i}";
+                $placeholders[] = ":{$key}";
+                $params[$key] = $flag;
+            }
+            $in = implode(',', $placeholders);
+            $query = "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag NOT IN ({$in})";
+        }
+
+        return array_column(
+            CommentDB::fetchAll($query, $params),
+            'comment_id'
+        );
+    }
+
+    /** @return int[] */
+    function getSoftDeletedCommentIds(int $openChatId): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag = 5",
+                compact('openChatId')
+            ),
+            'comment_id'
+        );
+    }
+
+    /** @return int[] */
+    function getDeletedCommentIds(int $openChatId): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag IN (1, 2, 4, 5)",
+                compact('openChatId')
+            ),
+            'comment_id'
+        );
+    }
+
+    function shadowDeleteAllComments(int $open_chat_id): int
+    {
+        $id = compact('open_chat_id');
+
+        // いいね削除
+        CommentDB::execute(
+            "DELETE FROM `like` WHERE comment_id IN (
+                SELECT comment_id FROM comment WHERE open_chat_id = :open_chat_id
+            )",
+            $id
+        );
+
+        // 全コメントをflag=1に更新（flag=2通報,4画像削除は除外、flag=1は既に対象状態）
+        return CommentDB::execute(
+            "UPDATE comment SET flag = 1 WHERE open_chat_id = :open_chat_id AND flag NOT IN (1, 2, 4)",
+            $id
+        )->rowCount();
+    }
+
+    function restoreCommentsByUserIdAndIp(string $user_id, string $ip): int
+    {
+        return CommentDB::execute(
+            "UPDATE
+                comment
+            SET
+                flag = 0
+            WHERE
+                flag = 1
+                AND comment_id IN (
+                    SELECT
+                        t1.comment_id
+                    FROM
+                        (SELECT * FROM comment WHERE flag = 1) AS t1
+                        JOIN `log` AS lt ON t1.comment_id = lt.entity_id
+                        AND lt.type = 'AddComment'
+                    WHERE
+                        t1.user_id = :user_id
+                        OR lt.ip = :ip
+                )",
+            compact('user_id', 'ip')
         )->rowCount();
     }
 

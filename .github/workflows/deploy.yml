@@ -166,6 +166,25 @@ jobs:
           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
           echo "Frontend deploy complete"
 
+      - name: Notify Discord (deploy success)
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
+          SITE_URL: ${{ steps.config.outputs.tweet_url }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            MSG=$(printf "🚀 プルリクエストがマージされ、%s\n\n#%s: %s\nBy @%s\n\n#オプチャグラフ %s\n\n%s" \
+              "$TWEET_MSG" "$PR_NUM" "$PR_TITLE" "$PR_AUTHOR" "$SITE_URL" "$PR_URL")
+          else
+            MSG=$(printf "🚀 手動デプロイが完了しました\n\n#オプチャグラフ %s" "$SITE_URL")
+          fi
+          jq -n --arg msg "$MSG" '{content: $msg}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+
       - name: Install twitter-api-v2
         if: |
           github.event_name == 'pull_request' &&
@@ -233,3 +252,23 @@ jobs:
           TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
           SITE_URL: ${{ steps.config.outputs.tweet_url }}
         run: node post-pr-merge.js
+
+      - name: Notify Discord (deploy failure)
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            DESC="#${PR_NUM}: ${PR_TITLE}"
+          else
+            DESC="手動実行 (workflow_dispatch)"
+          fi
+
+          jq -n \
+            --arg desc "$DESC" \
+            --arg url "$RUN_URL" \
+            '{embeds: [{title: "❌ デプロイ失敗", description: ($desc + "\n\n[→ Actions ログを確認](" + $url + ")"), color: 15158332}]}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"

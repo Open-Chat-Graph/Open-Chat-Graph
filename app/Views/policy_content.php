@@ -138,6 +138,44 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 </p>
 
                 <h2 style="margin-bottom: 2rem;">オプチャグラフに関する情報共有・コメント</h2>
+                <a id="admin-gear-btn" href="<?php echo url('oc/0/admin') ?>#comments" style="display: none; align-items: center; justify-content: center; width: 36px; height: 36px; margin-top: -1.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+                <script>if(document.cookie.split('; ').find(r=>r.startsWith('admin-enable='))){document.getElementById('admin-gear-btn').style.display='flex'}</script>
+
+                <?php if (isset($_adminDto)): ?>
+                    <div style="padding: 1rem; margin: 0 0 1rem; border: 1px solid #ccc;">
+                        <form action="/admin-api/deletecomment" method="POST" style="margin: 1rem 0;">
+                            <label for="comments-delete">コメントのフラグを変更</label>
+                            <select name="commentId" id="comments-delete" style="width: 5rem; font-size:1rem">
+                                <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
+                                    <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <label for="delete-flag">Flag</label>
+                            <?php $flagLabels = \App\Config\AppConfig::COMMENT_FLAG_LABELS; ?>
+                            <select name="flag" id="delete-flag" style="width: 5rem; font-size:1rem">
+                                <?php foreach ([1, 2, 5, 4, 0, 3] as $v): ?>
+                                    <option value="<?php echo $v ?>"><?php echo $flagLabels[$v] ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+                            <input type="submit">
+                        </form>
+                        <form action="/admin-api/deleteuser" method="POST" style="margin: 1rem 0;">
+                            <label for="user-delete">ユーザーをシャドウバン</label>
+                            <select name="commentId" id="user-delete" style="width: 5rem; font-size:1rem">
+                                <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
+                                    <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+                            <input type="submit">
+                        </form>
+                        <div style="margin: 1rem 0;">
+                            <a href="<?php echo url('admin/log/admin-action') ?>" target="_blank">操作ログ</a>
+                        </div>
+                    </div>
+                <?php endif ?>
+
                 <div style="min-height: 400px;">
                     <div id="comment-root"></div>
                 </div>
