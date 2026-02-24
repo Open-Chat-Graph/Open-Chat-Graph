@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\SecretsConfig;
 use App\Models\CommentRepositories\CommentImageRepositoryInterface;
+use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
 use App\Models\CommentRepositories\DeleteCommentRepositoryInterface;
+use App\Models\CommentRepositories\Enum\CommentLogType;
 use App\Services\Admin\AdminAuthService;
 use App\Services\Admin\AdminTool;
+use App\Services\Comment\CommentImageService;
 use App\Services\Comment\CommentImageServiceInterface;
 use App\Services\OpenChatAdmin\AdminEndPoint;
 use ExceptionHandler\ExceptionHandler;
@@ -51,22 +53,29 @@ class AdminEndPointController
         int $flag,
         DeleteCommentRepositoryInterface $deleteCommentRepository,
         CommentImageRepositoryInterface $commentImageRepository,
-        CommentImageServiceInterface $commentImageService
+        CommentImageServiceInterface $commentImageService,
+        CommentLogRepositoryInterface $commentLogRepository
     ) {
-        // 物理削除の場合、コメントが消える前にcomment_idを取得して画像も削除
-        if ($flag === 3) {
-            $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
-            if ($comment_id) {
-                $filenames = $commentImageRepository->deleteByCommentId($comment_id);
-                if (!empty($filenames)) {
-                    $commentImageService->deleteImages($filenames);
-                }
+        // ログ用にcomment_idを事前取得
+        $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
+
+        // 物理削除の場合、コメントが消える前に画像も削除
+        if ($flag === 3 && $comment_id) {
+            $filenames = $commentImageRepository->deleteByCommentId($comment_id);
+            if (!empty($filenames)) {
+                $commentImageService->deleteImages($filenames);
             }
         }
 
         $result = $deleteCommentRepository->deleteCommentByOcId($id, $commentId, $flag !== 3 ? $flag : null);
         if (!$result) {
             return view('admin/admin_message_page', ['title' => 'コメント削除', 'message' => '削除されたコメントはありません']);
+        }
+
+        // 管理者操作ログ記録
+        if ($comment_id) {
+            $type = $flag === 0 ? CommentLogType::AdminRestore : CommentLogType::AdminDelete;
+            $commentLogRepository->addAdminLogs([$comment_id], $type);
         }
 
         if ($flag > 0 && $flag !== 4) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
@@ -104,7 +113,8 @@ class AdminEndPointController
         int $commentId,
         int $id,
         CommentPostRepositoryInterface $commentPostRepo,
-        DeleteCommentRepositoryInterface $deleteCommentRepository
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentLogRepositoryInterface $commentLogRepository
     ) {
         $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
         if (!$comment_id) {
@@ -115,6 +125,9 @@ class AdminEndPointController
         if (!$result) {
             return view('admin/admin_message_page', ['title' => 'ユーザー削除', 'message' => '削除されたユーザーはいません']);
         }
+
+        // 管理者操作ログ記録
+        $commentLogRepository->addAdminLogs([$comment_id], CommentLogType::AdminBanUser);
 
         $deleteCommentRepository->deleteCommentByUserIdAndIpAll($result['user_id'], $result['ip']);
 
@@ -147,10 +160,19 @@ class AdminEndPointController
         int $id,
         DeleteCommentRepositoryInterface $deleteCommentRepository,
         CommentImageRepositoryInterface $commentImageRepository,
-        CommentImageServiceInterface $commentImageService
+        CommentImageServiceInterface $commentImageService,
+        CommentLogRepositoryInterface $commentLogRepository
     ) {
+        // ログ用に影響するcomment_idを事前取得（flag=1,2,4は除外 = softDeleteAllCommentsと同じ条件）
+        $affectedIds = $deleteCommentRepository->getCommentIdsByOpenChatId($id, [1, 2, 4]);
+
         $filenames = $deleteCommentRepository->getCommentImageFilenames($id);
         $count = $deleteCommentRepository->softDeleteAllComments($id);
+
+        // 管理者操作ログ記録
+        if (!empty($affectedIds)) {
+            $commentLogRepository->addAdminLogs($affectedIds, CommentLogType::AdminBulkDelete);
+        }
 
         if (!empty($filenames)) {
             $commentImageService->hideImages($filenames);
@@ -173,11 +195,20 @@ class AdminEndPointController
         int $id,
         DeleteCommentRepositoryInterface $deleteCommentRepository,
         CommentImageRepositoryInterface $commentImageRepository,
-        CommentImageServiceInterface $commentImageService
+        CommentImageServiceInterface $commentImageService,
+        CommentLogRepositoryInterface $commentLogRepository
     ) {
+        // ログ用にflag=5のcomment_idを事前取得
+        $affectedIds = $deleteCommentRepository->getSoftDeletedCommentIds($id);
+
         // flag=5のコメントに紐づく画像を復元
         $filenames = $deleteCommentRepository->getSoftDeletedCommentImageFilenames($id);
         $count = $deleteCommentRepository->restoreSoftDeletedComments($id);
+
+        // 管理者操作ログ記録
+        if (!empty($affectedIds)) {
+            $commentLogRepository->addAdminLogs($affectedIds, CommentLogType::AdminBulkRestore);
+        }
 
         if (!empty($filenames)) {
             $commentImageService->restoreImages($filenames);
@@ -238,5 +269,36 @@ class AdminEndPointController
 
         $count = count($filenames);
         return view('admin/admin_message_page', ['title' => '画像一括削除', 'message' => "{$count}件の画像を削除しました"]);
+    }
+
+    /**
+     * 削除済み画像配信API（管理者専用）
+     */
+    function commentImage(string $filename)
+    {
+        // ファイル名のバリデーション（hex32文字 + .webp）
+        if (!preg_match('/^[a-f0-9]+\.webp$/', $filename)) {
+            return response('Invalid filename', 400);
+        }
+
+        // public側を探す
+        $path = CommentImageService::getImagePath($filename);
+        if (file_exists($path)) {
+            header('Content-Type: image/webp');
+            header('Cache-Control: private, max-age=86400');
+            readfile($path);
+            exit;
+        }
+
+        // hidden側を探す
+        $path = CommentImageService::getHiddenImagePath($filename);
+        if (file_exists($path)) {
+            header('Content-Type: image/webp');
+            header('Cache-Control: private, max-age=86400');
+            readfile($path);
+            exit;
+        }
+
+        return response('Image not found', 404);
     }
 }
