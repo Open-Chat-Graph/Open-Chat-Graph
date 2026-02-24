@@ -576,6 +576,13 @@ Route::path(
     ->matchNum('id');
 
 Route::path(
+    'admin-api/restorecommentsall@post',
+    [AdminEndPointController::class, 'restorecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
     'oc/{open_chat_id}/admin',
     [OpenChatPageController::class, 'index']
 )

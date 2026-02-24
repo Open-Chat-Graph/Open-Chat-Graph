@@ -132,6 +132,27 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         )->rowCount();
     }
 
+    function restoreSoftDeletedComments(int $open_chat_id): int
+    {
+        return CommentDB::execute(
+            "UPDATE comment SET flag = 0 WHERE open_chat_id = :open_chat_id AND flag = 5",
+            compact('open_chat_id')
+        )->rowCount();
+    }
+
+    function getSoftDeletedCommentImageFilenames(int $open_chat_id): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT ci.filename FROM comment_image AS ci
+                 JOIN comment AS c ON ci.comment_id = c.comment_id
+                 WHERE c.open_chat_id = :open_chat_id AND c.flag = 5",
+                compact('open_chat_id')
+            ),
+            'filename'
+        );
+    }
+
     function deleteLikeByUserIdAndIp(int $open_chat_id, string $user_id, string $ip): int
     {
         return CommentDB::execute(

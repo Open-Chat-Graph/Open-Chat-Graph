@@ -169,6 +169,33 @@ class AdminEndPointController
         return redirect("oc/{$id}/admin");
     }
 
+    function restorecommentsall(
+        int $id,
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService
+    ) {
+        // flag=5のコメントに紐づく画像を復元
+        $filenames = $deleteCommentRepository->getSoftDeletedCommentImageFilenames($id);
+        $count = $deleteCommentRepository->restoreSoftDeletedComments($id);
+
+        if (!empty($filenames)) {
+            $commentImageService->restoreImages($filenames);
+        }
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
+
+        return redirect("oc/{$id}/admin");
+    }
+
     function deleteCommentImage(
         int $imageId,
         CommentImageRepositoryInterface $commentImageRepository,
