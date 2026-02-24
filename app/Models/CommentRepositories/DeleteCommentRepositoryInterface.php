@@ -19,4 +19,10 @@ interface DeleteCommentRepositoryInterface
     function deleteLikeByUserIdAndIp(int $open_chat_id, string $user_id, string $ip): int;
     function deleteCommentByUserIdAndIpAll(string $user_id, string $ip): void;
     function getCommentId(int $open_chat_id, int $id): int|false;
+
+    /** @return int[] comment_ids with flag NOT IN excludeFlags */
+    function getCommentIdsByOpenChatId(int $openChatId, array $excludeFlags): array;
+
+    /** @return int[] comment_ids with flag=5 */
+    function getSoftDeletedCommentIds(int $openChatId): array;
 }

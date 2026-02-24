@@ -20,7 +20,7 @@ class CommentImageThumbnailController
         }
 
         $flag = $commentImageRepository->getCommentFlagByFilename($filename);
-        if ($flag !== false && in_array($flag, [1, 2, 4])) {
+        if ($flag !== false && in_array($flag, [2, 4])) {
             return false;
         }
 

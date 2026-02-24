@@ -6,7 +6,6 @@ use App\Controllers\Api\AdminEndPointController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
-use App\Controllers\Api\CommentImageReportApiController;
 use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
@@ -18,6 +17,7 @@ use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
+use App\Controllers\Pages\AdminCommentLogController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -442,7 +442,7 @@ Route::path(
 // 通報API
 Route::path(
     'comment_report/{comment_id}@post',
-    [CommentReportApiController::class, 'index']
+    [CommentReportApiController::class, 'reportComment']
 )
     ->matchNum('comment_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -458,7 +458,7 @@ Route::path(
 // 画像通報API
 Route::path(
     'comment_image_report/{image_id}@post',
-    [CommentImageReportApiController::class, 'index']
+    [CommentReportApiController::class, 'reportImage']
 )
     ->matchNum('image_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -495,6 +495,19 @@ Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetai
 
         $adminAuthService->auth();
         noStore();
+    });
+
+// 管理者操作ログ
+Route::path('admin/log/admin-action', [AdminCommentLogController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
+Route::path('admin/log/admin-action/detail', [AdminCommentLogController::class, 'detail'])
+    ->matchNum('id', min: 1)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
@@ -581,6 +594,13 @@ Route::path(
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
+
+Route::path(
+    'admin-api/comment-image@get',
+    [AdminEndPointController::class, 'commentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('filename');
 
 Route::path(
     'oc/{open_chat_id}/admin',
