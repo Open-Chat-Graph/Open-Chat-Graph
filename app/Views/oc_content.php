@@ -3,11 +3,10 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
-$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+$enableAdsense = !isset($_adminDto);
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']); ?>
 
