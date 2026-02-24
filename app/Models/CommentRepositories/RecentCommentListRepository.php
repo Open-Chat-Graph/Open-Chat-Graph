@@ -103,7 +103,10 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
 
     public function getLatestCommentTime(): string|false
     {
-        $query = "SELECT MAX(time) FROM comment";
+        $query = "SELECT GREATEST(
+            COALESCE((SELECT MAX(time) FROM comment), '0'),
+            COALESCE((SELECT data FROM `log` WHERE `type` LIKE 'Admin%' ORDER BY id DESC LIMIT 1), '0')
+        )";
         return CommentDB::fetchColumn($query) ?? false;
     }
 

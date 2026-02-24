@@ -176,6 +176,38 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
         )->rowCount();
     }
 
+    /** @return int[] */
+    function getCommentIdsByOpenChatId(int $openChatId, array $excludeFlags): array
+    {
+        $params = ['openChatId' => $openChatId];
+        $placeholders = [];
+        foreach (array_values($excludeFlags) as $i => $flag) {
+            $key = "flag{$i}";
+            $placeholders[] = ":{$key}";
+            $params[$key] = $flag;
+        }
+
+        $in = implode(',', $placeholders);
+        $query = "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag NOT IN ({$in})";
+
+        return array_column(
+            CommentDB::fetchAll($query, $params),
+            'comment_id'
+        );
+    }
+
+    /** @return int[] */
+    function getSoftDeletedCommentIds(int $openChatId): array
+    {
+        return array_column(
+            CommentDB::fetchAll(
+                "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag = 5",
+                compact('openChatId')
+            ),
+            'comment_id'
+        );
+    }
+
     function deleteCommentByUserIdAndIpAll(string $user_id, string $ip): void
     {
         CommentDB::execute(
