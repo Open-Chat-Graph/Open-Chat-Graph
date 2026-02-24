@@ -17,6 +17,7 @@ use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
+use App\Controllers\Pages\AdminBanUserController;
 use App\Controllers\Pages\AdminCommentLogController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
@@ -530,6 +531,13 @@ Route::path('admin/comment-images', [AdminCommentImageController::class, 'commen
         noStore();
     });
 
+// シャドウバンユーザー一覧
+Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
     ->match(function () {
@@ -615,6 +623,13 @@ Route::path(
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
+
+Route::path(
+    'admin-api/unbanuser@post@get',
+    [AdminEndPointController::class, 'unbanuser']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('banId');
 
 Route::path(
     'admin-api/comment-image@get',

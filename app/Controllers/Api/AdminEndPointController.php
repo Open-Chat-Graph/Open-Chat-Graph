@@ -457,6 +457,40 @@ class AdminEndPointController
         return redirect("oc/{$id}/admin");
     }
 
+    function unbanuser(
+        int $banId,
+        CommentPostRepositoryInterface $commentPostRepo,
+        DeleteCommentRepositoryInterface $deleteCommentRepository
+    ) {
+        $confirm = $this->requireConfirmation(
+            "シャドウバン解除確認",
+            "バンID: {$banId} のユーザーのシャドウバンを解除します。\nシャドウ削除されたコメント(flag=1)が復元されます。",
+            'admin-api/unbanuser',
+            ['banId' => $banId],
+            url('admin/ban-users')
+        );
+        if ($confirm) return $confirm;
+
+        $result = $commentPostRepo->removeBanUser($banId);
+        if (!$result) {
+            return view('admin/admin_message_page', ['title' => 'バン解除', 'message' => '該当するバンユーザーが見つかりません']);
+        }
+
+        $restored = $deleteCommentRepository->restoreCommentsByUserIdAndIp($result['user_id'], $result['ip']);
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
+
+        return redirect('admin/ban-users');
+    }
+
     /**
      * 削除済み画像配信API（管理者専用）
      */
