@@ -6,7 +6,7 @@ use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
 use App\Views\Ads\GoogleAdsense as GAd;
 
-$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+$enableAdsense = true;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>

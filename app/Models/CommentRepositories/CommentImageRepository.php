@@ -107,7 +107,7 @@ class CommentImageRepository implements CommentImageRepositoryInterface
                 LEFT JOIN comment AS c ON ci.comment_id = c.comment_id
             WHERE
                 c.comment_id IS NULL
-                OR c.flag IN (1, 2, 4)
+                OR c.flag IN (1, 2, 4, 5)
             ORDER BY
                 ci.id DESC
             LIMIT
@@ -126,7 +126,7 @@ class CommentImageRepository implements CommentImageRepositoryInterface
                 LEFT JOIN comment AS c ON ci.comment_id = c.comment_id
             WHERE
                 c.comment_id IS NULL
-                OR c.flag IN (1, 2, 4)";
+                OR c.flag IN (1, 2, 4, 5)";
 
         return (int) CommentDB::fetchColumn($query);
     }
@@ -141,7 +141,7 @@ class CommentImageRepository implements CommentImageRepositoryInterface
                 comment_image AS ci
                 JOIN comment AS c ON ci.comment_id = c.comment_id
             WHERE
-                c.flag NOT IN (1, 2, 4)
+                c.flag NOT IN (1, 2, 4, 5)
             ORDER BY
                 ci.id DESC
             LIMIT
@@ -159,7 +159,7 @@ class CommentImageRepository implements CommentImageRepositoryInterface
                 comment_image AS ci
                 JOIN comment AS c ON ci.comment_id = c.comment_id
             WHERE
-                c.flag NOT IN (1, 2, 4)";
+                c.flag NOT IN (1, 2, 4, 5)";
 
         return (int) CommentDB::fetchColumn($query);
     }

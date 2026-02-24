@@ -62,4 +62,18 @@ class CommentLogRepository implements CommentLogRepositoryInterface
 
         return CommentDB::fetch($query, compact('comment_id'));
     }
+
+    function findRecentNamesByUserIdOrIp(string $user_id, string $ip): array
+    {
+        $query =
+            "SELECT DISTINCT c.name
+            FROM comment c
+            LEFT JOIN log l ON l.entity_id = c.comment_id AND l.type = 'AddComment'
+            WHERE (c.user_id = :user_id OR l.ip = :ip)
+            AND c.name != ''
+            ORDER BY c.comment_id DESC
+            LIMIT 10";
+
+        return CommentDB::fetchAll($query, compact('user_id', 'ip'), [\PDO::FETCH_COLUMN, 0]);
+    }
 }

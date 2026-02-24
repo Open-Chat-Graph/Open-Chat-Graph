@@ -69,10 +69,10 @@ class AdminEndPointController
             return view('admin/admin_message_page', ['title' => 'コメント削除', 'message' => '削除されたコメントはありません']);
         }
 
-        if ($flag > 0 && $flag < 4) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
+        if ($flag > 0 && $flag !== 4) $deleteCommentRepository->deleteLikeByUserIdAndIp($id, $result['user_id'], $result['ip']);
 
         // flag=2,4: 画像をpublic外に移動、flag=0: 画像をpublicに復元
-        if (in_array($flag, [0, 2, 4], true)) {
+        if (in_array($flag, [0, 2, 4, 5], true)) {
             $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
             if ($comment_id) {
                 $images = $commentImageRepository->getImagesByCommentId($comment_id);
@@ -138,6 +138,59 @@ class AdminEndPointController
         $result = $commentPostRepo->addBanRoom($id);
         if (!$result) {
             return view('admin/admin_message_page', ['title' => '存在しない部屋です', 'message' => '存在しない部屋です']);
+        }
+
+        return redirect("oc/{$id}/admin");
+    }
+
+    function deletecommentsall(
+        int $id,
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService
+    ) {
+        $filenames = $deleteCommentRepository->getCommentImageFilenames($id);
+        $count = $deleteCommentRepository->softDeleteAllComments($id);
+
+        if (!empty($filenames)) {
+            $commentImageService->hideImages($filenames);
+        }
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
+
+        return redirect("oc/{$id}/admin");
+    }
+
+    function restorecommentsall(
+        int $id,
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService
+    ) {
+        // flag=5のコメントに紐づく画像を復元
+        $filenames = $deleteCommentRepository->getSoftDeletedCommentImageFilenames($id);
+        $count = $deleteCommentRepository->restoreSoftDeletedComments($id);
+
+        if (!empty($filenames)) {
+            $commentImageService->restoreImages($filenames);
+        }
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
         }
 
         return redirect("oc/{$id}/admin");

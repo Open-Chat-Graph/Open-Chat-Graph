@@ -29,6 +29,7 @@
         <select name="flag" id="delete-flag" style="width: 5rem; font-size:1rem">
             <option value="1">削除</option>
             <option value="2">通報</option>
+            <option value="5">通常削除</option>
             <option value="4">画像削除</option>
             <option value="0">復元</option>
             <option value="3">完全削除</option>
@@ -45,6 +46,14 @@
         </select>
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
         <input type="submit">
+    </form>
+    <form onsubmit="return confirm('このオープンチャットの全コメントを削除しますか？')" action="/admin-api/deletecommentsall" method="POST" style="margin: 1rem 0;">
+        <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+        <input type="submit" value="全コメントを削除（通常削除）">
+    </form>
+    <form onsubmit="return confirm('通常削除されたコメントを全て復元しますか？')" action="/admin-api/restorecommentsall" method="POST" style="margin: 1rem 0;">
+        <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+        <input type="submit" value="通常削除を一斉復元">
     </form>
     <form onsubmit="return confirm('コメントを１週間禁止しますか？')" action="/admin-api/commentbanroom" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
