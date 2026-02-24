@@ -16,13 +16,14 @@ enum CommentLogType: string
     case AdminBanUser = 'AdminBanUser';
     case AdminBulkDelete = 'AdminBulkDelete';
     case AdminBulkRestore = 'AdminBulkRestore';
+    case AdminBulkBanUsers = 'AdminBulkBanUsers';
 
     /** admin系typeかどうか */
     public function isAdmin(): bool
     {
         return match ($this) {
             self::AdminDelete, self::AdminRestore, self::AdminBanUser,
-            self::AdminBulkDelete, self::AdminBulkRestore => true,
+            self::AdminBulkDelete, self::AdminBulkRestore, self::AdminBulkBanUsers => true,
             default => false,
         };
     }
@@ -36,6 +37,7 @@ enum CommentLogType: string
             self::AdminBanUser->value,
             self::AdminBulkDelete->value,
             self::AdminBulkRestore->value,
+            self::AdminBulkBanUsers->value,
         ];
     }
 
@@ -47,6 +49,7 @@ enum CommentLogType: string
             self::AdminBanUser => 'シャドウバン',
             self::AdminBulkDelete => '一括削除',
             self::AdminBulkRestore => '一括復元',
+            self::AdminBulkBanUsers => '一斉シャドウバン',
             default => $this->value,
         };
     }

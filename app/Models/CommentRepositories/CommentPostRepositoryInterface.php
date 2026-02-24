@@ -12,4 +12,7 @@ interface CommentPostRepositoryInterface
     /** @return array{ user_id:string,ip:string }|false */
     function addBanUser(int $comment_id): array|false;
     function getBanUser(string $user_id, string $ip): string|false;
+    function addBanUsersInRoom(int $open_chat_id): int;
+    function removeBanRoom(int $open_chat_id): bool;
+    function getBanRoomExpiry(int $open_chat_id): string|false;
 }

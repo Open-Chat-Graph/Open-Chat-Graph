@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
@@ -24,6 +25,21 @@ class AdminEndPointController
         if (!$adminAuthService->auth()) {
             throw new NotFoundException;
         }
+    }
+
+    private function requireConfirmation(string $title, string $description, string $action, array $params, ?string $cancelUrl = null)
+    {
+        if (!empty($_REQUEST['confirmed'])) {
+            return null;
+        }
+
+        return view('admin/admin_confirm_page', [
+            'title' => $title,
+            'description' => $description,
+            'action' => url($action),
+            'params' => $params,
+            'cancelUrl' => $cancelUrl ?? '/',
+        ]);
     }
 
     function index(string $type, string $id, AdminEndPoint $adminEndPoint)
@@ -56,6 +72,16 @@ class AdminEndPointController
         CommentImageServiceInterface $commentImageService,
         CommentLogRepositoryInterface $commentLogRepository
     ) {
+        $flagLabel = AppConfig::COMMENT_FLAG_LABELS[$flag] ?? "flag={$flag}";
+        $confirm = $this->requireConfirmation(
+            "コメントのフラグ変更確認",
+            "コメント #{$commentId} を「{$flagLabel}」に変更します。",
+            'admin-api/deletecomment',
+            ['id' => $id, 'commentId' => $commentId, 'flag' => $flag],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
         // ログ用にcomment_idを事前取得
         $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
 
@@ -116,6 +142,15 @@ class AdminEndPointController
         DeleteCommentRepositoryInterface $deleteCommentRepository,
         CommentLogRepositoryInterface $commentLogRepository
     ) {
+        $confirm = $this->requireConfirmation(
+            "ユーザーシャドウバン確認",
+            "コメント #{$commentId} の投稿者をシャドウバンします。\n該当ユーザーの全コメントがシャドウ削除されます。",
+            'admin-api/deleteuser',
+            ['id' => $id, 'commentId' => $commentId],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
         $comment_id = $deleteCommentRepository->getCommentId($id, $commentId);
         if (!$comment_id) {
             return view('admin/admin_message_page', ['title' => 'ユーザー削除', 'message' => 'ユーザーがいません']);
@@ -148,10 +183,35 @@ class AdminEndPointController
 
     function commentbanroom(int $id, CommentPostRepositoryInterface $commentPostRepo)
     {
+        $confirm = $this->requireConfirmation(
+            "コメント禁止確認",
+            "このオープンチャットのコメントを1週間禁止します。",
+            'admin-api/commentbanroom',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
         $result = $commentPostRepo->addBanRoom($id);
         if (!$result) {
             return view('admin/admin_message_page', ['title' => '存在しない部屋です', 'message' => '存在しない部屋です']);
         }
+
+        return redirect("oc/{$id}/admin");
+    }
+
+    function commentunbanroom(int $id, CommentPostRepositoryInterface $commentPostRepo)
+    {
+        $confirm = $this->requireConfirmation(
+            "コメント禁止解除確認",
+            "このオープンチャットのコメント禁止を解除します。",
+            'admin-api/commentunbanroom',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
+        $commentPostRepo->removeBanRoom($id);
 
         return redirect("oc/{$id}/admin");
     }
@@ -163,8 +223,17 @@ class AdminEndPointController
         CommentImageServiceInterface $commentImageService,
         CommentLogRepositoryInterface $commentLogRepository
     ) {
-        // ログ用に影響するcomment_idを事前取得（flag=1,2,4は除外 = softDeleteAllCommentsと同じ条件）
-        $affectedIds = $deleteCommentRepository->getCommentIdsByOpenChatId($id, [1, 2, 4]);
+        $confirm = $this->requireConfirmation(
+            "全コメント通常削除確認",
+            "このオープンチャットの全コメントを通常削除（flag=5）します。",
+            'admin-api/deletecommentsall',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
+        // ログ用に影響するcomment_idを事前取得（flag=2,4,5は除外 = softDeleteAllCommentsと同じ条件）
+        $affectedIds = $deleteCommentRepository->getCommentIdsByOpenChatId($id, [2, 4, 5]);
 
         $filenames = $deleteCommentRepository->getCommentImageFilenames($id);
         $count = $deleteCommentRepository->softDeleteAllComments($id);
@@ -198,12 +267,21 @@ class AdminEndPointController
         CommentImageServiceInterface $commentImageService,
         CommentLogRepositoryInterface $commentLogRepository
     ) {
-        // ログ用にflag=5のcomment_idを事前取得
-        $affectedIds = $deleteCommentRepository->getSoftDeletedCommentIds($id);
+        $confirm = $this->requireConfirmation(
+            "全コメント復元確認",
+            "削除されたコメント（シャドウ削除・通常削除）を全て復元します。",
+            'admin-api/restorecommentsall',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
 
-        // flag=5のコメントに紐づく画像を復元
-        $filenames = $deleteCommentRepository->getSoftDeletedCommentImageFilenames($id);
-        $count = $deleteCommentRepository->restoreSoftDeletedComments($id);
+        // ログ用にflag=1,5のcomment_idを事前取得
+        $affectedIds = $deleteCommentRepository->getDeletedCommentIds($id);
+
+        // flag=1,5のコメントに紐づく画像を復元
+        $filenames = $deleteCommentRepository->getDeletedCommentImageFilenames($id);
+        $count = $deleteCommentRepository->restoreDeletedComments($id);
 
         // 管理者操作ログ記録
         if (!empty($affectedIds)) {
@@ -232,6 +310,14 @@ class AdminEndPointController
         CommentImageRepositoryInterface $commentImageRepository,
         CommentImageServiceInterface $commentImageService
     ) {
+        $confirm = $this->requireConfirmation(
+            "画像削除確認",
+            "画像ID: {$imageId} を完全削除します。",
+            'admin-api/deletecommentimage',
+            ['imageId' => $imageId],
+        );
+        if ($confirm) return $confirm;
+
         $filename = $commentImageRepository->deleteImageById($imageId);
         if (!$filename) {
             return view('admin/admin_message_page', ['title' => '画像削除', 'message' => '画像が見つかりません']);
@@ -256,6 +342,14 @@ class AdminEndPointController
         CommentImageRepositoryInterface $commentImageRepository,
         CommentImageServiceInterface $commentImageService
     ) {
+        $confirm = $this->requireConfirmation(
+            "削除済み画像一括削除確認",
+            "削除済みコメントに紐づく画像ファイルを全て物理削除します。",
+            'admin-api/deletedcommentimages',
+            [],
+        );
+        if ($confirm) return $confirm;
+
         $images = $commentImageRepository->getDeletedCommentImages(999999);
         if (empty($images)) {
             return view('admin/admin_message_page', ['title' => '画像一括削除', 'message' => '削除対象の画像はありません']);
@@ -269,6 +363,98 @@ class AdminEndPointController
 
         $count = count($filenames);
         return view('admin/admin_message_page', ['title' => '画像一括削除', 'message' => "{$count}件の画像を削除しました"]);
+    }
+
+    function harddeletecommentsall(
+        int $id,
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentImageServiceInterface $commentImageService,
+        CommentLogRepositoryInterface $commentLogRepository
+    ) {
+        $confirm = $this->requireConfirmation(
+            "全コメント完全削除確認",
+            "このオープンチャットの全コメント・画像を完全削除します。\nこの操作は元に戻せません。",
+            'admin-api/harddeletecommentsall',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
+        // ログ用に全comment_idを事前取得
+        $affectedIds = $deleteCommentRepository->getCommentIdsByOpenChatId($id, []);
+
+        $filenames = $deleteCommentRepository->deleteCommentsAll($id);
+
+        // 管理者操作ログ記録
+        if (!empty($affectedIds)) {
+            $commentLogRepository->addAdminLogs($affectedIds, CommentLogType::AdminBulkDelete);
+        }
+
+        if (!empty($filenames)) {
+            $commentImageService->deleteImages($filenames);
+        }
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
+
+        return redirect("oc/{$id}/admin");
+    }
+
+    function bulkshadowban(
+        int $id,
+        CommentPostRepositoryInterface $commentPostRepo,
+        DeleteCommentRepositoryInterface $deleteCommentRepository,
+        CommentImageRepositoryInterface $commentImageRepository,
+        CommentImageServiceInterface $commentImageService,
+        CommentLogRepositoryInterface $commentLogRepository
+    ) {
+        $confirm = $this->requireConfirmation(
+            "一斉シャドウバン確認",
+            "このオープンチャットの全投稿者をBANし、全コメントをシャドウ削除します。\n画像はhiddenに移動されます。",
+            'admin-api/bulkshadowban',
+            ['id' => $id],
+            url("oc/{$id}/admin")
+        );
+        if ($confirm) return $confirm;
+
+        // 全投稿者BAN
+        $commentPostRepo->addBanUsersInRoom($id);
+
+        // ログ用に影響するcomment_idを事前取得（flag=1,2,4は除外 = shadowDeleteAllCommentsと同じ条件）
+        $affectedIds = $deleteCommentRepository->getCommentIdsByOpenChatId($id, [1, 2, 4]);
+
+        // 全コメントシャドウ削除
+        $deleteCommentRepository->shadowDeleteAllComments($id);
+
+        // 管理者操作ログ記録
+        if (!empty($affectedIds)) {
+            $commentLogRepository->addAdminLogs($affectedIds, CommentLogType::AdminBulkBanUsers);
+        }
+
+        // 画像をhiddenに移動
+        $filenames = $deleteCommentRepository->getCommentImageFilenames($id);
+        if (!empty($filenames)) {
+            $commentImageService->hideImages($filenames);
+        }
+
+        try {
+            purgeCacheCloudFlare(files: [
+                url('recent-comment-api'),
+                url('comments-timeline'),
+            ]);
+        } catch (\RuntimeException $e) {
+            AdminTool::sendDiscordNotify($e->getMessage());
+            ExceptionHandler::errorLog($e);
+        }
+
+        return redirect("oc/{$id}/admin");
     }
 
     /**
