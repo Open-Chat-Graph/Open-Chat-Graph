@@ -57,7 +57,7 @@ class CommentReportApiController
 
         $id = $comment['id'];
         $ocId = $comment['open_chat_id'];
-        $commentText = mb_substr($comment['text'], 0, 100);
+        $commentText = $comment['text'];
         $reporterHash = substr(hash('sha256', $report_user_id), 0, 7);
         $posterHash = substr(hash('sha256', $comment['user_id'] ?? ''), 0, 7);
 
@@ -71,9 +71,25 @@ class CommentReportApiController
         $posterLog = $commentLogRepository->findAddCommentLog($comment['comment_id']);
         $posterIp = $posterLog ? $posterLog['ip'] : '不明';
         $posterUa = $posterLog ? $posterLog['ua'] : '不明';
+        $posterIpHash = substr(hash('sha256', $posterIp), 0, 7);
+        $posterUaHash = substr(hash('sha256', $posterUa), 0, 7);
+
+        // 投稿者の他の名前を取得
+        $posterNames = $commentLogRepository->findRecentNamesByUserIdOrIp($comment['user_id'] ?? '', $posterIp);
+        $posterNameStr = '**' . ($comment['name'] ?: '匿名') . '**';
+        $otherPosterNames = array_filter($posterNames, fn($n) => $n !== $comment['name']);
+        if (!empty($otherPosterNames)) {
+            $posterNameStr .= ', ' . implode(', ', $otherPosterNames);
+        }
 
         $reporterIp = getIP();
         $reporterUa = getUA();
+        $reporterIpHash = substr(hash('sha256', $reporterIp), 0, 7);
+        $reporterUaHash = substr(hash('sha256', $reporterUa), 0, 7);
+
+        // 通報者の最近の書き込みから名前を取得
+        $reporterNames = $commentLogRepository->findRecentNamesByUserIdOrIp($report_user_id, $reporterIp);
+        $reporterNameStr = !empty($reporterNames) ? implode(', ', $reporterNames) : '';
 
         $deleteUrl = url(
             "admin-api/deletecomment?openExternalBrowser=1&id={$ocId}&commentId={$id}&flag=2"
@@ -83,18 +99,23 @@ class CommentReportApiController
         AdminTool::sendDiscordNotify(
             "📢 **コメント通報**\n"
             . "\n**ルーム**\n"
-            . "- {$roomInfo}\n"
+            . "{$roomInfo}\n"
             . "\n**コメント #{$id}**\n"
-            . "- {$commentText}\n"
+            . "{$commentText}\n"
             . "\n**投稿者**\n"
-            . "- 名前: {$comment['name']}\n"
+            . "- 名前: {$posterNameStr}\n"
             . "- hash: {$posterHash}\n"
-            . "- IP: {$posterIp}\n"
-            . "- UA: {$posterUa}\n"
+            . "- IP-hash: {$posterIpHash}\n"
+            . "  - IP: {$posterIp}\n"
+            . "- UA-hash: {$posterUaHash}\n"
+            . "  - UA: {$posterUa}\n"
             . "\n**通報者**\n"
+            . ($reporterNameStr ? "- 名前: {$reporterNameStr}\n" : '')
             . "- hash: {$reporterHash}\n"
-            . "- IP: {$reporterIp}\n"
-            . "- UA: {$reporterUa}\n"
+            . "- IP-hash: {$reporterIpHash}\n"
+            . "  - IP: {$reporterIp}\n"
+            . "- UA-hash: {$reporterUaHash}\n"
+            . "  - UA: {$reporterUa}\n"
             . "\n🔗 [削除する]({$deleteUrl}) | [ルーム管理]({$roomUrl})"
         );
 
