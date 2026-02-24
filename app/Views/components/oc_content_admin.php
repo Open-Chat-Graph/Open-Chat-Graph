@@ -47,11 +47,11 @@
     </form>
     <form action="/admin-api/deletecommentsall" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
-        <input type="submit" value="全コメントを削除（通常削除）">
+        <button type="submit" style="text-align: left;">全コメントを削除<br>（通常削除）</button>
     </form>
     <form action="/admin-api/restorecommentsall" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
-        <input type="submit" value="削除を一斉復元（シャドウ削除・通常削除）">
+        <button type="submit" style="text-align: left;">削除を一斉復元<br>（シャドウ削除・通常削除）</button>
     </form>
     <form action="/admin-api/harddeletecommentsall" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
@@ -59,7 +59,7 @@
     </form>
     <form action="/admin-api/bulkshadowban" method="POST" style="margin: 1rem 0;">
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
-        <input type="submit" value="一斉シャドウバン（全投稿者BAN + 全コメントシャドウ削除）">
+        <button type="submit" style="text-align: left;">一斉シャドウバン<br>（全投稿者BAN + 全コメントシャドウ削除）</button>
     </form>
     <?php if ($_adminDto->commentBanRemainingDays !== null): ?>
         <form action="/admin-api/commentunbanroom" method="POST" style="margin: 1rem 0;">
