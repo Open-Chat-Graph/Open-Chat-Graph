@@ -6,14 +6,15 @@ namespace App\Services\OpenChatAdmin;
 
 use App\Models\CommentRepositories\CommentListRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
+use App\Models\RecommendRepositories\ModifyRecommendRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\OpenChatAdmin\Dto\AdminOpenChatDto;
-use App\Models\Repositories\DB;
 
 class AdminOpenChat
 {
     function __construct(
         private RecommendRankingRepository $recommendRankingRepository,
+        private ModifyRecommendRepositoryInterface $modifyRecommendRepository,
         private CommentListRepositoryInterface $commentListRepository,
         private CommentPostRepositoryInterface $commentPostRepository,
     ) {
@@ -24,7 +25,7 @@ class AdminOpenChat
         $dto = new AdminOpenChatDto;
         $dto->id = $id;
         $dto->recommendTag = $this->recommendRankingRepository->getRecommendTag($id);
-        $dto->modifyTag = DB::fetchColumn("SELECT tag FROM modify_recommend WHERE id = {$id}");
+        $dto->modifyTag = $this->modifyRecommendRepository->getModifyTag($id);
         $dto->commentIdArray = $this->commentListRepository->getCommentIdArrayByOpenChatId($id);
 
         $banCreatedAt = $this->commentPostRepository->getBanRoomExpiry($id);

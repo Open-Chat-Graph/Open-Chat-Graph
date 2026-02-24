@@ -49,7 +49,7 @@ class OpenChatPageController
         $this->fileStorage = $fileStorage;
         AppConfig::$listLimitTopRanking = 5;
 
-        $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
+        $_adminDto = isset($isAdminPage) ? $this->getAdminDto($open_chat_id) : null;
         $topPageDto = $staticDataGeneration->getTopPageData();
 
         if (MimimalCmsConfig::$urlRoot === '') {

@@ -142,6 +142,41 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                     <div id="comment-root"></div>
                 </div>
 
+                <?php if (isset($_adminDto)): ?>
+                    <div style="padding: 1rem; margin: 1rem 0; border: 1px solid #ccc;">
+                        <form action="/admin-api/deletecomment" method="POST" style="margin: 1rem 0;">
+                            <label for="comments-delete">コメントのフラグを変更</label>
+                            <select name="commentId" id="comments-delete" style="width: 5rem; font-size:1rem">
+                                <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
+                                    <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <label for="delete-flag">Flag</label>
+                            <?php $flagLabels = \App\Config\AppConfig::COMMENT_FLAG_LABELS; ?>
+                            <select name="flag" id="delete-flag" style="width: 5rem; font-size:1rem">
+                                <?php foreach ([1, 2, 5, 4, 0, 3] as $v): ?>
+                                    <option value="<?php echo $v ?>"><?php echo $flagLabels[$v] ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+                            <input type="submit">
+                        </form>
+                        <form action="/admin-api/deleteuser" method="POST" style="margin: 1rem 0;">
+                            <label for="user-delete">ユーザーをシャドウバン</label>
+                            <select name="commentId" id="user-delete" style="width: 5rem; font-size:1rem">
+                                <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
+                                    <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
+                                <?php endforeach ?>
+                            </select>
+                            <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
+                            <input type="submit">
+                        </form>
+                        <div style="margin: 1rem 0;">
+                            <a href="<?php echo url('admin/log/admin-action') ?>" target="_blank">操作ログ</a>
+                        </div>
+                    </div>
+                <?php endif ?>
+
                 <h2>メールでのお問い合わせ先</h2>
                 <p>オプチャグラフお問い合わせ窓口: <a href="mailto:support@openchat-review.me">support@openchat-review.me</a></p>
             <?php elseif (\Shared\MimimalCmsConfig::$urlRoot === '/tw') : ?>

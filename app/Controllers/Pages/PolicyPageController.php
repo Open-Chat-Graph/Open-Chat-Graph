@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
+use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
 class PolicyPageController
 {
-    function index(PageBreadcrumbsListSchema $breadcrumbsShema)
+    function index(PageBreadcrumbsListSchema $breadcrumbsShema, ?bool $isAdmin = null)
     {
         $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
         $_meta = meta()->setTitle(t('オプチャグラフとは？'));
@@ -17,7 +18,9 @@ class PolicyPageController
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(t('オプチャグラフとは？'));
 
-        return view('policy_content', compact('_meta', '_css', '_breadcrumbsShema'));
+        $_adminDto = $isAdmin ? app(AdminOpenChat::class)->getDto(0) : null;
+
+        return view('policy_content', compact('_meta', '_css', '_breadcrumbsShema', '_adminDto'));
     }
 
     function privacy(PageBreadcrumbsListSchema $breadcrumbsShema)

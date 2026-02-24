@@ -623,12 +623,25 @@ Route::path(
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('filename');
 
+Route::path('oc/0/admin', [PolicyPageController::class, 'index'])
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdmin' => true];
+    });
+
 Route::path(
     'oc/{open_chat_id}/admin',
     [OpenChatPageController::class, 'index']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn() => ['isAdminPage' => '1']);
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdminPage' => '1'];
+    });
 
 /* Route::path(
     'ads/register@post',

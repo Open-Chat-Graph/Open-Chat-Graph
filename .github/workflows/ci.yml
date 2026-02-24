@@ -36,7 +36,23 @@ jobs:
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
 
+      - name: Notify Discord (skip-ci)
+        if: steps.skip.outputs.skip == 'true' && github.event_name == 'pull_request'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          jq -n \
+            --arg num "$PR_NUM" \
+            --arg title "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            '{embeds: [{title: "⏭️ CI スキップ", description: ("#" + $num + ": " + $title + "\n\nskip-ci によりテストがスキップされました\n\n[→ PR](" + $url + ")"), color: 9807270}]}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+
       - name: Checkout repository
+        id: checkout
         if: steps.skip.outputs.skip != 'true'
         uses: actions/checkout@v4
 
@@ -240,3 +256,55 @@ jobs:
         run: |
           echo "=== Final container status ==="
           docker compose -f docker-compose.yml -f docker-compose.ci.yml ps
+
+      - name: Notify Discord (success)
+        if: success() && steps.skip.outputs.skip != 'true' && github.event_name == 'pull_request'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          jq -n \
+            --arg num "$PR_NUM" \
+            --arg title "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            '{embeds: [{title: "✅ CI テスト成功", description: ("#" + $num + ": " + $title + "\n\n[→ マージする](" + $url + ")"), color: 3066993}]}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+
+      - name: Notify Discord (failure)
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$CHECKOUT_OUTCOME" = "failure" ]; then
+            TITLE="❌ CI 失敗: マージコンフリクトの可能性"
+            LOGS="チェックアウトに失敗しました。PRにマージコンフリクトがないか確認してください。"
+          else
+            TITLE="❌ CI テスト失敗"
+            LOGS=""
+            if [ -f storage/exception.log ]; then
+              LOGS=$(tail -30 storage/exception.log 2>/dev/null | head -c 1500 || true)
+            fi
+            if [ -z "$LOGS" ]; then
+              LOGS=$(docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app --tail=30 2>/dev/null | tail -c 1500 || true)
+            fi
+            if [ -z "$LOGS" ]; then
+              LOGS="ログを取得できませんでした"
+            fi
+          fi
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg num "$PR_NUM" \
+            --arg pr_title "$PR_TITLE" \
+            --arg logs "$LOGS" \
+            --arg run_url "$RUN_URL" \
+            --arg pr_url "$PR_URL" \
+            '{embeds: [{title: $title, description: ("#" + $num + ": " + $pr_title + "\n```\n" + $logs + "\n```\n\n[→ Actions ログ](" + $run_url + ") | [→ PR](" + $pr_url + ")"), color: 15158332}]}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"

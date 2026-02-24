@@ -143,7 +143,7 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
     function restoreDeletedComments(int $open_chat_id): int
     {
         return CommentDB::execute(
-            "UPDATE comment SET flag = 0 WHERE open_chat_id = :open_chat_id AND flag IN (1, 5)",
+            "UPDATE comment SET flag = 0 WHERE open_chat_id = :open_chat_id AND flag IN (1, 2, 4, 5)",
             compact('open_chat_id')
         )->rowCount();
     }
@@ -167,7 +167,7 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
             CommentDB::fetchAll(
                 "SELECT ci.filename FROM comment_image AS ci
                  JOIN comment AS c ON ci.comment_id = c.comment_id
-                 WHERE c.open_chat_id = :open_chat_id AND c.flag IN (1, 5)",
+                 WHERE c.open_chat_id = :open_chat_id AND c.flag IN (1, 2, 4, 5)",
                 compact('open_chat_id')
             ),
             'filename'
@@ -238,7 +238,7 @@ class DeleteCommentRepository implements DeleteCommentRepositoryInterface
     {
         return array_column(
             CommentDB::fetchAll(
-                "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag IN (1, 5)",
+                "SELECT comment_id FROM comment WHERE open_chat_id = :openChatId AND flag IN (1, 2, 4, 5)",
                 compact('openChatId')
             ),
             'comment_id'
