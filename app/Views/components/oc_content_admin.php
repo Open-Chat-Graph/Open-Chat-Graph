@@ -18,27 +18,25 @@
         <input type="hidden" name="type" value="deleteModifyTag">
         <input type="submit">
     </form>
-    <form onsubmit="return confirm('コメントを削除しますか？')" action="/admin-api/deletecomment" method="POST" style="margin: 1rem 0;">
-        <label for="comments-delete">コメントを削除</label>
+    <form onsubmit="return confirm('コメントのフラグを変更しますか？')" action="/admin-api/deletecomment" method="POST" style="margin: 1rem 0;">
+        <label for="comments-delete">コメントのフラグを変更</label>
         <select name="commentId" id="comments-delete" style="width: 5rem; font-size:1rem">
             <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
                 <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
             <?php endforeach ?>
         </select>
         <label for="delete-flag">Flag</label>
+        <?php $flagLabels = \App\Config\AppConfig::COMMENT_FLAG_LABELS; ?>
         <select name="flag" id="delete-flag" style="width: 5rem; font-size:1rem">
-            <option value="1">削除</option>
-            <option value="2">通報</option>
-            <option value="5">通常削除</option>
-            <option value="4">画像削除</option>
-            <option value="0">復元</option>
-            <option value="3">完全削除</option>
+            <?php foreach ([1, 2, 5, 4, 0, 3] as $v): ?>
+                <option value="<?php echo $v ?>"><?php echo $flagLabels[$v] ?></option>
+            <?php endforeach ?>
         </select>
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
         <input type="submit">
     </form>
-    <form onsubmit="return confirm('ユーザーをBANしますか？')" action="/admin-api/deleteuser" method="POST" style="margin: 1rem 0;">
-        <label for="user-delete">ユーザーをBAN</label>
+    <form onsubmit="return confirm('ユーザーをシャドウバンしますか？')" action="/admin-api/deleteuser" method="POST" style="margin: 1rem 0;">
+        <label for="user-delete">ユーザーをシャドウバン</label>
         <select name="commentId" id="user-delete" style="width: 5rem; font-size:1rem">
             <?php foreach ($_adminDto->commentIdArray as $commentId) : ?>
                 <option value="<?php echo $commentId ?>"><?php echo $commentId ?></option>
@@ -59,4 +57,7 @@
         <input type="hidden" name="id" value="<?php echo $_adminDto->id ?>">
         <input type="submit" value="コメントを1週間禁止">
     </form>
+    <div style="margin: 1rem 0;">
+        <a href="<?php echo url('admin/log/admin-action') ?>" target="_blank">操作ログ</a>
+    </div>
 </div>
