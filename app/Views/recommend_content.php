@@ -19,7 +19,7 @@ if (isset($_dto->tagRecordCounts[$_tagIndex])) {
 $hourlyUpdatedAt = $hourlyUpdatedAt ?? new DateTime();
 $hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
-$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+$enableAdsense = true;
 
 viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
