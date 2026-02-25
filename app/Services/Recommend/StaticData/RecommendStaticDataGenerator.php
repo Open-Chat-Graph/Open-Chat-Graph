@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
+use App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface;
 use App\Models\RecommendRepositories\CategoryRankingRepository;
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
+use App\Services\Recommend\BulkRecommendRankingBuilderInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
@@ -24,6 +26,8 @@ class RecommendStaticDataGenerator
         private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
+        private BulkRankingDataRepositoryInterface $bulkRankingDataRepository,
+        private BulkRecommendRankingBuilderInterface $bulkRecommendRankingBuilder,
     ) {}
 
     function getRecomendRanking(string $tag): RecommendListDto
@@ -70,41 +74,52 @@ class RecommendStaticDataGenerator
         return $this->recommendUpdater->getAllTagNames();
     }
 
-    private function updateRecommendStaticData()
+    function updateStaticData()
+    {
+        $allData = $this->bulkRankingDataRepository->fetchAll();
+        $this->bulkRecommendRankingBuilder->init($allData);
+
+        $this->updateRecommendStaticDataBulk();
+        $this->updateCategoryStaticDataBulk();
+        $this->updateOfficialStaticDataBulk();
+    }
+
+    private function updateRecommendStaticDataBulk(): void
     {
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
             $this->fileStorage->saveSerializedFile(
                 $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
-                $this->getRecomendRanking($tag)
+                $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag)
             );
         }
     }
 
-    private function updateCategoryStaticData()
+    private function updateCategoryStaticDataBulk(): void
     {
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $this->fileStorage->saveSerializedFile(
                 $this->fileStorage->getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
-                $this->getCategoryRanking($category)
+                $this->bulkRecommendRankingBuilder->buildCategoryRanking($category, getCategoryName($category))
             );
         }
     }
 
-    private function updateOfficialStaticData()
+    private function updateOfficialStaticDataBulk(): void
     {
         foreach ([1, 2] as $emblem) {
-            $this->fileStorage->saveSerializedFile(
-                $this->fileStorage->getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
-                $this->getOfficialRanking($emblem)
-            );
-        }
-    }
+            $listName = match ($emblem) {
+                1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
+                2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
+                default => ''
+            };
 
-    function updateStaticData()
-    {
-        $this->updateRecommendStaticData();
-        $this->updateCategoryStaticData();
-        $this->updateOfficialStaticData();
+            if ($listName) {
+                $this->fileStorage->saveSerializedFile(
+                    $this->fileStorage->getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
+                    $this->bulkRecommendRankingBuilder->buildOfficialRanking($emblem, $listName)
+                );
+            }
+        }
     }
 }
