@@ -14,8 +14,8 @@ use Shared\MimimalCmsConfig;
 
 class RecommendUpdater
 {
-    private RecommendUpdaterTagsInterface $recommendUpdaterTags;
-    private FileStorageInterface $fileStorage;
+    protected RecommendUpdaterTagsInterface $recommendUpdaterTags;
+    protected FileStorageInterface $fileStorage;
     public array $tags;
     protected string $start;
     protected string $end;
@@ -41,7 +41,7 @@ class RecommendUpdater
         }
     }
 
-    private function getOpenChatSubCategoriesTag(): array
+    protected function getOpenChatSubCategoriesTag(): array
     {
         $path = $this->fileStorage->getStorageFilePath($this->openChatSubCategoriesTagKey);
         $data = json_decode(
