@@ -64,6 +64,9 @@ class MimimalCmsConfig
         
         \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
         \App\Views\Classes\CollapseKeywordEnumerationsInterface::class => \App\Views\Classes\CollapseKeywordEnumerations::class,
+
+        \App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface::class => \App\Models\RecommendRepositories\BulkRankingDataRepository::class,
+        \App\Services\Recommend\BulkRecommendRankingBuilderInterface::class => \App\Services\Recommend\BulkRecommendRankingBuilder::class,
     ];
 
     // URL root
