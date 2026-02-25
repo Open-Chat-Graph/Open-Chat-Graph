@@ -6,13 +6,8 @@ namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
 use App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface;
-use App\Models\RecommendRepositories\CategoryRankingRepository;
-use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
-use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\Recommend\BulkRecommendRankingBuilderInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
-use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
@@ -20,10 +15,6 @@ use Shared\MimimalCmsConfig;
 class RecommendStaticDataGenerator
 {
     function __construct(
-        private RecommendRankingRepository $recommendRankingRepository,
-        private CategoryRankingRepository $categoryRankingRepository,
-        private OfficialRoomRankingRepository $officialRoomRankingRepository,
-        private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
         private BulkRankingDataRepositoryInterface $bulkRankingDataRepository,
@@ -32,25 +23,15 @@ class RecommendStaticDataGenerator
 
     function getRecomendRanking(string $tag): RecommendListDto
     {
-        return $this->recommendRankingBuilder->getRanking(
-            RecommendListType::Tag,
-            $tag,
-            $tag,
-            $this->recommendRankingRepository
-        );
+        return $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
     }
 
     function getCategoryRanking(int $category): RecommendListDto
     {
-        return $this->recommendRankingBuilder->getRanking(
-            RecommendListType::Category,
-            (string)$category,
-            getCategoryName($category),
-            $this->categoryRankingRepository
-        );
+        return $this->bulkRecommendRankingBuilder->buildCategoryRanking($category, getCategoryName($category));
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto
+    function getOfficialRanking(int $emblem): RecommendListDto|false
     {
         $listName = match ($emblem) {
             1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
@@ -58,12 +39,7 @@ class RecommendStaticDataGenerator
             default => ''
         };
 
-        return $listName ? $this->recommendRankingBuilder->getRanking(
-            RecommendListType::Official,
-            (string)$emblem,
-            $listName,
-            $this->officialRoomRankingRepository
-        ) : false;
+        return $listName ? $this->bulkRecommendRankingBuilder->buildOfficialRanking($emblem, $listName) : false;
     }
 
     /**
