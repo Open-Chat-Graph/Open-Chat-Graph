@@ -172,18 +172,31 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           SITE_URL: ${{ steps.config.outputs.tweet_url }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            MSG=$(printf "🚀 プルリクエストがマージされ、%s\n\n#%s: %s\nBy @%s\n\n#オプチャグラフ %s\n\n%s" \
-              "$TWEET_MSG" "$PR_NUM" "$PR_TITLE" "$PR_AUTHOR" "$SITE_URL" "$PR_URL")
+            BODY_EXCERPT=""
+            if [ -n "$PR_BODY" ]; then
+              BODY_EXCERPT=$(printf '%.200s' "$PR_BODY")
+              if [ "${#PR_BODY}" -gt 200 ]; then
+                BODY_EXCERPT="${BODY_EXCERPT}..."
+              fi
+            fi
+            jq -n \
+              --arg num "$PR_NUM" \
+              --arg title "$PR_TITLE" \
+              --arg body "$BODY_EXCERPT" \
+              --arg pr_url "$PR_URL" \
+              --arg site_url "$SITE_URL" \
+              '{embeds: [{title: "🚀 デプロイ成功", description: ("#" + $num + ": " + $title + (if $body != "" then "\n\n" + $body else "" end) + "\n\n[→ PRを開く](" + $pr_url + ") | [→ サイトを開く](" + $site_url + ")"), color: 3066993}]}' \
+            | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
           else
-            MSG=$(printf "🚀 手動デプロイが完了しました\n\n#オプチャグラフ %s" "$SITE_URL")
+            jq -n \
+              --arg site_url "$SITE_URL" \
+              '{embeds: [{title: "🚀 デプロイ成功", description: ("手動デプロイが完了しました\n\n[→ サイトを開く](" + $site_url + ")"), color: 3066993}]}' \
+            | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
           fi
-          jq -n --arg msg "$MSG" '{content: $msg}' \
-          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
 
       - name: Install twitter-api-v2
         if: |
