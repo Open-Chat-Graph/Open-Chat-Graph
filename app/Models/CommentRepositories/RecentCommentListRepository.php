@@ -22,6 +22,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
     ): array {
         $query =
             "SELECT
+                comment_id,
                 open_chat_id,
                 time,
                 name,
@@ -71,6 +72,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             if ($el['open_chat_id'] === 0) {
                 $result[] = [
                     'id' => 0,
+                    'comment_id' => $el['comment_id'],
                     'user' => in_array($el['flag'], [0, 4]) ? ($el['name'] ?: '匿名') : '***',
                     'name' => 'オプチャグラフとは？',
                     'img_url' => fileUrl('assets/icon-192x192.png'),
@@ -88,6 +90,7 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
 
             $result[] = [
                 'id' => $el['open_chat_id'],
+                'comment_id' => $el['comment_id'],
                 'user' => in_array($el['flag'], [0, 4]) ? ($el['name']  ?: '匿名') : '***',
                 'name' => $oc[$key]['name'],
                 'img_url' => $oc[$key]['img_url'],
