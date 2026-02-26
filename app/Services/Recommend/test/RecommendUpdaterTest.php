@@ -14,6 +14,8 @@ use Shared\MimimalCmsConfig;
 // docker compose exec app vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
 class RecommendUpdaterTest extends TestCase
 {
+    private const TEST_DB_NAME = 'ocgraph_recommend_test';
+
     private RecommendUpdater $recommendUpdater;
     private FileStorageInterface&Stub $mockFileStorage;
 
@@ -22,8 +24,10 @@ class RecommendUpdaterTest extends TestCase
         // MimimalCmsConfig::$urlRoot を '' に設定（日本語版のテスト）
         MimimalCmsConfig::$urlRoot = '';
 
-        // DB接続
+        // DB接続してテスト専用DBを作成・切り替え
         DB::connect();
+        DB::$pdo->exec('CREATE DATABASE IF NOT EXISTS `' . self::TEST_DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        DB::$pdo->exec('USE `' . self::TEST_DB_NAME . '`');
 
         // テストテーブルを作成
         $this->createTestTables();
@@ -77,30 +81,12 @@ class RecommendUpdaterTest extends TestCase
 
     protected function tearDown(): void
     {
-        // テストテーブルを削除（テンポラリテーブルも含む）
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS recommend_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag2_temp');
-        DB::execute('DROP TABLE IF EXISTS open_chat');
-        DB::execute('DROP TABLE IF EXISTS oc_tag');
-        DB::execute('DROP TABLE IF EXISTS oc_tag2');
-        DB::execute('DROP TABLE IF EXISTS recommend');
-        DB::execute('DROP TABLE IF EXISTS modify_recommend');
+        // テスト専用DBを丸ごと削除（本番DBには一切触れない）
+        DB::$pdo->exec('DROP DATABASE IF EXISTS `' . self::TEST_DB_NAME . '`');
     }
 
     private function createTestTables(): void
     {
-        // 既存テーブルを削除してクリーンな状態を確保
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS recommend_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag2_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS target_oc_ids');
-        DB::execute('DROP TABLE IF EXISTS oc_tag');
-        DB::execute('DROP TABLE IF EXISTS oc_tag2');
-        DB::execute('DROP TABLE IF EXISTS recommend');
-        DB::execute('DROP TABLE IF EXISTS modify_recommend');
-        DB::execute('DROP TABLE IF EXISTS open_chat');
-
         // open_chat テーブル
         DB::execute("
             CREATE TABLE `open_chat` (
