@@ -7,7 +7,7 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use App\Models\Repositories\DB;
+use App\Models\RecommendRepositories\RecommendTagRepositoryInterface;
 use App\Services\Recommend\TagDefinition\RecommendUpdaterTagsInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
@@ -21,6 +21,7 @@ class RecommendUpdater
 {
     protected RecommendUpdaterTagsInterface $recommendUpdaterTags;
     protected FileStorageInterface $fileStorage;
+    protected RecommendTagRepositoryInterface $repository;
     protected string $start;
     protected string $end;
     protected string $openChatSubCategoriesTagKey = 'openChatSubCategoriesTag';
@@ -45,9 +46,11 @@ class RecommendUpdater
 
     function __construct(
         FileStorageInterface $fileStorage,
+        RecommendTagRepositoryInterface $repository,
         ?RecommendUpdaterTagsInterface $recommendUpdaterTags = null
     ) {
         $this->fileStorage = $fileStorage;
+        $this->repository = $repository;
         if ($recommendUpdaterTags) {
             $this->recommendUpdaterTags = $recommendUpdaterTags;
         } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
@@ -89,7 +92,7 @@ class RecommendUpdater
         $isMock = AppConfig::$isMockEnvironment;
         if ($isMock) {
             $limit = 10;
-            $this->createTargetIdTable($limit);
+            $this->repository->createTargetIdTable($this->start, $this->end, $limit);
             $this->targetIdJoinClause = 'INNER JOIN target_oc_ids AS tid ON oc.id = tid.id';
             CronUtility::addCronLog("Mock environment. Recommend Update limit: {$limit}");
         }
@@ -97,7 +100,7 @@ class RecommendUpdater
         $this->updateRecommendTablesProcess($onlyRecommend);
 
         if ($isMock) {
-            $this->dropTargetIdTable();
+            $this->repository->dropTargetIdTable();
         }
 
         $this->fileStorage->safeFileRewrite(
@@ -108,12 +111,12 @@ class RecommendUpdater
 
     protected function updateRecommendTablesProcess(bool $onlyRecommend = false): void
     {
-        $this->rows = $this->fetchTargetRows();
+        $this->rows = $this->repository->fetchTargetRows($this->targetIdJoinClause, $this->start, $this->end);
         if (empty($this->rows)) {
             return;
         }
 
-        $this->modifyTags = $this->fetchModifyRecommend();
+        $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
 
         if (MimimalCmsConfig::$urlRoot !== '') {
             $this->matchAllRowsNonJa();
@@ -122,17 +125,17 @@ class RecommendUpdater
         }
 
         // recommend テーブルに反映
-        $this->bulkInsertViaTemp('recommend', $this->recommendResults);
+        $this->repository->bulkInsertViaTemp('recommend', $this->recommendResults);
 
         if ($onlyRecommend) {
             return;
         }
 
         // oc_tag テーブルに反映
-        $this->bulkInsertViaTemp('oc_tag', $this->ocTagResults);
+        $this->repository->bulkInsertViaTemp('oc_tag', $this->ocTagResults);
 
         // oc_tag2 テーブルに反映
-        $this->bulkInsertViaTemp('oc_tag2', $this->ocTag2Results);
+        $this->repository->bulkInsertViaTemp('oc_tag2', $this->ocTag2Results);
     }
 
     function getAllTagNames(): array
@@ -157,61 +160,6 @@ class RecommendUpdater
         $listName = str_replace('_AND_', ' ', $listName);
         $listName = str_replace('utfbin_', '', $listName);
         return $listName;
-    }
-
-    // ========================================================================
-    // バルクマッチング: データ取得
-    // ========================================================================
-
-    /**
-     * 対象行を1 SELECTで取得
-     *
-     * @return array<int, array{id: int, name: string, description: string, category: int}>
-     */
-    private function fetchTargetRows(): array
-    {
-        $query = "SELECT oc.id, oc.name, oc.description, oc.category
-                  FROM open_chat AS oc
-                  {$this->targetIdJoinClause}
-                  WHERE oc.updated_at BETWEEN :start AND :end";
-
-        $stmt = DB::execute($query, ['start' => $this->start, 'end' => $this->end]);
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-        $indexed = [];
-        foreach ($rows as $row) {
-            $row['id'] = (int)$row['id'];
-            $row['category'] = (int)$row['category'];
-            $indexed[$row['id']] = $row;
-        }
-
-        return $indexed;
-    }
-
-    /**
-     * modify_recommend テーブルの管理者オーバーライドを取得
-     *
-     * @return array<int, string> id => tag
-     */
-    private function fetchModifyRecommend(): array
-    {
-        $ids = array_keys($this->rows);
-        if (empty($ids)) {
-            return [];
-        }
-
-        // IDは自クエリ由来の整数値のため、直接埋め込みで安全
-        $idList = implode(',', array_map('intval', $ids));
-        $stmt = DB::execute(
-            "SELECT id, tag FROM modify_recommend WHERE id IN ({$idList})"
-        );
-
-        $result = [];
-        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $result[(int)$row['id']] = $row['tag'];
-        }
-
-        return $result;
     }
 
     // ========================================================================
@@ -559,7 +507,7 @@ class RecommendUpdater
     /**
      * タグ定義に対してテキストがマッチするかPHPで判定する
      *
-     * replace() が生成する SQL LIKE をPHPで再現:
+     * SQL LIKE をPHPで再現:
      * - utf8mb4_general_ci LIKE → mb_stripos()
      * - utf8mb4_bin LIKE → str_contains()
      * - _AND_ → 全サブストリングが存在
@@ -587,9 +535,8 @@ class RecommendUpdater
     /**
      * 単一キーワードのマッチング
      *
-     * SQL の replace() と同じセマンティクス:
-     * - _AND_ が先に展開され、_OR_ が後に展開される
-     * - 結果として OR(AND(...), AND(...)) の構造になる（ANDがORより優先）
+     * _AND_ が先に展開され、_OR_ が後に展開される
+     * 結果として OR(AND(...), AND(...)) の構造になる（ANDがORより優先）
      */
     private function matchesSingleKeyword(string $keyword, string $text): bool
     {
@@ -601,7 +548,6 @@ class RecommendUpdater
             $keyword = str_replace('utfbin_', '', $keyword);
         }
 
-        // _OR_ で分割（低優先度）→ 各パートを _AND_ で分割（高優先度）
         $orParts = explode('_OR_', $keyword);
         foreach ($orParts as $orPart) {
             $andParts = explode('_AND_', $orPart);
@@ -631,67 +577,5 @@ class RecommendUpdater
             return str_contains($text, $keyword);
         }
         return mb_stripos($text, $keyword) !== false;
-    }
-
-    // ========================================================================
-    // バルクINSERT
-    // ========================================================================
-
-    /**
-     * 一時テーブル経由でバッチINSERT + アトミックスワップ
-     *
-     * @param string $targetTable 対象テーブル名（recommend, oc_tag, oc_tag2）
-     * @param array<int, string> $data id => tag のマッピング
-     */
-    private function bulkInsertViaTemp(string $targetTable, array $data): void
-    {
-        $tempTable = $targetTable . '_temp';
-
-        DB::execute("CREATE TEMPORARY TABLE {$tempTable} LIKE {$targetTable}");
-
-        $chunks = array_chunk($data, 1000, true);
-        foreach ($chunks as $chunk) {
-            $placeholders = [];
-            $params = [];
-            $i = 0;
-            foreach ($chunk as $id => $tag) {
-                $placeholders[] = "(:id{$i}, :tag{$i})";
-                $params["id{$i}"] = $id;
-                $params["tag{$i}"] = $tag;
-                $i++;
-            }
-            if ($placeholders) {
-                $sql = "INSERT INTO {$tempTable} (id, tag) VALUES " . implode(', ', $placeholders);
-                DB::execute($sql, $params);
-            }
-        }
-
-        DB::transaction(function () use ($targetTable, $tempTable) {
-            DB::execute("DELETE FROM {$targetTable} WHERE id IN (SELECT id FROM {$tempTable})");
-            DB::execute("INSERT INTO {$targetTable} SELECT * FROM {$tempTable}");
-        });
-
-        DB::execute("DROP TEMPORARY TABLE {$tempTable}");
-    }
-
-    // ========================================================================
-    // Mock環境用ヘルパー
-    // ========================================================================
-
-    private function createTargetIdTable(int $limit): void
-    {
-        DB::execute("CREATE TEMPORARY TABLE IF NOT EXISTS target_oc_ids (id INT PRIMARY KEY)");
-        DB::execute(
-            "INSERT INTO target_oc_ids
-             SELECT id FROM open_chat
-             WHERE updated_at BETWEEN :start AND :end
-             LIMIT :limit",
-            ['start' => $this->start, 'end' => $this->end, 'limit' => $limit]
-        );
-    }
-
-    private function dropTargetIdTable(): void
-    {
-        DB::execute("DROP TEMPORARY TABLE IF EXISTS target_oc_ids");
     }
 }

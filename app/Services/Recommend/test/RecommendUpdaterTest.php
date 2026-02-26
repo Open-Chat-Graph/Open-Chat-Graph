@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\RecommendRepositories\RecommendTagRepository;
 use App\Models\Repositories\DB;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUpdaterTags;
@@ -64,6 +65,7 @@ class RecommendUpdaterTest extends TestCase
         // RecommendUpdater インスタンスを作成
         $this->recommendUpdater = new RecommendUpdater(
             $this->mockFileStorage,
+            new RecommendTagRepository(),
             new RecommendUpdaterTags()
         );
     }
