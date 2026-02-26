@@ -35,13 +35,16 @@ interface DBInterface
      *
      * @param string     $query  The SQL query to execute.
      *                   * *Example:* `'SELECT * FROM table WHERE category = :category LIMIT :offset, :limit'`
-     * 
-     * @param array|null $params [optional] An associative array of query parameters.
+     *                   * *Example:* `'SELECT * FROM table WHERE category IN (?, ?, ?)'`
+     *
+     * @param array|null $params [optional] An associative array of named parameters, or a list for positional (?) placeholders.
+     *                           Lists (0-indexed arrays) are automatically converted to 1-indexed for PDO positional binding.
      *                           InvalidArgumentException will be thrown if any of the array values are not strings or numbers.
      *                   * *Example:* `['category' => 'foods', 'limit' => 20, 'offset' => 60]`
-     * 
+     *                   * *Example:* `['foods', 'sports', 'music']`
+     *
      * @return PDOStatement Returns a PDOStatement object containing the results of the query, or false.
-     * 
+     *
      * @throws PDOException If an error occurs during the query execution.
      * @throws InvalidArgumentException If any of the array values are not strings, numbers or bool.
      */
