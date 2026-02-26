@@ -622,11 +622,10 @@ function fileUrl(string $filePath, ?string $publicDir = null, ?string $urlRoot =
 function debug(...$vars)
 {
     foreach ($vars as $var) {
-        echo "\n";
-        print_r(var_export($var));
+        fwrite(STDERR, "\n" . var_export($var, true));
     }
 
-    echo "\n";
+    fwrite(STDERR, "\n");
 }
 
 function stringToView(string $str): Shadow\Kernel\View
@@ -841,4 +840,3 @@ function getFilesWithExtension(string $dir, string $ext): \CallbackFilterIterato
     // Return a filtered iterator containing files matching the extension
     return new \CallbackFilterIterator($iterator, $filter);
 }
-

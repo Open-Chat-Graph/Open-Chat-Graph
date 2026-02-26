@@ -26,9 +26,9 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m
 
-# Mock環境かどうかを判定
+# Mock環境かどうかを判定（現プロジェクトのみ）
 _is-mock:
-	@docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .
+	@docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q .
 
 # MySQLの準備を待機（内部用ヘルパー）
 _wait-mysql:
@@ -166,7 +166,7 @@ build-frontend\:all-room-stats: ## 全体統計のみビルド
 
 # 基本環境
 up: ## 基本環境を起動
-	@if docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .; then \
+	@if docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)Mock環境から基本環境に切り替えています...$(NC)"; \
 		docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml down; \
 	fi
@@ -180,7 +180,7 @@ up: ## 基本環境を起動
 
 down: ## 環境を停止（基本・Mock両対応）
 	@echo "$(RED)環境を停止しています...$(NC)"
-	@if docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .; then \
+	@if docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)Mock環境を検出しました$(NC)"; \
 		docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml down; \
 	else \
@@ -188,17 +188,21 @@ down: ## 環境を停止（基本・Mock両対応）
 	fi
 	@echo "$(RED)環境が停止しました$(NC)"
 
-restart: down ## 環境を再起動（基本・Mock自動判定）
-	@if [ -f docker/line-mock-api/.env.mock ]; then \
-		echo "$(YELLOW)docker/line-mock-api/.env.mockが存在します。Mock環境として再起動します$(NC)"; \
+restart: ## 環境を再起動（基本・Mock自動判定）
+	@IS_MOCK=$$(docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -q line-mock-api 2>/dev/null | grep -q . && echo "1" || echo "0"); \
+	$(MAKE) down; \
+	if [ "$$IS_MOCK" = "1" ]; then \
+		echo "$(YELLOW)Mock環境として再起動します$(NC)"; \
 		$(MAKE) up-mock; \
 	else \
 		echo "$(YELLOW)基本環境として再起動します$(NC)"; \
 		$(MAKE) up; \
 	fi
 
-rebuild: down ## 環境を再ビルド（基本・Mock自動判定）
-	@if docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q . || [ -f docker/line-mock-api/.env.mock ]; then \
+rebuild: ## 環境を再ビルド（基本・Mock自動判定）
+	@IS_MOCK=$$(docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -q line-mock-api 2>/dev/null | grep -q . && echo "1" || echo "0"); \
+	$(MAKE) down; \
+	if [ "$$IS_MOCK" = "1" ]; then \
 		echo "$(GREEN)Mock環境をビルドしています...$(NC)"; \
 		docker compose -f docker-compose.yml -f docker-compose.mock.yml build --pull; \
 		echo "$(GREEN)ビルドが完了しました$(NC)"; \
@@ -219,7 +223,7 @@ ssh: ## コンテナにログイン（基本・Mock両対応）
 
 # Mock付き環境
 up-mock: _check-data-protection ## Mock付き環境を起動（docker/line-mock-api/.env.mockの設定を使用）
-	@if docker compose ps -a -q mysql 2>/dev/null | grep -q . && ! docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .; then \
+	@if docker compose ps -a -q mysql 2>/dev/null | grep -q . && ! docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)基本環境からMock環境に切り替えています...$(NC)"; \
 		$(MAKE) down; \
 	fi
@@ -285,7 +289,7 @@ show: ## 現在の起動モードを表示
 		echo ""; \
 		echo "$(YELLOW)利用可能なコマンド:$(NC) make up | make up-mock"; \
 	else \
-		IS_MOCK=$$(docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q . && echo "1" || echo "0"); \
+		IS_MOCK=$$(docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q . && echo "1" || echo "0"); \
 		DC_CMD=$$([ "$$IS_MOCK" = "1" ] && echo "docker compose --profile dev -f docker-compose.yml -f docker-compose.mock.yml" || echo "docker compose --profile dev"); \
 		echo "$(YELLOW)環境:$(NC) $$([ "$$IS_MOCK" = "1" ] && echo "Mock付き" || echo "基本")"; \
 		echo "$(YELLOW)起動中:$(NC)"; \
@@ -308,7 +312,7 @@ cert: ## SSL証明書を更新（LAN内ホスト/IPを追加可能）
 	@echo ""
 	@if docker compose ps -q app 2>/dev/null | grep -q .; then \
 		echo "$(YELLOW)Apacheを再読み込みして証明書を反映します...$(NC)"; \
-		if docker ps -a --filter "name=line-mock-api" --format "{{.Names}}" | grep -q .; then \
+		if docker compose -f docker-compose.yml -f docker-compose.mock.yml ps -a -q line-mock-api 2>/dev/null | grep -q .; then \
 			docker compose -f docker-compose.yml -f docker-compose.mock.yml exec app apachectl graceful; \
 		else \
 			docker compose exec app apachectl graceful; \

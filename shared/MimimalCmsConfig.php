@@ -57,6 +57,7 @@ class MimimalCmsConfig
         \App\Services\Comment\CommentImageServiceInterface::class => \App\Services\Comment\CommentImageService::class,
         
         \App\Models\RecommendRepositories\ModifyRecommendRepositoryInterface::class => \App\Models\RecommendRepositories\ModifyRecommendRepository::class,
+        \App\Models\RecommendRepositories\RecommendTagRepositoryInterface::class => \App\Models\RecommendRepositories\RecommendTagRepository::class,
 
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
         

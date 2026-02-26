@@ -7,26 +7,50 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use App\Models\Repositories\DB;
+use App\Models\RecommendRepositories\RecommendTagRepositoryInterface;
 use App\Services\Recommend\TagDefinition\RecommendUpdaterTagsInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
+/**
+ * タグマッチングによるレコメンド更新
+ *
+ * 1 SELECT で全対象行を取得し、PHP側で一括マッチング後、バッチINSERTで反映する方式。
+ */
 class RecommendUpdater
 {
-    private RecommendUpdaterTagsInterface $recommendUpdaterTags;
-    private FileStorageInterface $fileStorage;
-    public array $tags;
+    protected RecommendUpdaterTagsInterface $recommendUpdaterTags;
+    protected FileStorageInterface $fileStorage;
+    protected RecommendTagRepositoryInterface $repository;
     protected string $start;
     protected string $end;
     protected string $openChatSubCategoriesTagKey = 'openChatSubCategoriesTag';
     protected string $targetIdJoinClause = '';
 
+    /**
+     * @var array<int, array{id: int, name: string, description: string, category: int}>
+     */
+    private array $rows = [];
+
+    /** @var array<int, string> id => tag */
+    private array $modifyTags = [];
+
+    /** @var array<int, string> id => tag */
+    private array $recommendResults = [];
+
+    /** @var array<int, string> id => tag */
+    private array $ocTagResults = [];
+
+    /** @var array<int, string> id => tag */
+    private array $ocTag2Results = [];
+
     function __construct(
         FileStorageInterface $fileStorage,
+        RecommendTagRepositoryInterface $repository,
         ?RecommendUpdaterTagsInterface $recommendUpdaterTags = null
     ) {
         $this->fileStorage = $fileStorage;
+        $this->repository = $repository;
         if ($recommendUpdaterTags) {
             $this->recommendUpdaterTags = $recommendUpdaterTags;
         } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
@@ -41,7 +65,7 @@ class RecommendUpdater
         }
     }
 
-    private function getOpenChatSubCategoriesTag(): array
+    protected function getOpenChatSubCategoriesTag(): array
     {
         $path = $this->fileStorage->getStorageFilePath($this->openChatSubCategoriesTagKey);
         $data = json_decode(
@@ -68,7 +92,7 @@ class RecommendUpdater
         $isMock = AppConfig::$isMockEnvironment;
         if ($isMock) {
             $limit = 10;
-            $this->createTargetIdTable($limit);
+            $this->repository->createTargetIdTable($this->start, $this->end, $limit);
             $this->targetIdJoinClause = 'INNER JOIN target_oc_ids AS tid ON oc.id = tid.id';
             CronUtility::addCronLog("Mock environment. Recommend Update limit: {$limit}");
         }
@@ -76,7 +100,7 @@ class RecommendUpdater
         $this->updateRecommendTablesProcess($onlyRecommend);
 
         if ($isMock) {
-            $this->dropTargetIdTable();
+            $this->repository->dropTargetIdTable();
         }
 
         $this->fileStorage->safeFileRewrite(
@@ -85,91 +109,33 @@ class RecommendUpdater
         );
     }
 
-    protected function updateRecommendTablesProcess(bool $onlyRecommend = false)
+    protected function updateRecommendTablesProcess(bool $onlyRecommend = false): void
     {
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            // 一時テーブルで処理を実行（トランザクション外で高速処理）
-            $this->processWithTemporaryTable('recommend', function () {
-                $this->deleteRecommendTags('recommend_temp');
-                $this->updateDescription(column: 'oc.name', table: 'recommend_temp', allowDuplicateEntries: true);
-                $this->updateDescription(table: 'recommend_temp', allowDuplicateEntries: true);
-            });
-
-            $this->processWithTemporaryTable('oc_tag', function () {
-                $this->deleteTags('oc_tag_temp');
-                $this->updateName(table: 'oc_tag_temp', allowDuplicateEntries: true);
-                $this->updateName('oc.description', table: 'oc_tag_temp', allowDuplicateEntries: true);
-            });
-
-            $this->processWithTemporaryTable('oc_tag2', function () {
-                $this->deleteTags('oc_tag2_temp');
-            });
-
+        $this->rows = $this->repository->fetchTargetRows($this->targetIdJoinClause, $this->start, $this->end);
+        if (empty($this->rows)) {
             return;
         }
 
-        // 一時テーブルで処理を実行（トランザクション外で高速処理）
-        $this->processWithTemporaryTable('recommend', function () {
-            $this->deleteRecommendTags('recommend_temp');
-            $this->updateStrongestTags('recommend_temp');
-            $this->updateBeforeCategory('oc.name', 'recommend_temp');
-            $this->updateName(table: 'recommend_temp');
-            $this->updateDescription('oc.name', 'recommend_temp');
-            $this->updateDescription(table: 'recommend_temp');
-            $this->modifyRecommendTags('recommend_temp');
-        });
+        $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
+
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            $this->matchAllRowsNonJa();
+        } else {
+            $this->matchAllRowsJa($onlyRecommend);
+        }
+
+        // recommend テーブルに反映
+        $this->repository->bulkInsertViaTemp('recommend', $this->recommendResults);
 
         if ($onlyRecommend) {
             return;
         }
 
-        $this->processWithTemporaryTable('oc_tag', function () {
-            $this->deleteTags('oc_tag_temp');
-            $this->updateBeforeCategory('oc.name', 'oc_tag_temp');
-            $this->updateBeforeCategory(table: 'oc_tag_temp');
-            $this->updateDescription('oc.name', 'oc_tag_temp');
-            $this->updateDescription(table: 'oc_tag_temp');
-            $this->updateName(table: 'oc_tag_temp');
-        });
+        // oc_tag テーブルに反映
+        $this->repository->bulkInsertViaTemp('oc_tag', $this->ocTagResults);
 
-        $this->processWithTemporaryTable('oc_tag2', function () {
-            $this->deleteTags('oc_tag2_temp');
-            $this->updateDescription2('oc.name', 'oc_tag2_temp');
-            $this->updateDescription2(table: 'oc_tag2_temp');
-            $this->updateName2(table: 'oc_tag2_temp');
-            $this->updateName2('oc.description', table: 'oc_tag2_temp');
-        });
-    }
-
-    /**
-     * 一時テーブルを使用してデータを処理し、トランザクション内で本テーブルに反映
-     * トランザクション時間を数ミリ秒に短縮することでデッドロックリスクを削減
-     *
-     * @param string $targetTable 対象テーブル名
-     * @param callable $processCallback 一時テーブルに対する処理
-     */
-    private function processWithTemporaryTable(string $targetTable, callable $processCallback): void
-    {
-        $tempTable = $targetTable . '_temp';
-
-        // 1. 一時テーブルを作成（トランザクション外）
-        DB::execute("CREATE TEMPORARY TABLE {$tempTable} LIKE {$targetTable}");
-
-        // 2. 一時テーブルに対して処理を実行（トランザクション外で高速処理）
-        $processCallback();
-
-        // 3. 本テーブルに反映（トランザクション内、数ミリ秒で完了）
-        DB::transaction(function () use ($targetTable, $tempTable) {
-            // 更新対象のレコードを削除
-            DB::execute("DELETE FROM {$targetTable}
-                         WHERE id IN (SELECT id FROM {$tempTable})");
-
-            // 一時テーブルから本テーブルにコピー
-            DB::execute("INSERT INTO {$targetTable} SELECT * FROM {$tempTable}");
-        });
-
-        // 4. 一時テーブルを削除
-        DB::execute("DROP TEMPORARY TABLE {$tempTable}");
+        // oc_tag2 テーブルに反映
+        $this->repository->bulkInsertViaTemp('oc_tag2', $this->ocTag2Results);
     }
 
     function getAllTagNames(): array
@@ -188,39 +154,6 @@ class RecommendUpdater
         return array_unique($tags);
     }
 
-    function replace(string|array $word, string $column): string
-    {
-        $rep = function ($str) use ($column) {
-            $utfbin = mb_strpos($str, 'utfbin_') !== false;
-            $collation = preg_match('/[\xF0-\xF7][\x80-\xBF][\x80-\xBF][\x80-\xBF]/', $str) || $utfbin ? 'utf8mb4_bin' : 'utf8mb4_general_ci';
-
-            $like = "{$column} COLLATE {$collation} LIKE";
-            if ($utfbin) $str = str_replace('utfbin_', '', $str);
-            $str = str_replace('_AND_', "%' AND {$like} '%", $str);
-            $str = str_replace('_OR_', "%' OR {$like} '%", $str);
-            return "{$like} '%{$str}%'";
-        };
-
-        if (is_array($word)) {
-            return "(" . implode(") OR (", array_map(fn($str) => $rep($str), $word[1])) . ")";
-        }
-
-        return $rep($word);
-    }
-
-    /** @return string[] */
-    protected function getReplacedTags(string $column): array
-    {
-        $tags = array_merge(
-            $this->recommendUpdaterTags->getNameStrongTags(),
-            array_merge(...$this->getOpenChatSubCategoriesTag())
-        );
-
-        $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
-
-        return array_map(fn($str) => $this->replace($str, $column), $tags);
-    }
-
     function formatTag(string $tag): string
     {
         $listName = mb_strstr($tag, '_OR_', true) ?: $tag;
@@ -229,398 +162,420 @@ class RecommendUpdater
         return $listName;
     }
 
-    protected function updateName(
-        string $column = 'oc.name',
-        string $table = 'recommend',
-        bool $allowDuplicateEntries = false
-    ) {
-        $tags = $this->getReplacedTags($column);
+    // ========================================================================
+    // バルクマッチング: 日本語環境
+    // ========================================================================
 
-        foreach ($tags as $key => $search) {
-            $tag = $this->formatTag($this->tags[$key]);
-            $duplicateEntries = $allowDuplicateEntries ? "AND t.tag = '{$tag}'" : '';
+    /**
+     * 日本語環境: 全行に対してタグマッチングを実行
+     */
+    private function matchAllRowsJa(bool $onlyRecommend): void
+    {
+        $this->recommendResults = [];
+        $this->ocTagResults = [];
+        $this->ocTag2Results = [];
 
-            DB::execute(
-                "INSERT INTO
-                    {$table}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$table} AS t ON t.id = oc.id {$duplicateEntries}
-                        WHERE
-                            t.id IS NULL
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    ) AS oc
-                WHERE
-                    {$search}",
-                ['start' => $this->start, 'end' => $this->end]
-            );
+        $allIds = array_keys($this->rows);
+
+        // === recommend テーブル ===
+
+        // 1. Strongest tags: name列
+        $strongestNameTags = $this->recommendUpdaterTags->getStrongestTags('oc.name');
+        foreach ($strongestNameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->recommendResults[$id])) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->recommendResults[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // Strongest tags: description列
+        $strongestDescTags = $this->recommendUpdaterTags->getStrongestTags('oc.description');
+        foreach ($strongestDescTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->recommendResults[$id])) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
+                    $this->recommendResults[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // 2. Before-category tags (name)
+        $beforeCategoryTags = $this->recommendUpdaterTags->getBeforeCategoryNameTags();
+        foreach ($beforeCategoryTags as $category => $tagDefs) {
+            foreach ($tagDefs as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($allIds as $id) {
+                    if (isset($this->recommendResults[$id])) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                        $this->recommendResults[$id] = $formattedTag;
+                    }
+                }
+            }
+        }
+
+        // 3. Name tags
+        $nameTags = array_merge(
+            $this->recommendUpdaterTags->getNameStrongTags(),
+            array_merge(...$this->getOpenChatSubCategoriesTag())
+        );
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->recommendResults[$id])) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->recommendResults[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // 4. Description tags (strong → category → afterStrong) - name column
+        $this->matchDescriptionTags($allIds, 'name', $this->recommendResults);
+
+        // 5. Description tags (strong → category → afterStrong) - description column
+        $this->matchDescriptionTags($allIds, 'description', $this->recommendResults);
+
+        // 6. Admin override (modifyRecommendTags) - マッチしたIDのみ上書き
+        foreach ($this->modifyTags as $id => $tag) {
+            if (isset($this->recommendResults[$id])) {
+                $this->recommendResults[$id] = $tag;
+            }
+        }
+
+        if ($onlyRecommend) {
+            return;
+        }
+
+        // === oc_tag テーブル ===
+
+        // 1. Before-category tags (name)
+        foreach ($beforeCategoryTags as $category => $tagDefs) {
+            foreach ($tagDefs as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($allIds as $id) {
+                    if (isset($this->ocTagResults[$id])) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                        $this->ocTagResults[$id] = $formattedTag;
+                    }
+                }
+            }
+        }
+
+        // 2. Description tags (name column)
+        $this->matchDescriptionTags($allIds, 'name', $this->ocTagResults);
+
+        // 3. Description tags (description column)
+        $this->matchDescriptionTags($allIds, 'description', $this->ocTagResults);
+
+        // 4. Name tags
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->ocTagResults[$id])) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->ocTagResults[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // === oc_tag2 テーブル ===
+
+        // 1. Description tags (name column)
+        $this->matchDescriptionTagsForTag2($allIds, 'name');
+
+        // 2. Description tags (description column)
+        $this->matchDescriptionTagsForTag2($allIds, 'description');
+
+        // 3. Name tags (name column)
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->ocTag2Results[$id])) continue;
+                if (!isset($this->ocTagResults[$id]) || $this->ocTagResults[$id] === $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->ocTag2Results[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // 4. Name tags (description column)
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->ocTag2Results[$id])) continue;
+                if (!isset($this->ocTagResults[$id]) || $this->ocTagResults[$id] === $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
+                    $this->ocTag2Results[$id] = $formattedTag;
+                }
+            }
         }
     }
 
-    /** @return array{ string:string[] }  */
-    protected function getReplacedTagsDesc(string $column): array
+    // ========================================================================
+    // バルクマッチング: 台湾・タイ環境
+    // ========================================================================
+
+    /**
+     * 台湾・タイ環境: 全行に対してタグマッチングを実行
+     */
+    private function matchAllRowsNonJa(): void
     {
-        $this->tags = $this->getOpenChatSubCategoriesTag();
+        $this->recommendResults = [];
+        $this->ocTagResults = [];
+        $this->ocTag2Results = [];
 
-        return [
-            array_map(fn($a) => array_map(fn($str) => $this->replace($str, $column), $a), $this->tags),
-            array_map(fn($str) => $this->replace($str, $column), $this->recommendUpdaterTags->getDescStrongTags()),
-            array_map(fn($str) => $this->replace($str, $column), $this->recommendUpdaterTags->getAfterDescStrongTags())
-        ];
-    }
+        $allIds = array_keys($this->rows);
 
-    protected function updateDescription(
-        string $column = 'oc.description',
-        string $table = 'recommend',
-        bool $allowDuplicateEntries = false
-    ) {
-        [$tags, $strongTags, $afterStrongTags] = $this->getReplacedTagsDesc($column);
-
-        $excute = function ($targetTable, $tag, $search, $category) use ($allowDuplicateEntries) {
-            $tag = $this->formatTag($tag);
-            $duplicateEntries = $allowDuplicateEntries ? "AND t.tag = '{$tag}'" : '';
-
-            DB::execute(
-                "INSERT INTO
-                    {$targetTable}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id {$duplicateEntries}
-                        WHERE
-                            oc.category = {$category}
-                            AND (oc.updated_at BETWEEN :start AND :end)
-                            AND t.id IS NULL
-                    ) AS oc
-                WHERE
-                    {$search}",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        };
-
-        foreach ($tags as $category => $array) {
-            foreach ($strongTags as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getDescStrongTags()[$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
-            }
-
-            foreach ($array as $key => $search) {
-                $tag = $this->tags[$category][$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
-            }
-
-            foreach ($afterStrongTags as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getAfterDescStrongTags()[$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
-            }
-        }
-    }
-
-    protected function updateBeforeCategory(string $column = 'oc.name', string $table = 'recommend'): void
-    {
-        $strongTags = array_map(
-            fn($a) => array_map(fn($str) => $this->replace($str, $column), $a),
-            $this->recommendUpdaterTags->getBeforeCategoryNameTags()
+        $nameTags = array_merge(
+            $this->recommendUpdaterTags->getNameStrongTags(),
+            array_merge(...$this->getOpenChatSubCategoriesTag())
         );
 
-        $excute = function ($targetTable, $tag, $search, $category) {
-            $tag = $this->formatTag($tag);
-            DB::execute(
-                "INSERT INTO
-                    {$targetTable}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id
-                        WHERE
-                            t.id IS NULL
-                            AND oc.category = {$category}
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    ) AS oc
-                WHERE
-                    {$search}",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        };
-
-        foreach ($strongTags as $category => $array) {
-            foreach ($array as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getBeforeCategoryNameTags()[$category][$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
+        // recommend: name + description（allowDuplicateEntries=true）
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->recommendResults[$id]) && $this->recommendResults[$id] !== $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->recommendResults[$id] = $formattedTag;
+                }
             }
         }
-    }
-
-    protected function updateStrongestTags(string $table = 'recommend')
-    {
-        $this->executeUpdateStrongestTags('oc.name', $table);
-        $this->executeUpdateStrongestTags('oc.description', $table);
-    }
-
-    protected function executeUpdateStrongestTags(
-        string $column = 'oc.name',
-        string $table = 'recommend',
-    ) {
-        $tags = $this->getReplacedStrongestTags($column);
-
-        foreach ($tags as $key => $search) {
-            $tag = $this->formatTag($this->tags[$key]);
-
-            DB::execute(
-                "INSERT INTO
-                    {$table}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$table} AS t ON t.id = oc.id
-                        WHERE
-                            t.id IS NULL
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    ) AS oc
-                WHERE
-                    {$search}",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        }
-    }
-
-    /** @return string[] */
-    protected function getReplacedStrongestTags(string $column): array
-    {
-        $tags = $this->recommendUpdaterTags->getStrongestTags($column);
-
-        $this->tags = array_map(fn($el) => is_array($el) ? $el[0] : $el, $tags);
-
-        return array_map(fn($str) => $this->replace($str, $column), $tags);
-    }
-
-    protected function updateName2(
-        string $column = 'oc.name',
-        string $table = 'oc_tag2',
-        bool $allowDuplicateEntries = false
-    ) {
-        $tags = $this->getReplacedTags($column);
-
-        foreach ($tags as $key => $search) {
-            $tag = $this->formatTag($this->tags[$key]);
-            $duplicateEntries = $allowDuplicateEntries ? "AND t.tag = '{$tag}'" : '';
-
-            DB::execute(
-                "INSERT INTO
-                    {$table}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$table} AS t ON t.id = oc.id {$duplicateEntries}
-                            LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
-                        WHERE
-                            t.id IS NULL
-                            AND NOT t2.tag = '{$tag}'
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    ) AS oc
-                WHERE
-                    ({$search})",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        }
-    }
-
-    protected function updateDescription2(string $column = 'oc.description', string $table = 'oc_tag2')
-    {
-        [$tags, $strongTags, $afterStrongTags] = $this->getReplacedTagsDesc($column);
-
-        $excute = function ($targetTable, $tag, $search, $category) {
-            $tag = $this->formatTag($tag);
-            DB::execute(
-                "INSERT INTO
-                    {$targetTable}
-                SELECT
-                    oc.id,
-                    '{$tag}'
-                FROM
-                    (
-                        SELECT
-                            oc.*
-                        FROM
-                            open_chat AS oc
-                            {$this->targetIdJoinClause}
-                            LEFT JOIN {$targetTable} AS t ON t.id = oc.id
-                            LEFT JOIN oc_tag AS t2 ON t2.id = oc.id
-                        WHERE
-                            t.id IS NULL
-                            AND NOT t2.tag = '{$tag}'
-                            AND oc.category = {$category}
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    ) AS oc
-                WHERE
-                    ({$search})",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        };
-
-        foreach ($tags as $category => $array) {
-            foreach ($strongTags as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getDescStrongTags()[$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
-            }
-
-            foreach ($array as $key => $search) {
-                $tag = $this->tags[$category][$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
-            }
-
-            foreach ($afterStrongTags as $key => $search) {
-                $tag = $this->recommendUpdaterTags->getAfterDescStrongTags()[$key];
-                $tag = is_array($tag) ? $tag[0] : $tag;
-                $excute($table, $tag, $search, $category);
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->recommendResults[$id]) && $this->recommendResults[$id] !== $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
+                    $this->recommendResults[$id] = $formattedTag;
+                }
             }
         }
-    }
 
-    protected function deleteRecommendTags(string $table)
-    {
-        if ($this->targetIdJoinClause) {
-            // Mock環境：一時テーブルを使用
-            DB::execute(
-                "DELETE t FROM {$table} t
-                INNER JOIN (
-                    SELECT oc.id
-                    FROM open_chat AS oc
-                    INNER JOIN target_oc_ids AS tid ON oc.id = tid.id
-                    LEFT JOIN modify_recommend AS mr ON mr.id = oc.id
-                    WHERE mr.id IS NULL
-                        AND oc.updated_at BETWEEN :start AND :end
-                ) AS target ON t.id = target.id",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        } else {
-            // 本番環境：従来の方法
-            DB::execute(
-                "DELETE FROM
-                    {$table}
-                WHERE
-                    id IN (
-                        SELECT
-                            oc.id
-                        FROM
-                            open_chat AS oc
-                            LEFT JOIN modify_recommend AS mr ON mr.id = oc.id
-                        WHERE
-                            mr.id IS NULL
-                            AND oc.updated_at BETWEEN :start
-                            AND :end
-                    )",
-                ['start' => $this->start, 'end' => $this->end]
-            );
+        // Admin override - マッチしたIDのみ上書き
+        foreach ($this->modifyTags as $id => $tag) {
+            if (isset($this->recommendResults[$id])) {
+                $this->recommendResults[$id] = $tag;
+            }
         }
-    }
 
-    protected function deleteTags(string $table)
-    {
-        if ($this->targetIdJoinClause) {
-            // Mock環境：一時テーブルを使用
-            DB::execute(
-                "DELETE t FROM {$table} t
-                INNER JOIN (
-                    SELECT oc.id
-                    FROM open_chat AS oc
-                    INNER JOIN target_oc_ids AS tid ON oc.id = tid.id
-                    WHERE oc.updated_at BETWEEN :start AND :end
-                ) AS target ON t.id = target.id",
-                ['start' => $this->start, 'end' => $this->end]
-            );
-        } else {
-            // 本番環境：従来の方法
-            DB::execute(
-                "DELETE FROM
-                    {$table}
-                WHERE
-                    id IN (
-                        SELECT
-                            oc.id
-                        FROM
-                            open_chat AS oc
-                        WHERE
-                            oc.updated_at BETWEEN :start
-                            AND :end
-                    )",
-                ['start' => $this->start, 'end' => $this->end]
-            );
+        // oc_tag: name + description（allowDuplicateEntries=true）
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->ocTagResults[$id]) && $this->ocTagResults[$id] !== $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
+                    $this->ocTagResults[$id] = $formattedTag;
+                }
+            }
         }
+        foreach ($nameTags as $tagDef) {
+            $formattedTag = $this->extractFormattedTag($tagDef);
+            foreach ($allIds as $id) {
+                if (isset($this->ocTagResults[$id]) && $this->ocTagResults[$id] !== $formattedTag) continue;
+                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
+                    $this->ocTagResults[$id] = $formattedTag;
+                }
+            }
+        }
+
+        // oc_tag2: 全削除のみ（台湾・タイでは再挿入なし）
     }
 
-    protected function modifyRecommendTags(string $table = 'recommend')
+    // ========================================================================
+    // バルクマッチング: ヘルパーメソッド
+    // ========================================================================
+
+    /**
+     * タグ定義からフォーマット済みタグ名を抽出する
+     */
+    private function extractFormattedTag(string|array $tagDef): string
     {
-        DB::execute("UPDATE {$table} AS t1 JOIN modify_recommend AS t2 ON t1.id = t2.id SET t1.tag = t2.tag");
+        $tag = is_array($tagDef) ? $tagDef[0] : $tagDef;
+        return $this->formatTag($tag);
     }
 
     /**
-     * Mock環境用：処理対象IDを制限する一時テーブルを作成
+     * description系タグのマッチング（strong → category → afterStrong の順）
+     *
+     * @param int[] $targetIds
+     * @param string $column 'name' or 'description'
+     * @param array<int, string> &$results
      */
-    private function createTargetIdTable(int $limit): void
+    private function matchDescriptionTags(array $targetIds, string $column, array &$results): void
     {
-        DB::execute("CREATE TEMPORARY TABLE IF NOT EXISTS target_oc_ids (id INT PRIMARY KEY)");
-        DB::execute(
-            "INSERT INTO target_oc_ids
-             SELECT id FROM open_chat
-             WHERE updated_at BETWEEN :start AND :end
-             LIMIT :limit",
-            ['start' => $this->start, 'end' => $this->end, 'limit' => $limit]
-        );
+        $subCategoriesTags = $this->getOpenChatSubCategoriesTag();
+        $descStrongTags = $this->recommendUpdaterTags->getDescStrongTags();
+        $afterDescStrongTags = $this->recommendUpdaterTags->getAfterDescStrongTags();
+
+        foreach ($subCategoriesTags as $category => $categoryTagDefs) {
+            foreach ($descStrongTags as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($results[$id])) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $results[$id] = $formattedTag;
+                    }
+                }
+            }
+
+            foreach ($categoryTagDefs as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($results[$id])) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $results[$id] = $formattedTag;
+                    }
+                }
+            }
+
+            foreach ($afterDescStrongTags as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($results[$id])) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $results[$id] = $formattedTag;
+                    }
+                }
+            }
+        }
     }
 
     /**
-     * Mock環境用：一時テーブルを削除
+     * oc_tag2用 description系タグのマッチング
+     * oc_tagと同じタグの場合はスキップする特殊条件付き
+     *
+     * @param int[] $targetIds
+     * @param string $column 'name' or 'description'
      */
-    private function dropTargetIdTable(): void
+    private function matchDescriptionTagsForTag2(array $targetIds, string $column): void
     {
-        DB::execute("DROP TEMPORARY TABLE IF EXISTS target_oc_ids");
+        $subCategoriesTags = $this->getOpenChatSubCategoriesTag();
+        $descStrongTags = $this->recommendUpdaterTags->getDescStrongTags();
+        $afterDescStrongTags = $this->recommendUpdaterTags->getAfterDescStrongTags();
+
+        foreach ($subCategoriesTags as $category => $categoryTagDefs) {
+            foreach ($descStrongTags as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($this->ocTag2Results[$id])) continue;
+                    if (!isset($this->ocTagResults[$id]) || $this->ocTagResults[$id] === $formattedTag) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $this->ocTag2Results[$id] = $formattedTag;
+                    }
+                }
+            }
+
+            foreach ($categoryTagDefs as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($this->ocTag2Results[$id])) continue;
+                    if (!isset($this->ocTagResults[$id]) || $this->ocTagResults[$id] === $formattedTag) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $this->ocTag2Results[$id] = $formattedTag;
+                    }
+                }
+            }
+
+            foreach ($afterDescStrongTags as $tagDef) {
+                $formattedTag = $this->extractFormattedTag($tagDef);
+                foreach ($targetIds as $id) {
+                    if (isset($this->ocTag2Results[$id])) continue;
+                    if (!isset($this->ocTagResults[$id]) || $this->ocTagResults[$id] === $formattedTag) continue;
+                    if ($this->rows[$id]['category'] !== (int)$category) continue;
+                    if ($this->matchesTagDef($tagDef, $this->rows[$id][$column])) {
+                        $this->ocTag2Results[$id] = $formattedTag;
+                    }
+                }
+            }
+        }
+    }
+
+    // ========================================================================
+    // バルクマッチング: テキストマッチング
+    // ========================================================================
+
+    /**
+     * タグ定義に対してテキストがマッチするかPHPで判定する
+     *
+     * SQL LIKE をPHPで再現:
+     * - utf8mb4_general_ci LIKE → mb_stripos()
+     * - utf8mb4_bin LIKE → str_contains()
+     * - _AND_ → 全サブストリングが存在
+     * - _OR_ → いずれかが存在
+     * - utfbin_ プレフィックス → str_contains() を強制
+     * - 4バイトUTF-8文字含有 → str_contains() を強制
+     *
+     * @param string|array{string, string[]} $tagDef タグ定義
+     * @param string $text マッチ対象テキスト
+     */
+    private function matchesTagDef(string|array $tagDef, string $text): bool
+    {
+        if (is_array($tagDef)) {
+            foreach ($tagDef[1] as $keyword) {
+                if ($this->matchesSingleKeyword($keyword, $text)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return $this->matchesSingleKeyword($tagDef, $text);
+    }
+
+    /**
+     * 単一キーワードのマッチング
+     *
+     * _AND_ が先に展開され、_OR_ が後に展開される
+     * 結果として OR(AND(...), AND(...)) の構造になる（ANDがORより優先）
+     */
+    private function matchesSingleKeyword(string $keyword, string $text): bool
+    {
+        $utfbin = mb_strpos($keyword, 'utfbin_') !== false;
+        $has4byte = (bool)preg_match('/[\xF0-\xF7][\x80-\xBF][\x80-\xBF][\x80-\xBF]/', $keyword);
+        $useBinary = $utfbin || $has4byte;
+
+        if ($utfbin) {
+            $keyword = str_replace('utfbin_', '', $keyword);
+        }
+
+        $orParts = explode('_OR_', $keyword);
+        foreach ($orParts as $orPart) {
+            $andParts = explode('_AND_', $orPart);
+            $allMatch = true;
+            foreach ($andParts as $andPart) {
+                if (!$this->containsText($andPart, $text, $useBinary)) {
+                    $allMatch = false;
+                    break;
+                }
+            }
+            if ($allMatch) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * テキスト中にキーワードが含まれるかを判定
+     *
+     * @param bool $binary true: バイナリ比較（str_contains）、false: 大文字小文字無視（mb_stripos）
+     */
+    private function containsText(string $keyword, string $text, bool $binary): bool
+    {
+        if ($binary) {
+            return str_contains($text, $keyword);
+        }
+        return mb_stripos($text, $keyword) !== false;
     }
 }
