@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Auth\AuthInterface;
 
@@ -11,6 +12,7 @@ class RecentCommentApiController
 {
     function __construct(
         private RecentCommentListRepositoryInterface $recentCommentListRepository,
+        private CommentImageRepositoryInterface $commentImageRepository,
     ) {}
 
     function index(int $open_chat_id)
@@ -39,6 +41,14 @@ class RecentCommentApiController
             $user_id,
             $open_chat_id
         );
+
+        $commentIds = array_column($recentCommentList, 'comment_id');
+        $imagesMap = $this->commentImageRepository->getImagesByCommentIds($commentIds);
+
+        foreach ($recentCommentList as &$oc) {
+            $oc['images'] = $imagesMap[$oc['comment_id']] ?? [];
+            unset($oc['comment_id']);
+        }
 
         return view('components/open_chat_list_ranking_comment2', ['openChatList' => $recentCommentList]);
     }

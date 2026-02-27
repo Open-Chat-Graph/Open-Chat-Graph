@@ -36,29 +36,28 @@ use App\Views\Ads\GoogleAdsense as GAd;
               </div>
             <?php endif ?>
 
-            <?php if (mb_strlen($oc['description']) > 0) : ?>
-              <div class="comment-user" style="margin-left: 3px;">
-                <span>@<?php echo $oc['user'] ?></span>
-              </div>
-            <?php endif ?>
           </a>
         </h3>
+        <footer class="comment-footer">
+          <?php if (mb_strlen($oc['description']) > 0) : ?>
+            <div class="comment-user"><span><?php echo $oc['user'] ?></span></div>
+          <?php endif ?>
+          <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
+        </footer>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
           <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description'], 80) ?></p>
+          <?php if (!empty($oc['images'])) : ?>
+            <div class="comment-images">
+              <?php foreach ($oc['images'] as $img) : ?>
+                <img loading="lazy" src="<?php echo url('/comment-img/thumb/' . $img['filename']) ?>" alt="">
+              <?php endforeach ?>
+            </div>
+          <?php endif ?>
         <?php else : ?>
           <div class="comment-user" style="font-size: 12px;">
             <span>削除されたコメント</span>
           </div>
         <?php endif ?>
-
-        <footer class="comment-footer">
-          <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
-          <!-- <?php if ($oc['category']) : ?>
-            <div class="openchat-item-mui-chip-outer">
-              <span class="openchat-item-mui-chip-inner" aria-label="カテゴリ: <?php echo getCategoryName($oc['category']) ?>"><?php echo getCategoryName($oc['category']) ?></span>
-            </div>
-          <?php endif ?> -->
-        </footer>
         <div class="link-overlay hover"></div>
       </li>
 

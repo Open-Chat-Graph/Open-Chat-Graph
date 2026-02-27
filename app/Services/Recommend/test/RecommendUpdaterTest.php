@@ -2,27 +2,32 @@
 
 declare(strict_types=1);
 
+use App\Models\RecommendRepositories\RecommendTagRepository;
 use App\Models\Repositories\DB;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUpdaterTags;
 use App\Services\Storage\FileStorageInterface;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shared\MimimalCmsConfig;
 
 // docker compose exec app vendor/bin/phpunit app/Services/Recommend/test/RecommendUpdaterTest.php
 class RecommendUpdaterTest extends TestCase
 {
+    private const TEST_DB_NAME = 'ocgraph_recommend_test';
+
     private RecommendUpdater $recommendUpdater;
-    private FileStorageInterface|MockObject $mockFileStorage;
+    private FileStorageInterface&Stub $mockFileStorage;
 
     protected function setUp(): void
     {
         // MimimalCmsConfig::$urlRoot を '' に設定（日本語版のテスト）
         MimimalCmsConfig::$urlRoot = '';
 
-        // DB接続
+        // DB接続してテスト専用DBを作成・切り替え
         DB::connect();
+        DB::$pdo->exec('CREATE DATABASE IF NOT EXISTS `' . self::TEST_DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        DB::$pdo->exec('USE `' . self::TEST_DB_NAME . '`');
 
         // テストテーブルを作成
         $this->createTestTables();
@@ -31,7 +36,13 @@ class RecommendUpdaterTest extends TestCase
         $this->insertTestData();
 
         // FileStorageInterface のモックを作成
-        $this->mockFileStorage = $this->createMock(FileStorageInterface::class);
+        $this->mockFileStorage = $this->createStub(FileStorageInterface::class);
+
+        // getStorageFilePath のモック設定
+        // file_exists() が true を返すよう、実在するパスを返す
+        $this->mockFileStorage
+            ->method('getStorageFilePath')
+            ->willReturn(__FILE__);
 
         // getContents のモック設定（複数のファイルパスに対応）
         $this->mockFileStorage
@@ -58,34 +69,27 @@ class RecommendUpdaterTest extends TestCase
             });
 
         $this->mockFileStorage
-            ->expects($this->any())
             ->method('safeFileRewrite');
 
         // RecommendUpdater インスタンスを作成
         $this->recommendUpdater = new RecommendUpdater(
             $this->mockFileStorage,
+            new RecommendTagRepository(),
             new RecommendUpdaterTags()
         );
     }
 
     protected function tearDown(): void
     {
-        // テストテーブルを削除（テンポラリテーブルも含む）
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS recommend_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag_temp');
-        DB::execute('DROP TEMPORARY TABLE IF EXISTS oc_tag2_temp');
-        DB::execute('DROP TABLE IF EXISTS open_chat');
-        DB::execute('DROP TABLE IF EXISTS oc_tag');
-        DB::execute('DROP TABLE IF EXISTS oc_tag2');
-        DB::execute('DROP TABLE IF EXISTS recommend');
-        DB::execute('DROP TABLE IF EXISTS modify_recommend');
+        // テスト専用DBを丸ごと削除（本番DBには一切触れない）
+        DB::$pdo->exec('DROP DATABASE IF EXISTS `' . self::TEST_DB_NAME . '`');
     }
 
     private function createTestTables(): void
     {
         // open_chat テーブル
         DB::execute("
-            CREATE TABLE IF NOT EXISTS `open_chat` (
+            CREATE TABLE `open_chat` (
                 `id` int(11) NOT NULL AUTO_INCREMENT,
                 `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
                 `img_url` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -108,7 +112,7 @@ class RecommendUpdaterTest extends TestCase
 
         // oc_tag テーブル
         DB::execute("
-            CREATE TABLE IF NOT EXISTS `oc_tag` (
+            CREATE TABLE `oc_tag` (
                 `id` int(11) NOT NULL,
                 `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
                 PRIMARY KEY (`id`),
@@ -118,7 +122,7 @@ class RecommendUpdaterTest extends TestCase
 
         // oc_tag2 テーブル
         DB::execute("
-            CREATE TABLE IF NOT EXISTS `oc_tag2` (
+            CREATE TABLE `oc_tag2` (
                 `id` int(11) NOT NULL,
                 `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
                 PRIMARY KEY (`id`),
@@ -128,7 +132,7 @@ class RecommendUpdaterTest extends TestCase
 
         // recommend テーブル
         DB::execute("
-            CREATE TABLE IF NOT EXISTS `recommend` (
+            CREATE TABLE `recommend` (
                 `id` int(11) NOT NULL,
                 `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
                 PRIMARY KEY (`id`),
@@ -138,7 +142,7 @@ class RecommendUpdaterTest extends TestCase
 
         // modify_recommend テーブル
         DB::execute("
-            CREATE TABLE IF NOT EXISTS `modify_recommend` (
+            CREATE TABLE `modify_recommend` (
                 `id` int(11) NOT NULL,
                 `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
                 `time` datetime NOT NULL DEFAULT current_timestamp(),
