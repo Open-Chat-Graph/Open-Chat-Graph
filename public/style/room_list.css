@@ -575,6 +575,7 @@
 .recent-comment-list .openchat-item-desc {
   color: #111;
   font-weight: normal;
+  font-size: 15px;
   line-height: 150%;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -584,7 +585,7 @@
 .comment-images {
   display: flex;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 10px;
   pointer-events: none;
 }
 
@@ -608,6 +609,7 @@
 
 .recent-comment-list .openchat-item-title {
   display: flex;
+  font-size: 13px;
 }
 
 .top-ranking .openchat-item-title {
@@ -616,10 +618,10 @@
 }
 
 .comment-user {
-  color: #777;
+  color: #111;
   font-size: 14px;
   display: block;
-  font-weight: normal;
+  font-weight: bold;
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -632,7 +634,7 @@
   white-space: nowrap;
   overflow: hidden;
   color: #111;
-  font-weight: bold;
+  font-weight: normal;
   max-width: 70%;
 }
 
@@ -673,6 +675,12 @@
   gap: 6px;
   align-items: center;
   margin-top: 3px;
+  flex-wrap: nowrap;
+}
+
+.comment-footer .comment-user {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .comment-time {
@@ -680,6 +688,7 @@
   position: relative;
   color: #777;
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .recent-comment-list .super-icon {
@@ -1258,7 +1267,7 @@
 
   .recent-comment-list .openchat-item-desc {
     margin-top: 3px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: normal;
   }
 

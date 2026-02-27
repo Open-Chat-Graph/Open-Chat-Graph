@@ -36,14 +36,12 @@ use App\Views\Ads\GoogleAdsense as GAd;
               </div>
             <?php endif ?>
 
-            <?php if (mb_strlen($oc['description']) > 0) : ?>
-              <div class="comment-user" style="margin-left: 3px;">
-                <span>@<?php echo $oc['user'] ?></span>
-              </div>
-            <?php endif ?>
           </a>
         </h3>
         <footer class="comment-footer">
+          <?php if (mb_strlen($oc['description']) > 0) : ?>
+            <div class="comment-user"><span><?php echo $oc['user'] ?></span></div>
+          <?php endif ?>
           <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
         </footer>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
