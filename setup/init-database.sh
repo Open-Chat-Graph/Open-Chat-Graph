@@ -32,6 +32,8 @@ echo "MySQL: docker compose ${COMPOSE_FILES} exec mysql"
 echo "User: $MYSQL_USER"
 echo ""
 
+sudo chmod 777 public/comment-img
+
 # MySQLコマンド構築（docker compose経由）
 MYSQL_CMD="docker compose ${COMPOSE_FILES} exec -T mysql mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}"
 
