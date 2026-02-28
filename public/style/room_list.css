@@ -512,7 +512,7 @@
 .recent-comment-list .openchat-item {
   min-height: 40px;
   margin: 0;
-  padding: 12px 0;
+  padding: 14px 0;
   padding-left: 50px;
   padding-right: 1.5rem;
   cursor: unset;
@@ -575,7 +575,7 @@
 .recent-comment-list .openchat-item-desc {
   color: #111;
   font-weight: normal;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 150%;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -603,15 +603,15 @@
 
 .recent-comment-list .openchat-item h3 {
   display: block;
-  min-width: 0px;
-  max-width: 100%;
+  min-width: calc(100% + 1.5rem);
+  width: calc(100% + 1.5rem);
 }
 
 .recent-comment-list .openchat-item-title {
   display: flex;
   flex-wrap: nowrap;
   overflow: visible;
-  padding-right: 2.2rem;
+  justify-content: space-between;
 }
 
 .top-ranking .openchat-item-title {
@@ -621,14 +621,13 @@
 
 .comment-user {
   color: #777;
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 13px;
   display: block;
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 0px;
 }
 
 .openchat-item-title .comment-name {
@@ -638,7 +637,7 @@
   overflow: hidden;
   color: #111;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .recent-comment-list .openchat-item-title .comment-name {
@@ -652,7 +651,7 @@
 
 .recent-comment-list .openchat-item-title .comment-member-count {
   flex: 1 0 0;
-  font-size: 14px;
+  font-size: 15px;
   margin-left: 2px;
 }
 
@@ -688,12 +687,11 @@
 
 .comment-time {
   font-weight: normal;
-  position: absolute;
-  right: -1.5rem;
-  top: -1px;
+  position: relative;
   color: #555;
-  font-size: 11px;
+  font-size: 13px;
   flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .recent-comment-list .super-icon {
@@ -1293,6 +1291,7 @@
     font-size: 13px;
     font-weight: 500;
     padding-right: 0;
+    justify-content: left;
   }
 
   .recent-comment-list .openchat-item-title .comment-member-count {
@@ -1303,6 +1302,7 @@
     position: static;
     font-size: 14px;
     flex: 0 0 auto;
+    margin-left: 0;
   }
 
   .comment-time::before {
