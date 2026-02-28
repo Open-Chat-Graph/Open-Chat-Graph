@@ -91,11 +91,11 @@ use App\Views\Ads\GoogleAdsense as GAd;
             <span class="visually-hidden"><?php echo $oc['name'] ?></span>
           </a>
           <h3 class="unset">
-            <a style="font-size: 12px;" class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
-              <div class="comment-name">
+            <a class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
+              <div style="font-size: 12px;" class="comment-name">
                 <span aria-hidden="true"></span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
-              <div class="comment-user" style="font-size: 12px; margin-left: 4px;">
+              <div class="comment-member-count" style="font-size: 12px; margin-right: 4px; color: #777;">
                 <span>削除されたコメント</span>
               </div>
               <div class="comment-time" style="font-size: 12px; margin-left: 4px;">
