@@ -1,56 +1,60 @@
 let lastList = ''
 
+// 表示ルール:
+// 今日 & 15分以内       → "たった今"
+// 今日 & 1〜23時間前    → "3時間前"
+// 今日 & 16〜59分前     → "30分前"
+// 今日 & 15分超〜1分未満 → "45秒前"
+// 昨日以前 & 同年 (モバイル) → "2/23"
+// 昨日以前 & 同年 (PC)      → "2月23日"
+// 昨日以前 & 前年以前 (モバイル) → "2025/12/1"
+// 昨日以前 & 前年以前 (PC)      → "2025年12月1日"
 export function timeElapsedString(datetime, thresholdMinutes = 15) {
   const now = new Date()
-  const targetDatetime = new Date(datetime.replace(/-/g, '/')) // 日付形式を修正してDateオブジェクトを作成
+  const targetDatetime = new Date(datetime.replace(/-/g, '/'))
 
-  const diffMs = now - targetDatetime // ミリ秒単位の差を計算
-  const totalMinutes = diffMs / 1000 / 60 // ミリ秒を分に変換
+  const diffMs = now - targetDatetime
+  const totalMinutes = diffMs / 1000 / 60
 
   if (totalMinutes <= thresholdMinutes) {
-    return ['たった今', '#4d73ff']
+    return 'たった今'
   }
 
   const diffDate = new Date(diffMs)
-  const years = diffDate.getUTCFullYear() - 1970 // 1970年からの年数を計算
-  const months = diffDate.getUTCMonth()
-  const days = diffDate.getUTCDate() - 1 // 月初からの日数
   const hours = diffDate.getUTCHours()
   const minutes = diffDate.getUTCMinutes()
   const seconds = diffDate.getUTCSeconds()
 
-  const formattedTime = `${targetDatetime.getHours()}:${String(targetDatetime.getMinutes()).padStart(2, '0')}`
+  const isToday = now.getFullYear() === targetDatetime.getFullYear()
+    && now.getMonth() === targetDatetime.getMonth()
+    && now.getDate() === targetDatetime.getDate()
+
+  if (isToday) {
+    if (hours > 0) {
+      return hours + '時間前'
+    } else if (minutes > 0) {
+      return minutes + '分前'
+    } else {
+      return seconds + '秒前'
+    }
+  }
+
+  const isPC = window.matchMedia('(min-width: 512px)').matches
+  const m = targetDatetime.getMonth() + 1
+  const d = targetDatetime.getDate()
 
   if (now.getFullYear() > targetDatetime.getFullYear()) {
-    return [
-      `${targetDatetime.getFullYear()}年${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-      '#777',
-    ]
-  } else if (months > 0) {
-    return [
-      `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-      '#777',
-    ]
-  } else if (days > 0) {
-    return [
-      `${targetDatetime.getMonth() + 1}月${targetDatetime.getDate()}日 ${formattedTime}`,
-      '#777',
-    ]
-  } else if (hours > 0) {
-    return [hours + '時間前', '#4d73ff']
-  } else if (minutes > 0) {
-    return [minutes + '分前', '#4d73ff']
-  } else {
-    return [seconds + '秒前', '#4d73ff']
+    const y = targetDatetime.getFullYear()
+    return isPC ? `${y}年${m}月${d}日` : `${y}/${m}/${d}`
   }
+
+  return isPC ? `${m}月${d}日` : `${m}/${d}`
 }
 
 export function applyTimeElapsedString() {
   const commentTime = document.querySelectorAll('.comment-time span')
   commentTime.forEach((time) => {
-    const [formattedTime, color] = timeElapsedString(time.textContent)
-    time.textContent = formattedTime
-    time.style.color = color
+    time.textContent = timeElapsedString(time.textContent)
   })
 }
 

@@ -575,11 +575,11 @@
 .recent-comment-list .openchat-item-desc {
   color: #111;
   font-weight: normal;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 150%;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .comment-images {
@@ -609,7 +609,9 @@
 
 .recent-comment-list .openchat-item-title {
   display: flex;
-  font-size: 13px;
+  flex-wrap: nowrap;
+  overflow: visible;
+  padding-right: 2.2rem;
 }
 
 .top-ranking .openchat-item-title {
@@ -618,14 +620,15 @@
 }
 
 .comment-user {
-  color: #111;
-  font-size: 14px;
-  display: block;
+  color: #777;
+  font-size: 11px;
   font-weight: bold;
+  display: block;
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  margin-top: 2px;
 }
 
 .openchat-item-title .comment-name {
@@ -634,14 +637,12 @@
   white-space: nowrap;
   overflow: hidden;
   color: #111;
-  font-weight: normal;
-  max-width: 70%;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .recent-comment-list .openchat-item-title .comment-name {
-  flex: 1 1 0;
   min-width: 0;
-  max-width: max-content;
 }
 
 .openchat-item-title .comment-member-count {
@@ -650,7 +651,9 @@
 }
 
 .recent-comment-list .openchat-item-title .comment-member-count {
-  flex: 0 0 auto;
+  flex: 1 0 0;
+  font-size: 14px;
+  margin-left: 2px;
 }
 
 .recent-comment-list .openchat-item-title .comment-user {
@@ -671,10 +674,10 @@
 
 .comment-footer {
   all: unset;
-  display: flex;
   gap: 6px;
+  margin-top: 0px;
   align-items: center;
-  margin-top: 3px;
+  display: flex;
   flex-wrap: nowrap;
 }
 
@@ -685,9 +688,11 @@
 
 .comment-time {
   font-weight: normal;
-  position: relative;
-  color: #777;
-  font-size: 13px;
+  position: absolute;
+  right: -1.5rem;
+  top: -1px;
+  color: #555;
+  font-size: 11px;
   flex-shrink: 0;
 }
 
@@ -1267,7 +1272,7 @@
 
   .recent-comment-list .openchat-item-desc {
     margin-top: 3px;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: normal;
   }
 
@@ -1287,6 +1292,22 @@
   .recent-comment-list .openchat-item-title {
     font-size: 13px;
     font-weight: 500;
+    padding-right: 0;
+  }
+
+  .recent-comment-list .openchat-item-title .comment-member-count {
+    flex: 0 0 auto;
+  }
+
+  .comment-time {
+    position: static;
+    font-size: 14px;
+    flex: 0 0 auto;
+  }
+
+  .comment-time::before {
+    content: '・';
+    color: inherit;
   }
 
   .refresh-time span {
