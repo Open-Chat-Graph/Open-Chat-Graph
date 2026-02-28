@@ -35,15 +35,15 @@ use App\Views\Ads\GoogleAdsense as GAd;
                 <span>(<?php echo  formatMember($oc['member']) ?>)</span>
               </div>
             <?php endif ?>
+
+            <?php if (mb_strlen($oc['description']) > 0) : ?>
+              <div class="comment-user"><span>@<?php echo $oc['user'] ?></span></div>
+            <?php endif ?>
+
             <!-- JSのapplyTimeElapsedString()で表示フォーマット変換 -->
             <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
           </a>
         </h3>
-        <footer class="comment-footer">
-          <?php if (mb_strlen($oc['description']) > 0) : ?>
-            <div class="comment-user"><span><?php echo $oc['user'] ?></span></div>
-          <?php endif ?>
-        </footer>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
           <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description'], 80) ?></p>
           <?php if (!empty($oc['images'])) : ?>
