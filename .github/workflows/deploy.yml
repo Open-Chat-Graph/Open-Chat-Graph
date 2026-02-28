@@ -232,7 +232,7 @@ jobs:
 
               const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
-                'By @' + prAuthor + '\n\n' +
+                'By ' + prAuthor + '\n\n' +
                 '#オプチャグラフ ' + siteUrl + '\n\n' +
                 prUrl;
 
