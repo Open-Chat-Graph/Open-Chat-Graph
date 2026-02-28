@@ -54,7 +54,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
             </div>
           <?php endif ?>
         <?php else : ?>
-          <div class="comment-user" style="font-size: 12px;">
+          <div class="comment-user" style="font-size: 12px; margin-top: 4px; color: #777;">
             <span>削除されたコメント</span>
           </div>
         <?php endif ?>
