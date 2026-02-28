@@ -166,6 +166,36 @@ jobs:
           [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
           echo "Frontend deploy complete"
 
+      - name: Purge Cloudflare cache
+        env:
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CF_ZONE_ID_STG: ${{ secrets.STG_CLOUDFLARE_ZONE_ID }}
+          CF_API_KEY_STG: ${{ secrets.STG_CLOUDFLARE_API_KEY }}
+        run: |
+          if [ "$IS_STG" = "true" ]; then
+            ZONE_ID="$CF_ZONE_ID_STG"
+            API_KEY="$CF_API_KEY_STG"
+          else
+            ZONE_ID="$CF_ZONE_ID"
+            API_KEY="$CF_API_KEY"
+          fi
+          if [ -z "$ZONE_ID" ] || [ -z "$API_KEY" ]; then
+            echo "Cloudflare credentials not configured. Skipping cache purge."
+            exit 0
+          fi
+          echo "Purging Cloudflare cache..."
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          if echo "$RESPONSE" | grep -q '"success":true'; then
+            echo "Cache purged successfully."
+          else
+            echo "::error::Cache purge failed: $RESPONSE"
+            exit 1
+          fi
+
       - name: Notify Discord (deploy success)
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -232,7 +262,7 @@ jobs:
 
               const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
-                'By @' + prAuthor + '\n\n' +
+                'By ' + prAuthor + '\n\n' +
                 '#オプチャグラフ ' + siteUrl + '\n\n' +
                 prUrl;
 
