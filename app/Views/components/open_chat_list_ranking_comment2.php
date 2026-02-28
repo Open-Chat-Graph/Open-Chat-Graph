@@ -31,18 +31,18 @@ use App\Views\Ads\GoogleAdsense as GAd;
             </div>
 
             <?php if ($oc['member']) : ?>
-              <div class="comment-member-count" style="margin-left: 3px;">
+              <div class="comment-member-count">
                 <span>(<?php echo  formatMember($oc['member']) ?>)</span>
               </div>
             <?php endif ?>
-
+            <!-- JSのapplyTimeElapsedString()で表示フォーマット変換 -->
+            <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
           </a>
         </h3>
         <footer class="comment-footer">
           <?php if (mb_strlen($oc['description']) > 0) : ?>
             <div class="comment-user"><span><?php echo $oc['user'] ?></span></div>
           <?php endif ?>
-          <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
         </footer>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
           <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description'], 80) ?></p>
@@ -91,11 +91,11 @@ use App\Views\Ads\GoogleAdsense as GAd;
             <span class="visually-hidden"><?php echo $oc['name'] ?></span>
           </a>
           <h3 class="unset">
-            <a style="font-size: 12px;" class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
-              <div class="comment-name">
+            <a class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
+              <div style="font-size: 12px;" class="comment-name">
                 <span aria-hidden="true"></span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
-              <div class="comment-user" style="font-size: 12px; margin-left: 4px;">
+              <div class="comment-member-count" style="font-size: 12px; margin-right: 4px; color: #777;">
                 <span>削除されたコメント</span>
               </div>
               <div class="comment-time" style="font-size: 12px; margin-left: 4px;">
