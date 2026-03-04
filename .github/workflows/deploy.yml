@@ -189,7 +189,7 @@ jobs:
             -H "Authorization: Bearer ${API_KEY}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}')
-          if echo "$RESPONSE" | grep -q '"success":true'; then
+          if echo "$RESPONSE" | grep -q '"success":\s*true'; then
             echo "Cache purged successfully."
           else
             echo "::error::Cache purge failed: $RESPONSE"
