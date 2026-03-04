@@ -1,14 +1,14 @@
 let lastList = ''
 
 // 表示ルール:
-// 今日 & 15分以内       → "たった今"
-// 今日 & 1〜23時間前    → "3時間前"
-// 今日 & 16〜59分前     → "30分前"
-// 今日 & 15分超〜1分未満 → "45秒前"
-// 昨日以前 & 同年 (モバイル) → "2/23"
-// 昨日以前 & 同年 (PC)      → "2月23日"
-// 昨日以前 & 前年以前 (モバイル) → "2025/12/1"
-// 昨日以前 & 前年以前 (PC)      → "2025年12月1日"
+// 15分以内              → "たった今"
+// 24時間未満 & 1時間以上 → "3時間前"
+// 24時間未満 & 16〜59分  → "30分前"
+// 24時間未満 & 1分未満   → "45秒前"
+// 24時間以上 & 同年 (モバイル) → "2/23"
+// 24時間以上 & 同年 (PC)      → "2月23日"
+// 24時間以上 & 前年以前 (モバイル) → "2025/12/1"
+// 24時間以上 & 前年以前 (PC)      → "2025年12月1日"
 export function timeElapsedString(datetime, thresholdMinutes = 15) {
   const now = new Date()
   const targetDatetime = new Date(datetime.replace(/-/g, '/'))
@@ -25,11 +25,9 @@ export function timeElapsedString(datetime, thresholdMinutes = 15) {
   const minutes = diffDate.getUTCMinutes()
   const seconds = diffDate.getUTCSeconds()
 
-  const isToday = now.getFullYear() === targetDatetime.getFullYear()
-    && now.getMonth() === targetDatetime.getMonth()
-    && now.getDate() === targetDatetime.getDate()
+  const isWithin24h = diffMs < 24 * 60 * 60 * 1000
 
-  if (isToday) {
+  if (isWithin24h) {
     if (hours > 0) {
       return hours + '時間前'
     } else if (minutes > 0) {
