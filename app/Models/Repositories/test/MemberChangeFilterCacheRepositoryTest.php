@@ -10,21 +10,20 @@
  * - 実際のSQLiteデータベースを使用（1000件以上のテストデータ）
  * - キャッシュの読み書き動作
  * - hourly/dailyの使い分け
+ * - キーごとに独立した日付検証
  */
 
 use PHPUnit\Framework\TestCase;
 use App\Models\Repositories\MemberChangeFilterCacheRepository;
 use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
-use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository;
 use App\Models\SQLite\SQLiteStatistics;
-use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\Storage\FileStorageInterface;
 
 class MemberChangeFilterCacheRepositoryTest extends TestCase
 {
     private MemberChangeFilterCacheRepository $repository;
-    private SyncOpenChatStateRepositoryInterface $syncStateRepository;
+    private FileStorageInterface $fileStorage;
     private string $tempDbFile = '';
     private string $today;
 
@@ -35,7 +34,6 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     private ?string $originalMemberChange = null;
     private ?string $originalNewRooms = null;
     private ?string $originalWeeklyUpdate = null;
-    private ?string $originalFilterCacheDate = null;
 
     /**
      * テストデータの期待値（insertTestDataで生成されるデータに基づく）
@@ -70,23 +68,16 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
         // 実際のリポジトリを使用
         $statisticsRepository = app(SqliteStatisticsRepository::class);
-        $this->syncStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $this->fileStorage = app(FileStorageInterface::class);
         $this->repository = new MemberChangeFilterCacheRepository(
             $statisticsRepository,
-            $this->syncStateRepository,
-            app(FileStorageInterface::class)
-        );
-
-        // SyncOpenChatStateの初期値をバックアップ
-        $this->originalFilterCacheDate = $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
+            $this->fileStorage
         );
 
         // キャッシュファイルパス
-        $fileStorage = app(FileStorageInterface::class);
-        $this->filterMemberChangePath = $fileStorage->getStorageFilePath('filterMemberChange');
-        $this->filterNewRoomsPath = $fileStorage->getStorageFilePath('filterNewRooms');
-        $this->filterWeeklyUpdatePath = $fileStorage->getStorageFilePath('filterWeeklyUpdate');
+        $this->filterMemberChangePath = $this->fileStorage->getStorageFilePath('filterMemberChange');
+        $this->filterNewRoomsPath = $this->fileStorage->getStorageFilePath('filterNewRooms');
+        $this->filterWeeklyUpdatePath = $this->fileStorage->getStorageFilePath('filterWeeklyUpdate');
 
         // 既存のファイルをバックアップ
         $this->backupFile($this->filterMemberChangePath, $this->originalMemberChange);
@@ -115,14 +106,6 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         $this->restoreFile($this->filterMemberChangePath, $this->originalMemberChange);
         $this->restoreFile($this->filterNewRoomsPath, $this->originalNewRooms);
         $this->restoreFile($this->filterWeeklyUpdatePath, $this->originalWeeklyUpdate);
-
-        // SyncOpenChatStateを復元
-        if ($this->originalFilterCacheDate !== null) {
-            $this->syncStateRepository->setString(
-                SyncOpenChatStateType::filterCacheDate,
-                $this->originalFilterCacheDate
-            );
-        }
     }
 
     private function restoreFile(string $path, ?string $backup): void
@@ -145,6 +128,17 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 unlink($path);
             }
         }
+    }
+
+    /**
+     * 新形式のキャッシュファイルを書き込む（日付埋め込み）
+     */
+    private function writeCacheFile(string $key, string $date, array $data): void
+    {
+        $this->fileStorage->saveSerializedFile('@' . $key, [
+            '_cacheDate' => $date,
+            '_cacheData' => $data,
+        ]);
     }
 
     /**
@@ -277,11 +271,6 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         // キャッシュファイルが作成される
         $this->assertFileExists($this->filterMemberChangePath);
         $this->assertFileExists($this->filterNewRoomsPath);
-
-        // 日付がDBに保存される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForHourly_uses_cache_for_memberChange(): void
@@ -289,9 +278,8 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         // 1回目: DBから取得してキャッシュ
         $this->repository->getForHourly($this->today);
 
-        // キャッシュを手動で変更
-        $modifiedCache = [9999];
-        saveSerializedFile($this->filterMemberChangePath, $modifiedCache);
+        // キャッシュを手動で変更（新形式で日付を埋め込み）
+        $this->writeCacheFile('filterMemberChange', $this->today, [9999]);
 
         // 2回目: memberChangeはキャッシュから、newRoomsはリアルタイム
         $result2 = $this->repository->getForHourly($this->today);
@@ -346,11 +334,6 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         $this->assertFileExists($this->filterMemberChangePath);
         $this->assertFileExists($this->filterNewRoomsPath);
         $this->assertFileExists($this->filterWeeklyUpdatePath);
-
-        // 日付がDBに保存される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForDaily_uses_all_caches_on_second_call(): void
@@ -358,10 +341,10 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         // 1回目: DBから取得してキャッシュ
         $this->repository->getForDaily($this->today);
 
-        // 全てのキャッシュを手動で変更
-        saveSerializedFile($this->filterMemberChangePath, [1]);
-        saveSerializedFile($this->filterNewRoomsPath, [2]);
-        saveSerializedFile($this->filterWeeklyUpdatePath, [3]);
+        // 全てのキャッシュを手動で変更（新形式）
+        $this->writeCacheFile('filterMemberChange', $this->today, [1]);
+        $this->writeCacheFile('filterNewRooms', $this->today, [2]);
+        $this->writeCacheFile('filterWeeklyUpdate', $this->today, [3]);
 
         // 2回目: 全てキャッシュから
         $result = $this->repository->getForDaily($this->today);
@@ -372,9 +355,8 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForDaily_refetches_when_date_mismatch(): void
     {
-        // 別の日付でキャッシュを作成
-        saveSerializedFile($this->filterMemberChangePath, [9999]);
-        $this->syncStateRepository->setString(SyncOpenChatStateType::filterCacheDate, '2020-01-01');
+        // 別の日付でキャッシュを作成（新形式）
+        $this->writeCacheFile('filterMemberChange', '2020-01-01', [9999]);
 
         // 異なる日付でgetForDaily
         $result = $this->repository->getForDaily($this->today);
@@ -389,11 +371,6 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         sort($expected);
 
         $this->assertSame($expected, $result);
-
-        // 日付が更新される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForDaily_includes_weekly_update(): void
@@ -408,6 +385,50 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 "週次更新部屋（ID: {$id}）がdailyに含まれること"
             );
         }
+    }
+
+    // ========================================
+    // キャッシュ日付の独立性テスト
+    // ========================================
+
+    public function test_hourly_cache_does_not_validate_weekly_cache(): void
+    {
+        // hourlyタスクがfilterMemberChangeとfilterNewRoomsのキャッシュを今日の日付で保存
+        $this->repository->getForHourly($this->today);
+
+        // filterWeeklyUpdateに古い日付のキャッシュを手動作成
+        $this->writeCacheFile('filterWeeklyUpdate', '2020-01-01', [9999]);
+
+        // getForDailyを呼ぶ → filterWeeklyUpdateの日付が不一致なのでDBから再取得すべき
+        $result = $this->repository->getForDaily($this->today);
+
+        // 古い[9999]ではなく、DBから取得した正しい週次更新部屋が含まれること
+        foreach ($this->expectedWeeklyUpdate as $id) {
+            $this->assertContains(
+                $id,
+                $result,
+                "週次更新部屋（ID: {$id}）がDBから再取得されてdailyに含まれること"
+            );
+        }
+        $this->assertNotContains(9999, $result, '古いキャッシュの値が使われないこと');
+    }
+
+    public function test_old_format_cache_is_treated_as_invalid(): void
+    {
+        // 旧形式のキャッシュファイル（日付埋め込みなし）を作成
+        saveSerializedFile($this->filterMemberChangePath, [9999]);
+
+        // 旧形式はキャッシュ無効として扱われ、DBから再取得される
+        $result = $this->repository->getForHourly($this->today);
+        sort($result);
+
+        $expected = array_unique(array_merge(
+            $this->expectedMemberChange,
+            $this->expectedNewRooms
+        ));
+        sort($expected);
+
+        $this->assertSame($expected, $result);
     }
 
     // ========================================
