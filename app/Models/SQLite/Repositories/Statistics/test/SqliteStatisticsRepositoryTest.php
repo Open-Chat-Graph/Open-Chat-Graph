@@ -215,8 +215,9 @@ class SqliteStatisticsRepositoryTest extends TestCase
      *
      * 期待される動作:
      * - 最後のレコードが1週間以上前の部屋を取得
-     * - 昨日8日以上ぶりにクロールされた部屋（確認クロール対象）も取得
-     * - ID 1004, 1007, 1008が該当
+     * - 昨日8日以上ぶりにクロールされ、メンバー数が変動した部屋（確認クロール対象）も取得
+     * - ID 1004, 1007が該当
+     * - ID 1008は非該当（メンバー数変動なし → 確認クロール不要、引き続き週次）
      * - ID 1009は非該当（直近8日間に2レコードあるため確認クロール不要）
      */
     public function testGetWeeklyUpdateRooms(): void
@@ -224,30 +225,31 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $result = $this->repository->getWeeklyUpdateRooms($this->today);
         sort($result);
 
-        $expected = [1004, 1007, 1008];
+        $expected = [1004, 1007];
 
         $this->assertSame(
             $expected,
             $result,
-            '週次更新対象 + 確認クロール対象の部屋を取得すること'
+            '週次更新対象 + 確認クロール対象（変動あり）の部屋を取得すること'
         );
     }
 
     /**
      * テスト: 確認クロール対象の詳細検証
      *
-     * 8日以上のギャップから復帰した部屋は、メンバー変動の有無に関わらず
-     * 確認クロール対象に含まれること
+     * - メンバー変動あり → 確認クロール対象（翌日も確認し、日次復帰を判定）
+     * - メンバー変動なし → 引き続き週次（確認クロール不要）
+     * - 通常の日次サイクル → 対象外
      */
     public function testWeeklyUpdateIncludesConfirmationCrawlRooms(): void
     {
         $result = $this->repository->getWeeklyUpdateRooms($this->today);
 
-        // メンバー変動あり（100→120）の確認クロール対象
+        // メンバー変動あり（100→120）→ 確認クロール対象
         $this->assertContains(1007, $result, '8日以上ギャップ後の復帰（変動あり）が含まれること');
 
-        // メンバー変動なし（200→200）の確認クロール対象
-        $this->assertContains(1008, $result, '8日以上ギャップ後の復帰（変動なし）が含まれること');
+        // メンバー変動なし（200→200）→ 引き続き週次、確認クロール不要
+        $this->assertNotContains(1008, $result, '変動なしの部屋は確認クロール不要で含まれないこと');
 
         // 通常の日次サイクル（直近8日間に2レコード）は含まれない
         $this->assertNotContains(1009, $result, '通常の日次サイクル部屋は含まれないこと');
@@ -259,7 +261,9 @@ class SqliteStatisticsRepositoryTest extends TestCase
      * 期待される動作:
      * - getMemberChangeWithinLastWeek + getNewRoomsWithLessThan8Records + getWeeklyUpdateRooms
      * - = ID 1001, 1003, 1004, 1006, 1007, 1008, 1009
-     *   - 1009は getMemberChangeWithinLastWeek で取得（昨日メンバー変動あり）
+     *   - 1007: getWeeklyUpdateRooms（確認クロール） + getNewRoomsWithLessThan8Records
+     *   - 1008: getNewRoomsWithLessThan8Records のみ（変動なし→週次のまま）
+     *   - 1009: getMemberChangeWithinLastWeek + getNewRoomsWithLessThan8Records
      */
     public function testCombinedMethods(): void
     {
