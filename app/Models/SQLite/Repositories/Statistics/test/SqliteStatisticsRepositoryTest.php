@@ -135,6 +135,24 @@ class SqliteStatisticsRepositoryTest extends TestCase
             [1006, 600, date('Y-m-d', strtotime('-2 days'))],
             [1006, 610, date('Y-m-d', strtotime('-1 days'))],
             [1006, 610, $this->today],
+
+            // パターン7: 確認クロール対象 - メンバー変動あり（ID: 1007）
+            // 15日前のレコード + 昨日のレコード（8日以上のギャップ後に復帰）
+            // メンバー数が変わっている → 確認クロール対象
+            [1007, 100, date('Y-m-d', strtotime('-15 days'))],
+            [1007, 120, date('Y-m-d', strtotime('-1 days'))],
+
+            // パターン8: 確認クロール対象 - メンバー変動なし（ID: 1008）
+            // 15日前のレコード + 昨日のレコード（8日以上のギャップ後に復帰）
+            // メンバー数は同じ → それでも確認クロール対象（翌日のデータで判定するため）
+            [1008, 200, date('Y-m-d', strtotime('-15 days'))],
+            [1008, 200, date('Y-m-d', strtotime('-1 days'))],
+
+            // パターン9: 非対象 - 通常の日次サイクル（ID: 1009）
+            // 昨日と一昨日にレコードあり（8日間に2レコード）→ 確認クロール対象外
+            [1009, 300, date('Y-m-d', strtotime('-15 days'))],
+            [1009, 300, date('Y-m-d', strtotime('-2 days'))],
+            [1009, 310, date('Y-m-d', strtotime('-1 days'))],
         ];
 
         $stmt = SQLiteStatistics::$pdo->prepare(
@@ -158,12 +176,12 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $result = $this->repository->getNewRoomsWithLessThan8Records();
         sort($result);
 
-        $expected = [1003];
+        $expected = [1003, 1007, 1008, 1009];
 
         $this->assertSame(
             $expected,
             $result,
-            'レコード数が8以下の新規部屋（ID: 1003）のみを取得すること'
+            'レコード数が8未満の部屋を取得すること'
         );
     }
 
@@ -182,7 +200,8 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $result = $this->repository->getMemberChangeWithinLastWeek($this->today);
         sort($result);
 
-        $expected = [1001, 1003, 1006];
+        // 1009: -2日(300) → -1日(310) で変動あり
+        $expected = [1001, 1003, 1006, 1009];
 
         $this->assertSame(
             $expected,
@@ -196,20 +215,44 @@ class SqliteStatisticsRepositoryTest extends TestCase
      *
      * 期待される動作:
      * - 最後のレコードが1週間以上前の部屋を取得
-     * - ID 1004のみが該当
+     * - 昨日8日以上ぶりにクロールされ、メンバー数が変動した部屋（確認クロール対象）も取得
+     * - ID 1004, 1007が該当
+     * - ID 1008は非該当（メンバー数変動なし → 確認クロール不要、引き続き週次）
+     * - ID 1009は非該当（直近8日間に2レコードあるため確認クロール不要）
      */
     public function testGetWeeklyUpdateRooms(): void
     {
         $result = $this->repository->getWeeklyUpdateRooms($this->today);
         sort($result);
 
-        $expected = [1004];
+        $expected = [1004, 1007];
 
         $this->assertSame(
             $expected,
             $result,
-            '最後のレコードが1週間以上前の部屋（ID: 1004）のみを取得すること'
+            '週次更新対象 + 確認クロール対象（変動あり）の部屋を取得すること'
         );
+    }
+
+    /**
+     * テスト: 確認クロール対象の詳細検証
+     *
+     * - メンバー変動あり → 確認クロール対象（翌日も確認し、日次復帰を判定）
+     * - メンバー変動なし → 引き続き週次（確認クロール不要）
+     * - 通常の日次サイクル → 対象外
+     */
+    public function testWeeklyUpdateIncludesConfirmationCrawlRooms(): void
+    {
+        $result = $this->repository->getWeeklyUpdateRooms($this->today);
+
+        // メンバー変動あり（100→120）→ 確認クロール対象
+        $this->assertContains(1007, $result, '8日以上ギャップ後の復帰（変動あり）が含まれること');
+
+        // メンバー変動なし（200→200）→ 引き続き週次、確認クロール不要
+        $this->assertNotContains(1008, $result, '変動なしの部屋は確認クロール不要で含まれないこと');
+
+        // 通常の日次サイクル（直近8日間に2レコード）は含まれない
+        $this->assertNotContains(1009, $result, '通常の日次サイクル部屋は含まれないこと');
     }
 
     /**
@@ -217,7 +260,10 @@ class SqliteStatisticsRepositoryTest extends TestCase
      *
      * 期待される動作:
      * - getMemberChangeWithinLastWeek + getNewRoomsWithLessThan8Records + getWeeklyUpdateRooms
-     * - = ID 1001, 1003, 1004, 1006
+     * - = ID 1001, 1003, 1004, 1006, 1007, 1008, 1009
+     *   - 1007: getWeeklyUpdateRooms（確認クロール） + getNewRoomsWithLessThan8Records
+     *   - 1008: getNewRoomsWithLessThan8Records のみ（変動なし→週次のまま）
+     *   - 1009: getMemberChangeWithinLastWeek + getNewRoomsWithLessThan8Records
      */
     public function testCombinedMethods(): void
     {
@@ -228,7 +274,7 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $combined = array_unique(array_merge($memberChange, $newRooms, $weeklyUpdate));
         sort($combined);
 
-        $expected = [1001, 1003, 1004, 1006];
+        $expected = [1001, 1003, 1004, 1006, 1007, 1008, 1009];
 
         $this->assertSame(
             $expected,
@@ -259,6 +305,9 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $this->assertSame(8, $counts[1004], '部屋1004は8件のレコードを持つこと');
         $this->assertSame(9, $counts[1005], '部屋1005は9件のレコードを持つこと');
         $this->assertSame(9, $counts[1006], '部屋1006は9件のレコードを持つこと');
+        $this->assertSame(2, $counts[1007], '部屋1007は2件のレコードを持つこと（確認クロール対象・変動あり）');
+        $this->assertSame(2, $counts[1008], '部屋1008は2件のレコードを持つこと（確認クロール対象・変動なし）');
+        $this->assertSame(3, $counts[1009], '部屋1009は3件のレコードを持つこと（通常の日次サイクル）');
     }
 
     /**
@@ -285,6 +334,9 @@ class SqliteStatisticsRepositoryTest extends TestCase
         $this->assertGreaterThan(1, $changes[1004], '部屋1004はメンバー数が変動していること');
         $this->assertSame(1, $changes[1005], '部屋1005はメンバー数が変動していないこと');
         $this->assertGreaterThan(1, $changes[1006], '部屋1006はメンバー数が変動していること');
+        $this->assertGreaterThan(1, $changes[1007], '部屋1007はメンバー数が変動していること');
+        $this->assertSame(1, $changes[1008], '部屋1008はメンバー数が変動していないこと');
+        $this->assertGreaterThan(1, $changes[1009], '部屋1009はメンバー数が変動していること');
     }
 
     /**
