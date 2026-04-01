@@ -70,12 +70,23 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 
     public function getWeeklyUpdateRooms(string $date): array
     {
-        // 最後のレコードが1週間以上前の部屋（週次更新用）
+        // 1. 最後のレコードが1週間以上前の部屋（週次更新用）
+        // 2. 昨日8日以上ぶりにクロールされた部屋（確認クロール用）
+        //    → 確認クロール後、getMemberChangeWithinLastWeekの8日間ウィンドウで
+        //      メンバー変動を検知し、変動があれば日次サイクルに復帰する
         $query =
             "SELECT open_chat_id
             FROM statistics
             GROUP BY open_chat_id
-            HAVING MAX(`date`) <= DATE(:curDate, '-7 days')";
+            HAVING MAX(`date`) <= DATE(:curDate, '-7 days')
+
+            UNION
+
+            SELECT open_chat_id
+            FROM statistics
+            GROUP BY open_chat_id
+            HAVING MAX(`date`) = DATE(:curDate, '-1 day')
+               AND COUNT(CASE WHEN `date` >= DATE(:curDate, '-8 days') THEN 1 END) = 1";
 
         $mode = [\PDO::FETCH_COLUMN, 0];
         return SQLiteStatistics::fetchAll($query, ['curDate' => $date], $mode);
