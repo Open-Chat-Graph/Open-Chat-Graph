@@ -17,6 +17,7 @@ interface OcNarrativeRepositoryInterface
      * @return array{
      *     curr: ?int,
      *     curr_date: ?string,
+     *     m1: ?int,
      *     m7: ?int,
      *     m30: ?int,
      *     m90: ?int,
@@ -25,7 +26,9 @@ interface OcNarrativeRepositoryInterface
      *     peak_date: ?string,
      *     max_single_day_growth: ?int,
      *     max_growth_date: ?string,
-     *     first_date: ?string
+     *     first_date: ?string,
+     *     all_time_peak: ?int,
+     *     all_time_peak_date: ?string
      * }
      */
     public function getMemberMetrics(int $openChatId): array;

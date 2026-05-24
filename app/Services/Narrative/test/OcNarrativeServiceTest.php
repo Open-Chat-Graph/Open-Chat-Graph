@@ -1,17 +1,20 @@
 <?php
 
 /**
- * OcNarrativeService の 7 パターン分岐テスト
+ * OcNarrativeService の状態分類カスケードのテスト
  *
  * 実行コマンド:
  * docker compose exec app vendor/bin/phpunit app/Services/Narrative/test/OcNarrativeServiceTest.php
  *
  * テスト方針:
- * - OcNarrativeRepositoryInterface を mock し、メトリクス戻り値の組合せで 7 パターン全てを発火させる
- * - 戻り値の 'pattern' フィールドで分岐を検証 (文章自体はテンプレ変更で揺れるためサマリ含有確認のみ)
+ * - OcNarrativeRepositoryInterface を mock し、メトリクス戻り値の組合せで各状態を発火させる
+ * - 戻り値の 'pattern' フィールドで決定的な分類を検証 (文章は揺れるため含有確認中心)
+ * - 「数字と表現が矛盾しない」ことを実データ相当のフィクスチャで確認
  * - 異常データ / 例外 / curr=0 / sample_n=0 で必ず null を返すこと
  *
- * 注意: JP ロケール前提 (urlRoot === '') で動かす。setUp で復元。
+ * 状態 (pattern): stagnant / new / tiny / surge_up / surge_down /
+ *                 strong_growth / recovering / shrinking_from_peak /
+ *                 growing / gradual_up / gradual_down / declining / stable
  */
 
 declare(strict_types=1);
@@ -26,7 +29,8 @@ class OcNarrativeServiceTest extends TestCase
     // setUp / tearDown での MimimalCmsConfig 操作は不要。
 
     /**
-     * 7 パターンの member metrics fixture を返すヘルパ
+     * member metrics fixture を返すヘルパ。
+     * デフォルトは緩やかな増加 (growing) ルーム。
      */
     private function metricsFixture(array $overrides = []): array
     {
@@ -34,15 +38,18 @@ class OcNarrativeServiceTest extends TestCase
         return array_merge([
             'curr' => 1000,
             'curr_date' => $today,
+            'm1' => 999,
             'm7' => 990,
-            'm30' => 950,
-            'm90' => 900,
+            'm30' => 980,
+            'm90' => 940,
             'sample_n' => 90,
             'peak_high' => 1100,
             'peak_date' => $today,
             'max_single_day_growth' => 30,
             'max_growth_date' => $today,
             'first_date' => (new \DateTime('-200 days'))->format('Y-m-d'),
+            'all_time_peak' => 1100,
+            'all_time_peak_date' => $today,
         ], $overrides);
     }
 
@@ -79,55 +86,172 @@ class OcNarrativeServiceTest extends TestCase
     }
 
     // ============================================
-    // 7 パターン分岐
+    // 状態分類カスケード
     // ============================================
 
-    public function test_active_growth_pattern(): void
+    public function test_growing_pattern(): void
     {
-        // member > 50, pct30 > +5%
-        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]); // +11.1%
+        // 大規模 + 1 ヶ月で実数 / % とも明確に増加 (急増ほどではない、強成長ほどでもない)
+        $m = $this->metricsFixture([
+            'curr' => 1000, 'm1' => 999, 'm7' => 995, 'm30' => 980, 'm90' => 940,
+        ]); // 30日 +20 (+2.0%), 90日 +60 (+6.4%)
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
-        $this->assertSame('active_growth', $result['pattern']);
-        $this->assertStringContainsString('拡大', $result['summary']);
+        $this->assertSame('growing', $result['pattern']);
+        $this->assertStringContainsString('増加中', $result['summary']);
     }
 
-    public function test_rapid_growth_pattern(): void
+    public function test_strong_growth_pattern_by_absolute_scale(): void
     {
-        // sample_n < 60, pct30 > +50%
+        // +261 人/月 のような大規模成長は実数規模で「拡大中」(% が低くても過小評価しない)
         $m = $this->metricsFixture([
-            'curr' => 300, 'm30' => 100, // +200%
-            'sample_n' => 50,
-            'm7' => 250, 'm90' => null,
+            'curr' => 7946, 'm1' => 7946, 'm7' => 7872, 'm30' => 7685, 'm90' => 6660,
+            'peak_high' => 7946, 'all_time_peak' => 7946,
+        ]); // 30日 +261 (+3.4%), 90日 +1286 (+19.3%)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('strong_growth', $result['pattern']);
+        $this->assertStringContainsString('拡大中', $result['summary']);
+        $this->assertStringContainsString('大きく人数を伸ばしている', $result['detail']);
+    }
+
+    public function test_large_room_modest_pct_is_not_called_rapid(): void
+    {
+        // 20,236 人, 30 日 +230 (+1.1%): 実数規模で strong_growth だが「急拡大中」とは言わない
+        $m = $this->metricsFixture([
+            'curr' => 20236, 'm1' => 20236, 'm7' => 20120, 'm30' => 20006, 'm90' => 19851,
+            'peak_high' => 20236, 'all_time_peak' => 20236,
         ]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
-        $this->assertSame('rapid_growth', $result['pattern']);
-        $this->assertStringContainsString('急速', $result['summary']);
+        $this->assertSame('strong_growth', $result['pattern']);
+        $this->assertStringContainsString('拡大中', $result['summary']);
+        $this->assertStringNotContainsString('急拡大中', $result['summary']);
     }
 
-    public function test_decline_pattern(): void
+    public function test_surge_up_within_24h(): void
     {
-        // pct30 < -5%
-        $m = $this->metricsFixture(['curr' => 800, 'm30' => 1000]); // -20%
+        // 直近 24 時間で激増 (diff1 >= 10 かつ pct1 >= 10%)
+        $m = $this->metricsFixture([
+            'curr' => 8541, 'm1' => 4170, 'm7' => 2667, 'm30' => null, 'm90' => null,
+            'sample_n' => 30, 'peak_high' => 8541, 'all_time_peak' => 8541,
+        ]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
-        $this->assertSame('decline', $result['pattern']);
-        $this->assertStringContainsString('縮小', $result['summary']);
+        $this->assertSame('surge_up', $result['pattern']);
+        $this->assertStringContainsString('急成長中', $result['summary']);
+        $this->assertStringContainsString('直近 24 時間', $result['detail']);
+    }
+
+    public function test_surge_up_within_week(): void
+    {
+        // 24 時間は横ばいだが 1 週間で激増
+        $m = $this->metricsFixture([
+            'curr' => 1000, 'm1' => 999, 'm7' => 800, 'm30' => 780, 'm90' => 760,
+        ]); // diff7 +200 (+25%)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('surge_up', $result['pattern']);
+        $this->assertStringContainsString('直近 1 週間', $result['detail']);
+    }
+
+    public function test_surge_down_within_week(): void
+    {
+        $m = $this->metricsFixture([
+            'curr' => 800, 'm1' => 805, 'm7' => 1000, 'm30' => 1050, 'm90' => 1100,
+        ]); // diff7 -200 (-20%)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('surge_down', $result['pattern']);
+        $this->assertStringContainsString('急減中', $result['summary']);
+    }
+
+    public function test_declining_pattern(): void
+    {
+        // 1 ヶ月で明確に減少 (急減ほどではない)
+        $m = $this->metricsFixture([
+            'curr' => 950, 'm1' => 952, 'm7' => 960, 'm30' => 1000, 'm90' => 1010,
+            'peak_high' => 1010, 'all_time_peak' => 1010,
+        ]); // 30日 -50 (-5%)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('declining', $result['pattern']);
+        $this->assertStringContainsString('縮小傾向', $result['summary']);
+    }
+
+    public function test_tiny_room_with_shrink_context(): void
+    {
+        // 小規模ルーム (curr < 50)、全期間ピーク 32 から縮小 → 「増加中」と言わない
+        $m = $this->metricsFixture([
+            'curr' => 13, 'm1' => 13, 'm7' => 13, 'm30' => 13, 'm90' => 12,
+            'sample_n' => 198, 'peak_high' => 15, 'all_time_peak' => 32,
+            'all_time_peak_date' => '2023-10-30',
+        ]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('tiny', $result['pattern']);
+        $this->assertStringContainsString('小規模', $result['summary']);
+        $this->assertStringNotContainsString('増加中', $result['summary']);
+        // 全期間ピークからの縮小を文脈として添える
+        $this->assertStringContainsString('かつて', $result['detail']);
+        $this->assertStringContainsString('32 人', $result['detail']);
+    }
+
+    public function test_recovering_from_peak(): void
+    {
+        // 全期間ピークから大きく縮小しているが直近 1 ヶ月は緩やかに増加に転じている
+        // (強成長 (>=3% or >=100人) ほどではない modest な回復)
+        $m = $this->metricsFixture([
+            'curr' => 600, 'm1' => 599, 'm7' => 595, 'm30' => 585, 'm90' => 590,
+            'peak_high' => 1000, 'all_time_peak' => 1000, 'all_time_peak_date' => '2024-01-01',
+        ]); // curr 600 < 1000*0.7=700, 30日 +15 (+2.56%) > 0, 強成長閾値未満
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('recovering', $result['pattern']);
+        $this->assertStringContainsString('増加に転じている', $result['detail']);
+    }
+
+    public function test_shrinking_from_peak(): void
+    {
+        // 全期間ピークから大きく縮小、直近も横ばい / 縮小
+        $m = $this->metricsFixture([
+            'curr' => 600, 'm1' => 601, 'm7' => 600, 'm30' => 602, 'm90' => 650,
+            'peak_high' => 1000, 'all_time_peak' => 1000, 'all_time_peak_date' => '2024-01-01',
+        ]); // curr 600 < 700, 30日 -2 (横ばい)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('shrinking_from_peak', $result['pattern']);
+        $this->assertStringContainsString('縮小傾向', $result['summary']);
+        $this->assertStringContainsString('かつて', $result['detail']);
     }
 
     public function test_stable_pattern(): void
     {
-        // |pct30| < 2% かつ |pct90| < 2% で「安定運営中」
-        // pct90 が +2% を超えると summary は「じわじわ増加中」に切り替わるため
-        // ここでは m30/m90 とも curr ≒ で flat なフィクスチャを使う
-        $m = $this->metricsFixture(['curr' => 1010, 'm30' => 1000, 'm90' => 1005]); // 30日 +1%, 90日 +0.5%
+        // 30 日も 90 日も横ばい (実数 ±3 以内)
+        $m = $this->metricsFixture([
+            'curr' => 1000, 'm1' => 1000, 'm7' => 1001, 'm30' => 1002, 'm90' => 1001,
+            'peak_high' => 1005, 'all_time_peak' => 1005,
+        ]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
@@ -136,25 +260,28 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertStringContainsString('安定', $result['summary']);
     }
 
-    public function test_stable_pattern_with_long_term_growth_becomes_gradual_increase(): void
+    public function test_gradual_increase_when_month_flat_but_quarter_grows(): void
     {
-        // 30 日は実数 ±3 以内で横ばいだが、90 日では +2% 以上の明確な増加 → 「じわじわ増加中」
-        $m = $this->metricsFixture(['curr' => 1010, 'm30' => 1009, 'm90' => 980]); // 30日 +1人, 90日 +30人 (+3.06%)
+        // 30 日は実数 ±3 以内で横ばいだが、90 日では明確な増加 → 「じわじわ増加中」
+        $m = $this->metricsFixture([
+            'curr' => 1010, 'm1' => 1010, 'm7' => 1009, 'm30' => 1009, 'm90' => 980,
+            'peak_high' => 1010, 'all_time_peak' => 1010,
+        ]); // 30日 +1人 (横ばい), 90日 +30人 (+3.06%)
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
-        $this->assertSame('stable', $result['pattern']);
+        $this->assertSame('gradual_up', $result['pattern']);
         $this->assertStringContainsString('じわじわ増加中', $result['summary']);
         $this->assertStringContainsString('3 ヶ月単位では着実に人数が増えている', $result['detail']);
     }
 
     public function test_new_pattern(): void
     {
-        // sample_n < 30
+        // sample_n < 30 (サージでなければ実数で語る)
         $m = $this->metricsFixture([
-            'curr' => 50, 'm30' => null, 'm90' => null,
-            'm7' => 40,
+            'curr' => 50, 'm1' => 49, 'm30' => null, 'm90' => null,
+            'm7' => 48,
             'sample_n' => 20,
         ]);
         $service = $this->makeService($m);
@@ -170,7 +297,7 @@ class OcNarrativeServiceTest extends TestCase
         $m = $this->metricsFixture([
             'curr_date' => (new \DateTime('-400 days'))->format('Y-m-d'),
             'sample_n' => 50,
-            'curr' => 500,
+            'curr' => 500, 'm1' => 500, 'm7' => 500, 'm30' => 500, 'm90' => 500,
         ]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
@@ -223,9 +350,10 @@ class OcNarrativeServiceTest extends TestCase
         $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $service = new OcNarrativeService($repo);
 
+        // 順位取得が落ちてもメンバー数推移ベースの narrative は返る
         $result = $service->generate(1, $this->buildOc());
         $this->assertNotNull($result);
-        $this->assertSame('active_growth', $result['pattern']);
+        $this->assertSame('strong_growth', $result['pattern']); // 30日 +100 人 → 規模で strong_growth
     }
 
     // ============================================
@@ -261,15 +389,18 @@ class OcNarrativeServiceTest extends TestCase
     {
         $m = $this->metricsFixture([
             'curr' => 100,
+            'm1' => null,
             'm7' => null,
             'm30' => null,
             'm90' => null,
             'sample_n' => 100,
+            'peak_high' => 100,
+            'all_time_peak' => 100, // 縮小文脈を発火させない (現在=ピーク)
         ]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
-        // m30 が null → pct30 計算不可 → stable へフォールバック
+        // 全期間データが無く比較不可 → stable へフォールバック
         $this->assertNotNull($result);
         $this->assertSame('stable', $result['pattern']);
     }
@@ -372,7 +503,7 @@ class OcNarrativeServiceTest extends TestCase
 
     public function test_detail_contains_multiple_sentences_separated_by_newline(): void
     {
-        $m = $this->metricsFixture(['curr' => 2000, 'm30' => 1500]); // active_growth
+        $m = $this->metricsFixture(['curr' => 2000, 'm30' => 1500]); // strong_growth (規模大)
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
