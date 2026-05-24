@@ -6,6 +6,7 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Config\SecretsConfig;
+use App\Exceptions\GoneException;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
@@ -64,8 +65,7 @@ class OpenChatPageController
             $oc = $ocRepo->getOpenChatById($open_chat_id);
             if (!$oc) {
                 if ($deletedRepo->isDeleted($open_chat_id)) {
-                    http_response_code(410);
-                    exit;
+                    throw new GoneException();
                 }
                 return false;
             }
@@ -207,8 +207,7 @@ class OpenChatPageController
         $tag = $repo->getRecommendTag($open_chat_id);
         if (!$tag) {
             if ($isDeleted) {
-                http_response_code(410);
-                exit;
+                throw new GoneException();
             }
             return false;
         }

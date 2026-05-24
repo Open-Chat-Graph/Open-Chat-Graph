@@ -79,7 +79,6 @@ sqlite_rsync_dbs() {
             rm -f "${local_dir}"/*.db-wal "${local_dir}"/*.db-shm 2>/dev/null || true
             # --chmod: SQLite は WAL/SHM をディレクトリ内に作るためアプリ(www-data)が
             # ディレクトリと .db ファイルへ書き込みできる必要がある。
-            # rsync 後にディレクトリも 777 にして www-data の書き込みを許可。
             # --info=progress2 : 1ファイル単位でなく全体の live%を出す
             rsync -a --partial --delete --info=progress2 \
                 --include='*.db' --exclude='*' \
@@ -87,8 +86,32 @@ sqlite_rsync_dbs() {
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}/" \
                 "${local_dir}/"
-            chmod 777 "$local_dir" 2>/dev/null || true
         done
     done
+
+    # 全ディレクトリへ 777 を一括適用。SQLite は SELECT でも WAL/SHM を書くので
+    # 親ディレクトリの書き込み権限が必須。
+    # 過去にここで silent fail (`|| true`) していて TW/TH だけ 755 のままになった
+    # 事例があるため、エラーを表に出す。
+    sqlite_ensure_dirs_writable "$include_sqlapi"
+
     log_ok "SQLite rsync 完了"
+}
+
+# 全 SQLite ディレクトリを 777 にする。
+# WAL/SHM 書き込みのため www-data がディレクトリへ書ける必要がある。
+sqlite_ensure_dirs_writable() {
+    local include_sqlapi="${1:-false}"
+    local dirs=("${SQLITE_DIRS[@]}")
+    if [ "$include_sqlapi" = "true" ]; then
+        dirs+=("$SQLITE_SQLAPI_DIR")
+    fi
+    for lang in "${LANG_CODES[@]}"; do
+        for dir in "${dirs[@]}"; do
+            local local_dir
+            local_dir=$(sqlite_local_db_path "$lang" "$dir")
+            [ -d "$local_dir" ] || continue
+            chmod 777 "$local_dir"
+        done
+    done
 }
