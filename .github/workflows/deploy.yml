@@ -251,11 +251,13 @@ jobs:
             accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
           });
 
+          // opengraph.githubassets.com は bot 風 UA に対し 429 を返すため、
+          // ブラウザ風 UA で取得する。
+          const BROWSER_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
           // GitHub PR ページから OGP 画像 URL を抽出
           async function fetchOgImageUrl(pageUrl) {
-            const res = await fetch(pageUrl, {
-              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OpenChatGraphBot)' },
-            });
+            const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
             if (!res.ok) return null;
             const html = await res.text();
             const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
@@ -264,7 +266,7 @@ jobs:
 
           // OGP 画像をダウンロード (Buffer + MIME)
           async function downloadImage(url) {
-            const res = await fetch(url);
+            const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
             if (!res.ok) throw new Error('image download failed: ' + res.status);
             const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
             const buffer = Buffer.from(await res.arrayBuffer());
