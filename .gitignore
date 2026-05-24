@@ -23,7 +23,7 @@ docker/line-mock-api/.env.mock
 !docker/line-mock-api/public/.htaccess
 
 # セットアップスクリプト
-setup.sh
+/setup.sh
 prid-setup.sh
 setup/local-setup.sh
 /password.openchat-review.me
@@ -31,6 +31,8 @@ setup/local-setup.sh
 # バッチ処理
 batch/sh/*.key
 batch/sh/sqldump
+batch/sh/prod-sync/secrets/*
+!batch/sh/prod-sync/secrets-example/**
 
 # サイトマップ
 public/sitemaps/**
@@ -78,6 +80,9 @@ frontend/*/dist/
 # テスト関連
 test-logs/
 .playwright-mcp
+
+# Claude Code
+.claude/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
