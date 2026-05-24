@@ -9,7 +9,6 @@ use App\Config\SecretsConfig;
 use App\Exceptions\GoneException;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
-use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\Dto\RecommendListDto;
@@ -34,7 +33,6 @@ class OpenChatPageController
 
     function index(
         OpenChatPageRepositoryInterface $ocRepo,
-        DeleteOpenChatRepositoryInterface $deletedRepo,
         OcPageMeta $meta,
         StatisticsChartArrayService $statisticsChartArrayService,
         StatisticsViewUtility $statisticsViewUtility,
@@ -58,16 +56,13 @@ class OpenChatPageController
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
             if (!$oc)
-                return $this->deletedResponse($recommendGenarator, $deletedRepo, $open_chat_id, $topPageDto);
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
         } else {
             $oc = $ocRepo->getOpenChatById($open_chat_id);
             if (!$oc) {
-                if ($deletedRepo->isDeleted($open_chat_id)) {
-                    throw new GoneException();
-                }
-                return false;
+                throw new GoneException();
             }
 
             /** @var RecommendRankingRepository $recommendRankingRepository */
@@ -196,20 +191,14 @@ class OpenChatPageController
 
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
-        DeleteOpenChatRepositoryInterface $deletedRepo,
         int $open_chat_id,
         StaticTopPageDto $topPageDto
     ) {
-        $isDeleted = $deletedRepo->isDeleted($open_chat_id);
-
         /** @var RecommendRankingRepository $repo */
         $repo = app(RecommendRankingRepository::class);
         $tag = $repo->getRecommendTag($open_chat_id);
         if (!$tag) {
-            if ($isDeleted) {
-                throw new GoneException();
-            }
-            return false;
+            throw new GoneException();
         }
 
         $_meta = meta()->setTitle("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
@@ -220,7 +209,7 @@ class OpenChatPageController
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
-        http_response_code($isDeleted ? 410 : 404);
+        http_response_code(410);
         return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }
 

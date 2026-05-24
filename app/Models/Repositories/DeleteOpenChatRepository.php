@@ -45,12 +45,4 @@ class DeleteOpenChatRepository implements DeleteOpenChatRepositoryInterface
             compact('open_chat_id', 'emid')
         );
     }
-
-    public function isDeleted(int $open_chat_id): bool
-    {
-        return !!DB::fetchColumn(
-            "SELECT 1 FROM open_chat_deleted WHERE id = :open_chat_id LIMIT 1",
-            compact('open_chat_id')
-        );
-    }
 }

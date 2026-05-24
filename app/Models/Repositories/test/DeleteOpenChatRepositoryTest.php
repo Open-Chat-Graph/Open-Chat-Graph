@@ -76,24 +76,4 @@ class DeleteOpenChatRepositoryTest extends TestCase
         $stmt->execute(['id' => $openChatId, 'emid' => $emid]);
     }
 
-    public function testIsDeleted(): void
-    {
-        $openChatId = 12347;
-        $emid = 'test_emid_isdeleted_' . time();
-
-        // Not deleted initially
-        $this->assertFalse($this->repository->isDeleted($openChatId));
-
-        // Insert deletion record
-        $this->repository->insertDeletedOpenChat($openChatId, $emid);
-
-        // Now reported as deleted
-        $this->assertTrue($this->repository->isDeleted($openChatId));
-
-        // Clean up
-        $stmt = DB::$pdo->prepare(
-            "DELETE FROM open_chat_deleted WHERE id = :id AND emid = :emid"
-        );
-        $stmt->execute(['id' => $openChatId, 'emid' => $emid]);
-    }
 }
