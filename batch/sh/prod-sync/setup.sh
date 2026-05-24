@@ -50,6 +50,9 @@ if grep -q "^DATA_PROTECTION=true$" "${PROJECT_ROOT}/.env"; then
 fi
 log_ok ".env DATA_PROTECTION=false 確認"
 
+CURRENT_STEP=""
+trap '[ -n "$CURRENT_STEP" ] && echo "FAILED at step: $CURRENT_STEP — 再実行で続行可能 (各ステップは冪等)" >&2' ERR
+
 # envsubst の存在チェック
 if ! command -v envsubst >/dev/null 2>&1; then
     echo "Error: envsubst (gettext-base) が必要です。" >&2
@@ -59,12 +62,14 @@ fi
 # ============================================
 # 1. local-secrets.php を生成
 # ============================================
+CURRENT_STEP="local-secrets.php生成"
 log_step "1/8: local-secrets.php 生成"
 if [ -f "${PROJECT_ROOT}/local-secrets.php" ]; then
     log_info "既存 local-secrets.php を退避: local-secrets.php.bak"
     mv "${PROJECT_ROOT}/local-secrets.php" "${PROJECT_ROOT}/local-secrets.php.bak"
 fi
-MYSQL_HOST="mysql" \
+# MYSQL_HOST は env 由来。LOCAL_MYSQL_HOST を尊重し、未設定なら "mysql"。
+MYSQL_HOST="${LOCAL_MYSQL_HOST:-mysql}" \
 MYSQL_USER="$LOCAL_MYSQL_USER" \
 MYSQL_PASS="$LOCAL_MYSQL_PASS" \
 envsubst '${MYSQL_HOST} ${MYSQL_USER} ${MYSQL_PASS}' \
@@ -75,12 +80,14 @@ log_ok "local-secrets.php 生成完了"
 # ============================================
 # 2. リモート/ローカル DB チェック
 # ============================================
+CURRENT_STEP="mysql-check"
 mysql_check_remote_dbs
 mysql_check_local_dbs
 
 # ============================================
 # 3. MySQL: ダンプ → 転送 → インポート
 # ============================================
+CURRENT_STEP="mysql"
 mysql_dump_remote
 mysql_rsync_dumps
 mysql_import_local
@@ -89,26 +96,31 @@ mysql_ensure_comment_image_table
 # ============================================
 # 4. SQLite: チェックポイント → rsync (sqlapi 含む)
 # ============================================
+CURRENT_STEP="sqlite"
 sqlite_checkpoint_remote true
 sqlite_rsync_dbs true
 
 # ============================================
 # 5. 画像同期
 # ============================================
+CURRENT_STEP="images"
 images_rsync_comment_img
 images_rsync_comment_img_hidden
 
 # ============================================
 # 6. storage 派生キャッシュ
 # ============================================
+CURRENT_STEP="static"
 static_rsync_lang_dirs
 
 # ============================================
 # 7. DATA_PROTECTION=true へ切替
 # ============================================
+CURRENT_STEP="data-protection-flip"
 log_step "7/8: DATA_PROTECTION=true に切替"
 sed -i 's/^DATA_PROTECTION=false$/DATA_PROTECTION=true/' "${PROJECT_ROOT}/.env"
 log_ok ".env を DATA_PROTECTION=true に変更"
+CURRENT_STEP=""
 
 # ============================================
 # 8. 完了
