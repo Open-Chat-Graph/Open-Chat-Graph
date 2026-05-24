@@ -211,6 +211,10 @@ class ErrorPage
 
 noStore();
 
+$detailsMessage = $detailsMessage ?? '';
+$httpStatusMessage = $httpStatusMessage ?? '';
+$httpCode = $httpCode ?? 506;
+
 try {
     if ($detailsMessage) {
         $m = new ErrorPage;
