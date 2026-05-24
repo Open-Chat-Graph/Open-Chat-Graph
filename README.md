@@ -93,35 +93,29 @@ make ci-test   # CI環境でテストを実行（ローカル専用）
 make phpstan   # PHPStan静的解析を実行
 ```
 
-### 本番データミラー（プライベートリポ `oc-config` 経由）
+### 本番データミラー（アクセス権を持つ開発者のみ）
 
 本番データを取り込んだローカル開発環境を構築・更新する手順。
-機密（SSH鍵、本番DBパスワード）が必要なため private repo の `oc-config` を持つ開発者のみ利用可。
+機密（SSH鍵、本番DBパスワード等）は `make sync-setup` / `make sync-update` 実行時に
+プライベートリポジトリから自動的に取得される。アクセス権が無いと git clone が失敗するため、
+必然的に許可された開発者のみが利用できる。
 
-**初回構築（ワンコマンド）:**
+**初回構築:**
 
 ```bash
-# oc-config を既に clone 済みである前提
-/home/user/repos/oc-config/bin/install-prod-sync.sh
+git clone git@github.com:mimimiku778/Open-Chat-Graph.git
+cd Open-Chat-Graph
+make init-y      # docker / MySQL 起動
+make sync-setup  # 機密ファイル自動取得 + 本番フル取得 + DATA_PROTECTION=true
 ```
 
-実行内容（自動）:
-1. `ssh / rsync / git / composer / envsubst` のうち足りないものを apt install
-2. Open-Chat-Graph を git clone（既存ならスキップ）
-3. composer install
-4. 機密ファイル群（`prod-sync.env`, `prod-ssh.key`, `local-secrets.tmpl.php`）を `batch/sh/prod-sync/secrets/` に配置
-5. `make init-y` で docker / MySQL を起動
-6. `make sync-setup` で本番から **フル取得** + `.env` の `DATA_PROTECTION=true` に切替
-
-オプション引数: `-d <dir>`（clone 先指定）、`-b <branch>`（ブランチ指定）
-
-**差分更新:**
+**差分更新（以降の更新は1コマンド）:**
 
 ```bash
 make sync-update
 ```
 
-実行内容（前提: `DATA_PROTECTION=true`、`secrets/` 配置済み）:
+実行内容（前提: `DATA_PROTECTION=true`）:
 
 | Phase | 内容 |
 |---|---|

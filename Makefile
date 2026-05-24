@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -368,11 +368,31 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 	@echo "========================================$(NC)"
 
 # ============================================
-# 本番同期（プライベートリポ oc-config 経由で配置された secrets/ を使用）
+# 本番同期
 # ============================================
+# 機密ファイルは batch/sh/prod-sync/secrets/ にプライベートリポを clone する形で取得する。
+# アクセス権がない場合は git clone 自体が失敗するため、必然的に sync は使えない。
 
-sync-setup: ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）
+PROD_SYNC_CONFIG_URL ?= git@github.com:mimimiku778/Open-Chat-Graph-Config.git
+
+_ensure-prod-sync-secrets:
+	@SECRETS_DIR=batch/sh/prod-sync/secrets; \
+	if [ -d "$$SECRETS_DIR/.git" ]; then \
+		echo "$(GREEN)secrets を最新化中...$(NC)"; \
+		git -C "$$SECRETS_DIR" fetch --quiet origin && \
+		git -C "$$SECRETS_DIR" reset --hard --quiet origin/HEAD; \
+	else \
+		echo "$(GREEN)secrets を取得中...$(NC)"; \
+		rm -rf "$$SECRETS_DIR" && \
+		git clone --quiet --depth 1 "$(PROD_SYNC_CONFIG_URL)" "$$SECRETS_DIR" || { \
+			echo "$(RED)Error: 機密リポジトリへのアクセスができません$(NC)"; \
+			echo "$(YELLOW)アクセス権を持つ開発者のみが利用できる機能です$(NC)"; \
+			exit 1; \
+		}; \
+	fi
+
+sync-setup: _ensure-prod-sync-secrets ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）
 	@bash batch/sh/prod-sync/setup.sh
 
-sync-update: ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）
+sync-update: _ensure-prod-sync-secrets ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）
 	@bash batch/sh/prod-sync/update.sh
