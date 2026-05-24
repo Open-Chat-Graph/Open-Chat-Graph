@@ -65,7 +65,7 @@ jobs:
               echo "ssh_host=${{ vars.STG_SSH_HOST }}"
               echo "ssh_path=${{ vars.STG_SSH_PATH }}"
               echo "mysql_dbs=${{ vars.STG_MYSQL_DB_COMMENT }} ${{ vars.STG_MYSQL_DB_COMMENT_TW }} ${{ vars.STG_MYSQL_DB_COMMENT_TH }}"
-              echo "tweet_msg=開発環境に反映されました"
+              echo "tweet_msg=開発環境が更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review-dev.me"
             } >> "$GITHUB_OUTPUT"
           else
@@ -76,7 +76,7 @@ jobs:
               echo "ssh_host=${{ vars.SSH_HOST }}"
               echo "ssh_path=${{ vars.SSH_PATH }}"
               echo "mysql_dbs=${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}"
-              echo "tweet_msg=サイトに反映されました"
+              echo "tweet_msg=サイトが更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review.me"
             } >> "$GITHUB_OUTPUT"
           fi
@@ -255,22 +255,48 @@ jobs:
           // ブラウザ風 UA で取得する。
           const BROWSER_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-          // GitHub PR ページから OGP 画像 URL を抽出
-          async function fetchOgImageUrl(pageUrl) {
-            const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
-            if (!res.ok) return null;
-            const html = await res.text();
-            const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-            return m ? m[1] : null;
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          // GitHub PR ページから OGP 画像 URL を抽出。
+          // opengraph.githubassets.com の生成キュー詰まりや GitHub 側キャッシュ伝播遅延で
+          // 初回 fetch が失敗 / og:image meta 未反映のことがあるため、指数バックオフで
+          // 最大 5 回 (合計 ~45 秒) リトライする。
+          async function fetchOgImageUrl(pageUrl, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
+                if (res.ok) {
+                  const html = await res.text();
+                  const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+                  if (m) return m[1];
+                }
+                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
+              } catch (e) {
+                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
+              }
+              if (i < retries - 1) await sleep(3000 * (i + 1));
+            }
+            return null;
           }
 
-          // OGP 画像をダウンロード (Buffer + MIME)
-          async function downloadImage(url) {
-            const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
-            if (!res.ok) throw new Error('image download failed: ' + res.status);
-            const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
-            const buffer = Buffer.from(await res.arrayBuffer());
-            return { buffer, mimeType };
+          // OGP 画像をダウンロード (Buffer + MIME)。
+          // opengraph.githubassets.com が 5xx / 429 を返すことがあるためリトライする。
+          async function downloadImage(url, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
+                if (res.ok) {
+                  const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
+                  const buffer = Buffer.from(await res.arrayBuffer());
+                  return { buffer, mimeType };
+                }
+                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
+              } catch (e) {
+                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
+              }
+              if (i < retries - 1) await sleep(3000 * (i + 1));
+            }
+            throw new Error('image download failed after ' + retries + ' retries');
           }
 
           async function postTweet() {
@@ -302,19 +328,56 @@ jobs:
                 }
               }
 
-              const tail = includeUrls
-                ? '#オプチャグラフ ' + siteUrl + '\n\n' + prUrl
-                : '#オプチャグラフ';
+              // PR 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外。
+              const prBody = (process.env.PR_BODY || '')
+                .replace(/\n*🤖[\s\S]*$/, '')
+                .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
+                .trim();
 
-              const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
+              // X Premium tweet 上限は 25,000 文字。それを超える場合だけ事前に切り詰める。
+              const MAX_TWEET = 25000;
+              const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
-                'By ' + prAuthor + '\n\n' +
-                tail;
+                'By ' + prAuthor;
+              const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
+              const separator = '\n---\n';
+
+              let bodySection = '';
+              if (prBody) {
+                const overhead = head.length + separator.length + urlSuffix.length;
+                const remaining = MAX_TWEET - overhead;
+                if (remaining > 5) {
+                  const body = prBody.length > remaining
+                    ? prBody.slice(0, remaining - 1) + '…'
+                    : prBody;
+                  bodySection = separator + body;
+                }
+              }
+
+              const message = head + bodySection + urlSuffix;
 
               const tweetOpts = mediaIds && mediaIds.length
                 ? { media: { media_ids: mediaIds } }
                 : undefined;
-              const tweet = await client.v2.tweet(message, tweetOpts);
+
+              // X Premium 前提でフル本文を送信。文字数超過で X に拒否された場合のみ
+              // head + 区切り + 切り詰め本文 で再送する。
+              let tweet;
+              try {
+                tweet = await client.v2.tweet(message, tweetOpts);
+              } catch (err) {
+                const errCodes = (err && err.data && err.data.errors) ? err.data.errors.map(e => e.code) : [];
+                const tooLong = errCodes.includes(186) || /too long|character limit/i.test((err && err.message) || '');
+                if (!tooLong) throw err;
+
+                console.log('Tweet rejected as too long (' + message.length + ' chars). Retrying with truncated body.');
+                const tail = bodySection ? '\n---\n' : '';
+                const baseLen = head.length + tail.length + urlSuffix.length;
+                const limit = 280; // X 拒否時のフォールバック上限
+                const truncatedBody = prBody.slice(0, Math.max(0, limit - baseLen - 1)) + '…';
+                const fallback = head + (truncatedBody.length > 1 ? '\n---\n' + truncatedBody : '') + urlSuffix;
+                tweet = await client.v2.tweet(fallback, tweetOpts);
+              }
               console.log('Tweet posted: ' + tweet.data.id);
 
             } catch (error) {
@@ -340,6 +403,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
           SITE_URL: ${{ steps.config.outputs.tweet_url }}
           INCLUDE_URLS: ${{ contains(github.event.pull_request.labels.*.name, 'url-post') }}

@@ -31,7 +31,7 @@ setup/local-setup.sh
 # バッチ処理
 batch/sh/*.key
 batch/sh/sqldump
-batch/sh/prod-sync/secrets/*
+batch/sh/prod-sync/secrets/
 !batch/sh/prod-sync/secrets-example/**
 
 # サイトマップ
