@@ -5,30 +5,31 @@ declare(strict_types=1);
 namespace App\Models\Repositories;
 
 use App\Models\Repositories\RankingPosition\RankingPositionOhlcRepositoryInterface;
-use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
+use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\OpenChat\Enum\RankingType;
 
 /**
  * /oc/{id} narrative セクション用のデータ集約 Repository。
  *
- * - statistics_ohlc 由来のメンバー数メトリクス
- * - ranking_position_ohlc 由来のカテゴリ内順位推移
- * を 1 ヶ所で取得し、Service 層を時系列クエリの詳細から切り離す。
+ * - メンバー数メトリクス: daily の statistics テーブル (欠損なし)
+ *   ※ statistics_ohlc / ranking 系はランキング掲載日のみ記録され欠損が出るため、
+ *     メンバー数の時系列には使わない (仕様上ランキング外の期間が抜ける)
+ * - 順位 / 急上昇: ranking_position_ohlc (欠損は仕様通り、ラベルが出ないだけ)
  *
- * 既存 OHLC Repository を再利用し、生 SQL は呼ばない（テストしやすさ重視）。
+ * Service 層を時系列クエリの詳細から切り離す。
  */
 class OcNarrativeRepository implements OcNarrativeRepositoryInterface
 {
     public function __construct(
-        private StatisticsOhlcRepositoryInterface $statisticsOhlcRepository,
+        private StatisticsRepositoryInterface $statisticsRepository,
         private RankingPositionOhlcRepositoryInterface $rankingPositionOhlcRepository,
     ) {
     }
 
     public function getMemberMetrics(int $openChatId): array
     {
-        return $this->statisticsOhlcRepository->getMemberMetricsForNarrative($openChatId);
+        return $this->statisticsRepository->getMemberMetricsForNarrative($openChatId);
     }
 
     public function getPositionMovement(int $openChatId, int $category, int $days = 30): array

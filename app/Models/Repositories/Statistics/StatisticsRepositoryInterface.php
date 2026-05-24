@@ -58,4 +58,21 @@ interface StatisticsRepositoryInterface
      * @return int
      */
     public function getMemberCount(int $open_chat_id, string $date): int|false;
+
+    /**
+     * narrative 用のメンバー数メトリクス (daily の member スナップショットから集約)。
+     *
+     * statistics_ohlc はランキング掲載日しか記録されず欠損が出るため、欠損のない
+     * daily の statistics テーブルを使う。単日最大伸びは日次差分 (LAG) で算出。
+     *
+     * @return array{
+     *     curr: ?int, curr_date: ?string,
+     *     m7: ?int, m30: ?int, m90: ?int,
+     *     sample_n: int,
+     *     peak_high: ?int, peak_date: ?string,
+     *     max_single_day_growth: ?int, max_growth_date: ?string,
+     *     first_date: ?string
+     * }
+     */
+    public function getMemberMetricsForNarrative(int $open_chat_id): array;
 }
