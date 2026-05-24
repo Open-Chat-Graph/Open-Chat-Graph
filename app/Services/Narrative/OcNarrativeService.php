@@ -711,6 +711,10 @@ class OcNarrativeService
             if ($decelerating) {
                 return '長期的な成長は継続しているが、直近では伸びが緩やかになっている。';
             }
+            // 月次は成長しているが直近 1 週間が横ばい (実数 1 桁) → 週レベルの一服を明示
+            if ($pct7 !== null && $this->isFlat($diff7, $pct7)) {
+                return '中期では成長が続いているが、直近 1 週間は伸びが一服している。';
+            }
             return '成長基調が継続しており、勢いは衰えていない。';
         }
 
