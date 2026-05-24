@@ -208,34 +208,56 @@ class OcNarrativeService
             $sentences[] = $openInfo;
         }
 
-        // パターン別: 期間比較
+        // 全体ランキング (規模) + 全体急上昇 or カテゴリ内急上昇 (活発度)
+        $scaleActivity = $this->buildScaleAndActivitySentence($openchatId, $oc);
+        if ($scaleActivity !== null) {
+            $sentences[] = $scaleActivity;
+        }
+
+        // 期間比較数字を組み立てる (まだ sentences には積まない。文章は最後に置く)
+        $periodSentence = null;
+        $pct7 = $pct30 = $pct90 = null;
+        $diff7 = $diff30 = $diff90 = null;
         if ($pattern === 'new' || $pattern === 'stagnant') {
             // % 出さず絶対値で
-            if ($m['m7'] !== null) {
-                $diff7 = $curr - (int)$m['m7'];
-                if ($diff7 !== 0) {
-                    $sentences[] = sprintf('過去 7 日で %s 人。', $this->signedNumberFormat($diff7));
+            if (($m['m7'] ?? null) !== null) {
+                $diff7Val = $curr - (int)$m['m7'];
+                if ($diff7Val !== 0) {
+                    $periodSentence = sprintf('過去 7 日で %s 人。', $this->signedNumberFormat($diff7Val));
                 }
             }
         } else {
-            // 通常パターン: pct付きで出す
+            // 通常パターン: 実数 + % 併記、最後に解釈ラベル
             $pct7 = $this->safePct($m['m7'] ?? null, $curr);
             $pct30 = $this->safePct($m['m30'] ?? null, $curr);
             $pct90 = $this->safePct($m['m90'] ?? null, $curr);
+            $diff7 = ($m['m7'] ?? null) !== null ? $curr - (int)$m['m7'] : null;
+            $diff30 = ($m['m30'] ?? null) !== null ? $curr - (int)$m['m30'] : null;
+            $diff90 = ($m['m90'] ?? null) !== null ? $curr - (int)$m['m90'] : null;
 
             $parts = [];
-            if ($pct7 !== null && $m['m7'] !== null) {
-                $parts[] = sprintf('7 日 %s%%', $this->signedFloatFormat($pct7));
+            if ($pct90 !== null && $diff90 !== null) {
+                $parts[] = sprintf('過去 3 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff90), $this->signedFloatFormat($pct90));
             }
-            if ($pct30 !== null && $m['m30'] !== null) {
-                $parts[] = sprintf('30 日 %s%%', $this->signedFloatFormat($pct30));
+            if ($pct30 !== null && $diff30 !== null) {
+                $parts[] = sprintf('1 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff30), $this->signedFloatFormat($pct30));
             }
-            if ($pct90 !== null && $m['m90'] !== null) {
-                $parts[] = sprintf('90 日 %s%%', $this->signedFloatFormat($pct90));
+            if ($pct7 !== null && $diff7 !== null) {
+                $parts[] = sprintf('1 週間で %s 人 (%s%%)', $this->signedNumberFormat($diff7), $this->signedFloatFormat($pct7));
             }
-
             if (!empty($parts)) {
-                $sentences[] = sprintf('過去の推移は %s。', implode('、', $parts));
+                $labelPct = $pct30 ?? $pct90;
+                $label = $labelPct !== null ? $this->describeChange($labelPct) : '';
+                $tail = $label !== '' ? 'と' . $label : '';
+                $periodSentence = sprintf('%s%s。', implode('、', $parts), $tail);
+            }
+        }
+
+        // トレンド解釈 (評価ラベルの次、数字より前に置く)
+        if ($pct7 !== null || $pct30 !== null || $pct90 !== null) {
+            $trend = $this->describeTrend($pct7, $pct30, $pct90);
+            if ($trend !== null) {
+                $sentences[] = $trend;
             }
         }
 
@@ -263,28 +285,15 @@ class OcNarrativeService
             }
         }
 
-        // カテゴリ内順位推移
-        $catId = $this->extractCategoryId($oc);
-        if ($catId !== null && $catId >= 0 && $pattern !== 'stagnant' && $pattern !== 'new') {
-            try {
-                $pos = $this->repository->getPositionMovement($openchatId, $catId, 30);
-                if ($pos['sample_n'] >= 2
-                    && $pos['oldest_close'] !== null
-                    && $pos['latest_close'] !== null
-                ) {
-                    $delta = (int)$pos['oldest_close'] - (int)$pos['latest_close'];
-                    if (abs($delta) >= self::POSITION_DELTA_MENTION) {
-                        $arrow = $delta > 0 ? '→' : '→';
-                        $sentences[] = sprintf('カテゴリ内順位は 30 日前 %d 位 %s 現在 %d 位。',
-                            (int)$pos['oldest_close'],
-                            $arrow,
-                            (int)$pos['latest_close']);
-                    }
-                }
-            } catch (\Throwable $e) {
-                // 順位データの取得失敗は narrative 全体を壊さない
-            }
+        // 期間比較の細かい数字は最後に置く (一般読者には機微が分かりにくいため、
+        // 評価ラベル → トレンド解釈 → ピーク / 単日 の後に補足する位置)
+        if ($periodSentence !== null) {
+            $sentences[] = $periodSentence;
         }
+
+        // カテゴリ内 ranking 位置の delta は単独では「人がいるだけの無駄チャット」の場合も
+        // 拾ってしまうため出さない。代わりに上部で「全体 rising / カテゴリ内 rising」の
+        // 活発度ラベルを出している (= 実発言を伴う movement のシグナル)。
 
         // 停滞情報
         if ($pattern === 'stagnant' && $m['curr_date'] !== null) {
@@ -415,6 +424,173 @@ class OcNarrativeService
         if ($n > 0) return '+' . number_format($n);
         if ($n < 0) return '-' . number_format(abs($n));
         return '0';
+    }
+
+    /**
+     * 30 日 (or 90 日 fallback) の pct から短い解釈ラベルを返す。
+     * 数字列の末尾に「と〜」で接続する用途。
+     */
+    private function describeChange(float $pct): string
+    {
+        $abs = abs($pct);
+        if ($abs < 2.0) return 'ほぼ横ばい';
+        if ($pct >= 50.0) return '急成長';
+        if ($pct >= 15.0) return '安定して拡大';
+        if ($pct >= 5.0) return '成長基調';
+        if ($pct >= 2.0) return '緩やかな増加';
+        if ($pct > -5.0) return '緩やかな縮小';
+        if ($pct > -15.0) return '目立った減少';
+        return '大きく縮小';
+    }
+
+    /**
+     * 全体ランキング / 全体急上昇の平均位置から「規模」「活発度」を 1 文に集約。
+     * - 全体 ranking AVG ≤ X → 大規模代表
+     * - 全体 rising AVG ≤ Y → 非常に活発 / 最高クラス
+     * 両方該当すれば 1 文に組み合わせる。どちらも無ければ null。
+     */
+    private function buildScaleAndActivitySentence(int $openchatId, array $oc): ?string
+    {
+        $scaleLabel = null;     // 全体 ranking 由来 (規模)
+        $activityLabel = null;  // 全体 rising or カテゴリ内 rising 由来 (活発度)
+
+        // 全体 ranking AVG → 大規模代表度
+        try {
+            $r = $this->repository->getAveragePosition($openchatId, 0, 'ranking', 30);
+            if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                $avg = (float)$r['avg_position'];
+                if ($avg <= 10) {
+                    $scaleLabel = '全体ランキングでも常時トップ 10 入り、オープンチャット全体を代表する規模';
+                } elseif ($avg <= 50) {
+                    $scaleLabel = '全体ランキングで継続して上位 50 位以内に入る大規模な代表的ルーム';
+                } elseif ($avg <= 100) {
+                    $scaleLabel = '全体ランキングで上位 100 位以内に常在する大規模ルーム';
+                } elseif ($avg <= 200) {
+                    $scaleLabel = '全体ランキング上位に継続的に登場する規模のルーム';
+                }
+            }
+        } catch (\Throwable $e) {
+            // 取得失敗は narrative 全体を壊さない
+        }
+
+        // 全体 rising AVG → 最高クラス活発度 (優先)
+        try {
+            $r = $this->repository->getAveragePosition($openchatId, 0, 'rising', 30);
+            if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                $avg = (float)$r['avg_position'];
+                if ($avg <= 10) {
+                    $activityLabel = '総合急上昇でも常時トップ 10 入り、オープンチャットでも最高クラスの活発さ';
+                } elseif ($avg <= 50) {
+                    $activityLabel = '総合急上昇で継続して上位 50 位以内、非常に活発な運営';
+                } elseif ($avg <= 100) {
+                    $activityLabel = '総合急上昇で上位 100 位前後を維持する活発なルーム';
+                } elseif ($avg <= 200) {
+                    $activityLabel = '総合急上昇ランキングに継続的に登場している活発なルーム';
+                }
+            }
+        } catch (\Throwable $e) {
+            // 同上
+        }
+
+        // 全体 rising に該当しなければカテゴリ内 rising AVG をフォールバック
+        // (カテゴリ内の活発度判定 — 全体での「最高クラス」言及が無いときだけ出して冗長回避)
+        if ($activityLabel === null) {
+            $catId = $this->extractCategoryId($oc);
+            if ($catId !== null && $catId > 0) {
+                try {
+                    $r = $this->repository->getAveragePosition($openchatId, $catId, 'rising', 30);
+                    if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                        $avg = (float)$r['avg_position'];
+                        if ($avg <= 10) {
+                            $activityLabel = 'カテゴリ内の急上昇ランキングで継続して上位 10 位以内、いま活発に動いているルーム';
+                        } elseif ($avg <= 30) {
+                            $activityLabel = 'カテゴリ内の急上昇ランキングで上位 30 位以内を維持する活発なルーム';
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // 取得失敗は無視
+                }
+            }
+        }
+
+        if ($scaleLabel !== null && $activityLabel !== null) {
+            return $scaleLabel . '。' . $activityLabel . '。';
+        }
+        if ($scaleLabel !== null) {
+            return $scaleLabel . '。';
+        }
+        if ($activityLabel !== null) {
+            return $activityLabel . '。';
+        }
+        return null;
+    }
+
+    /**
+     * 短期 (30 日) と長期 (90 日)、直近 (7 日) を組み合わせて
+     * 動き方の特徴を 1 文に要約する。長短ねじれや勢い変化を捕捉して、
+     * 単なる数字羅列を「長期では伸びているが直近は落ち着き」のような
+     * 言葉に翻訳する役割。データ不足や両期間ともほぼ横ばいなら null。
+     */
+    private function describeTrend(?float $pct7, ?float $pct30, ?float $pct90): ?string
+    {
+        if ($pct30 === null && $pct90 === null) {
+            return null;
+        }
+        // 30 日が無いケースは 90 日だけで簡潔に
+        if ($pct30 === null) {
+            $abs90 = abs((float)$pct90);
+            if ($abs90 < 2.0) return null;
+            return $pct90 > 0 ? '長期的には拡大傾向。' : '長期的には縮小傾向。';
+        }
+        // 90 日が無いケースは 30 日だけで
+        if ($pct90 === null) {
+            $abs30 = abs((float)$pct30);
+            if ($abs30 < 2.0) return null;
+            return null; // 期間 1 つしかないと文が薄くなるので追加文は出さない
+        }
+
+        $p30 = (float)$pct30;
+        $p90 = (float)$pct90;
+        $abs30 = abs($p30);
+        $abs90 = abs($p90);
+
+        // 両期間ともほぼ横ばい → 「安定」
+        if ($abs30 < 2.0 && $abs90 < 5.0) {
+            return '長期的にも大きな変動はなく、安定した運営が続いている。';
+        }
+
+        // 長短ねじれ (符号違い)
+        if ($p30 > 2.0 && $p90 < -2.0) {
+            return '中期では下落していたが、直近 1 ヶ月で反転して拡大基調に。';
+        }
+        if ($p30 < -2.0 && $p90 > 2.0) {
+            return '長期では成長してきたものの、直近 1 ヶ月はやや落ち着き気味。';
+        }
+
+        // 両方プラス
+        if ($p30 > 0 && $p90 > 0) {
+            // 7 日 vs 30 日 で加速 / 減速を判定
+            if ($pct7 !== null) {
+                $p7 = (float)$pct7;
+                if ($p7 < 0 && $abs30 >= 5.0) {
+                    return '直近 1 週間は一旦落ち着いているが、中期では拡大が続いている。';
+                }
+            }
+            if ($p30 > $p90) {
+                return '長期に渡る成長が直近で加速している。';
+            }
+            return '成長基調が継続しており、勢いは衰えていない。';
+        }
+
+        // 両方マイナス
+        if ($p30 < 0 && $p90 < 0) {
+            if ($p30 > $p90) {
+                return '長期的な縮小傾向にあるが、直近では下げ止まりが見られる。';
+            }
+            return '長期にわたって縮小傾向が続いている。';
+        }
+
+        return null;
     }
 
     private function signedFloatFormat(float $f): string

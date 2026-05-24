@@ -98,4 +98,38 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
             'sample_n'     => (int)($row['sample_n'] ?? 0),
         ];
     }
+
+    public function getAveragePosition(int $open_chat_id, int $category, RankingType $type, int $days): array
+    {
+        $typeValue = $type->value;
+        $since = '-' . max(1, $days) . ' days';
+
+        $query =
+            "SELECT
+                AVG(close_position) AS avg_position,
+                COUNT(*)            AS sample_n
+               FROM ranking_position_ohlc
+              WHERE open_chat_id = :open_chat_id
+                AND category = :category
+                AND type = :type
+                AND date >= date('now', :since)";
+
+        SQLiteRankingPositionOhlc::connect(['mode' => '?mode=ro']);
+        $row = SQLiteRankingPositionOhlc::fetch($query, [
+            'open_chat_id' => $open_chat_id,
+            'category' => $category,
+            'type' => $typeValue,
+            'since' => $since,
+        ]);
+        SQLiteRankingPositionOhlc::$pdo = null;
+
+        if (!$row || !is_array($row) || (int)($row['sample_n'] ?? 0) === 0) {
+            return ['avg_position' => null, 'sample_n' => 0];
+        }
+
+        return [
+            'avg_position' => $row['avg_position'] !== null ? (float)$row['avg_position'] : null,
+            'sample_n'     => (int)$row['sample_n'],
+        ];
+    }
 }
