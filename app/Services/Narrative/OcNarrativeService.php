@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Narrative;
 
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
-use Shared\MimimalCmsConfig;
 
 /**
  * /oc/{id} ページ用の narrative (要約 + 詳細 + meta description) 生成サービス。
  *
- * - Phase 1: JP ロケール (`urlRoot === ''`) のみ。TW/TH は null を返す
+ * - locale / category label 解決は呼び出し側 (Controller) の責務。Service は与えられた数値・文字列を平に消費する
  * - 7 パターン分岐 (active_growth / rapid_growth / decline / stable / new / stagnant / 異常)
  * - 全体を try/catch で包み、異常データ / 取得失敗時は必ず null を返す
  *   → View 側で <?php if ($narrative) ?> でガードすれば、既存ページの動作が完全保持される
@@ -57,16 +56,12 @@ class OcNarrativeService
     /**
      * @param int $openchatId
      * @param array $oc ルーム属性 (id, name, description, category, member, created_at など)
+     * @param ?string $categoryLabel Controller 側で解決済みのカテゴリ表示名 (locale-aware)。null なら narrative にカテゴリ言及を出さない
      * @return ?array{summary: string, detail: string, meta_description: string, pattern: string}
      */
-    public function generate(int $openchatId, array $oc): ?array
+    public function generate(int $openchatId, array $oc, ?string $categoryLabel = null): ?array
     {
         try {
-            // V1: JP ロケールのみ
-            if (MimimalCmsConfig::$urlRoot !== '') {
-                return null;
-            }
-
             $metrics = $this->repository->getMemberMetrics($openchatId);
 
             // 最低条件: 現在値が取れること
@@ -80,7 +75,7 @@ class OcNarrativeService
             }
 
             // ロケール / カテゴリ未指定でも narrative 自体は出す (カテゴリ部分だけ省略)
-            $categoryLabel = $this->resolveCategoryLabel($oc);
+            // $categoryLabel は Controller から渡される (locale-aware resolution は呼び出し側の責務)
 
             $pattern = $this->detectPattern($metrics);
 
@@ -372,23 +367,6 @@ class OcNarrativeService
             return sprintf('%s 開設、運営 %d ヶ月。', $ym, $diff->m);
         }
         return sprintf('%s 開設。', $ym);
-    }
-
-    private function resolveCategoryLabel(array $oc): ?string
-    {
-        // controller は $oc['category'] (int id) のみ持つ。view で展開される label を service が知らない場合は
-        // ここでは数値カテゴリ ID から AppConfig::OPEN_CHAT_CATEGORY 経由で逆引きを試みる
-        $catId = $this->extractCategoryId($oc);
-        if ($catId === null || $catId === 0) {
-            return null;
-        }
-        try {
-            $map = \App\Config\AppConfig::OPEN_CHAT_CATEGORY[\Shared\MimimalCmsConfig::$urlRoot] ?? [];
-            $label = array_search($catId, $map, true);
-            return $label !== false ? (string)$label : null;
-        } catch (\Throwable $e) {
-            return null;
-        }
     }
 
     private function extractCategoryId(array $oc): ?int
