@@ -19,22 +19,11 @@ declare(strict_types=1);
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
 use PHPUnit\Framework\TestCase;
-use Shared\MimimalCmsConfig;
 
 class OcNarrativeServiceTest extends TestCase
 {
-    private string $originalUrlRoot;
-
-    protected function setUp(): void
-    {
-        $this->originalUrlRoot = MimimalCmsConfig::$urlRoot;
-        MimimalCmsConfig::$urlRoot = ''; // JP
-    }
-
-    protected function tearDown(): void
-    {
-        MimimalCmsConfig::$urlRoot = $this->originalUrlRoot;
-    }
+    // Service は locale 非依存にリファクタ済 (locale 分岐は Controller の責務)。
+    // setUp / tearDown での MimimalCmsConfig 操作は不要。
 
     /**
      * 7 パターンの member metrics fixture を返すヘルパ
@@ -224,19 +213,9 @@ class OcNarrativeServiceTest extends TestCase
     // ロケール判定
     // ============================================
 
-    public function test_returns_null_for_tw_locale(): void
-    {
-        MimimalCmsConfig::$urlRoot = '/tw';
-        $service = $this->makeService($this->metricsFixture());
-        $this->assertNull($service->generate(1, $this->buildOc()));
-    }
-
-    public function test_returns_null_for_th_locale(): void
-    {
-        MimimalCmsConfig::$urlRoot = '/th';
-        $service = $this->makeService($this->metricsFixture());
-        $this->assertNull($service->generate(1, $this->buildOc()));
-    }
+    // locale 分岐は Controller の責務に移管 (OpenChatPageController.php)。
+    // Service は locale 非依存になったため TW/TH 早期 null テストは削除。
+    // Controller レベルでの locale guard は curl 実機 + Chrome MCP で別途確認。
 
     // ============================================
     // ゼロ除算保護
