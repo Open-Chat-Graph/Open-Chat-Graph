@@ -28,6 +28,80 @@ html {
   padding: 1rem;
 }
 
+/* オプチャグラフの分析 (narrative) section
+ * 既存 description / graph-title トーンに合わせつつ、
+ * 左の細いアクセントラインで「分析セクション」であることを示す。
+ */
+.oc-narrative {
+  padding: 12px 1rem 14px 1rem;
+  font-family: var(--font-family);
+  color: #111;
+}
+
+.oc-narrative__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-narrative__title-icon {
+  font-size: 14px;
+  user-select: none;
+  line-height: 1;
+}
+
+.oc-narrative__summary {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #111;
+  background-color: #fafafa;
+  border-left: 3px solid #11d871;
+  border-radius: 0 6px 6px 0;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.oc-narrative__detail {
+  margin: 10px 0 0 0;
+  padding: 0 2px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: #333;
+  word-break: break-word;
+}
+
+@media screen and (min-width: 512px) {
+  .oc-narrative {
+    padding: 14px 1rem 16px 1rem;
+  }
+
+  .oc-narrative__title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .oc-narrative__title-icon {
+    font-size: 15px;
+  }
+
+  .oc-narrative__summary {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .oc-narrative__detail {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+}
+
 .open-btn.sp-btn {
   margin: 0;
   padding-top: 1rem;
