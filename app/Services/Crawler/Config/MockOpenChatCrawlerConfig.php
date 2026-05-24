@@ -15,7 +15,7 @@ class MockOpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 
     const LINE_INTERNAL_URL = 'http://line-mock-api/ti/g2/';
 
-    const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot-Mock; +https://github.com/mimimiku778/Open-Chat-Graph)';
+    const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot-Mock; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
 
     public const LINE_URL_MATCH_PATTERN = [
         '' =>    '{(?<=https:\/\/line-mock-api\/jp\/cover\/).+?(?=\?|$)}',
