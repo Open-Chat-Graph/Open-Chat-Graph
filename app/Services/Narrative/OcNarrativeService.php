@@ -82,7 +82,7 @@ class OcNarrativeService
             $pct30 = $this->safePct($metrics['m30'] ?? null, $curr);
             $diff30 = ($metrics['m30'] !== null) ? ($curr - (int)$metrics['m30']) : null;
 
-            $summary = $this->buildSummary($pattern, $curr, $diff30, $pct30, $categoryLabel, $oc);
+            $summary = $this->buildSummary($pattern, $curr, $diff30, $pct30, $categoryLabel, $oc, $openchatId);
             $detail = $this->buildDetail($pattern, $metrics, $oc, $categoryLabel, $openchatId);
             $metaDescription = $this->buildMetaDescription($oc, $curr, $diff30, $pct30, $categoryLabel);
 
@@ -149,51 +149,131 @@ class OcNarrativeService
         return 'stable';
     }
 
-    private function buildSummary(string $pattern, int $curr, ?int $diff30, ?float $pct30, ?string $category, array $oc): string
+    /**
+     * オプチャグラフ独自の 1h / 24h / 1w 成長ランキング位置から
+     * 「今まさに伸びている」ラベルを返す。最重要シグナル。
+     */
+    private function buildHotTrendingLabel(int $openchatId): ?string
+    {
+        try {
+            $pos = $this->repository->getGrowthRankingPositions($openchatId);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        $h = $pos['hour'];
+        $d = $pos['day'];
+        $w = $pos['week'];
+
+        // 3 期間すべてで 1 位独占 = 最高峰
+        if ($h !== null && $h <= 1 && $d !== null && $d <= 1 && $w !== null && $w <= 1) {
+            return '直近 1 時間・24 時間・1 週間すべての成長ランキングで全体 1 位を独占、いま間違いなく全オープンチャット中もっとも勢いのあるルーム';
+        }
+
+        // 1 位 (期間別)
+        if ($w !== null && $w <= 1) {
+            return '過去 1 週間で全オープンチャット中もっとも人数を伸ばしているルーム (週間成長ランキング 1 位)';
+        }
+        if ($d !== null && $d <= 1) {
+            return '直近 24 時間で全オープンチャット中もっとも人数を伸ばしているルーム (24 時間成長ランキング 1 位)';
+        }
+        if ($h !== null && $h <= 1) {
+            return '今この瞬間にもっとも人数が増えているルーム (直近 1 時間成長ランキング 1 位)';
+        }
+
+        // トップ 10 入り
+        if ($w !== null && $w <= 10) {
+            return sprintf('過去 1 週間の成長ランキングで全体 %d 位、急成長中の注目ルーム', $w);
+        }
+        if ($d !== null && $d <= 10) {
+            return sprintf('直近 24 時間の成長ランキングで全体 %d 位、いまよく伸びているルーム', $d);
+        }
+        if ($h !== null && $h <= 10) {
+            return sprintf('直近 1 時間の成長ランキングで全体 %d 位、今動きが活発', $h);
+        }
+
+        // トップ 50 入り
+        if ($w !== null && $w <= 50) {
+            return sprintf('過去 1 週間の成長ランキングで全体 %d 位の注目ルーム', $w);
+        }
+        if ($d !== null && $d <= 50) {
+            return sprintf('直近 24 時間の成長ランキングで全体 %d 位の注目ルーム', $d);
+        }
+
+        return null;
+    }
+
+    /**
+     * Summary 用の評価ラベル選択。最も impressive な単一ラベルを返す。
+     * 優先順位:
+     *  1. オプチャグラフの 1h / 24h / 1w 成長ランキング上位 (= いま伸びている = 最重要)
+     *  2. 全体 rising AVG (= 継続的に動きあり)
+     *  3. 全体 ranking AVG (= 規模)
+     *  4. カテゴリ内 rising AVG (= カテゴリ内で活発)
+     */
+    private function buildSummaryEvalLabel(int $openchatId, array $oc): ?string
+    {
+        $hot = $this->buildHotTrendingLabel($openchatId);
+        if ($hot !== null) {
+            return $hot;
+        }
+
+        try {
+            $r = $this->repository->getAveragePosition($openchatId, 0, 'rising', 30);
+            if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                $avg = (float)$r['avg_position'];
+                if ($avg <= 10) return '総合急上昇でも常時トップ 10 入り、オープンチャット中でも最高クラスの活発さ';
+                if ($avg <= 50) return '総合急上昇で継続して上位 50 位以内、非常に活発な運営';
+                if ($avg <= 100) return '総合急上昇で上位 100 位前後を維持する活発なルーム';
+                if ($avg <= 200) return '総合急上昇ランキングに継続的に登場している活発なルーム';
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            $r = $this->repository->getAveragePosition($openchatId, 0, 'ranking', 30);
+            if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                $avg = (float)$r['avg_position'];
+                if ($avg <= 10) return '全体ランキングでも常時トップ 10 入り、オープンチャット全体を代表する規模';
+                if ($avg <= 50) return '全体ランキングで継続して上位 50 位以内に入る大規模な代表的ルーム';
+                if ($avg <= 100) return '全体ランキングで上位 100 位以内に常在する大規模ルーム';
+                if ($avg <= 200) return '全体ランキング上位に継続的に登場する規模のルーム';
+            }
+        } catch (\Throwable $e) {}
+
+        $catId = $this->extractCategoryId($oc);
+        if ($catId !== null && $catId > 0) {
+            try {
+                $r = $this->repository->getAveragePosition($openchatId, $catId, 'rising', 30);
+                if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
+                    $avg = (float)$r['avg_position'];
+                    if ($avg <= 10) return 'カテゴリ内の急上昇ランキングで継続して上位 10 位以内、いま活発に動いているルーム';
+                    if ($avg <= 30) return 'カテゴリ内の急上昇ランキングで上位 30 位以内を維持する活発なルーム';
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        return null;
+    }
+
+    private function buildSummary(string $pattern, int $curr, ?int $diff30, ?float $pct30, ?string $category, array $oc, int $openchatId): string
     {
         $currFmt = number_format($curr);
-        $catPart = $category !== null && $category !== ''
-            ? sprintf('%s カテゴリのオープンチャット。', $category)
-            : 'オープンチャット。';
+        // 評価ラベル (ランキング / 急上昇) を最優先で出す。該当無しなら空。
+        $evalLabel = $this->buildSummaryEvalLabel($openchatId, $oc);
+        $evalPart = $evalLabel !== null ? $evalLabel . '。' : '';
 
-        switch ($pattern) {
-            case 'rapid_growth':
-                if ($diff30 !== null && $pct30 !== null) {
-                    return sprintf('急速に拡大中。現在 %s 人、過去 30 日で +%s 人 (+%.1f%%)。%s',
-                        $currFmt, number_format($diff30), $pct30, $catPart);
-                }
-                return sprintf('急速に拡大中の新興ルーム。現在 %s 人。%s', $currFmt, $catPart);
+        // pattern 部分: 「拡大中」「安定運営中」等の解釈ラベル + 現在人数のみ
+        // (% と人数の duplicate、category の表示は detail 側に集約)
+        $patternPart = match ($pattern) {
+            'rapid_growth'  => sprintf('急速に拡大中。現在 %s 人。', $currFmt),
+            'active_growth' => sprintf('拡大中。現在 %s 人。', $currFmt),
+            'decline'       => sprintf('縮小傾向。現在 %s 人。', $currFmt),
+            'stable'        => sprintf('安定運営中。現在 %s 人。', $currFmt),
+            'new'           => sprintf('新しく開設されたルーム。現在 %s 人。', $currFmt),
+            'stagnant'      => sprintf('現在 %s 人。長期更新が止まっています。', $currFmt),
+            default         => sprintf('現在 %s 人。', $currFmt),
+        };
 
-            case 'active_growth':
-                return sprintf('拡大中。現在 %s 人、過去 30 日で %s 人 (%s%%)。%s',
-                    $currFmt,
-                    $this->signedNumberFormat($diff30 ?? 0),
-                    $this->signedFloatFormat($pct30 ?? 0.0),
-                    $catPart);
-
-            case 'decline':
-                return sprintf('縮小傾向。現在 %s 人、過去 30 日で %s 人 (%s%%)。%s',
-                    $currFmt,
-                    $this->signedNumberFormat($diff30 ?? 0),
-                    $this->signedFloatFormat($pct30 ?? 0.0),
-                    $catPart);
-
-            case 'stable':
-                if ($pct30 !== null) {
-                    return sprintf('安定運営中。現在 %s 人、過去 30 日で %s%% と横ばい。%s',
-                        $currFmt, $this->signedFloatFormat($pct30), $catPart);
-                }
-                return sprintf('安定運営中。現在 %s 人。%s', $currFmt, $catPart);
-
-            case 'new':
-                return sprintf('新しく開設されたルーム。現在 %s 人。%s', $currFmt, $catPart);
-
-            case 'stagnant':
-                return sprintf('現在 %s 人。長期更新が止まっています。%s', $currFmt, $catPart);
-
-            default:
-                return sprintf('現在 %s 人。%s', $currFmt, $catPart);
-        }
+        return $evalPart . $patternPart;
     }
 
     private function buildDetail(string $pattern, array $m, array $oc, ?string $category, int $openchatId): string
@@ -208,11 +288,12 @@ class OcNarrativeService
             $sentences[] = $openInfo;
         }
 
-        // 全体ランキング (規模) + 全体急上昇 or カテゴリ内急上昇 (活発度)
-        $scaleActivity = $this->buildScaleAndActivitySentence($openchatId, $oc);
-        if ($scaleActivity !== null) {
-            $sentences[] = $scaleActivity;
+        // カテゴリ言及 (summary から移動)。カテゴリ無いルームは出さない。
+        if ($category !== null && $category !== '') {
+            $sentences[] = sprintf('%s カテゴリのオープンチャット。', $category);
         }
+
+        // 評価ラベル (ランキング / 急上昇) は summary 側に移動済み。detail からは削除。
 
         // 期間比較数字を組み立てる (まだ sentences には積まない。文章は最後に置く)
         $periodSentence = null;
