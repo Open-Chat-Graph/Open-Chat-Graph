@@ -255,15 +255,23 @@ jobs:
             try {
               const prNumber = process.env.PR_NUMBER;
               const prTitle = process.env.PR_TITLE;
+              const prUrl = process.env.PR_URL;
               const prAuthor = process.env.PR_AUTHOR;
               const tweetMsg = process.env.TWEET_MSG;
+              const siteUrl = process.env.SITE_URL;
+              const includeUrls = process.env.INCLUDE_URLS === 'true';
 
-              // X API は URL を含む post が $0.20 / URL 無しは $0.015。
-              // 単価を 13x 下げるため URL (siteUrl / prUrl) は載せない。
+              // X API: URL を含む post は $0.20 / 含まない場合 $0.015。
+              // デフォルトは URL なし。PR に `url-post` ラベルが付いている場合のみ
+              // サイト URL と PR URL を載せる（重要な PR で広く拡散したい用途想定）。
+              const tail = includeUrls
+                ? '#オプチャグラフ ' + siteUrl + '\n\n' + prUrl
+                : '#オプチャグラフ';
+
               const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
                 'By ' + prAuthor + '\n\n' +
-                '#オプチャグラフ';
+                tail;
 
               const tweet = await client.v2.tweet(message);
               console.log('Tweet posted: ' + tweet.data.id);
@@ -293,6 +301,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
           SITE_URL: ${{ steps.config.outputs.tweet_url }}
+          INCLUDE_URLS: ${{ contains(github.event.pull_request.labels.*.name, 'url-post') }}
         run: node post-pr-merge.js
 
       - name: Notify Discord (deploy failure)
