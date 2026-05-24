@@ -65,7 +65,7 @@ jobs:
               echo "ssh_host=${{ vars.STG_SSH_HOST }}"
               echo "ssh_path=${{ vars.STG_SSH_PATH }}"
               echo "mysql_dbs=${{ vars.STG_MYSQL_DB_COMMENT }} ${{ vars.STG_MYSQL_DB_COMMENT_TW }} ${{ vars.STG_MYSQL_DB_COMMENT_TH }}"
-              echo "tweet_msg=開発環境に反映されました"
+              echo "tweet_msg=開発環境が更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review-dev.me"
             } >> "$GITHUB_OUTPUT"
           else
@@ -76,7 +76,7 @@ jobs:
               echo "ssh_host=${{ vars.SSH_HOST }}"
               echo "ssh_path=${{ vars.SSH_PATH }}"
               echo "mysql_dbs=${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}"
-              echo "tweet_msg=サイトに反映されました"
+              echo "tweet_msg=サイトが更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review.me"
             } >> "$GITHUB_OUTPUT"
           fi
@@ -336,7 +336,7 @@ jobs:
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
                 .trim();
 
-              const head = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
+              const head = '🚀 ' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
                 'By ' + prAuthor + ' #オプチャグラフ';
               const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
