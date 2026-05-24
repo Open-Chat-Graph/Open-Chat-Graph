@@ -255,22 +255,48 @@ jobs:
           // ブラウザ風 UA で取得する。
           const BROWSER_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-          // GitHub PR ページから OGP 画像 URL を抽出
-          async function fetchOgImageUrl(pageUrl) {
-            const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
-            if (!res.ok) return null;
-            const html = await res.text();
-            const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-            return m ? m[1] : null;
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+          // GitHub PR ページから OGP 画像 URL を抽出。
+          // opengraph.githubassets.com の生成キュー詰まりや GitHub 側キャッシュ伝播遅延で
+          // 初回 fetch が失敗 / og:image meta 未反映のことがあるため、指数バックオフで
+          // 最大 5 回 (合計 ~45 秒) リトライする。
+          async function fetchOgImageUrl(pageUrl, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
+                if (res.ok) {
+                  const html = await res.text();
+                  const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+                  if (m) return m[1];
+                }
+                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
+              } catch (e) {
+                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
+              }
+              if (i < retries - 1) await sleep(3000 * (i + 1));
+            }
+            return null;
           }
 
-          // OGP 画像をダウンロード (Buffer + MIME)
-          async function downloadImage(url) {
-            const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
-            if (!res.ok) throw new Error('image download failed: ' + res.status);
-            const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
-            const buffer = Buffer.from(await res.arrayBuffer());
-            return { buffer, mimeType };
+          // OGP 画像をダウンロード (Buffer + MIME)。
+          // opengraph.githubassets.com が 5xx / 429 を返すことがあるためリトライする。
+          async function downloadImage(url, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+              try {
+                const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
+                if (res.ok) {
+                  const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
+                  const buffer = Buffer.from(await res.arrayBuffer());
+                  return { buffer, mimeType };
+                }
+                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
+              } catch (e) {
+                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
+              }
+              if (i < retries - 1) await sleep(3000 * (i + 1));
+            }
+            throw new Error('image download failed after ' + retries + ' retries');
           }
 
           async function postTweet() {
