@@ -15,6 +15,7 @@ use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
+use App\Services\Narrative\OcNarrativeService;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
@@ -43,6 +44,7 @@ class OpenChatPageController
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
+        OcNarrativeService $narrativeService,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -133,7 +135,10 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription])->setImageUrl(imgUrl($oc['img_url']));
+        // narrative section 用データ。失敗時は null で section / meta は既存挙動を完全維持
+        $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription]);
+
+        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], $narrative)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
@@ -178,6 +183,7 @@ class OpenChatPageController
             'topPageDto',
             'formatedDescription',
             'formatedRowDescription',
+            'narrative',
         ));
     }
 

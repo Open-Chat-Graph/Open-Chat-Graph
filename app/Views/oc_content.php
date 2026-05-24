@@ -166,6 +166,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
       <hr class="hr-top" style="margin-bottom: 8px;">
+      <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
+        <section class="oc-narrative" aria-labelledby="oc-narrative-title">
+          <h2 class="oc-narrative__title" id="oc-narrative-title">
+            <span class="oc-narrative__title-icon" aria-hidden="true">📊</span><?php echo t('オプチャグラフの分析') ?>
+          </h2>
+          <p class="oc-narrative__summary"><?php echo h($narrative['summary']) ?></p>
+          <?php if (!empty($narrative['detail'])): ?>
+            <p class="oc-narrative__detail"><?php echo nl2br(h($narrative['detail'])) ?></p>
+          <?php endif ?>
+        </section>
+        <hr class="hr-top" style="margin-bottom: 8px;">
+      <?php endif ?>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
