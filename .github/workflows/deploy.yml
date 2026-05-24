@@ -328,35 +328,42 @@ jobs:
                 }
               }
 
-              // X の標準ツイート上限 (280 文字) に収まるよう PR 本文を切り詰める。
-              // 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外。
-              const MAX_TWEET = 280;
+              // PR 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外。
               const prBody = (process.env.PR_BODY || '')
                 .replace(/\n*🤖[\s\S]*$/, '')
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
                 .trim();
 
-              const head = '🚀 ' + tweetMsg + '\n\n' +
+              const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
-                'By ' + prAuthor + ' #オプチャグラフ';
+                'By ' + prAuthor;
               const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
-              const separator = '\n---\n';
-
-              let bodySection = '';
-              const remaining = MAX_TWEET - head.length - separator.length - urlSuffix.length;
-              if (prBody && remaining > 5) {
-                const body = prBody.length > remaining
-                  ? prBody.slice(0, remaining - 1) + '…'
-                  : prBody;
-                bodySection = separator + body;
-              }
+              const bodySection = prBody ? '\n---\n' + prBody : '';
 
               const message = head + bodySection + urlSuffix;
 
               const tweetOpts = mediaIds && mediaIds.length
                 ? { media: { media_ids: mediaIds } }
                 : undefined;
-              const tweet = await client.v2.tweet(message, tweetOpts);
+
+              // X Premium 前提でフル本文を送信。文字数超過で X に拒否された場合のみ
+              // head + 区切り + 切り詰め本文 で再送する。
+              let tweet;
+              try {
+                tweet = await client.v2.tweet(message, tweetOpts);
+              } catch (err) {
+                const errCodes = (err && err.data && err.data.errors) ? err.data.errors.map(e => e.code) : [];
+                const tooLong = errCodes.includes(186) || /too long|character limit/i.test((err && err.message) || '');
+                if (!tooLong) throw err;
+
+                console.log('Tweet rejected as too long (' + message.length + ' chars). Retrying with truncated body.');
+                const tail = bodySection ? '\n---\n' : '';
+                const baseLen = head.length + tail.length + urlSuffix.length;
+                const limit = 280; // X 拒否時のフォールバック上限
+                const truncatedBody = prBody.slice(0, Math.max(0, limit - baseLen - 1)) + '…';
+                const fallback = head + (truncatedBody.length > 1 ? '\n---\n' + truncatedBody : '') + urlSuffix;
+                tweet = await client.v2.tweet(fallback, tweetOpts);
+              }
               console.log('Tweet posted: ' + tweet.data.id);
 
             } catch (error) {
