@@ -154,6 +154,7 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
             SELECT
                 (SELECT member FROM o ORDER BY date DESC LIMIT 1) AS curr,
                 (SELECT date   FROM o ORDER BY date DESC LIMIT 1) AS curr_date,
+                (SELECT member FROM o WHERE date <= date('now','-1 days')  ORDER BY date DESC LIMIT 1) AS m1,
                 (SELECT member FROM o WHERE date <= date('now','-7 days')  ORDER BY date DESC LIMIT 1) AS m7,
                 (SELECT member FROM o WHERE date <= date('now','-30 days') ORDER BY date DESC LIMIT 1) AS m30,
                 (SELECT member FROM o WHERE date <= date('now','-90 days') ORDER BY date DESC LIMIT 1) AS m90,
@@ -162,7 +163,10 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
                 (SELECT date FROM o ORDER BY member DESC, date DESC LIMIT 1) AS peak_date,
                 (SELECT MAX(day_diff) FROM o) AS max_single_day_growth,
                 (SELECT date FROM o WHERE day_diff = (SELECT MAX(day_diff) FROM o) ORDER BY date DESC LIMIT 1) AS max_growth_date,
-                (SELECT MIN(date) FROM o) AS first_date";
+                (SELECT MIN(date) FROM o) AS first_date,
+                -- 全期間 (window 外含む) のピーク。長期縮小の検知に使う
+                (SELECT MAX(member) FROM statistics WHERE open_chat_id = :open_chat_id) AS all_time_peak,
+                (SELECT date FROM statistics WHERE open_chat_id = :open_chat_id ORDER BY member DESC, date DESC LIMIT 1) AS all_time_peak_date";
 
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
         $row = SQLiteStatistics::fetch($query, compact('open_chat_id'));
@@ -170,11 +174,13 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 
         $empty = [
             'curr' => null, 'curr_date' => null,
+            'm1' => null,
             'm7' => null, 'm30' => null, 'm90' => null,
             'sample_n' => 0,
             'peak_high' => null, 'peak_date' => null,
             'max_single_day_growth' => null, 'max_growth_date' => null,
             'first_date' => null,
+            'all_time_peak' => null, 'all_time_peak_date' => null,
         ];
         if (!$row || !is_array($row)) {
             return $empty;
@@ -183,6 +189,7 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
         return [
             'curr'                  => $row['curr'] !== null ? (int)$row['curr'] : null,
             'curr_date'             => $row['curr_date'] !== null ? (string)$row['curr_date'] : null,
+            'm1'                    => $row['m1']  !== null ? (int)$row['m1']  : null,
             'm7'                    => $row['m7']  !== null ? (int)$row['m7']  : null,
             'm30'                   => $row['m30'] !== null ? (int)$row['m30'] : null,
             'm90'                   => $row['m90'] !== null ? (int)$row['m90'] : null,
@@ -192,6 +199,8 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
             'max_single_day_growth' => $row['max_single_day_growth'] !== null ? (int)$row['max_single_day_growth'] : null,
             'max_growth_date'       => $row['max_growth_date'] !== null ? (string)$row['max_growth_date'] : null,
             'first_date'            => $row['first_date'] !== null ? (string)$row['first_date'] : null,
+            'all_time_peak'         => $row['all_time_peak'] !== null ? (int)$row['all_time_peak'] : null,
+            'all_time_peak_date'    => $row['all_time_peak_date'] !== null ? (string)$row['all_time_peak_date'] : null,
         ];
     }
 }

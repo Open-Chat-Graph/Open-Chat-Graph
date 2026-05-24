@@ -7,8 +7,8 @@
  * docker compose exec app vendor/bin/phpunit app/Models/Repositories/test/OcNarrativeRepositoryTest.php
  *
  * 内容:
- * - 内部で StatisticsOhlcRepositoryInterface / RankingPositionOhlcRepositoryInterface に
- *   正しい引数で委譲することを mock で検証
+ * - メンバー数メトリクスは欠損のない daily statistics (StatisticsRepositoryInterface) に委譲
+ * - 順位 / 急上昇は RankingPositionOhlcRepositoryInterface に委譲
  * - 戻り値の透過性 (受け取った配列をそのまま返す)
  */
 
@@ -17,33 +17,34 @@ declare(strict_types=1);
 use App\Models\Repositories\OcNarrativeRepository;
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionOhlcRepositoryInterface;
-use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
+use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
 use PHPUnit\Framework\TestCase;
 
 class OcNarrativeRepositoryTest extends TestCase
 {
-    public function test_getMemberMetrics_delegates_to_statistics_ohlc_repository(): void
+    public function test_getMemberMetrics_delegates_to_statistics_repository(): void
     {
         $expected = [
             'curr' => 1234,
             'curr_date' => '2026-05-20',
-            'm7' => 1200, 'm30' => 1000, 'm90' => 800,
+            'm1' => 1230, 'm7' => 1200, 'm30' => 1000, 'm90' => 800,
             'sample_n' => 90,
             'peak_high' => 1500, 'peak_date' => '2026-05-01',
             'max_single_day_growth' => 50, 'max_growth_date' => '2026-04-15',
             'first_date' => '2025-08-01',
+            'all_time_peak' => 1500, 'all_time_peak_date' => '2026-05-01',
         ];
 
-        $statsOhlc = $this->createMock(StatisticsOhlcRepositoryInterface::class);
-        $statsOhlc->expects($this->once())
+        $stats = $this->createMock(StatisticsRepositoryInterface::class);
+        $stats->expects($this->once())
             ->method('getMemberMetricsForNarrative')
             ->with(42)
             ->willReturn($expected);
 
         $rankingOhlc = $this->createMock(RankingPositionOhlcRepositoryInterface::class);
 
-        $repo = new OcNarrativeRepository($statsOhlc, $rankingOhlc);
+        $repo = new OcNarrativeRepository($stats, $rankingOhlc);
 
         $this->assertSame($expected, $repo->getMemberMetrics(42));
     }
@@ -57,7 +58,7 @@ class OcNarrativeRepositoryTest extends TestCase
             'sample_n' => 30,
         ];
 
-        $statsOhlc = $this->createMock(StatisticsOhlcRepositoryInterface::class);
+        $stats = $this->createMock(StatisticsRepositoryInterface::class);
 
         $rankingOhlc = $this->createMock(RankingPositionOhlcRepositoryInterface::class);
         $rankingOhlc->expects($this->once())
@@ -70,14 +71,14 @@ class OcNarrativeRepositoryTest extends TestCase
             )
             ->willReturn($expected);
 
-        $repo = new OcNarrativeRepository($statsOhlc, $rankingOhlc);
+        $repo = new OcNarrativeRepository($stats, $rankingOhlc);
 
         $this->assertSame($expected, $repo->getPositionMovement(99, 3));
     }
 
     public function test_getPositionMovement_with_custom_days(): void
     {
-        $statsOhlc = $this->createMock(StatisticsOhlcRepositoryInterface::class);
+        $stats = $this->createMock(StatisticsRepositoryInterface::class);
         $rankingOhlc = $this->createMock(RankingPositionOhlcRepositoryInterface::class);
         $rankingOhlc->expects($this->once())
             ->method('getRecentPositionMovement')
@@ -89,14 +90,35 @@ class OcNarrativeRepositoryTest extends TestCase
             )
             ->willReturn(['oldest_close' => null, 'oldest_date' => null, 'latest_close' => null, 'latest_date' => null, 'best_high' => null, 'sample_n' => 0]);
 
-        $repo = new OcNarrativeRepository($statsOhlc, $rankingOhlc);
+        $repo = new OcNarrativeRepository($stats, $rankingOhlc);
         $repo->getPositionMovement(1, 0, 7);
+    }
+
+    public function test_getAveragePosition_maps_type_string_to_enum(): void
+    {
+        $expected = ['avg_position' => 12.5, 'sample_n' => 25];
+
+        $stats = $this->createMock(StatisticsRepositoryInterface::class);
+        $rankingOhlc = $this->createMock(RankingPositionOhlcRepositoryInterface::class);
+        $rankingOhlc->expects($this->once())
+            ->method('getAveragePosition')
+            ->with(
+                $this->equalTo(7),
+                $this->equalTo(0),
+                $this->equalTo(RankingType::Rising),
+                $this->equalTo(30),
+            )
+            ->willReturn($expected);
+
+        $repo = new OcNarrativeRepository($stats, $rankingOhlc);
+
+        $this->assertSame($expected, $repo->getAveragePosition(7, 0, 'rising', 30));
     }
 
     public function test_implements_interface(): void
     {
         $repo = new OcNarrativeRepository(
-            $this->createMock(StatisticsOhlcRepositoryInterface::class),
+            $this->createMock(StatisticsRepositoryInterface::class),
             $this->createMock(RankingPositionOhlcRepositoryInterface::class),
         );
         $this->assertInstanceOf(OcNarrativeRepositoryInterface::class, $repo);
