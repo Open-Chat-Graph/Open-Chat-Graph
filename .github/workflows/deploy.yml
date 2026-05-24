@@ -334,11 +334,25 @@ jobs:
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
                 .trim();
 
+              // X Premium tweet 上限は 25,000 文字。それを超える場合だけ事前に切り詰める。
+              const MAX_TWEET = 25000;
               const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
                 'By ' + prAuthor;
               const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
-              const bodySection = prBody ? '\n---\n' + prBody : '';
+              const separator = '\n---\n';
+
+              let bodySection = '';
+              if (prBody) {
+                const overhead = head.length + separator.length + urlSuffix.length;
+                const remaining = MAX_TWEET - overhead;
+                if (remaining > 5) {
+                  const body = prBody.length > remaining
+                    ? prBody.slice(0, remaining - 1) + '…'
+                    : prBody;
+                  bodySection = separator + body;
+                }
+              }
 
               const message = head + bodySection + urlSuffix;
 
