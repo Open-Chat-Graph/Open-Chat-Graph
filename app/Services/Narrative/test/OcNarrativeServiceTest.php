@@ -75,7 +75,7 @@ class OcNarrativeServiceTest extends TestCase
             'description' => 'これはテスト用のルームです。',
             'category' => 0,
             'member' => 1000,
-            'created_at' => (new \DateTime('-200 days'))->format('Y-m-d H:i:s'),
+            'api_created_at' => (new \DateTime('-200 days'))->format('Y-m-d H:i:s'),
         ], $overrides);
     }
 
@@ -296,6 +296,50 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertIsString($result['detail']);
         $this->assertIsString($result['meta_description']);
         $this->assertIsString($result['pattern']);
+    }
+
+    public function test_opening_info_uses_api_created_at_not_created_at(): void
+    {
+        // ルーム開設日は LINE API 由来の api_created_at のみ使う。
+        // created_at (= 我々のサイトへの登録日) はフォールバックにも使わない。
+        $oc = $this->buildOc([
+            'api_created_at' => '2026-01-14 00:00:00', // 実開設
+            'created_at' => '2026-04-06 00:00:00',     // サイトへの登録 (使われないはず)
+        ]);
+        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $oc);
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('2026年1月', $result['detail']);
+        $this->assertStringNotContainsString('2026年4月', $result['detail']);
+    }
+
+    public function test_opening_info_omitted_when_api_created_at_missing_no_fallback(): void
+    {
+        // api_created_at が null のときは created_at にフォールバックせず、開設情報の文を省略する。
+        $oc = $this->buildOc([
+            'api_created_at' => null,
+            'created_at' => '2026-04-06 00:00:00', // 使われない
+        ]);
+        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $oc);
+
+        $this->assertNotNull($result);
+        $this->assertStringNotContainsString('開設', $result['detail']);
+        $this->assertStringNotContainsString('2026年4月', $result['detail']);
+    }
+
+    public function test_opening_info_omitted_when_api_created_at_is_zero_date(): void
+    {
+        $oc = $this->buildOc(['api_created_at' => '0000-00-00 00:00:00']);
+        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $oc);
+
+        $this->assertNotNull($result);
+        $this->assertStringNotContainsString('開設', $result['detail']);
     }
 
     public function test_html_special_chars_in_name_are_returned_as_plain_for_caller_escape(): void
