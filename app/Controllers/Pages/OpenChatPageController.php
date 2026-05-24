@@ -33,6 +33,7 @@ class OpenChatPageController
 
     function index(
         OpenChatPageRepositoryInterface $ocRepo,
+        DeleteOpenChatRepositoryInterface $deletedRepo,
         OcPageMeta $meta,
         StatisticsChartArrayService $statisticsChartArrayService,
         StatisticsViewUtility $statisticsViewUtility,
@@ -56,16 +57,15 @@ class OpenChatPageController
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
             if (!$oc)
-                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+                return $this->deletedResponse($recommendGenarator, $deletedRepo, $open_chat_id, $topPageDto);
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
         } else {
             $oc = $ocRepo->getOpenChatById($open_chat_id);
             if (!$oc) {
-                /** @var DeleteOpenChatRepositoryInterface $deletedRepo */
-                $deletedRepo = app(DeleteOpenChatRepositoryInterface::class);
                 if ($deletedRepo->isDeleted($open_chat_id)) {
                     http_response_code(410);
+                    exit;
                 }
                 return false;
             }
@@ -196,11 +196,10 @@ class OpenChatPageController
 
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
+        DeleteOpenChatRepositoryInterface $deletedRepo,
         int $open_chat_id,
         StaticTopPageDto $topPageDto
     ) {
-        /** @var DeleteOpenChatRepositoryInterface $deletedRepo */
-        $deletedRepo = app(DeleteOpenChatRepositoryInterface::class);
         $isDeleted = $deletedRepo->isDeleted($open_chat_id);
 
         /** @var RecommendRankingRepository $repo */
@@ -209,6 +208,7 @@ class OpenChatPageController
         if (!$tag) {
             if ($isDeleted) {
                 http_response_code(410);
+                exit;
             }
             return false;
         }

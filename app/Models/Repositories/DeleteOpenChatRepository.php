@@ -48,10 +48,9 @@ class DeleteOpenChatRepository implements DeleteOpenChatRepositoryInterface
 
     public function isDeleted(int $open_chat_id): bool
     {
-        $stmt = DB::$pdo->prepare(
-            "SELECT 1 FROM open_chat_deleted WHERE id = :open_chat_id LIMIT 1"
+        return !!DB::fetchColumn(
+            "SELECT 1 FROM open_chat_deleted WHERE id = :open_chat_id LIMIT 1",
+            compact('open_chat_id')
         );
-        $stmt->execute(compact('open_chat_id'));
-        return (bool) $stmt->fetchColumn();
     }
 }
