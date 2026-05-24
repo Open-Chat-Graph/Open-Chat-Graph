@@ -377,16 +377,32 @@ PROD_SYNC_CONFIG_URL ?= git@github.com:mimimiku778/Open-Chat-Graph-Config.git
 
 _ensure-prod-sync-secrets:
 	@SECRETS_DIR=batch/sh/prod-sync/secrets; \
+	EXAMPLE_DIR=batch/sh/prod-sync/secrets-example; \
 	if [ -d "$$SECRETS_DIR/.git" ]; then \
 		echo "$(GREEN)secrets を最新化中...$(NC)"; \
 		git -C "$$SECRETS_DIR" fetch --quiet origin && \
 		git -C "$$SECRETS_DIR" reset --hard --quiet origin/HEAD; \
+	elif [ -d "$$SECRETS_DIR" ] && [ ! -d "$$SECRETS_DIR/.git" ] && [ -n "$$(ls -A $$SECRETS_DIR 2>/dev/null)" ]; then \
+		echo "$(GREEN)secrets (手動配置) を検出しました$(NC)"; \
 	else \
 		echo "$(GREEN)secrets を取得中...$(NC)"; \
 		rm -rf "$$SECRETS_DIR" && \
-		git clone --quiet --depth 1 "$(PROD_SYNC_CONFIG_URL)" "$$SECRETS_DIR" || { \
-			echo "$(RED)Error: 機密リポジトリへのアクセスができません$(NC)"; \
-			echo "$(YELLOW)アクセス権を持つ開発者のみが利用できる機能です$(NC)"; \
+		git clone --quiet --depth 1 "$(PROD_SYNC_CONFIG_URL)" "$$SECRETS_DIR" 2>/dev/null || { \
+			rm -rf "$$SECRETS_DIR"; \
+			echo ""; \
+			echo "$(RED)Error: 機密リポジトリ ($(PROD_SYNC_CONFIG_URL)) にアクセスできません$(NC)"; \
+			echo ""; \
+			echo "$(YELLOW)以下のいずれかの方法で secrets を配置してください:$(NC)"; \
+			echo ""; \
+			echo "  1) $(GREEN)既存のサンプルを書き換えて使う$(NC)"; \
+			echo "     cp -r $$EXAMPLE_DIR $$SECRETS_DIR"; \
+			echo "     # 上記コピー後、$$SECRETS_DIR/ 配下のファイルを編集して実値を入れる"; \
+			echo "     # (アクセス先サーバ・パスワード・SSH鍵を自前で用意する場合)"; \
+			echo ""; \
+			echo "  2) $(GREEN)自前のプライベートリポジトリを clone 先にする$(NC)"; \
+			echo "     make sync-update PROD_SYNC_CONFIG_URL=git@github.com:YOU/your-config.git"; \
+			echo "     # リポ構造は $$EXAMPLE_DIR を参考に作成 (secrets-example/README.md)"; \
+			echo ""; \
 			exit 1; \
 		}; \
 	fi

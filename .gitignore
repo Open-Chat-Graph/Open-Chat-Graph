@@ -32,7 +32,7 @@ setup/local-setup.sh
 batch/sh/*.key
 batch/sh/sqldump
 batch/sh/prod-sync/secrets/*
-!batch/sh/prod-sync/secrets/.gitkeep
+!batch/sh/prod-sync/secrets-example/**
 
 # サイトマップ
 public/sitemaps/**
