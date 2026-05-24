@@ -10,13 +10,15 @@
 
 static_rsync_lang_dirs() {
     log_step "Static: 派生キャッシュ同期 (storage/\$lang/...)"
+    local total=$(( ${#LANG_CODES[@]} * ${#STATIC_LANG_SUBDIRS[@]} )) i=0
     for lang in "${LANG_CODES[@]}"; do
         for sub in "${STATIC_LANG_SUBDIRS[@]}"; do
+            i=$((i+1))
             local remote_dir="${REMOTE_PUBLIC_HTML}/storage/${lang}/${sub}/"
             local local_dir="${LOCAL_STORAGE_DIR}/${lang}/${sub}/"
             mkdir -p "$local_dir"
-            log_info "rsync: ${lang}/${sub}/"
-            rsync -av --partial --delete \
+            log_info "[${i}/${total}] rsync: ${lang}/${sub}/"
+            rsync -a --partial --delete --info=progress2 \
                 --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}" \

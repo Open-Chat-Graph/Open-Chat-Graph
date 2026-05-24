@@ -33,10 +33,13 @@ sqlite_checkpoint_remote() {
         dirs+=("$SQLITE_SQLAPI_DIR")
     fi
 
+    local total=$(( ${#LANG_CODES[@]} * ${#dirs[@]} )) i=0
     for lang in "${LANG_CODES[@]}"; do
         for dir in "${dirs[@]}"; do
+            i=$((i+1))
             local remote_dir
             remote_dir=$(sqlite_remote_db_path "$lang" "$dir")
+            log_info "[${i}/${total}] checkpoint: ${lang}/${dir}"
             # 該当ディレクトリ内の *.db を全部 checkpoint。
             # 個別ファイルの checkpoint 失敗は heredoc 内で || true。
             # SSH 接続自体の失敗は表に出したいので外側 || true は付けない。
@@ -62,20 +65,23 @@ sqlite_rsync_dbs() {
         dirs+=("$SQLITE_SQLAPI_DIR")
     fi
 
+    local total=$(( ${#LANG_CODES[@]} * ${#dirs[@]} )) i=0
     for lang in "${LANG_CODES[@]}"; do
         for dir in "${dirs[@]}"; do
+            i=$((i+1))
             local remote_dir local_dir
             remote_dir=$(sqlite_remote_db_path "$lang" "$dir")
             local_dir=$(sqlite_local_db_path "$lang" "$dir")
             mkdir -p "$local_dir"
-            log_info "rsync: ${lang}/${dir}/"
+            log_info "[${i}/${total}] rsync: ${lang}/${dir}/"
             # --include='*.db' --exclude='*' : .db のみ転送 (.db-wal/.db-shm は除外)
             # ローカル側で WAL/SHM が古いと不整合になるので削除
             rm -f "${local_dir}"/*.db-wal "${local_dir}"/*.db-shm 2>/dev/null || true
             # --chmod: SQLite は WAL/SHM をディレクトリ内に作るためアプリ(www-data)が
             # ディレクトリと .db ファイルへ書き込みできる必要がある。
             # rsync 後にディレクトリも 777 にして www-data の書き込みを許可。
-            rsync -av --partial --delete \
+            # --info=progress2 : 1ファイル単位でなく全体の live%を出す
+            rsync -a --partial --delete --info=progress2 \
                 --include='*.db' --exclude='*' \
                 --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
