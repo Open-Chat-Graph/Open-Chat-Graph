@@ -328,12 +328,18 @@ jobs:
                 }
               }
 
-              // PR 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外し、
-              // markdown ヘッダ (#, ##, ### …) の直下の空行のみ詰める。
-              // 段落間の空行は読みやすさのため残す。
+              // PR 本文の整形:
+              //  1. 末尾の "🤖 Generated with..." / "Co-Authored-By:" を除外
+              //  2. URL を全部除去 (X API は URL 含むツイートで $0.20、無しで $0.015 と
+              //     13 倍コスト差。本文中のリンク経由で URL が混入するのを防ぐ)
+              //  3. markdown ヘッダ (#, ##, ### …) の直下の空行のみ詰める
+              //     (段落間の空行は読みやすさのため残す)
               const prBody = (process.env.PR_BODY || '')
                 .replace(/\n*🤖[\s\S]*$/, '')
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
+                .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+                .replace(/<https?:\/\/[^>]+>/g, '')
+                .replace(/https?:\/\/\S+/g, '')
                 .replace(/^(#{1,6} .*)\n\n+/gm, '$1\n')
                 .trim();
 
