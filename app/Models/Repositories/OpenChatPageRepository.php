@@ -95,6 +95,12 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
         return !!DB::fetchColumn($query, ['id' => $id]);
     }
 
+    public function isWithinIdRange(int $id): bool
+    {
+        $max = (int) DB::fetchColumn("SELECT MAX(id) FROM open_chat");
+        return $id <= $max;
+    }
+
     public function getOpenChatNamesByIds(array $ids): array
     {
         if (empty($ids)) {
