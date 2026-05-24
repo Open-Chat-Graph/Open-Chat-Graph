@@ -218,6 +218,85 @@ class SqliteRankingPositionOhlcRepositoryTest extends TestCase
     }
 
     /**
+     * getRecentPositionMovement: 範囲内にデータが無いと全 NULL / sample_n=0
+     */
+    public function testGetRecentPositionMovementEmpty(): void
+    {
+        SQLiteRankingPositionOhlc::connect();
+        SQLiteRankingPositionOhlc::$pdo = null;
+
+        $result = $this->repository->getRecentPositionMovement(77777, 0, RankingType::Ranking, 30);
+
+        $this->assertSame(0, $result['sample_n']);
+        $this->assertNull($result['oldest_close']);
+        $this->assertNull($result['latest_close']);
+        $this->assertNull($result['best_high']);
+    }
+
+    /**
+     * getRecentPositionMovement: 30 日範囲で最古値と最新値が取得され順位推移が表現できること
+     */
+    public function testGetRecentPositionMovementBasic(): void
+    {
+        $today = (new \DateTime('now'))->format('Y-m-d');
+        $d10   = (new \DateTime('-10 days'))->format('Y-m-d');
+        $d25   = (new \DateTime('-25 days'))->format('Y-m-d');
+        $d60   = (new \DateTime('-60 days'))->format('Y-m-d');
+
+        $data = [
+            // 60 日前 (範囲外、含まれない)
+            ['open_chat_id' => 5001, 'category' => 0, 'type' => 'ranking', 'open_position' => 100, 'high_position' => 90, 'low_position' => 110, 'close_position' => 95, 'date' => $d60],
+            // 25 日前 = oldest
+            ['open_chat_id' => 5001, 'category' => 0, 'type' => 'ranking', 'open_position' => 50,  'high_position' => 45, 'low_position' => 55,  'close_position' => 50, 'date' => $d25],
+            // 10 日前
+            ['open_chat_id' => 5001, 'category' => 0, 'type' => 'ranking', 'open_position' => 30,  'high_position' => 25, 'low_position' => 35,  'close_position' => 30, 'date' => $d10],
+            // 今日 = latest
+            ['open_chat_id' => 5001, 'category' => 0, 'type' => 'ranking', 'open_position' => 15,  'high_position' => 10, 'low_position' => 20,  'close_position' => 12, 'date' => $today],
+        ];
+
+        $this->repository->insertOhlc($data);
+        SQLiteRankingPositionOhlc::$pdo = null;
+
+        $result = $this->repository->getRecentPositionMovement(5001, 0, RankingType::Ranking, 30);
+
+        $this->assertSame(3, $result['sample_n'], '30 日範囲には 3 件');
+        $this->assertSame(50, $result['oldest_close']);
+        $this->assertSame($d25, $result['oldest_date']);
+        $this->assertSame(12, $result['latest_close']);
+        $this->assertSame($today, $result['latest_date']);
+        $this->assertSame(10, $result['best_high'], '範囲内の最良 (最小) 順位');
+    }
+
+    /**
+     * getRecentPositionMovement: category / type が異なるデータと混在しても正しく絞れること
+     */
+    public function testGetRecentPositionMovementFiltersByCategoryAndType(): void
+    {
+        $today = (new \DateTime('now'))->format('Y-m-d');
+        $d10   = (new \DateTime('-10 days'))->format('Y-m-d');
+
+        $data = [
+            // 目的のカテゴリ・タイプ
+            ['open_chat_id' => 5002, 'category' => 5, 'type' => 'ranking', 'open_position' => 80, 'high_position' => 70, 'low_position' => 90, 'close_position' => 75, 'date' => $d10],
+            ['open_chat_id' => 5002, 'category' => 5, 'type' => 'ranking', 'open_position' => 50, 'high_position' => 40, 'low_position' => 60, 'close_position' => 45, 'date' => $today],
+            // 別カテゴリ
+            ['open_chat_id' => 5002, 'category' => 6, 'type' => 'ranking', 'open_position' =>  1, 'high_position' =>  1, 'low_position' =>  3, 'close_position' =>  2, 'date' => $today],
+            // 別タイプ
+            ['open_chat_id' => 5002, 'category' => 5, 'type' => 'rising',  'open_position' =>  1, 'high_position' =>  1, 'low_position' =>  3, 'close_position' =>  2, 'date' => $today],
+        ];
+
+        $this->repository->insertOhlc($data);
+        SQLiteRankingPositionOhlc::$pdo = null;
+
+        $result = $this->repository->getRecentPositionMovement(5002, 5, RankingType::Ranking, 30);
+
+        $this->assertSame(2, $result['sample_n']);
+        $this->assertSame(75, $result['oldest_close']);
+        $this->assertSame(45, $result['latest_close']);
+        $this->assertSame(40, $result['best_high']);
+    }
+
+    /**
      * 複数日のデータが日付昇順でソートされて返ること
      * - 挿入順が降順でも結果は昇順
      */
