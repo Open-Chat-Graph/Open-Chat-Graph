@@ -124,14 +124,29 @@ class OcNarrativeServiceTest extends TestCase
 
     public function test_stable_pattern(): void
     {
-        // |pct30| < 2%
-        $m = $this->metricsFixture(['curr' => 1010, 'm30' => 1000]); // +1%
+        // |pct30| < 2% かつ |pct90| < 2% で「安定運営中」
+        // pct90 が +2% を超えると summary は「じわじわ増加中」に切り替わるため
+        // ここでは m30/m90 とも curr ≒ で flat なフィクスチャを使う
+        $m = $this->metricsFixture(['curr' => 1010, 'm30' => 1000, 'm90' => 1005]); // 30日 +1%, 90日 +0.5%
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
         $this->assertSame('stable', $result['pattern']);
         $this->assertStringContainsString('安定', $result['summary']);
+    }
+
+    public function test_stable_pattern_with_long_term_growth_becomes_gradual_increase(): void
+    {
+        // 30 日は実数 ±3 以内で横ばいだが、90 日では +2% 以上の明確な増加 → 「じわじわ増加中」
+        $m = $this->metricsFixture(['curr' => 1010, 'm30' => 1009, 'm90' => 980]); // 30日 +1人, 90日 +30人 (+3.06%)
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('stable', $result['pattern']);
+        $this->assertStringContainsString('じわじわ増加中', $result['summary']);
+        $this->assertStringContainsString('3 ヶ月単位では着実に人数が増えている', $result['detail']);
     }
 
     public function test_new_pattern(): void
