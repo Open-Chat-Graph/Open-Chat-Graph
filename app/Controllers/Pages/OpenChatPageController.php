@@ -54,14 +54,22 @@ class OpenChatPageController
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
-            if (!$oc)
+            if (!$oc) {
+                if (isset($isAdminPage) || !$ocRepo->isWithinIdRange($open_chat_id)) {
+                    return false;
+                }
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+            }
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
         } else {
             $oc = $ocRepo->getOpenChatById($open_chat_id);
-            if (!$oc)
-                return false;
+            if (!$oc) {
+                if (!$ocRepo->isWithinIdRange($open_chat_id)) {
+                    return false;
+                }
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+            }
 
             /** @var RecommendRankingRepository $recommendRankingRepository */
             $recommendRankingRepository = app(RecommendRankingRepository::class);
@@ -187,16 +195,43 @@ class OpenChatPageController
         return $officialPageList->getListDto($emblem);
     }
 
+    /**
+     * 過去に発番されていた範囲の id への !$oc アクセス時に呼ばれる削除済みレスポンス。
+     *
+     * - HTTP 410 Gone を返す (Google の再クロールキューから速やかに外す目的;
+     *   元の 404 だと数ヶ月〜年単位で再クロールされ続ける)
+     * - JP & recommend タグあり: errors/oc_error.php (リッチ UI: 「削除されました」+ recommend)
+     * - JP & タグなし / TW / TH: errors/error.php (汎用、TW/TH は翻訳済み)
+     *   ※ oc_error.php は本文が JP ハードコードのため他言語では使えない
+     *
+     * 範囲外 (=過去にも一度も発番されていない適当な id) の場合はこの関数は呼ばれず、
+     * 呼び出し側で return false → framework デフォルト 404 が走る。
+     */
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
         int $open_chat_id,
         StaticTopPageDto $topPageDto
     ) {
+        http_response_code(410);
+
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return view('errors/error', [
+                'httpCode' => 410,
+                'httpStatusMessage' => 'Gone',
+                'detailsMessage' => '',
+            ]);
+        }
+
         /** @var RecommendRankingRepository $repo */
         $repo = app(RecommendRankingRepository::class);
         $tag = $repo->getRecommendTag($open_chat_id);
-        if (!$tag)
-            return false;
+        if (!$tag) {
+            return view('errors/error', [
+                'httpCode' => 410,
+                'httpStatusMessage' => 'Gone',
+                'detailsMessage' => '',
+            ]);
+        }
 
         $_meta = meta()->setTitle("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
             ->setDescription("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
@@ -206,7 +241,6 @@ class OpenChatPageController
         [$tag2, $tag3] = $repo->getTags($open_chat_id);
         $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
 
-        http_response_code(404);
         return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }
 
