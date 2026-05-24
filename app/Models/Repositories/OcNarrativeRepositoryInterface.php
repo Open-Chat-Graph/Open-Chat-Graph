@@ -43,4 +43,19 @@ interface OcNarrativeRepositoryInterface
      * }
      */
     public function getPositionMovement(int $openChatId, int $category, int $days = 30): array;
+
+    /**
+     * 指定 category / type における close_position の平均と観測日数。
+     * narrative で以下の判定に使う:
+     * - category=0, type='ranking' → 全体での規模 (大規模代表)
+     * - category=0, type='rising'  → 全体での活発度 (最高クラス)
+     * - category>0, type='rising'  → カテゴリ内での活発度
+     *
+     * @param int    $openChatId
+     * @param int    $category 0 = 全体カテゴリ
+     * @param string $type    'ranking' or 'rising'
+     * @param int    $days    直近 N 日 (デフォルト 30)
+     * @return array{avg_position: ?float, sample_n: int}
+     */
+    public function getAveragePosition(int $openChatId, int $category, string $type, int $days = 30): array;
 }

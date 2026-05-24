@@ -73,6 +73,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($metrics);
         $repo->method('getPositionMovement')->willReturn($position ?? $this->emptyPositionMovement());
+        $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
         return new OcNarrativeService($repo);
     }
 
@@ -391,8 +392,11 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertStringNotContainsString('ピーク', $result['detail']);
     }
 
-    public function test_position_movement_included_when_delta_large(): void
+    public function test_category_internal_ranking_position_change_is_never_mentioned(): void
     {
+        // 「カテゴリ内順位は 30 日前 50 位 → 現在 12 位」のような単独の順位変動は
+        // 一般読者には意味が伝わらず、また「人がいるだけの無駄チャット」も拾うため出さない。
+        // 代わりに「全体 ranking で大規模」「全体 / カテゴリ rising で活発」のラベルを使う。
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 1000, 'm30' => 900]));
         $repo->method('getPositionMovement')->willReturn([
@@ -403,31 +407,71 @@ class OcNarrativeServiceTest extends TestCase
             'best_high' => 10,
             'sample_n' => 30,
         ]);
-        $service = new OcNarrativeService($repo);
-
-        $result = $service->generate(1, $this->buildOc(['category' => 5]));
-        $this->assertNotNull($result);
-        $this->assertStringContainsString('カテゴリ内順位', $result['detail']);
-        $this->assertStringContainsString('50 位', $result['detail']);
-        $this->assertStringContainsString('12 位', $result['detail']);
-    }
-
-    public function test_position_movement_not_included_when_delta_small(): void
-    {
-        $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
-        $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 1000, 'm30' => 900]));
-        $repo->method('getPositionMovement')->willReturn([
-            'oldest_close' => 15,
-            'oldest_date' => (new \DateTime('-30 days'))->format('Y-m-d'),
-            'latest_close' => 12, // delta=3 < 10 → 言及しない
-            'latest_date' => (new \DateTime('now'))->format('Y-m-d'),
-            'best_high' => 10,
-            'sample_n' => 30,
-        ]);
+        $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
         $service = new OcNarrativeService($repo);
 
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
         $this->assertNotNull($result);
         $this->assertStringNotContainsString('カテゴリ内順位', $result['detail']);
+    }
+
+    public function test_global_ranking_top_50_avg_produces_large_scale_label(): void
+    {
+        $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
+        $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 5000, 'm30' => 4900]));
+        $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
+            if ($cat === 0 && $type === 'ranking') {
+                return ['avg_position' => 25.5, 'sample_n' => 30];
+            }
+            return ['avg_position' => null, 'sample_n' => 0];
+        });
+        $service = new OcNarrativeService($repo);
+        $result = $service->generate(1, $this->buildOc(['category' => 5]));
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('大規模', $result['detail']);
+    }
+
+    public function test_global_rising_top_50_avg_produces_highest_class_active_label(): void
+    {
+        $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
+        $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 5000, 'm30' => 4900]));
+        $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
+            if ($cat === 0 && $type === 'rising') {
+                return ['avg_position' => 30.0, 'sample_n' => 30];
+            }
+            return ['avg_position' => null, 'sample_n' => 0];
+        });
+        $service = new OcNarrativeService($repo);
+        $result = $service->generate(1, $this->buildOc(['category' => 5]));
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('総合急上昇', $result['detail']);
+        $this->assertStringContainsString('非常に活発', $result['detail']);
+    }
+
+    public function test_category_internal_rising_used_as_fallback_when_global_rising_absent(): void
+    {
+        $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
+        $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 100, 'm30' => 95]));
+        $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
+            // 全体 rising は該当なし、カテゴリ内 rising で 5 位平均
+            if ($cat === 0) {
+                return ['avg_position' => null, 'sample_n' => 0];
+            }
+            if ($type === 'rising' && $cat > 0) {
+                return ['avg_position' => 5.0, 'sample_n' => 25];
+            }
+            return ['avg_position' => null, 'sample_n' => 0];
+        });
+        $service = new OcNarrativeService($repo);
+        $result = $service->generate(1, $this->buildOc(['category' => 5]));
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('カテゴリ内', $result['detail']);
+        $this->assertStringContainsString('活発', $result['detail']);
     }
 }

@@ -39,4 +39,15 @@ class OcNarrativeRepository implements OcNarrativeRepositoryInterface
             $days
         );
     }
+
+    public function getAveragePosition(int $openChatId, int $category, string $type, int $days = 30): array
+    {
+        $rankingType = $type === 'rising' ? RankingType::Rising : RankingType::Ranking;
+        return $this->rankingPositionOhlcRepository->getAveragePosition(
+            $openChatId,
+            $category,
+            $rankingType,
+            $days
+        );
+    }
 }

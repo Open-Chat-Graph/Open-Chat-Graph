@@ -41,4 +41,15 @@ interface RankingPositionOhlcRepositoryInterface
      * }
      */
     public function getRecentPositionMovement(int $open_chat_id, int $category, RankingType $type, int $days): array;
+
+    /**
+     * 直近 N 日の close_position の平均と観測日数を取得する。
+     *
+     * - 範囲内に 1 件も無い場合は ['avg_position' => null, 'sample_n' => 0]
+     * - narrative 生成で「全体 ranking で常時上位 = 大規模代表」
+     *   「全体 rising で常時上位 = 非常に活発」の判定に使う想定
+     *
+     * @return array{avg_position: ?float, sample_n: int}
+     */
+    public function getAveragePosition(int $open_chat_id, int $category, RankingType $type, int $days): array;
 }
