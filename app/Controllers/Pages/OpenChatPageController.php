@@ -214,32 +214,28 @@ class OpenChatPageController
     ) {
         http_response_code(410);
 
+        // TW/TH: oc_error.php は JP 本文ハードコードのため framework error.php へ
         if (MimimalCmsConfig::$urlRoot !== '') {
-            return view('errors/error', [
-                'httpCode' => 410,
-                'httpStatusMessage' => 'Gone',
-                'detailsMessage' => '',
-            ]);
+            return view('errors/error', ['httpCode' => 410]);
         }
 
         /** @var RecommendRankingRepository $repo */
         $repo = app(RecommendRankingRepository::class);
         $tag = $repo->getRecommendTag($open_chat_id);
-        if (!$tag) {
-            return view('errors/error', [
-                'httpCode' => 410,
-                'httpStatusMessage' => 'Gone',
-                'detailsMessage' => '',
-            ]);
-        }
 
-        $_meta = meta()->setTitle("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
-            ->setDescription("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
-            ->setOgpDescription("「{$tag}」タグのオープンチャット ID:{$open_chat_id} （オプチャグラフから削除済み）");
+        $titlePrefix = $tag
+            ? "「{$tag}」タグ ID:{$open_chat_id}"
+            : "ID:{$open_chat_id}";
+        $_meta = meta()->setTitle("{$titlePrefix} （オプチャグラフから削除済み）")
+            ->setDescription("{$titlePrefix} （オプチャグラフから削除済み）")
+            ->setOgpDescription(($tag ? "「{$tag}」タグのオープンチャット" : 'オープンチャット') . " ID:{$open_chat_id} （オプチャグラフから削除済み）");
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_list'];
 
-        [$tag2, $tag3] = $repo->getTags($open_chat_id);
-        $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
+        $recommend = [];
+        if ($tag) {
+            [$tag2, $tag3] = $repo->getTags($open_chat_id);
+            $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
+        }
 
         return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }

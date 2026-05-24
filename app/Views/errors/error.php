@@ -252,9 +252,15 @@ if (class_exists($config) && isset($config::$urlRoot)) {
 }
 
 
-$_meta = meta()->setTitle("{$httpCode} {$httpStatusMessage}")
-    ->setDescription($message)
-    ->setOgpDescription($message);
+// /oc/* の 410 (削除済み確定) のみエラーコードを出さず削除済みメッセージに切り替え。
+// 404 (範囲外 / 未登録 id) は通常の "404 Not Found" + 汎用メッセージで返す。
+$isOcDeletedPage = $httpCode == 410 && strpos(path(), 'oc/');
+$titleText = $isOcDeletedPage ? $message2 : "{$httpCode} {$httpStatusMessage}";
+$descText = $isOcDeletedPage ? $message2 : $message;
+
+$_meta = meta()->setTitle($titleText)
+    ->setDescription($descText)
+    ->setOgpDescription($descText);
 
 $_css = ['room_list', 'site_header', 'site_footer'];
 
@@ -305,7 +311,7 @@ try {
             <?php viewComponent('site_header') ?>
         </div>
         <header style="padding: 0;">
-            <?php if ($httpCode != 404 || !strpos(path(), 'oc/')) : ?>
+            <?php if ($httpCode != 410 || !strpos(path(), 'oc/')) : ?>
                 <h1><?php echo $httpCode ?? '' ?></h1>
                 <h2><?php echo $httpStatusMessage ?? '' ?></h2>
                 <br>
@@ -354,7 +360,7 @@ try {
             <p></p>
         <?php endif ?>
     </main>
-    <?php if ($httpCode == 404) : ?>
+    <?php if ($httpCode == 404 || $httpCode == 410) : ?>
         <?php /** @var NotFoundPageController $c */
         try {
             $c = app(NotFoundPageController::class);
