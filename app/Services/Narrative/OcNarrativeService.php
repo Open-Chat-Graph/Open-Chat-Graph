@@ -82,7 +82,8 @@ class OcNarrativeService
             $pct30 = $this->safePct($metrics['m30'] ?? null, $curr);
             $diff30 = ($metrics['m30'] !== null) ? ($curr - (int)$metrics['m30']) : null;
 
-            $summary = $this->buildSummary($pattern, $curr, $diff30, $pct30, $categoryLabel, $oc, $openchatId);
+            $pct90Cached = $this->safePct($metrics['m90'] ?? null, $curr);
+            $summary = $this->buildSummary($pattern, $curr, $diff30, $pct30, $pct90Cached, $categoryLabel, $oc, $openchatId);
             $detail = $this->buildDetail($pattern, $metrics, $oc, $categoryLabel, $openchatId);
             $metaDescription = $this->buildMetaDescription($oc, $curr, $diff30, $pct30, $categoryLabel);
 
@@ -254,12 +255,23 @@ class OcNarrativeService
         return null;
     }
 
-    private function buildSummary(string $pattern, int $curr, ?int $diff30, ?float $pct30, ?string $category, array $oc, int $openchatId): string
+    private function buildSummary(string $pattern, int $curr, ?int $diff30, ?float $pct30, ?float $pct90, ?string $category, array $oc, int $openchatId): string
     {
         $currFmt = number_format($curr);
         // 評価ラベル (ランキング / 急上昇) を最優先で出す。該当無しなら空。
         $evalLabel = $this->buildSummaryEvalLabel($openchatId, $oc);
         $evalPart = $evalLabel !== null ? $evalLabel . '。' : '';
+
+        // stable パターンは pct90 で「ほぼ横ばい / じわじわ増加 / じわじわ減少」に細分する。
+        // 30 日でほぼ動いていなくても、90 日で +2% 以上なら「じわじわ増加中」が実態に合う。
+        $stableLabel = '安定運営中';
+        if ($pattern === 'stable' && $pct90 !== null) {
+            if ($pct90 >= 2.0) {
+                $stableLabel = 'じわじわ増加中';
+            } elseif ($pct90 <= -2.0) {
+                $stableLabel = 'じわじわ減少中';
+            }
+        }
 
         // pattern 部分: 「拡大中」「安定運営中」等の解釈ラベル + 現在人数のみ
         // (% と人数の duplicate、category の表示は detail 側に集約)
@@ -267,7 +279,7 @@ class OcNarrativeService
             'rapid_growth'  => sprintf('急速に拡大中。現在 %s 人。', $currFmt),
             'active_growth' => sprintf('拡大中。現在 %s 人。', $currFmt),
             'decline'       => sprintf('縮小傾向。現在 %s 人。', $currFmt),
-            'stable'        => sprintf('安定運営中。現在 %s 人。', $currFmt),
+            'stable'        => sprintf('%s。現在 %s 人。', $stableLabel, $currFmt),
             'new'           => sprintf('新しく開設されたルーム。現在 %s 人。', $currFmt),
             'stagnant'      => sprintf('現在 %s 人。長期更新が止まっています。', $currFmt),
             default         => sprintf('現在 %s 人。', $currFmt),
@@ -328,7 +340,8 @@ class OcNarrativeService
             }
             if (!empty($parts)) {
                 $labelPct = $pct30 ?? $pct90;
-                $label = $labelPct !== null ? $this->describeChange($labelPct) : '';
+                $labelDiff = $pct30 !== null ? $diff30 : $diff90;
+                $label = $labelPct !== null ? $this->describeChange($labelDiff, $labelPct) : '';
                 $tail = $label !== '' ? 'と' . $label : '';
                 $periodSentence = sprintf('%s%s。', implode('、', $parts), $tail);
             }
@@ -336,7 +349,7 @@ class OcNarrativeService
 
         // トレンド解釈 (評価ラベルの次、数字より前に置く)
         if ($pct7 !== null || $pct30 !== null || $pct90 !== null) {
-            $trend = $this->describeTrend($pct7, $pct30, $pct90);
+            $trend = $this->describeTrend($diff7, $diff30, $diff90, $pct7, $pct30, $pct90);
             if ($trend !== null) {
                 $sentences[] = $trend;
             }
@@ -511,17 +524,29 @@ class OcNarrativeService
      * 30 日 (or 90 日 fallback) の pct から短い解釈ラベルを返す。
      * 数字列の末尾に「と〜」で接続する用途。
      */
-    private function describeChange(float $pct): string
+    private function describeChange(?int $diff, float $pct): string
     {
-        $abs = abs($pct);
-        if ($abs < 2.0) return 'ほぼ横ばい';
+        // オプチャの世界感では「横ばい」は実数 ±3 程度。+65 や +20 でも「増加」と認識すべき。
+        // → |diff| <= 3 または極めて微小な % (< 0.1%) のときだけ「ほぼ横ばい」とする。
+        $absDiff = $diff !== null ? abs($diff) : 0;
+        if ($absDiff <= 3 || abs($pct) < 0.1) return 'ほぼ横ばい';
         if ($pct >= 50.0) return '急成長';
         if ($pct >= 15.0) return '安定して拡大';
         if ($pct >= 5.0) return '成長基調';
-        if ($pct >= 2.0) return '緩やかな増加';
+        if ($pct >= 0.5) return '緩やかな増加';
         if ($pct > -5.0) return '緩やかな縮小';
         if ($pct > -15.0) return '目立った減少';
         return '大きく縮小';
+    }
+
+    /**
+     * 「ほぼ横ばい」判定のヘルパ。describeChange と同じ閾値で trend 文も判定する。
+     */
+    private function isFlat(?int $diff, ?float $pct): bool
+    {
+        $absDiff = $diff !== null ? abs($diff) : 0;
+        $absPct = $pct !== null ? abs($pct) : 0;
+        return $absDiff <= 3 || $absPct < 0.1;
     }
 
     /**
@@ -612,53 +637,65 @@ class OcNarrativeService
      * 単なる数字羅列を「長期では伸びているが直近は落ち着き」のような
      * 言葉に翻訳する役割。データ不足や両期間ともほぼ横ばいなら null。
      */
-    private function describeTrend(?float $pct7, ?float $pct30, ?float $pct90): ?string
+    private function describeTrend(?int $diff7, ?int $diff30, ?int $diff90, ?float $pct7, ?float $pct30, ?float $pct90): ?string
     {
         if ($pct30 === null && $pct90 === null) {
             return null;
         }
         // 30 日が無いケースは 90 日だけで簡潔に
         if ($pct30 === null) {
-            $abs90 = abs((float)$pct90);
-            if ($abs90 < 2.0) return null;
-            return $pct90 > 0 ? '長期的には拡大傾向。' : '長期的には縮小傾向。';
+            if ($this->isFlat($diff90, $pct90)) return null;
+            return ($pct90 ?? 0) > 0 ? '長期的には拡大傾向。' : '長期的には縮小傾向。';
         }
-        // 90 日が無いケースは 30 日だけで
         if ($pct90 === null) {
-            $abs30 = abs((float)$pct30);
-            if ($abs30 < 2.0) return null;
-            return null; // 期間 1 つしかないと文が薄くなるので追加文は出さない
+            return null;
         }
 
         $p30 = (float)$pct30;
         $p90 = (float)$pct90;
-        $abs30 = abs($p30);
-        $abs90 = abs($p90);
+        $flat30 = $this->isFlat($diff30, $pct30);
+        $flat90 = $this->isFlat($diff90, $pct90);
 
-        // 両期間ともほぼ横ばい → 「安定」
-        if ($abs30 < 2.0 && $abs90 < 5.0) {
+        // 両期間とも実数 / % どちらでもほぼ動いていない
+        if ($flat30 && $flat90) {
             return '長期的にも大きな変動はなく、安定した運営が続いている。';
         }
 
+        // 30 日は横ばいだが 90 日では明確に変動 (じわじわ系)
+        if ($flat30 && !$flat90) {
+            return $p90 > 0
+                ? '直近 1 ヶ月はほぼ横ばいだが、3 ヶ月単位では着実に人数が増えている。'
+                : '直近 1 ヶ月はほぼ横ばいだが、3 ヶ月単位では緩やかに人数が減っている。';
+        }
+
+        // 90 日は横ばいだが 30 日で動いている (直近の変化)
+        if (!$flat30 && $flat90) {
+            return $p30 > 0
+                ? '長期では変動がなかったが、直近 1 ヶ月で人数が増え始めている。'
+                : '長期では変動がなかったが、直近 1 ヶ月で人数が減り始めている。';
+        }
+
         // 長短ねじれ (符号違い)
-        if ($p30 > 2.0 && $p90 < -2.0) {
+        if ($p30 > 0 && $p90 < 0) {
             return '中期では下落していたが、直近 1 ヶ月で反転して拡大基調に。';
         }
-        if ($p30 < -2.0 && $p90 > 2.0) {
+        if ($p30 < 0 && $p90 > 0) {
             return '長期では成長してきたものの、直近 1 ヶ月はやや落ち着き気味。';
         }
 
         // 両方プラス
         if ($p30 > 0 && $p90 > 0) {
-            // 7 日 vs 30 日 で加速 / 減速を判定
-            if ($pct7 !== null) {
-                $p7 = (float)$pct7;
-                if ($p7 < 0 && $abs30 >= 5.0) {
-                    return '直近 1 週間は一旦落ち着いているが、中期では拡大が続いている。';
-                }
+            if ($pct7 !== null && (float)$pct7 < 0 && abs($p30) >= 5.0) {
+                return '直近 1 週間は一旦落ち着いているが、中期では拡大が続いている。';
             }
-            if ($p30 > $p90) {
+            // 1 日あたりのペース比較で加速 / 鈍化を判定
+            $rate30 = $p30 / 30;
+            $rate90 = $p90 / 90;
+            if ($rate30 > $rate90 * 1.3) {
                 return '長期に渡る成長が直近で加速している。';
+            }
+            if ($rate30 < $rate90 * 0.7) {
+                return '長期的な成長は継続しているが、直近では伸びが落ち着いてきている。';
             }
             return '成長基調が継続しており、勢いは衰えていない。';
         }
