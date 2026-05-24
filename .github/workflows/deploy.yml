@@ -328,17 +328,21 @@ jobs:
                 }
               }
 
-              // PR 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外。
+              // PR 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外し、
+              // markdown ヘッダ (#, ##, ### …) の直下の空行のみ詰める。
+              // 段落間の空行は読みやすさのため残す。
               const prBody = (process.env.PR_BODY || '')
                 .replace(/\n*🤖[\s\S]*$/, '')
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
+                .replace(/^(#{1,6} .*)\n\n+/gm, '$1\n')
                 .trim();
 
               // X Premium tweet 上限は 25,000 文字。それを超える場合だけ事前に切り詰める。
               const MAX_TWEET = 25000;
-              const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n\n' +
-                '#' + prNumber + ': ' + prTitle + '\n' +
-                'By ' + prAuthor;
+              // head: 「🚀 メッセージ#オプチャグラフ\n#番号: タイトル」の 2 行のみ。
+              // (アバター画像から作者は分かるので By {author} は省く)
+              const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n' +
+                '#' + prNumber + ': ' + prTitle;
               const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
               const separator = '\n---\n';
 
