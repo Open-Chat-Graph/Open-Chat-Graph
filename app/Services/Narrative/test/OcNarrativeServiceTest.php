@@ -74,6 +74,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo->method('getMemberMetrics')->willReturn($metrics);
         $repo->method('getPositionMovement')->willReturn($position ?? $this->emptyPositionMovement());
         $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         return new OcNarrativeService($repo);
     }
 
@@ -203,6 +204,8 @@ class OcNarrativeServiceTest extends TestCase
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 1000, 'm30' => 900]));
         $repo->method('getPositionMovement')->willThrowException(new \RuntimeException('ranking DB error'));
+        $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $service = new OcNarrativeService($repo);
 
         $result = $service->generate(1, $this->buildOc());
@@ -408,6 +411,7 @@ class OcNarrativeServiceTest extends TestCase
             'sample_n' => 30,
         ]);
         $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $service = new OcNarrativeService($repo);
 
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
@@ -420,6 +424,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 5000, 'm30' => 4900]));
         $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
             if ($cat === 0 && $type === 'ranking') {
                 return ['avg_position' => 25.5, 'sample_n' => 30];
@@ -430,7 +435,7 @@ class OcNarrativeServiceTest extends TestCase
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
-        $this->assertStringContainsString('大規模', $result['detail']);
+        $this->assertStringContainsString('大規模', $result['summary']);
     }
 
     public function test_global_rising_top_50_avg_produces_highest_class_active_label(): void
@@ -438,6 +443,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 5000, 'm30' => 4900]));
         $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
             if ($cat === 0 && $type === 'rising') {
                 return ['avg_position' => 30.0, 'sample_n' => 30];
@@ -448,8 +454,8 @@ class OcNarrativeServiceTest extends TestCase
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
-        $this->assertStringContainsString('総合急上昇', $result['detail']);
-        $this->assertStringContainsString('非常に活発', $result['detail']);
+        $this->assertStringContainsString('総合急上昇', $result['summary']);
+        $this->assertStringContainsString('非常に活発', $result['summary']);
     }
 
     public function test_category_internal_rising_used_as_fallback_when_global_rising_absent(): void
@@ -457,6 +463,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($this->metricsFixture(['curr' => 100, 'm30' => 95]));
         $repo->method('getPositionMovement')->willReturn($this->emptyPositionMovement());
+        $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
         $repo->method('getAveragePosition')->willReturnCallback(function ($id, $cat, $type) {
             // 全体 rising は該当なし、カテゴリ内 rising で 5 位平均
             if ($cat === 0) {
@@ -471,7 +478,7 @@ class OcNarrativeServiceTest extends TestCase
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
-        $this->assertStringContainsString('カテゴリ内', $result['detail']);
-        $this->assertStringContainsString('活発', $result['detail']);
+        $this->assertStringContainsString('カテゴリ内', $result['summary']);
+        $this->assertStringContainsString('活発', $result['summary']);
     }
 }

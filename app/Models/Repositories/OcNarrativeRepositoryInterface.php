@@ -58,4 +58,15 @@ interface OcNarrativeRepositoryInterface
      * @return array{avg_position: ?float, sample_n: int}
      */
     public function getAveragePosition(int $openChatId, int $category, string $type, int $days = 30): array;
+
+    /**
+     * オプチャグラフ独自の成長ランキング (1時間 / 24時間 / 1週間) における
+     * 現在のランキング位置を取得。各テーブルに該当行が無ければ null。
+     *
+     * 用途: summary の「いま伸びているルーム」「過去 1 週間で 1 位」等の
+     * トップ評価ラベル選定。
+     *
+     * @return array{hour: ?int, day: ?int, week: ?int}
+     */
+    public function getGrowthRankingPositions(int $openChatId): array;
 }

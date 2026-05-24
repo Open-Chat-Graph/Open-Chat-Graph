@@ -6,6 +6,7 @@ namespace App\Models\Repositories;
 
 use App\Models\Repositories\RankingPosition\RankingPositionOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\OpenChat\Enum\RankingType;
 
 /**
@@ -49,5 +50,28 @@ class OcNarrativeRepository implements OcNarrativeRepositoryInterface
             $rankingType,
             $days
         );
+    }
+
+    public function getGrowthRankingPositions(int $openChatId): array
+    {
+        $query =
+            "SELECT
+                (SELECT ranking_position FROM growth_ranking_past_hour     WHERE openchat_id = :id) AS hour_pos,
+                (SELECT ranking_position FROM growth_ranking_past_24_hours WHERE openchat_id = :id) AS day_pos,
+                (SELECT ranking_position FROM growth_ranking_past_week     WHERE openchat_id = :id) AS week_pos";
+
+        try {
+            SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+            $row = SQLiteOcgraphSqlapi::fetch($query, ['id' => $openChatId]);
+            SQLiteOcgraphSqlapi::$pdo = null;
+        } catch (\Throwable $e) {
+            return ['hour' => null, 'day' => null, 'week' => null];
+        }
+
+        return [
+            'hour' => $row && $row['hour_pos'] !== null ? (int)$row['hour_pos'] : null,
+            'day'  => $row && $row['day_pos']  !== null ? (int)$row['day_pos']  : null,
+            'week' => $row && $row['week_pos'] !== null ? (int)$row['week_pos'] : null,
+        ];
     }
 }
