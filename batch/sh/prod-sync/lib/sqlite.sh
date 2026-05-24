@@ -10,8 +10,8 @@
 #   - --inplace を使わないことでローカルアプリ稼働中の SQLite 読み込みを壊さない
 #   - その代わり一時的に約2倍のディスクが必要
 #
-# 注: --delete はディレクトリ単位の rsync では「同期元に無いファイルを削除」を意味し、
-# 単一ファイルの転送には影響しない。ここでは念のため統一的に付ける。
+# --delete はディレクトリ転送なので「リモートに無い同名ファイルをローカルからも削除」する。
+# 古い WAL/SHM 残骸を綺麗にする目的で付ける。
 
 sqlite_remote_db_path() {
     local lang="$1" dir="$2"
@@ -37,8 +37,10 @@ sqlite_checkpoint_remote() {
         for dir in "${dirs[@]}"; do
             local remote_dir
             remote_dir=$(sqlite_remote_db_path "$lang" "$dir")
-            # 該当ディレクトリ内の *.db を全部 checkpoint
-            "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$remote_dir")" <<'EOF' || true
+            # 該当ディレクトリ内の *.db を全部 checkpoint。
+            # 個別ファイルの checkpoint 失敗は heredoc 内で || true。
+            # SSH 接続自体の失敗は表に出したいので外側 || true は付けない。
+            "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$remote_dir")" <<'EOF'
 remote_dir=$1
 shopt -s nullglob
 for f in "$remote_dir"/*.db; do
@@ -70,11 +72,16 @@ sqlite_rsync_dbs() {
             # --include='*.db' --exclude='*' : .db のみ転送 (.db-wal/.db-shm は除外)
             # ローカル側で WAL/SHM が古いと不整合になるので削除
             rm -f "${local_dir}"/*.db-wal "${local_dir}"/*.db-shm 2>/dev/null || true
+            # --chmod: SQLite は WAL/SHM をディレクトリ内に作るためアプリ(www-data)が
+            # ディレクトリと .db ファイルへ書き込みできる必要がある。
+            # rsync 後にディレクトリも 777 にして www-data の書き込みを許可。
             rsync -av --partial --delete \
                 --include='*.db' --exclude='*' \
+                --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}/" \
                 "${local_dir}/"
+            chmod 777 "$local_dir" 2>/dev/null || true
         done
     done
     log_ok "SQLite rsync 完了"

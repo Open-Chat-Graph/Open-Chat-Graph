@@ -33,6 +33,7 @@ for _f in "$PROD_SYNC_ENV" "$PROD_SSH_KEY"; do
     fi
 done
 chmod 600 "$PROD_SSH_KEY" 2>/dev/null || true
+chmod 600 "$PROD_SYNC_ENV" 2>/dev/null || true
 
 # secrets を読み込む
 # shellcheck disable=SC1090
@@ -121,12 +122,16 @@ local_mysql() {
 
 # ローカル MySQL に SQL ファイルを流し込む (mysql コンテナ経由)
 # 第1引数: データベース名, 第2引数: SQL ファイルパス (ホスト側)
+#
+# foreign_key_checks / unique_checks を無効化して高速化 (dump は整合性ある前提)。
 local_mysql_import() {
     local db="$1"
     local sql_file="$2"
-    docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T mysql \
-        env MYSQL_PWD="$LOCAL_MYSQL_PASS" mysql -u"$LOCAL_MYSQL_USER" "$db" \
-        < "$sql_file"
+    {
+        printf 'SET foreign_key_checks=0;\nSET unique_checks=0;\n'
+        cat "$sql_file"
+    } | docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T mysql \
+        env MYSQL_PWD="$LOCAL_MYSQL_PASS" mysql -u"$LOCAL_MYSQL_USER" "$db"
 }
 
 # 進捗ログ

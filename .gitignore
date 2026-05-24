@@ -81,5 +81,8 @@ frontend/*/dist/
 test-logs/
 .playwright-mcp
 
+# Claude Code
+.claude/
+
 # 例外: .gitkeepは含める
 !*.gitkeep

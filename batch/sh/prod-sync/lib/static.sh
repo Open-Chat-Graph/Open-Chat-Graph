@@ -17,9 +17,11 @@ static_rsync_lang_dirs() {
             mkdir -p "$local_dir"
             log_info "rsync: ${lang}/${sub}/"
             rsync -av --partial --delete \
+                --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}" \
                 "$local_dir"
+            chmod 777 "$local_dir" 2>/dev/null || true
         done
     done
     log_ok "派生キャッシュ同期完了"

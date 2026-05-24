@@ -13,15 +13,18 @@ mysql_check_remote_dbs() {
     local missing
     missing=$(
         "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$REMOTE_MYSQL_USER" "$REMOTE_MYSQL_PASS" "${MYSQL_DBS[@]}")" <<'EOF'
-set -eo pipefail
+set -uo pipefail
 mysql_user=$1
 mysql_pass=$2
 shift 2
 for db in "$@"; do
     exists=$(MYSQL_PWD="$mysql_pass" mysql -u"$mysql_user" \
-        -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db';" -sN)
-    [ -z "$exists" ] && echo "MISSING:$db"
+        -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db';" -sN 2>/dev/null) || exit 2
+    if [ -z "$exists" ]; then
+        echo "MISSING:$db"
+    fi
 done
+exit 0
 EOF
     )
     if [ -n "$missing" ]; then
@@ -46,12 +49,16 @@ mysql_check_local_dbs() {
 }
 
 mysql_dump_remote() {
-    log_step "MySQL: リモートでダンプ生成 (--order-by-primary --skip-extended-insert --single-transaction)"
-    "${SSH_CMD[@]}" "$SSH_TARGET" "mkdir -p '${REMOTE_DUMP_DIR}' && rm -rf '${REMOTE_DUMP_DIR}'/*"
+    log_step "MySQL: リモートでダンプ生成 (extended-insert, routines/triggers/events 含む)"
+    # ranking 系等は毎時全書き換えで rsync 差分が効かないため、
+    # --extended-insert (デフォルト) で import 速度を優先する。
+    # tmp dir に書き、全DB成功後に正規ディレクトリへ atomic に移行する。
+    local remote_tmp="${REMOTE_DUMP_DIR}.tmp.$$"
+    "${SSH_CMD[@]}" "$SSH_TARGET" "mkdir -p '${REMOTE_DUMP_DIR}' '${remote_tmp}' && rm -rf '${remote_tmp}'/*"
 
     for db in "${MYSQL_DBS[@]}"; do
         log_info "ダンプ中: $db"
-        "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$REMOTE_MYSQL_USER" "$REMOTE_MYSQL_PASS" "$db" "$REMOTE_DUMP_DIR")" <<'EOF'
+        "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$REMOTE_MYSQL_USER" "$REMOTE_MYSQL_PASS" "$db" "$remote_tmp")" <<'EOF'
 set -eo pipefail
 mysql_user=$1
 mysql_pass=$2
@@ -59,22 +66,28 @@ db=$3
 dump_dir=$4
 MYSQL_PWD="$mysql_pass" mysqldump -u"$mysql_user" \
     --add-drop-table \
-    --order-by-primary \
-    --skip-extended-insert \
     --single-transaction \
+    --routines \
+    --triggers \
+    --events \
     --databases "$db" > "$dump_dir/$db.sql"
 EOF
     done
+
+    # 全DB成功 → tmp の中身を正規ディレクトリへ atomic 置換
+    "${SSH_CMD[@]}" "$SSH_TARGET" "rm -rf '${REMOTE_DUMP_DIR}'/* && mv '${remote_tmp}'/* '${REMOTE_DUMP_DIR}/' && rmdir '${remote_tmp}'"
     log_ok "ダンプ生成完了 (${#MYSQL_DBS[@]} DB)"
 }
 
 mysql_rsync_dumps() {
-    log_step "MySQL: ダンプをローカルへ rsync 差分転送"
+    log_step "MySQL: ダンプをローカルへ rsync 差分転送 (--delete でリモート不在分は削除)"
     mkdir -p "$LOCAL_SQLDUMP_DIR"
-    rsync -avz --partial \
+    rsync -avz --partial --delete \
+        --chmod=Da+rwx,Fa+rw \
         -e "$RSYNC_SSH" \
         "${SSH_TARGET}:${REMOTE_DUMP_DIR}/" \
         "${LOCAL_SQLDUMP_DIR}/"
+    chmod 777 "$LOCAL_SQLDUMP_DIR" 2>/dev/null || true
     log_ok "rsync 完了"
 }
 
