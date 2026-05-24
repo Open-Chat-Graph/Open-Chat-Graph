@@ -328,14 +328,30 @@ jobs:
                 }
               }
 
-              const tail = includeUrls
-                ? '#オプチャグラフ ' + siteUrl + '\n\n' + prUrl
-                : '#オプチャグラフ';
+              // X の標準ツイート上限 (280 文字) に収まるよう PR 本文を切り詰める。
+              // 本文末尾の "🤖 Generated with..." / "Co-Authored-By:" は除外。
+              const MAX_TWEET = 280;
+              const prBody = (process.env.PR_BODY || '')
+                .replace(/\n*🤖[\s\S]*$/, '')
+                .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
+                .trim();
 
-              const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
+              const head = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
-                'By ' + prAuthor + '\n\n' +
-                tail;
+                'By ' + prAuthor + ' #オプチャグラフ';
+              const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
+              const separator = '\n---\n';
+
+              let bodySection = '';
+              const remaining = MAX_TWEET - head.length - separator.length - urlSuffix.length;
+              if (prBody && remaining > 5) {
+                const body = prBody.length > remaining
+                  ? prBody.slice(0, remaining - 1) + '…'
+                  : prBody;
+                bodySection = separator + body;
+              }
+
+              const message = head + bodySection + urlSuffix;
 
               const tweetOpts = mediaIds && mediaIds.length
                 ? { media: { media_ids: mediaIds } }
@@ -366,6 +382,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
           SITE_URL: ${{ steps.config.outputs.tweet_url }}
           INCLUDE_URLS: ${{ contains(github.event.pull_request.labels.*.name, 'url-post') }}
