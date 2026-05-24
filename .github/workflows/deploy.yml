@@ -251,6 +251,26 @@ jobs:
             accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
           });
 
+          // GitHub PR ページから OGP 画像 URL を抽出
+          async function fetchOgImageUrl(pageUrl) {
+            const res = await fetch(pageUrl, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; OpenChatGraphBot)' },
+            });
+            if (!res.ok) return null;
+            const html = await res.text();
+            const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+            return m ? m[1] : null;
+          }
+
+          // OGP 画像をダウンロード (Buffer + MIME)
+          async function downloadImage(url) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('image download failed: ' + res.status);
+            const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
+            const buffer = Buffer.from(await res.arrayBuffer());
+            return { buffer, mimeType };
+          }
+
           async function postTweet() {
             try {
               const prNumber = process.env.PR_NUMBER;
@@ -262,8 +282,24 @@ jobs:
               const includeUrls = process.env.INCLUDE_URLS === 'true';
 
               // X API: URL を含む post は $0.20 / 含まない場合 $0.015。
-              // デフォルトは URL なし。PR に `url-post` ラベルが付いている場合のみ
-              // サイト URL と PR URL を載せる（重要な PR で広く拡散したい用途想定）。
+              // デフォルトは URL なし & OGP 画像添付 (PR の社内カード画像をビジュアル代替)。
+              // `url-post` ラベル付き PR の場合は URL を本文に載せる ($0.20)、X 側で
+              // URL 埋め込みカードが付くので OGP 添付は不要。
+              let mediaIds;
+              if (!includeUrls) {
+                try {
+                  const ogImageUrl = await fetchOgImageUrl(prUrl);
+                  if (ogImageUrl) {
+                    const { buffer, mimeType } = await downloadImage(ogImageUrl);
+                    const mediaId = await client.v1.uploadMedia(buffer, { mimeType });
+                    mediaIds = [mediaId];
+                    console.log('OGP image attached: ' + ogImageUrl);
+                  }
+                } catch (e) {
+                  console.error('OGP image skipped:', e.message);
+                }
+              }
+
               const tail = includeUrls
                 ? '#オプチャグラフ ' + siteUrl + '\n\n' + prUrl
                 : '#オプチャグラフ';
@@ -273,7 +309,10 @@ jobs:
                 'By ' + prAuthor + '\n\n' +
                 tail;
 
-              const tweet = await client.v2.tweet(message);
+              const tweetOpts = mediaIds && mediaIds.length
+                ? { media: { media_ids: mediaIds } }
+                : undefined;
+              const tweet = await client.v2.tweet(message, tweetOpts);
               console.log('Tweet posted: ' + tweet.data.id);
 
             } catch (error) {
