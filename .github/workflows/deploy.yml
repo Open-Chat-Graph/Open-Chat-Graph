@@ -255,16 +255,15 @@ jobs:
             try {
               const prNumber = process.env.PR_NUMBER;
               const prTitle = process.env.PR_TITLE;
-              const prUrl = process.env.PR_URL;
               const prAuthor = process.env.PR_AUTHOR;
               const tweetMsg = process.env.TWEET_MSG;
-              const siteUrl = process.env.SITE_URL;
 
+              // X API は URL を含む post が $0.20 / URL 無しは $0.015。
+              // 単価を 13x 下げるため URL (siteUrl / prUrl) は載せない。
               const message = '🚀 プルリクエストがマージされ、' + tweetMsg + '\n\n' +
                 '#' + prNumber + ': ' + prTitle + '\n' +
                 'By ' + prAuthor + '\n\n' +
-                '#オプチャグラフ ' + siteUrl + '\n\n' +
-                prUrl;
+                '#オプチャグラフ';
 
               const tweet = await client.v2.tweet(message);
               console.log('Tweet posted: ' + tweet.data.id);
