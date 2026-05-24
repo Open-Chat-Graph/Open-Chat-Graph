@@ -93,61 +93,26 @@ make ci-test   # CI環境でテストを実行（ローカル専用）
 make phpstan   # PHPStan静的解析を実行
 ```
 
-### 本番データミラー（アクセス権を持つ開発者のみ）
+### 本番データを取り込みたい場合（任意）
 
-本番データを取り込んだローカル開発環境を構築・更新する手順。
-機密（SSH鍵、本番DBパスワード等）は `make sync-setup` / `make sync-update` 実行時に
-プライベートリポジトリから自動的に取得される。アクセス権が無いと git clone が失敗するため、
-必然的に許可された開発者のみが利用できる。
-
-**初回構築:**
+通常の開発は `make up` / `make up-mock` で完結する。本番データのミラーが必要なときだけ以下を使う。
 
 ```bash
-git clone git@github.com:mimimiku778/Open-Chat-Graph.git
-cd Open-Chat-Graph
-make init-y      # docker / MySQL 起動
-make sync-setup  # 機密ファイル自動取得 + 本番フル取得 + DATA_PROTECTION=true
+make sync-setup   # 初回: 本番からフル取得 + DATA_PROTECTION=true に切替
+make sync-update  # 以降の差分更新（rsync差分転送 + 派生DBローカル再構築）
 ```
 
-**差分更新（以降の更新は1コマンド）:**
+**実行後の状態:**
 
-```bash
-make sync-update
-```
+- `.env` の `DATA_PROTECTION=true`（`make init`, `make ci-test`, `make up-mock` は実行不可になる）
+- MySQL は全 DB を本番ミラーで上書き、SQLite/画像/派生キャッシュもローカルに同期
+- ローカル app は同期中の数分間、MySQL 再インポートのため一時的に応答不可（SQLite 読みは継続）
 
-実行内容（前提: `DATA_PROTECTION=true`）:
+**アクセス権について:**
 
-| Phase | 内容 |
-|---|---|
-| MySQL | `mysqldump` （`--single-transaction --routines --triggers --events` 等）→ rsync 差分転送 → DROP+CREATE 再インポート |
-| SQLite (真実ソース) | リモートで WAL checkpoint → rsync 差分転送（`--chmod` で www-data 書き込み可に） |
-| SQLite (`ocgraph_sqlapi`) | **転送せず**、ローカルで `OcreviewApiDataImporter` 実行（差分追記） |
-| comment-img / comment-img-hidden | rsync 差分 + `--delete-after --max-delete=10000`（誤削除防止） |
-| storage 派生キャッシュ | rsync 差分 + `--delete` |
-
-**設計のポイント:**
-
-- 80GB の SQLite が転送量の大半。うち **49GB の `ocgraph_sqlapi` は派生 DB** で、ローカルで再構築できるため転送対象外
-- `rsync` のローリングチェックサムにより、変わってない部分は転送されない（実測: 真の差分更新時 speedup 数千〜数百万倍）
-- WAL checkpoint で本番側の最新書き込みを `.db` 本体に反映してから rsync
-- ローカルアプリ稼働中も SQLite 読み込みが壊れないよう `rsync` は default mode（temp + atomic rename）を使用
-- 各ステップは冪等。中断したら `make sync-update` を再実行すれば続行可
-
-**ファイル構成:**
-
-```
-batch/sh/prod-sync/
-├── lib/
-│   ├── config.sh      # prod-sync.env 読み込み + 共通ヘルパー
-│   ├── mysql.sh       # ダンプ → rsync → re-import 関数群
-│   ├── sqlite.sh      # WAL checkpoint → rsync 関数群
-│   ├── images.sh      # comment-img / comment-img-hidden rsync
-│   ├── static.sh      # storage/$lang/ 派生キャッシュ rsync
-│   └── derived.sh     # PHP CLI で OcreviewApiDataImporter 起動
-├── setup.sh           # 初回: フル取得 + DATA_PROTECTION=true 切替
-├── update.sh          # 差分更新: 破壊操作なし
-└── secrets/           # .gitignored: install-prod-sync.sh が配置
-```
+機密（SSH鍵・本番DBパスワード等）は `make sync-*` 実行時にプライベートリポから自動取得される。
+アクセス権が無いと取得失敗 → `batch/sh/prod-sync/secrets-example/` の雛形を書き換えるか、
+自前のリポを `PROD_SYNC_CONFIG_URL=...` で指定して使う（エラー時に手順が表示される）。
 
 **その他:**
 
