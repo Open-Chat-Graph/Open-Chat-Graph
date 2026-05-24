@@ -55,8 +55,12 @@ class OpenChatPageController
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
-            if (!$oc)
+            if (!$oc) {
+                if (isset($isAdminPage)) {
+                    return false;
+                }
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+            }
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
         } else {
