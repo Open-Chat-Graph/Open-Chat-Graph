@@ -344,17 +344,18 @@ class OcNarrativeService
 
     private function openingInfoSentence(array $oc, array $m): ?string
     {
-        $createdAt = $oc['created_at'] ?? $oc['api_created_at'] ?? null;
-        if ($createdAt === null || $createdAt === '') {
-            // first_date で代用
-            $createdAt = $m['first_date'] ?? null;
-        }
-        if ($createdAt === null || $createdAt === '') {
+        // ルーム開設日は api_created_at (LINE API 由来の実開設日) のみ使う。
+        // created_at は我々のサイトへの登録日 = 「ルーム開設」ではないので使わない。
+        // 一部のルームは api_created_at が null。その場合は開設情報の文を省略する。
+        $apiCreatedAt = $oc['api_created_at'] ?? null;
+        if ($apiCreatedAt === null || $apiCreatedAt === '' || $apiCreatedAt === 0 || $apiCreatedAt === '0000-00-00 00:00:00') {
             return null;
         }
 
         try {
-            $dt = new \DateTime((string)$createdAt);
+            $dt = is_int($apiCreatedAt) || ctype_digit((string)$apiCreatedAt)
+                ? (new \DateTime())->setTimestamp((int)$apiCreatedAt)
+                : new \DateTime((string)$apiCreatedAt);
         } catch (\Throwable $e) {
             return null;
         }
