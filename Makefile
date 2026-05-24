@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -73,6 +73,10 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make init-y$(NC)      - 確認なしで初期化"
 	@echo "  $(GREEN)make init-y-n$(NC)    - 確認なしで初期化（local-secrets.phpは保持）"
 	@echo "  $(GREEN)make ci-test$(NC)     - CIテストを実行（Mock環境でクローリング+URLテスト）"
+	@echo ""
+	@echo "$(YELLOW)本番同期（プライベートリポ oc-config の install-prod-sync.sh から呼ばれる想定）:$(NC)"
+	@echo "  $(GREEN)make sync-setup$(NC)  - 初回: 本番からフル取得 (DATA_PROTECTION=false 時のみ)"
+	@echo "  $(GREEN)make sync-update$(NC) - 差分更新: rsync差分でMySQL/SQLite/画像/派生キャッシュを同期 + ocgraph_sqlapi再構築"
 
 init: _check-data-protection ## 初回セットアップ
 	@$(MAKE) _init ARGS=""
@@ -362,3 +366,13 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 	@echo "$(GREEN)========================================"
 	@echo "  ローカルCIテスト完了"
 	@echo "========================================$(NC)"
+
+# ============================================
+# 本番同期（プライベートリポ oc-config 経由で配置された secrets/ を使用）
+# ============================================
+
+sync-setup: ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）
+	@bash batch/sh/prod-sync/setup.sh
+
+sync-update: ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）
+	@bash batch/sh/prod-sync/update.sh
