@@ -56,8 +56,10 @@ mysql_dump_remote() {
     local remote_tmp="${REMOTE_DUMP_DIR}.tmp.$$"
     "${SSH_CMD[@]}" "$SSH_TARGET" "mkdir -p '${REMOTE_DUMP_DIR}' '${remote_tmp}' && rm -rf '${remote_tmp}'/*"
 
+    local total=${#MYSQL_DBS[@]} i=0
     for db in "${MYSQL_DBS[@]}"; do
-        log_info "ダンプ中: $db"
+        i=$((i+1))
+        log_info "[${i}/${total}] ダンプ中: $db"
         "${SSH_CMD[@]}" "$SSH_TARGET" "bash -s $(remote_quote "$REMOTE_MYSQL_USER" "$REMOTE_MYSQL_PASS" "$db" "$remote_tmp")" <<'EOF'
 set -eo pipefail
 mysql_user=$1
@@ -82,7 +84,7 @@ EOF
 mysql_rsync_dumps() {
     log_step "MySQL: ダンプをローカルへ rsync 差分転送 (--delete でリモート不在分は削除)"
     mkdir -p "$LOCAL_SQLDUMP_DIR"
-    rsync -avz --partial --delete \
+    rsync -az --partial --delete --info=progress2 \
         --chmod=Da+rwx,Fa+rw \
         -e "$RSYNC_SSH" \
         "${SSH_TARGET}:${REMOTE_DUMP_DIR}/" \
@@ -93,13 +95,17 @@ mysql_rsync_dumps() {
 
 mysql_import_local() {
     log_step "MySQL: ローカル DB に再インポート (DROP+CREATE)"
+    local total=${#MYSQL_DBS[@]} i=0
     for db in "${MYSQL_DBS[@]}"; do
+        i=$((i+1))
         local sql_file="${LOCAL_SQLDUMP_DIR}/${db}.sql"
         if [ ! -f "$sql_file" ]; then
             echo "Error: ダンプファイルがありません: $sql_file" >&2
             return 1
         fi
-        log_info "インポート中: $db"
+        local sz
+        sz=$(du -h "$sql_file" 2>/dev/null | cut -f1)
+        log_info "[${i}/${total}] インポート中: $db (${sz})"
         local_mysql_import "$db" "$sql_file"
     done
     log_ok "インポート完了"
