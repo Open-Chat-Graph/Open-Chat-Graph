@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -73,6 +73,10 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make init-y$(NC)      - 確認なしで初期化"
 	@echo "  $(GREEN)make init-y-n$(NC)    - 確認なしで初期化（local-secrets.phpは保持）"
 	@echo "  $(GREEN)make ci-test$(NC)     - CIテストを実行（Mock環境でクローリング+URLテスト）"
+	@echo ""
+	@echo "$(YELLOW)本番同期（プライベートリポ oc-config の install-prod-sync.sh から呼ばれる想定）:$(NC)"
+	@echo "  $(GREEN)make sync-setup$(NC)  - 初回: 本番からフル取得 (DATA_PROTECTION=false 時のみ)"
+	@echo "  $(GREEN)make sync-update$(NC) - 差分更新: rsync差分でMySQL/SQLite/画像/派生キャッシュを同期 + ocgraph_sqlapi再構築"
 
 init: _check-data-protection ## 初回セットアップ
 	@$(MAKE) _init ARGS=""
@@ -362,3 +366,49 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 	@echo "$(GREEN)========================================"
 	@echo "  ローカルCIテスト完了"
 	@echo "========================================$(NC)"
+
+# ============================================
+# 本番同期
+# ============================================
+# 機密ファイルは batch/sh/prod-sync/secrets/ にプライベートリポを clone する形で取得する。
+# アクセス権がない場合は git clone 自体が失敗するため、必然的に sync は使えない。
+
+PROD_SYNC_CONFIG_URL ?= git@github.com:mimimiku778/Open-Chat-Graph-Config.git
+
+_ensure-prod-sync-secrets:
+	@SECRETS_DIR=batch/sh/prod-sync/secrets; \
+	EXAMPLE_DIR=batch/sh/prod-sync/secrets-example; \
+	if [ -d "$$SECRETS_DIR/.git" ]; then \
+		echo "$(GREEN)secrets を最新化中...$(NC)"; \
+		git -C "$$SECRETS_DIR" fetch --quiet origin && \
+		git -C "$$SECRETS_DIR" reset --hard --quiet origin/HEAD; \
+	elif [ -d "$$SECRETS_DIR" ] && [ ! -d "$$SECRETS_DIR/.git" ] && [ -n "$$(ls -A $$SECRETS_DIR 2>/dev/null)" ]; then \
+		echo "$(GREEN)secrets (手動配置) を検出しました$(NC)"; \
+	else \
+		echo "$(GREEN)secrets を取得中...$(NC)"; \
+		rm -rf "$$SECRETS_DIR" && \
+		git clone --quiet --depth 1 "$(PROD_SYNC_CONFIG_URL)" "$$SECRETS_DIR" 2>/dev/null || { \
+			rm -rf "$$SECRETS_DIR"; \
+			echo ""; \
+			echo "$(RED)Error: 機密リポジトリ ($(PROD_SYNC_CONFIG_URL)) にアクセスできません$(NC)"; \
+			echo ""; \
+			echo "$(YELLOW)以下のいずれかの方法で secrets を配置してください:$(NC)"; \
+			echo ""; \
+			echo "  1) $(GREEN)既存のサンプルを書き換えて使う$(NC)"; \
+			echo "     cp -r $$EXAMPLE_DIR $$SECRETS_DIR"; \
+			echo "     # 上記コピー後、$$SECRETS_DIR/ 配下のファイルを編集して実値を入れる"; \
+			echo "     # (アクセス先サーバ・パスワード・SSH鍵を自前で用意する場合)"; \
+			echo ""; \
+			echo "  2) $(GREEN)自前のプライベートリポジトリを clone 先にする$(NC)"; \
+			echo "     make sync-update PROD_SYNC_CONFIG_URL=git@github.com:YOU/your-config.git"; \
+			echo "     # リポ構造は $$EXAMPLE_DIR を参考に作成 (secrets-example/README.md)"; \
+			echo ""; \
+			exit 1; \
+		}; \
+	fi
+
+sync-setup: _ensure-prod-sync-secrets ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）
+	@bash batch/sh/prod-sync/setup.sh
+
+sync-update: _ensure-prod-sync-secrets ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）
+	@bash batch/sh/prod-sync/update.sh

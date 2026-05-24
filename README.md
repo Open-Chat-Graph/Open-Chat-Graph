@@ -93,6 +93,27 @@ make ci-test   # CI環境でテストを実行（ローカル専用）
 make phpstan   # PHPStan静的解析を実行
 ```
 
+### 本番データを取り込みたい場合（任意）
+
+通常の開発は `make up` / `make up-mock` で完結する。本番データのミラーが必要なときだけ以下を使う。
+
+```bash
+make sync-setup   # 初回: 本番からフル取得 + DATA_PROTECTION=true に切替
+make sync-update  # 以降の差分更新（rsync差分転送 + 派生DBローカル再構築）
+```
+
+**実行後の状態:**
+
+- `.env` の `DATA_PROTECTION=true`（`make init`, `make ci-test`, `make up-mock` は実行不可になる）
+- MySQL は全 DB を本番ミラーで上書き、SQLite/画像/派生キャッシュもローカルに同期
+- ローカル app は同期中の数分間、MySQL 再インポートのため一時的に応答不可（SQLite 読みは継続）
+
+**アクセス権について:**
+
+機密（SSH鍵・本番DBパスワード等）は `make sync-*` 実行時にプライベートリポから自動取得される。
+アクセス権が無いと取得失敗 → `batch/sh/prod-sync/secrets-example/` の雛形を書き換えるか、
+自前のリポを `PROD_SYNC_CONFIG_URL=...` で指定して使う（エラー時に手順が表示される）。
+
 **その他:**
 
 ```bash
