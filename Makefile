@@ -373,7 +373,7 @@ ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環
 # 機密ファイルは batch/sh/prod-sync/secrets/ にプライベートリポを clone する形で取得する。
 # アクセス権がない場合は git clone 自体が失敗するため、必然的に sync は使えない。
 
-PROD_SYNC_CONFIG_URL ?= git@github.com:mimimiku778/Open-Chat-Graph-Config.git
+PROD_SYNC_CONFIG_URL ?= git@github.com:Open-Chat-Graph/Open-Chat-Graph-Config.git
 
 _ensure-prod-sync-secrets:
 	@SECRETS_DIR=batch/sh/prod-sync/secrets; \
