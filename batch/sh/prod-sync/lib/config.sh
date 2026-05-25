@@ -131,6 +131,14 @@ local_mysql() {
         env MYSQL_PWD="$LOCAL_MYSQL_PASS" mysql -u"$LOCAL_MYSQL_USER" "$@"
 }
 
+# app コンテナ(root)でコマンドを実行する (app コンテナ経由)
+# host とバインドマウント (./:/var/www/html) を共有するため、
+# コンテナ内 root で chmod すれば host 側の同じ inode に反映される。
+# アプリ(www-data)が作成し host の sync ユーザーが触れないファイルの権限調整に使う。
+local_app_exec() {
+    docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T app "$@"
+}
+
 # ローカル MySQL に SQL ファイルを流し込む (mysql コンテナ経由)
 # 第1引数: データベース名, 第2引数: SQL ファイルパス (ホスト側)
 #
