@@ -64,7 +64,6 @@ jobs:
               echo "ssh_user=${{ vars.STG_SSH_USER }}"
               echo "ssh_host=${{ vars.STG_SSH_HOST }}"
               echo "ssh_path=${{ vars.STG_SSH_PATH }}"
-              echo "mysql_dbs=${{ vars.STG_MYSQL_DB_COMMENT }} ${{ vars.STG_MYSQL_DB_COMMENT_TW }} ${{ vars.STG_MYSQL_DB_COMMENT_TH }}"
               echo "tweet_msg=開発環境が更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review-dev.me"
             } >> "$GITHUB_OUTPUT"
@@ -75,7 +74,6 @@ jobs:
               echo "ssh_user=${{ vars.SSH_USER }}"
               echo "ssh_host=${{ vars.SSH_HOST }}"
               echo "ssh_path=${{ vars.SSH_PATH }}"
-              echo "mysql_dbs=${{ vars.MYSQL_DB_COMMENT }} ${{ vars.MYSQL_DB_COMMENT_TW }} ${{ vars.MYSQL_DB_COMMENT_TH }}"
               echo "tweet_msg=サイトが更新されました。以下のPRがマージされました。"
               echo "tweet_url=https://openchat-review.me"
             } >> "$GITHUB_OUTPUT"
@@ -146,12 +144,14 @@ jobs:
         run: |
           ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
 
-      - name: Initialize MySQL tables
-        env:
-          DB_USER: ${{ (env.IS_STG == 'true' && secrets.STG_MYSQL_USER) || secrets.MYSQL_USER }}
-          DB_PASS: ${{ (env.IS_STG == 'true' && secrets.STG_MYSQL_PASS) || secrets.MYSQL_PASS }}
+      # setup/schema/mysql/*.sql を source of truth に、全DBグループ(ocreview/ranking/comment/userlog)へ
+      # 不足テーブル・カラム・索引を「加算のみ」で冪等反映する (MySQL/MariaDB 両対応)。
+      # DROP/MODIFY は一切しない。DB名・接続情報はサーバの local-secrets.php が解決するため env 不要。
+      # 注意: 接続ユーザに ALTER/CREATE/INDEX 権限が必要(DROP は不要)。stg で先行検証される。
+      - name: Sync MySQL schema (additive, idempotent)
         run: |
-          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for db in ${{ steps.config.outputs.mysql_dbs }}; do if mysql -u "${{ env.DB_USER }}" -p"${{ env.DB_PASS }}" -e "USE $db" 2>/dev/null; then mysql -u "${{ env.DB_USER }}" -p"${{ env.DB_PASS }}" "$db" -e "CREATE TABLE IF NOT EXISTS comment_image (id int NOT NULL AUTO_INCREMENT, comment_id int NOT NULL, filename varchar(255) NOT NULL, sort_order tinyint NOT NULL DEFAULT 0, created_at datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (id), KEY idx_comment_id (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;" && echo "Ensured comment_image table in $db"; else echo "Skipped: $db (database not found)"; fi; done'
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} \
+            "cd ${{ steps.config.outputs.ssh_path }} && /usr/bin/php8.5 batch/exec/sync_mysql_schema.php"
 
       - name: Deploy frontend assets
         if: steps.any_frontend.outputs.changed == 'true'

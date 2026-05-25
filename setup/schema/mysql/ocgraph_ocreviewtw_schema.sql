@@ -108,7 +108,8 @@ CREATE TABLE `ranking_ban` (
   `updated_at` int(11) NOT NULL,
   `update_items` text DEFAULT NULL,
   `end_datetime` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ranking_ban_open_chat_datetime` (`open_chat_id`,`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
