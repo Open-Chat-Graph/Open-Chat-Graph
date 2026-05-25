@@ -407,8 +407,8 @@ _ensure-prod-sync-secrets:
 		}; \
 	fi
 
-sync-setup: _ensure-prod-sync-secrets ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）
-	@bash batch/sh/prod-sync/setup.sh
+sync-setup: _ensure-prod-sync-secrets ## 初回: 本番からフル取得（DATA_PROTECTION=false 時のみ実行可）。FROM=<step> で途中再開
+	@FROM="$(FROM)" bash batch/sh/prod-sync/setup.sh
 
-sync-update: _ensure-prod-sync-secrets ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）
-	@bash batch/sh/prod-sync/update.sh
+sync-update: _ensure-prod-sync-secrets ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）。FROM=<step> で途中再開
+	@FROM="$(FROM)" bash batch/sh/prod-sync/update.sh
