@@ -72,6 +72,14 @@ sqlite_rsync_dbs() {
             local remote_dir local_dir
             remote_dir=$(sqlite_remote_db_path "$lang" "$dir")
             local_dir=$(sqlite_local_db_path "$lang" "$dir")
+            # リモートにディレクトリが無ければスキップ。
+            # ocgraph_sqlapi は派生（アーカイブ追記専用）で、仕様上 ja のみ存在し
+            # tw/th には無い。存在しない転送元を rsync すると change_dir で
+            # code 23 を返して set -e で全体が中断するため、事前に存在確認する。
+            if ! "${SSH_CMD[@]}" "$SSH_TARGET" "[ -d $(remote_quote "$remote_dir") ]" 2>/dev/null; then
+                log_info "[${i}/${total}] skip (リモートに無し): ${lang}/${dir}/"
+                continue
+            fi
             mkdir -p "$local_dir"
             log_info "[${i}/${total}] rsync: ${lang}/${dir}/"
             # --include='*.db' --exclude='*' : .db のみ転送 (.db-wal/.db-shm は除外)
