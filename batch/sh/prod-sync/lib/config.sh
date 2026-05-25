@@ -109,9 +109,17 @@ STATIC_LANG_SUBDIRS=(
 # ============================================
 # SSH / rsync 共通オプション
 # ============================================
-SSH_CMD=(ssh -o StrictHostKeyChecking=accept-new -i "$PROD_SSH_KEY" -p "$REMOTE_PORT")
+# OpenSSH 10+ は PQ 鍵交換 未対応サーバへの接続のたびに警告を出す（本番サーバが該当）。
+# WarnWeakCrypto=no-pq-kex でこの警告だけ抑止する（他の弱い暗号警告は残す）。
+# 古いクライアントは未知オプションで落ちるため、サポートする場合のみ付与する。
+SSH_NO_PQ_WARN=""
+if ssh -G -o WarnWeakCrypto=no-pq-kex none >/dev/null 2>&1; then
+    SSH_NO_PQ_WARN="-o WarnWeakCrypto=no-pq-kex"
+fi
+
+SSH_CMD=(ssh -o StrictHostKeyChecking=accept-new $SSH_NO_PQ_WARN -i "$PROD_SSH_KEY" -p "$REMOTE_PORT")
 SSH_TARGET="${REMOTE_USER}@${REMOTE_SERVER}"
-RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new -i ${PROD_SSH_KEY} -p ${REMOTE_PORT}"
+RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new ${SSH_NO_PQ_WARN} -i ${PROD_SSH_KEY} -p ${REMOTE_PORT}"
 
 # ============================================
 # 共通ヘルパー
@@ -121,6 +129,32 @@ RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new -i ${PROD_SSH_KEY} -p ${REMOT
 local_mysql() {
     docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T mysql \
         env MYSQL_PWD="$LOCAL_MYSQL_PASS" mysql -u"$LOCAL_MYSQL_USER" "$@"
+}
+
+# app コンテナ(root)でコマンドを実行する (app コンテナ経由)
+# host とバインドマウント (./:/var/www/html) を共有するため、
+# コンテナ内 root で chmod すれば host 側の同じ inode に反映される。
+# アプリ(www-data)が作成し host の sync ユーザーが触れないファイルの権限調整に使う。
+local_app_exec() {
+    docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T app "$@"
+}
+
+# host 側 sync ユーザーの uid:gid。コンテナ(root)から chown する際の所有者。
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+
+# rsync 前のローカルディレクトリ権限正規化。
+# アプリ(www-data)が作成したファイル/ディレクトリは host の sync ユーザーが所有しておらず、
+# rsync -a が owner/group/times/perms を本番へ合わせようとして "Operation not permitted" で
+# 失敗する。また親ディレクトリに書き込めず --delete の unlink も失敗する。
+# コンテナ(root)で host ユーザー所有へ chown + a+rwX へ chmod しておけば、以降 rsync は
+# 全属性を自由に設定でき、どの環境でもこれらのエラーを踏まない。
+# (www-data は 777/666 のまま read/write/delete 可能 — 削除は親ディレクトリ権限で決まるため)
+# 引数: コンテナ内パス (バインドマウント先 /var/www/html 配下)。
+prepare_local_dir() {
+    local p="$1"
+    local_app_exec sh -c "chown -R ${HOST_UID}:${HOST_GID} '$p' && chmod -R a+rwX '$p'" 2>/dev/null \
+        || log_info "warn: 権限正規化をスキップ ($p) — app コンテナ未起動?"
 }
 
 # ローカル MySQL に SQL ファイルを流し込む (mysql コンテナ経由)

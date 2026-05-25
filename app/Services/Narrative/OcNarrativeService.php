@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Narrative;
 
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
+use Shared\MimimalCmsConfig;
 
 /**
  * /oc/{id} ページ用の narrative (要約 + 詳細 + meta description) 生成サービス。
  *
- * - locale / category label 解決は呼び出し側 (Controller) の責務。Service は与えられた数値・文字列を平に消費する
+ * - 多言語対応: 出力文字列は t() / sprintfT() を通す。日本語をそのまま翻訳キーに使い、
+ *   ja は translation.json のフォールスルー (キー == 日本語) で従来出力を完全維持する。
+ *   tw / th は translation.json のエントリで翻訳。日付・句読点は locale 別ヘルパで吸収
+ * - category label 解決は呼び出し側 (Controller) の責務。Service は与えられた数値・文字列を平に消費する
  * - メンバー数推移は「決定的な状態分類カスケード」で 1 つの状態に落とす (classify())
  *   → summary 用の短い状態ラベルと detail 用のトレンド文を同じ判定から導き、矛盾を作らない
  * - 全体を try/catch で包み、異常データ / 取得失敗時は必ず null を返す
@@ -33,8 +37,14 @@ use App\Models\Repositories\OcNarrativeRepositoryInterface;
  */
 class OcNarrativeService
 {
-    /** sample_n がこの値未満なら「新規」扱い (% 計算回避) */
+    /** sample_n がこの値未満なら「データ点が少ない」扱い (% 計算回避) */
     private const NEW_THRESHOLD_SAMPLE_N = 30;
+
+    /**
+     * 「新しく開設されたルーム」と表現してよい実開設日 (api_created_at) の上限日数。
+     * sample_n が少なくても、実開設が古い / 不明なルームを「新規」と誤表示しないためのガード。
+     */
+    private const NEW_ROOM_MAX_AGE_DAYS = 90;
 
     /** curr がこの値未満は「小規模ルーム」: % はノイズなので実数 / 縮小文脈で語る */
     private const TINY_MEMBER = 50;
@@ -93,8 +103,13 @@ class OcNarrativeService
                 return null;
             }
 
+            // 実開設日 (api_created_at) からの経過日数。null = 開設日が不明。
+            // 「新規」ラベルは sample_n ではなく実開設日で判定する (疎クロールの古い小規模ルーム対策)。
+            $created = $this->parseApiCreatedAt($oc);
+            $roomAgeDays = $created !== null ? (int)$created->diff(new \DateTime('now'))->days : null;
+
             // 決定的な状態分類 (summary ラベル / trend 文 / pattern を一貫して導く)
-            $state = $this->classify($metrics);
+            $state = $this->classify($metrics, $roomAgeDays);
 
             $diff30 = $this->diff($curr, $metrics['m30'] ?? null);
             $pct30 = $this->safePct($metrics['m30'] ?? null, $curr);
@@ -130,9 +145,10 @@ class OcNarrativeService
      * 「直近を主役、長期を文脈」の原則:
      *   24h → 1 週間 → 1 ヶ月 → 3 ヶ月 → 全期間 の順で最も新しい意味のある動きを見出しにする。
      *
+     * @param ?int $roomAgeDays api_created_at からの経過日数 (null = 開設日不明)
      * @return array{pattern: string, label: string, trend: ?string}
      */
-    private function classify(array $m): array
+    private function classify(array $m, ?int $roomAgeDays = null): array
     {
         $curr = (int)$m['curr'];
         $sampleN = (int)($m['sample_n'] ?? 0);
@@ -172,7 +188,13 @@ class OcNarrativeService
         }
 
         // ---- 1) 新規 (サージでなければ % はノイズ。実数で語る) -------------
-        if ($sampleN < self::NEW_THRESHOLD_SAMPLE_N) {
+        // sample_n が少ないだけでは「新規」と断定しない。実開設日 (api_created_at) が
+        // 実際に新しいときのみ「新しく開設されたルーム」と表現する。
+        // (開設が古い / 不明なまま疎にクロールされる小規模ルームを誤表示しないため)
+        if ($sampleN < self::NEW_THRESHOLD_SAMPLE_N
+            && $roomAgeDays !== null
+            && $roomAgeDays <= self::NEW_ROOM_MAX_AGE_DAYS
+        ) {
             return ['pattern' => 'new', 'label' => '新しく開設されたルーム', 'trend' => null];
         }
 
@@ -283,37 +305,37 @@ class OcNarrativeService
 
         // 3 期間すべてで 1 位独占 = 最高峰
         if ($h !== null && $h <= 1 && $d !== null && $d <= 1 && $w !== null && $w <= 1) {
-            return '直近 1 時間・24 時間・1 週間すべての成長ランキングで全体 1 位を独占、いま間違いなく全オープンチャット中もっとも勢いのあるルーム';
+            return t('直近 1 時間・24 時間・1 週間すべての成長ランキングで全体 1 位を独占、いま間違いなく全オープンチャット中もっとも勢いのあるルーム');
         }
 
         // 1 位 (期間別)
         if ($w !== null && $w <= 1) {
-            return '過去 1 週間で全オープンチャット中もっとも人数を伸ばしているルーム (週間成長ランキング 1 位)';
+            return t('過去 1 週間で全オープンチャット中もっとも人数を伸ばしているルーム (週間成長ランキング 1 位)');
         }
         if ($d !== null && $d <= 1) {
-            return '直近 24 時間で全オープンチャット中もっとも人数を伸ばしているルーム (24 時間成長ランキング 1 位)';
+            return t('直近 24 時間で全オープンチャット中もっとも人数を伸ばしているルーム (24 時間成長ランキング 1 位)');
         }
         if ($h !== null && $h <= 1) {
-            return '今この瞬間にもっとも人数が増えているルーム (直近 1 時間成長ランキング 1 位)';
+            return t('今この瞬間にもっとも人数が増えているルーム (直近 1 時間成長ランキング 1 位)');
         }
 
         // トップ 10 入り
         if ($w !== null && $w <= 10) {
-            return sprintf('過去 1 週間の成長ランキングで全体 %d 位、急成長中の注目ルーム', $w);
+            return sprintfT('過去 1 週間の成長ランキングで全体 %d 位、急成長中の注目ルーム', $w);
         }
         if ($d !== null && $d <= 10) {
-            return sprintf('直近 24 時間の成長ランキングで全体 %d 位、いまよく伸びているルーム', $d);
+            return sprintfT('直近 24 時間の成長ランキングで全体 %d 位、いまよく伸びているルーム', $d);
         }
         if ($h !== null && $h <= 10) {
-            return sprintf('直近 1 時間の成長ランキングで全体 %d 位、今動きが活発', $h);
+            return sprintfT('直近 1 時間の成長ランキングで全体 %d 位、今動きが活発', $h);
         }
 
         // トップ 50 入り
         if ($w !== null && $w <= 50) {
-            return sprintf('過去 1 週間の成長ランキングで全体 %d 位の注目ルーム', $w);
+            return sprintfT('過去 1 週間の成長ランキングで全体 %d 位の注目ルーム', $w);
         }
         if ($d !== null && $d <= 50) {
-            return sprintf('直近 24 時間の成長ランキングで全体 %d 位の注目ルーム', $d);
+            return sprintfT('直近 24 時間の成長ランキングで全体 %d 位の注目ルーム', $d);
         }
 
         return null;
@@ -340,10 +362,10 @@ class OcNarrativeService
             $r = $this->repository->getAveragePosition($openchatId, 0, 'rising', 30);
             if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
                 $avg = (float)$r['avg_position'];
-                if ($avg <= 10) return '総合急上昇でも常時トップ 10 入り、オープンチャット中でも最高クラスの活発さ';
-                if ($avg <= 50) return '総合急上昇で継続して上位 50 位以内、非常に活発な運営';
-                if ($avg <= 100) return '総合急上昇で上位 100 位前後を維持する活発なルーム';
-                if ($avg <= 200) return '総合急上昇ランキングに継続的に登場している活発なルーム';
+                if ($avg <= 10) return t('総合急上昇でも常時トップ 10 入り、オープンチャット中でも最高クラスの活発さ');
+                if ($avg <= 50) return t('総合急上昇で継続して上位 50 位以内、非常に活発な運営');
+                if ($avg <= 100) return t('総合急上昇で上位 100 位前後を維持する活発なルーム');
+                if ($avg <= 200) return t('総合急上昇ランキングに継続的に登場している活発なルーム');
             }
         } catch (\Throwable $e) {}
 
@@ -351,10 +373,10 @@ class OcNarrativeService
             $r = $this->repository->getAveragePosition($openchatId, 0, 'ranking', 30);
             if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
                 $avg = (float)$r['avg_position'];
-                if ($avg <= 10) return '全体ランキングでも常時トップ 10 入り、オープンチャット全体を代表する規模';
-                if ($avg <= 50) return '全体ランキングで継続して上位 50 位以内に入る大規模な代表的ルーム';
-                if ($avg <= 100) return '全体ランキングで上位 100 位以内に常在する大規模ルーム';
-                if ($avg <= 200) return '全体ランキング上位に継続的に登場する規模のルーム';
+                if ($avg <= 10) return t('全体ランキングでも常時トップ 10 入り、オープンチャット全体を代表する規模');
+                if ($avg <= 50) return t('全体ランキングで継続して上位 50 位以内に入る大規模な代表的ルーム');
+                if ($avg <= 100) return t('全体ランキングで上位 100 位以内に常在する大規模ルーム');
+                if ($avg <= 200) return t('全体ランキング上位に継続的に登場する規模のルーム');
             }
         } catch (\Throwable $e) {}
 
@@ -364,8 +386,8 @@ class OcNarrativeService
                 $r = $this->repository->getAveragePosition($openchatId, $catId, 'rising', 30);
                 if ($r['sample_n'] >= 5 && $r['avg_position'] !== null) {
                     $avg = (float)$r['avg_position'];
-                    if ($avg <= 10) return 'カテゴリ内の急上昇ランキングで継続して上位 10 位以内、いま活発に動いているルーム';
-                    if ($avg <= 30) return 'カテゴリ内の急上昇ランキングで上位 30 位以内を維持する活発なルーム';
+                    if ($avg <= 10) return t('カテゴリ内の急上昇ランキングで継続して上位 10 位以内、いま活発に動いているルーム');
+                    if ($avg <= 30) return t('カテゴリ内の急上昇ランキングで上位 30 位以内を維持する活発なルーム');
                 }
             } catch (\Throwable $e) {}
         }
@@ -382,13 +404,14 @@ class OcNarrativeService
 
         // 評価ラベル (ランキング / 急上昇) を最優先で出す。該当無しなら空。
         $evalLabel = $this->buildSummaryEvalLabel($openchatId, $oc);
-        $evalPart = $evalLabel !== null ? $evalLabel . '。' : '';
+        $evalPart = $evalLabel !== null ? $evalLabel . $this->sentenceEnd() : '';
 
         // 状態ラベル + 現在人数
+        $label = t($state['label']);
         if ($state['pattern'] === 'stagnant') {
-            $statePart = sprintf('現在 %s 人。%s。', $currFmt, $state['label']);
+            $statePart = sprintfT('現在 %s 人。%s。', $currFmt, $label);
         } else {
-            $statePart = sprintf('%s。現在 %s 人。', $state['label'], $currFmt);
+            $statePart = sprintfT('%s。現在 %s 人。', $label, $currFmt);
         }
 
         return $evalPart . $statePart;
@@ -410,14 +433,14 @@ class OcNarrativeService
             $sentences[] = $openInfo;
         }
 
-        // カテゴリ言及 (カテゴリ無いルームは出さない)
+        // カテゴリ言及 (カテゴリ無いルームは出さない)。$category は Controller 解決済の locale 表示名
         if ($category !== null && $category !== '') {
-            $sentences[] = sprintf('%s カテゴリのオープンチャット。', $category);
+            $sentences[] = sprintfT('%s カテゴリのオープンチャット。', $category);
         }
 
         // トレンド文 (状態分類が選んだ 1 文)
         if ($state['trend'] !== null && $state['trend'] !== '') {
-            $sentences[] = $state['trend'];
+            $sentences[] = t($state['trend']);
         }
 
         // 全期間ピークから大きく縮小しているルームは「かつて N 人 → 現在 M 人」を文脈として添える。
@@ -430,12 +453,12 @@ class OcNarrativeService
         ) {
             $peakDate = ($m['all_time_peak_date'] ?? null) !== null ? (string)$m['all_time_peak_date'] : null;
             if ($peakDate !== null) {
-                $sentences[] = sprintf('かつて %s には %s 人規模だったが、現在は %s 人。',
-                    $this->formatJapaneseDate($peakDate),
+                $sentences[] = sprintfT('かつて %s には %s 人規模だったが、現在は %s 人。',
+                    $this->localizedDate($peakDate),
                     number_format($allTimePeak),
                     number_format($curr));
             } else {
-                $sentences[] = sprintf('かつては %s 人規模だったが、現在は %s 人。',
+                $sentences[] = sprintfT('かつては %s 人規模だったが、現在は %s 人。',
                     number_format($allTimePeak),
                     number_format($curr));
             }
@@ -446,8 +469,8 @@ class OcNarrativeService
         if (!$shrinkContextAdded && ($m['peak_high'] ?? null) !== null && ($m['peak_date'] ?? null) !== null) {
             $peakHigh = (int)$m['peak_high'];
             if ($peakHigh > $curr * self::PEAK_MENTION_RATIO) {
-                $sentences[] = sprintf('ピークは %s の %s 人。',
-                    $this->formatJapaneseDate((string)$m['peak_date']),
+                $sentences[] = sprintfT('ピークは %s の %s 人。',
+                    $this->localizedDate((string)$m['peak_date']),
                     number_format($peakHigh));
             }
         }
@@ -459,8 +482,8 @@ class OcNarrativeService
                 $shouldMention = $growth >= self::SINGLE_DAY_GROWTH_ABS
                     || ($curr > 0 && $growth >= ($curr * self::SINGLE_DAY_GROWTH_PCT / 100));
                 if ($shouldMention && $growth > 0) {
-                    $sentences[] = sprintf('単日最大の伸びは %s の +%s 人。',
-                        $this->formatJapaneseDate((string)$m['max_growth_date']),
+                    $sentences[] = sprintfT('単日最大の伸びは %s の +%s 人。',
+                        $this->localizedDate((string)$m['max_growth_date']),
                         number_format($growth));
                 }
             }
@@ -478,7 +501,7 @@ class OcNarrativeService
             if ($days !== null && $days > 0) {
                 $months = (int)floor($days / 30);
                 if ($months >= 1) {
-                    $sentences[] = sprintf('最終更新は約 %d ヶ月前です。', $months);
+                    $sentences[] = sprintfT('最終更新は約 %d ヶ月前です。', $months);
                 }
             }
         }
@@ -504,15 +527,15 @@ class OcNarrativeService
             $diff30 = $this->diff($curr, $m['m30'] ?? null);
             $diff7 = $this->diff($curr, $m['m7'] ?? null);
             if ($diff30 !== null && $diff30 !== 0) {
-                $parts[] = sprintf('過去 1 ヶ月で %s 人', $this->signedNumberFormat($diff30));
+                $parts[] = sprintfT('過去 1 ヶ月で %s 人', $this->signedNumberFormat($diff30));
             }
             if ($diff7 !== null && $diff7 !== 0) {
-                $parts[] = sprintf('過去 7 日で %s 人', $this->signedNumberFormat($diff7));
+                $parts[] = sprintfT('過去 7 日で %s 人', $this->signedNumberFormat($diff7));
             }
             if (empty($parts)) {
                 return null;
             }
-            return implode('、', $parts) . '。';
+            return implode($this->listSep(), $parts) . $this->sentenceEnd();
         }
 
         // 通常パターン: 実数 + % 併記
@@ -525,38 +548,38 @@ class OcNarrativeService
 
         $parts = [];
         if ($pct90 !== null && $diff90 !== null) {
-            $parts[] = sprintf('過去 3 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff90), $this->signedFloatFormat($pct90));
+            $parts[] = sprintfT('過去 3 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff90), $this->signedFloatFormat($pct90));
         }
         if ($pct30 !== null && $diff30 !== null) {
-            $parts[] = sprintf('1 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff30), $this->signedFloatFormat($pct30));
+            $parts[] = sprintfT('1 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff30), $this->signedFloatFormat($pct30));
         }
         if ($pct7 !== null && $diff7 !== null) {
-            $parts[] = sprintf('1 週間で %s 人 (%s%%)', $this->signedNumberFormat($diff7), $this->signedFloatFormat($pct7));
+            $parts[] = sprintfT('1 週間で %s 人 (%s%%)', $this->signedNumberFormat($diff7), $this->signedFloatFormat($pct7));
         }
         if (empty($parts)) {
             return null;
         }
-        return implode('、', $parts) . '。';
+        return implode($this->listSep(), $parts) . $this->sentenceEnd();
     }
 
     private function buildMetaDescription(array $oc, int $curr, ?int $diff30, ?float $pct30, ?string $category): string
     {
         $name = trim((string)($oc['name'] ?? ''));
         if ($name === '') {
-            $name = 'オープンチャット';
+            $name = t('オープンチャット');
         }
 
         $currFmt = number_format($curr);
 
-        $head = sprintf('%s の統計・メンバー数推移。', $this->truncate($name, 30));
+        $head = sprintfT('%s の統計・メンバー数推移。', $this->truncate($name, 30));
 
-        $stat = sprintf('現在 %s 人', $currFmt);
+        $stat = sprintfT('現在 %s 人', $currFmt);
         if ($pct30 !== null && $diff30 !== null) {
-            $stat .= sprintf('、過去 30 日 %s%%', $this->signedFloatFormat($pct30));
+            $stat .= sprintfT('、過去 30 日 %s%%', $this->signedFloatFormat($pct30));
         }
-        $stat .= '。';
+        $stat .= $this->sentenceEnd();
 
-        $cat = ($category !== null && $category !== '') ? sprintf('%s カテゴリ。', $category) : '';
+        $cat = ($category !== null && $category !== '') ? sprintfT('%s カテゴリ。', $category) : '';
 
         // LINE description 冒頭を足す (短縮版)。meta 属性に改行が混入しないよう連続空白を 1 個に潰す
         $desc = '';
@@ -569,35 +592,45 @@ class OcNarrativeService
         return $this->truncate($combined, 160);
     }
 
-    private function openingInfoSentence(array $oc, array $m): ?string
+    /**
+     * ルーム開設日 (api_created_at) を DateTime にパース。
+     * - api_created_at は LINE API 由来の実開設日。created_at (当サイトへの登録日) は使わない
+     * - null / 空 / 0 / '0000-00-00 00:00:00' / パース不能 はすべて null (= 開設日不明)
+     */
+    private function parseApiCreatedAt(array $oc): ?\DateTime
     {
-        // ルーム開設日は api_created_at (LINE API 由来の実開設日) のみ使う。
-        // created_at は我々のサイトへの登録日 = 「ルーム開設」ではないので使わない。
         $apiCreatedAt = $oc['api_created_at'] ?? null;
         if ($apiCreatedAt === null || $apiCreatedAt === '' || $apiCreatedAt === 0 || $apiCreatedAt === '0000-00-00 00:00:00') {
             return null;
         }
-
         try {
-            $dt = is_int($apiCreatedAt) || ctype_digit((string)$apiCreatedAt)
+            return is_int($apiCreatedAt) || ctype_digit((string)$apiCreatedAt)
                 ? (new \DateTime())->setTimestamp((int)$apiCreatedAt)
                 : new \DateTime((string)$apiCreatedAt);
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    private function openingInfoSentence(array $oc, array $m): ?string
+    {
+        $dt = $this->parseApiCreatedAt($oc);
+        if ($dt === null) {
+            return null;
+        }
         $now = new \DateTime('now');
         $diff = $now->diff($dt);
 
-        $ym = $dt->format('Y年n月');
+        $ym = $this->localizedYearMonth($dt);
         $yearsRun = $diff->y;
 
         if ($yearsRun >= 1) {
-            return sprintf('%s 開設、運営 %d 年。', $ym, $yearsRun);
+            return sprintfT('%s 開設、運営 %d 年。', $ym, $yearsRun);
         }
         if ($diff->m >= 1) {
-            return sprintf('%s 開設、運営 %d ヶ月。', $ym, $diff->m);
+            return sprintfT('%s 開設、運営 %d ヶ月。', $ym, $diff->m);
         }
-        return sprintf('%s 開設。', $ym);
+        return sprintfT('%s 開設。', $ym);
     }
 
     private function extractCategoryId(array $oc): ?int
@@ -712,14 +745,48 @@ class OcNarrativeService
         return '0.0';
     }
 
-    private function formatJapaneseDate(string $date): string
+    /**
+     * locale 別の日付表記 (年月日)。
+     * - ja / tw: 「Y年n月j日」(中国語も同じ漢字表記が自然)
+     * - th: 数値表記「j/n/Y」(サイト全体が数値日付。タイ語月名は使わない)
+     */
+    private function localizedDate(string $date): string
     {
         try {
             $dt = new \DateTime($date);
-            return $dt->format('Y年n月j日');
         } catch (\Throwable $e) {
             return $date;
         }
+        return MimimalCmsConfig::$urlRoot === '/th'
+            ? $dt->format('j/n/Y')
+            : $dt->format('Y年n月j日');
+    }
+
+    /**
+     * locale 別の日付表記 (年月)。localizedDate と同じ方針。
+     */
+    private function localizedYearMonth(\DateTime $dt): string
+    {
+        return MimimalCmsConfig::$urlRoot === '/th'
+            ? $dt->format('n/Y')
+            : $dt->format('Y年n月');
+    }
+
+    /**
+     * locale 別の列挙区切り。ja / tw は読点「、」、th は半角スペース。
+     */
+    private function listSep(): string
+    {
+        return MimimalCmsConfig::$urlRoot === '/th' ? ' ' : '、';
+    }
+
+    /**
+     * locale 別の文末 / 区切り。ja / tw は句点「。」、th は半角スペース。
+     * t() テンプレート外で動的に連結する箇所のみで使う。
+     */
+    private function sentenceEnd(): string
+    {
+        return MimimalCmsConfig::$urlRoot === '/th' ? ' ' : '。';
     }
 
     private function truncate(string $s, int $maxLen): string

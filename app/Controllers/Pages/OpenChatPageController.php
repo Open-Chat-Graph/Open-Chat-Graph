@@ -135,21 +135,19 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        // narrative section 用データ。
-        // - locale guard: JP (urlRoot === '') のみ生成。TW/TH では null fallback で既存挙動維持
+        // narrative section 用データ (全言語対応)。
+        // - Service の出力文字列は t()/sprintfT() で多言語化済 (ja/tw/th)。
         // - category label の locale-aware 解決もここで行い、Service は平に文字列を消費する
+        //   (OPEN_CHAT_CATEGORY は現在の urlRoot キーで引くため、各言語の表示名になる)
         // - Service が失敗しても null が返るので section / meta は既存挙動を完全維持
-        $narrative = null;
-        if (MimimalCmsConfig::$urlRoot === '') {
-            $categoryLabel = null;
-            $catId = $oc['category'] ?? null;
-            if (is_int($catId) && $catId > 0) {
-                $catMap = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] ?? [];
-                $label = array_search($catId, $catMap, true);
-                $categoryLabel = $label !== false ? (string)$label : null;
-            }
-            $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription], $categoryLabel);
+        $categoryLabel = null;
+        $catId = $oc['category'] ?? null;
+        if (is_int($catId) && $catId > 0) {
+            $catMap = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] ?? [];
+            $label = array_search($catId, $catMap, true);
+            $categoryLabel = $label !== false ? (string)$label : null;
         }
+        $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription], $categoryLabel);
 
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], $narrative)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);

@@ -281,6 +281,19 @@ cd frontend/ranking && npm install && npm start
 
 プロキシ先のポートはリポジトリルートの `.env`（`HTTPS_PORT`）から自動的に読み取られます（docker-composeと同じ設定を共有）。
 
+## 🗄️ DBにテーブル・カラムを追加したいとき
+
+`setup/schema/mysql/*.sql` を編集するだけ。デプロイ時に、不足しているテーブル・カラム・索引が
+各DBへ「追加だけ」自動反映されます（既存データは壊しません。削除・型変更はしません）。
+`deploy.yml` もコードも触る必要はありません。
+
+```bash
+# 反映される内容を事前確認（DBは変更しない）
+docker compose exec app php batch/exec/sync_mysql_schema.php --dry-run
+```
+
+詳細・注意点は [`app/Services/Schema/README.md`](app/Services/Schema/README.md) を参照。
+
 ## 📁 ディレクトリ構造
 
 ```
