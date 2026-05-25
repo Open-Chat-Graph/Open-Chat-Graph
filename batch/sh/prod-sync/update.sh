@@ -53,11 +53,33 @@ fi
 log_ok ".env DATA_PROTECTION=true 確認"
 
 CURRENT_STEP=""
-trap '[ -n "$CURRENT_STEP" ] && echo "FAILED at step: $CURRENT_STEP — 再実行で続行可能 (各ステップは冪等)" >&2' ERR
+# 失敗時、重い手順(MySQL/SQLite)をやり直さず途中から再開できるよう、失敗ステップを案内する。
+trap '[ -n "$CURRENT_STEP" ] && { echo "" >&2; echo "✗ FAILED at step: $CURRENT_STEP" >&2; echo "  それ以前の手順(MySQL/SQLite 等)をスキップして再開するには:" >&2; echo "      make sync-update FROM=$CURRENT_STEP" >&2; }' ERR
+
+# 途中再開ポイント。FROM=<step> でそれ以前のステップをスキップして再開する。
+# 有効値: mysql sqlite images static derived
+SYNC_STEPS=(mysql sqlite images static derived)
+SYNC_FROM="${FROM:-}"
+if [ -n "$SYNC_FROM" ] && ! printf '%s\n' "${SYNC_STEPS[@]}" | grep -qx "$SYNC_FROM"; then
+    echo "Error: FROM=$SYNC_FROM は不正です。有効値: ${SYNC_STEPS[*]}" >&2
+    exit 1
+fi
+_resume_reached=true
+if [ -n "$SYNC_FROM" ]; then
+    _resume_reached=false
+    echo "  ▶ FROM=$SYNC_FROM: それ以前のステップをスキップして再開します"
+fi
+# step_active <name>: 実行すべきなら 0、(再開ポイント未到達で)スキップなら 1。
+step_active() {
+    [ "$_resume_reached" = true ] && return 0
+    [ "$1" = "$SYNC_FROM" ] && { _resume_reached=true; return 0; }
+    return 1
+}
 
 # ============================================
 # 1. MySQL
 # ============================================
+if step_active mysql; then
 CURRENT_STEP="mysql"
 mysql_check_remote_dbs
 mysql_check_local_dbs
@@ -65,26 +87,37 @@ mysql_dump_remote
 mysql_rsync_dumps
 mysql_import_local
 mysql_ensure_comment_image_table
+else
+log_step "1: MySQL (skip — FROM=$SYNC_FROM)"
+fi
 
 # ============================================
 # 2. SQLite (sqlapi 除外)
 # ============================================
+if step_active sqlite; then
 CURRENT_STEP="sqlite"
 sqlite_checkpoint_remote false
 sqlite_rsync_dbs false
+else
+log_step "2: SQLite (skip — FROM=$SYNC_FROM)"
+fi
 
 # ============================================
 # 3. 画像
 # ============================================
+if step_active images; then
 CURRENT_STEP="images"
 images_rsync_comment_img
 images_rsync_comment_img_hidden
+fi
 
 # ============================================
 # 4. storage 派生キャッシュ
 # ============================================
+if step_active static; then
 CURRENT_STEP="static"
 static_rsync_lang_dirs
+fi
 
 # ============================================
 # リモート → ローカル取得 ここまでで完了
@@ -102,8 +135,10 @@ echo ""
 # ============================================
 # 5. 派生 DB (ocgraph_sqlapi) をローカルで再構築
 # ============================================
+if step_active derived; then
 CURRENT_STEP="derived"
 derived_run_importer
+fi
 
 CURRENT_STEP=""
 

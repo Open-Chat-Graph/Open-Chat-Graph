@@ -86,3 +86,4 @@ test-logs/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
+local-secrets.php.bak
