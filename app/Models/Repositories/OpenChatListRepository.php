@@ -198,6 +198,14 @@ class OpenChatListRepository implements OpenChatListRepositoryInterface, OpenCha
      */
     public function getOpenChatSiteMapData(): array
     {
-        return DB::fetchAll("SELECT id, updated_at FROM open_chat ORDER BY id ASC");
+        // lastmod は専用テーブル oc_sitemap_lastmod (ページ内容が実際に変わった日) を優先し、
+        // 未登録 room は従来どおり open_chat.updated_at にフォールバック。
+        // 戻り値キーは updated_at のまま (SitemapGenerator 側は無改修)。
+        return DB::fetchAll(
+            "SELECT o.id, COALESCE(l.lastmod, o.updated_at) AS updated_at
+               FROM open_chat o
+               LEFT JOIN oc_sitemap_lastmod l ON l.open_chat_id = o.id
+              ORDER BY o.id ASC"
+        );
     }
 }
