@@ -109,9 +109,17 @@ STATIC_LANG_SUBDIRS=(
 # ============================================
 # SSH / rsync 共通オプション
 # ============================================
-SSH_CMD=(ssh -o StrictHostKeyChecking=accept-new -i "$PROD_SSH_KEY" -p "$REMOTE_PORT")
+# OpenSSH 10+ は PQ 鍵交換 未対応サーバへの接続のたびに警告を出す（本番サーバが該当）。
+# WarnWeakCrypto=no-pq-kex でこの警告だけ抑止する（他の弱い暗号警告は残す）。
+# 古いクライアントは未知オプションで落ちるため、サポートする場合のみ付与する。
+SSH_NO_PQ_WARN=""
+if ssh -G -o WarnWeakCrypto=no-pq-kex none >/dev/null 2>&1; then
+    SSH_NO_PQ_WARN="-o WarnWeakCrypto=no-pq-kex"
+fi
+
+SSH_CMD=(ssh -o StrictHostKeyChecking=accept-new $SSH_NO_PQ_WARN -i "$PROD_SSH_KEY" -p "$REMOTE_PORT")
 SSH_TARGET="${REMOTE_USER}@${REMOTE_SERVER}"
-RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new -i ${PROD_SSH_KEY} -p ${REMOTE_PORT}"
+RSYNC_SSH="ssh -o StrictHostKeyChecking=accept-new ${SSH_NO_PQ_WARN} -i ${PROD_SSH_KEY} -p ${REMOTE_PORT}"
 
 # ============================================
 # 共通ヘルパー
