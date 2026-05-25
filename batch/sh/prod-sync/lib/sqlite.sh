@@ -81,6 +81,8 @@ sqlite_rsync_dbs() {
                 continue
             fi
             mkdir -p "$local_dir"
+            # rsync 前にローカルを host ユーザー所有へ正規化 (owner/times/perms/unlink 失敗を防ぐ)。
+            prepare_local_dir "/var/www/html/storage/${lang}/SQLite/${dir}"
             log_info "[${i}/${total}] rsync: ${lang}/${dir}/"
             # --include='*.db' --exclude='*' : .db のみ転送 (.db-wal/.db-shm は除外)
             # ローカル側で WAL/SHM が古いと不整合になるので削除
@@ -90,6 +92,7 @@ sqlite_rsync_dbs() {
             # rsync 後にディレクトリも 777 にして www-data の書き込みを許可。
             # --info=progress2 : 1ファイル単位でなく全体の live%を出す
             rsync -a --partial --delete --info=progress2 \
+                --no-owner --no-group \
                 --include='*.db' --exclude='*' \
                 --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
