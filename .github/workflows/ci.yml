@@ -85,6 +85,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase repository owner
+        if: steps.skip.outputs.skip != 'true'
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Pull or build app image
         if: steps.skip.outputs.skip != 'true'
         run: |
@@ -100,9 +104,9 @@ jobs:
               -t oc-review-mock-app:latest \
               ./docker/app/
           # 変更がない場合はプリビルドイメージを使用
-          elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest 2>/dev/null; then
+          elif docker pull ghcr.io/${OWNER_LC}/oc-review-mock-app:latest 2>/dev/null; then
             echo "✓ Using prebuilt app image"
-            docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-app:latest oc-review-mock-app:latest
+            docker tag ghcr.io/${OWNER_LC}/oc-review-mock-app:latest oc-review-mock-app:latest
           else
             echo "Building app image (no prebuilt image found)"
             docker buildx build \
@@ -128,9 +132,9 @@ jobs:
               -t oc-review-mock-line-mock-api:latest \
               ./docker/line-mock-api/
           # 変更がない場合はプリビルドイメージを使用
-          elif docker pull ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest 2>/dev/null; then
+          elif docker pull ghcr.io/${OWNER_LC}/oc-review-mock-line-mock-api:latest 2>/dev/null; then
             echo "✓ Using prebuilt LINE Mock API image"
-            docker tag ghcr.io/${{ github.repository_owner }}/oc-review-mock-line-mock-api:latest oc-review-mock-line-mock-api:latest
+            docker tag ghcr.io/${OWNER_LC}/oc-review-mock-line-mock-api:latest oc-review-mock-line-mock-api:latest
           else
             echo "Building LINE Mock API image (no prebuilt image found)"
             docker buildx build \
