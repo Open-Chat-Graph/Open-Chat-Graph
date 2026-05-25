@@ -75,7 +75,7 @@ class OcNarrativeServiceTest extends TestCase
         ], $overrides);
     }
 
-    private function makeService(array $metrics, array $position = null): OcNarrativeService
+    private function makeService(array $metrics, ?array $position = null): OcNarrativeService
     {
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willReturn($metrics);
@@ -278,18 +278,56 @@ class OcNarrativeServiceTest extends TestCase
 
     public function test_new_pattern(): void
     {
-        // sample_n < 30 (サージでなければ実数で語る)
+        // sample_n < 30 かつ実開設日 (api_created_at) が新しい → 「新規」
         $m = $this->metricsFixture([
             'curr' => 50, 'm1' => 49, 'm30' => null, 'm90' => null,
             'm7' => 48,
             'sample_n' => 20,
         ]);
         $service = $this->makeService($m);
-        $result = $service->generate(1, $this->buildOc());
+        // 実際に最近開設されたルーム
+        $result = $service->generate(1, $this->buildOc([
+            'api_created_at' => (new \DateTime('-10 days'))->format('Y-m-d H:i:s'),
+        ]));
 
         $this->assertNotNull($result);
         $this->assertSame('new', $result['pattern']);
         $this->assertStringContainsString('新しく', $result['summary']);
+    }
+
+    public function test_old_room_with_sparse_data_is_not_labeled_new(): void
+    {
+        // 回帰テスト (oc/137181): 開設が古い小規模ルームが疎クロールで sample_n<30 でも
+        // 「新しく開設された」と誤表示しない。実開設日が古ければ通常のトレンド分類に落ちる。
+        $m = $this->metricsFixture([
+            'curr' => 98, 'm1' => 98, 'm7' => 98, 'm30' => 98, 'm90' => 97,
+            'sample_n' => 19, // 直近 200 日のデータ点が少ない (週 1 クロール等)
+            'peak_high' => 98, 'all_time_peak' => 98,
+        ]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc([
+            'api_created_at' => (new \DateTime('-800 days'))->format('Y-m-d H:i:s'),
+        ]));
+
+        $this->assertNotNull($result);
+        $this->assertNotSame('new', $result['pattern']);
+        $this->assertStringNotContainsString('新しく開設された', $result['summary']);
+    }
+
+    public function test_low_sample_with_unknown_open_date_is_not_labeled_new(): void
+    {
+        // api_created_at が null (開設日不明) のときは、sample_n<30 でも「新規」と断定しない。
+        $m = $this->metricsFixture([
+            'curr' => 98, 'm1' => 98, 'm7' => 98, 'm30' => 98, 'm90' => 97,
+            'sample_n' => 19,
+            'peak_high' => 98, 'all_time_peak' => 98,
+        ]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc(['api_created_at' => null]));
+
+        $this->assertNotNull($result);
+        $this->assertNotSame('new', $result['pattern']);
+        $this->assertStringNotContainsString('新しく開設された', $result['summary']);
     }
 
     public function test_stagnant_pattern_when_curr_date_older_than_365_days(): void
