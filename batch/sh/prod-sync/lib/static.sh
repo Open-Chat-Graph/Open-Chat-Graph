@@ -17,9 +17,11 @@ static_rsync_lang_dirs() {
             local remote_dir="${REMOTE_PUBLIC_HTML}/storage/${lang}/${sub}/"
             local local_dir="${LOCAL_STORAGE_DIR}/${lang}/${sub}/"
             mkdir -p "$local_dir"
+            # rsync 前にローカルを host ユーザー所有へ正規化 (owner/times/perms/unlink 失敗を防ぐ)。
+            prepare_local_dir "/var/www/html/storage/${lang}/${sub}"
             log_info "[${i}/${total}] rsync: ${lang}/${sub}/"
             rsync -a --partial --delete --info=progress2 \
-                --chmod=Da+rwx,Fa+rw \
+                --no-owner --no-group --chmod=Da+rwx,Fa+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}" \
                 "$local_dir"

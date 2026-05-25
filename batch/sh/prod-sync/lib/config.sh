@@ -139,6 +139,24 @@ local_app_exec() {
     docker compose -f "${PROJECT_ROOT}/docker-compose.yml" exec -T app "$@"
 }
 
+# host 側 sync ユーザーの uid:gid。コンテナ(root)から chown する際の所有者。
+HOST_UID="$(id -u)"
+HOST_GID="$(id -g)"
+
+# rsync 前のローカルディレクトリ権限正規化。
+# アプリ(www-data)が作成したファイル/ディレクトリは host の sync ユーザーが所有しておらず、
+# rsync -a が owner/group/times/perms を本番へ合わせようとして "Operation not permitted" で
+# 失敗する。また親ディレクトリに書き込めず --delete の unlink も失敗する。
+# コンテナ(root)で host ユーザー所有へ chown + a+rwX へ chmod しておけば、以降 rsync は
+# 全属性を自由に設定でき、どの環境でもこれらのエラーを踏まない。
+# (www-data は 777/666 のまま read/write/delete 可能 — 削除は親ディレクトリ権限で決まるため)
+# 引数: コンテナ内パス (バインドマウント先 /var/www/html 配下)。
+prepare_local_dir() {
+    local p="$1"
+    local_app_exec sh -c "chown -R ${HOST_UID}:${HOST_GID} '$p' && chmod -R a+rwX '$p'" 2>/dev/null \
+        || log_info "warn: 権限正規化をスキップ ($p) — app コンテナ未起動?"
+}
+
 # ローカル MySQL に SQL ファイルを流し込む (mysql コンテナ経由)
 # 第1引数: データベース名, 第2引数: SQL ファイルパス (ホスト側)
 #
