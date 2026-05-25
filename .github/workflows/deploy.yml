@@ -251,54 +251,6 @@ jobs:
             accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
           });
 
-          // opengraph.githubassets.com は bot 風 UA に対し 429 を返すため、
-          // ブラウザ風 UA で取得する。
-          const BROWSER_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-
-          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-          // GitHub PR ページから OGP 画像 URL を抽出。
-          // opengraph.githubassets.com の生成キュー詰まりや GitHub 側キャッシュ伝播遅延で
-          // 初回 fetch が失敗 / og:image meta 未反映のことがあるため、指数バックオフで
-          // 最大 5 回 (合計 ~45 秒) リトライする。
-          async function fetchOgImageUrl(pageUrl, retries = 5) {
-            for (let i = 0; i < retries; i++) {
-              try {
-                const res = await fetch(pageUrl, { headers: { 'User-Agent': BROWSER_UA } });
-                if (res.ok) {
-                  const html = await res.text();
-                  const m = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-                  if (m) return m[1];
-                }
-                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
-              } catch (e) {
-                console.log('fetchOgImageUrl attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
-              }
-              if (i < retries - 1) await sleep(3000 * (i + 1));
-            }
-            return null;
-          }
-
-          // OGP 画像をダウンロード (Buffer + MIME)。
-          // opengraph.githubassets.com が 5xx / 429 を返すことがあるためリトライする。
-          async function downloadImage(url, retries = 5) {
-            for (let i = 0; i < retries; i++) {
-              try {
-                const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA } });
-                if (res.ok) {
-                  const mimeType = (res.headers.get('content-type') || 'image/png').split(';')[0];
-                  const buffer = Buffer.from(await res.arrayBuffer());
-                  return { buffer, mimeType };
-                }
-                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' failed (status=' + res.status + ')');
-              } catch (e) {
-                console.log('downloadImage attempt ' + (i + 1) + ' / ' + retries + ' error: ' + e.message);
-              }
-              if (i < retries - 1) await sleep(3000 * (i + 1));
-            }
-            throw new Error('image download failed after ' + retries + ' retries');
-          }
-
           async function postTweet() {
             try {
               const prNumber = process.env.PR_NUMBER;
@@ -310,23 +262,8 @@ jobs:
               const includeUrls = process.env.INCLUDE_URLS === 'true';
 
               // X API: URL を含む post は $0.20 / 含まない場合 $0.015。
-              // デフォルトは URL なし & OGP 画像添付 (PR の社内カード画像をビジュアル代替)。
-              // `url-post` ラベル付き PR の場合は URL を本文に載せる ($0.20)、X 側で
-              // URL 埋め込みカードが付くので OGP 添付は不要。
-              let mediaIds;
-              if (!includeUrls) {
-                try {
-                  const ogImageUrl = await fetchOgImageUrl(prUrl);
-                  if (ogImageUrl) {
-                    const { buffer, mimeType } = await downloadImage(ogImageUrl);
-                    const mediaId = await client.v1.uploadMedia(buffer, { mimeType });
-                    mediaIds = [mediaId];
-                    console.log('OGP image attached: ' + ogImageUrl);
-                  }
-                } catch (e) {
-                  console.error('OGP image skipped:', e.message);
-                }
-              }
+              // デフォルトは URL なし。`url-post` ラベル付き PR の場合は URL を
+              // 本文に載せる ($0.20)、X 側で URL 埋め込みカードが付く。
 
               // PR 本文の整形:
               //  1. 末尾の "🤖 Generated with..." / "Co-Authored-By:" を除外
@@ -366,15 +303,11 @@ jobs:
 
               const message = head + bodySection + urlSuffix;
 
-              const tweetOpts = mediaIds && mediaIds.length
-                ? { media: { media_ids: mediaIds } }
-                : undefined;
-
               // X Premium 前提でフル本文を送信。文字数超過で X に拒否された場合のみ
               // head + 区切り + 切り詰め本文 で再送する。
               let tweet;
               try {
-                tweet = await client.v2.tweet(message, tweetOpts);
+                tweet = await client.v2.tweet(message);
               } catch (err) {
                 const errCodes = (err && err.data && err.data.errors) ? err.data.errors.map(e => e.code) : [];
                 const tooLong = errCodes.includes(186) || /too long|character limit/i.test((err && err.message) || '');
@@ -386,7 +319,7 @@ jobs:
                 const limit = 280; // X 拒否時のフォールバック上限
                 const truncatedBody = prBody.slice(0, Math.max(0, limit - baseLen - 1)) + '…';
                 const fallback = head + (truncatedBody.length > 1 ? '\n---\n' + truncatedBody : '') + urlSuffix;
-                tweet = await client.v2.tweet(fallback, tweetOpts);
+                tweet = await client.v2.tweet(fallback);
               }
               console.log('Tweet posted: ' + tweet.data.id);
 
