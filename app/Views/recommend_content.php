@@ -47,7 +47,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          <?php echo t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag) ?><?php echo $countTitle ?? '' ?>
+          <?php echo sprintfT('いま伸びている「%s」のオープンチャット', $tag) ?><?php echo $countTitle ? ' ' . $countTitle : '' ?>
         </h1>
       </div>
 
@@ -76,10 +76,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <p class="recommend-header-desc desc-bottom">
-      <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $extractTag) ?><br>
-      <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
-    </p>
+    <section class="recommend-lead">
+      <span class="recommend-lead__kicker">About this list</span>
+      <p class="recommend-lead__main"><?php echo sprintfT('「%s」のLINEオープンチャットの一覧です。メンバー数が今いちばん伸びている部屋を、毎時更新で上位に表示します。', $tag) ?></p>
+      <?php if (!empty($tagDescription)) : ?>
+        <p class="recommend-lead__theme"><?php echo $tagDescription // View が自動でhtmlエスケープ済み ?></p>
+      <?php endif ?>
+    </section>
     <?php if (isset($recommend)) : ?>
       <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
         <aside class="list-aside">

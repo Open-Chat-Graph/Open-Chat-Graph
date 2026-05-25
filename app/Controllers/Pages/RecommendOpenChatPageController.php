@@ -6,6 +6,7 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\RecommendPageList;
+use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Services\StaticData\StaticDataFile;
@@ -39,19 +40,22 @@ class RecommendOpenChatPageController
 
         $extractTag = $extractTag ?: $tag;
 
+        // 高需要タグ向けのテーマ固有紹介文(ja専用)。無ければ null でベースライン文のみ。
+        $tagDescription = MimimalCmsConfig::$urlRoot === '' ? RecommendTagDescription::get($tag) : null;
+
         $_dto = $staticDataGeneration->getRecommendPageDto();
 
         $count = 0;
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $pageDesc =
-                "2019年のサービス開始以来、累計3,000万人以上のユーザーに利用されているLINEオープンチャット。そこで、オプチャグラフでは、「{$tag}」をテーマにした中で、最近人数が急増しているルームのランキングを作成しました。このランキングは1時間ごとに更新され、新しいルームが継続的に追加されます。";
+                "「{$tag}」のLINEオープンチャット(オプチャ)を、いま活発に伸びている部屋順に一覧化。メンバー数の増減を1時間ごとに集計してランキング化しているので、今まさに参加者が増えている部屋・新しく募集中の部屋がひと目で分かります。新着ルームも随時追加。";
         } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
             $pageDesc =
-                "自 2019 年推出以來，LINE OpenChat 已累積超過 3,000 萬名用戶使用。在 這個網站 中，我們根據「{$tag}」主題，統計最近成長最快的聊天室排名。此排名每小時更新，並持續新增新的聊天室。";
+                "將「{$tag}」的 LINE 開放聊天室(OpenChat)依正在活躍成長的順序整理。我們每小時統計成員人數的增減並排名，讓你一眼看出此刻人數正在增加、正在招募新成員的聊天室。也會隨時新增新的聊天室。";
         } elseif (MimimalCmsConfig::$urlRoot === '/th') {
             $pageDesc =
-                "ตั้งแต่เปิดตัวในปี 2019 LINE OpenChat มีผู้ใช้สะสมมากกว่า 30 ล้านคนแล้ว บน เว็บไซต์นี้ เราจัดอันดับห้องแชทที่เติบโตเร็วที่สุดในหัวข้อ \"{$tag}\" การจัดอันดับนี้อัปเดตทุกชั่วโมง และมีห้องใหม่เพิ่มขึ้นอย่างต่อเนื่อง";
+                "รวม LINE OpenChat หัวข้อ \"{$tag}\" โดยเรียงตามห้องที่กำลังเติบโตและคึกคัก เรานับการเปลี่ยนแปลงจำนวนสมาชิกทุกชั่วโมงเพื่อจัดอันดับ คุณจึงเห็นได้ทันทีว่าห้องไหนกำลังมีคนเพิ่มขึ้นหรือกำลังรับสมาชิกใหม่ และมีการเพิ่มห้องใหม่อยู่เสมอ";
         }
 
         $_meta = meta()
@@ -71,7 +75,7 @@ class RecommendOpenChatPageController
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
-            $_meta->setTitle(t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag));
+            $_meta->setTitle(sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag));
             noStore();
             return view('recommend_content', compact(
                 '_meta',
@@ -84,6 +88,7 @@ class RecommendOpenChatPageController
                 '_dto',
                 'topPageDto',
                 'canonical',
+                'tagDescription',
             ));
         }
 
@@ -91,7 +96,7 @@ class RecommendOpenChatPageController
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
         $count = $recommend->getCount();
-        $headline = t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag);
+        $headline = sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag);
         $_meta->setTitle($headline);
         $_meta->setImageUrl(imgUrl($recommendList[0]['img_url']));
         $_meta->thumbnail = imgPreviewUrl($recommendList[0]['img_url']);
@@ -116,6 +121,7 @@ class RecommendOpenChatPageController
             'topPageDto',
             'canonical',
             'hourlyUpdatedAt',
+            'tagDescription',
         ));
     }
 }
