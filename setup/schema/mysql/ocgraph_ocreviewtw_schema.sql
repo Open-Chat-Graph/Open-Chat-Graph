@@ -82,6 +82,14 @@ CREATE TABLE `open_chat` (
   KEY `member` (`member`),
   KEY `updated_at` (`updated_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS `oc_sitemap_lastmod`;
+CREATE TABLE `oc_sitemap_lastmod` (
+  `open_chat_id` int(11) NOT NULL,
+  `lastmod` datetime NOT NULL,
+  `member_snapshot` int(11) NOT NULL,
+  PRIMARY KEY (`open_chat_id`),
+  KEY `lastmod` (`lastmod`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `open_chat_deleted`;
 CREATE TABLE `open_chat_deleted` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

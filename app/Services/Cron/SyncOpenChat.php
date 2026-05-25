@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
+use App\Models\Repositories\OcSitemapLastmodRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\CronUtility;
@@ -30,6 +31,7 @@ class SyncOpenChat
         private OpenChatHourlyInvitationTicketUpdater $invitationTicketUpdater,
         private RankingBanTableUpdater $rankingBanUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
+        private OcSitemapLastmodRepositoryInterface $lastmodRepo,
     ) {
         ini_set('memory_limit', '2G');
     }
@@ -140,6 +142,9 @@ class SyncOpenChat
         $updater->update(fn() => $this->state->setFalse(StateType::isDailyTaskActive));
 
         $this->executeAndCronLog(
+            // 全 member 確定後に sitemap lastmod を最新化。直後 (handle 末尾) の
+            // sitemap->generate() がこの lastmod を読む。
+            [fn() => $this->lastmodRepo->refreshLastmod(), 'sitemap lastmod 更新'],
             [
                 function () {
                     $result = purgeCacheCloudFlare(
