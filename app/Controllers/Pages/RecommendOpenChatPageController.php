@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
+use App\Models\Repositories\Recommend\RecommendGrowthRepository;
 use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
@@ -108,6 +109,10 @@ class RecommendOpenChatPageController
             $tag
         );
 
+        // テーマの勢い: rank/rising は ranking_position.db(ロケール別)、
+        // member(合計人数)は statistics.db(ロケール別)から集計。ja/tw/th 全ロケール対応。
+        $growth = RecommendGrowthRepository::themeMomentum(array_column($recommend->getList(false, null), 'id'));
+
         return view('recommend_content', compact(
             '_meta',
             '_css',
@@ -122,6 +127,7 @@ class RecommendOpenChatPageController
             'canonical',
             'hourlyUpdatedAt',
             'tagDescription',
+            'growth',
         ));
     }
 }
