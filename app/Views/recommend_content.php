@@ -47,39 +47,25 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
-          <?php echo t('【最新】') . sprintfT("「%s」おすすめオープンチャットランキング", $tag) ?><?php echo $countTitle ?? '' ?>
+          <?php echo sprintfT('いま伸びている「%s」のオープンチャット', $tag) ?><?php echo $countTitle ? ' ' . $countTitle : '' ?>
         </h1>
       </div>
 
-      <?php if (isset($recommend) && $count >= 5) : ?>
-        <figure class="talkroom_banner_img_figure">
-          <?php $ocList = $recommend->getPreviewList(5) ?>
-          <div class="talkroom_banner_img_area">
-            <div class="talkroom_banner_img_area_inner">
-              <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $ocList[0]['name'] ?>" src="<?php echo imgUrl($ocList[0]['img_url']) ?>">
-            </div>
-            <div class="talkroom_banner_img_area_inner">
-              <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $ocList[1]['name'] ?>" src="<?php echo imgUrl($ocList[1]['img_url']) ?>">
-            </div>
-            <div class="talkroom_banner_img_area_inner">
-              <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $ocList[2]['name'] ?>" src="<?php echo imgUrl($ocList[2]['img_url']) ?>">
-            </div>
-            <div class="talkroom_banner_img_area_inner">
-              <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $ocList[3]['name'] ?>" src="<?php echo imgUrl($ocList[3]['img_url']) ?>">
-            </div>
-            <div class="talkroom_banner_img_area_inner">
-              <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $ocList[4]['name'] ?>" src="<?php echo imgUrl($ocList[4]['img_url']) ?>">
-            </div>
-          </div>
-        </figure>
-      <?php endif ?>
+      <section class="recommend-lead">
+        <?php if (!empty($tagDescription)) : ?>
+          <p class="recommend-lead__theme"><?php echo $tagDescription // View が自動でhtmlエスケープ済み ?></p>
+        <?php else : ?>
+          <p class="recommend-lead__main"><?php echo sprintfT('「%s」のLINEオープンチャットの一覧です。メンバー数が今いちばん伸びている部屋を、毎時更新で上位に表示します。', $tag) ?></p>
+        <?php endif ?>
+      </section>
+
+      <?php viewComponent('recommend_growth_chart', [
+        'growth' => $growth ?? [],
+        'extractTag' => $extractTag,
+        'recommend' => $recommend ?? null,
+      ]) ?>
 
     </section>
-
-    <p class="recommend-header-desc desc-bottom">
-      <?php echo sprintfT('「%s」に関する人気のオープンチャットをピックアップ！🙌', $extractTag) ?><br>
-      <span class="desc-aside"><?php echo t('ランキングは、直近の人数増加を反映して決定されています。') ?></span>
-    </p>
     <?php if (isset($recommend)) : ?>
       <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
         <aside class="list-aside">
@@ -116,27 +102,28 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php foreach ($lists as $key => $listArray) : ?>
             <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
               <header class="recommend-ranking-section-header">
-                <h2 style="all: unset; font-size: <?php echo $key > 0 ? '16px' : '15px' ?>; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                  <?php if ($key > 0) : ?>
-                    <div><?php echo sprintfT("「%s」のオプチャランキング", $extractTag) ?><?php echo $countTitle ?? '' ?>&nbsp;</div>
-                    <div><?php echo sprintfT('%s位', $currentCount + 1) ?>〜 (<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
-                  <?php else : ?>
-                    <div><?php echo sprintfT("「%s」のオプチャランキング", $extractTag) ?>&nbsp;</div>
+                <?php if ($key > 0) : ?>
+                  <?php // 同一H2の反復(量産シグナル)を避け、継続チャンクは見出しではなく軽い順位区切りにする ?>
+                  <div class="recommend-ranking-continue"><?php echo sprintfT('%s位', $currentCount + 1) ?>〜</div>
+                <?php else : ?>
+                  <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
+                    <div><?php echo sprintfT("「%s」でいま人数が伸びているルーム", $extractTag) ?>&nbsp;</div>
                     <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
-                  <?php endif ?>
-                </h2>
+                  </h2>
+                <?php endif ?>
               </header>
               <?php $currentListCount = count($listArray) ?>
               <?php $currentCount += $currentListCount ?>
 
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => $currentCount - $currentListCount === 0, 'currentCount' => $currentCount - $currentListCount, 'showApiCreatedAt' => true]) ?>
 
-              <?php if ($listsLastKey !== $key) : ?>
+              <?php if ($key === 0) : ?>
+                <?php // 関連テーマはチャンク毎に反復させず、先頭チャンク後の1箇所のみ(全リストからタグ算出)に集約 ?>
                 <aside class="list-aside recommend-ranking-bottom" style="padding: 0; margin-bottom: -.5rem;">
                   <?php if (
                     isset($recommend)
                     && (
-                      ($recommendTags = $recommend->buildFilterdTags($listArray, filteredTagSort: []))
+                      ($recommendTags = $recommend->buildFilterdTags($recommendList, filteredTagSort: []))
                     )
                   ) : ?>
                     <?php viewComponent('recommend_content_tags', ['tags' => $recommendTags, 'tag' => $tag]) ?>
