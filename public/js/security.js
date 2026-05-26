@@ -1,32 +1,122 @@
+// 表示言語ごとの文面。<html lang> に合わせて出し分ける。
+// 誤検知の可能性を考慮し、非難調を避けて「再読み込み」導線を添える。
+const ADBLOCK_NOTICE_MESSAGES = {
+  ja: {
+    title: '広告が表示されていません',
+    body: 'オプチャグラフは広告収入で運営されています。広告ブロッカーをご利用の場合は、解除するか当サイトを許可リストに追加してください。',
+    note: '広告ブロッカーを使用していないのにこの画面が表示される場合は、お手数ですがページの再読み込みをお試しください。',
+    button: '再読み込み',
+  },
+  zh: {
+    title: '廣告未能顯示',
+    body: '本網站以廣告收入維持營運。如果您正在使用廣告攔截器，請將本站加入白名單或暫時停用。',
+    note: '若您並未使用廣告攔截器卻看到此畫面，請嘗試重新整理頁面。',
+    button: '重新整理',
+  },
+  th: {
+    title: 'ไม่สามารถแสดงโฆษณาได้',
+    body: 'เว็บไซต์นี้ดำเนินการด้วยรายได้จากโฆษณา หากคุณกำลังใช้ตัวบล็อกโฆษณา โปรดปิดการใช้งานหรือเพิ่มเว็บไซต์นี้ในรายการที่อนุญาต',
+    note: 'หากคุณไม่ได้ใช้ตัวบล็อกโฆษณาแต่ยังเห็นหน้านี้ โปรดลองโหลดหน้าเว็บใหม่อีกครั้ง',
+    button: 'โหลดหน้าใหม่',
+  },
+  en: {
+    title: 'Ads aren’t loading',
+    body: 'OpenChat Graph is supported by ad revenue. If you’re using an ad blocker, please disable it or add this site to your allowlist.',
+    note: 'If you’re not using an ad blocker and still see this screen, please try reloading the page.',
+    button: 'Reload',
+  },
+}
+
 function whiteOut() {
-  // オーバーレイの作成
+  // 多重表示を防ぐ
+  if (document.getElementById('ocgab-overlay')) return
+
+  // 現在の表示言語を <html lang> から判定 (ja / zh-TW → zh / th / その他 → en)
+  const rawLang = (document.documentElement.lang || 'ja').toLowerCase()
+  const lang = rawLang.startsWith('zh')
+    ? 'zh'
+    : rawLang.startsWith('th')
+    ? 'th'
+    : rawLang.startsWith('ja')
+    ? 'ja'
+    : 'en'
+  const msg = ADBLOCK_NOTICE_MESSAGES[lang] || ADBLOCK_NOTICE_MESSAGES.en
+
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes ocgab-fade { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes ocgab-rise { from { opacity: 0; transform: translateY(14px) scale(.98) } to { opacity: 1; transform: none } }
+    #ocgab-overlay {
+      position: fixed; inset: 0; z-index: 2147483647;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: rgba(247, 248, 250, .82);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      animation: ocgab-fade .28s ease both;
+      font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans Thai", "Yu Gothic", Meiryo, sans-serif;
+    }
+    #ocgab-card {
+      position: relative; box-sizing: border-box; width: 100%; max-width: 380px;
+      background: #fff; border: 1px solid rgba(20, 20, 30, .06); border-radius: 20px;
+      padding: 34px 28px 26px; text-align: center;
+      box-shadow: 0 24px 70px -12px rgba(20, 24, 40, .22);
+      animation: ocgab-rise .42s cubic-bezier(.2, .7, .2, 1) .06s both;
+    }
+    #ocgab-card .ocgab-icon {
+      width: 60px; height: 60px; margin: 0 auto 18px; border-radius: 17px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #ffa751, #e85d04);
+      box-shadow: 0 10px 24px -6px rgba(232, 93, 4, .5);
+    }
+    #ocgab-card .ocgab-title {
+      margin: 0 0 10px; font-size: 19px; font-weight: 700; letter-spacing: -.01em;
+      color: #1b1d23; line-height: 1.45;
+    }
+    #ocgab-card .ocgab-body { margin: 0; font-size: 14.5px; line-height: 1.75; color: #4a4d57; }
+    #ocgab-card .ocgab-note {
+      margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f3;
+      font-size: 12.5px; line-height: 1.7; color: #9499a3;
+    }
+    #ocgab-card .ocgab-btn {
+      margin-top: 22px; width: 100%; box-sizing: border-box; border: 0; border-radius: 12px;
+      padding: 13px 18px; font-size: 15px; font-weight: 600; font-family: inherit;
+      color: #fff; cursor: pointer; background: linear-gradient(135deg, #ffa751, #e85d04);
+      box-shadow: 0 8px 20px -6px rgba(232, 93, 4, .55);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+    #ocgab-card .ocgab-btn:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 12px 26px -6px rgba(232, 93, 4, .6); }
+    #ocgab-card .ocgab-btn:active { transform: translateY(0) }
+    @media (prefers-reduced-motion: reduce) {
+      #ocgab-overlay, #ocgab-card { animation: none }
+    }
+  `
+
+  const icon =
+    '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>'
+
   const overlay = document.createElement('div')
-  overlay.style.position = 'fixed'
-  overlay.style.top = '0'
-  overlay.style.left = '0'
-  overlay.style.width = '100%'
-  overlay.style.height = '100%'
-  overlay.style.backgroundColor = 'white'
-  overlay.style.opacity = '0'
-  overlay.style.zIndex = '29'
-  overlay.style.transition = 'opacity 1s' // フェードインに3秒かける
+  overlay.id = 'ocgab-overlay'
+  overlay.innerHTML =
+    '<div id="ocgab-card" role="alertdialog" aria-modal="true">' +
+    '<div class="ocgab-icon">' + icon + '</div>' +
+    '<h2 class="ocgab-title"></h2>' +
+    '<p class="ocgab-body"></p>' +
+    '<div class="ocgab-note"></div>' +
+    '<button type="button" class="ocgab-btn"></button>' +
+    '</div>'
 
-  // オーバーレイをbodyに追加
+  overlay.querySelector('.ocgab-title').textContent = msg.title
+  overlay.querySelector('.ocgab-body').textContent = msg.body
+  overlay.querySelector('.ocgab-note').textContent = msg.note
+  const btn = overlay.querySelector('.ocgab-btn')
+  btn.textContent = msg.button
+  btn.addEventListener('click', function () {
+    location.reload()
+  })
+
+  document.head.appendChild(style)
   document.body.appendChild(overlay)
-
-  // フェードインの開始
-  setTimeout(function () {
-    overlay.style.opacity = '1' // 3秒後にオーバーレイを完全に表示
-  }, 0) // 0秒後に実行（すぐに実行）
-
-  // 全てを真っ白にする
-  setTimeout(function () {
-    document.body.style.backgroundColor = 'white' // 更に3秒後に背景色を白に変更
-  }, 1000) // 3秒後に実行
-
-  alert(
-    'Erorr: アドブロックが有効な場合は解除してください。\n如果啟用了 adblock，請停用它。\nหากเปิดใช้งาน adblock ให้ปิดการใช้งาน\nIf you are using adblock, please disable it.'
-  )
+  document.documentElement.style.overflow = 'hidden'
 }
 
 async function blockblock() {
@@ -79,72 +169,67 @@ if (admin) {
 if (typeof admin === 'undefined' || !admin) blockblock()
 
 function detectAdBlock() {
-  // すべてのAdSense要素を取得
-  const adElements = document.querySelectorAll('.adsbygoogle')
+  // 広告枠の処理が終わった(data-adsbygoogle-status="done")要素だけを対象にする
+  const adElements = document.querySelectorAll(
+    '.adsbygoogle[data-adsbygoogle-status="done"]'
+  )
 
   if (adElements.length === 0) {
-    console.log('AdSense要素が見つかりません')
     return false
   }
 
-  let blockedCount = 0
   let totalCount = 0
-  let importantCount = 0
+  let blockedCount = 0
 
   adElements.forEach((adElement) => {
-    // data-adsbygoogle-status="done" の要素のみチェック
-    if (adElement.getAttribute('data-adsbygoogle-status') === 'done') {
-      totalCount++
+    // Google が「広告在庫なし(未配信)」と判定した枠は無罪。検出対象から外す。
+    // ※ アドブロック対策で誤って通常ユーザーをブロックしないための最重要ガード
+    if (adElement.getAttribute('data-ad-status') === 'unfilled') {
+      return
+    }
 
-      // iframe内のiframeを探す
-      const iframe = adElement.querySelector('iframe')
+    totalCount++
 
-      if (iframe) {
-        const style = window.getComputedStyle(iframe)
+    const iframe = adElement.querySelector('iframe')
+    // iframe が無い枠はブロック扱いしない(未配信などの無罪ケースを守る)
+    if (!iframe) {
+      return
+    }
 
-        // 1pxに縮小されているかチェック
-        const width = parseFloat(style.width)
-        const height = parseFloat(style.height)
+    const style = window.getComputedStyle(iframe)
+    const width = parseFloat(style.width)
+    const height = parseFloat(style.height)
 
-        if (width === 1 && height === 1) {
-          blockedCount++
-          console.log('アドブロック検出: iframe が 1px に縮小されています')
-        } else {
-          console.log('w', style.width, 'h', style.height)
-        }
+    // (A) 描画サイズが 1px 以下に潰されている
+    //     (0px や auto=NaN の「未描画/ロード途中」は誤爆しないよう除外)
+    const collapsedByComputed = width > 0 && width <= 1 && height > 0 && height <= 1
 
-        // style属性でheight: 1px !important; と width: 1px !important; をチェック
-        const styleAttr = iframe.getAttribute('style') || ''
-        if (
-          styleAttr.includes('height: 1px !important;') &&
-          styleAttr.includes('width: 1px !important;')
-        ) {
-          importantCount++
-          console.log(
-            'アドブロック検出: iframe に height: 1px !important; と width: 1px !important; が設定されています'
-          )
-        }
-      }
+    // (B) iframe の inline style に 1px !important が注入されている
+    //     (uBlock Origin 等が広告を潰すときの指紋。通常のAdSenseは付与しない)
+    //     max-width / max-height を width / height と誤認しないよう語境界で判定する
+    const styleAttr = iframe.getAttribute('style') || ''
+    const collapsedByInline =
+      /(^|[;\s])width:\s*1px\s*!important/.test(styleAttr) &&
+      /(^|[;\s])height:\s*1px\s*!important/.test(styleAttr)
+
+    if (collapsedByComputed || collapsedByInline) {
+      blockedCount++
     }
   })
 
-  if (totalCount > 0 && blockedCount / totalCount >= 0.5) {
-    return 1
-  } else if (importantCount > 0 && importantCount / totalCount >= 0.5) {
-    return 2
-  } else {
-    return 0
-  }
+  // 配信対象の枠の過半数が潰されていればアドブロックと判定
+  return totalCount > 0 && blockedCount / totalCount >= 0.5
 }
 
 if (typeof admin === 'undefined' || !admin) {
-  // （インターバルで監視）
+  // 広告枠が done になってからアドブロッカーが潰すまでに時間差があるため、
+  // 一度の判定で打ち切らず、検出できるまで(または10秒経過まで)監視を続ける。
+  // これにより「done になった瞬間にまだ潰れていない」取りこぼしを防ぎつつ、
+  // 潰れない通常ユーザーは10秒で監視終了となり誤検知しない。
   const checkInterval = setInterval(() => {
-    if (document.querySelector('.adsbygoogle[data-adsbygoogle-status="done"]')) {
+    if (detectAdBlock()) {
       clearInterval(checkInterval)
-      if (detectAdBlock()) {
-        whiteOut()
-      }
+      whiteOut()
     }
   }, 200) // 200ms間隔でチェック
 
