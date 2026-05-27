@@ -85,11 +85,11 @@ mysql_rsync_dumps() {
     log_step "MySQL: ダンプをローカルへ rsync 差分転送 (--delete でリモート不在分は削除)"
     mkdir -p "$LOCAL_SQLDUMP_DIR"
     rsync -az --partial --delete --info=progress2 \
-        --no-owner --no-group --chmod=Da+rwx,Fa+rw \
+        --no-owner --no-group --chmod=Du+rwx,Fu+rw \
         -e "$RSYNC_SSH" \
         "${SSH_TARGET}:${REMOTE_DUMP_DIR}/" \
         "${LOCAL_SQLDUMP_DIR}/"
-    chmod 777 "$LOCAL_SQLDUMP_DIR" 2>/dev/null || true
+    chmod 755 "$LOCAL_SQLDUMP_DIR" 2>/dev/null || true
     log_ok "rsync 完了"
 }
 

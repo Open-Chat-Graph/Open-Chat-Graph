@@ -7,6 +7,14 @@ use Spatie\SchemaOrg\Schema;
 
 class Metadata
 {
+    /**
+     * 検索結果でアイコン横に出る「サイト名ラベル」(og:site_name / WebSite schema name)。
+     * タイトル接尾辞($site_name)とは切り離し、全言語共通の英語ブランドで統一する
+     * (LINE公式が言語問わずラベルを「LINE」で出すのと同じ。日本語の「オプチャグラフ」は
+     * タイトル・本文に残るので国内のブランド検索には影響しない)。
+     */
+    public const BRAND_LABEL = 'Open Chat Graph';
+
     public string $title;
     public string $description;
     public string $ogpDescription;
@@ -85,7 +93,7 @@ class Metadata
         $tags .= '<meta property="og:title" content="' . $this->title . '">' . "\n";
         $tags .= '<meta property="og:description" content="' . $this->ogpDescription . '">' . "\n";
         if ($this->image_url) $tags .= '<meta property="og:image" content="' . $this->image_url . '">' . "\n";
-        $tags .= '<meta property="og:site_name" content="' . $this->site_name . '">' . "\n";
+        $tags .= '<meta property="og:site_name" content="' . self::BRAND_LABEL . '">' . "\n";
         $tags .= '<meta name="twitter:card" content="summary">' . "\n";
         $tags .= '<meta name="twitter:site" content="@openchat_graph">' . "\n";
 
@@ -97,7 +105,7 @@ class Metadata
     public function generateTopPageSchema(): string
     {
         return Schema::webSite()
-            ->name($this->site_name)
+            ->name(self::BRAND_LABEL)
             ->inLanguage($this->locale)
             ->url(url())
             ->image($this->image_url)

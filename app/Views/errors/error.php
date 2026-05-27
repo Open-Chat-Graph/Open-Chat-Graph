@@ -249,7 +249,7 @@ if (class_exists($config) && isset($config::$urlRoot)) {
             break;
         case '/tw':
             $message = '您正在查找的页面可能暂时无法访问，或者可能已移动或删除';
-            $message2 = '此聊天室未注册或已删除';
+            $message2 = '此社群未注册或已删除';
     }
 } else {
     $message = 'The page you are looking for is temporarily inaccessible and may be moved or deleted.';
