@@ -89,16 +89,17 @@ sqlite_rsync_dbs() {
             rm -f "${local_dir}"/*.db-wal "${local_dir}"/*.db-shm 2>/dev/null || true
             # --chmod: SQLite は WAL/SHM をディレクトリ内に作るためアプリ(www-data)が
             # ディレクトリと .db ファイルへ書き込みできる必要がある。
-            # rsync 後にディレクトリも 777 にして www-data の書き込みを許可。
+            # www-data は entrypoint で host UID(=同期実行ユーザー)に揃えてあるので
+            # owner perms(u+rwx/u+rw)だけで書き込め、world-write(777/666)は不要。
             # --info=progress2 : 1ファイル単位でなく全体の live%を出す
             rsync -a --partial --delete --info=progress2 \
                 --no-owner --no-group \
                 --include='*.db' --exclude='*' \
-                --chmod=Da+rwx,Fa+rw \
+                --chmod=Du+rwx,Fu+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}/" \
                 "${local_dir}/"
-            chmod 777 "$local_dir" 2>/dev/null || true
+            chmod 755 "$local_dir" 2>/dev/null || true
         done
     done
     log_ok "SQLite rsync 完了"

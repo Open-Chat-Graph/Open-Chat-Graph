@@ -60,7 +60,7 @@ class RecommendUpdater
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Th\RecommendUpdaterTags::class);
             $this->openChatSubCategoriesTagKey = 'openChatSubCategories';
         } else {
-            $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Ja\RecommendUpdaterTags::class);
+            $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::class);
             $this->openChatSubCategoriesTagKey = 'openChatSubCategoriesTag';
         }
     }
@@ -136,6 +136,49 @@ class RecommendUpdater
 
         // oc_tag2 テーブルに反映
         $this->repository->bulkInsertViaTemp('oc_tag2', $this->ocTag2Results);
+    }
+
+    /**
+     * シャドウテーブル方式で全レコードをフル再構築する（base/ja 専用）。
+     *
+     * tw/th の recommend/oc_tag/oc_tag2 は id にユニークキーが無く、本方式の
+     * upsert（INSERT ... ON DUPLICATE KEY UPDATE）が重複行を生むため ja 専用とする。
+     * tw/th のフル再構築は従来どおり updateRecommendTables(false) を使うこと。
+     *
+     * 全対象行を1回 compute し、live をコピーしたシャドウテーブルへ反映 → RENAME で原子的にスワップする。
+     * ビルド中に入った管理者上書き（modify_recommend）を再適用し、最後に t0 以降の差分を1回流して取りこぼしを回収する。
+     */
+    function rebuildAllViaShadowSwap(): void
+    {
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            throw new \LogicException('rebuildAllViaShadowSwap is supported only for the base (ja) locale.');
+        }
+
+        // スナップショット開始時刻を先に確保（この後の差分回収カーソル）
+        $t0 = (new \DateTime)->format('Y-m-d H:i:s');
+
+        // 全件 compute（既存の private マッチングを再利用）
+        $this->start = '2023-10-16 00:00:00';
+        $this->end   = '2033-10-16 00:00:00';
+        $this->rows  = $this->repository->fetchTargetRows('', $this->start, $this->end);
+
+        if (!empty($this->rows)) {
+            $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
+
+            $this->matchAllRowsJa(false);
+
+            $this->repository->applyViaShadowSwap('recommend', $this->recommendResults);
+            $this->repository->applyViaShadowSwap('oc_tag',    $this->ocTagResults);
+            $this->repository->applyViaShadowSwap('oc_tag2',   $this->ocTag2Results);
+        }
+
+        // ビルド中に入った管理者上書きを保護
+        $this->repository->reapplyAllModifyRecommend();
+
+        // 取りこぼし回収: カーソルを t0 に戻して差分を1回流す
+        // （updateRecommendTables(true) がカーソルを now へ前進させる）
+        $this->fileStorage->safeFileRewrite('@tagUpdatedAtDatetime', $t0);
+        $this->updateRecommendTables(true);
     }
 
     function getAllTagNames(): array

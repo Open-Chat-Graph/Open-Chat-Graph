@@ -47,9 +47,34 @@ try {
      */
     $recommendUpdater = app(RecommendUpdater::class);
 
-    CronUtility::addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
-    $recommendUpdater->updateRecommendTables();
-    CronUtility::addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
+    // ja のタグ定義(ja.json)に変更があれば全レコードを無停止で再適用、無ければ通常の差分更新。
+    $didRebuild = false;
+    if (MimimalCmsConfig::$urlRoot === '') {
+        $jsonPath = \App\Services\Recommend\TagDefinition\JaTagMetadata::jsonPath();
+        $currentHash = is_file($jsonPath) ? hash('sha256', (string)file_get_contents($jsonPath)) : '';
+        $storedHash = $state->getString(StateType::recommendTagsJsonHash);
+        if ($currentHash !== '' && $currentHash !== $storedHash) {
+            if ($state->getBool(StateType::isRecommendTagRebuildActive)) {
+                CronUtility::addCronLog('タグ定義変更を検知したが再適用が実行中のためスキップ（次回CRONで再試行）');
+            } else {
+                $state->setTrue(StateType::isRecommendTagRebuildActive);
+                try {
+                    CronUtility::addCronLog('タグ定義(ja.json)の変更を検知 → 全レコード再適用（無停止）開始');
+                    $recommendUpdater->rebuildAllViaShadowSwap();
+                    $state->setString(StateType::recommendTagsJsonHash, $currentHash);
+                    $didRebuild = true;
+                    CronUtility::addCronLog('全レコード再適用 完了');
+                } finally {
+                    $state->setFalse(StateType::isRecommendTagRebuildActive);
+                }
+            }
+        }
+    }
+    if (!$didRebuild) {
+        CronUtility::addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
+        $recommendUpdater->updateRecommendTables();
+        CronUtility::addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
+    }
 
     /**
      * @var RecommendStaticDataGenerator $recommendStaticDataGenerator

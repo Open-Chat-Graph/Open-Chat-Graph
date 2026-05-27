@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\RecommendRepositories\RecommendTagRepository;
 use App\Models\Repositories\DB;
 use App\Services\Recommend\RecommendUpdater;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUpdaterTags;
+use App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags;
 use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -75,7 +75,7 @@ class RecommendUpdaterTest extends TestCase
         $this->recommendUpdater = new RecommendUpdater(
             $this->mockFileStorage,
             new RecommendTagRepository(),
-            new RecommendUpdaterTags()
+            new JsonRecommendUpdaterTags()
         );
     }
 
@@ -83,6 +83,8 @@ class RecommendUpdaterTest extends TestCase
     {
         // テスト専用DBを丸ごと削除（本番DBには一切触れない）
         DB::$pdo->exec('DROP DATABASE IF EXISTS `' . self::TEST_DB_NAME . '`');
+        // 削除したDBを選択したまま接続を残すと後続テストに波及するため接続をリセット
+        DB::$pdo = null;
     }
 
     private function createTestTables(): void

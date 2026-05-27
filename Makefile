@@ -1,7 +1,13 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets shared-setup up-shared down-shared _shared-config _shared-prepare _shared-ports _up-shared
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
+
+# 共有モードのローカル設定（参照先リポジトリのパス・dockerネットワーク名）
+# 初回 make up-shared / shared-setup 時に対話で生成する。環境ごとに異なるため .gitignore 済み。
+SHARED_CONFIG := .shared.local.mk
+-include $(SHARED_CONFIG)
+SHARED_COMPOSE := OCG_DIR=$(OCG_DIR) OCG_NETWORK=$(OCG_NETWORK) docker compose -f docker-compose.shared.yml
 
 # デフォルト値（.envで定義されていない場合に使用）
 HTTPS_PORT ?= 8443
@@ -77,6 +83,11 @@ help: ## ヘルプを表示
 	@echo "$(YELLOW)本番同期（プライベートリポ oc-config の install-prod-sync.sh から呼ばれる想定）:$(NC)"
 	@echo "  $(GREEN)make sync-setup$(NC)  - 初回: 本番からフル取得 (DATA_PROTECTION=false 時のみ)"
 	@echo "  $(GREEN)make sync-update$(NC) - 差分更新: rsync差分でMySQL/SQLite/画像/派生キャッシュを同期 + ocgraph_sqlapi再構築"
+	@echo ""
+	@echo "$(YELLOW)共有モード（別リポジトリのDB/storageを参照する2つ目のインスタンス）:$(NC)"
+	@echo "  $(GREEN)make up-shared$(NC)   - 起動（初回は参照先パスを尋ね、ポート衝突時はプリセット選択）"
+	@echo "  $(GREEN)make shared-setup$(NC) - 初期設定のみ（起動しない）"
+	@echo "  $(GREEN)make down-shared$(NC) - 停止して通常設定に戻す"
 
 init: _check-data-protection ## 初回セットアップ
 	@$(MAKE) _init ARGS=""
@@ -412,3 +423,133 @@ sync-setup: _ensure-prod-sync-secrets ## 初回: 本番からフル取得（DATA
 
 sync-update: _ensure-prod-sync-secrets ## 差分更新: rsync差分転送で本番ミラーを最新化（DATA_PROTECTION=true 必須）。FROM=<step> で途中再開
 	@FROM="$(FROM)" bash batch/sh/prod-sync/update.sh
+
+# ============================================
+# 共有モード（別リポジトリのDB/storageを参照する2つ目のインスタンス）
+# ============================================
+# 既存の稼働環境（別ディレクトリにcloneしたリポジトリ）の MariaDB / storage / comment-img を
+# bind mount + 外部ネットワーク接続で「実体共有」しつつ、コードはこのリポジトリで動かす。
+# 初回 make up-shared で参照先パスを尋ね .shared.local.mk に保存（2回目以降は尋ねない）。
+# ポートが参照先と衝突する場合はプリセットから選択して .env に保存する。
+
+up-shared: ## 共有モードで起動（別リポジトリのDB/storage/comment-imgを実体共有）
+	@$(MAKE) _shared-config
+	@$(MAKE) _shared-prepare
+	@$(MAKE) _up-shared
+
+shared-setup: ## 共有モードの初期設定のみ（参照先の登録＋設定。起動はしない）
+	@$(MAKE) _shared-config
+	@$(MAKE) _shared-prepare
+	@echo "$(GREEN)設定完了。'make up-shared' で起動できます$(NC)"
+
+down-shared: ## 共有モードを停止し通常設定に戻す（local-secrets復元＋DATA_PROTECTION=false）
+	@echo "$(RED)共有モードを停止しています...$(NC)"
+	@$(SHARED_COMPOSE) down 2>/dev/null || true
+	@if [ -f local-secrets.php.bak ]; then \
+		mv local-secrets.php.bak local-secrets.php; \
+		echo "$(YELLOW)local-secrets.php を退避ファイルから復元しました$(NC)"; \
+	fi
+	@if grep -q "^DATA_PROTECTION=" .env 2>/dev/null; then \
+		sed -i 's/^DATA_PROTECTION=.*/DATA_PROTECTION=false/' .env; \
+	fi
+	@echo "$(GREEN)通常設定に戻しました。'make up' / 'make up-mock' で起動できます$(NC)"
+
+# 初回のみ参照先パス・ネットワーク名を尋ねて .shared.local.mk に保存（既にあれば何もしない）
+_shared-config:
+	@if [ -f "$(SHARED_CONFIG)" ] && grep -q '^OCG_DIR=' "$(SHARED_CONFIG)"; then exit 0; fi; \
+	echo "$(GREEN)===== 共有モード 初回設定 =====$(NC)"; \
+	echo "$(YELLOW)データ(MariaDB/storage/comment-img)を共有する既存リポジトリのディレクトリを入力してください$(NC)"; \
+	DEF="$$(cd .. 2>/dev/null && pwd)/Open-Chat-Graph"; \
+	printf "  参照先リポジトリのパス [$$DEF]: "; read IN; \
+	DIR="$${IN:-$$DEF}"; \
+	ABS="$$(cd "$$DIR" 2>/dev/null && pwd)"; \
+	if [ -z "$$ABS" ]; then echo "$(RED)エラー: $$DIR が見つかりません$(NC)"; exit 1; fi; \
+	if [ ! -f "$$ABS/local-secrets.php" ]; then \
+		echo "$(RED)エラー: $$ABS/local-secrets.php がありません$(NC)"; \
+		echo "$(YELLOW)先に参照先リポジトリで本番同期(make sync-setup 等)を済ませてください$(NC)"; \
+		exit 1; \
+	fi; \
+	DEFNET="$$(basename "$$ABS" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9_-]//g')_default"; \
+	printf "  dockerネットワーク名 [$$DEFNET]: "; read INNET; \
+	NET="$${INNET:-$$DEFNET}"; \
+	printf 'OCG_DIR=%s\nOCG_NETWORK=%s\n' "$$ABS" "$$NET" > "$(SHARED_CONFIG)"; \
+	echo "$(GREEN)$(SHARED_CONFIG) に保存しました（次回からは尋ねません）$(NC)"; \
+	echo "  OCG_DIR=$$ABS"; \
+	echo "  OCG_NETWORK=$$NET"
+
+# 冪等: local-secrets.php を参照先からコピー / DATA_PROTECTION=true / ポート衝突回避
+_shared-prepare:
+	@if [ -z "$(OCG_DIR)" ]; then \
+		echo "$(RED)エラー: 共有モードが未設定です。'make up-shared' を実行してください$(NC)"; exit 1; \
+	fi
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo "$(YELLOW).env が無いため .env.example から作成しました$(NC)"; \
+	fi
+	@if ! cmp -s local-secrets.php "$(OCG_DIR)/local-secrets.php" 2>/dev/null; then \
+		if [ -f local-secrets.php ] && [ ! -f local-secrets.php.bak ]; then \
+			cp local-secrets.php local-secrets.php.bak; \
+			echo "$(YELLOW)既存の local-secrets.php を local-secrets.php.bak に退避しました$(NC)"; \
+		fi; \
+		cp "$(OCG_DIR)/local-secrets.php" local-secrets.php; \
+		echo "$(GREEN)local-secrets.php を $(OCG_DIR) からコピーしました$(NC)"; \
+	fi
+	@if grep -q "^DATA_PROTECTION=" .env; then \
+		sed -i 's/^DATA_PROTECTION=.*/DATA_PROTECTION=true/' .env; \
+	else \
+		printf '\nDATA_PROTECTION=true\n' >> .env; \
+	fi
+	@$(MAKE) _shared-ports
+
+# 参照先とポートが衝突する場合のみ、プリセット選択メニューで .env のポートをずらす
+_shared-ports:
+	@OCG_HTTPS=$$(grep -E '^HTTPS_PORT=' "$(OCG_DIR)/.env" 2>/dev/null | head -1 | cut -d= -f2); \
+	OCG_HTTPS=$${OCG_HTTPS:-8443}; \
+	MY_HTTPS=$$(grep -E '^HTTPS_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2); \
+	MY_HTTPS=$${MY_HTTPS:-8443}; \
+	if [ "$$MY_HTTPS" != "$$OCG_HTTPS" ]; then \
+		echo "$(GREEN)ポート: https://localhost:$$MY_HTTPS （参照先 $$OCG_HTTPS と別なのでこのまま）$(NC)"; \
+		exit 0; \
+	fi; \
+	echo "$(YELLOW)このリポジトリのポート($$MY_HTTPS)が参照先と衝突します。使用するポート構成を選んでください:$(NC)"; \
+	for row in "1 9000 9443" "2 10000 10443" "3 11000 11443" "4 12000 12443" "5 13000 13443"; do \
+		set -- $$row; N=$$1; W=$$2; H=$$3; \
+		USED=""; docker ps --format '{{.Ports}}' 2>/dev/null | grep -qE ":$$H->" && USED=" $(RED)(使用中)$(NC)"; \
+		echo "  $$N) WEB $$W / HTTPS $$H$$USED"; \
+	done; \
+	echo "  6) 自分で入力"; \
+	printf "  番号 [1]: "; read SEL; SEL=$${SEL:-1}; \
+	case "$$SEL" in \
+		1) W=9000;  H=9443;; \
+		2) W=10000; H=10443;; \
+		3) W=11000; H=11443;; \
+		4) W=12000; H=12443;; \
+		5) W=13000; H=13443;; \
+		6) printf "  WEB_PORT: "; read W; printf "  HTTPS_PORT: "; read H;; \
+		*) echo "$(RED)無効な選択です$(NC)"; exit 1;; \
+	esac; \
+	if [ -z "$$W" ] || [ -z "$$H" ]; then echo "$(RED)ポートが未入力です$(NC)"; exit 1; fi; \
+	if grep -q '^WEB_PORT=' .env; then sed -i "s/^WEB_PORT=.*/WEB_PORT=$$W/" .env; else printf 'WEB_PORT=%s\n' "$$W" >> .env; fi; \
+	if grep -q '^HTTPS_PORT=' .env; then sed -i "s/^HTTPS_PORT=.*/HTTPS_PORT=$$H/" .env; else printf 'HTTPS_PORT=%s\n' "$$H" >> .env; fi; \
+	echo "$(GREEN)ポートを WEB=$$W / HTTPS=$$H に設定しました（https://localhost:$$H）$(NC)"
+
+# 実際の起動（.shared.local.mk / .env を再読込した状態で呼ばれる）
+_up-shared:
+	@if [ -z "$(OCG_DIR)" ]; then \
+		echo "$(RED)エラー: 共有モードが未設定です。'make up-shared' を実行してください$(NC)"; exit 1; \
+	fi
+	@if [ ! -d "$(OCG_DIR)" ]; then \
+		echo "$(RED)エラー: 参照先 $(OCG_DIR) が見つかりません$(NC)"; exit 1; \
+	fi
+	@if ! docker network inspect $(OCG_NETWORK) >/dev/null 2>&1; then \
+		echo "$(RED)エラー: dockerネットワーク $(OCG_NETWORK) が見つかりません$(NC)"; \
+		echo "$(YELLOW)先に参照先($(OCG_DIR))で 'make up' または 'make up-mock' を実行してください$(NC)"; \
+		echo "$(YELLOW)現在のネットワーク一覧:$(NC)"; docker network ls --format '  {{.Name}}'; \
+		exit 1; \
+	fi
+	@./docker/app/generate-ssl-certs.sh
+	@echo "$(GREEN)共有モードで起動しています（DB/storage は $(OCG_DIR) と共有）...$(NC)"
+	@IS_MOCK_ENVIRONMENT=0 CRON=0 $(SHARED_COMPOSE) up -d --remove-orphans --force-recreate app
+	@echo "$(GREEN)共有モードが起動しました$(NC)"
+	@echo "$(YELLOW)アクセスURL:$(NC) https://localhost:$(HTTPS_PORT)"
+	@echo "$(YELLOW)※ MariaDB / storage / comment-img は $(OCG_DIR) と実体共有$(NC)"
