@@ -21,11 +21,11 @@ static_rsync_lang_dirs() {
             prepare_local_dir "/var/www/html/storage/${lang}/${sub}"
             log_info "[${i}/${total}] rsync: ${lang}/${sub}/"
             rsync -a --partial --delete --info=progress2 \
-                --no-owner --no-group --chmod=Da+rwx,Fa+rw \
+                --no-owner --no-group --chmod=Du+rwx,Fu+rw \
                 -e "$RSYNC_SSH" \
                 "${SSH_TARGET}:${remote_dir}" \
                 "$local_dir"
-            chmod 777 "$local_dir" 2>/dev/null || true
+            chmod 755 "$local_dir" 2>/dev/null || true
         done
     done
     log_ok "派生キャッシュ同期完了"

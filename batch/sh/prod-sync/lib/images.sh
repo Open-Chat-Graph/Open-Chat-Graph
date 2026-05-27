@@ -19,11 +19,11 @@ images_rsync_comment_img() {
     mkdir -p "$local_dir"
     prepare_local_dir "/var/www/html/public/comment-img"
     rsync -a --partial --delete-after --max-delete="$IMAGES_MAX_DELETE" \
-        --info=progress2 --no-owner --no-group --chmod=Da+rwx,Fa+rw \
+        --info=progress2 --no-owner --no-group --chmod=Du+rwx,Fu+rw \
         -e "$RSYNC_SSH" \
         "${SSH_TARGET}:${remote_dir}" \
         "$local_dir"
-    chmod 777 "$local_dir" 2>/dev/null || true
+    chmod 755 "$local_dir" 2>/dev/null || true
     log_ok "comment-img 同期完了"
 }
 
@@ -34,10 +34,10 @@ images_rsync_comment_img_hidden() {
     mkdir -p "$local_dir"
     prepare_local_dir "/var/www/html/storage/comment-img-hidden"
     rsync -a --partial --delete-after --max-delete="$IMAGES_MAX_DELETE" \
-        --info=progress2 --no-owner --no-group --chmod=Da+rwx,Fa+rw \
+        --info=progress2 --no-owner --no-group --chmod=Du+rwx,Fu+rw \
         -e "$RSYNC_SSH" \
         "${SSH_TARGET}:${remote_dir}" \
         "$local_dir"
-    chmod 777 "$local_dir" 2>/dev/null || true
+    chmod 755 "$local_dir" 2>/dev/null || true
     log_ok "comment-img-hidden 同期完了"
 }
