@@ -893,6 +893,8 @@ $categoryNameJson = json_encode(
 
         // ── 保存先 URL（サーバ生成・XSS安全） ──
         var SAVE_URL = <?php echo json_encode(url('admin/recommend-tags/save'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        // CSRFトークン（サーバ埋め込み）。保存時に X-CSRF-Token ヘッダで送る。
+        var CSRF_TOKEN = <?php echo json_encode($csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
         // ── モデル（ja.json 全体）。キー順を保つため元データの順序をそのまま保持 ──
         var model = JSON.parse(document.getElementById('boot-data').textContent);
@@ -1734,8 +1736,12 @@ $categoryNameJson = json_encode(
             renderMetaList();
             renderRedirects();
             loadFilterAreas();
+            refreshTabCounts();
             markDirty();
-            toast('RAW JSON を取り込みました');
+            // 取り込み結果をすぐ確認できるよう編集画面（キーワード群）へ自動で切り替える
+            var kwTab = document.querySelector('.tab[data-tab="keywords"]');
+            if (kwTab) kwTab.click();
+            toast('RAW JSON を取り込みました（編集画面に反映）');
         });
 
         /* =========================================================
@@ -1820,7 +1826,7 @@ $categoryNameJson = json_encode(
             fetch(SAVE_URL, {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                 body: JSON.stringify(model)
             }).then(function (res) {
                 return res.json().then(function (data) { return { ok: res.ok, data: data }; });
