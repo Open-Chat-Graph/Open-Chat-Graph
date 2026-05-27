@@ -74,10 +74,27 @@ class GoogleAdsense
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const num = document.querySelectorAll('ins.manual').length;
-                for (let i = 0; i < num; i++) {
-                    (adsbygoogle = window.adsbygoogle || []).push({});
+                var ads = Array.prototype.slice.call(document.querySelectorAll('ins.manual'));
+                if (!ads.length) return;
+                var push = function() { (adsbygoogle = window.adsbygoogle || []).push({}); };
+
+                // IntersectionObserver 非対応環境は従来どおり一括読み込み（フォールバック）
+                if (!('IntersectionObserver' in window)) {
+                    ads.forEach(push);
+                    return;
                 }
+
+                // 各広告がビューポート手前 600px に入って初めて読み込む。
+                // 下部広告がユーザー到達前に「表示済み」化するのを防ぎ視認率(viewability)を上げる。
+                // push() は DOM 順で最も先頭の未読み込み ins を埋めるため、上→下のスクロールで順に充填される。
+                var io = new IntersectionObserver(function(entries, obs) {
+                    entries.forEach(function(entry) {
+                        if (!entry.isIntersecting) return;
+                        push();
+                        obs.unobserve(entry.target);
+                    });
+                }, { rootMargin: '600px 0px' });
+                ads.forEach(function(ad) { io.observe(ad); });
             });
         </script>
         EOT;
