@@ -6,12 +6,25 @@ namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
 use App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface;
+use App\Models\RecommendRepositories\CategoryRankingRepository;
+use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
+use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\Recommend\BulkRecommendRankingBuilderInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
+use App\Services\Recommend\Enum\RecommendListType;
+use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
+/**
+ * おすすめ/カテゴリ/公式ランキングの静的データ(.dat)の読み書きを担う。
+ *
+ * - 読み（ページ表示）: get*Ranking() … .dat を読む。未生成（新規タグ等）/無効化時は、
+ *   対象1件だけを DB から引く per-tag ビルダー(RecommendRankingBuilder)で即時生成する。
+ * - 書き（毎時バッチ）: updateStaticData() … 全件を1回の fetchAll で読み、bulk ビルダーで
+ *   一括生成して .dat 保存する（タグ数が多いので per-tag を都度引くより速い）。
+ */
 class RecommendStaticDataGenerator
 {
     function __construct(
@@ -21,45 +34,79 @@ class RecommendStaticDataGenerator
         private BulkRecommendRankingBuilderInterface $bulkRecommendRankingBuilder,
     ) {}
 
-    private bool $initialized = false;
-
-    /**
-     * ビルダーを一度だけ初期化する。
-     * 静的データ(.dat)が未生成のタグをページ表示時にライブ生成するフォールバックで、
-     * buildTagRanking 等の前提となる全ランキングデータ(init)が必要なため。
-     */
-    private function ensureInitialized(): void
-    {
-        if ($this->initialized) {
-            return;
-        }
-        $this->bulkRecommendRankingBuilder->init($this->bulkRankingDataRepository->fetchAll());
-        $this->initialized = true;
-    }
+    // ============================================================
+    // 読み（ページ表示）: .dat があれば読む、無ければ per-tag でDBから即時生成
+    // ============================================================
 
     function getRecomendRanking(string $tag): RecommendListDto
     {
-        $this->ensureInitialized();
-        return $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
+        return $this->fromFileOrDb(
+            'recommendStaticDataDir',
+            hash('crc32', $tag),
+            fn() => app(RecommendRankingBuilder::class)->getRanking(
+                RecommendListType::Tag,
+                $tag,
+                $tag,
+                app(RecommendRankingRepository::class)
+            )
+        );
     }
 
     function getCategoryRanking(int $category): RecommendListDto
     {
-        $this->ensureInitialized();
-        return $this->bulkRecommendRankingBuilder->buildCategoryRanking($category, getCategoryName($category));
+        return $this->fromFileOrDb(
+            'categoryStaticDataDir',
+            (string)$category,
+            fn() => app(RecommendRankingBuilder::class)->getRanking(
+                RecommendListType::Category,
+                (string)$category,
+                getCategoryName($category),
+                app(CategoryRankingRepository::class)
+            )
+        );
     }
 
-    function getOfficialRanking(int $emblem): RecommendListDto|false
+    function getOfficialRanking(int $emblem): RecommendListDto
     {
-        $this->ensureInitialized();
-        $listName = match ($emblem) {
-            1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
-            2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
-            default => ''
-        };
-
-        return $listName ? $this->bulkRecommendRankingBuilder->buildOfficialRanking($emblem, $listName) : false;
+        return $this->fromFileOrDb(
+            'officialStaticDataDir',
+            (string)$emblem,
+            fn() => app(RecommendRankingBuilder::class)->getRanking(
+                RecommendListType::Official,
+                (string)$emblem,
+                AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][$emblem] ?? '',
+                app(OfficialRoomRankingRepository::class)
+            )
+        );
     }
+
+    /**
+     * 静的データ(.dat)を読む。無い/無効化時は $liveBuild() でDBから即時生成する。
+     */
+    private function fromFileOrDb(string $dirKey, string $fileName, callable $liveBuild): RecommendListDto
+    {
+        $data = $this->fileStorage->getSerializedFile(
+            $this->fileStorage->getStorageFilePath($dirKey) . "/{$fileName}.dat"
+        );
+
+        if (!$data || AppConfig::$disableStaticDataFile) {
+            return $liveBuild();
+        }
+
+        // 古い/空のキャッシュはキャッシュさせない
+        if (
+            !$data->getCount()
+            || !$data->hourlyUpdatedAt === $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
+        ) {
+            noStore();
+        }
+
+        return $data;
+    }
+
+    // ============================================================
+    // 書き（毎時バッチ）: 全件を1回のfetchAllで読みbulkビルダーで一括生成
+    // ============================================================
 
     /**
      * @return string[]
@@ -69,9 +116,10 @@ class RecommendStaticDataGenerator
         return $this->recommendUpdater->getAllTagNames();
     }
 
-    function updateStaticData()
+    function updateStaticData(): void
     {
-        $this->ensureInitialized();
+        $allData = $this->bulkRankingDataRepository->fetchAll();
+        $this->bulkRecommendRankingBuilder->init($allData);
 
         $this->updateRecommendStaticDataBulk();
         $this->updateCategoryStaticDataBulk();
