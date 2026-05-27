@@ -38,7 +38,18 @@ make up-mock-cron       # Auto-crawling enabled
 
 # Show current configuration
 make show / help
+
+# Shared mode (share another repo's DB/storage; run this repo's code as a 2nd instance)
+make up-shared / shared-setup / down-shared
 ```
+
+### Shared Mode（共有モード）
+
+別ディレクトリにある既存リポジトリの **MariaDB / storage / comment-img を実体共有**しつつ、コードはこのリポジトリで動かす2つ目のインスタンス。
+
+- `make up-shared` … 初回は参照先リポジトリのパスを対話で尋ね `.shared.local.mk`（gitignore済・環境ごとに異なる）に保存。ポートが参照先と衝突する場合はプリセット（9000/9443 等）から選択して `.env` に保存。2回目以降は尋ねない。
+- 参照先の docker ネットワークに app を直結し、storage/comment-img を bind mount する（`docker-compose.shared.yml`）。`translation.json` だけはこのリポジトリ側を使う。
+- `DATA_PROTECTION=true` で動く（実データ共有のため）。詳細は [`README.shared.md`](README.shared.md)。
 
 ### Environment Details
 

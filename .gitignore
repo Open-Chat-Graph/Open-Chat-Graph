@@ -13,6 +13,8 @@ frontend/*/node_modules/
 local-secrets.php
 prod-secrets.php
 /shared/secrets.php
+# 共有モードのローカル設定（参照先パス・ネットワーク名。環境ごとに異なる）
+/.shared.local.mk
 local-setup.sh
 prod-setup.sh
 local-setup-prod-sync.sh
