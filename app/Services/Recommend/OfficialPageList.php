@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Services\Recommend\Dto\RecommendListDto;
-use App\Services\Recommend\StaticData\RecommendStaticDataFile;
+use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 
 class OfficialPageList
 {
     function __construct(
-        private RecommendStaticDataFile $recommendStaticDataGenerator,
+        private RecommendStaticDataGenerator $recommendStaticDataGenerator,
     ) {
     }
 
