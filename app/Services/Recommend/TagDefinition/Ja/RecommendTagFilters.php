@@ -4,15 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend\TagDefinition\Ja;
 
+use App\Services\Recommend\TagDefinition\JaTagMetadata;
 use Shared\MimimalCmsConfig;
 
 class RecommendTagFilters
 {
-    const RecommendPageTagFilter = [];
+    /** @return string[] */
+    static function recommendPageTagFilter(): array
+    {
+        return JaTagMetadata::recommendPageTagFilter();
+    }
 
-    const FilteredTagSort = [];
+    /** @return array<string,string[]> */
+    static function filteredTagSort(): array
+    {
+        return JaTagMetadata::filteredTagSort();
+    }
 
-    private const TopPageTagFilter = [];
+    /** @return array<string,string> */
+    static function redirectTags(): array
+    {
+        return JaTagMetadata::redirects();
+    }
 
     static function getTopPageTagFilter(): array
     {
@@ -20,18 +33,6 @@ class RecommendTagFilters
             return [];
         }
 
-        return array_merge(self::RecommendPageTagFilter, self::TopPageTagFilter);
+        return array_merge(JaTagMetadata::recommendPageTagFilter(), JaTagMetadata::topPageTagFilter());
     }
-
-    const RedirectTags = [
-        'ChatGPT' => '生成AI・ChatGPT',
-        'AI画像・イラスト生成' => '画像生成AI・AIイラスト',
-        'Produce 101 Japan' => 'PRODUCE 101 JAPAN THE GIRLS（日プ女子）',
-        'なりきり（全也）' => 'なりきり',
-        'クーポン・お得情報' => 'クーポン・無料配布',
-        'ロック' => '邦ロック',
-        '整形' => '美容整形',
-        'ポケポケ（Pokémon TCG Pocket／ポケモンカード アプリ）' => 'ポケポケ（Pokémon TCG Pocket）',
-        '就活生情報・選考対策・企業研究' => '企業研究',
-    ];
 }
