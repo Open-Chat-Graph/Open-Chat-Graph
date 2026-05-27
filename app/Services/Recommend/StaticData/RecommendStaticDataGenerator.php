@@ -21,18 +21,37 @@ class RecommendStaticDataGenerator
         private BulkRecommendRankingBuilderInterface $bulkRecommendRankingBuilder,
     ) {}
 
+    private bool $initialized = false;
+
+    /**
+     * ビルダーを一度だけ初期化する。
+     * 静的データ(.dat)が未生成のタグをページ表示時にライブ生成するフォールバックで、
+     * buildTagRanking 等の前提となる全ランキングデータ(init)が必要なため。
+     */
+    private function ensureInitialized(): void
+    {
+        if ($this->initialized) {
+            return;
+        }
+        $this->bulkRecommendRankingBuilder->init($this->bulkRankingDataRepository->fetchAll());
+        $this->initialized = true;
+    }
+
     function getRecomendRanking(string $tag): RecommendListDto
     {
+        $this->ensureInitialized();
         return $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
     }
 
     function getCategoryRanking(int $category): RecommendListDto
     {
+        $this->ensureInitialized();
         return $this->bulkRecommendRankingBuilder->buildCategoryRanking($category, getCategoryName($category));
     }
 
     function getOfficialRanking(int $emblem): RecommendListDto|false
     {
+        $this->ensureInitialized();
         $listName = match ($emblem) {
             1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
             2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
@@ -52,8 +71,7 @@ class RecommendStaticDataGenerator
 
     function updateStaticData()
     {
-        $allData = $this->bulkRankingDataRepository->fetchAll();
-        $this->bulkRecommendRankingBuilder->init($allData);
+        $this->ensureInitialized();
 
         $this->updateRecommendStaticDataBulk();
         $this->updateCategoryStaticDataBulk();
