@@ -19,6 +19,7 @@ use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
 use App\Controllers\Pages\AdminBanUserController;
 use App\Controllers\Pages\AdminCommentLogController;
+use App\Controllers\Pages\AdminRecommendTagController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -536,6 +537,32 @@ Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->match(function (AdminAuthService $adminAuthService) {
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
+// おすすめタグ定義(data/ja.json)編集GUI（管理者専用・日本語のみ・ローカル編集用途）
+// GETでもVerifyCsrfTokenを通し、CSRF-Tokenクッキーを発行する（保存POSTのX-CSRF-Token用）
+Route::path('admin/recommend-tags', [AdminRecommendTagController::class, 'index'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+    });
+
+// おすすめタグ定義の保存（CSRF必須・管理者専用）
+Route::path('admin/recommend-tags/save@post', [AdminRecommendTagController::class, 'save'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
+// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用）
+Route::path('admin/recommend-tags/rebuild@post', [AdminRecommendTagController::class, 'rebuild'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
     });
 
 // Adminer Database Tool

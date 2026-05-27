@@ -151,8 +151,9 @@ class RecommendListDto
     function buildFilterdTags(
         array $mergedElements,
         bool $shuffle = false,
-        array $filteredTagSort = RecommendTagFilters::FilteredTagSort
+        ?array $filteredTagSort = null
     ): array {
+        $filteredTagSort ??= RecommendTagFilters::filteredTagSort();
         $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
         $tagStr = RecommendUtility::extractTag($tag);
@@ -169,7 +170,7 @@ class RecommendListDto
         $tags = array_filter(
             $sortAndUniqueTags,
             fn($e) => (
-                !in_array($e, RecommendTagFilters::RecommendPageTagFilter)
+                !in_array($e, RecommendTagFilters::recommendPageTagFilter())
                 || (
                     isset($filteredTagSort[$tag])
                     && in_array($e, $filteredTagSort[$tag])
