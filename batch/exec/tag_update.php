@@ -42,6 +42,11 @@ try {
         if (MimimalCmsConfig::$urlRoot === '') {
             // base/ja: ロック競合を避ける安全なシャドウスワップ方式
             $recommendUpdater->rebuildAllViaShadowSwap();
+            // 適用済みハッシュを更新（毎時CRONの自動検知が直後に再度フル再適用しないように）
+            $jsonPath = \App\Services\Recommend\TagDefinition\JaTagMetadata::jsonPath();
+            if (is_file($jsonPath)) {
+                $state->setString(StateType::recommendTagsJsonHash, hash('sha256', (string)file_get_contents($jsonPath)));
+            }
         } else {
             // tw/th: recommend系テーブルにユニークキーが無くシャドウ方式が使えないため従来のフル再構築
             $recommendUpdater->updateRecommendTables(false);
