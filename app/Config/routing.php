@@ -558,6 +558,13 @@ Route::path('admin/recommend-tags/save@post', [AdminRecommendTagController::clas
         return MimimalCmsConfig::$urlRoot === '';
     });
 
+// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用）
+Route::path('admin/recommend-tags/rebuild@post', [AdminRecommendTagController::class, 'rebuild'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
     ->match(function () {

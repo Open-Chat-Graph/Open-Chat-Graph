@@ -119,6 +119,19 @@ class AdminRecommendTagController
     }
 
     /**
+     * 全レコードへタグを即時再適用（無停止シャドウ再構築）をバックグラウンドで開始する。
+     * ローカルで結果をすぐ確認したいとき、デプロイ後の手動反映に使う。
+     * 通常はデプロイ後の毎時CRONが ja.json の変更を自動検知して再適用するため、これは任意。
+     */
+    public function rebuild()
+    {
+        $path = \App\Config\AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
+        // ja 専用（ルートで urlRoot==='' を保証済み）。バックグラウンドで起動。
+        exec(\App\Config\AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
+        return response(['ok' => true]);
+    }
+
+    /**
      * 編集後のja.json全体を受け取り、検証してファイルへ原子的に保存する。
      *
      * 入力: application/json のリクエストボディ、または form フィールド `json`。

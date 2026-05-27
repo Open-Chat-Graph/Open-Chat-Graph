@@ -630,6 +630,7 @@ $categoryNameJson = json_encode(
             <div class="topbar__status" id="status">
                 <span class="dot"></span><span class="txt">読み込み済み</span>
             </div>
+            <button class="btn-ghost" id="btn-rebuild" type="button" title="保存済みのJSONを全レコードに無停止で再適用（バックグラウンドで実行）">全レコードに即時反映</button>
             <button class="btn-save" id="btn-save" type="button">
                 保存 <kbd>⌘S</kbd>
             </button>
@@ -893,8 +894,10 @@ $categoryNameJson = json_encode(
 
         // ── 保存先 URL（サーバ生成・XSS安全） ──
         var SAVE_URL = <?php echo json_encode(url('admin/recommend-tags/save'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-        // CSRFトークン（サーバ埋め込み）。保存時に X-CSRF-Token ヘッダで送る。
+        // CSRFトークン（サーバ埋め込み）。保存・再適用時に X-CSRF-Token ヘッダで送る。
         var CSRF_TOKEN = <?php echo json_encode($csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        // 全レコード即時再適用エンドポイント
+        var REBUILD_URL = <?php echo json_encode(url('admin/recommend-tags/rebuild'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
         // ── モデル（ja.json 全体）。キー順を保つため元データの順序をそのまま保持 ──
         var model = JSON.parse(document.getElementById('boot-data').textContent);
@@ -1846,6 +1849,27 @@ $categoryNameJson = json_encode(
             });
         }
         saveBtn.addEventListener('click', doSave);
+
+        // 全レコードに即時反映（裏で無停止再構築バッチを開始）。ローカル確認・手動反映用。
+        var rebuildBtn = document.getElementById('btn-rebuild');
+        if (rebuildBtn) rebuildBtn.addEventListener('click', function () {
+            var msg = dirty
+                ? '未保存の変更があります。先に「保存」してください。\nこのまま保存済みの内容で全レコード再適用を開始しますか？'
+                : '保存済みのタグ定義を全レコードに再適用します（無停止・バックグラウンド実行）。\n反映完了まで数分かかる場合があります。開始しますか？';
+            if (!confirm(msg)) return;
+            rebuildBtn.disabled = true;
+            fetch(REBUILD_URL, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+                body: '{}'
+            }).then(function (res) { return res.json().then(function (d) { return { ok: res.ok, d: d }; }); })
+              .then(function (r) {
+                  if (r.d && r.d.ok) toast('全レコード再適用をバックグラウンドで開始しました（反映まで数分かかる場合があります）');
+                  else toast((r.d && r.d.error) || '再適用の開始に失敗しました', 'err');
+              }).catch(function () { toast('通信に失敗しました', 'err'); })
+              .then(function () { rebuildBtn.disabled = false; });
+        });
 
         // ⌘S / Ctrl+S で保存
         document.addEventListener('keydown', function (e) {
