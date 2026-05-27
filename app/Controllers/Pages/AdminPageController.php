@@ -303,6 +303,7 @@ class AdminPageController
             'AdminPageController' => self::class,
             'LogController' => LogController::class,
             'AdminCommentImageController' => AdminCommentImageController::class,
+            'AdminRecommendTagController' => AdminRecommendTagController::class,
         ];
 
         // メソッド名と実際のURLパスが異なるもののマッピング
@@ -316,6 +317,14 @@ class AdminPageController
             'AdminCommentImageController' => [
                 'commentImages' => 'admin/comment-images',
             ],
+            'AdminRecommendTagController' => [
+                'index' => 'admin/recommend-tags',
+            ],
+        ];
+
+        // help 一覧に出さないメソッド（GUI内部が叩くPOST専用の保存エンドポイント等）
+        $hiddenMethods = [
+            'AdminRecommendTagController' => ['save' => true],
         ];
 
         $helpText = '';
@@ -330,6 +339,9 @@ class AdminPageController
                 }
 
                 $methodName = $method->getName();
+                if (!empty($hiddenMethods[$name][$methodName])) {
+                    continue;
+                }
                 $path = $routeMap[$name][$methodName] ?? "admin/{$methodName}";
                 $docComment = $method->getDocComment();
                 $helpText .= url($path) . "\n";
