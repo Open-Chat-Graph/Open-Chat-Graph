@@ -14,6 +14,7 @@
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
     <link rel="canonical" href="<?php echo url(strstr(path(), '?', true) ?: path()) ?>">
+    <?php viewComponent('hreflang') ?>
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
     <?php endif ?>
