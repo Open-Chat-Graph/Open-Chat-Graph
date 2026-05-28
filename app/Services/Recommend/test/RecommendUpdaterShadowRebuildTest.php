@@ -51,19 +51,6 @@ class RecommendUpdaterShadowRebuildTest extends TestCase
                 if ($filepath === '@tagUpdatedAtDatetime') {
                     // 過去日時を返し、差分回収（updateRecommendTables(true)）で全ルームが対象になるようにする
                     return '2020-01-01 00:00:00';
-                } elseif ($filepath === '@openChatSubCategoriesTag') {
-                    return json_encode([
-                        '5' => [],
-                        '7' => [],
-                        '8' => [],
-                        '12' => [],
-                        '17' => [],
-                        '22' => [],
-                        '26' => [],
-                        '33' => [],
-                        '40' => [],
-                        '41' => [],
-                    ]);
                 }
                 return '';
             });
