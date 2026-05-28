@@ -3,8 +3,8 @@
  * おすすめタグ定義 (ja.json) 編集GUI — 管理者専用・日本語専用・ローカル編集用途。
  *
  * バックエンド契約:
- *   $tagJson (string) … 整形済みの ja.json 生文字列
- *   $tagData (array)  … デコード済み連想配列
+ *   $_tagJson (string) … 整形済みの ja.json 生文字列
+ *   $_tagData (array)  … デコード済み連想配列
  *   $_meta            … meta() (title 設定済み・__toString で metaタグ出力)
  *
  * 保存: POST /admin/recommend-tags/save に ja.json 全体を JSON ボディで送信。
@@ -14,7 +14,7 @@
  * クライアントで parse する（<script> 注入防止のため JSON_HEX_* を付与）。
  */
 $bootJson = json_encode(
-    $tagData,
+    $_tagData,
     JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE
 );
 
@@ -714,6 +714,14 @@ $categoryNameJson = json_encode(
                 <div id="beforeCategory-cats"></div>
             </div>
 
+            <div class="group" data-kgroup="subCategoriesTag">
+                <div class="group__head">
+                    <span class="group__title">subCategoriesTag</span>
+                    <span class="group__desc">カテゴリ番号ごとのサブカテゴリタグ。name/desc 双方の判定で使う。</span>
+                </div>
+                <div id="subCategoriesTag-cats"></div>
+            </div>
+
             <div class="group" data-kgroup="nameStrong">
                 <div class="group__head">
                     <span class="group__title">nameStrong</span>
@@ -895,7 +903,7 @@ $categoryNameJson = json_encode(
         // ── 保存先 URL（サーバ生成・XSS安全） ──
         var SAVE_URL = <?php echo json_encode(url('admin/recommend-tags/save'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         // CSRFトークン（サーバ埋め込み）。保存・再適用時に X-CSRF-Token ヘッダで送る。
-        var CSRF_TOKEN = <?php echo json_encode($csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        var CSRF_TOKEN = <?php echo json_encode($_csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         // 全レコード即時再適用エンドポイント
         var REBUILD_URL = <?php echo json_encode(url('admin/recommend-tags/rebuild'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
@@ -908,7 +916,10 @@ $categoryNameJson = json_encode(
         catch (e) { CATEGORY_NAMES = {}; }
 
         // キーワード群グループ（順序＝優先度）
-        var KEYWORD_GROUPS = ['strongest', 'beforeCategory', 'nameStrong', 'descStrong', 'afterDescStrong'];
+        var KEYWORD_GROUPS = ['strongest', 'beforeCategory', 'subCategoriesTag', 'nameStrong', 'descStrong', 'afterDescStrong'];
+
+        // カテゴリ別マップ形式のグループ（{cat: [entries]}）
+        var CATEGORY_MAP_GROUPS = ['beforeCategory', 'subCategoriesTag'];
 
         var dirty = false;
 
@@ -941,8 +952,8 @@ $categoryNameJson = json_encode(
         function collectAllLabels(excludeRef) {
             var set = {};
             KEYWORD_GROUPS.forEach(function (g) {
-                if (g === 'beforeCategory') {
-                    var bc = model.beforeCategory || {};
+                if (CATEGORY_MAP_GROUPS.indexOf(g) !== -1) {
+                    var bc = model[g] || {};
                     Object.keys(bc).forEach(function (cat) {
                         (bc[cat] || []).forEach(function (e) {
                             if (e !== excludeRef && e.tag) set[e.tag] = true;
@@ -1294,10 +1305,12 @@ $categoryNameJson = json_encode(
             applySortable(container, list);
         }
 
-        function renderBeforeCategory() {
-            var host = document.getElementById('beforeCategory-cats');
+        // カテゴリ別マップ形式（{cat:[entries]}）のグループを描画する汎用関数。
+        // beforeCategory / subCategoriesTag が同じ構造なので共通化している。
+        function renderCategoryMap(groupKey, hostId) {
+            var host = document.getElementById(hostId);
             host.innerHTML = '';
-            var bc = model.beforeCategory || (model.beforeCategory = {});
+            var bc = model[groupKey] || (model[groupKey] = {});
             var cats = Object.keys(bc);
             if (cats.length === 0) {
                 host.appendChild(el('div', 'empty', 'カテゴリがありません。'));
@@ -1313,7 +1326,7 @@ $categoryNameJson = json_encode(
                 wrap.appendChild(bar);
 
                 var rows = el('div', 'rows beforecat');
-                rows.setAttribute('data-sortable', 'beforeCategory:' + cat);
+                rows.setAttribute('data-sortable', groupKey + ':' + cat);
                 renderList(rows, bc[cat], false);
 
                 var addTop = el('button', 'add-row add-top', '先頭に追加');
@@ -1346,9 +1359,18 @@ $categoryNameJson = json_encode(
             });
         }
 
+        function renderBeforeCategory() {
+            renderCategoryMap('beforeCategory', 'beforeCategory-cats');
+        }
+
+        function renderSubCategoriesTag() {
+            renderCategoryMap('subCategoriesTag', 'subCategoriesTag-cats');
+        }
+
         function renderAllKeywordGroups() {
             renderList(document.querySelector('[data-sortable="strongest"]'), model.strongest, true);
             renderBeforeCategory();
+            renderSubCategoriesTag();
             renderList(document.querySelector('[data-sortable="nameStrong"]'), model.nameStrong, false);
             renderList(document.querySelector('[data-sortable="descStrong"]'), model.descStrong, false);
             renderList(document.querySelector('[data-sortable="afterDescStrong"]'), model.afterDescStrong, false);
@@ -1764,11 +1786,13 @@ $categoryNameJson = json_encode(
 
         // タブのカウント表示
         function refreshTabCounts() {
-            // キーワード群: strongest+beforeCategory全件+name/desc/afterDesc
+            // キーワード群: strongest+beforeCategory+subCategoriesTag全件+name/desc/afterDesc
             var kw = (model.strongest || []).length + (model.nameStrong || []).length +
                      (model.descStrong || []).length + (model.afterDescStrong || []).length;
-            var bc = model.beforeCategory || {};
-            Object.keys(bc).forEach(function (c) { kw += (bc[c] || []).length; });
+            CATEGORY_MAP_GROUPS.forEach(function (g) {
+                var bc = model[g] || {};
+                Object.keys(bc).forEach(function (c) { kw += (bc[c] || []).length; });
+            });
             setCount('keywords', kw);
             var metaN = Object.keys(model.omitPattern || {}).length;
             Object.keys(model.descriptions || {}).forEach(function (l) {
@@ -1800,8 +1824,10 @@ $categoryNameJson = json_encode(
                 });
             }
             check(model.strongest); check(model.nameStrong); check(model.descStrong); check(model.afterDescStrong);
-            var bc = model.beforeCategory || {};
-            Object.keys(bc).forEach(function (c) { check(bc[c]); });
+            CATEGORY_MAP_GROUPS.forEach(function (g) {
+                var bc = model[g] || {};
+                Object.keys(bc).forEach(function (c) { check(bc[c]); });
+            });
 
             // 現行ラベルが redirects の旧キーに含まれていないか（改名後に旧名で復活＝循環の元）
             var redirects = model.redirects || {};

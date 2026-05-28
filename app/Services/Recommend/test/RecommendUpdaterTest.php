@@ -44,26 +44,13 @@ class RecommendUpdaterTest extends TestCase
             ->method('getStorageFilePath')
             ->willReturn(__FILE__);
 
-        // getContents のモック設定（複数のファイルパスに対応）
+        // getContents のモック設定。ja ロケールでは subCategoriesTag は ja.json から
+        // JsonRecommendUpdaterTags 経由で読み込まれるため、ここでは tag 更新時刻のみ扱う。
         $this->mockFileStorage
             ->method('getContents')
             ->willReturnCallback(function ($filepath) {
                 if ($filepath === '@tagUpdatedAtDatetime') {
                     return '2020-01-01 00:00:00';
-                } elseif ($filepath === '@openChatSubCategoriesTag') {
-                    // テストに必要なカテゴリ情報を返す
-                    return json_encode([
-                        '5' => [], // 生活
-                        '7' => [], // 学校
-                        '8' => [], // 趣味
-                        '12' => [], // グルメ
-                        '17' => [], // ゲーム・アプリ
-                        '22' => [], // マンガ・アニメ
-                        '26' => [], // 芸能人・有名人
-                        '33' => [], // 音楽
-                        '40' => [], // 金融・ビジネス
-                        '41' => [], // クリエイター
-                    ]);
                 }
                 return '';
             });
