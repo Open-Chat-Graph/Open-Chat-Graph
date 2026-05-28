@@ -97,7 +97,7 @@ class RecommendOpenChatPageController
         $recommendList = $recommend->getList(false);
         $hourlyUpdatedAt = new \DateTime($recommend->hourlyUpdatedAt);
 
-        $count = $recommend->getCount();
+        $count = min($recommend->getCount(), AppConfig::LIST_LIMIT_RECOMMEND);
         $headline = sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag);
         $_meta->setTitle($headline);
         $_meta->setImageUrl(imgUrl($recommendList[0]['img_url']));

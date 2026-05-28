@@ -78,13 +78,13 @@
         </header>
         <?php if (isset($recommend[0]) && $recommend[0]) : ?>
             <aside class="recommend-list-aside">
-                <?php viewComponent('recommend_list2', ['recommend' => $recommend[0], 'member' => 0, 'tag' => $recommend[2], 'id' => 0, 'showTags' => true]) ?>
+                <?php viewComponent('recommend_list2', ['recommend' => $recommend[0], 'member' => 0, 'tag' => $recommend[2], 'id' => 0]) ?>
             </aside>
             <hr class="hr-bottom">
         <?php endif ?>
         <?php if (isset($recommend[1]) && $recommend[1]) : ?>
             <aside class="recommend-list-aside">
-                <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => 0, 'tag' => $recommend[2], 'id' => 0, 'showTags' => true]) ?>
+                <?php viewComponent('recommend_list2', ['recommend' => $recommend[1], 'member' => 0, 'tag' => $recommend[2], 'id' => 0]) ?>
             </aside>
             <hr class="hr-bottom">
         <?php endif ?>
