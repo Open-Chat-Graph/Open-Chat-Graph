@@ -19,8 +19,6 @@ class FileStorageServiceConfig
         'sqliteRankingPositionOhlcDb' =>  '/SQLite/ranking_position_ohlc/ranking_position_ohlc.db',
         'sqliteRankingPositionDb' =>      '/SQLite/ranking_position/ranking_position.db',
         'openChatSubCategories' =>        '/open_chat_sub_categories/subcategories.json',
-        'openChatSubCategoriesSample' =>  '/open_chat_sub_categories/sample/subcategories.json',
-        'openChatSubCategoriesTag' =>     '/open_chat_sub_categories/subcategories_tag.json',
         'openChatRankingPositionDir' =>   '/ranking_position/ranking',
         'openChatRisingPositionDir' =>    '/ranking_position/rising',
         'openChatHourFilterId' =>         '/ranking_position/filter.dat',
