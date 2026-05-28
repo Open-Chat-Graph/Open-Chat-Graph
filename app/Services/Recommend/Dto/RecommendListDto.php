@@ -6,9 +6,6 @@ namespace App\Services\Recommend\Dto;
 
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
-use Shared\MimimalCmsConfig;
 
 class RecommendListDto
 {
@@ -130,66 +127,5 @@ class RecommendListDto
     function getCount(): int
     {
         return count($this->mergedElements);
-    }
-
-    /** @return string[] */
-    function getFilterdTags(bool $shuffle = true, ?int $limit = 0): array
-    {
-        // 日本以外は取得済みの関連タグを返す
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $result = $this->type === RecommendListType::Tag
-                ? array_filter($this->sortAndUniqueTags, fn($e) => $e !== $this->listName)
-                : $this->sortAndUniqueTags;
-        } else {
-            $result = $this->buildFilterdTags($this->getList($shuffle, $limit), $shuffle);
-        }
-
-        return array_slice($result, 0, self::TAG_LIMIT);
-    }
-
-    /** @return string[] */
-    function buildFilterdTags(
-        array $mergedElements,
-        bool $shuffle = false,
-        ?array $filteredTagSort = null
-    ): array {
-        $filteredTagSort ??= RecommendTagFilters::filteredTagSort();
-        $tag = $this->type === RecommendListType::Tag ? $this->listName : '';
-        $tagName = $this->type === RecommendListType::Tag ? $this->listName : '';
-        $tagStr = RecommendUtility::extractTag($tag);
-
-        $sortAndUniqueTags = sortAndUniqueArray(
-            array_merge(
-                array_column($mergedElements, 'tag1'),
-                array_column($mergedElements, 'tag2'),
-                $filteredTagSort[$tag] ?? []
-            ),
-            1
-        );
-
-        $tags = array_filter(
-            $sortAndUniqueTags,
-            fn($e) => (
-                !in_array($e, RecommendTagFilters::recommendPageTagFilter())
-                || (
-                    isset($filteredTagSort[$tag])
-                    && in_array($e, $filteredTagSort[$tag])
-                )
-            ) && $e !== $tagName
-        );
-
-        $tagsStr = array_map(fn($t) => RecommendUtility::extractTag($t), $tags);
-
-        uksort($tags, function ($a) use ($tagStr, $tagsStr, $tag, $tags, $filteredTagSort) {
-            return str_contains(
-                $tagsStr[$a],
-                $tagStr
-            ) || (
-                isset($filteredTagSort[$tag])
-                && in_array($tags[$a], $filteredTagSort[$tag])
-            ) ? -1 : 1;
-        });
-
-        return $tags;
     }
 }

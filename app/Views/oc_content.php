@@ -12,10 +12,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
 <body>
   <?php viewComponent('site_header') ?>
-  <?php if ($enableAdsense): ?>
-    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php GAd::output('ocTopRectangle', true) ?>
-  <?php endif ?>
 
   <div class="unset openchat body" style="overflow: hidden;">
     <article class="unset" style="display: block;">
@@ -219,13 +215,24 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     </article>
 
     <?php if ($enableAdsense): ?>
+      <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
       <?php GAd::output('ocTopWide2', true) ?>
     <?php endif ?>
 
-    <?php if ($recommend[0] || $recommend[3]) : ?>
+    <?php if (isset($similarSize) && $similarSize) : ?>
+      <aside class="recommend-list-aside" id="similar-size-rooms">
+        <?php viewComponent('similar_size_rooms', [
+          'rooms'         => $similarSize['rooms'],
+          'recommend'     => $similarSize['recommend'],
+          'mode'          => $similarSize['mode'],
+          'currentMember' => $oc['member'],
+          'category'      => $oc['category'] ?? null,
+          'tag'           => $oc['tag1'] ?? null,
+        ]) ?>
+      </aside>
+    <?php elseif ($recommend[3]) : ?>
       <aside class="recommend-list-aside" id="recommend-list-aside1">
-        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => '', 'id' => $oc['id']]) ?>
       </aside>
     <?php endif ?>
 
@@ -252,10 +259,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <div id="comment-root"></div>
       </section>
     <?php endif ?>
-    <?php if ($enableAdsense): ?>
-      <?php GAd::output('ocSeparatorResponsive', true) ?>
-    <?php endif ?>
-
     <?php viewComponent('footer_inner') ?>
 
   </div>

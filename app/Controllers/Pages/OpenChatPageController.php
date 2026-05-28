@@ -13,6 +13,7 @@ use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
+use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
 use App\Services\Narrative\OcNarrativeService;
@@ -45,6 +46,7 @@ class OpenChatPageController
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
         OcNarrativeService $narrativeService,
+        SimilarSizeRoomService $similarSizeRoomService,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -64,6 +66,12 @@ class OpenChatPageController
             }
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+            $similarSize = $similarSizeRoomService->fetch(
+                (int)$oc['id'],
+                (int)$oc['member'],
+                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+                isset($oc['category']) ? (int)$oc['category'] : null
+            );
         } else {
             $oc = $ocRepo->getOpenChatById($open_chat_id);
             if (!$oc) {
@@ -109,6 +117,8 @@ class OpenChatPageController
                 $oc['tag3'],
                 $oc['category']
             );
+            // 非 ja は similarSize を出さない（既存挙動を維持）
+            $similarSize = null;
         }
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
@@ -188,6 +198,7 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             'recommend',
+            'similarSize',
             '_hourlyRange',
             '_adminDto',
             'officialDto',
