@@ -15,11 +15,12 @@ use App\Config\AppConfig;
  *
  * JSONスキーマ（data/ja.json）:
  *   {
- *     "strongest":      [ {"tag":..,"keywords"?:[..],"nameKeywords"?:[..]}, .. ],
- *     "beforeCategory": { "<category>": [ {"tag":..,"keywords"?:[..]}, .. ], .. },
- *     "nameStrong":     [ {"tag":..,"keywords"?:[..]}, .. ],
- *     "descStrong":     [ .. ],
- *     "afterDescStrong":[ .. ]
+ *     "strongest":        [ {"tag":..,"keywords"?:[..],"nameKeywords"?:[..]}, .. ],
+ *     "beforeCategory":   { "<category>": [ {"tag":..,"keywords"?:[..]}, .. ], .. },
+ *     "subCategoriesTag": { "<category>": [ {"tag":..,"keywords"?:[..]}, .. ], .. },
+ *     "nameStrong":       [ {"tag":..,"keywords"?:[..]}, .. ],
+ *     "descStrong":       [ .. ],
+ *     "afterDescStrong":  [ .. ]
  *   }
  *
  * 規約:
@@ -167,5 +168,21 @@ class JsonRecommendUpdaterTags implements RecommendUpdaterTagsInterface
     function getAfterDescStrongTags(): array
     {
         return $this->entriesToTagDefs($this->load()['afterDescStrong'] ?? null);
+    }
+
+    function getSubCategoriesTag(): array
+    {
+        $byCategory = $this->load()['subCategoriesTag'] ?? null;
+        if (!is_array($byCategory)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($byCategory as $category => $entries) {
+            // JSONオブジェクトのキー順を維持。キーは文字列として扱う。
+            $result[(string)$category] = $this->entriesToTagDefs($entries);
+        }
+
+        return $result;
     }
 }

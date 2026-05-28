@@ -25,6 +25,7 @@ class AdminRecommendTagController
     private const REQUIRED_ARRAY_KEYS = [
         'strongest',
         'beforeCategory',
+        'subCategoriesTag',
         'nameStrong',
         'descStrong',
         'afterDescStrong',
@@ -42,6 +43,7 @@ class AdminRecommendTagController
     private const ALLOWED_TOP_KEYS = [
         'strongest',
         'beforeCategory',
+        'subCategoriesTag',
         'nameStrong',
         'descStrong',
         'afterDescStrong',
@@ -244,6 +246,17 @@ class AdminRecommendTagController
             }
         }
 
+        // subCategoriesTag も「カテゴリ文字列キー → エントリ配列」のマップ
+        foreach ($decoded['subCategoriesTag'] as $category => $entries) {
+            if (!is_array($entries)) {
+                return "subCategoriesTag[\"{$category}\"] は配列である必要があります。";
+            }
+            $error = $this->validateEntryList($entries, "subCategoriesTag[\"{$category}\"]");
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
         // (d) redirects があれば old !== new
         if (array_key_exists('redirects', $decoded)) {
             if (!is_array($decoded['redirects'])) {
@@ -286,6 +299,13 @@ class AdminRecommendTagController
             }
         }
         foreach ((array)($decoded['beforeCategory'] ?? []) as $entries) {
+            foreach ((array)$entries as $entry) {
+                if (is_array($entry) && isset($entry['tag']) && is_string($entry['tag'])) {
+                    $labels[$entry['tag']] = true;
+                }
+            }
+        }
+        foreach ((array)($decoded['subCategoriesTag'] ?? []) as $entries) {
             foreach ((array)$entries as $entry) {
                 if (is_array($entry) && isset($entry['tag']) && is_string($entry['tag'])) {
                     $labels[$entry['tag']] = true;
