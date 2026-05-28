@@ -56,6 +56,24 @@ try {
         // 成否に関わらず必ずフラグを下ろす
         $state->setFalse(StateType::isRecommendTagRebuildActive);
     }
+
+    // ──────────────────────────────────────────────
+    // 続けて静的データ生成 + CDN キャッシュ削除をチェイン実行する。
+    // tag rebuild だけだと .dat キャッシュと CDN が古いまま残り、/recommend ページ
+    // の見た目は次回毎時 CRON まで更新されない。GUI からの「全レコードに即時反映」が
+    // 押されたらここまで一気にやる。
+    //
+    // ja の場合、上で ja.json のハッシュは更新済みなので
+    // update_recommend_static_data.php 側の再構築はスキップされ、
+    // 差分の updateRecommendTables → 静的データ生成 → CDN purge のみが動く。
+    // tw/th の場合も同様に静的データ生成 → CDN purge が走る。
+    // ──────────────────────────────────────────────
+    $phpBinary = \App\Config\AppConfig::$phpBinary;
+    $staticScript = realpath(__DIR__ . '/update_recommend_static_data.php');
+    $urlRootArg = escapeshellarg((string)MimimalCmsConfig::$urlRoot);
+    AdminTool::sendDiscordNotify('chain to update_recommend_static_data.php at ' . date('Y-m-d H:i:s'));
+    exec("{$phpBinary} {$staticScript} {$urlRootArg}");
+    AdminTool::sendDiscordNotify('update_recommend_static_data.php done at ' . date('Y-m-d H:i:s'));
 } catch (\Throwable $e) {
     CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
