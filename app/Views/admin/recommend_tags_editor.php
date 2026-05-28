@@ -3,8 +3,8 @@
  * おすすめタグ定義 (ja.json) 編集GUI — 管理者専用・日本語専用・ローカル編集用途。
  *
  * バックエンド契約:
- *   $tagJson (string) … 整形済みの ja.json 生文字列
- *   $tagData (array)  … デコード済み連想配列
+ *   $_tagJson (string) … 整形済みの ja.json 生文字列
+ *   $_tagData (array)  … デコード済み連想配列
  *   $_meta            … meta() (title 設定済み・__toString で metaタグ出力)
  *
  * 保存: POST /admin/recommend-tags/save に ja.json 全体を JSON ボディで送信。
@@ -14,7 +14,7 @@
  * クライアントで parse する（<script> 注入防止のため JSON_HEX_* を付与）。
  */
 $bootJson = json_encode(
-    $tagData,
+    $_tagData,
     JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE
 );
 
@@ -903,7 +903,7 @@ $categoryNameJson = json_encode(
         // ── 保存先 URL（サーバ生成・XSS安全） ──
         var SAVE_URL = <?php echo json_encode(url('admin/recommend-tags/save'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         // CSRFトークン（サーバ埋め込み）。保存・再適用時に X-CSRF-Token ヘッダで送る。
-        var CSRF_TOKEN = <?php echo json_encode($csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        var CSRF_TOKEN = <?php echo json_encode($_csrfToken ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         // 全レコード即時再適用エンドポイント
         var REBUILD_URL = <?php echo json_encode(url('admin/recommend-tags/rebuild'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 

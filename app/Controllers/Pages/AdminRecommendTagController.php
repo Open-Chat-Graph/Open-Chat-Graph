@@ -112,10 +112,14 @@ class AdminRecommendTagController
         \Shadow\Kernel\Cookie::push(['CSRF-Token' => $csrfToken]);
         $_COOKIE['CSRF-Token'] = $csrfToken;
 
+        // _tagJson / _tagData は View のサニタイズ (htmlspecialchars) をスキップする命名規約
+        // (キーが '_' で始まると View::sanitizeArray が素通しする)。これを使わないと
+        // 説明文中の "&quot;" や "King&Prince" の '&' が保存→読込のたびに &amp; → &amp;amp; と
+        // 多重エスケープされて累積する不具合になる。
         return view('admin/recommend_tags_editor', [
-            'tagJson' => $tagJson,
-            'tagData' => $decoded,
-            'csrfToken' => $csrfToken,
+            '_tagJson' => $tagJson,
+            '_tagData' => $decoded,
+            '_csrfToken' => $csrfToken,
             '_meta' => $_meta,
         ]);
     }
