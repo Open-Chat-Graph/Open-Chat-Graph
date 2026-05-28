@@ -25,6 +25,7 @@ class AdminRecommendTagController
     private const REQUIRED_ARRAY_KEYS = [
         'strongest',
         'beforeCategory',
+        'subCategoriesTag',
         'nameStrong',
         'descStrong',
         'afterDescStrong',
@@ -42,6 +43,7 @@ class AdminRecommendTagController
     private const ALLOWED_TOP_KEYS = [
         'strongest',
         'beforeCategory',
+        'subCategoriesTag',
         'nameStrong',
         'descStrong',
         'afterDescStrong',
@@ -110,10 +112,14 @@ class AdminRecommendTagController
         \Shadow\Kernel\Cookie::push(['CSRF-Token' => $csrfToken]);
         $_COOKIE['CSRF-Token'] = $csrfToken;
 
+        // _tagJson / _tagData は View のサニタイズ (htmlspecialchars) をスキップする命名規約
+        // (キーが '_' で始まると View::sanitizeArray が素通しする)。これを使わないと
+        // 説明文中の "&quot;" や "King&Prince" の '&' が保存→読込のたびに &amp; → &amp;amp; と
+        // 多重エスケープされて累積する不具合になる。
         return view('admin/recommend_tags_editor', [
-            'tagJson' => $tagJson,
-            'tagData' => $decoded,
-            'csrfToken' => $csrfToken,
+            '_tagJson' => $tagJson,
+            '_tagData' => $decoded,
+            '_csrfToken' => $csrfToken,
             '_meta' => $_meta,
         ]);
     }
@@ -244,6 +250,17 @@ class AdminRecommendTagController
             }
         }
 
+        // subCategoriesTag も「カテゴリ文字列キー → エントリ配列」のマップ
+        foreach ($decoded['subCategoriesTag'] as $category => $entries) {
+            if (!is_array($entries)) {
+                return "subCategoriesTag[\"{$category}\"] は配列である必要があります。";
+            }
+            $error = $this->validateEntryList($entries, "subCategoriesTag[\"{$category}\"]");
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
         // (d) redirects があれば old !== new
         if (array_key_exists('redirects', $decoded)) {
             if (!is_array($decoded['redirects'])) {
@@ -286,6 +303,13 @@ class AdminRecommendTagController
             }
         }
         foreach ((array)($decoded['beforeCategory'] ?? []) as $entries) {
+            foreach ((array)$entries as $entry) {
+                if (is_array($entry) && isset($entry['tag']) && is_string($entry['tag'])) {
+                    $labels[$entry['tag']] = true;
+                }
+            }
+        }
+        foreach ((array)($decoded['subCategoriesTag'] ?? []) as $entries) {
             foreach ((array)$entries as $entry) {
                 if (is_array($entry) && isset($entry['tag']) && is_string($entry['tag'])) {
                     $labels[$entry['tag']] = true;

@@ -24,7 +24,6 @@ class RecommendUpdater
     protected RecommendTagRepositoryInterface $repository;
     protected string $start;
     protected string $end;
-    protected string $openChatSubCategoriesTagKey = 'openChatSubCategoriesTag';
     protected string $targetIdJoinClause = '';
 
     /**
@@ -55,22 +54,37 @@ class RecommendUpdater
             $this->recommendUpdaterTags = $recommendUpdaterTags;
         } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Tw\RecommendUpdaterTags::class);
-            $this->openChatSubCategoriesTagKey = 'openChatSubCategories';
         } else if (MimimalCmsConfig::$urlRoot === '/th') {
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Th\RecommendUpdaterTags::class);
-            $this->openChatSubCategoriesTagKey = 'openChatSubCategories';
         } else {
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::class);
-            $this->openChatSubCategoriesTagKey = 'openChatSubCategoriesTag';
         }
     }
 
+    /**
+     * LINEカテゴリID別のサブカテゴリタグ定義を読み出す。
+     *
+     * - ja: ja.json の "subCategoriesTag" セクション (RecommendUpdaterTagsInterface 経由)
+     * - tw/th: LINE 公式 crawled subcategories.json (storage/{tw|th}/open_chat_sub_categories/)
+     *   を従来どおり FileStorage から直接読む
+     *
+     * 戻り値の形は旧 storage/ja/open_chat_sub_categories/subcategories_tag.json と同一で、
+     * `{category_id: [tagDef, ...]}` の構造。tagDef は keywords 有りなら `[tag, keywords[]]`、
+     * 無しなら `tag(string)`。
+     *
+     * @return array<string,(string|array{string,string[]})[]>
+     */
     protected function getOpenChatSubCategoriesTag(): array
     {
-        $path = $this->fileStorage->getStorageFilePath($this->openChatSubCategoriesTagKey);
+        if (MimimalCmsConfig::$urlRoot === '') {
+            return $this->recommendUpdaterTags->getSubCategoriesTag();
+        }
+
+        // tw/th: 既存どおり LINE 公式 crawled サブカテゴリを読む
+        $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
         $data = json_decode(
             file_exists($path)
-                ? $this->fileStorage->getContents('@' . $this->openChatSubCategoriesTagKey)
+                ? $this->fileStorage->getContents('@openChatSubCategories')
                 : '{}',
             true
         );

@@ -32,4 +32,11 @@ class RecommendUpdaterTags implements RecommendUpdaterTagsInterface
     {
         return [];
     }
+
+    function getSubCategoriesTag(): array
+    {
+        // tw は LINE 公式 crawled subcategories.json (openChatSubCategories) を
+        // RecommendUpdater 側で FileStorage 経由で読み続けるため、ここでは空配列を返す。
+        return [];
+    }
 }
