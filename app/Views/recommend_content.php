@@ -3,7 +3,6 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
@@ -24,11 +23,6 @@ $enableAdsense = true;
 viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
 <body>
-  <?php if ($enableAdsense): ?>
-    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php GAd::output('recommendTopRectangle', true) ?>
-  <?php endif ?>
-
   <?php viewComponent('site_header') ?>
   <article class="ranking-page-main pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
@@ -89,10 +83,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <?php endif ?>
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
+        <?php if ($enableAdsense): ?>
+          <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
+        <?php endif ?>
         <ol class="openchat-item-list parent unset">
           <?php
           $chunkLen = 5;
-          $recommendList = $recommend->getList(false, null);
+          $recommendList = $recommend->getList(false, AppConfig::LIST_LIMIT_RECOMMEND);
           $firstLists = array_slice($recommendList, 0, $chunkLen);
           $secondLists = array_chunk(array_slice($recommendList, $chunkLen), $chunkLen * 2);
           $lists = [$firstLists, ...$secondLists];
@@ -116,20 +113,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
               <?php $currentCount += $currentListCount ?>
 
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => $currentCount - $currentListCount === 0, 'currentCount' => $currentCount - $currentListCount, 'showApiCreatedAt' => true]) ?>
-
-              <?php if ($key === 0) : ?>
-                <?php // 関連テーマはチャンク毎に反復させず、先頭チャンク後の1箇所のみ(全リストからタグ算出)に集約 ?>
-                <aside class="list-aside recommend-ranking-bottom" style="padding: 0; margin-bottom: -.5rem;">
-                  <?php if (
-                    isset($recommend)
-                    && (
-                      ($recommendTags = $recommend->buildFilterdTags($recommendList, filteredTagSort: []))
-                    )
-                  ) : ?>
-                    <?php viewComponent('recommend_content_tags', ['tags' => $recommendTags, 'tag' => $tag]) ?>
-                  <?php endif ?>
-                </aside>
-              <?php endif ?>
 
               <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
                 <hr class="hr-top" style="margin: 1rem auto;">
