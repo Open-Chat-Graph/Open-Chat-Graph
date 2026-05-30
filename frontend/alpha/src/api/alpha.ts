@@ -44,30 +44,4 @@ export const alphaApi = {
 
     return res.json()
   },
-
-  // グラフ用API（Viteプロキシ対応）
-  async getRankingPosition(openChatId: number, category?: number, sort?: string, startDate?: string): Promise<any> {
-    const query = new URLSearchParams()
-    if (category !== undefined) query.set('category', category.toString())
-    if (sort) query.set('sort', sort)
-    if (startDate) query.set('start_date', startDate)
-
-    const queryString = query.toString() ? `?${query}` : ''
-    const res = await fetch(`/oc/${openChatId}/position${queryString}`)
-    if (!res.ok) throw new Error('Ranking position API failed')
-
-    return res.json()
-  },
-
-  async getRankingPositionHour(openChatId: number, category?: number, sort?: string): Promise<any> {
-    const query = new URLSearchParams()
-    if (category !== undefined) query.set('category', category.toString())
-    if (sort) query.set('sort', sort)
-
-    const queryString = query.toString() ? `?${query}` : ''
-    const res = await fetch(`/oc/${openChatId}/position_hour${queryString}`)
-    if (!res.ok) throw new Error('Ranking position hour API failed')
-
-    return res.json()
-  },
 }

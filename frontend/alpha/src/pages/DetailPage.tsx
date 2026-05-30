@@ -1,26 +1,18 @@
 import { useParams, useLocation } from 'react-router-dom'
-import { useEffect, useRef, useState, memo, useCallback, useMemo } from 'react'
+import { useEffect, useState, memo, useCallback, useMemo } from 'react'
 import useSWR from 'swr'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { DetailHeader, DetailInfo, DetailStats, DetailActions, RankingHistory } from '@/components/Detail'
+import { DetailHeader, DetailInfo, DetailStats, DetailActions, RankingHistory, PreactChart } from '@/components/Detail'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
 import type { BasicInfoResponse, RankingHistoryResponse, OpenChat } from '@/types/api'
 
-declare global {
-  interface Window {
-    mountPreactChart?: (chatArgDto?: any, themeConfig?: any) => void
-    unmountPreactChart?: () => void
-  }
-}
-
 const DetailPage = memo(() => {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const { resolvedTheme } = useTheme()
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const [myListData, setMyListData] = useState(() => loadMyList())
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
@@ -114,83 +106,6 @@ const DetailPage = memo(() => {
     }
   }, [basicInfo?.name, basicInfo?.currentMember])
 
-  // Preactスクリプトを初回のみロード（グローバルに1回だけ）
-  useEffect(() => {
-    // 既にスクリプトがロード済みかチェック
-    const existingScript = document.getElementById('preact-chart-script')
-    if (existingScript) {
-      return
-    }
-
-    const script = document.createElement('script')
-    script.id = 'preact-chart-script'
-    script.type = 'module'
-    script.src = '/js/preact-chart/assets/index.js'
-    script.async = true
-    script.onerror = () => {
-      console.error('Failed to load Preact chart script')
-    }
-
-    // スクリプトロード完了を待つ
-    script.onload = () => {
-      console.log('Preact chart script loaded')
-    }
-
-    document.head.appendChild(script)
-  }, [])
-
-  // Preactチャートのマウント/アンマウント管理
-  // IDが変わったとき、またはbasicInfoが最初にロードされたときにマウント
-  useEffect(() => {
-    if (!basicInfo) return
-    // URLのIDとbasicInfoのIDが一致することを確認（SWRのキャッシュ対策）
-    if (id && basicInfo.id !== parseInt(id)) return
-
-    let isCancelled = false
-
-    // Preactアプリに必要なデータを準備
-    const chatArgDto = {
-      id: basicInfo.id,
-      baseUrl: window.location.origin,
-      categoryName: '全て',
-      categoryKey: basicInfo.category,
-      urlRoot: ''
-    }
-
-    const themeConfig = {
-      theme: resolvedTheme || 'light',
-      isDark: resolvedTheme === 'dark'
-    }
-
-    // グローバルマウント関数が利用可能になるまで待機（最大5秒）
-    const maxWaitTime = 5000
-    const startTime = Date.now()
-    const waitForMount = setInterval(() => {
-      if (window.mountPreactChart) {
-        clearInterval(waitForMount)
-
-        if (!isCancelled) {
-          // Preactチャートをマウント（データを直接渡す、DOMを経由しない）
-          window.mountPreactChart(chatArgDto, themeConfig)
-        }
-      } else if (Date.now() - startTime > maxWaitTime) {
-        clearInterval(waitForMount)
-        console.error('Preact chart script failed to load within 5 seconds')
-      }
-    }, 50)
-
-    // クリーンアップ（詳細画面を閉じるとき or IDが変わったとき）
-    return () => {
-      isCancelled = true
-      clearInterval(waitForMount)
-
-      // グローバルアンマウント関数を呼び出し（必ずアンマウント）
-      if (window.unmountPreactChart) {
-        window.unmountPreactChart()
-      }
-    }
-  }, [id, basicInfo?.id, resolvedTheme])
-
   if (error || (!isLoading && !basicInfo)) {
     return (
       <Card className="border-destructive">
@@ -244,22 +159,13 @@ const DetailPage = memo(() => {
           isInRanking={basicInfo.isInRanking}
         />
 
-        {/* Graph */}
-        <div className="max-w-[600px] md:mx-auto" key={`graph-${id}`}>
-          <div
-            ref={containerRef}
-            id="graph-box"
-            style={{
-              position: 'relative',
-              marginTop: '1.5rem',
-              paddingBottom: '2rem',
-              minHeight: 'clamp(400px, 50vh, 600px)'
-            }}
-          >
-            <div className="chart-canvas-box" id="dummy-canvas"></div>
-            <div id="app"></div>
-          </div>
-        </div>
+        {/* Graph（外部Preactバンドルをコンポーネント化。idが変わったらkeyで再マウント） */}
+        <PreactChart
+          key={basicInfo.id}
+          chatId={basicInfo.id}
+          categoryKey={basicInfo.category}
+          theme={resolvedTheme}
+        />
 
         <DetailActions
           url={basicInfo.url}
