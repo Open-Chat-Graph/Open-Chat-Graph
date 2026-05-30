@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# オプチャグラフα (alpha フロントエンド)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+LINE オープンチャットの統計を見る新フロントエンド。React 19 + Vite + TypeScript の SPA で、
+Open-Chat-Graph モノレポの一部として `frontend/alpha/` に同居する（旧 standalone リポジトリ
+`openchat-alpha` は廃止）。本番では `/alpha` で配信される PWA。
 
-Currently, two official plugins are available:
+## 開発
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# このディレクトリで
+npm install
+npm run dev      # Vite 開発サーバ（/alpha-api などは .env の HTTPS_PORT へプロキシ）
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+ローカルのPHPサーバ（Docker, 既定 https://localhost:8443）が動いている必要がある。
+`npm run dev` の proxy が `/alpha-api`・`/oc`・`/js` をそこへ転送する。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ビルド
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build                       # → ../../public/js/alpha に出力
+# またはモノレポ直下から
+make build-frontend:alpha           # alpha だけ
+make build-frontend                 # frontend/* を全部
 ```
+
+出力 `public/js/alpha/` はリポジトリにコミットする（git ベース配信のため）。
+配信ページの PHP シェルは `app/Views/alpha_content.php`、ルートは `app/Config/routing.php`
+の `alpha` / `alpha-api` 群。
+
+## 構成
+
+- `src/pages/` … 検索 / マイリスト / 通知 / 詳細 / 設定
+- `src/components/Layout/` … `DashboardLayout`(シェル), `HeaderSearchBar`, `MobileBottomNav`, `DetailOverlay`
+- `src/components/Detail/` … 詳細ページ部品（`PreactChart` は外部グラフバンドルのラッパー）
+- `src/contexts/layout-context.tsx` … ヘッダータイトル・検索再実行シグナルの共有
+- `src/api/alpha.ts` … `/alpha-api/*` クライアント、`src/services/storage.ts` … マイリスト(localStorage)
+- `src/lib/` … 画像URL(`imageUrl.ts`=公式CDN obs.line-scdn.net)、ソート定義、ストレージキー
+
+## 設計メモ
+
+- ページ切替は「保持パターン」: 検索/マイリスト/通知/設定は常時マウントし React 19 の
+  `<Activity>` で表示を切替えてスクロール・状態を保持。詳細ページだけ上に被せるオーバーレイ。
+  （背景: 作者記事 https://qiita.com/pikachu0203/items/e26ea70f92eab7d17642 ）
+- PWA: `vite-plugin-pwa`。SW は `/js/alpha/sw.js` を scope `/alpha` で登録（Apache が
+  `Service-Worker-Allowed: /` を付与）。
+- 認証は将来「認証ユーザーのみ」を想定。現状は未導入。通知もサーバ購読を持たず端末ローカル完結。
