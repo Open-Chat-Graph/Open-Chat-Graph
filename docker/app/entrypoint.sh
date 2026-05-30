@@ -108,6 +108,9 @@ if [ -f /etc/apache2/sites-enabled/000-default.conf ]; then
         || echo "Apache HTTP config: HTTPS_PORT 置換をスキップ (bind mount のため sed -i 不可)"
 fi
 
+# mod_headers を有効化（alpha PWA の Service-Worker-Allowed ヘッダ配信用）
+run_as_root a2enmod headers >/dev/null 2>&1 || true
+
 echo "Starting Apache..."
 
 # Cron設定スクリプトを実行（CRON=1の場合は有効化、それ以外はクリーンアップ）

@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
         description: 'LINE OpenChatの統計・ランキング',
         lang: 'ja',
         start_url: mode === 'production' ? '/alpha' : '/',
-        scope: mode === 'production' ? '/alpha/' : '/',
+        scope: mode === 'production' ? '/alpha' : '/',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#10b981',
@@ -80,34 +80,45 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        navigateFallback: null,
         runtimeCaching: [
           {
-            urlPattern: /^\/alpha-api\/.*/i,
+            // アプリのページ遷移（/alpha 配下のHTML）: オンライン優先・オフライン時はキャッシュ
+            urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 // 1時間
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              cacheName: 'alpha-pages',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
           {
-            urlPattern: /^\/oc\/.*/i,
+            // アプリ本体のJS/CSS/画像（/js/alpha/配下）
+            urlPattern: /^.*\/js\/alpha\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'alpha-assets',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /^.*\/alpha-api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /^.*\/oc\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'oc-api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 // 1時間
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           }
         ]

@@ -14,6 +14,16 @@
 
     <link rel="stylesheet" href="<?php echo fileUrl('js/alpha/index.css', urlRoot: '') ?>">
     <script defer="defer" src="<?php echo fileUrl('js/alpha/index.js', urlRoot: '') ?>"></script>
+
+    <!-- PWA: Service Worker を /alpha スコープで登録（sw.js は Service-Worker-Allowed: / 配信） -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/js/alpha/sw.js', { scope: '/alpha' })
+                    .catch(function (e) { console.error('SW registration failed', e) })
+            })
+        }
+    </script>
 </head>
 
 <body>
