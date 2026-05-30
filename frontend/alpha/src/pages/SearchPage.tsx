@@ -51,7 +51,6 @@ const SearchPage = memo(() => {
     setSize,
     isLoading,
     isValidating,
-    mutate: _mutate,
   } = useSWRInfinite<SearchResponse>(
     getKey,
     ([, keyword, sortType, sortOrder, page, limit]) =>

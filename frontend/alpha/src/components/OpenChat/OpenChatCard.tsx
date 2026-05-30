@@ -68,7 +68,7 @@ const truncateAroundKeyword = (text: string, keyword: string, maxLength: number 
   }
 
   // キーワードを分割（全角・半角スペース対応）
-  const keywords = keyword.split(/[\s　]+/).filter(k => k.length > 0)
+  const keywords = keyword.split(/[\s\u3000]+/).filter(k => k.length > 0)
   let firstMatchIndex = -1
   let matchedKeywordLength = 0
 
@@ -89,8 +89,8 @@ const truncateAroundKeyword = (text: string, keyword: string, maxLength: number 
 
   // キーワードの前後に15文字ずつ余裕を持たせる
   const margin = 15
-  let start = Math.max(0, firstMatchIndex - margin)
-  let end = Math.min(text.length, firstMatchIndex + matchedKeywordLength + margin)
+  const start = Math.max(0, firstMatchIndex - margin)
+  const end = Math.min(text.length, firstMatchIndex + matchedKeywordLength + margin)
 
   const prefix = start > 0 ? '...' : ''
   const suffix = end < text.length ? '...' : ''
@@ -105,7 +105,7 @@ const highlightText = (text: string, keyword: string): React.ReactElement => {
   }
 
   // キーワードを分割（全角・半角スペース対応）
-  const keywords = keyword.split(/[\s　]+/).filter(k => k.length > 0)
+  const keywords = keyword.split(/[\s\u3000]+/).filter(k => k.length > 0)
 
   // 正規表現のメタ文字をエスケープ
   const escapedKeywords = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
@@ -197,7 +197,7 @@ export const OpenChatCard = memo(({
     hasMovedRef.current = false
   }
 
-  const handleTouchStart = (_e: React.TouchEvent) => {
+  const handleTouchStart = () => {
     if (selectionMode || !onEnterSelectionMode) return
 
     setIsPressing(true)
