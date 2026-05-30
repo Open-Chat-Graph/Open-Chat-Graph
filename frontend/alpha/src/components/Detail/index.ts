@@ -1,0 +1,5 @@
+export { DetailHeader } from './DetailHeader'
+export { DetailInfo } from './DetailInfo'
+export { DetailStats } from './DetailStats'
+export { DetailActions } from './DetailActions'
+export { RankingHistory } from './RankingHistory'

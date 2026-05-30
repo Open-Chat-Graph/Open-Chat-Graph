@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* shadcn/ui standard dark mode - Slate theme */
+    --background: 222.2 84% 4.9%;      /* #020817 - Very dark blue-black */
+    --foreground: 210 40% 98%;         /* #f8fafc - Almost white */
+    --card: 222.2 84% 4.9%;            /* #020817 - Match background */
+    --card-foreground: 210 40% 98%;    /* #f8fafc - Almost white */
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;      /* #4c8bf5 - Bright blue */
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215.4 16.3% 33.3%;       /* #475569 - slate-600, matches graph grid */
+    --input: 215.4 16.3% 33.3%;        /* #475569 - Match border */
+    --ring: 215.4 16.3% 46%;           /* #64748b - slate-500, toned down focus ring */
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* スクロールバーをコンテンツに被せる（レイアウトシフト防止） */
+  html {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    width: 100vw;
+    overscroll-behavior: none; /* pull-to-refresh無効化 */
+  }
+
+  body {
+    overflow-y: overlay; /* 非標準だがChromiumで動作する可能性 */
+    width: 100%;
+    overscroll-behavior: none; /* pull-to-refresh無効化 */
+  }
+}
+
+/* Preact Graph Styles */
+.chart-canvas-box {
+  aspect-ratio: 1.8 / 1;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+
+.chart-canvas-box canvas {
+  overflow: hidden;
+}
+
+#chart-preact-canvas {
+  aspect-ratio: 1.8 / 1;
+}
+
+@media screen and (max-width: 511px) {
+  .chart-canvas-box {
+    aspect-ratio: 1.4 / 1;
+  }
+
+  #chart-preact-canvas {
+    aspect-ratio: 1.4 / 1;
+  }
+}
+
+@media screen and (max-width: 359px) {
+  .chart-canvas-box {
+    margin: 0 -0.75rem;
+    width: calc(100% + 1.5rem);
+    aspect-ratio: 1.2 / 1;
+  }
+
+  #chart-preact-canvas {
+    aspect-ratio: 1.2 / 1;
+  }
+
+  .limit-btns .MuiTab-fullWidth {
+    font-size: 13px;
+  }
+}
+
+.limit-btns {
+  margin-bottom: 8px;
+}
+
+/* MUI Tabs カスタムスタイル（Preactグラフ用） */
+.MuiTabs-scroller.MuiTabs-scrollableY {
+  overscroll-behavior: none;
+}
+
+.MuiTabs-root.category-tab {
+  border-color: #efefef;
+  min-height: 39px;
+}
+
+.category-tab .MuiTab-root.MuiTab-textColorPrimary {
+  font-weight: 700;
+  color: #aaa;
+  min-height: 39px;
+  padding: 0 16px;
+}
+
+/* Preactグラフのタブ専用スタイル */
+.limit-btns.category-tab .MuiTab-root.MuiTab-textColorPrimary {
+  min-width: 0;
+  padding: 0;
+  min-height: 48px;
+}
+
+.category-tab .MuiButtonBase-root.Mui-selected {
+  font-weight: 700;
+  color: #111;
+}
+
+.category-tab .MuiTabs-indicator {
+  background-color: #111;
+}
+
+/* ダークモード対応 */
+.dark .MuiTabs-root.category-tab {
+  border-color: #475569; /* slate-600 */
+}
+
+.dark .category-tab .MuiTab-root.MuiTab-textColorPrimary {
+  color: #cbd5e1; /* slate-300 - 明るいグレー */
+}
+
+.dark .category-tab .MuiButtonBase-root.Mui-selected {
+  color: #ffffff; /* 純白 */
+}
+
+.dark .category-tab .MuiTabs-indicator {
+  background-color: #7dd3fc; /* sky-300 - 明るい青 */
+}
+
+/* 超細オーバーレイ風スクロールバー */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) transparent;
+}
+
+.dark * {
+  scrollbar-color: hsl(217.2 32.6% 25%) transparent;
+}
+
+/* Chrome, Edge, Safari - 4pxの極細スクロールバー */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(217.2 32.6% 25%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(217.2 32.6% 35%);
+}
