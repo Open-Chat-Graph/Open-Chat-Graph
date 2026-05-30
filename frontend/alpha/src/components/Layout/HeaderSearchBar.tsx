@@ -18,6 +18,7 @@ import {
 import { SORT_METRICS, sortMetricLabel } from '@/lib/sort-options'
 import { CATEGORIES } from '@/lib/categories'
 import { useLayout } from '@/contexts/layout-context'
+import { SavedSearchControls } from './SavedSearchControls'
 
 const SEARCH_PLACEHOLDER = 'キーワードを入力...'
 
@@ -145,6 +146,9 @@ export function HeaderSearchBar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* 検索条件の保存・呼び出し */}
+        <SavedSearchControls />
       </div>
 
       {/* カテゴリ絞り込み（キーワード欄付近） */}

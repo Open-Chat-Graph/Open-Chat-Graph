@@ -32,3 +32,7 @@ export const CATEGORIES: CategoryOption[] = [
   { id: 29, name: '本' },
   { id: 30, name: '映画・舞台' },
 ]
+
+/** カテゴリ id から名前を引く。0 や不明な id は「すべて」。 */
+export const categoryName = (id: number): string =>
+  CATEGORIES.find((c) => c.id === id)?.name ?? 'すべて'
