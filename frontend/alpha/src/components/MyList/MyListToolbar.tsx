@@ -9,20 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Folder } from '@/types/storage'
 import type { MyListSortType, SortOrder } from '@/services/storage'
-
-// 統合ソートオプション（タイプ×順序の全組み合わせ）
-const UNIFIED_SORT_OPTIONS = [
-  { value: 'member', order: 'desc' as SortOrder, label: '人数降順' },
-  { value: 'member', order: 'asc' as SortOrder, label: '人数昇順' },
-  { value: 'created_at', order: 'desc' as SortOrder, label: '作成日順降順' },
-  { value: 'created_at', order: 'asc' as SortOrder, label: '作成日順昇順' },
-  { value: 'hourly_diff', order: 'desc' as SortOrder, label: '1時間増減降順' },
-  { value: 'hourly_diff', order: 'asc' as SortOrder, label: '1時間増減昇順' },
-  { value: 'diff_24h', order: 'desc' as SortOrder, label: '24時間増減降順' },
-  { value: 'diff_24h', order: 'asc' as SortOrder, label: '24時間増減昇順' },
-  { value: 'diff_1w', order: 'desc' as SortOrder, label: '1週間増減降順' },
-  { value: 'diff_1w', order: 'asc' as SortOrder, label: '1週間増減昇順' },
-] as const
+import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
 
 interface MyListToolbarProps {
   currentFolderId: string | null

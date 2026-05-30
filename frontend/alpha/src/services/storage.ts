@@ -1,12 +1,14 @@
 import type { MyListData, Folder, ChatItem } from '@/types/storage'
 import { v4 as uuidv4 } from 'uuid'
+import { STORAGE_KEYS } from '@/lib/storage-keys'
+import type { SortType, SortOrder } from '@/lib/sort-options'
 
-const STORAGE_KEY = 'alpha_mylist'
-const SORT_SETTINGS_KEY = 'alpha_mylist_sort'
+const STORAGE_KEY = STORAGE_KEYS.myList
+const SORT_SETTINGS_KEY = STORAGE_KEYS.myListSort
 const CURRENT_VERSION = 1
 
-export type MyListSortType = 'member' | 'created_at' | 'hourly_diff' | 'diff_24h' | 'diff_1w'
-export type SortOrder = 'asc' | 'desc'
+export type MyListSortType = SortType
+export type { SortOrder }
 
 export interface MyListSortSettings {
   sortType: MyListSortType

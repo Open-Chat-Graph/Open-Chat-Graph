@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { getLastFolderId } from './useFolderNavigation'
+import { STORAGE_KEYS } from '@/lib/storage-keys'
 
 /**
  * ナビゲーションハンドラーフック
@@ -24,7 +25,7 @@ export function useNavigationHandler() {
       const searchQuery = searchParams.get('q') || ''
       if (searchQuery) {
         // すべてのクエリパラメータを保存
-        sessionStorage.setItem('searchPageQuery', searchParams.toString())
+        sessionStorage.setItem(STORAGE_KEYS.searchQuery, searchParams.toString())
       }
     }
   }, [location.pathname, searchParams])
@@ -45,7 +46,7 @@ export function useNavigationHandler() {
         navigate(-1)
       } else {
         // 履歴がない場合（直接アクセス）は検索ページに遷移
-        const savedParams = sessionStorage.getItem('searchPageQuery')
+        const savedParams = sessionStorage.getItem(STORAGE_KEYS.searchQuery)
         if (savedParams) {
           navigate(`/?${savedParams}`)
         } else {
@@ -56,13 +57,13 @@ export function useNavigationHandler() {
       // 検索ページで検索ボタン → 空の検索に戻る（再レンダリング）
       if (e) e.preventDefault()
       // sessionStorageもクリアして、次回の復元時に空の状態にする
-      sessionStorage.removeItem('searchPageQuery')
+      sessionStorage.removeItem(STORAGE_KEYS.searchQuery)
       navigate('/', { replace: true })
     } else {
       // 他のページから検索ボタン → 検索ページに遷移（クエリを復元）
       if (e) e.preventDefault()
       saveSearchQuery()
-      const savedParams = sessionStorage.getItem('searchPageQuery')
+      const savedParams = sessionStorage.getItem(STORAGE_KEYS.searchQuery)
       if (savedParams) {
         navigate(`/?${savedParams}`)
       } else {

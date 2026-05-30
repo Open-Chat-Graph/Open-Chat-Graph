@@ -8,12 +8,10 @@ import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
 import type { SearchResponse } from '@/types/api'
+import type { SortType, SortOrder } from '@/lib/sort-options'
+import { STORAGE_KEYS } from '@/lib/storage-keys'
 
 const LIMIT = 20
-
-// ソート種別の定義
-type SortType = 'member' | 'created_at' | 'hourly_diff' | 'diff_24h' | 'diff_1w'
-type SortOrder = 'asc' | 'desc'
 
 const SearchPage = memo(() => {
   const navigate = useNavigate()
@@ -111,7 +109,7 @@ const SearchPage = memo(() => {
   const handleCardClick = useCallback((chatId: number) => {
     // 検索クエリ（キーワード + ソート設定）をsessionStorageに保存してから詳細ページに遷移
     if (urlKeyword) {
-      sessionStorage.setItem('searchPageQuery', searchParams.toString())
+      sessionStorage.setItem(STORAGE_KEYS.searchQuery, searchParams.toString())
     }
 
     // リストから該当するデータを見つけてstateで渡す（DetailPageでのフェッチを避ける）

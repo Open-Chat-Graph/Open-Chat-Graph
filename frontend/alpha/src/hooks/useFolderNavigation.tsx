@@ -1,7 +1,8 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { STORAGE_KEYS } from '@/lib/storage-keys'
 
-const STORAGE_KEY = 'alpha_mylist_current_folder'
+const STORAGE_KEY = STORAGE_KEYS.myListCurrentFolder
 
 export interface UseFolderNavigationReturn {
   currentFolderId: string | null

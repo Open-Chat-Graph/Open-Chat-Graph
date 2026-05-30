@@ -4,7 +4,9 @@
  * 認証はまだ無いフェーズなので、サーバーに購読を持たず localStorage で完結させる。
  * 各ルームを最後に確認したときのメンバー数を覚えておき、それを上回ったら「未読の増加」とみなす。
  */
-const NOTIF_SEEN_KEY = 'alpha_notif_seen'
+import { STORAGE_KEYS } from '@/lib/storage-keys'
+
+const NOTIF_SEEN_KEY = STORAGE_KEYS.notifSeen
 
 /** chatId -> 最後に確認したときのメンバー数 */
 export type SeenMembers = Record<number, number>
