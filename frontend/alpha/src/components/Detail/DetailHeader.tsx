@@ -74,6 +74,8 @@ export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModa
       {/* Image Modal */}
       <Dialog open={imageModalOpen} onOpenChange={onImageModalOpenChange}>
         <DialogContent className="max-w-full w-full h-full p-0 bg-black/90 border-0">
+          {/* 画像モーダル内の閉じるボタン。z-50 は DialogContent(層=modal) 内のローカル重ね
+              （画像の上に出すだけ）でアプリ全体の重ね順トークンとは無関係。 */}
           <button
             onClick={() => onImageModalOpenChange(false)}
             className="absolute top-4 right-4 z-50 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"

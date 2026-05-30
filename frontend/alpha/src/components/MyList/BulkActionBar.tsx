@@ -80,7 +80,7 @@ export const BulkActionBarMobile = memo(({
   onExitSelectionMode,
 }: BulkActionBarProps) => {
   return (
-    <div className="md:hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-background border rounded-lg shadow-lg p-3 flex gap-3 z-50 max-w-[90vw]" data-testid="bulk-action-bar">
+    <div className="md:hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-background border rounded-lg shadow-lg p-3 flex gap-3 z-nav max-w-[90vw]" data-testid="bulk-action-bar">
       <Button
         variant="outline"
         size="sm"

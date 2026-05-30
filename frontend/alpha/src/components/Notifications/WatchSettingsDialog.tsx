@@ -125,7 +125,7 @@ export function WatchSettingsDialog({ open, onOpenChange }: WatchSettingsDialogP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto p-0">
-        <DialogHeader className="sticky top-0 z-10 border-b bg-background px-5 py-4">
+        <DialogHeader className="sticky top-0 z-subheader border-b bg-background px-5 py-4">
           <DialogTitle>ウォッチ条件の設定</DialogTitle>
           <DialogDescription>
             条件に合う部屋や増減があると、毎時のデータ更新後に通知でお知らせします。
@@ -312,7 +312,7 @@ export function WatchSettingsDialog({ open, onOpenChange }: WatchSettingsDialogP
           </div>
         )}
 
-        <div className="sticky bottom-0 z-10 flex items-center gap-3 border-t bg-background px-5 py-4">
+        <div className="sticky bottom-0 z-subheader flex items-center gap-3 border-t bg-background px-5 py-4">
           {saveError && (
             <span className="text-xs text-destructive">保存に失敗しました</span>
           )}

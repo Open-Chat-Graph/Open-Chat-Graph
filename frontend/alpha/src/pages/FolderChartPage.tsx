@@ -103,7 +103,7 @@ const FolderChartPage = memo(() => {
   return (
     <div className="-m-3 md:-m-6">
       {/* ヘッダ */}
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/90 px-2 py-2 backdrop-blur-sm">
+      <header className="sticky top-0 z-subheader flex items-center gap-2 border-b bg-background/90 px-2 py-2 backdrop-blur-sm">
         <button
           type="button"
           onClick={handleClose}

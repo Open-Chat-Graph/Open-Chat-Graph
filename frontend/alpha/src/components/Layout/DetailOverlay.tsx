@@ -19,7 +19,7 @@ export function DetailOverlay({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 bg-background pt-12">
+    <div className="fixed inset-0 z-overlay bg-background pt-12">
       <div
         ref={scrollRef}
         className="p-3 md:p-6 md:ml-[var(--main-offset-md)] lg:ml-[var(--main-offset-lg)] max-w-full md:max-w-[var(--content-w)] h-full overflow-y-auto overflow-x-hidden md:border-r"

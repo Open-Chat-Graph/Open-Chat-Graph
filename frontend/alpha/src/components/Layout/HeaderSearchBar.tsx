@@ -101,39 +101,41 @@ export function HeaderSearchBar() {
 
   return (
     <div className="border-t md:border-t-0 md:border-b bg-background px-3 py-2 md:px-4 space-y-2">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={SEARCH_PLACEHOLDER}
-            className="w-full h-10 pl-10 pr-12 rounded-md border border-input bg-background text-base"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => {
-              setTimeout(() => setIsFocused(false), 100)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                executeSearch()
-                e.currentTarget.blur()
-              }
-            }}
-          />
-          {value && (
-            <button
-              type="button"
-              onClick={() => setValue('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-accent w-8 h-8 flex items-center justify-center"
-              aria-label="クリア"
-            >
-              <XIcon className="h-5 w-5" />
-            </button>
-          )}
-        </div>
+      {/* 1行目: キーワード入力（常に全幅・潰さない） */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder={SEARCH_PLACEHOLDER}
+          className="w-full h-10 pl-10 pr-12 rounded-md border border-input bg-background text-base"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => {
+            setTimeout(() => setIsFocused(false), 100)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              executeSearch()
+              e.currentTarget.blur()
+            }
+          }}
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => setValue('')}
+            className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-accent w-8 h-8 flex items-center justify-center"
+            aria-label="クリア"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
 
+      {/* 2行目: 並び順・ソート軸・カテゴリ・見張り・保存 */}
+      <div className="flex items-center gap-2">
         {/* 昇順/降順トグル */}
         <Button
           variant="outline"
@@ -155,7 +157,7 @@ export function HeaderSearchBar() {
               <ChevronDown className="h-4 w-4 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44" data-testid="toolbar-sort-dropdown-content">
+          <DropdownMenuContent align="start" sideOffset={6} className="w-44" data-testid="toolbar-sort-dropdown-content">
             {SORT_METRICS.map((m) => (
               <DropdownMenuItem
                 key={m.value}
@@ -170,6 +172,23 @@ export function HeaderSearchBar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* カテゴリ絞り込み（残り幅を埋める。デスクトップは控えめに） */}
+        <Select
+          value={currentCategory}
+          onValueChange={(v) => updateParam((p) => (v === '0' ? p.delete('category') : p.set('category', v)))}
+        >
+          <SelectTrigger className="h-10 flex-1 min-w-0 md:max-w-[220px]" data-testid="toolbar-category-select">
+            <SelectValue placeholder="カテゴリ" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.id === 0 ? 'すべてのカテゴリ' : c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* このキーワードを見張る（検索中のキーワードがあるときだけ） */}
         {appliedKeyword && (
@@ -202,23 +221,6 @@ export function HeaderSearchBar() {
         {/* 検索条件の保存・呼び出し */}
         <SavedSearchControls />
       </div>
-
-      {/* カテゴリ絞り込み（キーワード欄付近） */}
-      <Select
-        value={currentCategory}
-        onValueChange={(v) => updateParam((p) => (v === '0' ? p.delete('category') : p.set('category', v)))}
-      >
-        <SelectTrigger className="h-9 w-full md:w-56" data-testid="toolbar-category-select">
-          <SelectValue placeholder="カテゴリ" />
-        </SelectTrigger>
-        <SelectContent>
-          {CATEGORIES.map((c) => (
-            <SelectItem key={c.id} value={String(c.id)}>
-              {c.id === 0 ? 'すべてのカテゴリ' : c.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   )
 }

@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* モバイルサイドバー背景（タップで閉じる） */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-[60] bg-black/50 lg:hidden"
+          className="fixed inset-0 z-header bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
          */}
         <aside
           className={cn(
-            "fixed inset-y-0 right-0 z-[70] w-64 transform bg-card border-l transition-transform duration-300 ease-in-out md:fixed md:translate-x-0 md:w-14 md:h-screen md:right-auto md:left-[var(--sidebar-left-md)] md:border-l-0 md:border-r lg:w-64 lg:left-[var(--sidebar-left-lg)]",
+            "fixed inset-y-0 right-0 z-sidebar w-64 transform bg-card border-l transition-transform duration-300 ease-in-out md:fixed md:translate-x-0 md:w-14 md:h-screen md:right-auto md:left-[var(--sidebar-left-md)] md:border-l-0 md:border-r lg:w-64 lg:left-[var(--sidebar-left-lg)]",
             sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
           )}
         >
@@ -167,7 +167,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
            * - モバイル: 画面全幅で固定、スクロールで非表示
            * - タブレット以上: サイドバー右側に固定 (left-14/left-64)、700px幅
            */}
-          <div className="fixed top-0 left-0 right-0 z-[60] bg-card border-b md:left-[var(--main-offset-md)] lg:left-[var(--main-offset-lg)] md:w-[var(--content-w)] md:border-r">
+          {/* アプリ固定ヘッダ（タイトル＋検索バー）。層=header(60)。
+              実高さは headerRef を ResizeObserver で測り --header-searchbar-h に反映し、
+              keep-aliveパネルはこの値を top に使う（決め打ち禁止）。 */}
+          <div ref={headerRef} className="fixed top-0 left-0 right-0 z-header bg-card border-b md:left-[var(--main-offset-md)] lg:left-[var(--main-offset-lg)] md:w-[var(--content-w)] md:border-r">
             {/* タイトルバー (h-12: 48px) */}
             <header className="flex h-12 items-center justify-between px-4 select-none">
               <div className="flex items-center gap-2 flex-1 min-w-0">

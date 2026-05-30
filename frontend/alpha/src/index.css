@@ -42,8 +42,22 @@
     --sidebar-left-lg: max(0px, calc((100vw - var(--shell-lg)) / 2));
     --main-offset-md: max(var(--sidebar-md), calc((100vw - var(--shell-md)) / 2 + var(--sidebar-md)));
     --main-offset-lg: max(var(--sidebar-lg), calc((100vw - var(--shell-lg)) / 2 + var(--sidebar-lg)));
-    --header-searchbar-h: calc(var(--header-h) + var(--searchbar-h)); /* 104px */
+    --header-searchbar-h: calc(var(--header-h) + var(--searchbar-h)); /* 初期値104px。実際は実測で上書き（下記） */
   }
+
+  /*
+   * ===== オフセット契約（重ね＋位置の意図。重ね順は tailwind.config.js の zIndex を参照）=====
+   * 固定ヘッダの上にコンテンツが潜らないための約束事。
+   *  - --header-searchbar-h: 検索ページの固定ヘッダ（タイトル48 + 検索バー）の高さ。
+   *      検索バーは行数が増減する（カテゴリ行・ウォッチ導線など）ので決め打ちしない。
+   *      DashboardLayout が headerRef を ResizeObserver で実測し、この変数を上書きする。
+   *      検索の keep-alive パネル（App.tsx）は top にこの変数を使う。
+   *  - タイトルのみのページ（mylist/通知/設定/period-growth）のパネルは top-12（=--header-h）。
+   *  - 全面オーバーレイ（Detail/FolderChart, 層=overlay 50）は固定ヘッダ(層=header 60)の“下”に潜る設計。
+   *      ヘッダに戻る/タイトルを出すため。よって overlay 側は pt-12 でヘッダ分を必ず空ける。
+   *  - --content-w / --main-offset-* : 中央カラム幅とサイドバー分の左オフセット。ヘッダ/パネル/オーバーレイで共通利用。
+   *  - --bottomnav-h : モバイル下部ナビ高。パネルの bottom 余白に使う。
+   */
 
   .dark {
     /* shadcn/ui standard dark mode - Slate theme */

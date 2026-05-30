@@ -32,10 +32,10 @@ export function RankingHistoryOverlay({ openChatId, onClose }: RankingHistoryOve
 
   const items = data?.data ?? []
 
-  // ルート(body)へポータル。詳細オーバーレイ(z-50)やサイドバー(z-70)より前面に出すため、
-  // ネスト先の stacking context に閉じ込めない。
+  // ルート(body)へポータル。層=modal(80) ＝ overlay(50)/sidebar(70) より前面。
+  // ネスト先の stacking context に閉じ込めないため body へ出す。
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex flex-col bg-background">
+    <div className="fixed inset-0 z-modal flex flex-col bg-background">
       {/* ヘッダー */}
       <header className="flex h-12 flex-shrink-0 items-center gap-2 border-b bg-card px-2 select-none">
         <button
