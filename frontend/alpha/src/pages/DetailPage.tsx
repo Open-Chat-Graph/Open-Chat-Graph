@@ -9,7 +9,7 @@ import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
 import { useLayout } from '@/contexts/layout-context'
-import type { BasicInfoResponse, OpenChat } from '@/types/api'
+import type { BasicInfoResponse, OpenChat, RankingHistoryResponse } from '@/types/api'
 
 const DetailPage = memo(() => {
   const { id } = useParams<{ id: string }>()
@@ -71,6 +71,15 @@ const DetailPage = memo(() => {
       keepPreviousData: false // IDが変わったら前のデータを保持しない
     }
   )
+
+  // ランキング掲載履歴の件数を先読み（オーバーレイと同一SWRキー＝開いた時はキャッシュ即ヒット）。
+  // 件数をボタンに出し、0件はグレーアウトするために必要。非ブロッキングに背後で取得。
+  const { data: historyData } = useSWR<RankingHistoryResponse>(
+    basicInfo?.id ? ['ranking-history', basicInfo.id] : null,
+    () => alphaApi.getRankingHistory(basicInfo!.id),
+    { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 }
+  )
+  const historyCount = historyData?.data.length // 取得中は undefined
 
   const handleAddToMyList = useCallback(() => {
     setFolderSelectOpen(true)
@@ -172,16 +181,32 @@ const DetailPage = memo(() => {
         {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
         <InsightsBlock openChatId={basicInfo.id} />
 
-        {/* ランキング掲載履歴: ボタンのみ。押すと上に重ねる個別画面を開きそこで初めてfetch */}
-        <button
-          type="button"
-          onClick={() => navigate(`/openchat/${basicInfo.id}/ranking-history`)}
-          className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
-        >
-          <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-          <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
-          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-        </button>
+        {/* ランキング掲載履歴: 件数を先読み表示。0件はグレーアウトして開けない。
+            1件以上なら「N件」を出し、押すと上に重ねる個別画面（キャッシュ即ヒット）を開く。 */}
+        {historyCount === 0 ? (
+          <div
+            className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left opacity-50"
+            aria-disabled="true"
+            data-testid="ranking-history-empty"
+          >
+            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-muted-foreground">ランキング掲載履歴</span>
+            <span className="text-xs tabular-nums text-muted-foreground">0件</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(`/openchat/${basicInfo.id}/ranking-history`)}
+            className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
+          >
+            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
+            {historyCount !== undefined && (
+              <span className="text-xs tabular-nums text-muted-foreground">{historyCount}件</span>
+            )}
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </button>
+        )}
       </div>
 
       <FolderSelectDialog
