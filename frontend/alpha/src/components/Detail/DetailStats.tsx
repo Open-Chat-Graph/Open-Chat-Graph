@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { BarChart3, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface DetailStatsProps {
@@ -65,57 +65,6 @@ const diffColor = (diff: number): string =>
 const fmtDiff = (diff: number): string =>
   `${diff > 0 ? '+' : diff === 0 ? '±' : ''}${diff.toLocaleString()}`
 
-// 本家「オプチャグラフの分析」相当のナラティブを手元データから組み立てる。
-// 新APIは増やさず、メンバー数・3指標・開設日・カテゴリ・掲載有無だけで文脈化する。
-const buildNarrative = (p: {
-  currentMember: number
-  diff24h: number | null
-  percent24h: number | null
-  diff1w: number | null
-  percent1w: number | null
-  categoryName?: string
-  registeredAt?: string
-  isInRanking: boolean
-}): string => {
-  const parts: string[] = []
-  const opened = toDate(p.registeredAt)
-  const has24h = p.diff24h !== null && p.diff24h !== undefined && p.diff24h !== 0
-  const has1w = p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0
-
-  // 勢いの一言（24時間→1週間の順で優先）。名詞止めで「〜のルーム。」に繋ぐ。
-  let usedWeekInMomentum = false
-  const momentum = (() => {
-    if (has24h) {
-      return `直近24時間で${fmtDiff(p.diff24h!)}人と${p.diff24h! > 0 ? '増加中' : '減少中'}`
-    }
-    if (has1w) {
-      usedWeekInMomentum = true
-      return `直近1週間で${fmtDiff(p.diff1w!)}人と${p.diff1w! > 0 ? '増加傾向' : '減少傾向'}`
-    }
-    return p.isInRanking ? '人数は横ばい' : '現在ランキングには非掲載'
-  })()
-  parts.push(`${momentum}のルーム。`)
-
-  parts.push(`現在 ${p.currentMember.toLocaleString()}人。`)
-
-  if (opened) {
-    const years = Math.floor((Date.now() - opened.getTime()) / (365.25 * 24 * 3600 * 1000))
-    const span = years >= 1 ? `運営${years}年` : '運営1年未満'
-    parts.push(`${opened.getFullYear()}年${opened.getMonth() + 1}月 開設、${span}。`)
-  }
-
-  if (p.categoryName) {
-    parts.push(`${p.categoryName} カテゴリのオープンチャット。`)
-  }
-
-  // 勢いで1週間を使っていなければ、補足として1週間の増減を出す（重複回避）
-  if (!usedWeekInMomentum && has1w && p.percent1w !== null && p.percent1w !== undefined) {
-    parts.push(`過去1週間で ${fmtDiff(p.diff1w!)}人 (${p.percent1w > 0 ? '+' : ''}${p.percent1w.toFixed(1)}%)。`)
-  }
-
-  return parts.join('')
-}
-
 export const DetailStats = memo(({
   currentMember,
   joinMethodType,
@@ -150,17 +99,6 @@ export const DetailStats = memo(({
       )}
     </div>
   )
-
-  const narrative = buildNarrative({
-    currentMember,
-    diff24h,
-    percent24h,
-    diff1w,
-    percent1w,
-    categoryName,
-    registeredAt,
-    isInRanking,
-  })
 
   return (
     <div className="max-w-[var(--content-w)] mx-auto space-y-3">
@@ -204,15 +142,6 @@ export const DetailStats = memo(({
             ランキング非掲載
           </Badge>
         )}
-      </div>
-
-      {/* オプチャグラフの分析（本家相当のナラティブ） */}
-      <div className="rounded-lg border bg-muted/30 px-3 py-2.5">
-        <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <BarChart3 className="h-3.5 w-3.5" />
-          オプチャグラフの分析
-        </div>
-        <p className="text-sm leading-relaxed break-words">{narrative}</p>
       </div>
     </div>
   )

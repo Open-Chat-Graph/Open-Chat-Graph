@@ -47,6 +47,25 @@ const sortMetricLabel = (sort?: string): string => {
   }
 }
 
+// 開設日(api_created_at)を YYYY/MM/DD に整形。作成日ソート時にカードへ出す。
+// api_created_at は実体が unix秒(number) で来る（型は string だが）。数値文字列・日時文字列も吸収。
+const formatOpenDate = (raw?: string | number | null): string | null => {
+  if (raw === undefined || raw === null || raw === '') return null
+  let d: Date
+  if (typeof raw === 'number' || /^\d+$/.test(String(raw))) {
+    const n = Number(raw)
+    d = new Date(n > 9999999999 ? n : n * 1000) // 10桁以下は秒とみなしてミリ秒へ
+  } else {
+    const s = String(raw)
+    d = new Date(s.includes('T') ? s : s.replace(' ', 'T'))
+  }
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+  }
+  const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[1]}/${m[2]}/${m[3]}` : null
+}
+
 // 増減値の色クラス
 const diffColorClass = (diff: number): string =>
   diff > 0
@@ -308,7 +327,11 @@ export const OpenChatCard = memo(({
               </>
             )}
 
-            {isNotInRanking ? (
+            {currentSort === 'created_at' && formatOpenDate(chat.registeredAt) ? (
+              <span className="ml-auto whitespace-nowrap">
+                <span className="text-muted-foreground">{formatOpenDate(chat.registeredAt)} 開設</span>
+              </span>
+            ) : isNotInRanking ? (
               <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-[11px] h-5 px-1.5 font-normal">
                 <AlertCircle className="h-3 w-3" />
                 非掲載
