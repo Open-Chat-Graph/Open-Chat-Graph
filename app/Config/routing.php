@@ -868,5 +868,14 @@ Route::path('alpha-api/insights/{open_chat_id}', [AlphaApiController::class, 'in
     ->matchNum('open_chat_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - 任意のN日増減検索
+Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth'])
+    ->matchStr('keyword', maxLen: 1000)
+    ->matchNum('category', min: 0, emptyAble: true, default: 0)
+    ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
+    ->matchStr('order', emptyAble: true, default: 'desc')
+    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 cache();
 Route::run();

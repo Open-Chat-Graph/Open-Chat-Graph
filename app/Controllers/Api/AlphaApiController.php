@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use App\Config\AppConfig;
 use App\Models\ApiRepositories\Alpha\AlphaOpenChatRepository;
+use App\Models\ApiRepositories\Alpha\AlphaPeriodGrowthRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
@@ -414,5 +415,90 @@ class AlphaApiController
         $result = $insightsService->generate($open_chat_id, $category);
 
         return response($result);
+    }
+
+    /**
+     * 任意のN日増減 検索API
+     * GET /alpha-api/period-growth?keyword=xxx&category=0&days=30&order=desc&limit=20
+     *
+     * キーワード(＋カテゴリ)一致のうち「N日前と現在のどちらにも統計がある」
+     * ルームに絞り、その期間のメンバー増減でソートして返す。
+     */
+    function periodGrowth(AlphaPeriodGrowthRepository $repo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        // キーワードは必須
+        $keyword = Validator::str(Reception::input('keyword', ''), maxLen: 1000, e: $error);
+        if (trim($keyword) === '') {
+            throw new BadRequestException('keyword parameter is required');
+        }
+
+        $category = (int)Validator::str(
+            (string)Reception::input('category', '0'),
+            regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
+            e: $error
+        );
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+        $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
+        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+
+        $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, (int)$limit);
+
+        $data = [];
+        foreach ($result['data'] as $row) {
+            $item = $row['candidate'];
+
+            // URLをLINE形式に変換（search/batchStats と同じロジック）
+            $lineUrl = '';
+            if (!empty($item['url'])) {
+                if (strpos($item['url'], 'http') === 0) {
+                    $lineUrl = $item['url'];
+                } else {
+                    $hash = trim($item['url'], '/');
+                    if (!empty($hash)) {
+                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
+                    }
+                }
+            }
+
+            $data[] = [
+                'id' => (int)$item['id'],
+                'name' => $item['name'],
+                'desc' => $item['description'] ?? '',
+                // 現在のメンバー数（open_chat の最新値）
+                'member' => (int)$item['member'],
+                'img' => $item['img_url'] ?? '',
+                'emblem' => (int)$item['emblem'],
+                'category' => (int)$item['category'],
+                'categoryName' => $this->getCategoryName((int)$item['category']),
+                'join_method_type' => (int)$item['join_method_type'],
+
+                // N日増減（statistics: 基準日 − N日前）
+                'diff' => (int)$row['diff'],
+                'percent' => (float)$row['percent'],
+                'pastMember' => (int)$row['pastMember'],
+
+                // 比較に用いた実日付（要求日と最寄りの実データ日）
+                'pastDate' => $row['pastDateActual'],
+                'baseDate' => $row['baseDateActual'],
+
+                // 作成日と登録日
+                'createdAt' => !empty($item['created_at']) ? strtotime($item['created_at']) : null,
+                'registeredAt' => $item['api_created_at'] ?? '',
+
+                'url' => $lineUrl,
+            ];
+        }
+
+        return response([
+            'data' => $data,
+            'days' => $result['days'],
+            'totalMatched' => $result['totalMatched'],
+            // リスト全体の基準日/狙ったN日前日付（フロント表示用）
+            'baseDate' => $result['baseDate'],
+            'targetPastDate' => $result['pastDate'],
+        ]);
     }
 }
