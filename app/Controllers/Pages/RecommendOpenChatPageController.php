@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\Repositories\Recommend\RecommendGrowthRepository;
+use App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface;
 use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
@@ -17,7 +17,8 @@ use Shared\MimimalCmsConfig;
 class RecommendOpenChatPageController
 {
     function __construct(
-        private PageBreadcrumbsListSchema $breadcrumbsShema
+        private PageBreadcrumbsListSchema $breadcrumbsShema,
+        private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
     function index(
@@ -112,7 +113,12 @@ class RecommendOpenChatPageController
 
         // テーマの勢い: rank/rising は ranking_position.db(ロケール別)、
         // member(合計人数)は statistics.db(ロケール別)から集計。ja/tw/th 全ロケール対応。
-        $growth = RecommendGrowthRepository::themeMomentum(array_column($recommend->getList(false, null), 'id'));
+        // 集計窓の起点は現在時刻ではなく最終 cron 時刻($hourlyUpdatedAt)を渡す。クロール遅延や
+        // ローカルの古いデータでも窓が実データに乗るようにするため(時刻取得はこの利用元の責務)。
+        $growth = $this->recommendGrowthRepository->themeMomentum(
+            array_column($recommend->getList(false, null), 'id'),
+            $hourlyUpdatedAt
+        );
 
         return view('recommend_content', compact(
             '_meta',

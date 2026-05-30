@@ -48,6 +48,7 @@ class MimimalCmsConfig
 
         \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface::class => \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository::class,
         \App\Models\Repositories\SimilarSizeRoomRepositoryInterface::class => \App\Models\Repositories\SimilarSizeRoomRepository::class,
+        \App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface::class => \App\Models\Repositories\Recommend\RecommendGrowthRepository::class,
 
         \App\Models\CommentRepositories\CommentListRepositoryInterface::class => \App\Models\CommentRepositories\CommentListRepository::class,
         \App\Models\CommentRepositories\CommentLogRepositoryInterface::class => \App\Models\CommentRepositories\CommentLogRepository::class,
