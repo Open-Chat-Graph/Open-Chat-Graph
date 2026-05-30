@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { History, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, RankingHistoryOverlay } from '@/components/Detail'
+import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, InsightsBlock, RankingHistoryOverlay } from '@/components/Detail'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
@@ -168,6 +168,9 @@ const DetailPage = memo(() => {
           onAddToMyList={handleAddToMyList}
           onRemoveFromMyList={handleRemoveFromMyList}
         />
+
+        {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
+        <InsightsBlock openChatId={basicInfo.id} />
 
         {/* ランキング掲載履歴: ボタンのみ。押すと上に重ねる個別画面を開きそこで初めてfetch */}
         <button
