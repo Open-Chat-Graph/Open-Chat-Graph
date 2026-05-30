@@ -24,6 +24,7 @@
 declare(strict_types=1);
 
 use App\Models\Repositories\Recommend\RecommendGrowthRepository;
+use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
 
 class RecommendGrowthRepositoryTest extends TestCase
@@ -34,13 +35,29 @@ class RecommendGrowthRepositoryTest extends TestCase
      */
     private const STABLE_IDS = [3, 17, 18, 19, 20];
 
+    /**
+     * 集計窓の起点。本番(コントローラ)と同じく最終 cron 時刻を使い、現在時刻には依存させない。
+     * これによりローカルの古いデータでもテストの不変条件が安定して成立する。
+     */
+    private \DateTime $anchor;
+
+    private RecommendGrowthRepository $repo;
+
+    protected function setUp(): void
+    {
+        $this->anchor = new \DateTime(
+            app(FileStorageInterface::class)->getContents('@hourlyCronUpdatedAtDatetime')
+        );
+        $this->repo = new RecommendGrowthRepository();
+    }
+
     // ===================================================
     // themeMomentum: 空・無効 ID
     // ===================================================
 
     public function test_themeMomentum_returns_empty_array_for_empty_ids(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum([]);
+        $result = $this->repo->themeMomentum([], $this->anchor);
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
@@ -48,7 +65,7 @@ class RecommendGrowthRepositoryTest extends TestCase
     public function test_themeMomentum_returns_empty_array_for_nonexistent_ids(): void
     {
         // 絶対に存在しない ID (int_max 付近)
-        $result = RecommendGrowthRepository::themeMomentum([PHP_INT_MAX - 1, PHP_INT_MAX - 2, PHP_INT_MAX - 3]);
+        $result = $this->repo->themeMomentum([PHP_INT_MAX - 1, PHP_INT_MAX - 2, PHP_INT_MAX - 3], $this->anchor);
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
@@ -57,7 +74,7 @@ class RecommendGrowthRepositoryTest extends TestCase
     {
         // 1件のみ → rank も member も成立しない可能性が高い → 空
         // (空ではない場合も shape チェックだけ行う)
-        $result = RecommendGrowthRepository::themeMomentum([3]);
+        $result = $this->repo->themeMomentum([3], $this->anchor);
         $this->assertIsArray($result);
         // 空でも非空でも落ちない: 非空なら shape を確認する
         if (!empty($result)) {
@@ -71,7 +88,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_returns_correct_top_level_keys(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -83,7 +100,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_rank_has_correct_keys(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -96,7 +113,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_member_has_correct_keys(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -113,7 +130,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_spanDays_is_int(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -124,7 +141,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_rank_current_and_first_are_ints(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -135,7 +152,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_leaderId_is_int(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -145,7 +162,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_member_increase_and_rooms_are_ints(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -161,7 +178,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_rank_points_are_date_ascending(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result) || empty($result['rank']['points'])) {
             $this->markTestSkipped('rank.points が空のためスキップ');
         }
@@ -175,7 +192,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_rank_points_have_correct_shape(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result) || empty($result['rank']['points'])) {
             $this->markTestSkipped('rank.points が空のためスキップ');
         }
@@ -194,7 +211,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_member_points_have_correct_shape(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 21);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result) || empty($result['member']['points'])) {
             $this->markTestSkipped('member.points が空のためスキップ');
         }
@@ -211,7 +228,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_member_points_are_date_ascending(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 21);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result) || empty($result['member']['points'])) {
             $this->markTestSkipped('member.points が空のためスキップ');
         }
@@ -229,7 +246,7 @@ class RecommendGrowthRepositoryTest extends TestCase
     public function test_themeMomentum_leaderId_is_in_input_ids_when_positive(): void
     {
         $ids = self::STABLE_IDS;
-        $result = RecommendGrowthRepository::themeMomentum($ids, 7);
+        $result = $this->repo->themeMomentum($ids, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -253,7 +270,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_spanDays_is_consistent_with_points(): void
     {
-        $result = RecommendGrowthRepository::themeMomentum(self::STABLE_IDS, 7);
+        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
         if (empty($result)) {
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
@@ -273,7 +290,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_returns_empty_for_zero_ids(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth([]);
+        $result = $this->repo->themeGrowth([], $this->anchor);
         $this->assertIsArray($result);
         $this->assertArrayHasKey('points', $result);
         $this->assertArrayHasKey('rooms', $result);
@@ -283,21 +300,21 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_returns_empty_for_one_id(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth([3]);
+        $result = $this->repo->themeGrowth([3], $this->anchor);
         $this->assertEmpty($result['points']);
         $this->assertSame(0, $result['rooms']);
     }
 
     public function test_themeGrowth_returns_empty_for_two_ids(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth([3, 17]);
+        $result = $this->repo->themeGrowth([3, 17], $this->anchor);
         $this->assertEmpty($result['points']);
         $this->assertSame(0, $result['rooms']);
     }
 
     public function test_themeGrowth_returns_data_for_five_ids(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, 21);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
         // データがある場合は shape を確認(データがなければ empty shape も正常)
         $this->assertArrayHasKey('points', $result);
         $this->assertArrayHasKey('rooms', $result);
@@ -308,7 +325,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_rooms_matches_cohort_count(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, 21);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result['points'])) {
             $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
         }
@@ -321,7 +338,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_nonexistent_ids_return_empty(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth([PHP_INT_MAX - 1, PHP_INT_MAX - 2, PHP_INT_MAX - 3], 21);
+        $result = $this->repo->themeGrowth([PHP_INT_MAX - 1, PHP_INT_MAX - 2, PHP_INT_MAX - 3], $this->anchor, 21);
         $this->assertEmpty($result['points']);
         $this->assertSame(0, $result['rooms']);
     }
@@ -332,7 +349,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_points_are_date_ascending(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, 21);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result['points'])) {
             $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
         }
@@ -345,7 +362,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_points_values_are_ints(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, 21);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result['points'])) {
             $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
         }
@@ -358,7 +375,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeGrowth_points_dates_match_expected_format(): void
     {
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, 21);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
         if (empty($result['points'])) {
             $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
         }
@@ -371,7 +388,7 @@ class RecommendGrowthRepositoryTest extends TestCase
     public function test_themeGrowth_points_count_does_not_exceed_days(): void
     {
         $days = 14;
-        $result = RecommendGrowthRepository::themeGrowth(self::STABLE_IDS, $days);
+        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, $days);
         if (empty($result['points'])) {
             $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
         }
