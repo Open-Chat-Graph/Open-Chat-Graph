@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, Bell } from 'lucide-react'
@@ -23,6 +23,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
   const { pageTitle, detailTitle } = usePageTitle()
   const { unseenCount } = useGrowthNotifications()
+
+  // 固定ヘッダー（タイトルバー＋検索バー）の実高さを測って CSS 変数に反映する。
+  // 検索バーの行数が増減（カテゴリ行の追加など）してもコンテンツが潜らないようにする。
+  const headerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const apply = () => {
+      document.documentElement.style.setProperty('--header-searchbar-h', `${el.offsetHeight}px`)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [location.pathname])
 
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
   const navigation = useMemo(() => {

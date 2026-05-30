@@ -11,6 +11,7 @@ import DetailPage from './pages/DetailPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import PeriodGrowthPage from './pages/PeriodGrowthPage'
+import FolderChartPage from './pages/FolderChartPage'
 
 /**
  * 常駐（keep-alive）するベースページの定義。
@@ -95,9 +96,15 @@ function isDetailPage(pathname: string): boolean {
   return pathname.startsWith('/openchat/')
 }
 
+// /mylist/:folderId/chart … フォルダ統合グラフ（マイリストの上に被せるオーバーレイ）
+function isFolderChartPage(pathname: string): boolean {
+  return /^\/mylist\/[^/]+\/chart$/.test(pathname)
+}
+
 function AppContent() {
   const location = useLocation()
   const showDetail = isDetailPage(location.pathname)
+  const showFolderChart = isFolderChartPage(location.pathname)
 
   return (
     <LayoutProvider>
@@ -110,6 +117,13 @@ function AppContent() {
         {showDetail && (
           <DetailOverlay>
             <DetailPage />
+          </DetailOverlay>
+        )}
+
+        {/* フォルダ統合グラフもオーバーレイ（マイリストの上に被せる） */}
+        {showFolderChart && (
+          <DetailOverlay>
+            <FolderChartPage />
           </DetailOverlay>
         )}
       </DashboardLayout>
@@ -127,6 +141,7 @@ function App() {
         <Route path="/" element={<AppContent />} />
         <Route path="/mylist" element={<AppContent />} />
         <Route path="/mylist/:folderId" element={<AppContent />} />
+        <Route path="/mylist/:folderId/chart" element={<AppContent />} />
         <Route path="/settings" element={<AppContent />} />
         <Route path="/notifications" element={<AppContent />} />
         <Route path="/period-growth" element={<AppContent />} />
