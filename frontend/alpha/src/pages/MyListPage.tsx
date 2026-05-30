@@ -238,7 +238,7 @@ const MyListPage = memo(() => {
     <>
       {/* ツールバー - fixedで全幅表示 */}
       <div
-        className={`fixed top-12 left-0 right-0 z-10 bg-background border-b transition-transform duration-300 select-none md:left-[max(56px,calc((100vw-756px)/2+56px))] lg:left-[max(256px,calc((100vw-956px)/2+256px))] md:w-[700px] md:border-r ${
+        className={`fixed top-12 left-0 right-0 z-10 bg-background border-b transition-transform duration-300 select-none md:left-[var(--main-offset-md)] lg:left-[var(--main-offset-lg)] md:w-[var(--content-w)] md:border-r ${
           scrollDirection === 'down' ? '-translate-y-full' : 'translate-y-0'
         }`}
       >

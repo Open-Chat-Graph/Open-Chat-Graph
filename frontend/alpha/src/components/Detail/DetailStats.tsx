@@ -71,7 +71,7 @@ export const DetailStats = memo(({
   const isNotInRanking = !isInRanking
 
   return (
-    <div className="max-w-[700px] mx-auto space-y-2">
+    <div className="max-w-[var(--content-w)] mx-auto space-y-2">
       {/* メンバー・入室タイプ・カテゴリ */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <div className="flex items-center gap-1.5">

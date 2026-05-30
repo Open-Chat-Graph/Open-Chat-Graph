@@ -24,6 +24,25 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /*
+     * レイアウト寸法の一元定義（旧コードはこれらの数値が App.tsx / DashboardLayout の
+     * Tailwind arbitrary value に直書き・重複していた）。ここを変えれば全体に反映される。
+     */
+    --content-w: 700px;        /* 中央カラム幅 */
+    --sidebar-md: 56px;        /* タブレット幅サイドバー (w-14) */
+    --sidebar-lg: 256px;       /* デスクトップ幅サイドバー (w-64) */
+    --header-h: 48px;          /* タイトルバー (h-12) */
+    --searchbar-h: 56px;       /* 検索バー */
+    --bottomnav-h: 49px;       /* モバイル下部ナビ */
+    /* 派生値（シェル幅・中央寄せオフセット） */
+    --shell-md: calc(var(--content-w) + var(--sidebar-md));   /* 756px */
+    --shell-lg: calc(var(--content-w) + var(--sidebar-lg));   /* 956px */
+    --sidebar-left-md: max(0px, calc((100vw - var(--shell-md)) / 2));
+    --sidebar-left-lg: max(0px, calc((100vw - var(--shell-lg)) / 2));
+    --main-offset-md: max(var(--sidebar-md), calc((100vw - var(--shell-md)) / 2 + var(--sidebar-md)));
+    --main-offset-lg: max(var(--sidebar-lg), calc((100vw - var(--shell-lg)) / 2 + var(--sidebar-lg)));
+    --header-searchbar-h: calc(var(--header-h) + var(--searchbar-h)); /* 104px */
   }
 
   .dark {

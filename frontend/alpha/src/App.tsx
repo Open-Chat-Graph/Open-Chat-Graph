@@ -72,7 +72,7 @@ function AppContent() {
             overflowX: 'hidden',
             scrollbarGutter: 'stable'
           }}
-          className="top-[104px] bottom-[49px] md:bottom-0 p-3 md:p-6"
+          className="top-[var(--header-searchbar-h)] bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
         >
           <div className="space-y-6">
             <SearchPage />
@@ -88,7 +88,7 @@ function AppContent() {
             left: 0,
             right: 0,
           }}
-          className="top-12 bottom-[49px] md:bottom-0"
+          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0"
         >
           <MyListPage />
         </div>
@@ -105,7 +105,7 @@ function AppContent() {
             overflowX: 'hidden',
             scrollbarGutter: 'stable'
           }}
-          className="top-12 bottom-[49px] md:bottom-0 p-3 md:p-6"
+          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
         >
           <div className="space-y-6">
             <SettingsPage />
@@ -126,7 +126,7 @@ function AppContent() {
         >
           <div
             ref={overlayRef}
-            className="p-3 md:p-6 md:ml-[max(56px,calc((100vw-756px)/2+56px))] lg:ml-[max(256px,calc((100vw-956px)/2+256px))] max-w-full md:max-w-[700px] h-full overflow-y-auto overflow-x-hidden md:border-r"
+            className="p-3 md:p-6 md:ml-[var(--main-offset-md)] lg:ml-[var(--main-offset-lg)] max-w-full md:max-w-[var(--content-w)] h-full overflow-y-auto overflow-x-hidden md:border-r"
             style={{ scrollbarGutter: 'stable' }}
           >
             <DetailPage />

@@ -11,7 +11,7 @@ interface DetailActionsProps {
 
 export const DetailActions = memo(({ url, isInList, onAddToMyList, onRemoveFromMyList }: DetailActionsProps) => {
   return (
-    <div className="max-w-[700px] mx-auto flex justify-center gap-3 flex-wrap pb-4">
+    <div className="max-w-[var(--content-w)] mx-auto flex justify-center gap-3 flex-wrap pb-4">
       {url && (
         <Button
           variant="default"

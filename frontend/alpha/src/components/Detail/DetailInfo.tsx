@@ -21,7 +21,7 @@ export const DetailInfo = memo(({ name, emblem, description }: DetailInfoProps) 
   }, [description])
 
   return (
-    <div className="max-w-[700px] mx-auto space-y-4">
+    <div className="max-w-[var(--content-w)] mx-auto space-y-4">
       {/* Title and icons */}
       <div className="flex items-center gap-2">
         {emblem === 2 && (
