@@ -126,7 +126,6 @@ const DetailPage = memo(() => {
     <div className="space-y-4">
       {/* 画像はマージンなし */}
       <DetailHeader
-        id={basicInfo.id}
         thumbnail={basicInfo.thumbnail}
         name={basicInfo.name}
         imageModalOpen={imageModalOpen}

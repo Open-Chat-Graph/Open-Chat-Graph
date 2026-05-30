@@ -8,20 +8,11 @@ interface DetailHeaderProps {
   name: string
   imageModalOpen: boolean
   onImageModalOpenChange: (open: boolean) => void
-  id: number
 }
 
-// 画像URLを生成
-const getThumbnailUrl = (id: number, localImgUrl: string | undefined) => {
-  if (!localImgUrl) return undefined
-  return imgUrl(id, localImgUrl)
-}
-
-// 画像URLを生成
-const getThumbnailPreviewUrl = (id: number, localImgUrl: string | undefined) => {
-  if (!localImgUrl) return undefined
-  return imgPreviewUrl(id, localImgUrl)
-}
+// 画像URLを生成（空文字なら undefined にして未表示にする）
+const getThumbnailUrl = (localImgUrl: string | undefined) => imgUrl(localImgUrl) || undefined
+const getThumbnailPreviewUrl = (localImgUrl: string | undefined) => imgPreviewUrl(localImgUrl) || undefined
 
 type ProgressiveImageProps = {
   src: string
@@ -54,9 +45,9 @@ const ProgressiveImage = memo(({ src, previewSrc, alt, className }: ProgressiveI
 
 ProgressiveImage.displayName = 'ProgressiveImage'
 
-export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModalOpenChange, id }: DetailHeaderProps) => {
-  const thumbnailUrl = getThumbnailUrl(id, thumbnail)
-  const thumbnailPreviewUrl = getThumbnailPreviewUrl(id, thumbnail)
+export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModalOpenChange }: DetailHeaderProps) => {
+  const thumbnailUrl = getThumbnailUrl(thumbnail)
+  const thumbnailPreviewUrl = getThumbnailPreviewUrl(thumbnail)
 
   return (
     <>

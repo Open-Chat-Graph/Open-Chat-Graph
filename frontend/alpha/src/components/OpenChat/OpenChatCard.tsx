@@ -260,7 +260,7 @@ export const OpenChatCard = memo(({
             )}
             {chat.img && (
               <img
-                src={imgPreviewUrl(chat.id, chat.img)}
+                src={imgPreviewUrl(chat.img)}
                 alt={chat.name}
                 className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover flex-shrink-0"
               />

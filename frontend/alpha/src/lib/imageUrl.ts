@@ -1,77 +1,27 @@
 /**
- * 画像URL生成ユーティリティ
- * PHPのimgUrl()とimgPreviewUrl()を移植
+ * オープンチャット画像のURL生成。
+ *
+ * サーバー(app/Helpers/functions.php の imgUrl()/imgPreviewUrl())に合わせ、
+ * LINE公式CDN(obs.line-scdn.net)を直接指す。API が返す `local_img_url` は
+ * OBS のハッシュ。すでに絶対URLならそのまま使う。
  */
+const LINE_IMG_URL = 'https://obs.line-scdn.net/'
+const LINE_IMG_PREVIEW_PATH = '/preview'
 
-// デフォルト画像のハッシュリスト
-const DEFAULT_OPENCHAT_IMG_URL_HASH = [
-  '2AtTNcODU67',
-  '3SXDWf2OXqcY',
-  '2pPOKy2ldZWl',
-  '3y6jWliwCg1',
-  '4DceVI1KwU1k',
-]
-
-// 画像パス（固定）
-const OPENCHAT_IMG_PATH = 'oc-img'
-const OPENCHAT_IMG_PREVIEW_PATH = 'preview'
-const OPENCHAT_IMG_PREVIEW_SUFFIX = '_p'
-
-/**
- * IDからサブディレクトリパスを生成
- * PHPのfilePathNumById()と同等
- */
-function getSubDir(id: number): string {
-  const thousands = Math.floor(id / 1000)
-  return `${thousands}`
+function isFullUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value)
 }
 
-/**
- * 画像パスを生成
- * PHPのgetImgPath()と同等
- */
-function getImgPath(id: number, imgUrl: string): string {
-  const subDir = getSubDir(id)
-  return `${OPENCHAT_IMG_PATH}/${subDir}/${imgUrl}.webp`
-}
-
-/**
- * プレビュー画像パスを生成
- * PHPのgetImgPreviewPath()と同等
- */
-function getImgPreviewPath(id: number, imgUrl: string): string {
-  const subDir = getSubDir(id)
-  return `${OPENCHAT_IMG_PATH}/${OPENCHAT_IMG_PREVIEW_PATH}/${subDir}/${imgUrl}${OPENCHAT_IMG_PREVIEW_SUFFIX}.webp`
-}
-
-/**
- * 通常の画像URL を生成
- * PHPのimgUrl()と同等
- */
-export function imgUrl(id: number, localImgUrl: string): string {
+/** 通常画像URL */
+export function imgUrl(localImgUrl: string | undefined | null): string {
   if (!localImgUrl) return ''
-
-  const basePath = 'https://openchat-review.me/'
-
-  if (DEFAULT_OPENCHAT_IMG_URL_HASH.includes(localImgUrl)) {
-    return `${basePath}${OPENCHAT_IMG_PATH}/default/${localImgUrl}.webp?id=${id}`
-  }
-
-  return basePath + getImgPath(id, localImgUrl)
+  if (isFullUrl(localImgUrl)) return localImgUrl
+  return LINE_IMG_URL + localImgUrl
 }
 
-/**
- * プレビュー画像URLを生成
- * PHPのimgPreviewUrl()と同等
- */
-export function imgPreviewUrl(id: number, localImgUrl: string): string {
+/** プレビュー(軽量)画像URL */
+export function imgPreviewUrl(localImgUrl: string | undefined | null): string {
   if (!localImgUrl) return ''
-
-  const basePath = 'https://openchat-review.me/'
-
-  if (DEFAULT_OPENCHAT_IMG_URL_HASH.includes(localImgUrl)) {
-    return `${basePath}${OPENCHAT_IMG_PATH}/${OPENCHAT_IMG_PREVIEW_PATH}/default/${localImgUrl}${OPENCHAT_IMG_PREVIEW_SUFFIX}.webp?id=${id}`
-  }
-
-  return basePath + getImgPreviewPath(id, localImgUrl)
+  if (isFullUrl(localImgUrl)) return localImgUrl
+  return LINE_IMG_URL + localImgUrl + LINE_IMG_PREVIEW_PATH
 }
