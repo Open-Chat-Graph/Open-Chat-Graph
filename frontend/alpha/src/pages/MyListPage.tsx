@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, memo } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import useSWR from 'swr'
-import { ArrowLeft, CheckSquare, FolderPlus, ArrowUpDown, Check } from 'lucide-react'
+import { ArrowLeft, CheckSquare, FolderPlus, ArrowUpDown, Check, LineChart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -275,6 +275,21 @@ const MyListPage = memo(() => {
 
               {/* 通常のツールバー（常に表示、右側） */}
               <div className="flex items-center gap-2 ml-auto">
+                {/* 統合グラフ（フォルダ内かつ非選択モードのとき）。配下ルームの成長を1つに重ねる */}
+                {folderNav.currentFolderId && !selection.selectionMode &&
+                  myListData.items.some(item => item.folderId === folderNav.currentFolderId) && (
+                    <Button
+                      variant="outline"
+                      className="h-10 w-10 md:w-auto md:px-3"
+                      onClick={() => navigate(`/mylist/${folderNav.currentFolderId}/chart`)}
+                      data-testid="folder-chart-button"
+                      title="統合グラフ"
+                    >
+                      <LineChart className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">統合グラフ</span>
+                    </Button>
+                  )}
+
                 <Button
                   variant={selection.selectionMode ? 'default' : 'outline'}
                   className="h-10 w-10 md:w-auto md:px-3"

@@ -7,7 +7,7 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { HeaderSearchBar } from './HeaderSearchBar'
 import { cn } from '@/lib/utils'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
-import { useGrowthNotifications } from '@/hooks/useGrowthNotifications'
+import { useAlerts } from '@/hooks/useAlerts'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
 
@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [searchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
   const { pageTitle, detailTitle } = usePageTitle()
-  const { unseenCount } = useGrowthNotifications()
+  const { unreadCount } = useAlerts()
 
   // 固定ヘッダー（タイトルバー＋検索バー）の実高さを測って CSS 変数に反映する。
   // 検索バーの行数が増減（カテゴリ行の追加など）してもコンテンツが潜らないようにする。
@@ -44,10 +44,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return [
       { name: '検索', href: '/', icon: Search, badge: 0 },
       { name: 'マイリスト', href: '/mylist', icon: FolderOpen, badge: 0 },
-      { name: '通知', href: '/notifications', icon: Bell, badge: unseenCount },
+      { name: '通知', href: '/notifications', icon: Bell, badge: unreadCount },
       { name: '設定', href: '/settings', icon: Settings, badge: 0 },
     ]
-  }, [unseenCount])
+  }, [unreadCount])
 
   // 詳細ページ判定（戻るボタンを表示）
   const isDetailPage = location.pathname.startsWith('/openchat/')
