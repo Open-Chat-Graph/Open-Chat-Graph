@@ -863,5 +863,10 @@ Route::path('alpha-api/ranking-history/{open_chat_id}', [AlphaApiController::cla
     ->matchNum('open_chat_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - 高次の考察取得
+Route::path('alpha-api/insights/{open_chat_id}', [AlphaApiController::class, 'insights'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 cache();
 Route::run();

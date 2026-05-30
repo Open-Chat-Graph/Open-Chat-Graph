@@ -9,6 +9,7 @@ use App\Models\ApiRepositories\Alpha\AlphaOpenChatRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
+use App\Services\Alpha\AlphaInsightsService;
 use App\Models\Repositories\DB;
 use Shadow\Kernel\Reception;
 use Shadow\Kernel\Validator;
@@ -384,5 +385,34 @@ class AlphaApiController
         return response([
             'data' => $result,
         ]);
+    }
+
+    /**
+     * 高次の考察 取得API
+     * GET /alpha-api/insights/{open_chat_id}
+     *
+     * 既存の数値・グラフ・掲載履歴では一目で分からない高次の洞察だけを
+     * 構造化配列で返す。データ不足の洞察は配列に含めない（黙る）。
+     */
+    function insights(
+        AlphaStatsRepository $statsRepo,
+        AlphaInsightsService $insightsService,
+        int $open_chat_id
+    ) {
+        Reception::$isJson = true;
+
+        // カテゴリ取得（存在しないルームは 404）
+        $ocData = $statsRepo->findById($open_chat_id);
+        if (!$ocData) {
+            return response(['error' => 'OpenChat not found'], 404);
+        }
+
+        $category = isset($ocData['category']) && $ocData['category'] !== null
+            ? (int)$ocData['category']
+            : null;
+
+        $result = $insightsService->generate($open_chat_id, $category);
+
+        return response($result);
     }
 }
