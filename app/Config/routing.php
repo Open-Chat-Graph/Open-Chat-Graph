@@ -818,6 +818,9 @@ Route::path('alpha/mylist/{hash}', [AlphaPageController::class, 'index'])
 Route::path('alpha/settings', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+Route::path('alpha/notifications', [AlphaPageController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path('alpha/openchat/{id}', [AlphaPageController::class, 'index'])
     ->matchNum('id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');

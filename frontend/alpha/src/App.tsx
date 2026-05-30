@@ -6,6 +6,7 @@ import SearchPage from './pages/SearchPage'
 import MyListPage from './pages/MyListPage'
 import DetailPage from './pages/DetailPage'
 import SettingsPage from './pages/SettingsPage'
+import NotificationsPage from './pages/NotificationsPage'
 
 /**
  * 詳細ページかどうかを判定
@@ -96,6 +97,23 @@ function AppContent() {
         </div>
       </Activity>
 
+      {/* 通知ページ: タイトルバー(48px)のみ */}
+      <Activity mode={location.pathname === '/notifications' ? 'visible' : 'hidden'}>
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            scrollbarGutter: 'stable'
+          }}
+          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
+        >
+          <NotificationsPage />
+        </div>
+      </Activity>
+
       {/* 設定ページ: タイトルバー(48px)のみ */}
       <Activity mode={location.pathname === '/settings' ? 'visible' : 'hidden'}>
         <div
@@ -151,6 +169,7 @@ function App() {
         <Route path="/mylist" element={<AppContent />} />
         <Route path="/mylist/:folderId" element={<AppContent />} />
         <Route path="/settings" element={<AppContent />} />
+        <Route path="/notifications" element={<AppContent />} />
         <Route path="/openchat/:id" element={<AppContent />} />
         <Route path="*" element={<AppContent />} />
       </Routes>

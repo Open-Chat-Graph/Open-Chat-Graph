@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, ArrowUpDown, Check } from 'lucide-react'
+import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, ArrowUpDown, Check, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { cn } from '@/lib/utils'
 import { loadMyList } from '@/services/storage'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
+import { useGrowthNotifications } from '@/hooks/useGrowthNotifications'
 import { useLayout } from '@/contexts/layout-context'
 
 // 統合ソートオプション
@@ -43,15 +44,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
   const { detailTitle: ctxDetailTitle } = useLayout()
+  const { unseenCount } = useGrowthNotifications()
 
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
   const navigation = useMemo(() => {
     return [
-      { name: '検索', href: '/', icon: Search },
-      { name: 'マイリスト', href: '/mylist', icon: FolderOpen },
-      { name: '設定', href: '/settings', icon: Settings },
+      { name: '検索', href: '/', icon: Search, badge: 0 },
+      { name: 'マイリスト', href: '/mylist', icon: FolderOpen, badge: 0 },
+      { name: '通知', href: '/notifications', icon: Bell, badge: unseenCount },
+      { name: '設定', href: '/settings', icon: Settings, badge: 0 },
     ]
-  }, [])
+  }, [unseenCount])
 
   // 詳細ページ判定（戻るボタンを表示）
   const isDetailPage = location.pathname.startsWith('/openchat/')
@@ -116,6 +119,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
     if (location.pathname === '/settings') {
       return '設定'
+    }
+    if (location.pathname === '/notifications') {
+      return '通知'
     }
     if (location.pathname === '/') {
       const keyword = searchParams.get('q')
@@ -240,7 +246,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     }}
                     title={item.name}
                   >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="relative flex-shrink-0">
+                      <item.icon className="h-5 w-5" />
+                      {item.badge > 0 && (
+                        <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
+                    </span>
                     <span className="md:hidden lg:inline">{item.name}</span>
                   </Link>
                 )
