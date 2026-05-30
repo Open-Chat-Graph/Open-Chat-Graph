@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect, useRef, Activity } from 'react'
+import { Activity } from 'react'
+import type { ReactNode } from 'react'
 import { DashboardLayout } from './components/Layout'
 import { LayoutProvider } from './contexts/layout-context'
+import { DetailOverlay } from './components/Layout/DetailOverlay'
+import { cn } from './lib/utils'
 import SearchPage from './pages/SearchPage'
 import MyListPage from './pages/MyListPage'
 import DetailPage from './pages/DetailPage'
@@ -9,151 +12,99 @@ import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
 
 /**
- * 詳細ページかどうかを判定
+ * 常駐（keep-alive）するベースページの定義。
  *
- * 詳細ページのみがオーバーレイとして表示される。
- * 他のページ（検索、マイリスト、設定）は常にDOMに存在する。
- *
- * @param pathname - 現在のパス
- * @returns 詳細ページの場合true
+ * 検索/マイリスト/設定/通知は常に DOM に置き、React 19 の <Activity> で表示を切り替える。
+ * これによりタブを行き来してもスクロール位置や入力状態が保持される。
+ * 詳細ページだけは別扱いで、上に被せるオーバーレイとして都度マウントする。
  */
+interface KeepAlivePage {
+  key: string
+  isActive: (pathname: string) => boolean
+  element: ReactNode
+  /** ヘッダー(48px)＋検索バー(56px)の下から始めるか、タイトルバー(48px)の下からか */
+  top: 'header-and-searchbar' | 'title'
+  /** パネル自身がスクロールするか（false の場合はページ側でスクロール制御） */
+  scrollable: boolean
+}
+
+const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
+  {
+    key: 'search',
+    isActive: (p) => p === '/',
+    element: <SearchPage />,
+    top: 'header-and-searchbar',
+    scrollable: true,
+  },
+  {
+    key: 'mylist',
+    isActive: (p) => p === '/mylist' || p.startsWith('/mylist/'),
+    element: <MyListPage />,
+    top: 'title',
+    scrollable: false,
+  },
+  {
+    key: 'notifications',
+    isActive: (p) => p === '/notifications',
+    element: <NotificationsPage />,
+    top: 'title',
+    scrollable: true,
+  },
+  {
+    key: 'settings',
+    isActive: (p) => p === '/settings',
+    element: <SettingsPage />,
+    top: 'title',
+    scrollable: true,
+  },
+]
+
+function KeepAlivePanel({ page, active }: { page: KeepAlivePage; active: boolean }) {
+  return (
+    <Activity mode={active ? 'visible' : 'hidden'}>
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          ...(page.scrollable
+            ? { overflowY: 'auto', overflowX: 'hidden', scrollbarGutter: 'stable' }
+            : {}),
+        }}
+        className={cn(
+          page.top === 'header-and-searchbar' ? 'top-[var(--header-searchbar-h)]' : 'top-12',
+          'bottom-[var(--bottomnav-h)] md:bottom-0',
+          page.scrollable && 'p-3 md:p-6',
+        )}
+      >
+        {page.scrollable ? <div className="space-y-6">{page.element}</div> : page.element}
+      </div>
+    </Activity>
+  )
+}
+
 function isDetailPage(pathname: string): boolean {
   return pathname.startsWith('/openchat/')
 }
 
-/**
- * アプリケーションのメインコンテンツ
- *
- * アーキテクチャ:
- * - 検索、マイリスト、設定ページは常にDOMに存在し、React 19.2の<Activity />で表示切替
- * - <Activity />のmode='hidden'は自動的にdisplay:noneを設定し、副作用も自動制御
- * - これにより、スクロール位置やフォーム状態が自動的に保持される
- * - 詳細ページのみがオーバーレイとして動的に表示される
- * - 詳細ページは常に新しくマウントされ、スクロール位置は0から始まる
- */
 function AppContent() {
   const location = useLocation()
-  const showDetailOverlay = isDetailPage(location.pathname)
-  const overlayRef = useRef<HTMLDivElement>(null)
-
-  // 詳細ページのオーバーレイ表示時にbodyスクロールを無効化
-  useEffect(() => {
-    if (showDetailOverlay) {
-      document.body.style.overflow = 'hidden'
-      // オーバーレイを常に0からスタート
-      if (overlayRef.current) {
-        overlayRef.current.scrollTo(0, 0)
-      }
-    } else {
-      document.body.style.overflow = ''
-    }
-
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [showDetailOverlay])
+  const showDetail = isDetailPage(location.pathname)
 
   return (
     <LayoutProvider>
-    <DashboardLayout>
-      {/*
-        ベースページ（検索、マイリスト、設定）
-        - すべて常にDOMに存在し、<Activity />で表示切替（mode='visible'/'hidden'）
-        - 各ページは独自のスクロールコンテナを持つ（絶対配置）
-        - スクロール位置、入力値、フォーム状態などすべて自動的に保持される
-        - <Activity />が副作用（useEffect）の制御も自動で行う
-        - 復元ロジック不要のシンプルなアーキテクチャ
-      */}
-      {/* 検索ページ: タイトルバー(48px) + 検索バー(56px) */}
-      <Activity mode={location.pathname === '/' ? 'visible' : 'hidden'}>
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollbarGutter: 'stable'
-          }}
-          className="top-[var(--header-searchbar-h)] bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
-        >
-          <div className="space-y-6">
-            <SearchPage />
-          </div>
-        </div>
-      </Activity>
+      <DashboardLayout>
+        {KEEP_ALIVE_PAGES.map((page) => (
+          <KeepAlivePanel key={page.key} page={page} active={page.isActive(location.pathname)} />
+        ))}
 
-      {/* マイリストページ: タイトルバー(48px)のみ - スクロールなし（ページ内で制御） */}
-      <Activity mode={location.pathname === '/mylist' || location.pathname.startsWith('/mylist/') ? 'visible' : 'hidden'}>
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-          }}
-          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0"
-        >
-          <MyListPage />
-        </div>
-      </Activity>
-
-      {/* 通知ページ: タイトルバー(48px)のみ */}
-      <Activity mode={location.pathname === '/notifications' ? 'visible' : 'hidden'}>
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollbarGutter: 'stable'
-          }}
-          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
-        >
-          <NotificationsPage />
-        </div>
-      </Activity>
-
-      {/* 設定ページ: タイトルバー(48px)のみ */}
-      <Activity mode={location.pathname === '/settings' ? 'visible' : 'hidden'}>
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollbarGutter: 'stable'
-          }}
-          className="top-12 bottom-[var(--bottomnav-h)] md:bottom-0 p-3 md:p-6"
-        >
-          <div className="space-y-6">
-            <SettingsPage />
-          </div>
-        </div>
-      </Activity>
-
-      {/*
-        オーバーレイページ（詳細ページのみ）
-        - ベースページの上に重ねて表示
-        - fixed positioning で画面全体を覆う
-        - 常に新しくマウントされ、スクロール位置は0から始まる
-      */}
-      {showDetailOverlay && (
-        <div
-          className="fixed inset-0 z-50 bg-background pt-12 md:pt-12"
-          style={{ willChange: 'auto' }}
-        >
-          <div
-            ref={overlayRef}
-            className="p-3 md:p-6 md:ml-[var(--main-offset-md)] lg:ml-[var(--main-offset-lg)] max-w-full md:max-w-[var(--content-w)] h-full overflow-y-auto overflow-x-hidden md:border-r"
-            style={{ scrollbarGutter: 'stable' }}
-          >
+        {/* 詳細ページはベースページの上に被せるオーバーレイ（都度マウント） */}
+        {showDetail && (
+          <DetailOverlay>
             <DetailPage />
-          </div>
-        </div>
-      )}
-    </DashboardLayout>
+          </DetailOverlay>
+        )}
+      </DashboardLayout>
     </LayoutProvider>
   )
 }
