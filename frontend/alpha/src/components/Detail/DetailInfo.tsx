@@ -21,7 +21,7 @@ export const DetailInfo = memo(({ name, emblem, description }: DetailInfoProps) 
   }, [description])
 
   return (
-    <div className="max-w-[var(--content-w)] mx-auto space-y-4">
+    <div className="max-w-[var(--content-w)] mx-auto space-y-2">
       {/* Title and icons */}
       <div className="flex items-center gap-2">
         {emblem === 2 && (
@@ -30,17 +30,17 @@ export const DetailInfo = memo(({ name, emblem, description }: DetailInfoProps) 
         {emblem === 1 && (
           <SpecialIcon className="w-[21px] h-5 flex-shrink-0" />
         )}
-        <h1 className="text-xl sm:text-2xl font-bold break-words">
+        <h1 className="text-lg sm:text-xl font-bold break-words leading-snug">
           {name}
         </h1>
       </div>
 
-      {/* Description */}
+      {/* Description（本家相当：小さめ・行間詰め） */}
       {description && (
         <div>
           <p
             ref={descriptionRef}
-            className={`text-base text-muted-foreground leading-relaxed break-words whitespace-pre-line ${!descriptionExpanded ? 'line-clamp-4' : ''}`}
+            className={`text-sm text-muted-foreground leading-normal break-words whitespace-pre-line ${!descriptionExpanded ? 'line-clamp-3' : ''}`}
           >
             {description}
           </p>

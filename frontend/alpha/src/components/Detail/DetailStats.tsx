@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Users, Clock, Calendar, Tag, AlertCircle } from 'lucide-react'
+import { BarChart3, AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface DetailStatsProps {
@@ -34,21 +34,84 @@ const getJoinMethodLabel = (type: number) => {
   }
 }
 
-// タイムスタンプを日付文字列に変換
-const formatTimestamp = (timestamp: string | number): string => {
-  // 数値の場合
+// タイムスタンプ → Date（秒・ミリ秒・数値文字列を吸収）
+const toDate = (timestamp: string | number | null | undefined): Date | null => {
+  if (timestamp === null || timestamp === undefined || timestamp === '') return null
+  let ts: number
   if (typeof timestamp === 'number') {
-    const ms = timestamp > 9999999999 ? timestamp / 1000 : timestamp * 1000
-    return new Date(ms).toLocaleDateString('ja-JP')
+    ts = timestamp
+  } else if (/^\d+$/.test(timestamp)) {
+    ts = parseInt(timestamp)
+  } else {
+    const d = new Date(timestamp)
+    return isNaN(d.getTime()) ? null : d
   }
-  // 文字列で数値のみの場合
-  if (typeof timestamp === 'string' && timestamp.match(/^\d+$/)) {
-    const ts = parseInt(timestamp)
-    const ms = ts > 9999999999 ? ts / 1000 : ts * 1000
-    return new Date(ms).toLocaleDateString('ja-JP')
+  const ms = ts > 9999999999 ? ts : ts * 1000
+  const d = new Date(ms)
+  return isNaN(d.getTime()) ? null : d
+}
+
+const formatTimestamp = (timestamp: string | number): string =>
+  toDate(timestamp)?.toLocaleDateString('ja-JP') ?? String(timestamp)
+
+// 増減の色
+const diffColor = (diff: number): string =>
+  diff > 0
+    ? 'text-green-600 dark:text-green-500'
+    : diff < 0
+      ? 'text-red-600 dark:text-red-500'
+      : 'text-muted-foreground'
+
+// 「+1,234」形式
+const fmtDiff = (diff: number): string =>
+  `${diff > 0 ? '+' : diff === 0 ? '±' : ''}${diff.toLocaleString()}`
+
+// 本家「オプチャグラフの分析」相当のナラティブを手元データから組み立てる。
+// 新APIは増やさず、メンバー数・3指標・開設日・カテゴリ・掲載有無だけで文脈化する。
+const buildNarrative = (p: {
+  currentMember: number
+  diff24h: number | null
+  percent24h: number | null
+  diff1w: number | null
+  percent1w: number | null
+  categoryName?: string
+  registeredAt?: string
+  isInRanking: boolean
+}): string => {
+  const parts: string[] = []
+  const opened = toDate(p.registeredAt)
+
+  // 勢いの一言（24時間→1週間の順で優先）
+  const momentum = (() => {
+    if (p.diff24h !== null && p.diff24h !== undefined && p.diff24h !== 0) {
+      const dir = p.diff24h > 0 ? '増加中' : '減少中'
+      return `直近24時間で${fmtDiff(p.diff24h)}人と${dir}`
+    }
+    if (p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0) {
+      const dir = p.diff1w > 0 ? '伸びている' : '減っている'
+      return `直近1週間で${fmtDiff(p.diff1w)}人と${dir}`
+    }
+    return p.isInRanking ? '人数は横ばい' : '現在ランキングには非掲載'
+  })()
+  parts.push(`${momentum}のルーム。`)
+
+  parts.push(`現在 ${p.currentMember.toLocaleString()}人。`)
+
+  if (opened) {
+    const years = Math.floor((Date.now() - opened.getTime()) / (365.25 * 24 * 3600 * 1000))
+    const span = years >= 1 ? `運営${years}年` : '運営1年未満'
+    parts.push(`${opened.getFullYear()}年${opened.getMonth() + 1}月 開設、${span}。`)
   }
-  // その他の場合はそのまま返す
-  return String(timestamp)
+
+  if (p.categoryName) {
+    parts.push(`${p.categoryName} カテゴリのオープンチャット。`)
+  }
+
+  if (p.percent1w !== null && p.percent1w !== undefined && p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0) {
+    parts.push(`過去1週間で ${fmtDiff(p.diff1w)}人 (${p.percent1w > 0 ? '+' : ''}${p.percent1w.toFixed(1)}%)。`)
+  }
+
+  return parts.join('')
 }
 
 export const DetailStats = memo(({
@@ -60,7 +123,6 @@ export const DetailStats = memo(({
   percent24h,
   diff1w,
   percent1w,
-  createdAt,
   registeredAt,
   categoryName,
   isInRanking,
@@ -70,117 +132,81 @@ export const DetailStats = memo(({
   const has1wData = isValidRankingData(diff1w)
   const isNotInRanking = !isInRanking
 
+  // 1指標分の表示（ラベル＋符号付き増減＋%）。本家詳細同様、3指標を横並びで見せる。
+  const renderMetric = (label: string, has: boolean, diff: number | null, percent: number | null) => (
+    <div key={label} className="flex flex-col">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {has && diff !== null ? (
+        <span className={`text-sm font-semibold tabular-nums ${diffColor(diff)}`}>
+          {fmtDiff(diff)}
+          {percent !== null && percent !== undefined && diff !== 0 && (
+            <span className="ml-0.5 text-xs font-normal">({percent > 0 ? '+' : ''}{percent.toFixed(1)}%)</span>
+          )}
+        </span>
+      ) : (
+        <span className="text-sm font-semibold text-muted-foreground">N/A</span>
+      )}
+    </div>
+  )
+
+  const narrative = buildNarrative({
+    currentMember,
+    diff24h,
+    percent24h,
+    diff1w,
+    percent1w,
+    categoryName,
+    registeredAt,
+    isInRanking,
+  })
+
   return (
-    <div className="max-w-[var(--content-w)] mx-auto space-y-2">
-      {/* メンバー・入室タイプ・カテゴリ */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <div className="flex items-center gap-1.5">
-          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-muted-foreground">メンバー:</span>
-          <span className="font-semibold">{currentMember.toLocaleString()}人</span>
+    <div className="max-w-[var(--content-w)] mx-auto space-y-3">
+      {/* メンバー数（主役）＋ 3指標 */}
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div className="flex flex-col">
+          <span className="text-xs text-muted-foreground">メンバー</span>
+          <span className="text-2xl font-bold leading-none tabular-nums">
+            {currentMember.toLocaleString()}
+            <span className="ml-0.5 text-base font-medium text-muted-foreground">人</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3.5 w-3.5 flex items-center justify-center">
-            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-          </div>
-          <span className="text-muted-foreground">入室:</span>
-          <span>{getJoinMethodLabel(joinMethodType ?? 0)}</span>
-        </div>
-        {categoryName && (
-          <div className="flex items-center gap-1.5">
-            <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">カテゴリ:</span>
-            <span>{categoryName}</span>
-          </div>
-        )}
+
+        {isNotInRanking
+          ? renderMetric('1週間', has1wData, diff1w, percent1w)
+          : [
+              renderMetric('1時間', hasHourlyData, hourlyDiff, hourlyPercentage),
+              renderMetric('24時間', has24hData, diff24h, percent24h),
+              renderMetric('1週間', has1wData, diff1w, percent1w),
+            ]}
       </div>
 
-      {/* 増減統計 */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {isNotInRanking ? (
-          <>
-            {/* ランキング非掲載時はバッジと1週間統計のみ表示 */}
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              ランキング非掲載
-            </Badge>
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">1週間:</span>
-              {has1wData ? (
-                <span className={`font-semibold ${diff1w! > 0 ? 'text-green-600 dark:text-green-500' : diff1w! < 0 ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'}`}>
-                  {diff1w! > 0 ? '+' : diff1w === 0 ? '±' : ''}{diff1w!.toLocaleString()}
-                  {percent1w !== null && percent1w !== undefined && diff1w !== 0 && (
-                    <span className="text-xs ml-1">({percent1w > 0 ? '+' : ''}{percent1w.toFixed(1)}%)</span>
-                  )}
-                </span>
-              ) : (
-                <span className="font-semibold text-muted-foreground">N/A</span>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            {/* ランキング掲載時は全統計を表示 */}
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">1時間:</span>
-              {hasHourlyData ? (
-                <span className={`font-semibold ${hourlyDiff! > 0 ? 'text-green-600 dark:text-green-500' : hourlyDiff! < 0 ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'}`}>
-                  {hourlyDiff! > 0 ? '+' : hourlyDiff === 0 ? '±' : ''}{hourlyDiff!.toLocaleString()}
-                  {hourlyPercentage !== null && hourlyPercentage !== undefined && hourlyDiff !== 0 && (
-                    <span className="text-xs ml-1">({hourlyPercentage > 0 ? '+' : ''}{hourlyPercentage.toFixed(1)}%)</span>
-                  )}
-                </span>
-              ) : (
-                <span className="font-semibold text-muted-foreground">N/A</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">24時間:</span>
-              {has24hData ? (
-                <span className={`font-semibold ${diff24h! > 0 ? 'text-green-600 dark:text-green-500' : diff24h! < 0 ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'}`}>
-                  {diff24h! > 0 ? '+' : diff24h === 0 ? '±' : ''}{diff24h!.toLocaleString()}
-                  {percent24h !== null && percent24h !== undefined && diff24h !== 0 && (
-                    <span className="text-xs ml-1">({percent24h > 0 ? '+' : ''}{percent24h.toFixed(1)}%)</span>
-                  )}
-                </span>
-              ) : (
-                <span className="font-semibold text-muted-foreground">N/A</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">1週間:</span>
-              {has1wData ? (
-                <span className={`font-semibold ${diff1w! > 0 ? 'text-green-600 dark:text-green-500' : diff1w! < 0 ? 'text-red-600 dark:text-red-500' : 'text-muted-foreground'}`}>
-                  {diff1w! > 0 ? '+' : diff1w === 0 ? '±' : ''}{diff1w!.toLocaleString()}
-                  {percent1w !== null && percent1w !== undefined && diff1w !== 0 && (
-                    <span className="text-xs ml-1">({percent1w > 0 ? '+' : ''}{percent1w.toFixed(1)}%)</span>
-                  )}
-                </span>
-              ) : (
-                <span className="font-semibold text-muted-foreground">N/A</span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 日付 */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+      {/* メタ：カテゴリ ・ 入室方式 ・ 開設日 ＋ 非掲載バッジ */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        {categoryName && <span className="truncate">{categoryName}</span>}
+        <span aria-hidden className="opacity-50">・</span>
+        <span>入室 {getJoinMethodLabel(joinMethodType ?? 0)}</span>
         {registeredAt && (
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">作成:</span>
-            <span>{formatTimestamp(registeredAt)}</span>
-          </div>
+          <>
+            <span aria-hidden className="opacity-50">・</span>
+            <span>{formatTimestamp(registeredAt)} 開設</span>
+          </>
         )}
-        {createdAt && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">登録:</span>
-            <span>{new Date(createdAt * 1000).toLocaleDateString('ja-JP')}</span>
-          </div>
+        {isNotInRanking && (
+          <Badge variant="secondary" className="ml-1 flex items-center gap-1 h-5 px-1.5 text-[11px] font-normal">
+            <AlertCircle className="h-3 w-3" />
+            ランキング非掲載
+          </Badge>
         )}
+      </div>
+
+      {/* オプチャグラフの分析（本家相当のナラティブ） */}
+      <div className="rounded-lg border bg-muted/30 px-3 py-2.5">
+        <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <BarChart3 className="h-3.5 w-3.5" />
+          オプチャグラフの分析
+        </div>
+        <p className="text-sm leading-relaxed break-words">{narrative}</p>
       </div>
     </div>
   )

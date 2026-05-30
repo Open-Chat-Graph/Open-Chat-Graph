@@ -51,13 +51,15 @@ export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModa
 
   return (
     <>
-      {/* Header image - full width within content bounds */}
-      <div
-        className="-mx-3 -mt-3 md:-mx-6 md:-mt-6 cursor-pointer"
-        style={{ aspectRatio: '16/9' }}
-        onClick={() => thumbnailUrl && onImageModalOpenChange(true)}
-      >
-        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300">
+      {/* Header icon - 本家詳細同様の小さめ丸アイコン（タップで拡大） */}
+      <div className="max-w-[var(--content-w)] mx-auto pt-1">
+        <button
+          type="button"
+          aria-label={`${name} の画像を拡大`}
+          className="block rounded-full overflow-hidden w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 cursor-pointer ring-1 ring-black/5 dark:ring-white/10"
+          onClick={() => thumbnailUrl && onImageModalOpenChange(true)}
+          disabled={!thumbnailUrl}
+        >
           {thumbnailUrl && (
             <ProgressiveImage
               src={thumbnailUrl}
@@ -66,7 +68,7 @@ export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModa
               className="w-full h-full object-cover"
             />
           )}
-        </div>
+        </button>
       </div>
 
       {/* Image Modal */}
