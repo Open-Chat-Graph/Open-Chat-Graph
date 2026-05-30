@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
         name: 'オプチャグラフ',
         short_name: 'オプチャ',
         description: 'LINE OpenChatの統計・ランキング',
+        lang: 'ja',
         start_url: mode === 'production' ? '/alpha' : '/',
         scope: mode === 'production' ? '/alpha/' : '/',
         display: 'standalone',
