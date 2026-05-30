@@ -38,7 +38,6 @@ class AlphaStatsRepository
                 oc.member,
                 oc.category,
                 oc.description,
-                oc.local_img_url,
                 oc.img_url,
                 oc.emblem,
                 oc.api_created_at,

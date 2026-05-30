@@ -25,7 +25,7 @@ class AlphaQueryBuilder
             oc.name,
             oc.description,
             oc.member,
-            oc.local_img_url,
+            oc.img_url,
             oc.emblem,
             oc.join_method_type,
             oc.category,
