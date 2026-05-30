@@ -10,6 +10,7 @@ import { loadMyList, addItem, isInMyList } from '@/services/storage'
 import type { SearchResponse } from '@/types/api'
 import type { SortType, SortOrder } from '@/lib/sort-options'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
+import { useLayout } from '@/contexts/layout-context'
 
 const LIMIT = 20
 
@@ -24,7 +25,8 @@ const SearchPage = memo(() => {
   const [myListData, setMyListData] = useState(() => loadMyList())
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
+  // 検索バー再実行シグナル（同じキーワードでも SWR キーを変えて再フェッチ）
+  const { searchNonce } = useLayout()
 
   // useSWRInfinite でページングを管理
   const getKey = useCallback(
@@ -35,11 +37,11 @@ const SearchPage = memo(() => {
       // 前のページデータがあり、それが最後のページなら nullを返す
       if (previousPageData && previousPageData.data.length === 0) return null
 
-      // SWRのキーを返す（sort, order, refreshKeyを含める）
+      // SWRのキーを返す（sort, order, searchNonce を含めて再実行に対応）
       // pageIndexは0始まりなので、そのまま渡す
-      return ['search', urlKeyword, sort, order, pageIndex, LIMIT, refreshKey]
+      return ['search', urlKeyword, sort, order, pageIndex, LIMIT, searchNonce]
     },
-    [urlKeyword, sort, order, refreshKey]
+    [urlKeyword, sort, order, searchNonce]
   )
 
   const {
@@ -61,17 +63,6 @@ const SearchPage = memo(() => {
       dedupingInterval: 60000,
     }
   )
-
-  // 検索実行イベントをリッスンしてキャッシュをクリアして再フェッチ
-  useEffect(() => {
-    const handleForceSearch = () => {
-      // refreshKeyを更新してSWRキーを変更し、強制的に再フェッチ
-      setRefreshKey(prev => prev + 1)
-    }
-
-    window.addEventListener('force-search', handleForceSearch)
-    return () => window.removeEventListener('force-search', handleForceSearch)
-  }, [])
 
   // 全ページのデータを結合
   const results = useMemo(() => {

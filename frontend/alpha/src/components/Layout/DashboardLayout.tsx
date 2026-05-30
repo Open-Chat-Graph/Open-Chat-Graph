@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
-  const { detailTitle: ctxDetailTitle } = useLayout()
+  const { detailTitle: ctxDetailTitle, triggerSearch } = useLayout()
   const { unseenCount } = useGrowthNotifications()
 
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
@@ -65,12 +65,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const executeSearch = useCallback(() => {
     if (mobileSearchValue.trim()) {
       setSearchParams({ q: mobileSearchValue.trim() })
-      // カスタムイベントを発火して再フェッチをトリガー
-      window.dispatchEvent(new CustomEvent('force-search'))
+      // 同じキーワードでも再フェッチさせるため Context のシグナルを bump
+      triggerSearch()
     } else {
       setSearchParams({})
     }
-  }, [mobileSearchValue, setSearchParams])
+  }, [mobileSearchValue, setSearchParams, triggerSearch])
 
   // 詳細ページのタイトル情報を取得（Context から。詳細ページ以外では null）
   const getDetailPageTitle = (): { name: string; member: number } | null => {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 
 export interface DetailTitle {
@@ -10,6 +10,9 @@ interface LayoutContextValue {
   /** 詳細ページのヘッダーに出すタイトル（詳細ページ以外では null） */
   detailTitle: DetailTitle | null
   setDetailTitle: (title: DetailTitle | null) => void
+  /** 検索の再実行シグナル。同じキーワードでも再フェッチさせたいとき bump する */
+  searchNonce: number
+  triggerSearch: () => void
 }
 
 const LayoutContext = createContext<LayoutContextValue | null>(null)
@@ -24,9 +27,11 @@ const LayoutContext = createContext<LayoutContextValue | null>(null)
  */
 export function LayoutProvider({ children }: { children: ReactNode }) {
   const [detailTitle, setDetailTitle] = useState<DetailTitle | null>(null)
+  const [searchNonce, setSearchNonce] = useState(0)
+  const triggerSearch = useCallback(() => setSearchNonce((n) => n + 1), [])
 
   return (
-    <LayoutContext.Provider value={{ detailTitle, setDetailTitle }}>
+    <LayoutContext.Provider value={{ detailTitle, setDetailTitle, searchNonce, triggerSearch }}>
       {children}
     </LayoutContext.Provider>
   )
