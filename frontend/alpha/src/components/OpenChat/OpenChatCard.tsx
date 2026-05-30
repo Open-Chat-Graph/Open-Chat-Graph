@@ -151,20 +151,20 @@ export const OpenChatCard = memo(({
     (currentSort === 'diff_24h' && !has24hData) ||
     (currentSort === 'diff_1w' && !has1wData)
 
-  // 本家リスト同様、カードに見せる成長指標は「ソート軸の1つ」だけ。
-  // 非掲載は1時間/24時間が無いことが多いので1週間を優先。
-  const metricKey =
-    isNotInRanking
-      ? 'diff_1w'
-      : currentSort === 'hourly_diff' || currentSort === 'diff_24h' || currentSort === 'diff_1w'
-        ? currentSort
-        : 'diff_24h'
+  // 本家同様、成長指標は「成長系ソートのときだけ」その軸を見せる。
+  // 人数/作成日ソートでは右端に数字を出さない（メンバー数はメタ行に既出）。
+  const metricKey: 'hourly_diff' | 'diff_24h' | 'diff_1w' | null =
+    currentSort === 'hourly_diff' || currentSort === 'diff_24h' || currentSort === 'diff_1w'
+      ? currentSort
+      : null
   const metric =
     metricKey === 'hourly_diff'
       ? { has: hasHourlyData, diff: chat.increasedMember, percent: chat.percentageIncrease }
       : metricKey === 'diff_1w'
         ? { has: has1wData, diff: chat.diff1w, percent: chat.percent1w }
-        : { has: has24hData, diff: chat.diff24h, percent: chat.percent24h }
+        : metricKey === 'diff_24h'
+          ? { has: has24hData, diff: chat.diff24h, percent: chat.percent24h }
+          : null
 
   const longPressTimerRef = useRef<number | null>(null)
   const [isPressing, setIsPressing] = useState(false)
@@ -313,7 +313,7 @@ export const OpenChatCard = memo(({
                 <AlertCircle className="h-3 w-3" />
                 非掲載
               </Badge>
-            ) : metric.has ? (
+            ) : metricKey && metric && metric.has ? (
               <span className="ml-auto whitespace-nowrap">
                 <span className="text-muted-foreground">{sortMetricLabel(metricKey)} </span>
                 <span className={`font-semibold ${diffColorClass(metric.diff)}`}>

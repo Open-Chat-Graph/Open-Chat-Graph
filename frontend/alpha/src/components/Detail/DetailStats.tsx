@@ -11,7 +11,6 @@ interface DetailStatsProps {
   percent24h: number | null
   diff1w: number | null
   percent1w: number | null
-  createdAt?: number | null
   registeredAt?: string
   categoryName?: string
   isInRanking: boolean
@@ -80,16 +79,18 @@ const buildNarrative = (p: {
 }): string => {
   const parts: string[] = []
   const opened = toDate(p.registeredAt)
+  const has24h = p.diff24h !== null && p.diff24h !== undefined && p.diff24h !== 0
+  const has1w = p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0
 
-  // 勢いの一言（24時間→1週間の順で優先）
+  // 勢いの一言（24時間→1週間の順で優先）。名詞止めで「〜のルーム。」に繋ぐ。
+  let usedWeekInMomentum = false
   const momentum = (() => {
-    if (p.diff24h !== null && p.diff24h !== undefined && p.diff24h !== 0) {
-      const dir = p.diff24h > 0 ? '増加中' : '減少中'
-      return `直近24時間で${fmtDiff(p.diff24h)}人と${dir}`
+    if (has24h) {
+      return `直近24時間で${fmtDiff(p.diff24h!)}人と${p.diff24h! > 0 ? '増加中' : '減少中'}`
     }
-    if (p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0) {
-      const dir = p.diff1w > 0 ? '伸びている' : '減っている'
-      return `直近1週間で${fmtDiff(p.diff1w)}人と${dir}`
+    if (has1w) {
+      usedWeekInMomentum = true
+      return `直近1週間で${fmtDiff(p.diff1w!)}人と${p.diff1w! > 0 ? '増加傾向' : '減少傾向'}`
     }
     return p.isInRanking ? '人数は横ばい' : '現在ランキングには非掲載'
   })()
@@ -107,8 +108,9 @@ const buildNarrative = (p: {
     parts.push(`${p.categoryName} カテゴリのオープンチャット。`)
   }
 
-  if (p.percent1w !== null && p.percent1w !== undefined && p.diff1w !== null && p.diff1w !== undefined && p.diff1w !== 0) {
-    parts.push(`過去1週間で ${fmtDiff(p.diff1w)}人 (${p.percent1w > 0 ? '+' : ''}${p.percent1w.toFixed(1)}%)。`)
+  // 勢いで1週間を使っていなければ、補足として1週間の増減を出す（重複回避）
+  if (!usedWeekInMomentum && has1w && p.percent1w !== null && p.percent1w !== undefined) {
+    parts.push(`過去1週間で ${fmtDiff(p.diff1w!)}人 (${p.percent1w > 0 ? '+' : ''}${p.percent1w.toFixed(1)}%)。`)
   }
 
   return parts.join('')
@@ -183,8 +185,12 @@ export const DetailStats = memo(({
 
       {/* メタ：カテゴリ ・ 入室方式 ・ 開設日 ＋ 非掲載バッジ */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        {categoryName && <span className="truncate">{categoryName}</span>}
-        <span aria-hidden className="opacity-50">・</span>
+        {categoryName && (
+          <>
+            <span className="truncate">{categoryName}</span>
+            <span aria-hidden className="opacity-50">・</span>
+          </>
+        )}
         <span>入室 {getJoinMethodLabel(joinMethodType ?? 0)}</span>
         {registeredAt && (
           <>

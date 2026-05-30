@@ -149,7 +149,6 @@ const DetailPage = memo(() => {
           percent24h={basicInfo.percent24h}
           diff1w={basicInfo.diff1w}
           percent1w={basicInfo.percent1w}
-          createdAt={basicInfo.createdAt}
           registeredAt={basicInfo.registeredAt}
           categoryName={basicInfo.categoryName}
           isInRanking={basicInfo.isInRanking}
