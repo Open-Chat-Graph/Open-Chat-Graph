@@ -22,6 +22,7 @@ const SearchPage = memo(() => {
   const urlKeyword = searchParams.get('q') || ''
   const sort = (searchParams.get('sort') as SortType) || 'member'
   const order = (searchParams.get('order') as SortOrder) || 'desc'
+  const category = Number(searchParams.get('category')) || 0
   const [myListData, setMyListData] = useState(() => loadMyList())
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
@@ -37,11 +38,11 @@ const SearchPage = memo(() => {
       // 前のページデータがあり、それが最後のページなら nullを返す
       if (previousPageData && previousPageData.data.length === 0) return null
 
-      // SWRのキーを返す（sort, order, searchNonce を含めて再実行に対応）
+      // SWRのキーを返す（sort, order, category, searchNonce を含めて再実行に対応）
       // pageIndexは0始まりなので、そのまま渡す
-      return ['search', urlKeyword, sort, order, pageIndex, LIMIT, searchNonce]
+      return ['search', urlKeyword, sort, order, category, pageIndex, LIMIT, searchNonce]
     },
-    [urlKeyword, sort, order, searchNonce]
+    [urlKeyword, sort, order, category, searchNonce]
   )
 
   const {
@@ -53,8 +54,8 @@ const SearchPage = memo(() => {
     isValidating,
   } = useSWRInfinite<SearchResponse>(
     getKey,
-    ([, keyword, sortType, sortOrder, page, limit]) =>
-      alphaApi.search({ keyword, page, limit, sort: sortType, order: sortOrder }),
+    ([, keyword, sortType, sortOrder, cat, page, limit]) =>
+      alphaApi.search({ keyword, category: cat as number, page: page as number, limit: limit as number, sort: sortType as SortType, order: sortOrder as SortOrder }),
     {
       revalidateFirstPage: false,
       revalidateOnFocus: false,

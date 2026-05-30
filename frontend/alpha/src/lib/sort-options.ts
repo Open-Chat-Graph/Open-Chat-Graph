@@ -1,6 +1,19 @@
 export type SortType = 'member' | 'created_at' | 'hourly_diff' | 'diff_24h' | 'diff_1w'
 export type SortOrder = 'asc' | 'desc'
 
+// 検索メニュー用のソート軸（昇順/降順はメニューでなくトグルボタンで切替）。
+// 「作成日順」は一番下に置く。
+export const SORT_METRICS: { value: SortType; label: string }[] = [
+  { value: 'member', label: '人数' },
+  { value: 'hourly_diff', label: '1時間増減' },
+  { value: 'diff_24h', label: '24時間増減' },
+  { value: 'diff_1w', label: '1週間増減' },
+  { value: 'created_at', label: '作成日順' },
+]
+
+export const sortMetricLabel = (value: string): string =>
+  SORT_METRICS.find((m) => m.value === value)?.label ?? '人数'
+
 // 統合ソートオプション
 export const UNIFIED_SORT_OPTIONS = [
   { value: 'member', order: 'desc', label: '人数降順' },

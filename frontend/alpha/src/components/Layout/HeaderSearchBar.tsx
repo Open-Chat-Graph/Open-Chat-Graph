@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, ArrowUpDown, Check, X as XIcon } from 'lucide-react'
+import { Search, ArrowDownWideNarrow, ArrowUpWideNarrow, Check, X as XIcon, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,14 +8,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { SORT_METRICS, sortMetricLabel } from '@/lib/sort-options'
+import { CATEGORIES } from '@/lib/categories'
 import { useLayout } from '@/contexts/layout-context'
 
 const SEARCH_PLACEHOLDER = 'キーワードを入力...'
 
 /**
- * 検索ページのヘッダー検索バー（キーワード入力＋ソート）。
- * 旧 DashboardLayout に直書きされていたものを切り出した。
+ * 検索ページのヘッダー検索バー（キーワード＋カテゴリ＋ソート）。
+ * ソートは「軸（メニュー）」と「昇順/降順（トグルボタン）」を分離。
  */
 export function HeaderSearchBar() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -30,13 +38,12 @@ export function HeaderSearchBar() {
 
   const executeSearch = useCallback(() => {
     const q = value.trim()
-    if (q) {
-      setSearchParams({ q })
-      triggerSearch() // 同じキーワードでも再フェッチさせる
-    } else {
-      setSearchParams({})
-    }
-  }, [value, setSearchParams, triggerSearch])
+    const next = new URLSearchParams(searchParams)
+    if (q) next.set('q', q)
+    else next.delete('q')
+    setSearchParams(next)
+    triggerSearch() // 同じキーワードでも再フェッチさせる
+  }, [value, searchParams, setSearchParams, triggerSearch])
 
   // iOS Safari: 入力中（IME確定）のタップを優先し、他要素のクリックを一時的に抑止
   useEffect(() => {
@@ -56,9 +63,19 @@ export function HeaderSearchBar() {
 
   const currentSort = searchParams.get('sort') || 'member'
   const currentOrder = searchParams.get('order') || 'desc'
+  const currentCategory = searchParams.get('category') || '0'
+
+  const updateParam = useCallback(
+    (mutate: (p: URLSearchParams) => void) => {
+      const next = new URLSearchParams(searchParams)
+      mutate(next)
+      setSearchParams(next)
+    },
+    [searchParams, setSearchParams],
+  )
 
   return (
-    <div className="border-t md:border-t-0 md:border-b bg-background px-3 py-2 md:px-4">
+    <div className="border-t md:border-t-0 md:border-b bg-background px-3 py-2 md:px-4 space-y-2">
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -70,7 +87,6 @@ export function HeaderSearchBar() {
             onChange={(e) => setValue(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {
-              // IME確定後のタップを正しく処理するため少し遅延
               setTimeout(() => setIsFocused(false), 100)
             }}
             onKeyDown={(e) => {
@@ -92,36 +108,61 @@ export function HeaderSearchBar() {
             </button>
           )}
         </div>
+
+        {/* 昇順/降順トグル */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 flex-shrink-0"
+          aria-label={currentOrder === 'desc' ? '降順（タップで昇順）' : '昇順（タップで降順）'}
+          title={currentOrder === 'desc' ? '降順' : '昇順'}
+          onClick={() => updateParam((p) => p.set('order', currentOrder === 'desc' ? 'asc' : 'desc'))}
+          data-testid="toolbar-order-toggle"
+        >
+          {currentOrder === 'desc' ? <ArrowDownWideNarrow className="h-4 w-4" /> : <ArrowUpWideNarrow className="h-4 w-4" />}
+        </Button>
+
+        {/* ソート軸メニュー（昇降は含めない。作成日順は最下部） */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-10 px-3 flex-shrink-0" data-testid="toolbar-sort-dropdown-trigger">
-              <ArrowUpDown className="h-4 w-4" />
+            <Button variant="outline" className="h-10 gap-1 px-3 flex-shrink-0" data-testid="toolbar-sort-dropdown-trigger">
+              <span className="text-sm">{sortMetricLabel(currentSort)}</span>
+              <ChevronDown className="h-4 w-4 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56" data-testid="toolbar-sort-dropdown-content">
-            {UNIFIED_SORT_OPTIONS.map((option) => {
-              const isSelected = option.value === currentSort && option.order === currentOrder
-              return (
-                <DropdownMenuItem
-                  key={`${option.value}-${option.order}`}
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams)
-                    newParams.set('sort', option.value)
-                    newParams.set('order', option.order)
-                    setSearchParams(newParams)
-                  }}
-                  data-testid={`toolbar-sort-option-${option.value}-${option.order}`}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Check className={`h-4 w-4 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
-                    <span>{option.label}</span>
-                  </div>
-                </DropdownMenuItem>
-              )
-            })}
+          <DropdownMenuContent align="end" className="w-44" data-testid="toolbar-sort-dropdown-content">
+            {SORT_METRICS.map((m) => (
+              <DropdownMenuItem
+                key={m.value}
+                onClick={() => updateParam((p) => p.set('sort', m.value))}
+                data-testid={`toolbar-sort-option-${m.value}`}
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <Check className={`h-4 w-4 ${m.value === currentSort ? 'opacity-100' : 'opacity-0'}`} />
+                  <span>{m.label}</span>
+                </div>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* カテゴリ絞り込み（キーワード欄付近） */}
+      <Select
+        value={currentCategory}
+        onValueChange={(v) => updateParam((p) => (v === '0' ? p.delete('category') : p.set('category', v)))}
+      >
+        <SelectTrigger className="h-9 w-full md:w-56" data-testid="toolbar-category-select">
+          <SelectValue placeholder="カテゴリ" />
+        </SelectTrigger>
+        <SelectContent>
+          {CATEGORIES.map((c) => (
+            <SelectItem key={c.id} value={String(c.id)}>
+              {c.id === 0 ? 'すべてのカテゴリ' : c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }
