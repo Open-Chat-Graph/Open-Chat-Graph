@@ -133,7 +133,7 @@ class AlphaApiController
                     // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
                     $hash = trim($item['url'], '/');
                     if (!empty($hash)) {
-                        $lineUrl = AppConfig::LINE_URL . $hash;
+                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
                     }
                 }
             }
@@ -201,7 +201,7 @@ class AlphaApiController
                 // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
                 $hash = trim($ocData['url'], '/');
                 if (!empty($hash)) {
-                    $lineUrl = AppConfig::LINE_URL . $hash;
+                    $lineUrl = AppConfig::LINE_APP_URL . $hash;
                 }
             }
         }
@@ -303,7 +303,7 @@ class AlphaApiController
                     // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
                     $hash = trim($item['url'], '/');
                     if (!empty($hash)) {
-                        $lineUrl = AppConfig::LINE_URL . $hash;
+                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
                     }
                 }
             }

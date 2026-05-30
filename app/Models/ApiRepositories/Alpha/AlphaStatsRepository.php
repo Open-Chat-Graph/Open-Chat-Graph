@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories\Alpha;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\SQLite\SQLiteRankingPosition;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * Alpha統計データ専用リポジトリ
@@ -17,8 +17,9 @@ class AlphaStatsRepository
 {
     private AlphaQueryBuilder $queryBuilder;
 
-    public function __construct()
-    {
+    public function __construct(
+        private FileStorageInterface $fileStorage,
+    ) {
         $this->queryBuilder = new AlphaQueryBuilder();
     }
 
@@ -27,7 +28,7 @@ class AlphaStatsRepository
      */
     public function findById(int $id): ?array
     {
-        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
+        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents($this->fileStorage->getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
             ->format('Y-m-d H:i:s');
 
         $sql = "

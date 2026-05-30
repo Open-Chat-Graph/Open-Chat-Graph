@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories\Alpha;
 
-use App\Config\AppConfig;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * Alpha API用SQLクエリビルダー
@@ -17,7 +17,7 @@ class AlphaQueryBuilder
      */
     private function getSelectClause(): string
     {
-        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents(AppConfig::getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
+        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents(app(FileStorageInterface::class)->getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
             ->format('Y-m-d H:i:s');
 
         return "
