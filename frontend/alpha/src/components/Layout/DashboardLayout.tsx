@@ -140,15 +140,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     window.addEventListener('storage', handleStorageChange)
 
-    // カスタムイベントでも検知（同一タブ内の変更用）
-    const handleCustomEvent = () => {
-      setTitleUpdateTrigger(prev => prev + 1)
-    }
-    window.addEventListener('mylist-folder-change', handleCustomEvent)
-
     return () => {
       window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('mylist-folder-change', handleCustomEvent)
     }
   }, [])
 
