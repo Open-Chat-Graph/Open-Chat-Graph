@@ -28,6 +28,12 @@ try {
         isset($argv[2]) && $argv[2] == 'dailyTest',
         isset($argv[3]) && $argv[3] == 'retryDailyTest'
     );
+
+    // 毎時クロール完了後に Alpha 通知/アラートを算出（ja のみ・バックグラウンド・本体を止めない）
+    if (!MimimalCmsConfig::$urlRoot) {
+        $alphaPath = __DIR__ . '/../exec/alpha_hourly.php';
+        exec(PHP_BINARY . " {$alphaPath} >/dev/null 2>&1 &");
+    }
 } catch (\Throwable $e) {
     // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
     $shouldNotify = true;

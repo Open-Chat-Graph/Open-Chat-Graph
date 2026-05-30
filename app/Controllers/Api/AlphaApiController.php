@@ -8,9 +8,11 @@ use App\Config\AppConfig;
 use App\Models\ApiRepositories\Alpha\AlphaOpenChatRepository;
 use App\Models\ApiRepositories\Alpha\AlphaPeriodGrowthRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
+use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaInsightsService;
+use App\Services\Auth\AuthInterface;
 use App\Models\Repositories\DB;
 use Shadow\Kernel\Reception;
 use Shadow\Kernel\Validator;
@@ -500,5 +502,147 @@ class AlphaApiController
             'baseDate' => $result['baseDate'],
             'targetPastDate' => $result['pastDate'],
         ]);
+    }
+
+    // ============================================================
+    // 通知/アラート（ウォッチ設定 + 算出済み通知）
+    // 認証は未導入。cookie-user-id ベースの user_id で識別する。
+    // ============================================================
+
+    /**
+     * ウォッチ設定の取得
+     * GET /alpha-api/alerts/config
+     */
+    function alertsConfigGet(AuthInterface $auth, AlphaAlertRepository $repo)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+
+        return response([
+            'keywords' => $repo->getKeywordWatches($userId),
+            'rooms' => $repo->getRoomWatches($userId),
+            'mylistThreshold' => $repo->getMylistThreshold($userId),
+        ]);
+    }
+
+    /**
+     * ウォッチ設定の保存（全置き換え）
+     * PUT /alpha-api/alerts/config
+     * Body: { keywords:[{keyword,category?}], rooms:[{openChatId,upMember?,upPercent?,downMember?,downPercent?}],
+     *         mylistThreshold:{upPercent?,downPercent?,enabled} }
+     */
+    function alertsConfigPut(AuthInterface $auth, AlphaAlertRepository $repo, Reception $reception)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+        $body = $reception->input();
+
+        // keywords
+        $keywords = [];
+        if (isset($body['keywords']) && is_array($body['keywords'])) {
+            foreach ($body['keywords'] as $k) {
+                if (!is_array($k)) continue;
+                $kw = trim((string)($k['keyword'] ?? ''));
+                if ($kw === '' || mb_strlen($kw) > 190) continue;
+                $cat = (isset($k['category']) && $k['category'] !== null && $k['category'] !== '')
+                    ? (int)$k['category'] : null;
+                $keywords[] = ['keyword' => $kw, 'category' => $cat];
+            }
+        }
+
+        // rooms
+        $rooms = [];
+        if (isset($body['rooms']) && is_array($body['rooms'])) {
+            foreach ($body['rooms'] as $r) {
+                if (!is_array($r)) continue;
+                $ocId = (int)($r['openChatId'] ?? $r['open_chat_id'] ?? 0);
+                if ($ocId < 1) continue;
+                $rooms[] = [
+                    'open_chat_id' => $ocId,
+                    'up_member' => $this->numOrNull($r['upMember'] ?? null),
+                    'up_percent' => $this->floatOrNull($r['upPercent'] ?? null),
+                    'down_member' => $this->numOrNull($r['downMember'] ?? null),
+                    'down_percent' => $this->floatOrNull($r['downPercent'] ?? null),
+                ];
+            }
+        }
+
+        $repo->replaceKeywordWatches($userId, $keywords);
+        $repo->replaceRoomWatches($userId, $rooms);
+
+        // mylistThreshold
+        if (isset($body['mylistThreshold']) && is_array($body['mylistThreshold'])) {
+            $mt = $body['mylistThreshold'];
+            $repo->saveMylistThreshold(
+                $userId,
+                $this->floatOrNull($mt['upPercent'] ?? null),
+                $this->floatOrNull($mt['downPercent'] ?? null),
+                !empty($mt['enabled'])
+            );
+        }
+
+        return response([
+            'keywords' => $repo->getKeywordWatches($userId),
+            'rooms' => $repo->getRoomWatches($userId),
+            'mylistThreshold' => $repo->getMylistThreshold($userId),
+        ]);
+    }
+
+    /**
+     * 算出済み通知の取得（＋既読更新）
+     * GET /alpha-api/alerts
+     *   ?markRead=all          … 取得後に全件既読化
+     *   ?markRead=1,2,3        … 指定id既読化
+     */
+    function alertsGet(AuthInterface $auth, AlphaAlertRepository $repo)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+
+        $markRead = (string)Reception::input('markRead', '');
+        if ($markRead === 'all') {
+            $repo->markAllRead($userId);
+        } elseif ($markRead !== '') {
+            $repo->markRead($userId, array_map('intval', explode(',', $markRead)));
+        }
+
+        $notifications = $repo->getNotifications($userId);
+
+        // type 別に振り分けてフロントが扱いやすい形にする
+        $keywordHits = [];
+        $movements = [];
+        $unreadCount = 0;
+        foreach ($notifications as $n) {
+            if (!$n['is_read']) $unreadCount++;
+            $item = [
+                'id' => $n['id'],
+                'type' => $n['type'],
+                'isRead' => $n['is_read'],
+                'createdAt' => strtotime($n['created_at']),
+            ] + $n['payload'];
+
+            if ($n['type'] === 'keyword') {
+                $keywordHits[] = $item;
+            } else {
+                $movements[] = $item;
+            }
+        }
+
+        return response([
+            'keywordHits' => $keywordHits,
+            'movements' => $movements,
+            'unreadCount' => $unreadCount,
+            'computedAt' => $notifications[0]['created_at'] ?? null,
+        ]);
+    }
+
+    private function numOrNull(mixed $v): ?int
+    {
+        return ($v === null || $v === '') ? null : (int)$v;
+    }
+
+    private function floatOrNull(mixed $v): ?float
+    {
+        return ($v === null || $v === '') ? null : (float)$v;
     }
 }

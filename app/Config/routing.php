@@ -821,6 +821,10 @@ Route::path('alpha/settings', [AlphaPageController::class, 'index'])
 Route::path('alpha/notifications', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// 任意N日増減ビュー（フロントの SPA ページが到達できるように）
+Route::path('alpha/period-growth', [AlphaPageController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path('alpha/openchat/{id}', [AlphaPageController::class, 'index'])
     ->matchNum('id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
@@ -875,6 +879,19 @@ Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')
     ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - 通知/アラート: ウォッチ設定の取得(GET)/保存(PUT)
+Route::path(
+    'alpha-api/alerts/config@get@put',
+    [AlphaApiController::class, 'alertsConfigGet', 'get'],
+    [AlphaApiController::class, 'alertsConfigPut', 'put']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - 通知/アラート: 算出済み通知一覧（＋既読更新）
+Route::path('alpha-api/alerts', [AlphaApiController::class, 'alertsGet'])
+    ->matchStr('markRead', emptyAble: true, maxLen: 2000, default: '')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 cache();
