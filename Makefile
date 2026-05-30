@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets shared-setup up-shared down-shared _shared-config _shared-prepare _shared-ports _up-shared
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats build-frontend\:alpha _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets shared-setup up-shared down-shared _shared-config _shared-prepare _shared-ports _up-shared
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -68,6 +68,7 @@ help: ## ヘルプを表示
 	@echo "  $(GREEN)make build-frontend:ranking$(NC)  - ランキングのみビルド"
 	@echo "  $(GREEN)make build-frontend:oc-app$(NC)   - コメント・グラフ等のみビルド"
 	@echo "  $(GREEN)make build-frontend:all-room-stats$(NC) - 全体統計のみビルド"
+	@echo "  $(GREEN)make build-frontend:alpha$(NC)    - alpha(新フロント)のみビルド"
 	@echo ""
 	@echo "$(YELLOW)静的解析:$(NC)"
 	@echo "  $(GREEN)make phpstan$(NC)    - PHPStan静的解析を実行"
@@ -178,6 +179,11 @@ build-frontend\:all-room-stats: ## 全体統計のみビルド
 	@echo "$(GREEN)all-room-stats をビルドしています...$(NC)"
 	@$(MAKE) _build-one-frontend DIR=frontend/all-room-stats
 	@echo "$(GREEN)all-room-stats ビルド完了$(NC)"
+
+build-frontend\:alpha: ## alpha(新フロント)のみビルド
+	@echo "$(GREEN)alpha をビルドしています...$(NC)"
+	@$(MAKE) _build-one-frontend DIR=frontend/alpha
+	@echo "$(GREEN)alpha ビルド完了$(NC)"
 
 # 基本環境
 up: ## 基本環境を起動
