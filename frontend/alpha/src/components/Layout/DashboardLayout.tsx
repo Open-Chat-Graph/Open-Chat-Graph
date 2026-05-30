@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MobileBottomNav } from './MobileBottomNav'
 import { cn } from '@/lib/utils'
-import { loadMyList } from '@/services/storage'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
 import { useGrowthNotifications } from '@/hooks/useGrowthNotifications'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useLayout } from '@/contexts/layout-context'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
 
@@ -24,13 +24,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileSearchValue, setMobileSearchValue] = useState('')
-  const [_titleUpdateTrigger, setTitleUpdateTrigger] = useState(0)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
-  const { detailTitle: ctxDetailTitle, triggerSearch } = useLayout()
+  const { triggerSearch } = useLayout()
+  const { pageTitle, detailTitle } = usePageTitle()
   const { unseenCount } = useGrowthNotifications()
 
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
@@ -71,72 +71,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setSearchParams({})
     }
   }, [mobileSearchValue, setSearchParams, triggerSearch])
-
-  // 詳細ページのタイトル情報を取得（Context から。詳細ページ以外では null）
-  const getDetailPageTitle = (): { name: string; member: number } | null => {
-    if (!location.pathname.startsWith('/openchat/')) return null
-    return ctxDetailTitle
-  }
-
-  // ページタイトルを現在のルートに基づいて生成
-  const getPageTitle = (): string => {
-    if (location.pathname.startsWith('/openchat/')) {
-      const detailTitle = getDetailPageTitle()
-      if (detailTitle) {
-        return `${detailTitle.name} (${detailTitle.member.toLocaleString()})`
-      }
-      return 'オープンチャット'
-    }
-    if (location.pathname === '/mylist' || location.pathname.startsWith('/mylist/')) {
-      const myListData = loadMyList()
-      // URLからフォルダIDを取得（例: /mylist/folder-123 → folder-123）
-      const currentFolderId = location.pathname.startsWith('/mylist/')
-        ? location.pathname.replace('/mylist/', '')
-        : null
-
-      if (currentFolderId) {
-        // フォルダ内: フォルダ名とそのフォルダ内のアイテム数を表示
-        const folder = myListData.folders.find(f => f.id === currentFolderId)
-        const folderItems = myListData.items.filter(item => item.folderId === currentFolderId)
-        return folder ? `${folder.name} ${folderItems.length}件` : `マイリスト ${myListData.items.length}件`
-      } else {
-        // ルート: マイリストとルートレベルのアイテム数を表示
-        return `マイリスト ${myListData.items.length}件`
-      }
-    }
-    if (location.pathname === '/settings') {
-      return '設定'
-    }
-    if (location.pathname === '/notifications') {
-      return '通知'
-    }
-    if (location.pathname === '/') {
-      const keyword = searchParams.get('q')
-      if (keyword) {
-        const currentSort = searchParams.get('sort') || 'member'
-        const currentOrder = searchParams.get('order') || 'desc'
-        const sortLabel = UNIFIED_SORT_OPTIONS.find(
-          opt => opt.value === currentSort && opt.order === currentOrder
-        )?.label ?? '人数降順'
-        return `「${keyword}」の検索結果 - ${sortLabel}`
-      }
-      return 'オプチャグラフα'
-    }
-    return 'オプチャグラフα'
-  }
-
-  // マイリストのタイトル更新用: sessionStorage の変更を検知
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setTitleUpdateTrigger(prev => prev + 1)
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [])
 
   // iOSのSafariで検索バー入力中のタップを正しく処理する
   useEffect(() => {
@@ -293,19 +227,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       )?.label ?? '人数降順'
                     }</span>
                   </span>
-                ) : (() => {
-                  // 詳細ページの場合: "ChatName (member)"形式で、人数は省略されない
-                  const detailTitle = getDetailPageTitle()
-                  if (detailTitle) {
-                    return (
-                      <span className="text-base font-semibold flex items-center min-w-0">
-                        <span className="truncate">{detailTitle.name}</span>
-                        <span className="flex-shrink-0 ml-1">({detailTitle.member.toLocaleString()})</span>
-                      </span>
-                    )
-                  }
-                  return <span className="text-base font-semibold truncate">{getPageTitle()}</span>
-                })()}
+                ) : detailTitle ? (
+                  // 詳細ページ: "ChatName (member)" 形式で人数は省略しない
+                  <span className="text-base font-semibold flex items-center min-w-0">
+                    <span className="truncate">{detailTitle.name}</span>
+                    <span className="flex-shrink-0 ml-1">({detailTitle.member.toLocaleString()})</span>
+                  </span>
+                ) : (
+                  <span className="text-base font-semibold truncate">{pageTitle}</span>
+                )}
               </div>
             </header>
 
