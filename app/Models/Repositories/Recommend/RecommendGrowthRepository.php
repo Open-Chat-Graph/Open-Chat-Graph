@@ -30,7 +30,7 @@ use App\Models\SQLite\SQLiteStatistics;
  *   - rank は ranking_position.db(ロケール別)、member は statistics.db(ロケール別)から集計。
  *     いずれも ja/tw/th 全ロケール対応。ocgraph_sqlapi は使用しない。
  */
-class RecommendGrowthRepository
+class RecommendGrowthRepository implements RecommendGrowthRepositoryInterface
 {
     /** ランキングの全体カテゴリ(=全体ランキング)。 */
     private const RANK_CATEGORY_OVERALL = 0;
@@ -38,11 +38,16 @@ class RecommendGrowthRepository
     /**
      * テーマの勢いを 1 つの配列にまとめて返す(ja/tw/th 全ロケール対応・呼び出し側はそのままビューへ)。
      *
+     * 「直近 N 日」の起点は現在時刻ではなく $anchorDate(最後に時報 cron が更新した時刻)を呼び出し側から渡す。
+     * 集計窓を実データの存在期間に合わせるためで、クロール遅延やローカルの古いデータでも窓がデータに乗る
+     * (本番では現在時刻とほぼ一致するので挙動は変わらない)。時刻取得はこの層の責務にしない。
+     *
      * @param int[] $openChatIds 掲載部屋の ID 群
+     * @param \DateTime $anchorDate 「直近 N 日」の起点(最終 cron 時刻)
      * @param int $days 遡る日数
      * @return array{
      *   spanDays: int,
-     *   rank: array{points: array{date:string, value:int}[], current:int, first:int},
+     *   rank: array{points: array{date:string, value:int}[], current:int, first:int, leaderId:int},
      *   member: array{points: array{date:string, value:int}[], increase:int, rooms:int}
      * }|array{} データ不足時は空配列
      *
@@ -50,12 +55,12 @@ class RecommendGrowthRepository
      *          leaderId = 最新日にその最高順位を持っていた部屋の open_chat_id(どの部屋の話か示すため)。
      * member = 同一部屋コホートの合計人数(規模・rank が無いテーマのフォールバック)。
      */
-    public static function themeMomentum(array $openChatIds, int $days = 7): array
+    public function themeMomentum(array $openChatIds, \DateTime $anchorDate, int $days = 7): array
     {
-        $rank   = self::bestRankPositionDaily($openChatIds, $days);
+        $rank   = $this->bestRankPositionDaily($openChatIds, $anchorDate, $days);
         // rank は ranking_position.db(ロケール別)、member は statistics.db(ロケール別)から集計。
         // いずれも ja/tw/th 全ロケール対応。
-        $member = self::themeGrowth($openChatIds, $days);
+        $member = $this->themeGrowth($openChatIds, $anchorDate, $days);
 
         // ヒーロー(rank)が 2 点未満 かつ member も空ならグラフ・数値を出す意味が無いので空配列。
         if (count($rank['points']) < 2 && !$member['points']) {
@@ -109,20 +114,21 @@ class RecommendGrowthRepository
      * where + group by は高速。
      *
      * @param int[] $openChatIds 掲載部屋の ID 群
+     * @param \DateTime $anchorDate 「直近 N 日」の起点(最終 cron 時刻)
      * @param int $days 遡る日数
      * @return array{points: array{date:string, value:int}[], leaderId: int}
      *         points: 日付昇順 / value: その日のテーマ最高順位(= MIN(position)・小さいほど良い)
      *         leaderId: 最新日に最高順位だった部屋の open_chat_id(無ければ 0)
      */
-    private static function bestRankPositionDaily(array $openChatIds, int $days): array
+    private function bestRankPositionDaily(array $openChatIds, \DateTime $anchorDate, int $days): array
     {
-        $ids = self::sanitizeIds($openChatIds);
+        $ids = $this->sanitizeIds($openChatIds);
         if (!$ids) {
             return ['points' => [], 'leaderId' => 0];
         }
 
         $in = implode(',', $ids);
-        $since = (new \DateTime("-{$days} days"))->format('Y-m-d');
+        $since = (clone $anchorDate)->modify("-{$days} days")->format('Y-m-d');
         $category = self::RANK_CATEGORY_OVERALL;
 
         SQLiteRankingPosition::connect(['mode' => '?mode=ro']);
@@ -137,6 +143,8 @@ class RecommendGrowthRepository
         );
 
         // 「どの部屋の話か」を示すため、最新日に最高(=最小)順位だった部屋を1つ特定する。
+        // 表示順位(rankCurrent)と同じ「最新の有データ日」を使うこと。日付の選び方をどちらか片方だけ
+        // 変えると、画面に出る順位とリーダー部屋がズレるため意図的に同一日にそろえている。
         // $latest は DB から取り出した値の再注入になるため、プレースホルダでバインドして埋め込む。
         $leaderId = 0;
         if ($rows) {
@@ -167,22 +175,23 @@ class RecommendGrowthRepository
      * 同一部屋コホートの合計メンバー数を日次で返す。
      *
      * @param int[] $openChatIds 掲載部屋の ID 群
+     * @param \DateTime $anchorDate 「直近 N 日」の起点(最終 cron 時刻)
      * @param int $days 遡る日数
      * @return array{points: array{date:string, value:int}[], rooms:int}
      *         points: 日付昇順の合計 / rooms: コホートに含まれる部屋数
      */
-    public static function themeGrowth(array $openChatIds, int $days = 21): array
+    public function themeGrowth(array $openChatIds, \DateTime $anchorDate, int $days = 21): array
     {
         $empty = ['points' => [], 'rooms' => 0];
 
-        $ids = self::sanitizeIds($openChatIds);
+        $ids = $this->sanitizeIds($openChatIds);
         if (count($ids) < 3) {
             return $empty;
         }
 
         $in = implode(',', $ids);
         // DateTime 由来の Y-m-d 固定書式なのでインライン化(注入リスクなし)。
-        $since = (new \DateTime("-{$days} days"))->format('Y-m-d');
+        $since = (clone $anchorDate)->modify("-{$days} days")->format('Y-m-d');
 
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
 
@@ -229,7 +238,7 @@ class RecommendGrowthRepository
      * @param int[] $openChatIds
      * @return int[]
      */
-    private static function sanitizeIds(array $openChatIds): array
+    private function sanitizeIds(array $openChatIds): array
     {
         return array_values(array_filter(array_map('intval', $openChatIds)));
     }
