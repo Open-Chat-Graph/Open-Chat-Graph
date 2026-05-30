@@ -1,26 +1,12 @@
-import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/Settings/ThemeToggle'
+import { useScrollToTopOnReclick } from '@/hooks/useScrollToTopOnReclick'
 
 export default function SettingsPage() {
   const location = useLocation()
-
-  // 同じページでボタン再クリック時のスクロールリセット
-  useEffect(() => {
-    const timestamp = (location.state as any)?.timestamp
-    if (timestamp && location.pathname === '/settings') {
-      // スクロール位置をリセット
-      const containers = document.querySelectorAll('main > div[style*="position: absolute"]')
-      const settingsContainer = Array.from(containers).find(c =>
-        (c as HTMLElement).style.display === 'block'
-      ) as HTMLElement | undefined
-
-      if (settingsContainer) {
-        settingsContainer.scrollTo(0, 0)
-      }
-    }
-  }, [location.state, location.pathname])
+  // 設定タブ再クリック時に先頭へスクロール
+  useScrollToTopOnReclick(location.pathname === '/settings')
 
   return (
     <div className="space-y-6">
