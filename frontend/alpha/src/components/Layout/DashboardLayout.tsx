@@ -1,20 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, ArrowUpDown, Check, Bell } from 'lucide-react'
+import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { MobileBottomNav } from './MobileBottomNav'
+import { HeaderSearchBar } from './HeaderSearchBar'
 import { cn } from '@/lib/utils'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
 import { useGrowthNotifications } from '@/hooks/useGrowthNotifications'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useLayout } from '@/contexts/layout-context'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
 
 interface DashboardLayoutProps {
@@ -23,13 +17,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mobileSearchValue, setMobileSearchValue] = useState('')
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
-  const { triggerSearch } = useLayout()
   const { pageTitle, detailTitle } = usePageTitle()
   const { unseenCount } = useGrowthNotifications()
 
@@ -54,47 +45,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       navigate('/')
     }
   }
-
-  // 検索バーの値をURLパラメータと同期
-  useEffect(() => {
-    const q = searchParams.get('q') || ''
-    setMobileSearchValue(q)
-  }, [searchParams])
-
-  // 検索実行ハンドラー
-  const executeSearch = useCallback(() => {
-    if (mobileSearchValue.trim()) {
-      setSearchParams({ q: mobileSearchValue.trim() })
-      // 同じキーワードでも再フェッチさせるため Context のシグナルを bump
-      triggerSearch()
-    } else {
-      setSearchParams({})
-    }
-  }, [mobileSearchValue, setSearchParams, triggerSearch])
-
-  // iOSのSafariで検索バー入力中のタップを正しく処理する
-  useEffect(() => {
-    if (!isSearchFocused) return
-
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      // 検索バー自体とその子要素のクリックは許可
-      const searchBar = document.querySelector('input[placeholder="キーワードを入力..."]')
-      if (searchBar?.contains(target) || target.closest('button[aria-label="クリア"]')) {
-        return
-      }
-      // その他のクリックはブロック（IME確定処理を優先）
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    // キャプチャフェーズでイベントを捕捉
-    document.addEventListener('click', handleClick, true)
-
-    return () => {
-      document.removeEventListener('click', handleClick, true)
-    }
-  }, [isSearchFocused])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -240,82 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </header>
 
             {/* 検索バー（検索ページのみ、約56pxの高さ） */}
-            {location.pathname === '/' && (
-              <div className="border-t md:border-t-0 md:border-b bg-background px-3 py-2 md:px-4">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="キーワードを入力..."
-                      className="w-full h-10 pl-10 pr-12 rounded-md border border-input bg-background text-base"
-                      value={mobileSearchValue}
-                      onChange={(e) => {
-                        setMobileSearchValue(e.target.value)
-                      }}
-                      onFocus={() => setIsSearchFocused(true)}
-                      onBlur={() => {
-                        // iOSのSafariでIME確定後のタップを正しく処理するため、少し遅延させる
-                        setTimeout(() => setIsSearchFocused(false), 100)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          executeSearch()
-                          // キーボードを閉じる
-                          e.currentTarget.blur()
-                        }
-                      }}
-                    />
-                    {mobileSearchValue && (
-                      <button
-                        type="button"
-                        onClick={() => setMobileSearchValue('')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-accent w-8 h-8 flex items-center justify-center"
-                        aria-label="クリア"
-                      >
-                        <XIcon className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-10 px-3 flex-shrink-0"
-                        data-testid="toolbar-sort-dropdown-trigger"
-                      >
-                        <ArrowUpDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56" data-testid="toolbar-sort-dropdown-content">
-                      {UNIFIED_SORT_OPTIONS.map((option) => {
-                        const currentSort = searchParams.get('sort') || 'member'
-                        const currentOrder = searchParams.get('order') || 'desc'
-                        const isSelected = option.value === currentSort && option.order === currentOrder
-                        return (
-                          <DropdownMenuItem
-                            key={`${option.value}-${option.order}`}
-                            onClick={() => {
-                              const newParams = new URLSearchParams(searchParams)
-                              newParams.set('sort', option.value)
-                              newParams.set('order', option.order)
-                              setSearchParams(newParams)
-                            }}
-                            data-testid={`toolbar-sort-option-${option.value}-${option.order}`}
-                          >
-                            <div className="flex items-center gap-2 w-full">
-                              <Check className={`h-4 w-4 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
-                              <span>{option.label}</span>
-                            </div>
-                          </DropdownMenuItem>
-                        )
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            )}
+            {location.pathname === '/' && <HeaderSearchBar />}
           </div>
 
           {/**
