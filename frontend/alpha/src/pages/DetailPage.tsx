@@ -7,12 +7,14 @@ import { DetailHeader, DetailInfo, DetailStats, DetailActions, RankingHistory, P
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
+import { useLayout } from '@/contexts/layout-context'
 import type { BasicInfoResponse, RankingHistoryResponse, OpenChat } from '@/types/api'
 
 const DetailPage = memo(() => {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const { resolvedTheme } = useTheme()
+  const { setDetailTitle } = useLayout()
 
   const [myListData, setMyListData] = useState(() => loadMyList())
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
@@ -93,18 +95,13 @@ const DetailPage = memo(() => {
     setFolderSelectOpen(false)
   }, [id, myListData])
 
-  // タイトル情報をsessionStorageに保存（DashboardLayoutのタイトルバー用）
+  // ヘッダーのタイトルを共有Context経由で渡す（離脱時にクリア）
   useEffect(() => {
     if (basicInfo?.name && basicInfo?.currentMember !== undefined) {
-      sessionStorage.setItem('detailPageTitle', JSON.stringify({
-        name: basicInfo.name,
-        member: basicInfo.currentMember
-      }))
+      setDetailTitle({ name: basicInfo.name, member: basicInfo.currentMember })
     }
-    return () => {
-      sessionStorage.removeItem('detailPageTitle')
-    }
-  }, [basicInfo?.name, basicInfo?.currentMember])
+    return () => setDetailTitle(null)
+  }, [basicInfo?.name, basicInfo?.currentMember, setDetailTitle])
 
   if (error || (!isLoading && !basicInfo)) {
     return (

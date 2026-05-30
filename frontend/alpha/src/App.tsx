@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect, useRef, Activity } from 'react'
 import { DashboardLayout } from './components/Layout'
+import { LayoutProvider } from './contexts/layout-context'
 import SearchPage from './pages/SearchPage'
 import MyListPage from './pages/MyListPage'
 import DetailPage from './pages/DetailPage'
@@ -52,6 +53,7 @@ function AppContent() {
   }, [showDetailOverlay])
 
   return (
+    <LayoutProvider>
     <DashboardLayout>
       {/*
         ベースページ（検索、マイリスト、設定）
@@ -134,6 +136,7 @@ function AppContent() {
         </div>
       )}
     </DashboardLayout>
+    </LayoutProvider>
   )
 }
 

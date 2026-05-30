@@ -13,6 +13,7 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { cn } from '@/lib/utils'
 import { loadMyList } from '@/services/storage'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
+import { useLayout } from '@/contexts/layout-context'
 
 // 統合ソートオプション
 const UNIFIED_SORT_OPTIONS = [
@@ -41,6 +42,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
+  const { detailTitle: ctxDetailTitle } = useLayout()
 
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
   const navigation = useMemo(() => {
@@ -80,21 +82,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [mobileSearchValue, setSearchParams])
 
-  // 詳細ページのタイトル情報を取得
+  // 詳細ページのタイトル情報を取得（Context から。詳細ページ以外では null）
   const getDetailPageTitle = (): { name: string; member: number } | null => {
     if (!location.pathname.startsWith('/openchat/')) return null
-    try {
-      const titleData = sessionStorage.getItem('detailPageTitle')
-      if (titleData) {
-        const { name, member } = JSON.parse(titleData)
-        if (name && member !== undefined) {
-          return { name, member }
-        }
-      }
-    } catch (e) {
-      // エラーの場合はnullを返す
-    }
-    return null
+    return ctxDetailTitle
   }
 
   // ページタイトルを現在のルートに基づいて生成
