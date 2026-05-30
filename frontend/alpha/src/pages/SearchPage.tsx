@@ -5,6 +5,7 @@ import { Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
+import { WatchKeywordButton } from '@/components/Notifications'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
 import type { SearchResponse } from '@/types/api'
@@ -153,9 +154,12 @@ const SearchPage = memo(() => {
 
       {urlKeyword && results.length > 0 && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground mt-2">
-            {totalCount.toLocaleString()}件
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              {totalCount.toLocaleString()}件
+            </p>
+            <WatchKeywordButton keyword={urlKeyword} category={category} />
+          </div>
 
           <div className="grid gap-2 md:gap-4">
             {results.map((chat) => (

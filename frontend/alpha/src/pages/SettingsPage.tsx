@@ -24,7 +24,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>分析ツール</CardTitle>
           <CardDescription>
-            上級者向けの分析ビュー。広告やSEOを気にせず深掘りできます。
+            キーワードと期間を指定して増減を分析します。
           </CardDescription>
         </CardHeader>
         <CardContent>

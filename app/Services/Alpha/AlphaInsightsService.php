@@ -130,7 +130,7 @@ class AlphaInsightsService
                     'type' => 'growth_rank',
                     'period' => $key,
                     'position' => $p,
-                    'text' => "過去{$label}の成長ランキングで全体{$p}位（人数の伸びが全オープンチャット中で上位）",
+                    'text' => "過去{$label}で人数の伸びが全体{$p}位",
                 ];
                 return;
             }
@@ -170,7 +170,7 @@ class AlphaInsightsService
                     'delta' => (int)$delta,
                     'fromDate' => $mv['oldest_date'] ?? null,
                     'toDate' => $mv['latest_date'] ?? null,
-                    'text' => "全体ランキング順位が直近30日で{$oldest}位→{$latest}位に{$dir}",
+                    'text' => "直近30日で全体順位 {$oldest}→{$latest}位（{$dir}）",
                 ];
             }
         }
@@ -182,7 +182,7 @@ class AlphaInsightsService
                 'category' => 0,
                 'bestPosition' => (int)$best,
                 'currentPosition' => (int)$latest,
-                'text' => "全体ランキングでの直近30日の最高順位は{$best}位",
+                'text' => "直近30日の最高は全体{$best}位",
             ];
         }
     }
@@ -213,7 +213,7 @@ class AlphaInsightsService
                 'rank' => $rank,
                 'total' => $total,
                 'percentile' => $this->roundPct($pct),
-                'text' => "同カテゴリ内のメンバー数で{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
+                'text' => "同カテゴリで{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
             ];
         }
 
@@ -227,7 +227,7 @@ class AlphaInsightsService
                     'type' => 'category_share',
                     'category' => $category,
                     'sharePercent' => $shareR,
-                    'text' => "同カテゴリ全体のメンバー数のうち約{$shareR}%を占める",
+                    'text' => "同カテゴリの人数の約{$shareR}%を占める",
                 ];
             }
         }
@@ -242,7 +242,7 @@ class AlphaInsightsService
                     'category' => $category,
                     'ratio' => round($ratio, 1),
                     'avgMember' => (int)round($avg),
-                    'text' => "カテゴリ平均（約" . number_format((int)round($avg)) . "人）の" . round($ratio, 1) . "倍の規模",
+                    'text' => "カテゴリ平均の" . round($ratio, 1) . "倍の規模",
                 ];
             }
         }
@@ -270,8 +270,8 @@ class AlphaInsightsService
             'maxGrowthDate' => (string)$date,
             'updating' => $updating,
             'text' => $updating
-                ? "過去最大の単日増加（{$this->fmtDate((string)$date)}の+" . number_format($growth) . "人）を直近で更新中"
-                : "過去最大の単日増加は{$this->fmtDate((string)$date)}の+" . number_format($growth) . "人",
+                ? "単日最大の増加を更新中（{$this->fmtDate((string)$date)} +" . number_format($growth) . "人）"
+                : "単日最大の増加は{$this->fmtDate((string)$date)}の+" . number_format($growth) . "人",
         ];
     }
 
@@ -304,7 +304,7 @@ class AlphaInsightsService
                 'ratio' => round($ratio, 1),
                 'recentPerDay' => round($recentPace, 1),
                 'basePerDay' => round($basePace, 1),
-                'text' => "直近1週間の増加ペースが過去3か月平均の約" . round($ratio, 1) . "倍に加速",
+                'text' => "増加ペースが平常の約" . round($ratio, 1) . "倍に加速",
             ];
         }
     }
