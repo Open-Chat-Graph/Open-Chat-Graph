@@ -151,3 +151,105 @@ export interface PeriodGrowthParams {
   order?: 'asc' | 'desc'
   limit?: number
 }
+
+// ===== 通知・ウォッチ条件（/alpha-api/alerts*） =====
+// すべて ja のみ。通知は毎時クロール後に算出（即時ではない）。
+
+// --- ウォッチ条件の取得（GET /alpha-api/alerts/config） ---
+export interface AlertsConfigKeyword {
+  id: number
+  keyword: string
+  category: number | null
+  created_at: string
+}
+
+export interface AlertsConfigRoom {
+  id: number
+  open_chat_id: number
+  up_member: number | null
+  up_percent: number | null
+  down_member: number | null
+  down_percent: number | null
+}
+
+export interface AlertsConfigMylistThreshold {
+  up_percent: number | null
+  down_percent: number | null
+  enabled: boolean
+}
+
+export interface AlertsConfigResponse {
+  keywords: AlertsConfigKeyword[]
+  rooms: AlertsConfigRoom[]
+  mylistThreshold: AlertsConfigMylistThreshold
+}
+
+// --- ウォッチ条件の保存（PUT /alpha-api/alerts/config、全置き換え） ---
+export interface AlertsConfigRequestKeyword {
+  keyword: string // 必須・最大190字
+  category?: number | null
+}
+
+export interface AlertsConfigRequestRoom {
+  openChatId: number
+  upMember?: number | null
+  upPercent?: number | null
+  downMember?: number | null
+  downPercent?: number | null
+}
+
+export interface AlertsConfigRequestMylistThreshold {
+  upPercent?: number | null
+  downPercent?: number | null
+  enabled: boolean
+}
+
+export interface AlertsConfigRequest {
+  keywords?: AlertsConfigRequestKeyword[]
+  rooms?: AlertsConfigRequestRoom[]
+  mylistThreshold?: AlertsConfigRequestMylistThreshold
+}
+
+// --- 通知一覧（GET /alpha-api/alerts?markRead=all|<csv ids>） ---
+export interface AlertBase {
+  id: number
+  type: 'keyword' | 'room' | 'mylist'
+  isRead: boolean
+  createdAt: number // unix秒
+}
+
+// 新しい部屋（キーワード見張りヒット）
+export interface KeywordHit extends AlertBase {
+  type: 'keyword'
+  keyword: string
+  category: number | null
+  emid: string
+  openChatId: number | null // 未登録の真の新規部屋は null
+  name: string
+  desc: string
+  img: string // obsハッシュ → imgPreviewUrl で前置
+  joinMethodType: number
+  isRegistered: boolean
+  member: number | null
+}
+
+// ウォッチの動き（部屋／マイリストの増減）
+export interface Movement extends AlertBase {
+  type: 'room' | 'mylist'
+  kind: 'room' | 'mylist'
+  openChatId: number
+  name: string
+  img: string // open_chat.img_url（保存パス）
+  category: number | null
+  currentMember: number | null
+  diff: number
+  percent: number
+  direction: 'up' | 'down'
+}
+
+export interface AlertsResponse {
+  keywordHits: KeywordHit[]
+  movements: Movement[]
+  unreadCount: number
+  computedAt: string | null
+}

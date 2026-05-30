@@ -128,8 +128,8 @@ const SearchPage = memo(() => {
   return (
     <div className="space-y-6">
       {isLoading && size === 1 && results.length === 0 && (
-        <div className="flex justify-center py-8">
-          <div className="text-muted-foreground">読み込み中...</div>
+        <div className="flex justify-center py-10" role="status" aria-label="読み込み中">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
         </div>
       )}
 

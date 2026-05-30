@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse } from '../types/api'
 
 const API_BASE = '/alpha-api'
 
@@ -64,6 +64,37 @@ export const alphaApi = {
 
     const res = await fetch(`${API_BASE}/period-growth?${query}`)
     if (!res.ok) throw new Error('Period growth API failed')
+
+    return res.json()
+  },
+
+  // ===== 通知・ウォッチ条件 =====
+
+  // ウォッチ条件を取得（キーワード見張り・部屋しきい値・マイリスト全体しきい値）
+  async getAlertsConfig(): Promise<AlertsConfigResponse> {
+    const res = await fetch(`${API_BASE}/alerts/config`)
+    if (!res.ok) throw new Error('Alerts config API failed')
+
+    return res.json()
+  },
+
+  // ウォッチ条件を全置き換えで保存。レスポンスは保存後の最新（GET と同形）。
+  async putAlertsConfig(body: AlertsConfigRequest): Promise<AlertsConfigResponse> {
+    const res = await fetch(`${API_BASE}/alerts/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new Error('Alerts config save failed')
+
+    return res.json()
+  },
+
+  // 通知一覧を取得。markRead に 'all' か対象 id の CSV を渡すと既読化する。
+  async getAlerts(markRead?: 'all' | string): Promise<AlertsResponse> {
+    const query = markRead ? `?markRead=${encodeURIComponent(markRead)}` : ''
+    const res = await fetch(`${API_BASE}/alerts${query}`)
+    if (!res.ok) throw new Error('Alerts API failed')
 
     return res.json()
   },

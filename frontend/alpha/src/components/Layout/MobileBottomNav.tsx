@@ -1,22 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Search, List, Bell, Settings } from 'lucide-react'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
-import { useGrowthNotifications } from '@/hooks/useGrowthNotifications'
+import { useAlerts } from '@/hooks/useAlerts'
 import { useMemo } from 'react'
 
 export function MobileBottomNav() {
   const location = useLocation()
   const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
-  const { unseenCount } = useGrowthNotifications()
+  const { unreadCount } = useAlerts()
 
   const navItems = useMemo(() => {
     return [
       { path: '/', icon: Search, label: '検索' },
       { path: '/mylist', icon: List, label: 'マイリスト' },
-      { path: '/notifications', icon: Bell, label: '通知', badge: unseenCount },
+      { path: '/notifications', icon: Bell, label: '通知', badge: unreadCount },
       { path: '/settings', icon: Settings, label: '設定' },
     ]
-  }, [unseenCount])
+  }, [unreadCount])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t md:hidden">

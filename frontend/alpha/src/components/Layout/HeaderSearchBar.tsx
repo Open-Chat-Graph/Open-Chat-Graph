@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, ArrowDownWideNarrow, ArrowUpWideNarrow, Check, X as XIcon, ChevronDown } from 'lucide-react'
+import { Search, ArrowDownWideNarrow, ArrowUpWideNarrow, Check, X as XIcon, ChevronDown, Eye, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAlertsConfig } from '@/components/Notifications'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +30,11 @@ const SEARCH_PLACEHOLDER = 'キーワードを入力...'
 export function HeaderSearchBar() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { triggerSearch } = useLayout()
+  const { addKeyword } = useAlertsConfig()
   const [value, setValue] = useState('')
   const [isFocused, setIsFocused] = useState(false)
+  // このキーワードを見張る導線の状態: idle / saving / done（追加済み or 既に存在）
+  const [watchState, setWatchState] = useState<'idle' | 'saving' | 'done'>('idle')
 
   // URL の q と入力値を同期
   useEffect(() => {
@@ -65,6 +69,26 @@ export function HeaderSearchBar() {
   const currentSort = searchParams.get('sort') || 'member'
   const currentOrder = searchParams.get('order') || 'desc'
   const currentCategory = searchParams.get('category') || '0'
+
+  // 検索中のキーワード（URL の q）。これを見張り対象にする。
+  const appliedKeyword = (searchParams.get('q') || '').trim()
+
+  // 見張り対象のキーワード/カテゴリが変わったらボタン状態をリセット
+  useEffect(() => {
+    setWatchState('idle')
+  }, [appliedKeyword, currentCategory])
+
+  const handleWatchKeyword = useCallback(async () => {
+    if (!appliedKeyword || watchState !== 'idle') return
+    setWatchState('saving')
+    try {
+      const cat = currentCategory === '0' ? null : Number(currentCategory)
+      await addKeyword({ keyword: appliedKeyword, category: cat })
+      setWatchState('done')
+    } catch {
+      setWatchState('idle')
+    }
+  }, [appliedKeyword, currentCategory, watchState, addKeyword])
 
   const updateParam = useCallback(
     (mutate: (p: URLSearchParams) => void) => {
@@ -146,6 +170,34 @@ export function HeaderSearchBar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* このキーワードを見張る（検索中のキーワードがあるときだけ） */}
+        {appliedKeyword && (
+          <Button
+            variant={watchState === 'done' ? 'secondary' : 'outline'}
+            size="icon"
+            className="h-10 w-10 flex-shrink-0"
+            onClick={handleWatchKeyword}
+            disabled={watchState !== 'idle'}
+            aria-label={
+              watchState === 'done' ? 'このキーワードを見張り中' : 'このキーワードを見張る'
+            }
+            title={
+              watchState === 'done'
+                ? '見張りに追加しました'
+                : `「${appliedKeyword}」を見張る`
+            }
+            data-testid="watch-current-keyword"
+          >
+            {watchState === 'saving' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : watchState === 'done' ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </Button>
+        )}
 
         {/* 検索条件の保存・呼び出し */}
         <SavedSearchControls />
