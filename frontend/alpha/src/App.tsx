@@ -122,6 +122,8 @@ function App() {
         <Route path="/settings" element={<AppContent />} />
         <Route path="/notifications" element={<AppContent />} />
         <Route path="/openchat/:id" element={<AppContent />} />
+        <Route path="/openchat/:id/ranking-history" element={<AppContent />} />
+        <Route path="/openchat/:id/image" element={<AppContent />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
     </BrowserRouter>

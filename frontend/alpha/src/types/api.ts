@@ -84,7 +84,9 @@ export interface RankingHistoryItem {
   member: number  // その時点のメンバー数
   currentMember: number  // 現在のメンバー数
   memberDiff: number  // メンバー数の差分
-  percentage: number  // ランキング位置パーセンテージ
+  percentage: number  // ランキング位置パーセンテージ（フォールバック用）
+  position: number | null  // 同一カテゴリ内の順位（N位）。古い履歴は null
+  totalCount: number | null  // 同一カテゴリのランキング総数（M位）。古い履歴は null
 }
 
 export interface RankingHistoryResponse {

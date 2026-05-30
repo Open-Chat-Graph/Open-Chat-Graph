@@ -825,6 +825,15 @@ Route::path('alpha/openchat/{id}', [AlphaPageController::class, 'index'])
     ->matchNum('id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// SPA のディープリンク（詳細の上に重ねるサブ画面）。実体は同じ index を返す
+Route::path('alpha/openchat/{id}/ranking-history', [AlphaPageController::class, 'index'])
+    ->matchNum('id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path('alpha/openchat/{id}/image', [AlphaPageController::class, 'index'])
+    ->matchNum('id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 // Alpha API - 検索
 Route::path('alpha-api/search', [AlphaApiController::class, 'search'])
     ->matchStr('keyword', emptyAble: true, maxLen: 100)

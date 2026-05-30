@@ -1,25 +1,30 @@
-import { useParams, useLocation } from 'react-router-dom'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState, memo, useCallback, useMemo } from 'react'
 import useSWR from 'swr'
+import { History, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { DetailHeader, DetailInfo, DetailStats, DetailActions, RankingHistory, PreactChart } from '@/components/Detail'
+import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, RankingHistoryOverlay } from '@/components/Detail'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
 import { useLayout } from '@/contexts/layout-context'
-import type { BasicInfoResponse, RankingHistoryResponse, OpenChat } from '@/types/api'
+import type { BasicInfoResponse, OpenChat } from '@/types/api'
 
 const DetailPage = memo(() => {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const { setDetailTitle } = useLayout()
 
   const [myListData, setMyListData] = useState(() => loadMyList())
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
-  const [imageModalOpen, setImageModalOpen] = useState(false)
   const isInList = id ? isInMyList(myListData, parseInt(id)) : false
+
+  // 詳細の上に重ねるサブ画面は URL で制御（ブラウザバックで閉じる）
+  const isImageRoute = location.pathname.endsWith('/image')
+  const isHistoryRoute = location.pathname.endsWith('/ranking-history')
 
   // location.stateから初期データを取得（検索/マイリストから遷移した場合）
   const initialData = location.state?.initialData as OpenChat | undefined
@@ -64,15 +69,6 @@ const DetailPage = memo(() => {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       keepPreviousData: false // IDが変わったら前のデータを保持しない
-    }
-  )
-
-  const { data: historyData } = useSWR<RankingHistoryResponse>(
-    id ? ['ranking-history', id] : null,
-    () => alphaApi.getRankingHistory(parseInt(id!)),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false
     }
   )
 
@@ -128,8 +124,12 @@ const DetailPage = memo(() => {
       <DetailHeader
         thumbnail={basicInfo.thumbnail}
         name={basicInfo.name}
-        imageModalOpen={imageModalOpen}
-        onImageModalOpenChange={setImageModalOpen}
+        imageModalOpen={isImageRoute}
+        onImageModalOpenChange={(open) => {
+          // 開く＝URLを進める / 閉じる＝ブラウザバック相当
+          if (open) navigate(`/openchat/${basicInfo.id}/image`)
+          else navigate(-1)
+        }}
       />
 
       {/* コンテンツ */}
@@ -170,12 +170,16 @@ const DetailPage = memo(() => {
           onRemoveFromMyList={handleRemoveFromMyList}
         />
 
-        {/* ランキング掲載履歴 */}
-        {historyData?.data && historyData.data.length > 0 && (
-          <div className="-mt-2 md:mt-0">
-            <RankingHistory data={historyData.data} />
-          </div>
-        )}
+        {/* ランキング掲載履歴: ボタンのみ。押すと上に重ねる個別画面を開きそこで初めてfetch */}
+        <button
+          type="button"
+          onClick={() => navigate(`/openchat/${basicInfo.id}/ranking-history`)}
+          className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
+        >
+          <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+          <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+        </button>
       </div>
 
       <FolderSelectDialog
@@ -185,6 +189,14 @@ const DetailPage = memo(() => {
         onSelect={handleFolderSelect}
         title="マイリストに追加"
       />
+
+      {/* ランキング掲載履歴の個別画面（開いている時だけマウント＝この時だけfetch） */}
+      {isHistoryRoute && (
+        <RankingHistoryOverlay
+          openChatId={basicInfo.id}
+          onClose={() => navigate(-1)}
+        />
+      )}
     </div>
   )
 })
