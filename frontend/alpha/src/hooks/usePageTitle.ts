@@ -55,6 +55,7 @@ function computeTitle(
 
   if (pathname === '/settings') return '設定'
   if (pathname === '/notifications') return '通知'
+  if (pathname === '/period-growth') return '任意のN日増減'
 
   if (pathname === '/') {
     const keyword = searchParams.get('q')

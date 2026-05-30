@@ -88,12 +88,10 @@ const PeriodGrowthPage = memo(() => {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold">任意のN日増減</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          キーワードに一致し「N日前と現在の両方に統計があるルーム」だけを、その期間の増減で並べます。
-        </p>
-      </div>
+      {/* 見出しは固定ヘッダ（タイトルバー）が「任意のN日増減」を表示するので、ここは説明のみ */}
+      <p className="text-sm text-muted-foreground">
+        キーワードに一致し「N日前と現在の両方に統計があるルーム」だけを、その期間の増減で並べます。
+      </p>
 
       <PeriodGrowthControls
         keyword={keyword}

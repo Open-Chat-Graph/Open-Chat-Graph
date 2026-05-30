@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CATEGORIES, categoryName } from '@/lib/categories'
+import { useBackDismiss } from '@/hooks/useBackDismiss'
 import { useAlertsConfig, configToRequest } from './useAlertsConfig'
 import type {
   AlertsConfigRequestKeyword,
@@ -48,6 +49,8 @@ const toNum = (s: string): number | null => {
  * 3区分: (a)キーワード見張り (b)部屋ウォッチのしきい値 (c)マイリスト全体のしきい値。
  */
 export function WatchSettingsDialog({ open, onOpenChange }: WatchSettingsDialogProps) {
+  // ブラウザバックで閉じる（アプリ全体の統一挙動）
+  useBackDismiss(open, () => onOpenChange(false))
   const { config, isLoading, save } = useAlertsConfig()
 
   // ローカル編集状態（保存形→送信形に正規化したもの）
@@ -124,7 +127,10 @@ export function WatchSettingsDialog({ open, onOpenChange }: WatchSettingsDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto p-0">
+      <DialogContent
+        className="max-h-[85vh] gap-0 overflow-y-auto p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader className="sticky top-0 z-subheader border-b bg-background px-5 py-4">
           <DialogTitle>ウォッチ条件の設定</DialogTitle>
           <DialogDescription>

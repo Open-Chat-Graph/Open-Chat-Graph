@@ -13,12 +13,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">設定</h1>
-        <p className="text-muted-foreground mt-1">
-          アプリケーションの設定を管理します
-        </p>
-      </div>
+      {/* 見出しは固定ヘッダ（タイトルバー）が「設定」を表示するので、ここでは繰り返さない */}
 
       <Card>
         <CardHeader>

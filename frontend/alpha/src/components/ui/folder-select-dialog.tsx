@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Folder as FolderIcon, FolderOpen } from 'lucide-react'
+import { useBackDismiss } from '@/hooks/useBackDismiss'
 import type { Folder } from '@/types/storage'
 
 interface FolderSelectDialogProps {
@@ -17,6 +18,8 @@ export function FolderSelectDialog({
   onSelect,
   title,
 }: FolderSelectDialogProps) {
+  // ブラウザバックで閉じる（アプリ全体の統一挙動）
+  useBackDismiss(open, () => onOpenChange(false))
   const handleSelect = (folderId: string | null) => {
     onSelect(folderId)
     onOpenChange(false)

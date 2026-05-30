@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useBackDismiss } from '@/hooks/useBackDismiss'
 import type { Folder } from '@/types/storage'
 
 interface FolderDialogProps {
@@ -24,7 +25,9 @@ export function FolderDialog({
   mode,
 }: FolderDialogProps) {
   const [name, setName] = useState('')
-  const [pushedHistory, setPushedHistory] = useState(false)
+
+  // ブラウザバックで閉じる（アプリ全体の統一挙動。共通フックに集約）
+  useBackDismiss(open, () => onOpenChange(false))
 
   useEffect(() => {
     if (open) {
@@ -36,61 +39,23 @@ export function FolderDialog({
     }
   }, [open, mode, folder])
 
-  // モーダルを開くときに履歴を追加
-  useEffect(() => {
-    if (open && !pushedHistory) {
-      window.history.pushState({ modalOpen: true }, '')
-      setPushedHistory(true)
-    }
-  }, [open, pushedHistory])
-
-  // ブラウザバック時にモーダルを閉じる
-  useEffect(() => {
-    const handlePopState = () => {
-      if (open) {
-        onOpenChange(false)
-        setPushedHistory(false)
-      }
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [open, onOpenChange])
-
   const handleSave = () => {
     if (name.trim()) {
       // 常にparentIdはnullで保存（フラットな構造）
       onSave(name.trim(), null)
-      setPushedHistory(false)
-      if (pushedHistory) {
-        window.history.back()
-      } else {
-        onOpenChange(false)
-      }
+      onOpenChange(false)
     }
   }
 
   const handleDelete = () => {
     if (onDelete) {
       onDelete()
-      setPushedHistory(false)
-      if (pushedHistory) {
-        window.history.back()
-      } else {
-        onOpenChange(false)
-      }
+      onOpenChange(false)
     }
   }
 
   const handleCancel = () => {
-    setPushedHistory(false)
-    if (pushedHistory) {
-      window.history.back()
-    } else {
-      onOpenChange(false)
-    }
+    onOpenChange(false)
   }
 
   return (

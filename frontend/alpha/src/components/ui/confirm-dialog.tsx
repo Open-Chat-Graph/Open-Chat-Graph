@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { useBackDismiss } from '@/hooks/useBackDismiss'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -31,6 +32,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  // ブラウザバックで閉じる（アプリ全体の統一挙動）
+  useBackDismiss(open, () => onOpenChange(false))
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* フッター */}
             <div className="border-t p-4 md:hidden lg:block select-none">
               <p className="text-xs text-muted-foreground">
-                統計監視ツール v0.1
+                オープンチャットの成長を、深く読む。
               </p>
             </div>
           </div>

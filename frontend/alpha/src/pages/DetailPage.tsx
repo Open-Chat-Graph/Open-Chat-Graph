@@ -172,6 +172,7 @@ const DetailPage = memo(() => {
         />
 
         <DetailActions
+          openChatId={basicInfo.id}
           url={basicInfo.url}
           isInList={isInList}
           onAddToMyList={handleAddToMyList}

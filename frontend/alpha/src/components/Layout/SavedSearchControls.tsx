@@ -4,6 +4,7 @@ import { Bookmark, BookmarkCheck, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useBackDismiss } from '@/hooks/useBackDismiss'
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,9 @@ export function SavedSearchControls() {
   const [saved, setSaved] = useState<SavedSearch[]>(() => loadSavedSearches())
   const [dialogOpen, setDialogOpen] = useState(false)
   const [name, setName] = useState('')
+
+  // ブラウザバックで閉じる（アプリ全体の統一挙動）
+  useBackDismiss(dialogOpen, () => setDialogOpen(false))
 
   const q = searchParams.get('q') || ''
   const category = Number(searchParams.get('category')) || 0

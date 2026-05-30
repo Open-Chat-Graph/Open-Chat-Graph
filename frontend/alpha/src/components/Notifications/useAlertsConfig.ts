@@ -71,5 +71,22 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  return { config: data, isLoading, error, save, addKeyword }
+  // 詳細画面からの部屋追加（ワンタップ）。既定しきい値は ±10%。重複は足さない。
+  // 細かいしきい値は通知タブの「見張り設定」で調整できる。
+  const addRoom = useCallback(
+    async (openChatId: number): Promise<{ added: boolean }> => {
+      const current = data ?? (await alphaApi.getAlertsConfig())
+      if (current.rooms.some((r) => r.open_chat_id === openChatId)) return { added: false }
+      const req = configToRequest(current)
+      req.rooms = [
+        ...(req.rooms ?? []),
+        { openChatId, upPercent: 10, downPercent: 10, upMember: null, downMember: null },
+      ]
+      await save(req)
+      return { added: true }
+    },
+    [data, save],
+  )
+
+  return { config: data, isLoading, error, save, addKeyword, addRoom }
 }
