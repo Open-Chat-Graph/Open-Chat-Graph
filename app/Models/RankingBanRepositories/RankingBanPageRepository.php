@@ -132,7 +132,9 @@ class RankingBanPageRepository
             rb.updated_at,
             rb.update_items,
             rb.member,
-            rb.percentage
+            rb.percentage,
+            rb.ranking_position,
+            rb.ranking_total
         FROM
             ranking_ban AS rb
         WHERE

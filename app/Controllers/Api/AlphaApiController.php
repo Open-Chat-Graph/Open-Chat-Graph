@@ -375,6 +375,9 @@ class AlphaApiController
                 'currentMember' => (int)$currentMember,
                 'memberDiff' => (int)$currentMember - (int)$item['member'],
                 'percentage' => (int)$item['percentage'],
+                // 「N位 / M位」表示用（古いレコードは未保存=null → フロントは percentage にフォールバック）
+                'position' => isset($item['ranking_position']) ? (int)$item['ranking_position'] : null,
+                'totalCount' => isset($item['ranking_total']) ? (int)$item['ranking_total'] : null,
             ];
         }, $history);
 

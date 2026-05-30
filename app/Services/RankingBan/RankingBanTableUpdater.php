@@ -69,9 +69,15 @@ class RankingBanTableUpdater
             if ($percentage > 100) $percentage = 100;
             if ($percentage < 1) $percentage = 1;
 
+            // 「N位 / M位」表示用に実際の順位と総数も保存する（percentage はフォールバック用に維持）
+            $ranking_position = (int)$rankingDay['position'];
+            $ranking_total = (int)$rankingDay['total_count_ranking'];
+
             $result[] = compact(
                 'datetime',
                 'percentage',
+                'ranking_position',
+                'ranking_total',
                 'member'
             ) + [
                 'open_chat_id' => $id,

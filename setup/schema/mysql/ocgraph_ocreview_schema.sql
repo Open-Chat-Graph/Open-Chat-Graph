@@ -96,6 +96,8 @@ CREATE TABLE `ranking_ban` (
   `open_chat_id` int(11) NOT NULL,
   `datetime` datetime NOT NULL,
   `percentage` int(11) NOT NULL,
+  `ranking_position` int(11) DEFAULT NULL,
+  `ranking_total` int(11) DEFAULT NULL,
   `member` int(11) NOT NULL,
   `flag` int(11) NOT NULL DEFAULT 0,
   `updated_at` int(11) NOT NULL,
