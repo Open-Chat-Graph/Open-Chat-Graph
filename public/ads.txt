@@ -1,3 +1,0 @@
-google.com, pub-2330982526015125, DIRECT, f08c47fec0942fa0
-
-contact=https://openchat-review.me/policy

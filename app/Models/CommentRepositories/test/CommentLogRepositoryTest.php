@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/CommentRepositories/test/CommentLogRepositoryTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Models\CommentRepositories\CommentLogRepository;

@@ -58,7 +58,7 @@
   flex-direction: column;
   align-items: center;
   flex-direction: row;
-  letter-spacing: .06px;
+  letter-spacing: 0.06px;
   font-weight: bold;
 }
 
@@ -81,7 +81,7 @@
 .app-dl {
   font-size: 11px;
   margin-bottom: 4px;
-  letter-spacing: .06px;
+  letter-spacing: 0.06px;
   color: #b7b7b7;
 }
 

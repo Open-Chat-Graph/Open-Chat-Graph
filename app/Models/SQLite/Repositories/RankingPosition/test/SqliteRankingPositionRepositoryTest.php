@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/SQLite/Repositories/RankingPosition/test/SqliteRankingPositionRepositoryTest.php
+ */
+
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 

@@ -1,135 +1,373 @@
-name: Deploy to Production
+name: Deploy
 
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
+    branches: [main, stg]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'デプロイ先の環境'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
 
 jobs:
   deploy:
     # PRがマージされた場合、または手動実行時に実行
-    # ただし、skip-ciラベル/タイトルがある場合はスキップ
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (github.event.pull_request.merged == true &&
-       !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
-       !startsWith(github.event.pull_request.title, 'skip-ci'))
+      (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
-
+    env:
+      IS_STG: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'stg') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging') }}
     steps:
-    # PRマージ時はCIテストが成功しているか確認
-    - name: Check CI status
-      if: github.event_name == 'pull_request'
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
+      # PRマージ時はCIテストが成功しているか確認（skip-ci時はスキップ）
+      - name: Check CI status
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+          !startsWith(github.event.pull_request.title, 'skip-ci')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking CI Test status for PR #${{ github.event.pull_request.number }}..."
 
-        # PRのhead SHA を取得
-        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # PRのhead SHA を取得
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
 
-        # CI Test ワークフローの結果を確認
-        CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
-          --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
+          # CI Test ワークフローの結果を確認
+          CI_STATUS=$(gh api repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs \
+            --jq '.check_runs[] | select(.name == "test") | .conclusion' | head -1)
 
-        echo "CI Test status: $CI_STATUS"
+          echo "CI Test status: $CI_STATUS"
 
-        if [ "$CI_STATUS" != "success" ]; then
-          echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
-          exit 1
-        fi
+          if [ "$CI_STATUS" != "success" ] && [ "$CI_STATUS" != "skipped" ]; then
+            echo "::error::CI Test has not passed (status: $CI_STATUS). Aborting deployment."
+            exit 1
+          fi
 
-        echo "CI Test passed. Proceeding with deployment."
+          echo "CI Test passed. Proceeding with deployment."
 
-    - name: Setup SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Deploy
-      run: |
-        ssh -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.SSH_PATH }} && git fetch origin && git reset --hard origin/main"
+      - name: Configure deploy target
+        id: config
+        run: |
+          if [ "$IS_STG" = "true" ]; then
+            {
+              echo "branch=stg"
+              echo "ssh_port=${{ vars.STG_SSH_PORT }}"
+              echo "ssh_user=${{ vars.STG_SSH_USER }}"
+              echo "ssh_host=${{ vars.STG_SSH_HOST }}"
+              echo "ssh_path=${{ vars.STG_SSH_PATH }}"
+              echo "tweet_msg=開発環境が更新されました。以下のPRがマージされました。"
+              echo "tweet_url=https://openchat-review-dev.me"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "branch=main"
+              echo "ssh_port=${{ vars.SSH_PORT }}"
+              echo "ssh_user=${{ vars.SSH_USER }}"
+              echo "ssh_host=${{ vars.SSH_HOST }}"
+              echo "ssh_path=${{ vars.SSH_PATH }}"
+              echo "tweet_msg=サイトが更新されました。以下のPRがマージされました。"
+              echo "tweet_url=https://openchat-review.me"
+            } >> "$GITHUB_OUTPUT"
+          fi
 
-    - name: Checkout repository
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      uses: actions/checkout@v4
+      - name: Check for frontend changes
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        id: check_changes
+        with:
+          filters: |
+            frontend_ranking:
+              - 'frontend/ranking/**'
+            frontend_oc_app:
+              - 'frontend/oc-app/**'
+            frontend_all_room_stats:
+              - 'frontend/all-room-stats/**'
 
-    - name: Setup Node.js
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Check if any frontend changed
+        id: any_frontend
+        run: |
+          if [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || \
+             [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || \
+             [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
-    - name: Install twitter-api-v2
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      run: npm install twitter-api-v2
+      - name: Setup Node.js
+        if: steps.any_frontend.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-    - name: Create post script
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      run: |
-        cat > post-pr-merge.js << 'EOF'
-        import { TwitterApi } from 'twitter-api-v2';
-
-        const client = new TwitterApi({
-          appKey: process.env.TWITTER_API_KEY,
-          appSecret: process.env.TWITTER_API_SECRET,
-          accessToken: process.env.TWITTER_ACCESS_TOKEN,
-          accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-        });
-
-        async function postTweet() {
-          try {
-            const prNumber = process.env.PR_NUMBER;
-            const prTitle = process.env.PR_TITLE;
-            const prUrl = process.env.PR_URL;
-            const prAuthor = process.env.PR_AUTHOR;
-
-            const message = '🚀 プルリクエストがマージされ、サイトに反映されました\n\n' +
-              '#' + prNumber + ': ' + prTitle + '\n' +
-              'By @' + prAuthor + '\n\n' +
-              '#オプチャグラフ https://openchat-review.me' + '\n\n' +
-              prUrl;
-
-            const tweet = await client.v2.tweet(message);
-            console.log('Tweet posted: ' + tweet.data.id);
-
-          } catch (error) {
-            console.error('Error:', error);
-            process.exit(1);
+      - name: Build frontend
+        if: steps.any_frontend.outputs.changed == 'true'
+        run: |
+          build_frontend() {
+            echo "Building: $1"
+            (cd "$1" && npm ci && CI=false npm run build)
           }
-        }
+          [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/ranking
+          [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/oc-app
+          [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && build_frontend frontend/all-room-stats
+          echo "Frontend build complete"
 
-        postTweet();
-        EOF
+      - name: Setup SSH
+        env:
+          SSH_KEY: ${{ (env.IS_STG == 'true' && secrets.STG_SSH_PRIVATE_KEY) || secrets.SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ (env.IS_STG == 'true' && secrets.STG_SSH_KNOWN_HOSTS) || secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
 
-    - name: Post to X (Twitter)
-      if: |
-        github.event_name == 'pull_request' &&
-        !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
-        !startsWith(github.event.pull_request.title, 'skip-post')
-      env:
-        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
-        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
-        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_URL: ${{ github.event.pull_request.html_url }}
-        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-      run: node post-pr-merge.js
+      - name: Deploy code
+        run: |
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "cd ${{ steps.config.outputs.ssh_path }} && git fetch origin && git reset --hard origin/${{ steps.config.outputs.branch }}"
+
+      - name: Install composer dependencies
+        run: |
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "cd ${{ steps.config.outputs.ssh_path }} && /usr/bin/php8.5 /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction"
+
+      - name: Initialize SQLite databases
+        run: |
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+
+      # setup/schema/mysql/*.sql を source of truth に、全DBグループ(ocreview/ranking/comment/userlog)へ
+      # 不足テーブル・カラム・索引を「加算のみ」で冪等反映する (MySQL/MariaDB 両対応)。
+      # DROP/MODIFY は一切しない。DB名・接続情報はサーバの local-secrets.php が解決するため env 不要。
+      # 注意: 接続ユーザに ALTER/CREATE/INDEX 権限が必要(DROP は不要)。stg で先行検証される。
+      - name: Sync MySQL schema (additive, idempotent)
+        run: |
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} \
+            "cd ${{ steps.config.outputs.ssh_path }} && /usr/bin/php8.5 batch/exec/sync_mysql_schema.php"
+
+      - name: Deploy frontend assets
+        if: steps.any_frontend.outputs.changed == 'true'
+        run: |
+          deploy() {
+            local dir=$(basename "$1")
+            ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} "rm -rf ${{ steps.config.outputs.ssh_path }}/public/js/$dir/"
+            scp -P ${{ steps.config.outputs.ssh_port }} -r "$1" ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }}:${{ steps.config.outputs.ssh_path }}/public/js/
+          }
+          [ "${{ steps.check_changes.outputs.frontend_ranking }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/react/
+          [ "${{ steps.check_changes.outputs.frontend_oc_app }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/oc-app/
+          [ "${{ steps.check_changes.outputs.frontend_all_room_stats }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] && deploy public/js/all-room-stats/
+          echo "Frontend deploy complete"
+
+      - name: Purge Cloudflare cache
+        env:
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CF_ZONE_ID_STG: ${{ secrets.STG_CLOUDFLARE_ZONE_ID }}
+          CF_API_KEY_STG: ${{ secrets.STG_CLOUDFLARE_API_KEY }}
+        run: |
+          if [ "$IS_STG" = "true" ]; then
+            ZONE_ID="$CF_ZONE_ID_STG"
+            API_KEY="$CF_API_KEY_STG"
+          else
+            ZONE_ID="$CF_ZONE_ID"
+            API_KEY="$CF_API_KEY"
+          fi
+          if [ -z "$ZONE_ID" ] || [ -z "$API_KEY" ]; then
+            echo "Cloudflare credentials not configured. Skipping cache purge."
+            exit 0
+          fi
+          echo "Purging Cloudflare cache..."
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+          if echo "$RESPONSE" | grep -q '"success":\s*true'; then
+            echo "Cache purged successfully."
+          else
+            echo "::error::Cache purge failed: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Notify Discord (deploy success)
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          SITE_URL: ${{ steps.config.outputs.tweet_url }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BODY_EXCERPT=""
+            if [ -n "$PR_BODY" ]; then
+              BODY_EXCERPT=$(printf '%.200s' "$PR_BODY")
+              if [ "${#PR_BODY}" -gt 200 ]; then
+                BODY_EXCERPT="${BODY_EXCERPT}..."
+              fi
+            fi
+            jq -n \
+              --arg num "$PR_NUM" \
+              --arg title "$PR_TITLE" \
+              --arg body "$BODY_EXCERPT" \
+              --arg pr_url "$PR_URL" \
+              --arg site_url "$SITE_URL" \
+              '{embeds: [{title: "🚀 デプロイ成功", description: ("#" + $num + ": " + $title + (if $body != "" then "\n\n" + $body else "" end) + "\n\n[→ PRを開く](" + $pr_url + ") | [→ サイトを開く](" + $site_url + ")"), color: 3066993}]}' \
+            | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+          else
+            jq -n \
+              --arg site_url "$SITE_URL" \
+              '{embeds: [{title: "🚀 デプロイ成功", description: ("手動デプロイが完了しました\n\n[→ サイトを開く](" + $site_url + ")"), color: 3066993}]}' \
+            | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"
+          fi
+
+      - name: Install twitter-api-v2
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        run: npm install twitter-api-v2
+
+      - name: Create post script
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        run: |
+          cat > post-pr-merge.js << 'EOF'
+          import { TwitterApi } from 'twitter-api-v2';
+
+          const client = new TwitterApi({
+            appKey: process.env.TWITTER_API_KEY,
+            appSecret: process.env.TWITTER_API_SECRET,
+            accessToken: process.env.TWITTER_ACCESS_TOKEN,
+            accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+          });
+
+          async function postTweet() {
+            try {
+              const prNumber = process.env.PR_NUMBER;
+              const prTitle = process.env.PR_TITLE;
+              const prUrl = process.env.PR_URL;
+              const prAuthor = process.env.PR_AUTHOR;
+              const tweetMsg = process.env.TWEET_MSG;
+              const siteUrl = process.env.SITE_URL;
+              const includeUrls = process.env.INCLUDE_URLS === 'true';
+
+              // X API: URL を含む post は $0.20 / 含まない場合 $0.015。
+              // デフォルトは URL なし。`url-post` ラベル付き PR の場合は URL を
+              // 本文に載せる ($0.20)、X 側で URL 埋め込みカードが付く。
+
+              // PR 本文の整形:
+              //  1. 末尾の "🤖 Generated with..." / "Co-Authored-By:" を除外
+              //  2. URL を全部除去 (X API は URL 含むツイートで $0.20、無しで $0.015 と
+              //     13 倍コスト差。本文中のリンク経由で URL が混入するのを防ぐ)
+              //  3. markdown ヘッダ (#, ##, ### …) の直下の空行のみ詰める
+              //     (段落間の空行は読みやすさのため残す)
+              const prBody = (process.env.PR_BODY || '')
+                .replace(/\n*🤖[\s\S]*$/, '')
+                .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
+                .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+                .replace(/<https?:\/\/[^>]+>/g, '')
+                .replace(/https?:\/\/\S+/g, '')
+                .replace(/^(#{1,6} .*)\n\n+/gm, '$1\n')
+                .trim();
+
+              // X Premium tweet 上限は 25,000 文字。それを超える場合だけ事前に切り詰める。
+              const MAX_TWEET = 25000;
+              // head: 「🚀 メッセージ#オプチャグラフ\n#番号: タイトル」の 2 行のみ。
+              // (アバター画像から作者は分かるので By {author} は省く)
+              const head = '🚀 ' + tweetMsg + '#オプチャグラフ\n' +
+                '#' + prNumber + ': ' + prTitle;
+              const urlSuffix = includeUrls ? '\n\n' + siteUrl + '\n\n' + prUrl : '';
+              const separator = '\n---\n';
+
+              let bodySection = '';
+              if (prBody) {
+                const overhead = head.length + separator.length + urlSuffix.length;
+                const remaining = MAX_TWEET - overhead;
+                if (remaining > 5) {
+                  const body = prBody.length > remaining
+                    ? prBody.slice(0, remaining - 1) + '…'
+                    : prBody;
+                  bodySection = separator + body;
+                }
+              }
+
+              const message = head + bodySection + urlSuffix;
+
+              // X Premium 前提でフル本文を送信。文字数超過で X に拒否された場合のみ
+              // head + 区切り + 切り詰め本文 で再送する。
+              let tweet;
+              try {
+                tweet = await client.v2.tweet(message);
+              } catch (err) {
+                const errCodes = (err && err.data && err.data.errors) ? err.data.errors.map(e => e.code) : [];
+                const tooLong = errCodes.includes(186) || /too long|character limit/i.test((err && err.message) || '');
+                if (!tooLong) throw err;
+
+                console.log('Tweet rejected as too long (' + message.length + ' chars). Retrying with truncated body.');
+                const tail = bodySection ? '\n---\n' : '';
+                const baseLen = head.length + tail.length + urlSuffix.length;
+                const limit = 280; // X 拒否時のフォールバック上限
+                const truncatedBody = prBody.slice(0, Math.max(0, limit - baseLen - 1)) + '…';
+                const fallback = head + (truncatedBody.length > 1 ? '\n---\n' + truncatedBody : '') + urlSuffix;
+                tweet = await client.v2.tweet(fallback);
+              }
+              console.log('Tweet posted: ' + tweet.data.id);
+
+            } catch (error) {
+              console.error('Error:', error);
+              process.exit(1);
+            }
+          }
+
+          postTweet();
+          EOF
+
+      - name: Post to X (Twitter)
+        if: |
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-post') &&
+          !startsWith(github.event.pull_request.title, 'skip-post')
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          TWEET_MSG: ${{ steps.config.outputs.tweet_msg }}
+          SITE_URL: ${{ steps.config.outputs.tweet_url }}
+          INCLUDE_URLS: ${{ contains(github.event.pull_request.labels.*.name, 'url-post') }}
+        run: node post-pr-merge.js
+
+      - name: Notify Discord (deploy failure)
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            DESC="#${PR_NUM}: ${PR_TITLE}"
+          else
+            DESC="手動実行 (workflow_dispatch)"
+          fi
+
+          jq -n \
+            --arg desc "$DESC" \
+            --arg url "$RUN_URL" \
+            '{embeds: [{title: "❌ デプロイ失敗", description: ($desc + "\n\n[→ Actions ログを確認](" + $url + ")"), color: 15158332}]}' \
+          | curl -sS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK"

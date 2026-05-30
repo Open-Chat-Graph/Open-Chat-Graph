@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Models/Repositories/test/OpenChatDataForUpdaterWithCacheRepositoryTest.php
+ */
+
 use PHPUnit\Framework\TestCase;
 use App\Services\OpenChat\Dto\OpenChatApiDtoFactory;
 use App\Services\OpenChat\Dto\OpenChatDto;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OpenChat\Crawler;
 
 use App\Config\AppConfig;
+use App\Services\Cron\Utility\CronUtility;
 use Shared\MimimalCmsConfig;
 
 class OpenChatApiRankingDownloader
@@ -26,7 +27,13 @@ class OpenChatApiRankingDownloader
     function fetchOpenChatApiRankingAll(\Closure $callback, ?\Closure $callbackByCategoryBefore, ?\Closure $callbackByCategoryAfter): array
     {
         $result = [];
-        foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $key => $category) {
+        $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
+
+        if (AppConfig::$isStaging) {
+            $categories = CronUtility::filterCategoriesForStaging($categories);
+        }
+
+        foreach ($categories as $key => $category) {
             if ($callbackByCategoryBefore && $callbackByCategoryBefore((string)$category)) {
                 continue;
             }

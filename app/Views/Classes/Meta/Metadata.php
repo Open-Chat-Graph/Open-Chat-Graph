@@ -7,6 +7,14 @@ use Spatie\SchemaOrg\Schema;
 
 class Metadata
 {
+    /**
+     * 検索結果でアイコン横に出る「サイト名ラベル」(og:site_name / WebSite schema name)。
+     * タイトル接尾辞($site_name)とは切り離し、全言語共通の英語ブランドで統一する
+     * (LINE公式が言語問わずラベルを「LINE」で出すのと同じ。日本語の「オプチャグラフ」は
+     * タイトル・本文に残るので国内のブランド検索には影響しない)。
+     */
+    public const BRAND_LABEL = 'Open Chat Graph';
+
     public string $title;
     public string $description;
     public string $ogpDescription;
@@ -28,8 +36,14 @@ class Metadata
         $this->site_url = url();
         $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
 
-        $this->title = t('オプチャグラフ');
-        $this->site_name = t('オプチャグラフ');
+        $siteTitle = t('オプチャグラフ');
+        $this->site_name = $siteTitle;
+
+        if (AppConfig::$isStaging) {
+            $this->title = $siteTitle . t(' (開発環境)');
+        } else {
+            $this->title = $siteTitle;
+        }
 
         $this->locale = t('ja');
 
@@ -40,7 +54,8 @@ class Metadata
 
     public function setTitle(string $title, bool $includeSiteTitle = true): static
     {
-        $this->title = h($title) . ($includeSiteTitle ? ('｜' . $this->title) : '');
+        $suffix = AppConfig::$isStaging ? t(' (開発環境)') : '';
+        $this->title = h($title) . ($includeSiteTitle ? ('｜' . $this->site_name) : '') . $suffix;
         return $this;
     }
 
@@ -78,7 +93,7 @@ class Metadata
         $tags .= '<meta property="og:title" content="' . $this->title . '">' . "\n";
         $tags .= '<meta property="og:description" content="' . $this->ogpDescription . '">' . "\n";
         if ($this->image_url) $tags .= '<meta property="og:image" content="' . $this->image_url . '">' . "\n";
-        $tags .= '<meta property="og:site_name" content="' . $this->site_name . '">' . "\n";
+        $tags .= '<meta property="og:site_name" content="' . self::BRAND_LABEL . '">' . "\n";
         $tags .= '<meta name="twitter:card" content="summary">' . "\n";
         $tags .= '<meta name="twitter:site" content="@openchat_graph">' . "\n";
 
@@ -90,7 +105,7 @@ class Metadata
     public function generateTopPageSchema(): string
     {
         return Schema::webSite()
-            ->name($this->site_name)
+            ->name(self::BRAND_LABEL)
             ->inLanguage($this->locale)
             ->url(url())
             ->image($this->image_url)

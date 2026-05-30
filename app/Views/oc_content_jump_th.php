@@ -11,7 +11,7 @@ function ad(bool $show = true)
 
 ?>
   <div style="margin: -24px 0;">
-    <?php GAd::output(GAd::AD_SLOTS['siteSeparatorResponsive']) ?>
+    <?php GAd::output('siteSeparatorResponsive') ?>
   </div>
 <?php
 

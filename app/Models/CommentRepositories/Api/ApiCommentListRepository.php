@@ -21,24 +21,30 @@ class ApiCommentListRepository implements CommentListRepositoryInterface
         "SELECT
                 c.id,
                 c.comment_id AS commentId,
-                CASE c.flag AND c.user_id != :user_id
-                    WHEN 0 THEN c.name
-                    ELSE 'Anonymous'
+                CASE
+                    WHEN c.flag = 5 THEN 'Anonymous'
+                    WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN 'Anonymous'
+                    ELSE c.name
                 END AS name,
-                CASE c.flag AND c.user_id != :user_id
-                    WHEN 0 THEN c.text
-                    ELSE ''
+                CASE
+                    WHEN c.flag = 5 THEN ''
+                    WHEN c.flag IN (1, 2) AND c.user_id != :user_id THEN ''
+                    ELSE c.text
                 END AS text,
                 c.time,
                 c.user_id AS userId,
                 CASE
+                    WHEN c.flag = 4 THEN 4
+                    WHEN c.flag = 5 THEN 5
                     WHEN c.user_id = :user_id THEN 0
                     ELSE c.flag
                 END AS flag,
                 IFNULL(l.empathy, 0) AS empathyCount,
                 IFNULL(l.insights, 0) AS insightsCount,
                 IFNULL(l.negative, 0) AS negativeCount,
-                IFNULL(l.voted, '') AS voted
+                IFNULL(l.voted, '') AS voted,
+                NULL AS logIp,
+                NULL AS logUa
             FROM
                 comment AS c
                 LEFT JOIN (
@@ -95,7 +101,8 @@ class ApiCommentListRepository implements CommentListRepositoryInterface
                 name,
                 time,
                 text,
-                comment_id
+                comment_id,
+                user_id
             FROM
                 comment
             WHERE

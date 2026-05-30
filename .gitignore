@@ -7,11 +7,14 @@ Thumbs.db
 # 依存関係
 /vendor
 /node_modules
+frontend/*/node_modules/
 
 # 設定ファイル
 local-secrets.php
 prod-secrets.php
 /shared/secrets.php
+# 共有モードのローカル設定（参照先パス・ネットワーク名。環境ごとに異なる）
+/.shared.local.mk
 local-setup.sh
 prod-setup.sh
 local-setup-prod-sync.sh
@@ -22,7 +25,7 @@ docker/line-mock-api/.env.mock
 !docker/line-mock-api/public/.htaccess
 
 # セットアップスクリプト
-setup.sh
+/setup.sh
 prid-setup.sh
 setup/local-setup.sh
 /password.openchat-review.me
@@ -30,16 +33,20 @@ setup/local-setup.sh
 # バッチ処理
 batch/sh/*.key
 batch/sh/sqldump
+batch/sh/prod-sync/secrets/
+!batch/sh/prod-sync/secrets-example/**
 
 # サイトマップ
 public/sitemaps/**
-public/sitemap.xml
+public/sitemap*.xml
 
 # ストレージ
 storage/exception.log
 storage/furigana/**
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
+storage/*/SQLite/statistics_ohlc/statistics_ohlc.db
+storage/*/SQLite/ranking_position_ohlc/ranking_position_ohlc.db
 storage/*/SQLite/ranking_position/ranking_position.db
 storage/*/SQLite/ocgraph_sqlapi/*.db
 storage/*/SQLite/*/*.db-shm
@@ -61,8 +68,24 @@ storage/*/open_chat_sub_categories/subcategories.json
 # 別端末用のルートCA証明書（スマホ等でHTTPS接続する際に使用）
 *-rootCA.pem
 
+# コメント画像
+public/comment-img/*
+storage/comment-img-hidden/*
+!storage/comment-img-hidden/.gitkeep
+
+# フロントエンドビルド成果物
+public/js/react/
+public/js/oc-app/
+public/js/all-room-stats/
+frontend/*/dist/
+
 # テスト関連
 test-logs/
+.playwright-mcp
+
+# Claude Code
+.claude/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
+local-secrets.php.bak

@@ -33,11 +33,7 @@
     }
   },
   "postCreateCommand": "bash .devcontainer/post-create-command.sh",
-  "forwardPorts": [
-    8443,
-    8080,
-    9000
-  ],
+  "forwardPorts": [8443, 8080, 9000],
   "portsAttributes": {
     "8443": {
       "label": "HTTPS (Basic)",

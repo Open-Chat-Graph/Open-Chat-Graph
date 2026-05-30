@@ -1,0 +1,45 @@
+# 共有モード（別リポジトリのローカル環境を共有する2つ目のインスタンス）
+#
+# 目的:
+#   コードはこのリポジトリで動かしつつ、ローカルのデータ実体（MariaDB・storage・comment-img）を
+#   別ディレクトリにある既存リポジトリ側に一本化する。
+#   本番同期(prod-sync)を参照先で1回やれば、両リポジトリから同じデータが見える。
+#
+# 仕組み:
+#   1. app を自前の mysql ではなく参照先の MariaDB に接続させる
+#      （app の default ネットワークを参照先の外部ネットワークに差し替え、
+#        local-secrets.php の dbHost='mysql' が参照先の mysql を指すようにする）
+#   2. storage / public/comment-img を参照先の実ディレクトリで bind mount する
+#      （大容量データを複製せず参照。ホストのワーキングツリーは汚さない）
+#   3. local-secrets.php は参照先からコピー（make shared-setup が実施）
+#
+# 使い方（詳細は make help / README.shared.md）:
+#   make up-shared      # 初回は参照先パスを尋ねる → 参照先のデータで起動
+#   make down-shared    # 通常のローカル環境へ戻す
+#
+# 参照先（make が .shared.local.mk から渡す。直接 docker compose する場合は env で指定）:
+#   OCG_DIR     : 参照先リポジトリのパス
+#   OCG_NETWORK : 参照先の docker ネットワーク名（例: <project>_default）
+
+services:
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    # 自前の mysql には依存しない（参照先の mysql を使うため）
+    depends_on: !reset []
+    # storage / comment-img を参照先の実体で上書き（./:/var/www/html より優先される）
+    volumes:
+      - '${OCG_DIR:?OCG_DIR is required - run make up-shared}/storage:/var/www/html/storage'
+      - '${OCG_DIR:?OCG_DIR is required - run make up-shared}/public/comment-img:/var/www/html/public/comment-img'
+      # translation.json だけは storage 共有から外し、このリポジトリ側を使う。
+      # （翻訳はコード扱いでこのリポジトリで管理。データ実体は参照先のまま）
+      # storage ディレクトリ bind より深いパスなので、こちらが優先されて上書きされる。
+      - './storage/translation.json:/var/www/html/storage/translation.json'
+
+# app の default ネットワークを参照先の外部ネットワークに差し替える。
+# これにより app から 'mysql' が参照先の MariaDB として解決される。
+networks:
+  default:
+    name: "${OCG_NETWORK:?OCG_NETWORK is required - run make up-shared}"
+    external: true

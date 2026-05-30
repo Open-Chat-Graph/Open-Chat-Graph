@@ -5,7 +5,6 @@
 use App\Config\AppConfig;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
-use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
 if (!$recommend->getCount()) {
@@ -22,10 +21,6 @@ if ($recommend->type === RecommendListType::Category) {
 
 ?>
 
-<?php if (!isset($disableGAd) || !$disableGAd): ?>
-    <?php //GAd::output(GAd::AD_SLOTS['siteSeparatorRectangle']) ?>
-<?php endif ?>
-
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
@@ -36,13 +31,6 @@ if ($recommend->type === RecommendListType::Category) {
     </header>
 
     <?php viewComponent('open_chat_list_recommend', compact('recommend', 'id') + ['limit' => true, 'shuffle' => true]) ?>
-
-    <?php if (isset($showTags) && $tags = $recommend->getFilterdTags(true)) : ?>
-        <div>
-            <div style="line-height: 1.5; font-size: 16px; color: #111; font-weight: bold;"><?php echo t('関連のテーマ') ?></div>
-            <?php viewComponent('tag_list_section', compact('tags')) ?>
-        </div>
-    <?php endif ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot][htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">

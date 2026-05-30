@@ -170,7 +170,7 @@ class LiveTalkAnalyzerEventListener {
       const users = this.#processUserCallTimes(slicedObj.liveUser[i], slicedObj.elapsedTime[i])
 
       // ユーザー名カラムの要素を生成して追加する
-      users.forEach(function(el) {
+      users.forEach(function (el) {
         const talkUser = document.createElement('span')
         talkUser.textContent = el[0]
 

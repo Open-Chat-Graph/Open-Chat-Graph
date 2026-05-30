@@ -25,14 +25,17 @@ class MimimalCmsConfig
         \App\Models\Repositories\DeleteOpenChatRepositoryInterface::class => \App\Models\Repositories\DeleteOpenChatRepository::class,
         \App\Models\Repositories\SyncOpenChatStateRepositoryInterface::class => \App\Models\Repositories\SyncOpenChatStateRepository::class,
         \App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface::class => \App\Models\Repositories\MemberChangeFilterCacheRepository::class,
+        \App\Models\Repositories\AllRoomStatsRepositoryInterface::class => \App\Models\Repositories\AllRoomStatsRepository::class,
 
         \App\Models\Repositories\Statistics\StatisticsRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository::class,
         \App\Models\Repositories\Statistics\StatisticsRankingUpdaterRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRankingUpdaterRepository::class,
         \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsPageRepository::class,
+        \App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsOhlcRepository::class,
 
         \App\Services\Crawler\Config\OpenChatCrawlerConfigInterface::class => \App\Services\Crawler\Config\OpenChatCrawlerConfig::class,
         \App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionPageRepository::class,
+        \App\Models\Repositories\RankingPosition\RankingPositionOhlcRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionOhlcRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\RankingPositionHourRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionHourPageRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\RankingPositionHourPageRepository::class,
         \App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\HourMemberRankingUpdaterRepository::class,
@@ -40,8 +43,12 @@ class MimimalCmsConfig
         \App\Models\Repositories\OpenChatListRepositoryInterface::class => \App\Models\Repositories\OpenChatListRepository::class,
         \App\Models\Repositories\OpenChatRecentListRepositoryInterface::class => \App\Models\Repositories\OpenChatListRepository::class,
         \App\Models\Repositories\OpenChatPageRepositoryInterface::class => \App\Models\Repositories\OpenChatPageRepository::class,
+        \App\Models\Repositories\OcNarrativeRepositoryInterface::class => \App\Models\Repositories\OcNarrativeRepository::class,
+        \App\Models\Repositories\OcSitemapLastmodRepositoryInterface::class => \App\Models\Repositories\OcSitemapLastmodRepository::class,
 
         \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface::class => \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository::class,
+        \App\Models\Repositories\SimilarSizeRoomRepositoryInterface::class => \App\Models\Repositories\SimilarSizeRoomRepository::class,
+        \App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface::class => \App\Models\Repositories\Recommend\RecommendGrowthRepository::class,
 
         \App\Models\CommentRepositories\CommentListRepositoryInterface::class => \App\Models\CommentRepositories\CommentListRepository::class,
         \App\Models\CommentRepositories\CommentLogRepositoryInterface::class => \App\Models\CommentRepositories\CommentLogRepository::class,
@@ -49,16 +56,22 @@ class MimimalCmsConfig
         \App\Models\CommentRepositories\DeleteCommentRepositoryInterface::class => \App\Models\CommentRepositories\DeleteCommentRepository::class,
         \App\Models\CommentRepositories\LikePostRepositoryInterface::class => \App\Models\CommentRepositories\LikePostRepository::class,
         \App\Models\CommentRepositories\RecentCommentListRepositoryInterface::class => \App\Models\CommentRepositories\RecentCommentListRepository::class,
+        \App\Models\CommentRepositories\CommentImageRepositoryInterface::class => \App\Models\CommentRepositories\CommentImageRepository::class,
+
+        \App\Services\Comment\CommentImageServiceInterface::class => \App\Services\Comment\CommentImageService::class,
         
+        \App\Models\RecommendRepositories\ModifyRecommendRepositoryInterface::class => \App\Models\RecommendRepositories\ModifyRecommendRepository::class,
+        \App\Models\RecommendRepositories\RecommendTagRepositoryInterface::class => \App\Models\RecommendRepositories\RecommendTagRepository::class,
+
         \App\Services\Auth\AuthInterface::class => \App\Services\Auth\Auth::class,
         
         \App\Services\OpenChat\Updater\OpenChatDeleterInterface::class => \App\Services\OpenChat\Updater\OpenChatDeleter::class,
         
         \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
-        \App\Views\Classes\Dto\CommentArgDtoFactoryInterface::class => \App\Views\Classes\Dto\CommentArgDtoFactory::class,
         \App\Views\Classes\CollapseKeywordEnumerationsInterface::class => \App\Views\Classes\CollapseKeywordEnumerations::class,
 
-        \App\Services\Storage\FileStorageInterface::class => \App\Services\Storage\FileStorageService::class,
+        \App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface::class => \App\Models\RecommendRepositories\BulkRankingDataRepository::class,
+        \App\Services\Recommend\BulkRecommendRankingBuilderInterface::class => \App\Services\Recommend\BulkRecommendRankingBuilder::class,
     ];
 
     // URL root
@@ -82,10 +95,11 @@ class MimimalCmsConfig
 
     // Database configuration
     public static string $dbHost = '';
-    public static string $dbName = 'cf782105_ocreview';
+    public static string $dbName = '';
     public static string $dbUserName = '';
     public static string $dbPassword = '';
     public static bool $dbAttrPersistent = false;
+    public static string $dbCharset = 'utf8mb4';
 
     // String cryptor configuration
     public static string $stringCryptorHkdfKey = '';
@@ -136,5 +150,5 @@ class MimimalCmsConfig
      * This constant is used to specify the GitHub URL for displaying the source code in the exception error trace.
      * The path name after the DOCUMENT_ROOT_NAME constant is concatenated with this URL.
      */
-    public static string $errorPageGitHubUrl = 'https://github.com/mimimiku778/Open-Chat-Graph/blob/main/';
+    public static string $errorPageGitHubUrl = 'https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/';
 }

@@ -6,7 +6,7 @@ use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
 use App\Views\Ads\GoogleAdsense as GAd;
 
-$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+$enableAdsense = true;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
@@ -53,8 +53,8 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
-        <?php if ($dto->recentCommentList): ?>
-            <?php viewComponent('top_ranking_recent_comments', ['recentCommentList' => $dto->recentCommentList]) ?>
+        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
+            <?php viewComponent('top_ranking_recent_comments') ?>
         <?php endif ?>
 
         <hr class="hr-top" style="margin-bottom: 8px;">
@@ -64,9 +64,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
         <hr class="hr-top" style="margin-bottom: 8px;">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
 
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
@@ -117,23 +117,13 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 fetchMyList('myList')
             });
         </script>
-        <?php if (AppConfig::$enableCloudflare): ?>
-            <script type="module">
-                import {
-                    getComment
-                } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
+        <script type="module">
+            import {
+                getComment
+            } from '<?php echo fileUrl('/js/fetchComment.js', urlRoot: '') ?>'
 
-                getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
-            </script>
-        <?php else: ?>
-            <script type="module">
-                import {
-                    applyTimeElapsedString
-                } from '<?php echo fileUrl('/js/fetchComment.js') ?>'
-
-                applyTimeElapsedString()
-            </script>
-        <?php endif ?>
+            getComment(0, '<?php echo MimimalCmsConfig::$urlRoot ?>')
+        </script>
     <?php endif ?>
 </body>
 

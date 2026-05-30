@@ -19,6 +19,8 @@ class CommentListApi
     public int $insightsCount;
     public int $negativeCount;
     public string $voted;
+    public ?string $logIp = null;
+    public ?string $logUa = null;
 
     function getResponseArray(): array
     {
@@ -29,11 +31,17 @@ class CommentListApi
                 'name' => $this->name,
                 'text' => $this->text,
                 'time' => $this->time,
-                'userId' => match ($this->flag) {
-                    0 => $this->userId === SecretsConfig::$adminApiKey ? '管理者' : base62Hash($this->userId, 'fnv132'),
-                    1 => '削除済',
+                'status' => match ($this->flag) {
+                    0, 4 => '',
+                    1, 5 => '削除済',
                     2 => '通報により削除済',
-                }
+                    default => '削除済',
+                },
+                'userIdHash' => $this->userId === SecretsConfig::$adminApiKey
+                    ? '管理者'
+                    : substr(hash('sha256', $this->userId), 0, 7),
+                'uaHash' => $this->logUa !== null ? substr(hash('sha256', $this->logUa), 0, 7) : null,
+                'ipHash' => $this->logIp !== null ? substr(hash('sha256', $this->logIp), 0, 7) : null,
             ],
             'like' => [
                 'empathyCount' => $this->empathyCount,

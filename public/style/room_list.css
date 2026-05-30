@@ -319,8 +319,15 @@
   letter-spacing: -0.3px;
   cursor: pointer;
   min-height: 58px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
 }
 
 .openchat-item.add-openchat-form-item {
@@ -359,7 +366,7 @@
 .recent-comment-list .openchat-item-img {
   width: 40px;
   height: 40px;
-  top: 8px;
+  top: 13px;
 }
 
 .openchat-item h3 {
@@ -454,7 +461,7 @@
 }
 
 .openchat-item-mui-chip-inner {
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-left: 7px;
@@ -505,7 +512,7 @@
 .recent-comment-list .openchat-item {
   min-height: 40px;
   margin: 0;
-  padding: 8px 0;
+  padding: 14px 0;
   padding-left: 50px;
   padding-right: 1.5rem;
   cursor: unset;
@@ -530,7 +537,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.goldmedal::before {
-  content: "🥇";
+  content: '🥇';
   font-style: normal;
   font-size: 24px;
   left: -31px;
@@ -539,7 +546,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.silvermedal::before {
-  content: "🥈";
+  content: '🥈';
   font-style: normal;
   font-size: 22px;
   left: -30px;
@@ -548,7 +555,7 @@
 }
 
 .top-ranking:not(.not-rank) .openchat-item.blonzemedal::before {
-  content: "🥉";
+  content: '🥉';
   font-style: normal;
   font-size: 20px;
   left: -29px;
@@ -566,11 +573,27 @@
 }
 
 .recent-comment-list .openchat-item-desc {
-  color: #111;
+  color: #777;
   font-weight: normal;
+  font-size: 13px;
   line-height: 150%;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+  margin-top: 4px;
+}
+
+.comment-images {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  pointer-events: none;
+}
+
+.comment-images img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .top-ranking .openchat-item h3 {
@@ -580,12 +603,15 @@
 
 .recent-comment-list .openchat-item h3 {
   display: block;
-  min-width: 0px;
-  max-width: min-content;
+  min-width: calc(100% + 1.5rem);
+  width: calc(100% + 1.5rem);
 }
 
 .recent-comment-list .openchat-item-title {
   display: flex;
+  flex-wrap: nowrap;
+  overflow: visible;
+  justify-content: space-between;
 }
 
 .top-ranking .openchat-item-title {
@@ -595,13 +621,14 @@
 
 .comment-user {
   color: #777;
-  font-size: 14px;
+  font-size: 12px;
   display: block;
-  font-weight: normal;
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  margin-right: 4px;
+  font-weight: normal;
 }
 
 .openchat-item-title .comment-name {
@@ -610,13 +637,31 @@
   white-space: nowrap;
   overflow: hidden;
   color: #111;
-  font-weight: bold;
-  max-width: 70%;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.recent-comment-list .openchat-item-title .comment-name {
+  flex: 1 1 3rem;
+  min-width: 0;
+  max-width: max-content;
 }
 
 .openchat-item-title .comment-member-count {
   color: #111;
   font-weight: 500;
+}
+
+.recent-comment-list .openchat-item-title .comment-member-count {
+  flex: 0 0 auto;
+  font-size: 15px;
+  margin-right: 4px;
+}
+
+.recent-comment-list .openchat-item-title .comment-user {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: max-content;
 }
 
 /* .openchat-item-title .comment-user:before {
@@ -631,17 +676,28 @@
 
 .comment-footer {
   all: unset;
-  display: flex;
   gap: 6px;
+  margin-top: 0px;
   align-items: center;
-  margin-top: 3px;
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.comment-footer .comment-user {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .comment-time {
   font-weight: normal;
   position: relative;
-  color: #777;
-  font-size: 13px;
+  color: #aaa;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.recent-comment-list .openchat-item-title .comment-time {
+  margin-left: auto;
 }
 
 .recent-comment-list .super-icon {
@@ -748,7 +804,7 @@
 
 .white-btn .ranking-readMore::after {
   display: inline-block;
-  content: "";
+  content: '';
   margin-left: 6px;
   width: 6px;
   height: 6px;
@@ -818,7 +874,7 @@
 }
 
 .page-select label span::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   right: -7px;
@@ -868,7 +924,7 @@
 }
 
 .button01.next a::after {
-  content: "";
+  content: '';
   margin-left: 4px;
   width: 5px;
   height: 5px;
@@ -879,7 +935,7 @@
 }
 
 .button01.prev a::before {
-  content: "";
+  content: '';
   margin-right: 4px;
   width: 5px;
   height: 5px;
@@ -1057,7 +1113,7 @@
 .mylist .openchat-item::after {
   position: absolute;
   top: 76%;
-  content: "";
+  content: '';
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
@@ -1220,7 +1276,7 @@
 
   .recent-comment-list .openchat-item-desc {
     margin-top: 3px;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: normal;
   }
 
@@ -1240,6 +1296,33 @@
   .recent-comment-list .openchat-item-title {
     font-size: 13px;
     font-weight: 500;
+    padding-right: 0;
+    justify-content: left;
+  }
+
+  .recent-comment-list .openchat-item-title .comment-member-count {
+    flex: 0 0 auto;
+  }
+
+  .recent-comment-list .openchat-item-title .comment-user {
+    font-size: 14px;
+    margin-left: 6px;
+  }
+
+   .comment-time{
+    position: static;
+    font-size: 14px;
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+
+  .recent-comment-list .openchat-item-title .comment-time {
+    margin-left: 0;
+  }
+
+  .comment-time::before {
+    content: '・';
+    color: inherit;
   }
 
   .refresh-time span {
@@ -1334,14 +1417,15 @@
   display: block;
   height: 36px;
   margin-left: auto;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0px 1px 3px 0px,
     rgba(0, 0, 0, 0.06) 0px 1px 2px 0px;
   border: 1px solid #06c755;
 }
 
 .tag-btn.open-btn::after {
   display: inline-flex;
-  content: "";
+  content: '';
   position: absolute;
   width: 6px;
   height: 6px;
@@ -1406,11 +1490,7 @@
 }
 
 .gradient-bottom {
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1)
-  );
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
   position: absolute;
   bottom: 0;
   left: 0;
@@ -1525,5 +1605,10 @@
 
   .openchat-list-date.ranking-url {
     zoom: 110%;
+  }
+
+  .comment-images img {
+    width: 80px;
+    height: 80px;
   }
 }

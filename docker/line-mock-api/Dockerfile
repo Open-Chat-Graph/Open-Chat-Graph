@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.5-apache
 
 # PHP設定ファイルをコピー
 COPY php.ini /usr/local/etc/php/php.ini

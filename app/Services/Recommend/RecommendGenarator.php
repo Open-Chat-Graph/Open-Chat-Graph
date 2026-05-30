@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Services\Recommend\Dto\RecommendListDto;
-use App\Services\Recommend\StaticData\RecommendStaticDataFile;
+use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 
 class RecommendGenarator
 {
     function __construct(
-        private RecommendStaticDataFile $recommendStaticDataFile
+        private RecommendStaticDataGenerator $recommendStaticDataGenerator
     ) {
     }
 
@@ -22,16 +22,16 @@ class RecommendGenarator
                 false,
                 false,
                 '',
-                $category ? $this->recommendStaticDataFile->getCategoryRanking($category) : false
+                $category ? $this->recommendStaticDataGenerator->getCategoryRanking($category) : false
             ];
         }
 
         if ($tag === $tag2) $tag2 = $tag3;
         return [
-            $this->recommendStaticDataFile->getRecomendRanking($tag),
-            $tag2 ? $this->recommendStaticDataFile->getRecomendRanking($tag2) : false,
+            $this->recommendStaticDataGenerator->getRecomendRanking($tag),
+            $tag2 ? $this->recommendStaticDataGenerator->getRecomendRanking($tag2) : false,
             $tag,
-            $category ? $this->recommendStaticDataFile->getCategoryRanking($category) : false
+            $category ? $this->recommendStaticDataGenerator->getCategoryRanking($category) : false
         ];
     }
 }

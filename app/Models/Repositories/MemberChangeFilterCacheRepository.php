@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Repositories;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\Statistics\StatisticsRepositoryInterface;
-use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\Storage\FileStorageInterface;
 
 /**
@@ -29,7 +26,6 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
 {
     function __construct(
         private StatisticsRepositoryInterface $statisticsRepository,
-        private SyncOpenChatStateRepositoryInterface $syncStateRepository,
         private FileStorageInterface $fileStorage,
     ) {}
 
@@ -123,33 +119,45 @@ class MemberChangeFilterCacheRepository implements MemberChangeFilterCacheReposi
 
     /**
      * キャッシュから読み込む
+     *
+     * キャッシュファイル内に日付を埋め込み、キーごとに独立して日付検証を行う。
+     * 共有の filterCacheDate を使うと、毎時タスクが filterMemberChange/filterNewRooms の
+     * キャッシュ保存時に日付を更新してしまい、filterWeeklyUpdate のキャッシュが
+     * 古いまま有効と誤判定されるバグがあった。
      */
     private function loadCache(string $key, string $date): ?array
     {
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath($key);
+        $path = $this->fileStorage->getStorageFilePath($key);
 
         if (!file_exists($path)) {
             return null;
         }
 
-        // 日付チェック（DBから取得）
-        $cachedDate = $this->syncStateRepository->getString(SyncOpenChatStateType::filterCacheDate);
-        if ($cachedDate !== $date) {
+        $cached = $this->fileStorage->getSerializedFile('@' . $key);
+        if ($cached === false) {
             return null;
         }
 
-        $cached = $this->fileStorage->getSerializedFile('@' . $key);
-        return $cached === false ? null : $cached;
+        // 新形式: 日付がファイル内に埋め込まれている
+        if (is_array($cached) && array_key_exists('_cacheDate', $cached) && array_key_exists('_cacheData', $cached)) {
+            if ($cached['_cacheDate'] !== $date) {
+                return null;
+            }
+            return $cached['_cacheData'];
+        }
+
+        // 旧形式: 日付が埋め込まれていない → キャッシュ無効として再取得
+        return null;
     }
 
     /**
-     * キャッシュに保存
+     * キャッシュに保存（日付をファイル内に埋め込む）
      */
     private function saveCache(string $key, string $date, array $data): void
     {
-        $this->fileStorage->saveSerializedFile('@' . $key, $data);
-
-        // 日付も更新（DBに保存）
-        $this->syncStateRepository->setString(SyncOpenChatStateType::filterCacheDate, $date);
+        $this->fileStorage->saveSerializedFile('@' . $key, [
+            '_cacheDate' => $date,
+            '_cacheData' => $data,
+        ]);
     }
 }

@@ -33,6 +33,7 @@ make up
 - **初期状態**（データベースとSQLiteファイルが存在しない）の場合、確認なしで自動実行
 
 **引数を渡す:**
+
 ```bash
 # 対話型（デフォルト）
 make init
@@ -55,9 +56,11 @@ make init-y-n
 ### 環境の種類
 
 **基本環境（make up）:**
+
 - 実際のLINEサーバーにアクセス（インターネット接続必要）
 
 **Mock付き環境（make up-mock）:**
+
 - LINE Mock APIを含む開発環境
 - Docker Composeのサービス名（line-mock-api）でMock APIにアクセス
 - インターネット接続不要
@@ -66,6 +69,7 @@ make init-y-n
 ### 利用可能なコマンド
 
 **基本環境:**
+
 ```bash
 make up        # 起動
 make down      # 停止
@@ -75,24 +79,50 @@ make ssh       # コンテナにログイン（基本・Mock両対応）
 ```
 
 **Mock付き環境:**
+
 ```bash
 make up-mock      # 起動（docker/line-mock-api/.env.mockの設定を使用）
 make cron         # Cron有効化（毎時30/35/40分に自動クローリング）
 make cron-stop    # Cron無効化
 ```
 
-**テスト・CI:**
+**テスト・CI・静的解析:**
+
 ```bash
 make ci-test   # CI環境でテストを実行（ローカル専用）
+make phpstan   # PHPStan静的解析を実行
 ```
 
+### 本番データを取り込みたい場合（任意）
+
+通常の開発は `make up` / `make up-mock` で完結する。本番データのミラーが必要なときだけ以下を使う。
+
+```bash
+make sync-setup   # 初回: 本番からフル取得 + DATA_PROTECTION=true に切替
+make sync-update  # 以降の差分更新（rsync差分転送 + 派生DBローカル再構築）
+```
+
+**実行後の状態:**
+
+- `.env` の `DATA_PROTECTION=true`（`make init`, `make ci-test`, `make up-mock` は実行不可になる）
+- MySQL は全 DB を本番ミラーで上書き、SQLite/画像/派生キャッシュもローカルに同期
+- ローカル app は同期中の数分間、MySQL 再インポートのため一時的に応答不可（SQLite 読みは継続）
+
+**アクセス権について:**
+
+機密（SSH鍵・本番DBパスワード等）は `make sync-*` 実行時にプライベートリポから自動取得される。
+アクセス権が無いと取得失敗 → `batch/sh/prod-sync/secrets-example/` の雛形を書き換えるか、
+自前のリポを `PROD_SYNC_CONFIG_URL=...` で指定して使う（エラー時に手順が表示される）。
+
 **その他:**
+
 ```bash
 make show      # 現在の起動モード・設定表示
 make help      # 全コマンド表示
 ```
 
 **Cron自動実行モード:**
+
 - 毎時30分: 日本語クローリング
 - 毎時35分: 繁体字中国語クローリング
 - 毎時40分: タイ語クローリング
@@ -100,11 +130,13 @@ make help      # 全コマンド表示
 ### アクセスURL
 
 **基本環境（make up）:**
+
 - HTTPS: https://localhost:8443
 - phpMyAdmin: http://localhost:8080
 - MySQL: localhost:3306
 
 **Mock付き環境（make up-mock）:**
+
 - HTTPS（基本）: https://localhost:8443
 - HTTPS（Mock）: https://localhost:8543
 - phpMyAdmin: http://localhost:8080
@@ -114,6 +146,7 @@ make help      # 全コマンド表示
 MySQLコマンド例: `docker compose exec mysql mysql -uroot -ptest_root_pass -e "SELECT 1"`
 
 **注意:**
+
 - HTTPは自動的にHTTPSにリダイレクトされます
 - 両環境でMySQLデータベースは共有されます
 
@@ -130,17 +163,20 @@ ENABLE_XDEBUG=1 make up-mock
 ### CI環境
 
 **GitHub Actionsで自動テストを実行:**
+
 - `.github/workflows/ci.yml`: PRマージ前に自動実行
 - `docker-compose.ci.yml`: CI専用設定（SSL無効、Xdebug無効）
 - Docker Layer Caching: 2回目以降のビルドを高速化
 
 **ローカルでCIテストを実行:**
+
 ```bash
 make ci-test
 ```
 
 **CIテストとデプロイをスキップ:**
 緊急修正やドキュメント更新など、CIテストとデプロイを実行せずにmainにマージしたい場合：
+
 - PRに `skip-ci` ラベルを付ける
 - またはPRタイトルの先頭に `skip-ci:` を追加
 
@@ -168,6 +204,7 @@ Mock環境で時刻を進めながらクローリングをテスト：
 **実行回数設定:** `docker/line-mock-api/.env.mock` で `TEST_JA_HOURS`（日本語）、`TEST_TW_HOURS`（繁体字）、`TEST_TH_HOURS`（タイ語）を変更
 
 **データ検証:** `./.github/scripts/verify-test-data.sh` で以下を確認
+
 - MySQLテーブルのレコード数:
   - `ocgraph_comment.open_chat`: 2000件以上
   - `ocgraph_ocreviewth.open_chat`: 1000件以上
@@ -179,12 +216,83 @@ Mock環境で時刻を進めながらクローリングをテスト：
 
 ---
 
+## ⚠️ トラブルシューティング
+
+### SQLiteファイルをコンテナ間でコピーした後に `SQLITE_READONLY` エラーが出る
+
+別のコンテナや環境からSQLiteの`.db`ファイルを`storage/`にコピーした場合、以下のエラーが発生することがある:
+
+```
+PDOException: SQLSTATE[HY000]: General error: 8 attempt to write a readonly database
+```
+
+**原因**: SQLiteはWALモードで動作しており、SELECTでも`-shm`/`-wal`ファイルをディレクトリに新規作成する必要がある。コピーしたファイルのownerがコンテナ内のPHPプロセスユーザー（`www-data`）と異なり、かつディレクトリに書き込み権限がないため、ファイル作成に失敗する。
+
+**対処法**: `.db`ファイルとディレクトリの両方にwww-dataの書き込み権限を付与する:
+
+```bash
+docker compose exec app sh -c 'find /var/www/html/storage -name "*.db" -exec chown www-data:www-data {} + && find /var/www/html/storage/*/SQLite -type d -exec chmod 777 {} +'
+```
+
+---
+
 ## 🏗️ 技術スタック
 
-- PHP 8.3 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
+- PHP 8.5 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
 - MySQL/MariaDB + SQLite
-- React + TypeScript（事前ビルド済み）
-- 外部リポジトリ: [ランキング](https://github.com/mimimiku778/Open-Chat-Graph-Frontend) / [グラフ](https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph) / [コメント](https://github.com/mimimiku778/Open-Chat-Graph-Comments)
+- React + TypeScript + Vite / Create React App
+
+### フロントエンド
+
+ソースコードは `frontend/` 配下にあり、ビルド成果物は `public/js/` に出力されます（gitignored）。
+
+```
+frontend/
+├── stats-graph/  → public/js/chart/   (Vite + Preact, グラフ表示)
+├── ranking/      → public/js/react/   (Create React App, ランキング)
+└── comments/     → public/js/comment/ (Vite + React, コメント)
+```
+
+```bash
+# 全フロントエンドをビルド（make init でも自動実行）
+make build-frontend
+
+# 個別にビルド
+cd frontend/stats-graph && npm install && npm run build
+```
+
+デプロイ時はGitHub Actionsでビルドし、SCPで本番サーバーに配置します。
+
+### フロントエンド開発（HMR + プロキシ）
+
+バックエンド（`make up` または `make up-mock`）を起動した状態で、各フロントエンドを個別にdev serverで起動できます。
+Viteプロキシ/CRAプロキシによりAPIリクエストがバックエンド（`https://localhost:8443`）に転送されるため、CORSエラーは発生しません。
+
+```bash
+# コメント (Vite + React, http://localhost:5173)
+cd frontend/comments && npm install && npm run dev
+
+# グラフ (Vite + Preact, http://localhost:5173)
+cd frontend/stats-graph && npm install && npm run dev
+
+# ランキング (CRA, http://localhost:3000)
+cd frontend/ranking && npm install && npm start
+```
+
+プロキシ先のポートはリポジトリルートの `.env`（`HTTPS_PORT`）から自動的に読み取られます（docker-composeと同じ設定を共有）。
+
+## 🗄️ DBにテーブル・カラムを追加したいとき
+
+`setup/schema/mysql/*.sql` を編集するだけ。デプロイ時に、不足しているテーブル・カラム・索引が
+各DBへ「追加だけ」自動反映されます（既存データは壊しません。削除・型変更はしません）。
+`deploy.yml` もコードも触る必要はありません。
+
+```bash
+# 反映される内容を事前確認（DBは変更しない）
+docker compose exec app php batch/exec/sync_mysql_schema.php --dry-run
+```
+
+詳細・注意点は [`app/Services/Schema/README.md`](app/Services/Schema/README.md) を参照。
 
 ## 📁 ディレクトリ構造
 
@@ -196,6 +304,7 @@ app/
 ├── Services/       # ビジネスロジック
 │   └── Crawler/    # クローラー関連（Config含む）
 └── Views/          # テンプレート
+frontend/           # フロントエンドソース（ビルド → public/js/）
 shadow/             # MimimalCMSフレームワーク
 batch/              # Cronジョブ・バッチ処理
 shared/             # DI設定

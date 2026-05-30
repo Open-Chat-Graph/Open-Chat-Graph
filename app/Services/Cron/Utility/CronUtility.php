@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron\Utility;
 
 use App\Config\AppConfig;
-use App\Services\Storage\FileStorageService;
+use App\Services\Storage\FileStorageInterface;
 
 class CronUtility
 {
@@ -56,7 +56,7 @@ class CronUtility
             error_log(
                 $timestamp . ' ' . $logMessage . "\n",
                 3,
-                FileStorageService::getStorageFilePath('addCronLogDest')
+                app(FileStorageInterface::class)->getStorageFilePath('addCronLogDest')
             );
 
             // 戻り値用にはGitHub参照部分をフルURL形式に変換
@@ -133,6 +133,23 @@ class CronUtility
 
         // フルURLを生成
         return 'https://github.com/' . AppConfig::$githubRepo . '/blob/' . AppConfig::$githubBranch . '/' . $path . '#L' . $line;
+    }
+
+    /**
+     * ステージング環境用に、カテゴリ配列を特定カテゴリのみにフィルタリングする
+     *
+     * @param array<string, int> $categories カテゴリ配列
+     * @return array<string, int> フィルタリングされたカテゴリ配列
+     */
+    public static function filterCategoriesForStaging(array $categories): array
+    {
+        $targetCategory = match (\Shared\MimimalCmsConfig::$urlRoot) {
+            '/tw' => 34, // 科技
+            '/th' => 24, // รายการทีวี
+            default => 24, // TV・VOD
+        };
+
+        return array_filter($categories, fn($category) => $category === $targetCategory);
     }
 
     /**

@@ -21,6 +21,11 @@ interface RankingPositionHourRepositoryInterface
     public function getDailyMemberStats(\DateTime $todayLastTime): array;
 
     /**
+     * @return array{ open_chat_id: int, open_member: int, high_member: int, low_member: int, close_member: int, date: string }[]
+     */
+    public function getDailyMemberOhlc(\DateTime $todayLastTime): array;
+
+    /**
      * @return array{ open_chat_id: int, member: int }[]
      */
     public function getHourlyMemberColumn(\DateTime $lastTime): array;
@@ -46,6 +51,18 @@ interface RankingPositionHourRepositoryInterface
      * @return array{total_count_all_category_rising:int, total_count_all_category_ranking:int}
      */
     public function insertTotalCount(string $fileTime): array;
+
+    /**
+     * 指定日の毎時ランキングデータからOHLCを集約する。
+     *
+     * - その日にランキングに一度でも掲載されたルームのみレコードを生成する
+     *   （終日圏外のルームはレコードなし）
+     * - low_position: 全時間帯でランクインしていた場合は最低順位、
+     *   一部の時間帯で圏外だった場合は NULL
+     *
+     * @return array{ open_chat_id: int, category: int, open_position: int, high_position: int, low_position: int|null, close_position: int, date: string }[]
+     */
+    public function getDailyPositionOhlc(RankingType $type, \DateTime $date): array;
 
     /**
      * @return string|false Y-m-d H:i:s

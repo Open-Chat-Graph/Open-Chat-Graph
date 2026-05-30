@@ -1,34 +1,39 @@
 {
-    "name": "mimimiku778/minimalcms",
-    "description": "MimimalCMS",
-    "authors": [
-        {
-            "name": "mimimiku778",
-            "email": "0203.sub@gmail.com"
-        }
-    ],
-    "require": {
-        "fabpot/goutte": "^4.0.3",
-        "spatie/schema-org": "^3.14",
-        "asika/sitemap": "^2.0"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^9.6"
-    },
-    "autoload": {
-        "psr-4": {
-            "Shadow\\": "shadow/",
-            "App\\": "app/",
-            "Shared\\": "shared/",
-            "App\\Views\\": "app/Views/Classes"
-        },
-        "files": [
-            "shared/MimimalCMS_Settings.php",
-            "shared/MimimalCMS_Enums.php",
-            "shared/MimimalCMS_ExceptionHandler.php",
-            "shared/MimimalCMS_HelperFunctions.php",
-            "app/Helpers/functions.php",
-            "shared/bootstrap.php"
-        ]
+  "name": "mimimiku778/minimalcms",
+  "description": "MimimalCMS",
+  "authors": [
+    {
+      "name": "mimimiku778",
+      "email": "0203.sub@gmail.com"
     }
+  ],
+  "require": {
+    "symfony/browser-kit": "^7.2",
+    "symfony/http-client": "^7.2",
+    "symfony/dom-crawler": "^7.2",
+    "symfony/css-selector": "^7.2",
+    "spatie/schema-org": "^3.23",
+    "asika/sitemap": "^2.2"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12.5",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-deprecation-rules": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Shadow\\": "shadow/",
+      "App\\": "app/",
+      "Shared\\": "shared/",
+      "App\\Views\\": "app/Views/Classes"
+    },
+    "files": [
+      "shared/MimimalCMS_Settings.php",
+      "shared/MimimalCMS_Enums.php",
+      "shared/MimimalCMS_ExceptionHandler.php",
+      "shared/MimimalCMS_HelperFunctions.php",
+      "app/Helpers/functions.php",
+      "shared/bootstrap.php"
+    ]
+  }
 }

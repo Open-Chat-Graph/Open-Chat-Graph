@@ -15,7 +15,7 @@ interface ReceptionInterface
      * @param  mixed        $default
      * @return mixed
      */
-    public static function input(string $name = null, mixed $default = ''): mixed;
+    public static function input(?string $name = null, mixed $default = ''): mixed;
 
     /**
      * Check if a specific input field exists.
@@ -32,7 +32,7 @@ interface ReceptionInterface
      *                          If null, the entire input data is returned as an object.
      * @return \stdClass|null
      */
-    public static function getObject(string $name = null): \stdClass|null;
+    public static function getObject(?string $name = null): \stdClass|null;
 
     /**
      * Overwrites the input data with the given data.

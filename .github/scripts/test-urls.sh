@@ -23,11 +23,13 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# テスト用URL（CI環境ではHTTPを使用）
+# テスト用URL（CI環境ではHTTPを使用、ローカルでは.envのポート設定を参照）
 if [ "${CI}" = "true" ]; then
     BASE_URL="http://localhost:8000"
 else
-    BASE_URL="https://localhost:8443"
+    HTTPS_PORT=$(grep -E '^HTTPS_PORT=' .env 2>/dev/null | cut -d'=' -f2 || echo "8443")
+    HTTPS_PORT=${HTTPS_PORT:-8443}
+    BASE_URL="https://localhost:${HTTPS_PORT}"
 fi
 
 # ログディレクトリ
@@ -70,6 +72,38 @@ test_url() {
     else
         local status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "$url")
         echo -e "${RED}FAILED (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+}
+
+# サイトマップにURLが含まれているかテスト
+test_sitemap_contains_url() {
+    local sitemap_dir="$1"
+    local expected_url="$2"
+    local description="$3"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+    echo -n "Testing Sitemap: ${description} ... " | tee -a "$LOG_FILE"
+
+    # コンテナ内のパスに変換
+    local container_path="/var/www/html/${sitemap_dir}"
+
+    # サイトマップディレクトリが存在するか確認
+    if ! ${COMPOSE_CMD} exec -T app test -d "${container_path}" 2>/dev/null; then
+        echo -e "${RED}FAILED (Directory not found: ${sitemap_dir})${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+
+    # コンテナ経由でサイトマップファイルを検索してURLが含まれているか確認
+    if ${COMPOSE_CMD} exec -T app grep -rq "<loc>${expected_url}</loc>" "${container_path}" 2>/dev/null; then
+        echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    else
+        echo -e "${RED}FAILED (URL not found in sitemap)${NC}" | tee -a "$LOG_FILE"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         return 1
     fi
@@ -187,6 +221,33 @@ main() {
     fi
     echo ""
 
+    # サイトマップにOC URLが含まれているかのテスト
+    log "サイトマップのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/ja/" "https://openchat-review.me/oc/${JA_OC_ID}" "日本語サイトマップに OC ${JA_OC_ID} が含まれているか"
+    else
+        log_error "日本語のOC IDが取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/tw/" "https://openchat-review.me/tw/oc/${TW_OC_ID}" "繁体字サイトマップに OC ${TW_OC_ID} が含まれているか"
+    else
+        log_error "繁体字のOC IDが取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_sitemap_contains_url "./public/sitemaps/th/" "https://openchat-review.me/th/oc/${TH_OC_ID}" "タイ語サイトマップに OC ${TH_OC_ID} が含まれているか"
+    else
+        log_error "タイ語のOC IDが取得できませんでした"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    fi
+    echo ""
+
     # OC順位ページ（時間別・日別）のテスト
     log "OC順位ページのテスト"
     if [ -n "$JA_OC_ID" ] && [ -n "$JA_START_DATE" ] && [ -n "$JA_END_DATE" ]; then
@@ -235,6 +296,41 @@ main() {
     fi
     echo ""
 
+    # OC順位OHLCデータAPI（ローソク足チャート用）のテスト
+    log "OC順位OHLCデータAPIのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（ranking/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（rising/category=0）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=8" "OC順位OHLC（ranking/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=8" "OC順位OHLC（rising/category=8）"
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（タイ語/ranking/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（タイ語/rising/category=0）"
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（繁体字/ranking/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（繁体字/rising/category=0）"
+    fi
+    echo ""
+
+    # OCメンバーOHLCデータAPI（ローソク足チャート用）のテスト
+    log "OCメンバーOHLCデータAPIのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/member_ohlc" "OCメンバーOHLC"
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/member_ohlc" "OCメンバーOHLC（タイ語）"
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/member_ohlc" "OCメンバーOHLC（繁体字）"
+    fi
+    echo ""
+
     # 各種ページ
     log "各種ページのテスト（多言語）"
     test_url "${BASE_URL}/policy" "ポリシーページ"
@@ -256,6 +352,8 @@ main() {
     test_url "${BASE_URL}/labs/publication-analytics" "公開分析"
     test_url "${BASE_URL}/policy/term" "利用規約ページ"
     test_url "${BASE_URL}/labs/live" "Labs Live"
+    test_url "${BASE_URL}/labs/all-room-stats" "全体統計"
+    test_url "${BASE_URL}/labs" "labsページ"
     echo ""
 
     # OCリストページ（各種パラメータ）- 日本語

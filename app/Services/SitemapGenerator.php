@@ -11,7 +11,6 @@ use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
-use App\Models\Repositories\DB;
 use Shared\MimimalCmsConfig;
 
 class SitemapGenerator
@@ -22,6 +21,7 @@ class SitemapGenerator
     const MINIMUM_LASTMOD = '2025-08-23 21:30:00';
     private string $currentUrl = '';
     private int $currentNum = 0;
+    private string $currentTmpDir = '';
 
     function __construct(
         private OpenChatListRepositoryInterface $ocRepo,
@@ -31,31 +31,59 @@ class SitemapGenerator
 
     function generate()
     {
-        $ccurrentUrlRoot = MimimalCmsConfig::$urlRoot;
-        $index = new SitemapIndex();
-        foreach (array_keys(AppConfig::$dbName) as $lang) {
-            MimimalCmsConfig::$urlRoot = $lang;
-            $this->currentUrl = AppConfig::$siteDomain . $lang . '/';
-            $this->generateEachLanguage($index);
+        $currentLang = MimimalCmsConfig::$urlRoot;
+        $langCode = $this->getLangCode($currentLang);
+
+        // 現在のURL設定
+        $this->currentUrl = AppConfig::$siteDomain . $currentLang . '/';
+
+        // 一時ディレクトリで生成
+        $tmpDir = self::SITEMAP_DIR . ".tmp-{$langCode}/";
+        $finalDir = self::SITEMAP_DIR . "{$langCode}/";
+
+        // 一時ディレクトリ作成
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
         }
 
-        $this->fileStorage->safeFileRewrite(self::INDEX_SITEMAP, $index->render());
-        MimimalCmsConfig::$urlRoot = $ccurrentUrlRoot;
-        $this->cleanSitemapFiles(self::SITEMAP_DIR, $this->currentNum);
+        // 現在の言語用のインデックス
+        $languageIndex = new SitemapIndex();
+        $this->currentNum = 0;
+        $this->currentTmpDir = $tmpDir;
+
+        // 一時ディレクトリにサイトマップを生成
+        $this->generateEachLanguage($languageIndex, $langCode);
+
+        // 一時ファイルに言語別インデックスを保存
+        $tmpIndexFile = __DIR__ . "/../../public/.tmp-sitemap-{$langCode}.xml";
+        $finalIndexFile = __DIR__ . "/../../public/sitemap-{$langCode}.xml";
+        $this->fileStorage->safeFileRewrite($tmpIndexFile, $languageIndex->render());
+
+        // アトミック切り替え: 一気にリネーム
+        if (is_dir($finalDir)) {
+            $this->removeDirectory($finalDir);
+        }
+        rename($tmpDir, $finalDir);
+        rename($tmpIndexFile, $finalIndexFile);
+
+        // メインインデックス更新
+        $this->updateMainSitemapIndex();
+
+        // 従来のゴミファイル削除（初回のみ）
+        $this->cleanLegacySitemapFiles();
     }
 
-    private function generateEachLanguage(SitemapIndex $index)
+    private function generateEachLanguage(SitemapIndex $index, string $langCode)
     {
-        $index->addItem($this->generateSitemap1(), new \DateTime);
+        $index->addItem($this->generateSitemap1($langCode), new \DateTime);
 
         foreach (array_chunk($this->ocRepo->getOpenChatSiteMapData(), 25000) as $openChat) {
-            $index->addItem($this->genarateOpenChatSitemap($openChat), new \DateTime);
+            $index->addItem($this->genarateOpenChatSitemap($openChat, $langCode), new \DateTime);
         }
     }
 
-    private function generateSitemap1(): string
+    private function generateSitemap1(string $langCode): string
     {
-        $date = $this->fileStorage->getContents('@dailyCronUpdatedAtDate');
         $datetime = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
         $sitemap = new Sitemap();
@@ -82,10 +110,10 @@ class SitemapGenerator
             $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('tag:' . $tag), lastmod: $datetime);
         }
 
-        return $this->saveXml($sitemap);
+        return $this->saveXml($sitemap, $langCode);
     }
 
-    private function genarateOpenChatSitemap(array $openChat): string
+    private function genarateOpenChatSitemap(array $openChat, string $langCode): string
     {
         $sitemap = new Sitemap();
         foreach ($openChat as $oc) {
@@ -97,7 +125,7 @@ class SitemapGenerator
             $this->addItem($sitemap, "oc/{$id}", $updated_at);
         }
 
-        return $this->saveXml($sitemap);
+        return $this->saveXml($sitemap, $langCode);
     }
 
     private function addItem(Sitemap $sitemap, string $uri, string $datetime = 'now'): Sitemap
@@ -108,36 +136,102 @@ class SitemapGenerator
     /**
      * @return string XML URL
      */
-    private function saveXml(Sitemap $sitemap): string
+    private function saveXml(Sitemap $sitemap, string $langCode): string
     {
         $this->currentNum++;
         $n = $this->currentNum;
 
-        $fileName = "sitemap{$n}.xml";
-        $this->fileStorage->safeFileRewrite(self::SITEMAP_DIR . $fileName, $sitemap->render());
+        $fileName = "sitemap-{$n}.xml";
+        $filePath = $this->currentTmpDir . $fileName;
+        $this->fileStorage->safeFileRewrite($filePath, $sitemap->render());
 
-        return AppConfig::$siteDomain . self::SITEMAP_PATH . $fileName;
+        // URLは最終的なパスを返す
+        return AppConfig::$siteDomain . self::SITEMAP_PATH . "{$langCode}/" . $fileName;
     }
 
     /**
-     * 指定ディレクトリのsitemapファイルを削除
+     * 言語コードを取得
      *
-     * @param string $directory 対象ディレクトリ
-     * @param int $maxNumber 削除しない最大番号
+     * @param string $lang URL rootの言語コード ('', '/tw', '/th')
+     * @return string 言語コード ('ja', 'tw', 'th')
      */
-    private function cleanSitemapFiles(string $directory, int $maxNumber): void
+    private function getLangCode(string $lang): string
     {
-        // ディレクトリ内のファイルを取得
-        $files = scandir($directory);
+        return match ($lang) {
+            '' => 'ja',
+            '/tw' => 'tw',
+            '/th' => 'th',
+            default => 'ja',
+        };
+    }
 
-        foreach ($files as $file) {
-            // ファイル名が 'sitemap' で始まり '.xml' で終わるかを確認
-            if (
-                preg_match('/^sitemap(\d+)\.xml$/', $file, $matches)
-                && (int)$matches[1] > $maxNumber
-            ) {
-                unlink("{$directory}/{$file}");
+    /**
+     * メインサイトマップインデックスを更新
+     */
+    private function updateMainSitemapIndex(): void
+    {
+        $mainIndex = new SitemapIndex();
+
+        // 各言語ディレクトリの個別サイトマップファイルを直接参照する
+        // （サイトマップインデックスのネストはSitemapsプロトコルで禁止）
+        foreach (array_keys(AppConfig::$dbName) as $lang) {
+            $langCode = $this->getLangCode($lang);
+            $langDir = self::SITEMAP_DIR . "{$langCode}/";
+
+            if (!is_dir($langDir)) {
+                continue;
+            }
+
+            $files = glob($langDir . "sitemap-*.xml");
+            if ($files === false) {
+                continue;
+            }
+
+            sort($files);
+            foreach ($files as $file) {
+                $fileName = basename($file);
+                $url = AppConfig::$siteDomain . self::SITEMAP_PATH . "{$langCode}/" . $fileName;
+                $mainIndex->addItem($url, new \DateTime);
             }
         }
+
+        $this->fileStorage->safeFileRewrite(self::INDEX_SITEMAP, $mainIndex->render());
+    }
+
+    /**
+     * 従来のゴミサイトマップファイルを削除
+     */
+    private function cleanLegacySitemapFiles(): void
+    {
+        // /public/sitemaps/ 直下の sitemap*.xml を削除
+        $files = glob(self::SITEMAP_DIR . 'sitemap*.xml');
+        if ($files === false) {
+            return;
+        }
+
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    /**
+     * ディレクトリを再帰的に削除
+     *
+     * @param string $dir 削除対象ディレクトリ
+     */
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+        }
+        rmdir($dir);
     }
 }

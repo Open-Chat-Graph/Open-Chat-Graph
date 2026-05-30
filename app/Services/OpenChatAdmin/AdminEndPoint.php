@@ -4,19 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChatAdmin;
 
+use App\Models\RecommendRepositories\ModifyRecommendRepositoryInterface;
+use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use Shared\Exceptions\BadRequestException as Bad;
 use Shadow\Kernel\Reception as R;
-use App\Models\Repositories\DB;
 
 class AdminEndPoint
 {
+    function __construct(
+        private OpenChatPageRepositoryInterface $openChatRepository,
+        private ModifyRecommendRepositoryInterface $modifyRecommendRepository,
+    ) {
+    }
+
     function modifyTag(string $id)
     {
         if (!R::has('tag')) throw new Bad('tag is NULL');;
 
-        if (!DB::fetchColumn('SELECT id FROM open_chat WHERE id = ' . $id)) throw new Bad("存在しないID: {$id}");
+        if (!$this->openChatRepository->isExistsOpenChat((int) $id)) throw new Bad("存在しないID: {$id}");
 
         if ($tag = R::input('tag')) {
             /** @var RecommendUpdater $recommendUpdater */
@@ -27,29 +34,16 @@ class AdminEndPoint
             if ($key === false) throw new Bad("存在しないタグ: {$tag}");;
 
             $target = $tags[$key];
-            DB::execute(
-                "INSERT INTO modify_recommend (id, tag) VALUES({$id}, '{$target}') 
-                    ON DUPLICATE KEY UPDATE id = {$id}, tag = '{$target}'"
-            );
-            DB::execute(
-                "INSERT INTO recommend VALUES({$id}, '{$target}') 
-                    ON DUPLICATE KEY UPDATE id = {$id}, tag = '{$target}'"
-            );
+            $this->modifyRecommendRepository->upsertModifyTag((int) $id, $target);
+            $this->modifyRecommendRepository->upsertRecommendTag((int) $id, $target);
         } else {
-            DB::execute(
-                "INSERT INTO modify_recommend (id, tag) VALUES({$id}, '') 
-                    ON DUPLICATE KEY UPDATE id = {$id}, tag = ''"
-            );
-            DB::execute(
-                "DELETE FROM recommend WHERE id = {$id}"
-            );
+            $this->modifyRecommendRepository->upsertModifyTag((int) $id, '');
+            $this->modifyRecommendRepository->deleteRecommendTag((int) $id);
         }
     }
 
     function deleteModifyTag(string $id)
     {
-        DB::execute(
-            "DELETE FROM modify_recommend WHERE id = {$id}"
-        );
+        $this->modifyRecommendRepository->deleteModifyTag((int) $id);
     }
 }

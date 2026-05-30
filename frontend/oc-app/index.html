@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="/style/mvp.css" />
+    <link rel="stylesheet" href="/style/site_header.css" />
+    <link rel="stylesheet" href="/style/site_footer.css" />
+    <link rel="stylesheet" href="/style/room_page.css" />
+    <link rel="stylesheet" href="/style/graph_page.css" />
+    <link rel="stylesheet" href="/style/react/OpenChat.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OC App - Dev</title>
+  </head>
+  <style>
+    #app {
+      min-height: 181px;
+    }
+    .limit-btns.category-tab .MuiTab-root.MuiTab-textColorPrimary {
+      min-width: 0;
+      padding: 0;
+      min-height: 48px;
+    }
+    .chart-canvas-box {
+      aspect-ratio: 1.8 / 1;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+      margin-bottom: -16px;
+    }
+    .chart-canvas-box canvas { overflow: hidden; }
+    #chart-preact-canvas { aspect-ratio: 1.8 / 1; }
+    .comment-term-text-color { color: #b7b7b7; }
+  </style>
+  <body style="margin: 0; padding: 1rem;">
+    <script type="application/json" id="chart-arg">
+      {"id":228516,"categoryKey":33,"categoryName":"音楽","baseUrl":"","urlRoot":""}
+    </script>
+    <script type="application/json" id="stats-dto">
+      {"date":["2024-01-01","2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-06","2024-01-07","2024-01-08"],"member":[100,110,120,130,140,150,160,170],"startDate":"2024-01-01","endDate":"2024-01-08"}
+    </script>
+    <div style="position: relative; margin: auto; padding-bottom: 1rem;" id="graph-box">
+      <div class="chart-canvas-box" id="dummy-canvas"></div>
+      <div id="app"></div>
+    </div>
+    <hr />
+    <script type="application/json" id="comment-app-init-dto">
+      {"recaptchaKey":"","openChatId":0}
+    </script>
+    <div id="comment-root"></div>
+    <script type="module" src="/src/entry-graph.tsx"></script>
+    <script type="module" src="/src/entry-comments.tsx"></script>
+  </body>
+</html>

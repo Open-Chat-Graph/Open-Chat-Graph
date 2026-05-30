@@ -1,9 +1,17 @@
 RewriteEngine On
 
+# Pass Authorization header to PHP (required for Basic Auth in CGI/FastCGI environments like Xserver)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Redirect Trailing Slashes If Not A Folder...
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} (.+)/$
 RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+# アイコンファイルは常にPHPルーティングを通す（ステージング環境での切り替えのため）
+RewriteRule ^assets/icon-192x192\.png$ index.php [QSA,L]
+RewriteRule ^favicon\.ico$ index.php [QSA,L]
 
 # Send Requests To Front Controller...
 RewriteCond %{REQUEST_FILENAME} !-d

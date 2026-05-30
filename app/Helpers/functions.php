@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Config\SecretsConfig;
 use App\Config\AppConfig;
-use App\Services\Admin\AdminAuthService;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shadow\Kernel\Dispatcher\ReceptionInitializer;
 use Shadow\Kernel\Utility\KernelUtility;
@@ -27,7 +26,7 @@ function nl2brReplace(string $string): string
 
 function gTag(string $id): string
 {
-    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
+    if (AppConfig::$isDevlopment) {
         return '';
     }
 
@@ -670,20 +669,6 @@ function sessionStart(): bool
     return session_start();
 }
 
-/**
- * @throws NotFoundException
- */
-function adminMode(): true
-{
-    noStore();
-
-    /** @var AdminAuthService $adminAuthService */
-    $adminAuthService = app(AdminAuthService::class);
-    if (!$adminAuthService->auth())
-        throw new NotFoundException;
-
-    return true;
-}
 
 function getStorageFileTime(string $filename, bool $fullPath = false): int|false
 {
@@ -861,4 +846,34 @@ function getSiteDomainUrl(string|array ...$paths): string
 function getCdnPrefixUrl(string|array ...$paths): string
 {
     return preg_replace('#^https?://#', '', getSiteDomainUrl(...$paths));
+}
+
+/**
+ * Get Basic authentication credentials from various server variables
+ * 
+ * Xserver環境を含むさまざまなサーバー環境でBasic認証情報を取得します。
+ * PHP_AUTH_USER/PHP_AUTH_PWが利用できない環境では、
+ * HTTP_AUTHORIZATIONヘッダーからパースします。
+ *
+ * @return array{user: string, pass: string} Basic認証のユーザー名とパスワード
+ */
+function getBasicAuthCredentials(): array
+{
+    $user = $_SERVER['PHP_AUTH_USER'] ?? $_SERVER['REMOTE_USER'] ?? '';
+    $pass = $_SERVER['PHP_AUTH_PW'] ?? '';
+
+    if ($user === '' || $pass === '') {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? '';
+
+        if (preg_match('/^Basic\s+(.+)$/i', $authHeader, $m)) {
+            $decoded = base64_decode($m[1], true);
+            if ($decoded !== false && str_contains($decoded, ':')) {
+                [$user, $pass] = explode(':', $decoded, 2);
+            }
+        }
+    }
+
+    return ['user' => $user, 'pass' => $pass];
 }

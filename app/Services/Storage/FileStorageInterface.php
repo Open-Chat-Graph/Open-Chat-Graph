@@ -13,6 +13,14 @@ namespace App\Services\Storage;
 interface FileStorageInterface
 {
     /**
+     * ストレージファイルのパスを取得
+     *
+     * @param string $storageFileName ストレージファイルキー
+     * @return string ファイルの絶対パス
+     */
+    public function getStorageFilePath(string $storageFileName): string;
+
+    /**
      * ファイルに安全に書き込む（アトミックな書き込み）
      *
      * 一時ファイルに書き込んでからrenameすることで、

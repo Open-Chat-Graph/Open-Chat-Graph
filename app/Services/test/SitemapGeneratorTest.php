@@ -1,8 +1,12 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/test/SitemapGeneratorTest.php
+ */
+
 declare(strict_types=1);
 
-use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use PHPUnit\Framework\TestCase;
 use App\Services\SitemapGenerator;
 

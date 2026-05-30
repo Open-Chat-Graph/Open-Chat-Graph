@@ -31,34 +31,33 @@ use App\Views\Ads\GoogleAdsense as GAd;
             </div>
 
             <?php if ($oc['member']) : ?>
-              <div class="comment-member-count" style="margin-left: 3px;">
+              <div class="comment-member-count">
                 <span>(<?php echo  formatMember($oc['member']) ?>)</span>
               </div>
             <?php endif ?>
 
             <?php if (mb_strlen($oc['description']) > 0) : ?>
-              <div class="comment-user" style="margin-left: 3px;">
-                <span>@<?php echo $oc['user'] ?></span>
-              </div>
+              <div class="comment-user"><span>@<?php echo $oc['user'] ?></span></div>
             <?php endif ?>
+
+            <!-- JSのapplyTimeElapsedString()で表示フォーマット変換 -->
+            <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
           </a>
         </h3>
         <?php if (mb_strlen($oc['description']) > 0) : ?>
           <p class="openchat-item-desc unset"><?php echo truncateDescription($oc['description'], 80) ?></p>
+          <?php if (!empty($oc['images'])) : ?>
+            <div class="comment-images">
+              <?php foreach ($oc['images'] as $img) : ?>
+                <img loading="lazy" src="<?php echo url('/comment-img/thumb/' . $img['filename']) ?>" alt="">
+              <?php endforeach ?>
+            </div>
+          <?php endif ?>
         <?php else : ?>
-          <div class="comment-user" style="font-size: 12px;">
+          <div class="comment-user" style="font-size: 12px; margin-top: 4px; color: #777;">
             <span>削除されたコメント</span>
           </div>
         <?php endif ?>
-
-        <footer class="comment-footer">
-          <div class="comment-time"><span><?php echo $oc['time'] ?></span></div>
-          <!-- <?php if ($oc['category']) : ?>
-            <div class="openchat-item-mui-chip-outer">
-              <span class="openchat-item-mui-chip-inner" aria-label="カテゴリ: <?php echo getCategoryName($oc['category']) ?>"><?php echo getCategoryName($oc['category']) ?></span>
-            </div>
-          <?php endif ?> -->
-        </footer>
         <div class="link-overlay hover"></div>
       </li>
 
@@ -69,7 +68,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
       <?php if ($ads && $count1 < $listCount && $count1 % 10 === 0) : ?>
         <li class="unset" style="margin: 0 -1rem; display: block;">
           <hr class="hr-bottom" style="margin: 4px 0 8px 0; padding: 0; width: 100%;">
-          <?php GAd::output(GAd::AD_SLOTS['recentCommentSeparatorResponsive']) ?>
+          <?php GAd::output('recentCommentSeparatorResponsive') ?>
           <hr class="hr-top" style="margin: 8px 0 4px 0; padding: 0; width: 100%;">
         </li>
       <?php endif ?>
@@ -92,11 +91,11 @@ use App\Views\Ads\GoogleAdsense as GAd;
             <span class="visually-hidden"><?php echo $oc['name'] ?></span>
           </a>
           <h3 class="unset">
-            <a style="font-size: 12px;" class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
-              <div class="comment-name">
+            <a class="openchat-item-title unset" href="<?php echo  $oc['id'] ? url('/oc/' . $oc['id']) : url('policy#comments') ?>">
+              <div style="font-size: 12px;" class="comment-name">
                 <span aria-hidden="true"></span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
-              <div class="comment-user" style="font-size: 12px; margin-left: 4px;">
+              <div class="comment-member-count" style="font-size: 12px; margin-right: 4px; color: #777;">
                 <span>削除されたコメント</span>
               </div>
               <div class="comment-time" style="font-size: 12px; margin-left: 4px;">

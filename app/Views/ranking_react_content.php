@@ -1,11 +1,11 @@
 <?php
-$enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示 
+$enableAdsense = true;
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
 
 <head prefix="og: http://ogp.me/ns#">
-    <?php echo gTag(\App\Config\AppConfig::GTM_ID) ?>
+    <?php echo gTag(\App\Config\AppConfig::$gtmId) ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <?php echo $_meta ?>
@@ -13,7 +13,7 @@ $enableAdsense = \Shared\MimimalCmsConfig::$urlRoot === ''; // 日本語版の�
     <?php foreach ($_css as $css) : ?>
         <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
     <?php endforeach ?>
-    <script defer="defer" src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
+    <script type="module" crossorigin src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
     <link rel="canonical" href="<?php echo url('ranking') . ($category ? '/' . $category : '') ?>">
     <?php if ($enableAdsense): ?>
         <?php \App\Views\Ads\GoogleAdsense::gTag() ?>

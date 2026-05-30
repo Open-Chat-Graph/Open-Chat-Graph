@@ -79,10 +79,10 @@ class ReactRankingPageController
             'style/react/OpenChat.css',
             'style/react/OpenChatList.css',
             'style/react/SiteHeader.css',
-            getFilePath('style/react', 'main.*.css')
+            getFilePath('js/react', 'main-*.css')
         ];
 
-        $_js = getFilePath('js/react', 'main.*.js');
+        $_js = getFilePath('js/react', 'main-*.js');
 
         $_meta = meta()
             ->setTitle($this->buildTitle($reception))

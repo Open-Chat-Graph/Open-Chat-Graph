@@ -9,10 +9,8 @@ use App\Models\Repositories\Api\ApiOpenChatPageRepository;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
 use App\Models\Repositories\Api\ApiStatisticsPageRepository;
 use App\Services\OpenChat\Api\ApiRankingPositionChartArgDtoFactory;
-use App\Services\OpenChat\Api\ApiCommentArgDtoFactory;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
-use App\Views\Classes\Dto\CommentArgDtoFactoryInterface;
 
 class ApiDbOpenChatControllerServiceProvider implements ServiceProviderInterface
 {
@@ -21,7 +19,6 @@ class ApiDbOpenChatControllerServiceProvider implements ServiceProviderInterface
         app()->bind(OpenChatPageRepositoryInterface::class, ApiOpenChatPageRepository::class);
         app()->bind(StatisticsPageRepositoryInterface::class, ApiStatisticsPageRepository::class);
         app()->bind(RankingPositionChartArgDtoFactoryInterface::class, ApiRankingPositionChartArgDtoFactory::class);
-        app()->bind(CommentArgDtoFactoryInterface::class, ApiCommentArgDtoFactory::class);
 
         app()->bind(CollapseKeywordEnumerationsInterface::class, fn() => new class() implements CollapseKeywordEnumerationsInterface {
             static function collapse(

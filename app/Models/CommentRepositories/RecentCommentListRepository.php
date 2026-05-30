@@ -22,10 +22,12 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
     ): array {
         $query =
             "SELECT
+                comment_id,
                 open_chat_id,
                 time,
                 name,
                 CASE
+                    WHEN flag = 5 THEN 5
                     WHEN user_id = :user_id THEN 0
                     ELSE flag
                 END AS flag,
@@ -70,15 +72,17 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
             if ($el['open_chat_id'] === 0) {
                 $result[] = [
                     'id' => 0,
-                    'user' => ($el['name'] ?: '匿名'),
+                    'comment_id' => $el['comment_id'],
+                    'user' => in_array($el['flag'], [0, 4]) ? ($el['name'] ?: '匿名') : '***',
                     'name' => 'オプチャグラフとは？',
                     'img_url' => fileUrl('assets/icon-192x192.png'),
                     'emblem' => 0,
-                    'description' => $el['text'],
+                    'description' => in_array($el['flag'], [0, 4]) ? $el['text'] : '',
                     'time' => $el['time'],
                     'member' => 0,
                     'category' => 0,
                 ];
+                continue;
             }
 
             $key = array_search($el['open_chat_id'], $idArray);
@@ -86,11 +90,12 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
 
             $result[] = [
                 'id' => $el['open_chat_id'],
-                'user' => $el['flag'] === 0 ? ($el['name']  ?: '匿名') : '***',
+                'comment_id' => $el['comment_id'],
+                'user' => in_array($el['flag'], [0, 4]) ? ($el['name']  ?: '匿名') : '***',
                 'name' => $oc[$key]['name'],
                 'img_url' => $oc[$key]['img_url'],
                 'emblem' => $oc[$key]['emblem'],
-                'description' => $el['flag'] === 0 ? $el['text'] : '',
+                'description' => in_array($el['flag'], [0, 4]) ? $el['text'] : '',
                 'time' => $el['time'],
                 'member' => $oc[$key]['member'],
                 'category' => $oc[$key]['category'],
@@ -98,6 +103,15 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
         }
 
         return $result;
+    }
+
+    public function getLatestCommentTime(): string|false
+    {
+        $query = "SELECT GREATEST(
+            COALESCE((SELECT MAX(time) FROM comment), '0'),
+            COALESCE((SELECT data FROM `log` WHERE `type` LIKE 'Admin%' ORDER BY id DESC LIMIT 1), '0')
+        )";
+        return CommentDB::fetchColumn($query) ?? false;
     }
 
     public function getRecordCount(

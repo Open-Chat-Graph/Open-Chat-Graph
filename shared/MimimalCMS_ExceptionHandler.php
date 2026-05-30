@@ -98,10 +98,12 @@ class ExceptionHandler
         self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
 
         $configClass = MimimalCmsConfig::class;
+        $appConfigClass = \App\Config\AppConfig::class;
         $adminToolClass = \App\Services\Admin\AdminTool::class;
         if (
             class_exists($configClass)
-            && !($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false)
+            && class_exists($appConfigClass)
+            && (!($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false) || ($appConfigClass::$isStaging ?? false))
             && class_exists($adminToolClass)
         ) {
             try {

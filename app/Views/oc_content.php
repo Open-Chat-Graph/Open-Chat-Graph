@@ -3,20 +3,15 @@
 <?php
 
 use App\Config\AppConfig;
-use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Views\Ads\GoogleAdsense as GAd;
 use Shared\MimimalCmsConfig;
 
-$enableAdsense = MimimalCmsConfig::$urlRoot === ''; // 日本語版のみ広告表示
+$enableAdsense = !isset($_adminDto);
 
 viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
   <?php viewComponent('site_header') ?>
-  <?php if ($enableAdsense): ?>
-    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php GAd::output(GAd::AD_SLOTS['ocTopRectangle'], true) ?>
-  <?php endif ?>
 
   <div class="unset openchat body" style="overflow: hidden;">
     <article class="unset" style="display: block;">
@@ -141,8 +136,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </span>
         </aside>
 
-        <div style="display: flex; flex-direction: column; width: 100%; margin: auto 0;">
-          <section class="open-btn sp-btn" style="width: 100%; margin: 0; padding: 0;">
+        <div style="display: flex; gap: 8px; width: 100%; margin: auto 0;">
+          <?php if (isset($_adminDto)) : ?>
+            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">✕</a>
+          <?php else : ?>
+            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+          <?php endif ?>
+          <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
               <a href="<?php echo MimimalCmsConfig::$urlRoot === '' ? url('oc', $oc['id'], 'jump') : lineAppUrl($oc) ?>" class="openchat_link" style="font-size: 16px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
@@ -162,6 +162,18 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
       <hr class="hr-top" style="margin-bottom: 8px;">
+      <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
+        <section class="oc-narrative" aria-labelledby="oc-narrative-title">
+          <h2 class="oc-narrative__title" id="oc-narrative-title">
+            <span class="oc-narrative__title-icon" aria-hidden="true">📊</span><?php echo t('オプチャグラフの分析') ?>
+          </h2>
+          <p class="oc-narrative__summary"><?php echo h($narrative['summary']) ?></p>
+          <?php if (!empty($narrative['detail'])): ?>
+            <p class="oc-narrative__detail"><?php echo nl2br(h($narrative['detail'])) ?></p>
+          <?php endif ?>
+        </section>
+        <hr class="hr-top" style="margin-bottom: 8px;">
+      <?php endif ?>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
@@ -198,18 +210,29 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <script type="application/json" id="stats-dto">
           <?php echo json_encode($_statsDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
         </script>
-        <script async type="module" crossorigin src="/<?php echo getFilePath('js/chart', 'index-*.js') ?>"></script>
+        <script async type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'graph-*.js') ?>"></script>
       </section>
     </article>
 
     <?php if ($enableAdsense): ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocTopWide2'], true) ?>
+      <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
+      <?php GAd::output('ocTopWide2', true) ?>
     <?php endif ?>
 
-    <?php if ($recommend[0] || $recommend[3]) : ?>
+    <?php if (isset($similarSize) && $similarSize) : ?>
+      <aside class="recommend-list-aside" id="similar-size-rooms">
+        <?php viewComponent('similar_size_rooms', [
+          'rooms'         => $similarSize['rooms'],
+          'recommend'     => $similarSize['recommend'],
+          'mode'          => $similarSize['mode'],
+          'currentMember' => $oc['member'],
+          'category'      => $oc['category'] ?? null,
+          'tag'           => $oc['tag1'] ?? null,
+        ]) ?>
+      </aside>
+    <?php elseif ($recommend[3]) : ?>
       <aside class="recommend-list-aside" id="recommend-list-aside1">
-        <?php $recommendDto1 = $recommend[0] ?: $recommend[3] ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $recommendDto1, 'member' => $oc['member'], 'tag' => $recommend[2], 'id' => $oc['id'], 'showTags' => true, 'disableGAd' => true]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => '', 'id' => $oc['id']]) ?>
       </aside>
     <?php endif ?>
 
@@ -234,21 +257,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <?php echo json_encode($_commentArgDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
         </script>
         <div id="comment-root"></div>
-        <aside class="recent-comment-list" style="padding-bottom: 0;">
-          <?php if ($topPageDto->recentCommentList): ?>
-            <hr class="hr-top" style="margin: 1rem 0;">
-            <?php viewComponent('top_ranking_recent_comments', [
-              'recentCommentList' => $topPageDto->recentCommentList,
-              'title' => '最近投稿された他ルームのコメント',
-            ]) ?>
-          <?php endif ?>
-        </aside>
       </section>
     <?php endif ?>
-    <?php if ($enableAdsense): ?>
-      <?php GAd::output(GAd::AD_SLOTS['ocSeparatorResponsive'], true) ?>
-    <?php endif ?>
-
     <?php viewComponent('footer_inner') ?>
 
   </div>
@@ -294,7 +304,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
   ?>
-    <script defer type="module" crossorigin src="/<?php echo getFilePath('js/comment', 'index-*.js') ?>"></script>
+    <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/oc-app', 'comments-*.css') ?>">
+    <script defer type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'comments-*.js') ?>"></script>
   <?php endif ?>
 
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>

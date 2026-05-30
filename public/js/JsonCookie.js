@@ -1,6 +1,6 @@
 /**
  * Utility class for working with JSON-encoded cookies in the browser.
- * 
+ *
  * @author mimimiku778 <0203.sub@gmail.com>
  * @license https://github.com/mimimiku778/MimimalCMS/blob/master/LICENSE.md
  */
@@ -10,21 +10,21 @@ export class JsonCookie {
 
   /**
    * Creates a new `JsonCookie` instance with the given name and expiration time.
-   * 
+   *
    * @param {string} name - The name of the cookie.
    * @param {number|null} [expiresSeconds=null] - The number of seconds until the cookie expires, or `null` for a session cookie.
    */
   constructor(name = 'json_cookie', expiresSeconds = 3600 * 24 * 365) {
-    this.name = name;
-    this.expiresSeconds = expiresSeconds;
+    this.name = name
+    this.expiresSeconds = expiresSeconds
   }
 
   /**
    * Gets the value of the cookie, optionally filtered by a specific key.
-   * 
+   *
    * @param {string|null} [key=null] - The key to filter the cookie by, or `null` to get the entire cookie object.
    * @returns {*} The value of the cookie, or `undefined` if the cookie is not found or is not a valid JSON string.
-   * 
+   *
    * @example
    * const cookie = new JsonCookie('myCookie')
    * const entireCookie = cookie.get()
@@ -65,10 +65,10 @@ export class JsonCookie {
 
   /**
    * Sets the value of the cookie, either as a key-value pair or an entire object.
-   * 
+   *
    * @param {string|object} keyOrData - The key to set, or an object to set as the entire cookie value.
    * @param {*} [value=null] - The value to set for the given key, if `keyOrData` is a string.
-   * 
+   *
    * @example
    * const cookie = new JsonCookie('myCookie')
    * cookie.set('myKey', 'myValue')
@@ -109,14 +109,14 @@ export class JsonCookie {
         } */
 
     document.cookie = cookieString
-    return unixTimestamp;
+    return unixTimestamp
   }
 
   /**
    * Removes the cookie or a specific key-value pair from the cookie.
-   * 
+   *
    * @param {string|null} [key=null] - The key to remove, or `null` to remove the entire cookie.
-   * 
+   *
    * @example
    * const cookie = new JsonCookie('myCookie')
    * cookie.remove()
@@ -139,7 +139,7 @@ export class JsonCookie {
 
       const cookieString = `${this.name}=${encodedData}${expires};${this.secure ? 'Secure;' : ''};path=/`
       document.cookie = cookieString
-      return unixTimestamp;
+      return unixTimestamp
     }
 
     const cookieString = `${this.name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT;${this.secure ? 'Secure;' : ''};path=/`
@@ -148,7 +148,7 @@ export class JsonCookie {
   }
 
   isStringTooLarge(string, maxBytes = 4096) {
-    const byteCount = new TextEncoder().encode(string).length;
-    return byteCount > maxBytes;
+    const byteCount = new TextEncoder().encode(string).length
+    return byteCount > maxBytes
   }
 }

@@ -12,4 +12,13 @@ interface CommentPostRepositoryInterface
     /** @return array{ user_id:string,ip:string }|false */
     function addBanUser(int $comment_id): array|false;
     function getBanUser(string $user_id, string $ip): string|false;
+    function addBanUsersInRoom(int $open_chat_id): int;
+    function removeBanRoom(int $open_chat_id): bool;
+    function getBanRoomExpiry(int $open_chat_id): string|false;
+
+    /** @return list<array{id:int, user_id:string, ip:string, created_at:string, name:string}> */
+    function getBanUsers(int $limit, int $offset): array;
+    function getBanUserCount(): int;
+    /** @return array{user_id:string, ip:string}|false */
+    function removeBanUser(int $banId): array|false;
 }

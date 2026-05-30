@@ -7,26 +7,23 @@
  * docker compose exec app ./vendor/bin/phpunit app/Models/Repositories/test/MemberChangeFilterCacheRepositoryTest.php
  *
  * テスト内容:
- * - 実際のSQLiteデータベースを使用（1000件以上のテストデータ）
+ * - 実際のSQLiteデータベースを使用（1200件以上のテストデータ）
  * - キャッシュの読み書き動作
  * - hourly/dailyの使い分け
+ * - キーごとに独立した日付検証
  */
 
 use PHPUnit\Framework\TestCase;
 use App\Models\Repositories\MemberChangeFilterCacheRepository;
 use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
-use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRepository;
 use App\Models\SQLite\SQLiteStatistics;
-use App\Config\AppConfig;
-use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Storage\FileStorageInterface;
 
 class MemberChangeFilterCacheRepositoryTest extends TestCase
 {
     private MemberChangeFilterCacheRepository $repository;
-    private SyncOpenChatStateRepositoryInterface $syncStateRepository;
-    private string $tempDbFile = '';
-    private string $today;
+    private FileStorageInterface $fileStorage;
 
     private string $filterMemberChangePath;
     private string $filterNewRoomsPath;
@@ -35,27 +32,27 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     private ?string $originalMemberChange = null;
     private ?string $originalNewRooms = null;
     private ?string $originalWeeklyUpdate = null;
-    private ?string $originalFilterCacheDate = null;
 
     /**
-     * テストデータの期待値（insertTestDataで生成されるデータに基づく）
+     * テストデータの期待値（クラス全体で共有）
      */
-    private array $expectedMemberChange = [];
-    private array $expectedNewRooms = [];
-    private array $expectedWeeklyUpdate = [];
+    private static string $today;
+    private static string $tempDbFile = '';
+    private static array $expectedMemberChange = [];
+    private static array $expectedNewRooms = [];
+    private static array $expectedWeeklyUpdate = [];
 
-    protected function setUp(): void
+    /**
+     * クラス全体で1回だけDB作成（テスト高速化）
+     */
+    public static function setUpBeforeClass(): void
     {
-        $this->today = date('Y-m-d');
+        self::$today = date('Y-m-d');
+        self::$tempDbFile = sys_get_temp_dir() . '/test_filter_cache_' . uniqid() . '.db';
 
-        // 一時的なテスト用SQLiteファイルを作成
-        $this->tempDbFile = sys_get_temp_dir() . '/test_filter_cache_' . uniqid() . '.db';
-
-        // テスト用PDOインスタンスを作成してSQLiteStatistics::$pdoにセット
-        SQLiteStatistics::$pdo = new \PDO('sqlite:' . $this->tempDbFile);
+        SQLiteStatistics::$pdo = new \PDO('sqlite:' . self::$tempDbFile);
         SQLiteStatistics::$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-        // テーブル作成
         SQLiteStatistics::$pdo->exec("
             CREATE TABLE statistics (
                 open_chat_id INTEGER NOT NULL,
@@ -65,33 +62,37 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
             )
         ");
 
-        // テストデータ挿入（1000件以上）
-        $this->insertTestData();
+        self::insertTestData();
+    }
 
-        // 実際のリポジトリを使用
+    public static function tearDownAfterClass(): void
+    {
+        if (file_exists(self::$tempDbFile)) {
+            unlink(self::$tempDbFile);
+        }
+    }
+
+    protected function setUp(): void
+    {
+        // PDOを再セット（他のテストで変わっている可能性）
+        SQLiteStatistics::$pdo = new \PDO('sqlite:' . self::$tempDbFile);
+        SQLiteStatistics::$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
         $statisticsRepository = app(SqliteStatisticsRepository::class);
-        $this->syncStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
+        $this->fileStorage = app(FileStorageInterface::class);
         $this->repository = new MemberChangeFilterCacheRepository(
             $statisticsRepository,
-            $this->syncStateRepository
+            $this->fileStorage
         );
 
-        // SyncOpenChatStateの初期値をバックアップ
-        $this->originalFilterCacheDate = $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        );
+        $this->filterMemberChangePath = $this->fileStorage->getStorageFilePath('filterMemberChange');
+        $this->filterNewRoomsPath = $this->fileStorage->getStorageFilePath('filterNewRooms');
+        $this->filterWeeklyUpdatePath = $this->fileStorage->getStorageFilePath('filterWeeklyUpdate');
 
-        // キャッシュファイルパス
-        $this->filterMemberChangePath = AppConfig::getStorageFilePath('filterMemberChange');
-        $this->filterNewRoomsPath = AppConfig::getStorageFilePath('filterNewRooms');
-        $this->filterWeeklyUpdatePath = AppConfig::getStorageFilePath('filterWeeklyUpdate');
-
-        // 既存のファイルをバックアップ
         $this->backupFile($this->filterMemberChangePath, $this->originalMemberChange);
         $this->backupFile($this->filterNewRoomsPath, $this->originalNewRooms);
         $this->backupFile($this->filterWeeklyUpdatePath, $this->originalWeeklyUpdate);
 
-        // キャッシュをクリア
         $this->clearAllCaches();
     }
 
@@ -104,23 +105,9 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     protected function tearDown(): void
     {
-        // テスト用SQLiteファイルを削除
-        if (file_exists($this->tempDbFile)) {
-            unlink($this->tempDbFile);
-        }
-
-        // 既存のファイルを復元
         $this->restoreFile($this->filterMemberChangePath, $this->originalMemberChange);
         $this->restoreFile($this->filterNewRoomsPath, $this->originalNewRooms);
         $this->restoreFile($this->filterWeeklyUpdatePath, $this->originalWeeklyUpdate);
-
-        // SyncOpenChatStateを復元
-        if ($this->originalFilterCacheDate !== null) {
-            $this->syncStateRepository->setString(
-                SyncOpenChatStateType::filterCacheDate,
-                $this->originalFilterCacheDate
-            );
-        }
     }
 
     private function restoreFile(string $path, ?string $backup): void
@@ -146,7 +133,18 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     }
 
     /**
-     * テストデータを挿入（1000件以上）
+     * 新形式のキャッシュファイルを書き込む（日付埋め込み）
+     */
+    private function writeCacheFile(string $key, string $date, array $data): void
+    {
+        $this->fileStorage->saveSerializedFile('@' . $key, [
+            '_cacheDate' => $date,
+            '_cacheData' => $data,
+        ]);
+    }
+
+    /**
+     * テストデータを挿入（1200件以上）
      *
      * データパターン:
      * - ID 1-200: メンバー変動あり（過去8日間で変動）→ expectedMemberChange
@@ -154,8 +152,9 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
      * - ID 401-600: 週次更新対象（最終レコードが1週間以上前）→ expectedWeeklyUpdate
      * - ID 601-800: 通常部屋（対象外）
      * - ID 801-1000: メンバー変動あり + 新規部屋（両方に該当）
+     * - ID 1001-1200: 確認クロール対象（8日以上のギャップ後に復帰）→ expectedWeeklyUpdate
      */
-    private function insertTestData(): void
+    private static function insertTestData(): void
     {
         $stmt = SQLiteStatistics::$pdo->prepare(
             "INSERT INTO statistics (open_chat_id, member, date) VALUES (?, ?, ?)"
@@ -171,7 +170,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 $member = $baseMember + (8 - $day) * 5;
                 $stmt->execute([$id, $member, $date]);
             }
-            $this->expectedMemberChange[] = $id;
+            self::$expectedMemberChange[] = $id;
         }
 
         // パターン2: 新規部屋（ID 201-400）
@@ -182,7 +181,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 $date = date('Y-m-d', strtotime("-{$day} days"));
                 $stmt->execute([$id, $baseMember, $date]);
             }
-            $this->expectedNewRooms[] = $id;
+            self::$expectedNewRooms[] = $id;
         }
 
         // パターン3: 週次更新対象（ID 401-600）
@@ -194,7 +193,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 $member = $baseMember + (15 - $day) * 3;
                 $stmt->execute([$id, $member, $date]);
             }
-            $this->expectedWeeklyUpdate[] = $id;
+            self::$expectedWeeklyUpdate[] = $id;
         }
 
         // パターン4: 通常部屋（ID 601-800）
@@ -217,14 +216,28 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
                 $member = $baseMember + (4 - $day) * 2; // 変動あり
                 $stmt->execute([$id, $member, $date]);
             }
-            $this->expectedMemberChange[] = $id;
-            $this->expectedNewRooms[] = $id;
+            self::$expectedMemberChange[] = $id;
+            self::$expectedNewRooms[] = $id;
+        }
+
+        // パターン6: 確認クロール対象（ID 1001-1200）
+        // 古いレコード8件（15〜22日前） + 昨日のレコード1件
+        // 直近8日間のレコードは昨日の1件のみ → 8日以上のギャップ後の復帰 → 確認クロール対象
+        // レコード数9件 ≥ 8 → getNewRoomsWithLessThan8Records には該当しない
+        for ($id = 1001; $id <= 1200; $id++) {
+            $baseMember = 700 + ($id - 1000);
+            for ($day = 22; $day >= 15; $day--) {
+                $date = date('Y-m-d', strtotime("-{$day} days"));
+                $stmt->execute([$id, $baseMember, $date]);
+            }
+            $stmt->execute([$id, $baseMember + 10, date('Y-m-d', strtotime('-1 days'))]);
+            self::$expectedWeeklyUpdate[] = $id;
         }
 
         // 期待値をソート
-        sort($this->expectedMemberChange);
-        sort($this->expectedNewRooms);
-        sort($this->expectedWeeklyUpdate);
+        sort(self::$expectedMemberChange);
+        sort(self::$expectedNewRooms);
+        sort(self::$expectedWeeklyUpdate);
     }
 
     // ========================================
@@ -246,7 +259,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
         );
         $count = (int) $stmt->fetchColumn();
 
-        $this->assertSame(1000, $count, '部屋数は1000件であること');
+        $this->assertSame(1200, $count, '部屋数は1200件であること');
     }
 
     // ========================================
@@ -255,13 +268,13 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForHourly_returns_memberChange_and_newRooms(): void
     {
-        $result = $this->repository->getForHourly($this->today);
+        $result = $this->repository->getForHourly(self::$today);
         sort($result);
 
         // メンバー変動 + 新規部屋（重複除去）
         $expected = array_unique(array_merge(
-            $this->expectedMemberChange,
-            $this->expectedNewRooms
+            self::$expectedMemberChange,
+            self::$expectedNewRooms
         ));
         sort($expected);
 
@@ -270,33 +283,27 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForHourly_creates_cache_files(): void
     {
-        $this->repository->getForHourly($this->today);
+        $this->repository->getForHourly(self::$today);
 
         // キャッシュファイルが作成される
         $this->assertFileExists($this->filterMemberChangePath);
         $this->assertFileExists($this->filterNewRoomsPath);
-
-        // 日付がDBに保存される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForHourly_uses_cache_for_memberChange(): void
     {
         // 1回目: DBから取得してキャッシュ
-        $this->repository->getForHourly($this->today);
+        $this->repository->getForHourly(self::$today);
 
-        // キャッシュを手動で変更
-        $modifiedCache = [9999];
-        saveSerializedFile($this->filterMemberChangePath, $modifiedCache);
+        // キャッシュを手動で変更（新形式で日付を埋め込み）
+        $this->writeCacheFile('filterMemberChange', self::$today, [9999]);
 
         // 2回目: memberChangeはキャッシュから、newRoomsはリアルタイム
-        $result2 = $this->repository->getForHourly($this->today);
+        $result2 = $this->repository->getForHourly(self::$today);
         sort($result2);
 
         // キャッシュ[9999] + 新規部屋（リアルタイム）
-        $expected = array_unique(array_merge([9999], $this->expectedNewRooms));
+        $expected = array_unique(array_merge([9999], self::$expectedNewRooms));
         sort($expected);
 
         $this->assertSame($expected, $result2);
@@ -304,10 +311,10 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForHourly_does_not_include_weekly_update(): void
     {
-        $result = $this->repository->getForHourly($this->today);
+        $result = $this->repository->getForHourly(self::$today);
 
         // 週次更新部屋は含まれない
-        foreach ($this->expectedWeeklyUpdate as $id) {
+        foreach (self::$expectedWeeklyUpdate as $id) {
             $this->assertNotContains(
                 $id,
                 $result,
@@ -322,14 +329,14 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForDaily_returns_all_three_data(): void
     {
-        $result = $this->repository->getForDaily($this->today);
+        $result = $this->repository->getForDaily(self::$today);
         sort($result);
 
         // メンバー変動 + 新規部屋 + 週次更新（重複除去）
         $expected = array_unique(array_merge(
-            $this->expectedMemberChange,
-            $this->expectedNewRooms,
-            $this->expectedWeeklyUpdate
+            self::$expectedMemberChange,
+            self::$expectedNewRooms,
+            self::$expectedWeeklyUpdate
         ));
         sort($expected);
 
@@ -338,31 +345,26 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForDaily_creates_all_cache_files(): void
     {
-        $this->repository->getForDaily($this->today);
+        $this->repository->getForDaily(self::$today);
 
         // 全てのキャッシュファイルが作成される
         $this->assertFileExists($this->filterMemberChangePath);
         $this->assertFileExists($this->filterNewRoomsPath);
         $this->assertFileExists($this->filterWeeklyUpdatePath);
-
-        // 日付がDBに保存される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForDaily_uses_all_caches_on_second_call(): void
     {
         // 1回目: DBから取得してキャッシュ
-        $this->repository->getForDaily($this->today);
+        $this->repository->getForDaily(self::$today);
 
-        // 全てのキャッシュを手動で変更
-        saveSerializedFile($this->filterMemberChangePath, [1]);
-        saveSerializedFile($this->filterNewRoomsPath, [2]);
-        saveSerializedFile($this->filterWeeklyUpdatePath, [3]);
+        // 全てのキャッシュを手動で変更（新形式）
+        $this->writeCacheFile('filterMemberChange', self::$today, [1]);
+        $this->writeCacheFile('filterNewRooms', self::$today, [2]);
+        $this->writeCacheFile('filterWeeklyUpdate', self::$today, [3]);
 
         // 2回目: 全てキャッシュから
-        $result = $this->repository->getForDaily($this->today);
+        $result = $this->repository->getForDaily(self::$today);
         sort($result);
 
         $this->assertSame([1, 2, 3], $result);
@@ -370,42 +372,80 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForDaily_refetches_when_date_mismatch(): void
     {
-        // 別の日付でキャッシュを作成
-        saveSerializedFile($this->filterMemberChangePath, [9999]);
-        $this->syncStateRepository->setString(SyncOpenChatStateType::filterCacheDate, '2020-01-01');
+        // 別の日付でキャッシュを作成（新形式）
+        $this->writeCacheFile('filterMemberChange', '2020-01-01', [9999]);
 
         // 異なる日付でgetForDaily
-        $result = $this->repository->getForDaily($this->today);
+        $result = $this->repository->getForDaily(self::$today);
         sort($result);
 
         // DBから再取得した値が返される
         $expected = array_unique(array_merge(
-            $this->expectedMemberChange,
-            $this->expectedNewRooms,
-            $this->expectedWeeklyUpdate
+            self::$expectedMemberChange,
+            self::$expectedNewRooms,
+            self::$expectedWeeklyUpdate
         ));
         sort($expected);
 
         $this->assertSame($expected, $result);
-
-        // 日付が更新される
-        $this->assertSame($this->today, $this->syncStateRepository->getString(
-            SyncOpenChatStateType::filterCacheDate
-        ));
     }
 
     public function test_getForDaily_includes_weekly_update(): void
     {
-        $result = $this->repository->getForDaily($this->today);
+        $result = $this->repository->getForDaily(self::$today);
 
         // 週次更新部屋が含まれる
-        foreach ($this->expectedWeeklyUpdate as $id) {
+        foreach (self::$expectedWeeklyUpdate as $id) {
             $this->assertContains(
                 $id,
                 $result,
                 "週次更新部屋（ID: {$id}）がdailyに含まれること"
             );
         }
+    }
+
+    // ========================================
+    // キャッシュ日付の独立性テスト
+    // ========================================
+
+    public function test_hourly_cache_does_not_validate_weekly_cache(): void
+    {
+        // hourlyタスクがfilterMemberChangeとfilterNewRoomsのキャッシュを今日の日付で保存
+        $this->repository->getForHourly(self::$today);
+
+        // filterWeeklyUpdateに古い日付のキャッシュを手動作成
+        $this->writeCacheFile('filterWeeklyUpdate', '2020-01-01', [9999]);
+
+        // getForDailyを呼ぶ → filterWeeklyUpdateの日付が不一致なのでDBから再取得すべき
+        $result = $this->repository->getForDaily(self::$today);
+
+        // 古い[9999]ではなく、DBから取得した正しい週次更新部屋が含まれること
+        foreach (self::$expectedWeeklyUpdate as $id) {
+            $this->assertContains(
+                $id,
+                $result,
+                "週次更新部屋（ID: {$id}）がDBから再取得されてdailyに含まれること"
+            );
+        }
+        $this->assertNotContains(9999, $result, '古いキャッシュの値が使われないこと');
+    }
+
+    public function test_old_format_cache_is_treated_as_invalid(): void
+    {
+        // 旧形式のキャッシュファイル（日付埋め込みなし）を作成
+        saveSerializedFile($this->filterMemberChangePath, [9999]);
+
+        // 旧形式はキャッシュ無効として扱われ、DBから再取得される
+        $result = $this->repository->getForHourly(self::$today);
+        sort($result);
+
+        $expected = array_unique(array_merge(
+            self::$expectedMemberChange,
+            self::$expectedNewRooms
+        ));
+        sort($expected);
+
+        $this->assertSame($expected, $result);
     }
 
     // ========================================
@@ -431,7 +471,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForHourly_returns_unique_values(): void
     {
-        $result = $this->repository->getForHourly($this->today);
+        $result = $this->repository->getForHourly(self::$today);
 
         // 重複がないことを確認
         $this->assertCount(count(array_unique($result)), $result);
@@ -439,7 +479,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
 
     public function test_getForDaily_returns_unique_values(): void
     {
-        $result = $this->repository->getForDaily($this->today);
+        $result = $this->repository->getForDaily(self::$today);
 
         // 重複がないことを確認
         $this->assertCount(count(array_unique($result)), $result);
@@ -452,7 +492,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     public function test_getForHourly_performance(): void
     {
         $start = microtime(true);
-        $this->repository->getForHourly($this->today);
+        $this->repository->getForHourly(self::$today);
         $elapsed = microtime(true) - $start;
 
         // 1秒以内に完了すること
@@ -462,7 +502,7 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     public function test_getForDaily_performance(): void
     {
         $start = microtime(true);
-        $this->repository->getForDaily($this->today);
+        $this->repository->getForDaily(self::$today);
         $elapsed = microtime(true) - $start;
 
         // 1秒以内に完了すること
@@ -473,12 +513,12 @@ class MemberChangeFilterCacheRepositoryTest extends TestCase
     {
         // 1回目: DBから取得
         $start1 = microtime(true);
-        $this->repository->getForDaily($this->today);
+        $this->repository->getForDaily(self::$today);
         $elapsed1 = microtime(true) - $start1;
 
         // 2回目: キャッシュから取得
         $start2 = microtime(true);
-        $this->repository->getForDaily($this->today);
+        $this->repository->getForDaily(self::$today);
         $elapsed2 = microtime(true) - $start2;
 
         // キャッシュからの取得は初回より速いこと

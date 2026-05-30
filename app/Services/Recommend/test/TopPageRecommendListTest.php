@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/Recommend/test/TopPageRecommendListTest.php
+ */
+
 declare(strict_types=1);
 
 use App\Services\Recommend\TopPageRecommendList;

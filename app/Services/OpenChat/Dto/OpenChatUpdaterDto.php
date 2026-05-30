@@ -9,7 +9,6 @@ use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 class OpenChatUpdaterDto
 {
     public int $open_chat_id;
-    public bool $delete_flag = false;
     public ?string $updated_at = null;
 
     public ?string $emid = null;

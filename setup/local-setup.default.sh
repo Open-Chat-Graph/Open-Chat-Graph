@@ -142,7 +142,9 @@ docker compose exec -T -u root app bash -c '
     rm -f storage/*/ranking_position/*/*.dat
     rm -f storage/*/ranking_position/*.dat
     rm -f storage/*/SQLite/statistics/*.db*
+    rm -f storage/*/SQLite/statistics_ohlc/*.db*
     rm -f storage/*/SQLite/ranking_position/*.db*
+    rm -f storage/*/SQLite/ranking_position_ohlc/*.db*
     rm -f storage/*/SQLite/ocgraph_sqlapi/*.db*
     rm -f storage/*.log
     rm -f storage/*/*/*.log
@@ -174,13 +176,13 @@ use App\Config\SecretsConfig;
 use Shared\MimimalCmsConfig;
 use App\Config\AppConfig;
 
-AppConfig::$disableAds = false;
+AppConfig::$isDevlopment = true;
+AppConfig::$isStaging = false;
+
 AppConfig::$disableStaticDataFile = false;
 
-AppConfig::$isDevlopment = true;
-
 // 環境変数でisMockEnvironmentを制御
-if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+if (function_exists('getenv') && ($isMockEnv = !!getenv('IS_MOCK_ENVIRONMENT'))) {
     AppConfig::$isMockEnvironment = filter_var($isMockEnv, FILTER_VALIDATE_BOOLEAN);
     AppConfig::$lineImageUrl = 'http://localhost:' . getenv('LINE_MOCK_PORT') . '/obs/';
 } else {
@@ -196,14 +198,13 @@ if (
     $_SERVER['HTTPS'] = 'on';
 
     // モック環境の場合、LINE画像URLをCodespaces用に変更
-    if (function_exists('getenv') && ($isMockEnv = getenv('IS_MOCK_ENVIRONMENT')) !== false) {
+    if (function_exists('getenv') && ($isMockEnv = !!getenv('IS_MOCK_ENVIRONMENT'))) {
         $host = $_SERVER['HTTP_HOST'];
         $host = str_replace(getenv('HTTPS_PORT'), getenv('LINE_MOCK_PORT'), $host);
         AppConfig::$lineImageUrl = 'https://' . $host . '/obs/';
     }
 }
 
-AppConfig::$isStaging = false;
 AppConfig::$phpBinary = 'php';
 
 MimimalCmsConfig::$exceptionHandlerDisplayErrorTraceDetails = true;
@@ -214,7 +215,10 @@ MimimalCmsConfig::$stringCryptorHkdfKey = 'HKDF_KEY';
 MimimalCmsConfig::$stringCryptorOpensslKey = 'OPEN_SSL_KEY';
 
 SecretsConfig::$adminApiKey = 'key';
+SecretsConfig::$googleRecaptchaSiteKey = '';
 SecretsConfig::$googleRecaptchaSecretKey = '';
+SecretsConfig::$stagingBasicAuthUser = 'ocgraph';
+SecretsConfig::$stagingBasicAuthPassword = 'ocgraph';
 SecretsConfig::$cloudFlareZoneId = '';
 SecretsConfig::$cloudFlareApiKey = '';
 SecretsConfig::$yahooClientId = '';
@@ -252,6 +256,12 @@ for lang in ja tw th; do
 
     # ranking_position.db を生成
     cat setup/schema/sqlite/ranking_position.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position/ranking_position.db"
+
+    # ranking_position_ohlc.db を生成
+    cat setup/schema/sqlite/ranking_position_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/ranking_position_ohlc/ranking_position_ohlc.db"
+
+    # statistics_ohlc.db を生成
+    cat setup/schema/sqlite/statistics_ohlc.sql | docker compose exec -T -u www-data app sqlite3 "storage/${lang}/SQLite/statistics_ohlc/statistics_ohlc.db"
 
     # sqlapi.db を生成（jaのみ）
     if [ "$lang" == "ja" ]; then

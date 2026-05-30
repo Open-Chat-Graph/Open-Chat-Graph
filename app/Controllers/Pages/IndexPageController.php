@@ -35,22 +35,10 @@ class IndexPageController
             $dto->hourlyUpdatedAt
         );
 
-        $dto->recentCommentList = $recentCommentListRepository->findRecentCommentOpenChatAll(
-            0,
-            15,
-        );
-
-        $updatedAtHouryCron = $dto->rankingUpdatedAt;
-
-        if (isset($dto->recentCommentList[0]['time'])) {
-            $updatedAtComments = new \DateTime($dto->recentCommentList[0]['time']);
-            $_updatedAt = $updatedAtHouryCron > $updatedAtComments ? $updatedAtHouryCron : $updatedAtComments;
-        } else {
-            $_updatedAt = $updatedAtHouryCron;
-        }
-
         $officialDto = $officialPageList->getListDto(1);
         $officialDto2 = $officialPageList->getListDto(2);
+
+        $_updatedAt = $dto->rankingUpdatedAt;
 
         return view('top_content', compact(
             '_meta',

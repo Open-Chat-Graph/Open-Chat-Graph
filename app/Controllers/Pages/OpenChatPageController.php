@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
+use App\Config\SecretsConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
@@ -12,8 +13,10 @@ use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
+use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
+use App\Services\Narrative\OcNarrativeService;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
@@ -22,7 +25,6 @@ use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
-use App\Views\Classes\Dto\CommentArgDtoFactoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
@@ -41,29 +43,43 @@ class OpenChatPageController
         RecommendGenarator $recommendGenarator,
         RecentCommentListRepositoryInterface $recentCommentListRepository,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
-        CommentArgDtoFactoryInterface $commentArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
+        OcNarrativeService $narrativeService,
+        SimilarSizeRoomService $similarSizeRoomService,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
         $this->fileStorage = $fileStorage;
         AppConfig::$listLimitTopRanking = 5;
 
-        $_adminDto = isset($isAdminPage) && adminMode() ? $this->getAdminDto($open_chat_id) : null;
+        $_adminDto = isset($isAdminPage) ? $this->getAdminDto($open_chat_id) : null;
         $topPageDto = $staticDataGeneration->getTopPageData();
-        $topPageDto->recentCommentList = [];
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
-            if (!$oc)
+            if (!$oc) {
+                if (isset($isAdminPage) || !$ocRepo->isWithinIdRange($open_chat_id)) {
+                    return false;
+                }
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+            }
 
             $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+            $similarSize = $similarSizeRoomService->fetch(
+                (int)$oc['id'],
+                (int)$oc['member'],
+                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+                isset($oc['category']) ? (int)$oc['category'] : null
+            );
         } else {
             $oc = $ocRepo->getOpenChatById($open_chat_id);
-            if (!$oc)
-                return false;
+            if (!$oc) {
+                if (!$ocRepo->isWithinIdRange($open_chat_id)) {
+                    return false;
+                }
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+            }
 
             /** @var RecommendRankingRepository $recommendRankingRepository */
             $recommendRankingRepository = app(RecommendRankingRepository::class);
@@ -101,6 +117,8 @@ class OpenChatPageController
                 $oc['tag3'],
                 $oc['category']
             );
+            // 非 ja は similarSize を出さない（既存挙動を維持）
+            $similarSize = null;
         }
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
@@ -127,7 +145,21 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription])->setImageUrl(imgUrl($oc['img_url']));
+        // narrative section 用データ (全言語対応)。
+        // - Service の出力文字列は t()/sprintfT() で多言語化済 (ja/tw/th)。
+        // - category label の locale-aware 解決もここで行い、Service は平に文字列を消費する
+        //   (OPEN_CHAT_CATEGORY は現在の urlRoot キーで引くため、各言語の表示名になる)
+        // - Service が失敗しても null が返るので section / meta は既存挙動を完全維持
+        $categoryLabel = null;
+        $catId = $oc['category'] ?? null;
+        if (is_int($catId) && $catId > 0) {
+            $catMap = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] ?? [];
+            $label = array_search($catId, $catMap, true);
+            $categoryLabel = $label !== false ? (string)$label : null;
+        }
+        $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription], $categoryLabel);
+
+        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], $narrative)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
@@ -145,7 +177,12 @@ class OpenChatPageController
         $_hourlyRange = $this->buildHourlyRange($oc);
 
         $_chartArgDto = $rankingPositionChartArgDtoFactory->create($oc, $categoryValue ?? t('すべて'));
-        $_commentArgDto = $commentArgDtoFactory->create($oc['id']);
+        $_commentArgDto = [
+            'openChatId' => $open_chat_id,
+            'recaptchaKey' => SecretsConfig::$googleRecaptchaSiteKey,
+            'openChatName' => $oc['name'],
+        ];
+
         $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
@@ -161,12 +198,14 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             'recommend',
+            'similarSize',
             '_hourlyRange',
             '_adminDto',
             'officialDto',
             'topPageDto',
             'formatedDescription',
             'formatedRowDescription',
+            'narrative',
         ));
     }
 
@@ -184,26 +223,48 @@ class OpenChatPageController
         return $officialPageList->getListDto($emblem);
     }
 
+    /**
+     * 過去に発番されていた範囲の id への !$oc アクセス時に呼ばれる削除済みレスポンス。
+     *
+     * - HTTP 410 Gone を返す (Google の再クロールキューから速やかに外す目的;
+     *   元の 404 だと数ヶ月〜年単位で再クロールされ続ける)
+     * - JP & recommend タグあり: errors/oc_error.php (リッチ UI: 「削除されました」+ recommend)
+     * - JP & タグなし / TW / TH: errors/error.php (汎用、TW/TH は翻訳済み)
+     *   ※ oc_error.php は本文が JP ハードコードのため他言語では使えない
+     *
+     * 範囲外 (=過去にも一度も発番されていない適当な id) の場合はこの関数は呼ばれず、
+     * 呼び出し側で return false → framework デフォルト 404 が走る。
+     */
     private function deletedResponse(
         RecommendGenarator $recommendGenarator,
         int $open_chat_id,
         StaticTopPageDto $topPageDto
     ) {
+        http_response_code(410);
+
+        // TW/TH: oc_error.php は JP 本文ハードコードのため framework error.php へ
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return view('errors/error', ['httpCode' => 410]);
+        }
+
         /** @var RecommendRankingRepository $repo */
         $repo = app(RecommendRankingRepository::class);
         $tag = $repo->getRecommendTag($open_chat_id);
-        if (!$tag)
-            return false;
 
-        $_meta = meta()->setTitle("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
-            ->setDescription("「{$tag}」タグ ID:{$open_chat_id} （オプチャグラフから削除済み）")
-            ->setOgpDescription("「{$tag}」タグのオープンチャット ID:{$open_chat_id} （オプチャグラフから削除済み）");
+        $titlePrefix = $tag
+            ? "「{$tag}」タグ ID:{$open_chat_id}"
+            : "ID:{$open_chat_id}";
+        $_meta = meta()->setTitle("{$titlePrefix} （オプチャグラフから削除済み）")
+            ->setDescription("{$titlePrefix} （オプチャグラフから削除済み）")
+            ->setOgpDescription(($tag ? "「{$tag}」タグのオープンチャット" : 'オープンチャット') . " ID:{$open_chat_id} （オプチャグラフから削除済み）");
         $_css = ['room_list', 'site_header', 'site_footer', 'recommend_list'];
 
-        [$tag2, $tag3] = $repo->getTags($open_chat_id);
-        $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
+        $recommend = [];
+        if ($tag) {
+            [$tag2, $tag3] = $repo->getTags($open_chat_id);
+            $recommend = $recommendGenarator->getRecommend($tag, $tag2 ?: null, $tag3 ?: null, null);
+        }
 
-        http_response_code(404);
         return view('errors/oc_error', compact('_meta', '_css', 'recommend', 'open_chat_id', 'topPageDto'));
     }
 

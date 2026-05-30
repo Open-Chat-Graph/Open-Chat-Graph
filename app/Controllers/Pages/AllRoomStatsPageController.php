@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Pages;
+
+use App\Models\Repositories\AllRoomStatsRepositoryInterface;
+use App\Models\Repositories\DB;
+use App\Services\Storage\FileStorageInterface;
+use App\Views\Schema\PageBreadcrumbsListSchema;
+
+/**
+ * 全体統計ページ (/labs/all-room-stats)
+ *
+ * MySQL + SQLiteから統計データを取得し、ビューに渡す
+ */
+class AllRoomStatsPageController
+{
+    const Title = 'オープンチャット全体統計';
+    const Desc = 'オプチャグラフに登録されている全オープンチャットの統計データ。総ルーム数・総参加者数・カテゴリー別のルーム数などを一覧表示します。';
+
+    function index(
+        AllRoomStatsRepositoryInterface $repository,
+        PageBreadcrumbsListSchema $breadcrumbsSchema,
+        FileStorageInterface $fileStorage,
+    ) {
+        DB::connect();
+
+        $updatedAt = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+
+        $totalRooms = $repository->getTotalRoomCount();
+        $totalMembers = $repository->getTotalMemberCount();
+        $trackingStartDate = $repository->getTrackingStartDate();
+        $overallMedian = $repository->getOverallMedian();
+
+        $newRoomsMonthly = $repository->getNewRoomCountSince('1 month');
+
+        $categoryStats = $repository->getCategoryStatsWithTrend();
+
+        $memberTrendBreakdown = $repository->getMemberTrendBreakdown('-1 month');
+
+        $disappearedBreakdown = $repository->getDisappearedRoomBreakdown('-1 month');
+
+        $memberDistribution = $repository->getMemberDistribution();
+
+        $_css = ['site_header', 'site_footer', 'terms'];
+        $_meta = meta()->setTitle(self::Title);
+        $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
+        $_breadcrumbsSchema = $breadcrumbsSchema->generateSchema('Labs', 'labs', self::Title);
+
+        return view('all_room_stats_content', compact(
+            '_meta',
+            '_css',
+            '_breadcrumbsSchema',
+            'updatedAt',
+            'totalRooms',
+            'totalMembers',
+            'trackingStartDate',
+            'overallMedian',
+            'newRoomsMonthly',
+            'categoryStats',
+            'memberTrendBreakdown',
+            'disappearedBreakdown',
+            'memberDistribution',
+        ));
+    }
+}

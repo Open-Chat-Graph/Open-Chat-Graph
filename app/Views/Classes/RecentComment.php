@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Views;
 
+use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Traits\TraitPaginationRecordsCalculator;
 
@@ -13,6 +14,7 @@ class RecentComment
 
     public function __construct(
         private RecentCommentListRepositoryInterface $recentCommentListRepository,
+        private CommentImageRepositoryInterface $commentImageRepository,
         private OpenChatPagination $openChatPagination,
     ) {}
 
@@ -21,9 +23,7 @@ class RecentComment
      */
     public function getAllOrderByRegistrationDate(int $pageNumber, int $limit): array|false
     {
-        //$labelArray = $this->openChatListRepository->findAllOrderByIdCreatedAtColumn();
-
-        return $this->openChatPagination->getSelectElementArgOrderDesc(
+        $result = $this->openChatPagination->getSelectElementArgOrderDesc(
             $pageNumber,
             $this->recentCommentListRepository->getRecordCount(),
             fn(int $startId, int $endId) => $this->recentCommentListRepository
@@ -31,5 +31,19 @@ class RecentComment
             [],
             limit: $limit,
         );
+
+        if ($result === false) {
+            return false;
+        }
+
+        $commentIds = array_column($result['openChatList'], 'comment_id');
+        $imagesMap = $this->commentImageRepository->getImagesByCommentIds($commentIds);
+
+        foreach ($result['openChatList'] as &$oc) {
+            $oc['images'] = $imagesMap[$oc['comment_id']] ?? [];
+            unset($oc['comment_id']);
+        }
+
+        return $result;
     }
 }

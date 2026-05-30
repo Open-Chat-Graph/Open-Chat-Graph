@@ -32,13 +32,6 @@ CREATE TABLE `api_data_download_state` (
   `rising` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-DROP TABLE IF EXISTS `member`;
-CREATE TABLE `member` (
-  `open_chat_id` int(11) NOT NULL,
-  `member` int(11) NOT NULL,
-  `time` datetime NOT NULL,
-  UNIQUE KEY `open_chat_id` (`open_chat_id`,`time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 DROP TABLE IF EXISTS `modify_recommend`;
 CREATE TABLE `modify_recommend` (
   `id` int(11) NOT NULL,
@@ -82,6 +75,14 @@ CREATE TABLE `open_chat` (
   KEY `member` (`member`),
   KEY `updated_at` (`updated_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS `oc_sitemap_lastmod`;
+CREATE TABLE `oc_sitemap_lastmod` (
+  `open_chat_id` int(11) NOT NULL,
+  `lastmod` datetime NOT NULL,
+  `member_snapshot` int(11) NOT NULL,
+  PRIMARY KEY (`open_chat_id`),
+  KEY `lastmod` (`lastmod`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `open_chat_deleted`;
 CREATE TABLE `open_chat_deleted` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,14 +90,6 @@ CREATE TABLE `open_chat_deleted` (
   `deleted_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-DROP TABLE IF EXISTS `ranking`;
-CREATE TABLE `ranking` (
-  `open_chat_id` int(11) NOT NULL,
-  `position` int(11) NOT NULL,
-  `category` int(11) NOT NULL,
-  `time` datetime NOT NULL,
-  UNIQUE KEY `open_chat_id` (`open_chat_id`,`category`,`time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 DROP TABLE IF EXISTS `ranking_ban`;
 CREATE TABLE `ranking_ban` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -108,7 +101,8 @@ CREATE TABLE `ranking_ban` (
   `updated_at` int(11) NOT NULL,
   `update_items` text DEFAULT NULL,
   `end_datetime` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ranking_ban_open_chat_datetime` (`open_chat_id`,`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
@@ -129,14 +123,6 @@ CREATE TABLE `reject_room` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`emid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-DROP TABLE IF EXISTS `rising`;
-CREATE TABLE `rising` (
-  `open_chat_id` int(11) NOT NULL,
-  `position` int(11) NOT NULL,
-  `category` int(11) NOT NULL,
-  `time` datetime NOT NULL,
-  UNIQUE KEY `open_chat_id` (`open_chat_id`,`category`,`time`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 DROP TABLE IF EXISTS `statistics_ranking_day`;
 CREATE TABLE `statistics_ranking_day` (
   `id` int(11) NOT NULL,
@@ -179,14 +165,6 @@ CREATE TABLE `sync_open_chat_state` (
   `bool` int(11) NOT NULL DEFAULT 0,
   `extra` text NOT NULL DEFAULT '',
   UNIQUE KEY `name_2` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-DROP TABLE IF EXISTS `total_count`;
-CREATE TABLE `total_count` (
-  `total_count_rising` int(11) NOT NULL,
-  `total_count_ranking` int(11) NOT NULL,
-  `time` datetime NOT NULL,
-  `category` int(11) NOT NULL,
-  UNIQUE KEY `time` (`time`,`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 DROP TABLE IF EXISTS `user_log`;
 CREATE TABLE `user_log` (

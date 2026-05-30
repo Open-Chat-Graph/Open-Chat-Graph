@@ -21,4 +21,6 @@ interface RecentCommentListRepositoryInterface
         string $user_id = '',
         int $open_chat_id = 0,
     ): int;
+
+    public function getLatestCommentTime(): string|false;
 }

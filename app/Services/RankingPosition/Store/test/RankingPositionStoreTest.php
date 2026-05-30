@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * テスト実行コマンド:
+ * docker compose exec app vendor/bin/phpunit app/Services/RankingPosition/Store/test/RankingPositionStoreTest.php
+ */
+
 use PHPUnit\Framework\TestCase;
 use App\Services\OpenChat\Crawler\OpenChatApiRankingDownloader;
 use App\Services\RankingPosition\Store\RankingPositionStore;

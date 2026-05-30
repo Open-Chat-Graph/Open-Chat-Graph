@@ -6,15 +6,14 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
-use App\Models\Repositories\DeleteOpenChatRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
+use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
-use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateDailyRankingService;
 use App\Services\UpdateHourlyMemberRankingService;
@@ -121,6 +120,14 @@ class AdminPageController
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
+    
+    /**
+     * $_SERVERの内容を出力
+     */
+    function server()
+    {
+        pre_var_dump($_SERVER);
+    }
 
     /**
      * タグ更新テストバッチ実行
@@ -153,7 +160,7 @@ class AdminPageController
     {
         $path = AppConfig::ROOT_PATH . 'batch/cron/cron_half_check.php';
 
-        exec("/usr/bin/php8.2 {$path} >/dev/null 2>&1 &");
+        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
     }
@@ -161,10 +168,10 @@ class AdminPageController
     /**
      * オープンチャット削除
      */
-    function deleteoc(?string $oc, DeleteOpenChatRepositoryInterface $deleteOpenChatRepository)
+    function deleteoc(?string $oc, \App\Services\OpenChat\Updater\OpenChatDeleter $openChatDeleter)
     {
         if (!($oc = Validator::num($oc))) return false;
-        $result = $deleteOpenChatRepository->deleteOpenChat($oc);
+        $result = $openChatDeleter->deleteOpenChatById($oc);
         return view('admin/admin_message_page', ['title' => 'オープンチャット削除', 'message' => $result ? '削除しました' : '削除されたオープンチャットはありません']);
     }
 
@@ -292,21 +299,58 @@ class AdminPageController
      */
     function help()
     {
-        $reflection = new \ReflectionClass(self::class);
-        $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $controllers = [
+            'AdminPageController' => self::class,
+            'LogController' => LogController::class,
+            'AdminCommentImageController' => AdminCommentImageController::class,
+            'AdminRecommendTagController' => AdminRecommendTagController::class,
+        ];
 
-        $helpText = "AdminPageController Help:\n\n";
-        foreach ($methods as $method) {
-            if ($method->isConstructor()) {
-                continue;
-            }
+        // メソッド名と実際のURLパスが異なるもののマッピング
+        $routeMap = [
+            'LogController' => [
+                'index' => 'admin/log',
+                'cronLog' => 'admin/log/{type}',
+                'exceptionLog' => 'admin/log/exception',
+                'exceptionDetail' => 'admin/log/exception/detail',
+            ],
+            'AdminCommentImageController' => [
+                'commentImages' => 'admin/comment-images',
+            ],
+            'AdminRecommendTagController' => [
+                'index' => 'admin/recommend-tags',
+            ],
+        ];
 
-            $docComment = $method->getDocComment();
-            $helpText .= url("admin/" . $method->getName()) . "\n";
-            if ($docComment) {
-                $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
-            } else {
-                $helpText .= "No documentation available.\n";
+        // help 一覧に出さないメソッド（GUI内部が叩くPOST専用の保存エンドポイント等）
+        $hiddenMethods = [
+            'AdminRecommendTagController' => ['save' => true],
+        ];
+
+        $helpText = '';
+        foreach ($controllers as $name => $class) {
+            $reflection = new \ReflectionClass($class);
+            $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+            $helpText .= "{$name}:\n\n";
+            foreach ($methods as $method) {
+                if ($method->isConstructor()) {
+                    continue;
+                }
+
+                $methodName = $method->getName();
+                if (!empty($hiddenMethods[$name][$methodName])) {
+                    continue;
+                }
+                $path = $routeMap[$name][$methodName] ?? "admin/{$methodName}";
+                $docComment = $method->getDocComment();
+                $helpText .= url($path) . "\n";
+                if ($docComment) {
+                    $helpText .= trim(preg_replace('/^\s*\*\s?/m', '', preg_replace('/^\/\*\*|\*\/$/', '', $docComment))) . "\n";
+                } else {
+                    $helpText .= "No documentation available.\n";
+                }
+                $helpText .= "\n";
             }
             $helpText .= "\n";
         }
@@ -338,5 +382,15 @@ class AdminPageController
         // adminer-plugin.php内でadminer-5.4.1.phpも読み込まれる
         include AppConfig::ROOT_PATH . 'app/Services/Admin/adminer-plugin.php';
         exit;
+    }
+
+    /**
+     * Discord通知テスト
+     */
+    function testdiscord(?string $message)
+    {
+        $message = $message ?? 'テストメッセージ from AdminPageController';
+        $result = AdminTool::sendDiscordNotify($message);
+        return view('admin/admin_message_page', ['title' => 'Discord通知テスト', 'message' => $result . "\n" . '送信メッセージ: ' . $message]);
     }
 }

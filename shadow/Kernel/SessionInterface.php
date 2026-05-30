@@ -80,7 +80,7 @@ interface SessionInterface
      *               * **Example for a specific key:** `['code' => 1001, 'message' => 'The input must be a string.']`
      *               * **Example for all errors:** `['key1' => ['code' => 1001, 'message' => 'Error message 1'], 'key2' => ['code' => 1002, 'message' => 'Error message 2']]`
      */
-    public static function getError(string $key = null): array;
+    public static function getError(?string $key = null): array;
 
     /**
      * Gets the error message string from the session's error array by key.

@@ -7,6 +7,7 @@ use App\Controllers\Api\AlphaApiController;
 use App\Controllers\Api\CommentLikePostApiController;
 use App\Controllers\Api\CommentListApiController;
 use App\Controllers\Api\CommentPostApiController;
+use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
@@ -17,9 +18,14 @@ use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AlphaPageController;
+use App\Controllers\Pages\AdminCommentImageController;
+use App\Controllers\Pages\AdminBanUserController;
+use App\Controllers\Pages\AdminCommentLogController;
+use App\Controllers\Pages\AdminRecommendTagController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
+use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\PolicyPageController;
@@ -29,14 +35,19 @@ use App\Controllers\Pages\RecentCommentPageController;
 use App\Controllers\Pages\RecentOpenChatPageController;
 use App\Controllers\Pages\RecommendOpenChatPageController;
 use App\Controllers\Pages\RegisterOpenChatPageController;
+use App\Controllers\Pages\RobotsController;
+use App\Controllers\Pages\AdsTxtController;
+use App\Controllers\Pages\StagingIconController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
 use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
+use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
+use Shared\Exceptions\UnauthorizedException;
 use Shared\MimimalCmsConfig;
 
 Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
@@ -73,6 +84,34 @@ Route::path('policy', [PolicyPageController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+Route::path('robots.txt', [RobotsController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path('ads.txt', [AdsTxtController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path('assets/icon-192x192.png', [StagingIconController::class, 'icon192'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+    });
+
+Route::path('favicon.ico', [StagingIconController::class, 'favicon'])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+    });
+
 Route::path('/', [IndexPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
@@ -86,9 +125,10 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
 
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
-    ->match(function (int $open_chat_id, FileStorageInterface $fileStorage) {
+    ->match(function (FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
@@ -153,6 +193,26 @@ Route::path(
 
 
 Route::path(
+    'oc/{open_chat_id}/member_ohlc',
+    [RankingPositionApiController::class, 'memberOhlc']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path(
+    'oc/{open_chat_id}/position_ohlc',
+    [RankingPositionApiController::class, 'rankingPositionOhlc']
+)
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('category', min: 0)
+    ->matchStr('sort', regex: ['ranking', 'rising'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path(
     'oc/{open_chat_id}/position_hour',
     [RankingPositionApiController::class, 'rankingPositionHour']
 )
@@ -187,10 +247,11 @@ Route::path('mylist-api', [MyListApiController::class, 'index'])
     });
 
 Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function (RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     })
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
@@ -246,10 +307,11 @@ Route::path(
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page')
-    ->match(function (int $page, FileStorageInterface $fileStorage) {
+    ->match(function (int $page, RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     });
 
 Route::path(
@@ -257,30 +319,31 @@ Route::path(
     [RecentCommentPageController::class, 'index'],
 )
     ->matchNum('page', emptyAble: true)
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function (RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        $time = $recentCommentListRepository->getLatestCommentTime();
+        if ($time) checkLastModified($time);
     });
 
 Route::path(
     'labs',
     [LabsPageController::class, 'index']
 )
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/labs_content.php'));
     });
 
 Route::path(
     'labs/live',
     [LabsPageController::class, 'live']
 )
-    ->match(function (FileStorageInterface $fileStorage) {
+    ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/live_content.php'));
     });
 
 /* Route::path(
@@ -292,6 +355,16 @@ Route::path(
                 if (MimimalCmsConfig::$urlRoot !== '')
             return false;
     }); */
+
+Route::path(
+    'labs/all-room-stats',
+    [AllRoomStatsPageController::class, 'index']
+)
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
 
 Route::path(
     'labs/publication-analytics',
@@ -320,10 +393,23 @@ Route::path(
     ->matchStr('token', 'post')
     ->matchStr('name', 'post', maxLen: 20, emptyAble: true)
     ->matchStr('text', 'post', maxLen: 1000)
+    ->matchFile('image0', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image1', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->matchFile('image2', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
     ->match(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')
                 return false;
+
+            if (AppConfig::$isStaging && SecretsConfig::$stagingBasicAuthPassword) {
+                $auth = getBasicAuthCredentials();
+                if ($auth['user'] !== SecretsConfig::$stagingBasicAuthUser || $auth['pass'] !== SecretsConfig::$stagingBasicAuthPassword) {
+                    header('WWW-Authenticate: Basic realm="Staging Comment API"');
+                    throw new UnauthorizedException(
+                        'Basic authentication is required to post comments on staging environment.'
+                    );
+                }
+            }
 
             return removeAllZeroWidthCharacters($text)
                 ? ['name' => removeAllZeroWidthCharacters($name) ? $name : '']
@@ -360,9 +446,25 @@ Route::path(
 // 通報API
 Route::path(
     'comment_report/{comment_id}@post',
-    [CommentReportApiController::class, 'index']
+    [CommentReportApiController::class, 'reportComment']
 )
     ->matchNum('comment_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('token');
+
+// コメント画像サムネイルAPI
+Route::path(
+    'comment-img/thumb/{filename}@get',
+    [CommentImageThumbnailController::class, 'index']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// 画像通報API
+Route::path(
+    'comment_image_report/{image_id}@post',
+    [CommentReportApiController::class, 'reportImage']
+)
+    ->matchNum('image_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
 
@@ -399,11 +501,69 @@ Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetai
         noStore();
     });
 
+// 管理者操作ログ
+Route::path('admin/log/admin-action', [AdminCommentLogController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
+Route::path('admin/log/admin-action/detail', [AdminCommentLogController::class, 'detail'])
+    ->matchNum('id', min: 1)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
 Route::path('admin/log/{type}', [LogController::class, 'cronLog'])
     ->matchStr('type', regex: ['ja-cron', 'th-cron', 'tw-cron'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->match(function () {
         noStore();
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
+// 管理者画像管理ページ
+Route::path('admin/comment-images', [AdminCommentImageController::class, 'commentImages'])
+    ->matchStr('tab', regex: ['deleted', 'active'], default: 'active', emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+    });
+
+// シャドウバンユーザー一覧
+Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->match(function (AdminAuthService $adminAuthService) {
+        return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
+    });
+
+// おすすめタグ定義(data/ja.json)編集GUI（管理者専用・日本語のみ・ローカル編集用途）
+// GETでもVerifyCsrfTokenを通し、CSRF-Tokenクッキーを発行する（保存POSTのX-CSRF-Token用）
+Route::path('admin/recommend-tags', [AdminRecommendTagController::class, 'index'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+    });
+
+// おすすめタグ定義の保存（CSRF必須・管理者専用）
+Route::path('admin/recommend-tags/save@post', [AdminRecommendTagController::class, 'save'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
+// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用）
+Route::path('admin/recommend-tags/rebuild@post', [AdminRecommendTagController::class, 'rebuild'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
         return MimimalCmsConfig::$urlRoot === '';
     });
 
@@ -425,10 +585,10 @@ Route::path(
     ->matchNum('id')
     ->matchNum('commentId')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
-    ->matchNum('flag', min: 0, max: 3);
+    ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post',
+    'admin-api/deleteuser@post@get',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
@@ -436,18 +596,96 @@ Route::path(
     ->matchNum('commentId');
 
 Route::path(
-    'admin-api/commentbanroom@post',
+    'admin-api/commentbanroom@post@get',
     [AdminEndPointController::class, 'commentbanroom']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
+    'admin-api/commentunbanroom@post@get',
+    [AdminEndPointController::class, 'commentunbanroom']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::class, 'commentImageStorageSize'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path(
+    'admin-api/deletecommentimage@post@get',
+    [AdminEndPointController::class, 'deleteCommentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('imageId');
+
+Route::path(
+    'admin-api/deletedcommentimages@post@get',
+    [AdminEndPointController::class, 'deleteDeletedCommentImages']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+Route::path(
+    'admin-api/deletecommentsall@post@get',
+    [AdminEndPointController::class, 'deletecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/restorecommentsall@post@get',
+    [AdminEndPointController::class, 'restorecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/harddeletecommentsall@post@get',
+    [AdminEndPointController::class, 'harddeletecommentsall']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/bulkshadowban@post@get',
+    [AdminEndPointController::class, 'bulkshadowban']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('id');
+
+Route::path(
+    'admin-api/unbanuser@post@get',
+    [AdminEndPointController::class, 'unbanuser']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchNum('banId');
+
+Route::path(
+    'admin-api/comment-image@get',
+    [AdminEndPointController::class, 'commentImage']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->matchStr('filename');
+
+Route::path('oc/0/admin', [PolicyPageController::class, 'index'])
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdmin' => true];
+    });
+
+Route::path(
     'oc/{open_chat_id}/admin',
     [OpenChatPageController::class, 'index']
 )
     ->matchNum('open_chat_id', min: 1)
-    ->match(fn() => ['isAdminPage' => '1']);
+    ->match(function (AdminAuthService $adminAuthService) {
+        if (!$adminAuthService->auth())
+            return false;
+        noStore();
+        return ['isAdminPage' => '1'];
+    });
 
 /* Route::path(
     'ads/register@post',

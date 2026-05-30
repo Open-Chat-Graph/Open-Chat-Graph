@@ -2,19 +2,18 @@
 
 namespace App\Config;
 
-use Shared\MimimalCmsConfig;
-
 class AppConfig
 {
     // サイトのURL（末尾にスラッシュなし）
     static string $siteDomain = 'https://openchat-review.me';
 
-    static string $phpBinary = '/usr/bin/php8.3';
+    static string $phpBinary = '/usr/bin/php8.5';
 
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
     const DEFAULT_OGP_IMAGE_FILE_PATH = 'assets/ogp.png';
 
-    const GTM_ID = 'GTM-NTK2GPTF';
+    // Google Tag Manager ID
+    static string $gtmId = 'GTM-NTK2GPTF';
 
     const LINE_APP_URL = 'https://line.me/ti/g2/';
     const LINE_APP_SUFFIX = '?utm_source=openchat-graph&utm_medium=referral&utm_campaign=default';
@@ -40,11 +39,20 @@ class AppConfig
     const LIST_LIMIT_MY_LIST = 50;
     const LIST_LIMIT_RECENT_COMMENT = 50;
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
-    const LIST_LIMIT_RECOMMEND = 100;
+    const LIST_LIMIT_RECOMMEND = 30;
 
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;
+
+    const COMMENT_FLAG_LABELS = [
+        0 => '復元',
+        1 => 'シャドウ削除',
+        2 => '通報',
+        3 => '完全削除',
+        4 => '画像削除',
+        5 => '通常削除',
+    ];
 
     const OFFICIAL_EMBLEMS = [
         '' => [
@@ -150,9 +158,12 @@ class AppConfig
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
-    static string $githubRepo = 'pika-0203/Open-Chat-Graph';
+    static string $githubRepo = 'Open-Chat-Graph/Open-Chat-Graph';
     static string $githubBranch = 'main';
     static bool $disableAdTags = true;
+
+    // 重複通報の受付をスキップ（管理者が既に対応している通報をさらに通報されるのを防止）
+    static bool $skipDuplicateReport = false;
 
     /** @var array<string,int> */
     static array $developmentEnvUpdateLimit = [
@@ -195,43 +206,6 @@ class AppConfig
     const SQLITE_SCHEMA_STATISTICS = __DIR__ . '/../../setup/schema/sqlite/statistics.sql';
     const SQLITE_SCHEMA_RANKING_POSITION = __DIR__ . '/../../setup/schema/sqlite/ranking_position.sql';
     const SQLITE_SCHEMA_SQLAPI = __DIR__ . '/../../setup/schema/sqlite/sqlapi.sql';
-
-    private const STORAGE_DIR = [
-        '' =>    __DIR__ . '/../../storage/ja',
-        '/tw' => __DIR__ . '/../../storage/tw',
-        '/th' => __DIR__ . '/../../storage/th',
-    ];
-    const STORAGE_FILES = [
-        'addCronLogDest' =>               '/logs/cron.log',
-        'sqliteStatisticsDb' =>           '/SQLite/statistics/statistics.db',
-        'sqliteRankingPositionDb' =>      '/SQLite/ranking_position/ranking_position.db',
-        'openChatSubCategories' =>        '/open_chat_sub_categories/subcategories.json',
-        'openChatSubCategoriesSample' =>  '/open_chat_sub_categories/sample/subcategories.json',
-        'openChatSubCategoriesTag' =>     '/open_chat_sub_categories/subcategories_tag.json',
-        'openChatRankingPositionDir' =>   '/ranking_position/ranking',
-        'openChatRisingPositionDir' =>    '/ranking_position/rising',
-        'openChatHourFilterId' =>         '/ranking_position/filter.dat',
-        'filterMemberChange' =>           '/ranking_position/filter_member_change.dat',
-        'filterNewRooms' =>               '/ranking_position/filter_new_rooms.dat',
-        'filterWeeklyUpdate' =>           '/ranking_position/filter_weekly_update.dat',
-        'dailyCronUpdatedAtDate' =>       '/static_data_top/daily_updated_at.dat',
-        'hourlyCronUpdatedAtDatetime' =>  '/static_data_top/hourly_updated_at.dat',
-        'hourlyRealUpdatedAtDatetime' =>  '/static_data_top/real_updated_at.dat',
-        'commentUpdatedAtMicrotime' =>    '/static_data_top/comment_updated_at.dat',
-        'tagUpdatedAtDatetime' =>         '/static_data_top/tag_updated_at.dat',
-        'topPageRankingData' =>           '/static_data_top/ranking_list.dat',
-        'rankingArgDto' =>                '/static_data_top/ranking_arg_dto.dat',
-        'recommendPageDto' =>             '/static_data_top/recommend_page_dto.dat',
-        'tagList' =>                      '/static_data_top/tag_list.dat',
-        'recommendStaticDataDir' =>       '/static_data_recommend/tag',
-        'categoryStaticDataDir' =>        '/static_data_recommend/category',
-        'officialStaticDataDir' =>        '/static_data_recommend/official',
-    ];
-
-    static function getStorageFilePath(string $storageFileName): string
-    {
-        return self::STORAGE_DIR[MimimalCmsConfig::$urlRoot] . self::STORAGE_FILES[$storageFileName];
-    }
 
     /** @var array<string,string> */
     static array $dbName = [
@@ -282,4 +256,3 @@ class AppConfig
     ];
     const ADD_OPEN_CHAT_DEFAULT_OPENCHAT_IMG_URL_HASH = '2AtTNcODU67';
 }
-

@@ -31,7 +31,6 @@ class StaticDataGenerator
         $dto->dailyList = $this->openChatListRepository->findMemberStatsDailyRanking(0, AppConfig::$listLimitTopRanking);
         $dto->weeklyList = $this->openChatListRepository->findMemberStatsPastWeekRanking(0, AppConfig::$listLimitTopRanking);
         $dto->popularList = $this->openChatListRepository->findMemberCountRanking(AppConfig::$listLimitTopRanking, []);
-        $dto->recentCommentList = [];
         $dto->recommendList = $this->topPageRecommendList->getList(30);
 
         $dto->hourlyUpdatedAt = new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
@@ -66,7 +65,7 @@ class StaticDataGenerator
                 $_argDto->openChatCategory[] = [$name, $number];
         }
 
-        $path = \App\Services\Storage\FileStorageService::getStorageFilePath('openChatSubCategories');
+        $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
         $subCategories = json_decode(
             file_exists($path)
                 ? $this->fileStorage->getContents('@openChatSubCategories')
