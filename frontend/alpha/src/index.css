@@ -10,7 +10,8 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    /* αブランドアクセント: indigo→violet（本家の青と差別化） */
+    --primary: 258 80% 58%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 258 80% 58%;
     --radius: 0.5rem;
 
     /*
@@ -67,7 +68,7 @@
     --card-foreground: 210 40% 98%;    /* #f8fafc - Almost white */
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;      /* #4c8bf5 - Bright blue */
+    --primary: 258 90% 68%;            /* αアクセント: 明るいindigo-violet（ダーク用） */
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -89,7 +90,13 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* αトーン: 数値（メトリクス）は Sora で幾何的・等幅に。tabular-nums を持つ要素へ適用し、
+     部屋の人数・増減・順位などの「数字が主役」の見え方を統一する。 */
+  .tabular-nums {
+    font-family: 'Sora', 'Noto Sans JP', system-ui, sans-serif;
   }
 
   /* スクロールバーをコンテンツに被せる（レイアウトシフト防止） */

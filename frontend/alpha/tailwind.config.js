@@ -25,6 +25,11 @@ export default {
        *                  （ここを 50 にするとヘッダ下に潜るので不可）
        *  modal(80)     … dialog / RankingHistory 等の最前面オーバーレイ（全層より上）
        */
+      // αトーン: 本文=Noto Sans JP / 見出し・数値=Sora（幾何サンセリフ）
+      fontFamily: {
+        sans: ['"Noto Sans JP"', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Sora', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
+      },
       zIndex: {
         subheader: '10',
         overlay: '50',

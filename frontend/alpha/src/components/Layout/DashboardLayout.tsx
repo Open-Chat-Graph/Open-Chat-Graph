@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-12 items-center justify-between border-b px-6 md:px-0 md:justify-center lg:px-6 lg:justify-between select-none">
               <div className="flex items-center gap-2 md:justify-center lg:justify-start">
                 <BarChart3 className="h-6 w-6 text-primary" />
-                <span className="text-lg font-semibold md:hidden lg:inline">オプチャグラフα</span>
+                <span className="font-display text-lg font-bold tracking-tight md:hidden lg:inline">オプチャグラフα</span>
               </div>
               <Button
                 variant="ghost"
