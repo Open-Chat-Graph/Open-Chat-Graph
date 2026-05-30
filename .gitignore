@@ -83,8 +83,13 @@ frontend/*/dist/
 test-logs/
 .playwright-mcp
 
-# Claude Code
-.claude/
+# Claude Code（settings/worktrees はローカル。agents/commands はチーム共有のため追跡）
+.claude/*
+!.claude/agents/
+!.claude/commands/
+
+# featureパイプラインの受け渡しファイル（一時物）
+.pipeline/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
