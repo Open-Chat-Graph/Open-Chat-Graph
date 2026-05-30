@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse } from '../types/api'
 
 const API_BASE = '/alpha-api'
 
@@ -41,6 +41,29 @@ export const alphaApi = {
   async getRankingHistory(openChatId: number): Promise<RankingHistoryResponse> {
     const res = await fetch(`${API_BASE}/ranking-history/${openChatId}`)
     if (!res.ok) throw new Error('Ranking history API failed')
+
+    return res.json()
+  },
+
+  // 高次の考察（一目で分からない洞察だけ）。insights が空配列のこともある。
+  async getInsights(openChatId: number): Promise<InsightsResponse> {
+    const res = await fetch(`${API_BASE}/insights/${openChatId}`)
+    if (!res.ok) throw new Error('Insights API failed')
+
+    return res.json()
+  },
+
+  // 任意のN日増減検索（N日前と現在の両方に統計があるルームに絞り増減順）。
+  async getPeriodGrowth(params: PeriodGrowthParams): Promise<PeriodGrowthResponse> {
+    const query = new URLSearchParams()
+    query.set('keyword', params.keyword)
+    if (params.category) query.set('category', params.category.toString())
+    if (params.days !== undefined) query.set('days', params.days.toString())
+    if (params.order) query.set('order', params.order)
+    if (params.limit) query.set('limit', params.limit.toString())
+
+    const res = await fetch(`${API_BASE}/period-growth?${query}`)
+    if (!res.ok) throw new Error('Period growth API failed')
 
     return res.json()
   },

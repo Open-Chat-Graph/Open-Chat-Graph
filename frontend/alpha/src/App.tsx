@@ -10,6 +10,7 @@ import MyListPage from './pages/MyListPage'
 import DetailPage from './pages/DetailPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
+import PeriodGrowthPage from './pages/PeriodGrowthPage'
 
 /**
  * 常駐（keep-alive）するベースページの定義。
@@ -47,6 +48,13 @@ const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
     key: 'notifications',
     isActive: (p) => p === '/notifications',
     element: <NotificationsPage />,
+    top: 'title',
+    scrollable: true,
+  },
+  {
+    key: 'period-growth',
+    isActive: (p) => p === '/period-growth',
+    element: <PeriodGrowthPage />,
     top: 'title',
     scrollable: true,
   },
@@ -121,6 +129,7 @@ function App() {
         <Route path="/mylist/:folderId" element={<AppContent />} />
         <Route path="/settings" element={<AppContent />} />
         <Route path="/notifications" element={<AppContent />} />
+        <Route path="/period-growth" element={<AppContent />} />
         <Route path="/openchat/:id" element={<AppContent />} />
         <Route path="/openchat/:id/ranking-history" element={<AppContent />} />
         <Route path="/openchat/:id/image" element={<AppContent />} />

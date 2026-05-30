@@ -92,3 +92,62 @@ export interface RankingHistoryItem {
 export interface RankingHistoryResponse {
   data: RankingHistoryItem[]
 }
+
+// 高次の考察 - /alpha-api/insights/{id}
+// type ごとに数値フィールドは異なるが、UI は text を主役に type でアイコン分けする。
+export interface InsightItem {
+  type:
+    | 'growth_rank'
+    | 'position_trend'
+    | 'best_rank'
+    | 'category_rank'
+    | 'category_share'
+    | 'category_scale'
+    | 'record_single_day'
+    | 'pace_anomaly'
+    | string
+  text: string
+  [key: string]: unknown
+}
+
+export interface InsightsResponse {
+  insights: InsightItem[]
+  generatedAt: string
+}
+
+// 任意のN日増減 - /alpha-api/period-growth
+export interface PeriodGrowthItem {
+  id: number
+  name: string
+  desc: string
+  member: number  // 現在のメンバー数
+  img: string
+  emblem: 0 | 1 | 2
+  category: number
+  categoryName: string
+  join_method_type: number
+  diff: number  // N日間のメンバー増減
+  percent: number  // N日間の増減率
+  pastMember: number  // N日前のメンバー数
+  pastDate: string  // 比較に用いた実際のN日前日付
+  baseDate: string  // 比較に用いた実際の基準日付
+  createdAt: number | null
+  registeredAt: string
+  url: string
+}
+
+export interface PeriodGrowthResponse {
+  data: PeriodGrowthItem[]
+  days: number
+  totalMatched: number
+  baseDate: string
+  targetPastDate: string
+}
+
+export interface PeriodGrowthParams {
+  keyword: string
+  category?: number
+  days?: number
+  order?: 'asc' | 'desc'
+  limit?: number
+}
