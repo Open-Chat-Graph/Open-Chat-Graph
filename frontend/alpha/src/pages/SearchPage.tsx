@@ -9,6 +9,7 @@ import { WatchKeywordButton } from '@/components/Notifications'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { SearchLanding } from '@/components/Common/SearchLanding'
 import { useListProgress } from '@/hooks/useListProgress'
+import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
 import { alphaApi } from '@/api/alpha'
 import { addSearchHistory } from '@/services/searchHistory'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
@@ -17,7 +18,7 @@ import type { SortType, SortOrder } from '@/lib/sort-options'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
 import { useLayout } from '@/contexts/layout-context'
 
-const LIMIT = 20
+const LIMIT = 1000
 
 const SearchPage = memo(() => {
   const navigate = useNavigate()
@@ -80,6 +81,14 @@ const SearchPage = memo(() => {
   // 検索プログレス: SWR の getKey と同じ識別（pageIndex を除く）を1キーにまとめる。
   // これが変わるたびに ETA を取り直し、0→90% のアニメを仕切り直す。
   const searchKey = urlKeyword ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
+
+  // 取得1000件・表示30件ずつのウィンドウィング。
+  const { visibleCount, onReachEnd } = useInfiniteReveal({
+    loadedCount: results.length,
+    hasMore,
+    setSize,
+    resetKey: searchKey,
+  })
   const etaParams = useMemo<SearchEtaParams | null>(
     () =>
       urlKeyword
@@ -120,13 +129,14 @@ const SearchPage = memo(() => {
   })
   const hasResults = results.length > 0
 
-  // Intersection Observer for infinite scroll
+  // Intersection Observer for infinite scroll（バッファ即時 reveal or 次ページ取得）
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0]
-        if (first.isIntersecting && hasMore && !isLoadingMore && !isLoading) {
-          setSize(prev => prev + 1)
+        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
+        if (first.isIntersecting && !isValidating && !isLoading) {
+          onReachEnd()
         }
       },
       { threshold: 0.1 }
@@ -142,7 +152,7 @@ const SearchPage = memo(() => {
         observer.unobserve(currentTarget)
       }
     }
-  }, [hasMore, isLoadingMore, isLoading, setSize])
+  }, [onReachEnd, isValidating, isLoading])
 
   const handleCardClick = useCallback((chatId: number) => {
     // 検索クエリ（キーワード + ソート設定）をsessionStorageに保存してから詳細ページに遷移
@@ -241,7 +251,7 @@ const SearchPage = memo(() => {
           </button>
 
           <div className="grid gap-2 md:gap-4">
-            {results.map((chat) => (
+            {results.slice(0, visibleCount).map((chat) => (
               <OpenChatCard
                 key={chat.id}
                 chat={chat}

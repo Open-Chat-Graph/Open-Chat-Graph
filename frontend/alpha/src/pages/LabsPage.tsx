@@ -14,6 +14,7 @@ import type { LabsMetric } from '@/components/Labs/LabsControls'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { ListScreen } from '@/components/Layout'
 import { useListProgress } from '@/hooks/useListProgress'
+import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
 import { alphaApi } from '@/api/alpha'
 import { DEFAULT_PERIOD, periodKey, periodToParams, type PeriodValue } from '@/lib/period'
 import type { EtaListType } from '@/types/api'
@@ -26,7 +27,7 @@ import type {
   OpenChat,
 } from '@/types/api'
 
-const PAGE_SIZE = 30
+const PAGE_SIZE = 1000
 
 // 任意のタブのページ応答（無限スクロールの1ページ分）。
 type LabsPageResponse = AccessRankingResponse | PageRankingResponse | SearchQueryRankingResponse
@@ -180,21 +181,39 @@ const LabsPage = memo(() => {
     return pages.flatMap((p) => (p as SearchQueryRankingResponse).data)
   }, [pages, tab])
 
-  // 無限スクロール
+  // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
+  // ※ useInfiniteReveal の loadedCount 計算に必要なため observer より先に定義する。
+  const primary = metric === 'seo' ? 'seo' : 'pv'
+
+  const entities = useMemo<LabsEntity[]>(() => {
+    if (tab === 'pages') return pageRows.map((page) => ({ kind: 'page', page }))
+    return rooms.map((room) => ({ kind: 'room', room }))
+  }, [tab, rooms, pageRows])
+
+  // 取得1000件・表示30件ずつのウィンドウィング。
+  const { visibleCount, onReachEnd } = useInfiniteReveal({
+    loadedCount: tab === 'keywords' ? queries.length : entities.length,
+    hasMore,
+    setSize,
+    resetKey: filterKey,
+  })
+
+  // 無限スクロール（バッファ即時 reveal or 次の1000件取得）
   useEffect(() => {
     const el = observerTarget.current
     if (!el) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isValidating) {
-          setSize((s) => s + 1)
+        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
+        if (entries[0].isIntersecting && !isValidating) {
+          onReachEnd()
         }
       },
       { threshold: 0.1 },
     )
     observer.observe(el)
     return () => observer.unobserve(el)
-  }, [hasMore, isValidating, setSize])
+  }, [onReachEnd, isValidating])
 
   const handleCardClick = useCallback(
     (id: number) => {
@@ -204,17 +223,9 @@ const LabsPage = memo(() => {
     [navigate, rooms],
   )
 
-  // primary は metric から決める。
-  const primary = metric === 'seo' ? 'seo' : 'pv'
-
-  // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
-  const entities = useMemo<LabsEntity[]>(() => {
-    if (tab === 'pages') return pageRows.map((page) => ({ kind: 'page', page }))
-    return rooms.map((room) => ({ kind: 'room', room }))
-  }, [tab, rooms, pageRows])
-
   return (
     <ListScreen
+      scrollResetKey={tab}
       header={
         /* 検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。骨格は ListScreen が固定する。 */
         <LabsControls
@@ -257,10 +268,10 @@ const LabsPage = memo(() => {
         {!error && !isEmpty && (
           <ListProgressRegion progress={progress} active={progressActive} hasResults={hasResults}>
             {tab === 'keywords' ? (
-              <LabsQuerySection queries={queries} />
+              <LabsQuerySection queries={queries.slice(0, visibleCount)} />
             ) : (
               <div className="grid gap-2 md:gap-3">
-                {entities.map((entity, index) => (
+                {entities.slice(0, visibleCount).map((entity, index) => (
                   <LabsRankingCard
                     key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
                     entity={entity}

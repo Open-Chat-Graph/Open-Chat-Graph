@@ -55,7 +55,7 @@ class AlphaApiController
 
         // バリデーション
         $this->args->page = Validator::num(Reception::input('page', 0), min: 0, e: $error);
-        $this->args->limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $this->args->limit = Validator::num(Reception::input('limit', 20), min: 1, max: 1000, e: $error);
         $this->args->category = (int)Validator::str(
             (string)Reception::input('category', '0'),
             regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
@@ -458,7 +458,7 @@ class AlphaApiController
         );
         $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
-        $limit = (int)Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $limit = (int)Validator::num(Reception::input('limit', 20), min: 1, max: 1000, e: $error);
         // 無限スクロールのページ番号（1始まり）。offset に展開してリポジトリへ渡す。
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
@@ -556,7 +556,7 @@ class AlphaApiController
         );
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
         $win = $this->resolveRankingWindow($repo, $error);
-        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 1000, e: $error);
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
         // scope=pages＝「その他ページ（非オプチャ）」タブ。既定 rooms。
@@ -657,7 +657,7 @@ class AlphaApiController
         );
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
         $win = $this->resolveRankingWindow($repo, $error);
-        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 1000, e: $error);
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
@@ -690,7 +690,7 @@ class AlphaApiController
         Reception::$isJson = true;
 
         $win = $this->resolveRankingWindow($repo, $error);
-        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 1000, e: $error);
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
 

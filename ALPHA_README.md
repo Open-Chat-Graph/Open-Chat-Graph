@@ -24,7 +24,8 @@
 - 常駐ページは React 19 `<Activity>` の keep-alive（検索/マイリスト/通知/設定/period-growth/watch/labs）。詳細・掲載履歴・フォルダ統合グラフ・画像はURLルート駆動のオーバーレイ。
 - モーダル/上に重ねる画面は全てブラウザバックで閉じる（`useBackDismiss`＋ルート駆動）。ドリルダウン到達ページ(period-growth/watch/labs)は固定タイトルバーに戻る矢印。
 - 重ね順は `tailwind.config.js` の zIndex トークンが唯一の定義元（subheader/overlay/nav/header/sidebar/popover/modal。生 `z-[NN]` 禁止、dropdown/selectはpopover>header）。固定ヘッダ高さは ResizeObserver で実測し `--header-searchbar-h` に反映。入力は `text-base md:text-sm`（iOS拡大防止）。
-- 画面骨格（固定サブヘッダ＋スクロール領域）は `components/Layout/ListScreen.tsx` に集約。ヘッダをスクロール外の flex 兄弟に置きカードの覗き込みを物理的に防ぐ（旧 `sticky -mt -mx` 方式を廃止）。利用ページ(labs/watch)は `KEEP_ALIVE_PAGES` で `scrollable:false`。
+- 画面骨格（固定サブヘッダ＋スクロール領域）は `components/Layout/ListScreen.tsx` に集約。ヘッダをスクロール外の flex 兄弟に置きカードの覗き込みを物理的に防ぐ（旧 `sticky -mt -mx` 方式を廃止）。利用ページ(labs/watch)は `KEEP_ALIVE_PAGES` で `scrollable:false`。`scrollResetKey` prop 変化で内部スクロールコンテナを先頭へ戻す（Labs タブ切替などで使用）。
+- 無限スクロールは「ネットワーク1000件取得・描画30件ずつ reveal」分離方式（`hooks/useInfiniteReveal.ts`）。バッファに未表示分があれば即時 +30、使い切ったとき・hasMore があれば次の1000件をネットワーク取得。検索・Labs・period-growth 共通。
 - リスト取得の応答待ち表示は `components/Common/ListProgress.tsx` に集約し、3状態すべて同一の `ListProgressBar`（細い primary バー・スピナー不使用）に統一: 初回＝`ListProgressRegion` の上部バー＋キャプション／再取得＝`ListRefetchBar`（前回結果を薄くdim＋同じ上部バー）／追加読み込み（無限スクロール次ページ）＝`ListProgressFooter`（リスト末尾に同じバー。次ページETAは取れないので約900msの軽いindeterminate ramp）。検索・Labs・period-growth が共用し同一描画（先頭ページ進行値は `useListProgress`）。旧 `InfiniteScrollLoader`（Loader2スピナー）は廃止。
 - ビルド: `make build-frontend:alpha` → `public/js/alpha`（成果物コミット＝gitベースデプロイ）。
 - 主要ディレクトリ: `src/{pages,components,api,hooks,lib,services,contexts,types}`。

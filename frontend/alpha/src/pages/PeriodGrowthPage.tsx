@@ -6,12 +6,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder, type PeriodGrowthQuery } from '@/components/PeriodGrowth'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { useListProgress } from '@/hooks/useListProgress'
+import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
 import { periodKey, periodToParams, type PeriodValue } from '@/lib/period'
 import type { PeriodGrowthItem, PeriodGrowthResponse, OpenChat } from '@/types/api'
 
-const LIMIT = 30
+const LIMIT = 1000
 const DEFAULT_DAYS = 30
 
 // "2024-05-30 12:00:00" → "2024/05/30"
@@ -134,6 +135,14 @@ const PeriodGrowthPage = memo(() => {
   const isLoadingMore = isValidating && size > 1
   const hasResults = items.length > 0
 
+  // 取得1000件・表示30件ずつのウィンドウィング。
+  const { visibleCount, onReachEnd } = useInfiniteReveal({
+    loadedCount: items.length,
+    hasMore,
+    setSize,
+    resetKey: filterKey ?? '',
+  })
+
   // ETAプログレス: 条件が変わるたびに ETA を取り直し 0→90%、応答到着で 100%。
   // append（size>1）は除外。初回＝上部バー／結果表示中の再取得＝重ねバー。
   const firstPageLoading = searched && (isLoading || isValidating) && !isLoadingMore
@@ -152,21 +161,22 @@ const PeriodGrowthPage = memo(() => {
       : undefined,
   })
 
-  // 無限スクロール
+  // 無限スクロール（バッファ即時 reveal or 次の1000件取得）
   useEffect(() => {
     const el = observerTarget.current
     if (!el) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isValidating) {
-          setSize((s) => s + 1)
+        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
+        if (entries[0].isIntersecting && !isValidating) {
+          onReachEnd()
         }
       },
       { threshold: 0.1 },
     )
     observer.observe(el)
     return () => observer.unobserve(el)
-  }, [hasMore, isValidating, setSize])
+  }, [onReachEnd, isValidating])
 
   const handleSubmit = useCallback(
     (next: PeriodGrowthQuery) => {
@@ -280,7 +290,7 @@ const PeriodGrowthPage = memo(() => {
           ) : (
             <>
               <div className="grid gap-2 md:gap-3">
-                {items.map((item, index) => (
+                {items.slice(0, visibleCount).map((item, index) => (
                   <PeriodGrowthCard
                     key={item.id}
                     item={item}

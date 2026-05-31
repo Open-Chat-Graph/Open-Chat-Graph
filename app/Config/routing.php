@@ -860,7 +860,7 @@ Route::path('alpha-api/search', [AlphaApiController::class, 'search'])
     ->matchStr('keyword', emptyAble: true, maxLen: 100)
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('page', min: 0, emptyAble: true, default: 0)
-    ->matchNum('limit', min: 1, max: 50, emptyAble: true, default: 20)
+    ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 検索ETA（プログレスバー用）
@@ -920,7 +920,7 @@ Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth
     ->matchStr('startDate', emptyAble: true, maxLen: 10, default: '')
     ->matchStr('endDate', emptyAble: true, maxLen: 10, default: '')
     ->matchStr('order', emptyAble: true, default: 'desc')
-    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - アクセス数ランキング（Labs）
@@ -928,7 +928,7 @@ Route::path('alpha-api/access-ranking', [AlphaApiController::class, 'accessRanki
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')
-    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 検索流入(SEO)ランキング（Labs）
@@ -936,13 +936,13 @@ Route::path('alpha-api/search-ranking', [AlphaApiController::class, 'searchRanki
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')
-    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 検索クエリランキング（Labs）
 Route::path('alpha-api/search-query-ranking', [AlphaApiController::class, 'searchQueryRanking'])
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
-    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 詳細画面のGA/GSC指標
