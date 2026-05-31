@@ -68,6 +68,8 @@ $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 ## フロントエンド
 - 別リポジトリ: ランキング(Open-Chat-Graph-Frontend) / グラフ(Frontend-Stats-Graph) / コメント(Comments)。
 - **オプチャグラフα**: このリポジトリに統合済み `frontend/alpha`（React19+Vite+TS+Tailwind+shadcn/ui+SWR）。`make build-frontend:alpha` で `public/js/alpha` へビルド（成果物コミット＝git ベースデプロイ）。`/alpha` で配信（ja のみ）。α-APIは `app/Controllers/Api/AlphaApiController.php`＋`routing.php`（`MimimalCmsConfig::$urlRoot===''` ガード）。
+  - **αの実装済み機能・UI/バックエンド構成・API/ルート/テーブル/バッチは [`ALPHA_README.md`](ALPHA_README.md) に集約。α に機能を追加/変更したら必ず ALPHA_README.md を更新する。**
+  - αの通知/アラート毎時処理は `/admin/alphahourly`（admin認証）で手動実行できる（テスト用。結果は cronログ＝/admin/log/cron に残る）。
   - α規約: 重ね順は tailwind の `zIndex` トークン（生 `z-[NN]` 禁止。dropdown/select=popover>header）／入力は `text-base md:text-sm`(モバイル16px＝iOS拡大防止)／固定ヘッダ高さは ResizeObserver で実測／モーダル・上に重ねる画面は **ブラウザバックで閉じる**（`useBackDismiss` or URLルート駆動）。
 - **ローカルPreactグラフ**: 別管理（source: `/home/user/oc-review-graph`）。ビルド済バンドルが `public/js/preact-chart/assets/index.js`。チャート変更後は再ビルドして配置。
 - 統合: ReactをPHPテンプレートに埋め込み、ビルド済JSを配信。

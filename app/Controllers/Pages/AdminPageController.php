@@ -13,6 +13,7 @@ use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateDailyRankingService;
@@ -151,6 +152,30 @@ class AdminPageController
         exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+    }
+
+    /**
+     * Alpha(α)の通知/アラート毎時処理だけを手動実行する（テスト用）。
+     * 毎時クロール後に走るのと同じ alpha_hourly を同期実行し、ウォッチ条件に合致する
+     * 新着部屋(LINE公式検索)・部屋/マイリストの増減を検出して alpha_notification に保存する。
+     * 結果は cronログ（/admin/log/cron、タグ「【Alpha通知】」）に残る。実行後 αの通知タブで確認できる。
+     * 事前に α側でアラート条件（検索の「このキーワードをアラート」/詳細の「この部屋の増減をアラート」/見張り…アラート設定）を登録しておくこと。
+     */
+    function alphahourly()
+    {
+        $path = AppConfig::ROOT_PATH . 'batch/exec/alpha_hourly.php';
+
+        CronUtility::addCronLog('【Alpha通知】手動実行を /admin/alphahourly からトリガー');
+
+        // 同期実行（完了してから結果を表示）。バッチ内で完了/失敗を addCronLog に記録する。
+        exec(AppConfig::$phpBinary . " {$path} 2>&1", $output, $exit);
+
+        return view('admin/admin_message_page', [
+            'title' => 'Alpha通知 手動実行',
+            'message' => "alpha_hourly を実行しました（exit={$exit}）。"
+                . "結果は cronログ（/admin/log/cron のタグ「【Alpha通知】」）と、αの通知タブで確認してください。"
+                . (empty($output) ? '' : "\n出力: " . implode("\n", array_slice($output, -10))),
+        ]);
     }
 
     /**
