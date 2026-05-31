@@ -1,4 +1,5 @@
 import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse } from '../types/api'
+import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
 
@@ -84,10 +85,9 @@ export const alphaApi = {
     return res.json()
   },
 
-  // 部屋ごとのアクセス・検索メトリクス（詳細ページ向け）。days で集計期間を指定。
-  async getRoomMetrics(openChatId: number, days?: number): Promise<RoomMetricsResponse> {
-    const query = new URLSearchParams()
-    if (days !== undefined) query.set('days', days.toString())
+  // 部屋ごとのアクセス・検索メトリクス（詳細ページ向け）。period で集計期間（日数/範囲/全期間）を指定。
+  async getRoomMetrics(openChatId: number, period?: PeriodValue): Promise<RoomMetricsResponse> {
+    const query = new URLSearchParams(period ? periodToParams(period) : {})
 
     const res = await fetch(`${API_BASE}/room-metrics/${openChatId}?${query}`)
     if (!res.ok) throw new Error('Room metrics API failed')

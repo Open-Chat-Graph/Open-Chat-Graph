@@ -10,8 +10,9 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { alphaApi } from '@/api/alpha'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { PeriodRangePicker } from '@/components/ui/period-range-picker'
+import { DEFAULT_PERIOD, periodKey, type PeriodValue } from '@/lib/period'
 import { RoomFlowPanels } from './RoomFlowPanels'
 import type { RoomMetricsResponse } from '@/types/api'
 
@@ -24,17 +25,11 @@ interface RoomMetricsBlockProps {
  *
  * グラフ（メンバー数の推移）が見せられない「人がどう訪れているか」を補う補助ブロック。
  * 純PV・ユニークユーザー・SEO流入・参加リンク押下・平均エンゲージメント時間を、
- * 数字を主役に静かに並べる。期間は 7日/30日 を切替（既定30日）。
+ * 数字を主役に静かに並べる。期間は既定30日。プルダウンでプリセット/カレンダー/全期間を選べる。
  *
  * creds 投入前は updatedAt が null で全指標がゼロで返る。その場合は「壊れている」のではなく
  * 「まだ集計が無い」状態なので、ブロックごと無表示にして注意を奪わない。
  */
-
-// 期間プリセット。本家の日次集計に合わせ 7/30 日のみ。
-const DAY_PRESETS: { value: number; label: string }[] = [
-  { value: 7, label: '7日' },
-  { value: 30, label: '30日' },
-]
 
 // 秒 → 「M分S秒」/「S秒」。エンゲージメント時間の整形。
 function formatEngagement(seconds: number): string {
@@ -81,12 +76,12 @@ function MetricTile({
 }
 
 export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => {
-  const [days, setDays] = useState(30)
+  const [period, setPeriod] = useState<PeriodValue>(DEFAULT_PERIOD)
 
   // 遅延取得。詳細の主役はグラフなので、メトリクスは後追いで静かに現れればよい。
   const { data, error, isLoading } = useSWR<RoomMetricsResponse>(
-    ['room-metrics', openChatId, days],
-    () => alphaApi.getRoomMetrics(openChatId, days),
+    ['room-metrics', openChatId, periodKey(period)],
+    () => alphaApi.getRoomMetrics(openChatId, period),
     { revalidateOnFocus: false, revalidateOnReconnect: false, keepPreviousData: true },
   )
 
@@ -122,22 +117,9 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
         <span className="hidden text-[11px] font-normal text-muted-foreground sm:inline">
           オプチャグラフ上での見られ方
         </span>
-        {/* 期間切替：7日/30日 */}
-        <div className="ml-auto flex gap-1">
-          {DAY_PRESETS.map((p) => (
-            <Button
-              key={p.value}
-              type="button"
-              size="sm"
-              variant={days === p.value ? 'default' : 'outline'}
-              className="h-7 px-2.5 text-xs"
-              onClick={() => setDays(p.value)}
-              aria-pressed={days === p.value}
-              data-testid={`room-metrics-days-${p.value}`}
-            >
-              {p.label}
-            </Button>
-          ))}
+        {/* 期間指定：既定30日／プリセット／カレンダー／全期間 */}
+        <div className="ml-auto">
+          <PeriodRangePicker value={period} onChange={setPeriod} />
         </div>
       </header>
 
@@ -197,7 +179,10 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       {data.updatedAt && (
         <footer className="border-t bg-muted/20 px-4 py-1.5 text-right">
           <span className="text-[10px] tabular-nums text-muted-foreground/70">
-            直近{data.days}日 ・ {data.updatedAt} 時点
+            {data.fromDate && data.toDate
+              ? `${data.fromDate}〜${data.toDate}（${data.days}日）`
+              : `直近${data.days}日`}
+            {' ・ '}{data.updatedAt} 時点
           </span>
         </footer>
       )}

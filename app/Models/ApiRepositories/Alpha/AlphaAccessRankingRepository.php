@@ -256,7 +256,48 @@ class AlphaAccessRankingRepository
      *   avgEngagementSeconds:?float
      * }
      */
-    public function getRoomMetrics(int $openChatId, int $days): array
+    /**
+     * 期間ウィンドウを解決する（詳細メトリクスの期間指定の唯一の入口）。
+     *
+     * - all=true            → データの全期間（MIN(date)〜MAX(date)）
+     * - start/end が Y-m-d   → その範囲（含まれる日付の集計を全部見る。前後関係は自動補正）
+     * - それ以外            → 直近 $days 日（既定 30）
+     *
+     * 基準は alpha_room_access_daily の MIN/MAX。返り値の days は範囲の実日数。
+     *
+     * @return array{fromDate:string, toDate:string, days:int}
+     */
+    public function resolveWindow(string $start, string $end, int $days, bool $all): array
+    {
+        DB::connect();
+        $maxRaw = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
+        $maxDate = ($maxRaw === false || $maxRaw === null) ? date('Y-m-d') : (string)$maxRaw;
+        $minRaw = DB::fetchColumn('SELECT MIN(`date`) FROM alpha_room_access_daily');
+        $minDate = ($minRaw === false || $minRaw === null) ? $maxDate : (string)$minRaw;
+
+        $isYmd = static fn(string $s): bool => preg_match('/^\d{4}-\d{2}-\d{2}$/', $s) === 1;
+
+        if ($all) {
+            $from = $minDate;
+            $to = $maxDate;
+        } elseif ($isYmd($start) && $isYmd($end)) {
+            $from = min($start, $end);
+            $to = max($start, $end);
+        } else {
+            $to = $maxDate;
+            $from = (new \DateTime($maxDate))->modify('-' . (max(1, $days) - 1) . ' day')->format('Y-m-d');
+        }
+
+        $realDays = (new \DateTime($from))->diff(new \DateTime($to))->days + 1;
+        return ['fromDate' => $from, 'toDate' => $to, 'days' => $realDays];
+    }
+
+    /**
+     * 詳細画面用: 1部屋の指定期間メトリクス（GA/GSC 集計）。
+     *
+     * @return array{updatedAt:?string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float, jumpClicks:int, jumpClicksOrganic:int, avgEngagementSeconds:?float}
+     */
+    public function getRoomMetrics(int $openChatId, string $fromDate, string $toDate): array
     {
         DB::connect();
 
@@ -277,7 +318,6 @@ class AlphaAccessRankingRepository
             return $empty;
         }
         $baseDate = (string)$baseDate;
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
 
         $sql = "
             SELECT
@@ -294,10 +334,10 @@ class AlphaAccessRankingRepository
                      THEN SUM(engagement_seconds * active_users) / SUM(active_users)
                      ELSE NULL END AS engagement_seconds
             FROM alpha_room_access_daily
-            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
         ";
 
-        $row = DB::fetch($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+        $row = DB::fetch($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
 
         // 期間内にこの部屋の行が無ければ SUM は全て NULL（GROUP無し集計は1行返る）
         if (!$row || $row['pageviews'] === null) {
@@ -326,16 +366,9 @@ class AlphaAccessRankingRepository
      *
      * @return array<int, array{query:string, clicks:int, impressions:int, position:?float}>
      */
-    public function getRoomSearchQueries(int $openChatId, int $days, int $limit = 20): array
+    public function getRoomSearchQueries(int $openChatId, string $fromDate, string $toDate, int $limit = 20): array
     {
         DB::connect();
-
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_search_query_daily');
-        if ($baseDate === false || $baseDate === null) {
-            return [];
-        }
-        $baseDate = (string)$baseDate;
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
         $limit = max(1, $limit);
 
         $sql = "
@@ -347,13 +380,13 @@ class AlphaAccessRankingRepository
                      THEN SUM(position * impressions) / SUM(impressions)
                      ELSE NULL END AS position
             FROM alpha_room_search_query_daily
-            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
             GROUP BY query
             ORDER BY clicks DESC
             LIMIT {$limit}
         ";
 
-        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
 
         return array_map(static function ($r) {
             return [
@@ -372,16 +405,9 @@ class AlphaAccessRankingRepository
      *
      * @return array<int, array{referrer:string, pageviews:int}>
      */
-    public function getRoomReferrers(int $openChatId, int $days, int $limit = 20): array
+    public function getRoomReferrers(int $openChatId, string $fromDate, string $toDate, int $limit = 20): array
     {
         DB::connect();
-
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_referrer_daily');
-        if ($baseDate === false || $baseDate === null) {
-            return [];
-        }
-        $baseDate = (string)$baseDate;
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
         $limit = max(1, $limit);
 
         $sql = "
@@ -389,13 +415,13 @@ class AlphaAccessRankingRepository
                 referrer,
                 SUM(pageviews) AS pageviews
             FROM alpha_room_referrer_daily
-            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
             GROUP BY referrer
             ORDER BY pageviews DESC
             LIMIT {$limit}
         ";
 
-        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
 
         return array_map(static function ($r) {
             return [

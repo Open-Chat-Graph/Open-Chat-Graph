@@ -652,16 +652,23 @@ class AlphaApiController
         $error = BadRequestException::class;
         Reception::$isJson = true;
 
-        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+        // 期間: days（既定30）／ start・end（Y-m-d 範囲）／ all=1（全期間）。範囲は alpha_room_access_daily の MIN〜MAX 基準で解決。
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 3650, e: $error);
+        $start = trim((string)Reception::input('start', ''));
+        $end = trim((string)Reception::input('end', ''));
+        $all = (string)Reception::input('all', '') === '1';
+        $win = $repo->resolveWindow($start, $end, (int)$days, $all);
 
-        $m = $repo->getRoomMetrics($open_chat_id, (int)$days);
-        $searchQueries = $repo->getRoomSearchQueries($open_chat_id, (int)$days, 20);
-        $referrerRows = $repo->getRoomReferrers($open_chat_id, (int)$days, 20);
+        $m = $repo->getRoomMetrics($open_chat_id, $win['fromDate'], $win['toDate']);
+        $searchQueries = $repo->getRoomSearchQueries($open_chat_id, $win['fromDate'], $win['toDate'], 20);
+        $referrerRows = $repo->getRoomReferrers($open_chat_id, $win['fromDate'], $win['toDate'], 20);
 
         $referrers = array_map(fn($r) => $this->formatReferrer($r, $open_chat_id), $referrerRows);
 
         return response([
-            'days' => (int)$days,
+            'days' => $win['days'],
+            'fromDate' => $win['fromDate'],
+            'toDate' => $win['toDate'],
             'updatedAt' => $m['updatedAt'],
             'pageviews' => $m['pageviews'],
             'activeUsers' => $m['activeUsers'],

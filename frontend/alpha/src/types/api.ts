@@ -370,7 +370,9 @@ export interface RoomReferrer {
 }
 
 export interface RoomMetricsResponse {
-  days: number  // 集計対象の日数
+  days: number  // 集計対象の実日数（範囲・全期間でも実日数）
+  fromDate?: string  // 集計開始日（Y-m-d）
+  toDate?: string  // 集計終了日（Y-m-d）
   updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
   pageviews: number  // ページビュー数
   activeUsers: number  // アクティブユーザー数
