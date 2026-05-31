@@ -1,15 +1,12 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Eye } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/Settings/ThemeToggle'
-import { useScrollToTopOnReclick } from '@/hooks/useScrollToTopOnReclick'
 
 export default function SettingsPage() {
-  const location = useLocation()
   const navigate = useNavigate()
-  // 設定タブ再クリック時に先頭へスクロール
-  useScrollToTopOnReclick(location.pathname === '/settings')
+  // タブ再押下時の先頭スクロール／再マウントは画面表示状態カーネル（App.tsx の KeepAlivePanel）が担う。
 
   return (
     <div className="space-y-6">

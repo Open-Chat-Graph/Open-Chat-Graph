@@ -1,21 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Search, List, Bell, Settings, LineChart } from 'lucide-react'
-import { useNavigationHandler } from '@/hooks/useNavigationHandler'
+import { useViewNavigation } from '@/hooks/useViewNavigation'
+import type { ViewKey } from '@/lib/viewNavigation'
 import { useAlerts } from '@/hooks/useAlerts'
 import { useMemo } from 'react'
 
 export function MobileBottomNav() {
   const location = useLocation()
-  const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
+  const { goToView } = useViewNavigation()
   const { unreadCount } = useAlerts()
 
   const navItems = useMemo(() => {
     return [
-      { path: '/', icon: Search, label: '検索' },
-      { path: '/mylist', icon: List, label: 'マイリスト' },
-      { path: '/analysis', icon: LineChart, label: '分析' },
-      { path: '/notifications', icon: Bell, label: '通知', badge: unreadCount },
-      { path: '/settings', icon: Settings, label: '設定' },
+      { path: '/', view: 'search' as ViewKey, icon: Search, label: '検索' },
+      { path: '/mylist', view: 'mylist' as ViewKey, icon: List, label: 'マイリスト' },
+      { path: '/analysis', view: 'analysis' as ViewKey, icon: LineChart, label: '分析' },
+      { path: '/notifications', view: 'notifications' as ViewKey, icon: Bell, label: '通知', badge: unreadCount },
+      { path: '/settings', view: 'settings' as ViewKey, icon: Settings, label: '設定' },
     ]
   }, [unreadCount])
 
@@ -34,16 +35,7 @@ export function MobileBottomNav() {
             <Link
               key={item.path}
               to={item.path}
-              onClick={(e) => {
-                // 各ページの専用ハンドラーを使用（通知は通常遷移）
-                if (item.path === '/') {
-                  navigateToSearch(e)
-                } else if (item.path === '/mylist') {
-                  navigateToMylist(e)
-                } else if (item.path === '/settings') {
-                  navigateToSettings(e)
-                }
-              }}
+              onClick={(e) => goToView(item.view, e)}
               className={`flex flex-1 flex-col items-center justify-center gap-1 py-1.5 transition-colors select-none ${
                 isActive
                   ? 'text-primary font-medium'

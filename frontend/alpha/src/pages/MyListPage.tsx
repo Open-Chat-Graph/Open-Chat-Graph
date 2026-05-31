@@ -35,7 +35,6 @@ import { useBulkOperations } from '@/hooks/useBulkOperations'
 import { useFolderManagement } from '@/hooks/useFolderManagement'
 import { useFolderNavigation } from '@/hooks/useFolderNavigation'
 import { useScrollDirection } from '@/hooks/useScrollDirection'
-import { useScrollToTopOnReclick } from '@/hooks/useScrollToTopOnReclick'
 import type { MyListData } from '@/types/storage'
 import type { BatchStatsResponse } from '@/types/api'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
@@ -66,7 +65,7 @@ const MyListPage = memo(() => {
   const folderMgmt = useFolderManagement({ myListData, setMyListData, onConfirm: confirmDialog.confirm })
   const folderNav = useFolderNavigation(folderId)
   const scrollDirection = useScrollDirection()
-  useScrollToTopOnReclick(location.pathname === '/mylist' || location.pathname.startsWith('/mylist/'))
+  // タブ再押下時の先頭スクロール＋再マウント（＝データ再読込）は画面表示状態カーネルが担う。
 
   // マイリストのアイテムIDを取得
   const itemIds = myListData.items.map(item => item.id)
@@ -122,15 +121,6 @@ const MyListPage = memo(() => {
     window.addEventListener('popstate', handlePopstate)
     return () => window.removeEventListener('popstate', handlePopstate)
   }, [])
-
-  // 同じページでボタン再クリック時のデータリロード（スクロールは useScrollToTopOnReclick）
-  useEffect(() => {
-    const timestamp = (location.state as { timestamp?: number } | null)?.timestamp
-    if (timestamp && (location.pathname === '/mylist' || location.pathname.startsWith('/mylist/'))) {
-      setMyListData(loadMyList())
-      mutate()
-    }
-  }, [location.state, location.pathname, mutate])
 
   const handleUpdateData = useCallback((data: MyListData) => {
     setMyListData(data)

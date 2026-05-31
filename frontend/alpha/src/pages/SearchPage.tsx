@@ -29,7 +29,7 @@ const SearchPage = memo(() => {
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
   // 検索バー再実行シグナル（同じキーワードでも SWR キーを変えて再フェッチ）
-  const { searchNonce } = useLayout()
+  const { searchNonce, bumpReset } = useLayout()
 
   // useSWRInfinite でページングを管理
   const getKey = useCallback(
@@ -161,12 +161,15 @@ const SearchPage = memo(() => {
   }, [selectedChatId, myListData])
 
   // 検索→期間分析の橋渡し。今のキーワード（＋カテゴリ）を引き継いで期間の伸びで並べ直す。
+  // 画面表示状態カーネルの reset 契約で period-growth パネルを再マウント＋トップへ
+  // （前回の結果・スクロール位置を持ち越さない）。
   const handleViewPeriodGrowth = useCallback(() => {
     const params = new URLSearchParams()
     params.set('q', urlKeyword)
     if (category) params.set('category', String(category))
+    bumpReset('period-growth')
     navigate(`/period-growth?${params.toString()}`)
-  }, [navigate, urlKeyword, category])
+  }, [navigate, urlKeyword, category, bumpReset])
 
   return (
     <div className="space-y-6">

@@ -13,6 +13,14 @@ interface LayoutContextValue {
   /** 検索の再実行シグナル。同じキーワードでも再フェッチさせたいとき bump する */
   searchNonce: number
   triggerSearch: () => void
+  /**
+   * keep-alive パネルごとのリセット nonce（画面表示状態カーネル）。
+   * 値が変わったパネルは key に混ぜて強制再マウント＋スクロール先頭へ戻す。
+   * 同タブ再クリック等で `bumpReset(panelKey)` を呼ぶ。enter（タブ復帰）では
+   * 触らないので状態は保持される。
+   */
+  resetNonces: Record<string, number>
+  bumpReset: (panelKey: string) => void
 }
 
 const LayoutContext = createContext<LayoutContextValue | null>(null)
@@ -29,9 +37,15 @@ export function LayoutProvider({ children }: { children: ReactNode }) {
   const [detailTitle, setDetailTitle] = useState<DetailTitle | null>(null)
   const [searchNonce, setSearchNonce] = useState(0)
   const triggerSearch = useCallback(() => setSearchNonce((n) => n + 1), [])
+  const [resetNonces, setResetNonces] = useState<Record<string, number>>({})
+  const bumpReset = useCallback((panelKey: string) => {
+    setResetNonces((prev) => ({ ...prev, [panelKey]: (prev[panelKey] ?? 0) + 1 }))
+  }, [])
 
   return (
-    <LayoutContext.Provider value={{ detailTitle, setDetailTitle, searchNonce, triggerSearch }}>
+    <LayoutContext.Provider
+      value={{ detailTitle, setDetailTitle, searchNonce, triggerSearch, resetNonces, bumpReset }}
+    >
       {children}
     </LayoutContext.Provider>
   )

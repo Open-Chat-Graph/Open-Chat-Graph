@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { Activity } from 'react'
+import { Activity, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { DashboardLayout } from './components/Layout'
-import { LayoutProvider } from './contexts/layout-context'
+import { LayoutProvider, useLayout } from './contexts/layout-context'
+import { recordViewState } from './lib/viewNavigation'
 import { DetailOverlay } from './components/Layout/DetailOverlay'
 import { cn } from './lib/utils'
 import SearchPage from './pages/SearchPage'
@@ -93,9 +94,20 @@ const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
 ]
 
 function KeepAlivePanel({ page, active }: { page: KeepAlivePage; active: boolean }) {
+  // 画面表示状態カーネル: このパネルの reset nonce が変わったら
+  // (1) key で中身を強制再マウント（React state とデータを破棄＝再レンダリング）
+  // (2) スクロールを先頭へ戻す。enter（タブ復帰）では nonce 不変なので状態は保持される。
+  const { resetNonces } = useLayout()
+  const nonce = resetNonces[page.key] ?? 0
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+  }, [nonce])
+
   return (
     <Activity mode={active ? 'visible' : 'hidden'}>
       <div
+        ref={scrollRef}
         style={{
           position: 'absolute',
           left: 0,
@@ -110,7 +122,9 @@ function KeepAlivePanel({ page, active }: { page: KeepAlivePage; active: boolean
           page.scrollable && 'p-3 md:p-6',
         )}
       >
-        {page.scrollable ? <div className="space-y-6">{page.element}</div> : page.element}
+        <div key={nonce} className={page.scrollable ? 'space-y-6' : undefined}>
+          {page.element}
+        </div>
       </div>
     </Activity>
   )
@@ -129,6 +143,11 @@ function AppContent() {
   const location = useLocation()
   const showDetail = isDetailPage(location.pathname)
   const showFolderChart = isFolderChartPage(location.pathname)
+
+  // 画面表示状態カーネル: enter 復元用に「最後の検索クエリ／分析サブ画面」を記録する。
+  useEffect(() => {
+    recordViewState(location.pathname, location.search)
+  }, [location.pathname, location.search])
 
   return (
     <LayoutProvider>

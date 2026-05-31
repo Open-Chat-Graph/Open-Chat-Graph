@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from './MobileBottomNav'
 import { HeaderSearchBar } from './HeaderSearchBar'
 import { cn } from '@/lib/utils'
-import { useNavigationHandler } from '@/hooks/useNavigationHandler'
+import { useViewNavigation } from '@/hooks/useViewNavigation'
+import type { ViewKey } from '@/lib/viewNavigation'
 import { useAlerts } from '@/hooks/useAlerts'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
@@ -20,7 +21,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { navigateToSearch, navigateToMylist, navigateToSettings } = useNavigationHandler()
+  const { goToView } = useViewNavigation()
   const { pageTitle, detailTitle } = usePageTitle()
   const { unreadCount } = useAlerts()
 
@@ -42,11 +43,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // ナビゲーションメニュー（マイリストは常に/mylist固定）
   const navigation = useMemo(() => {
     return [
-      { name: '検索', href: '/', icon: Search, badge: 0 },
-      { name: 'マイリスト', href: '/mylist', icon: FolderOpen, badge: 0 },
-      { name: '分析', href: '/analysis', icon: LineChart, badge: 0 },
-      { name: '通知', href: '/notifications', icon: Bell, badge: unreadCount },
-      { name: '設定', href: '/settings', icon: Settings, badge: 0 },
+      { name: '検索', href: '/', view: 'search' as ViewKey, icon: Search, badge: 0 },
+      { name: 'マイリスト', href: '/mylist', view: 'mylist' as ViewKey, icon: FolderOpen, badge: 0 },
+      { name: '分析', href: '/analysis', view: 'analysis' as ViewKey, icon: LineChart, badge: 0 },
+      { name: '通知', href: '/notifications', view: 'notifications' as ViewKey, icon: Bell, badge: unreadCount },
+      { name: '設定', href: '/settings', view: 'settings' as ViewKey, icon: Settings, badge: 0 },
     ]
   }, [unreadCount])
 
@@ -127,15 +128,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     )}
                     onClick={(e) => {
                       setSidebarOpen(false)
-
-                      // 各ページの専用ハンドラーを使用
-                      if (item.href === '/') {
-                        navigateToSearch(e)
-                      } else if (item.href === '/mylist') {
-                        navigateToMylist(e)
-                      } else if (item.href === '/settings') {
-                        navigateToSettings(e)
-                      }
+                      goToView(item.view, e)
                     }}
                     title={item.name}
                   >
