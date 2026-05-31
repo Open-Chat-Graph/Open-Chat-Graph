@@ -48,8 +48,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
           <h3 class="oc-jump-section-title">มาตรฐานเกี่ยวกับการโพสต์บน LINE</h3>
-          <span class="oc-jump-instruction">โปรดทำเครื่องหมายในแต่ละข้อด้านล่าง</span>
-          <span class="oc-jump-instruction">เมื่อทำเครื่องหมายครบทุกข้อ ปุ่ม "เปิดใน LINE" ที่อยู่ด้านล่างสุดจะใช้งานได้</span>
+          <span class="oc-jump-instruction">โปรดอ่านข้อห้ามแต่ละข้อด้านล่าง ก่อนกดปุ่ม "เปิดใน LINE" ที่อยู่ด้านล่างสุด</span>
         </div>
         <hr class="hr-bottom">
         <div class="oc-rule-item">
@@ -70,10 +69,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-general" class="oc-jump-checkbox">
-          <label for="check-general" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "ไม่นัดพบคนไม่รู้จัก" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">ไม่แชร์เนื้อหาอนาจาร</h3>
@@ -97,10 +92,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-adult" class="oc-jump-checkbox">
-          <label for="check-adult" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "ไม่แชร์เนื้อหาอนาจาร" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">สแปม</h3>
@@ -122,10 +113,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-spam" class="oc-jump-checkbox">
-          <label for="check-spam" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "สแปม" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">การใช้ LINE และ LINE Official Account ในเชิงพาณิชย์อย่างไม่เหมาะสม</h3>
@@ -147,10 +134,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-commercial" class="oc-jump-checkbox">
-          <label for="check-commercial" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "การใช้ LINE และ LINE Official Account ในเชิงพาณิชย์อย่างไม่เหมาะสม" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">การกระทำที่ก่อให้เกิดผลเสียต่อ LINE</h3>
@@ -176,10 +159,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-harmful" class="oc-jump-checkbox">
-          <label for="check-harmful" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "การกระทำที่ก่อให้เกิดผลเสียต่อ LINE" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">ไม่ทำให้ผู้อื่นขุ่นเคืองใจ</h3>
@@ -201,10 +180,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-offensive" class="oc-jump-checkbox">
-          <label for="check-offensive" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "ไม่ทำให้ผู้อื่นขุ่นเคืองใจ" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">การกระทำที่ผิดกฎหมายและการกระทำเพื่อสนับสนุน</h3>
@@ -228,10 +203,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-illegal" class="oc-jump-checkbox">
-          <label for="check-illegal" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "การกระทำที่ผิดกฎหมายและการกระทำเพื่อสนับสนุน" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
         <?php ad() ?>
         <h3 class="oc-jump-section-title">ข้อห้ามอื่นๆ</h3>
@@ -249,10 +220,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           <br>
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
-        <div class="oc-jump-checkbox-wrapper">
-          <input type="checkbox" id="check-other" class="oc-jump-checkbox">
-          <label for="check-other" class="oc-jump-checkbox-label-th">ฉันยืนยันว่าได้ตรวจสอบข้อ "ข้อห้ามอื่นๆ" แล้ว</label>
-        </div>
         <hr class="hr-bottom">
       </section>
       <div class="oc-jump-footer-info">
@@ -265,9 +232,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
         </div>
       </div>
       <?php if ($oc['url']) : ?>
-        <div id="checkbox-warning" class="oc-jump-checkbox-warning">
-          ※ โปรดทำเครื่องหมายในช่องตรวจสอบสำหรับทุกข้อ
-        </div>
         <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="openchat_link oc-jump-line-button">
           <div class="oc-jump-line-button-content">
             <?php if ($oc['join_method_type'] !== 0) : ?>
@@ -286,48 +250,6 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
-  <script>
-    // Check the status of checkboxes and toggle button enable/disable
-    function checkAllCheckboxes() {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-      const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-
-      const button = document.getElementById('line-open-button');
-      const warning = document.getElementById('checkbox-warning');
-
-      if (button) {
-        if (allChecked) {
-          // Enable button when all checkboxes are checked
-          button.style.opacity = '1';
-          button.style.pointerEvents = 'auto';
-          if (warning) {
-            warning.style.display = 'none';
-          }
-        } else {
-          // Disable button when checkboxes are incomplete
-          button.style.opacity = '0.5';
-          button.style.pointerEvents = 'none';
-          if (warning) {
-            warning.style.display = 'block';
-          }
-        }
-      }
-    }
-
-    // Execute on page load and checkbox changes
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add event listeners to each checkbox
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-      checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', checkAllCheckboxes);
-      });
-    });
-
-    // Check initial state
-    checkAllCheckboxes();
-  </script>
 </body>
 
 </html>

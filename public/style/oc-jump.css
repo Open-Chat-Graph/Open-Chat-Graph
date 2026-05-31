@@ -191,3 +191,93 @@
   aspect-ratio: 1.8;
   border-radius: 0;
 }
+
+/* === Revamp 2026-05: 「説明文を読ませる」ための可読性向上 === */
+
+/* 説明文ボックス: jump では全文を読ませるのが目的。
+   room_page.css の .talkroom_description は text-align:center だが、
+   長文を読ませる用途では中央寄せは読みづらいので左寄せ・行間広めに上書きする。 */
+.oc-jump-section .talkroom_description_box {
+  margin: 0;
+  max-height: none;
+}
+
+.oc-jump-section .talkroom_description {
+  text-align: left;
+  line-height: 1.8;
+  font-size: 15px;
+  color: #222;
+}
+
+.oc-jump-section #talkroom-description-btn {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 「この部屋について」など本文セクションの小見出し */
+.oc-jump-content-label {
+  display: block;
+  font-size: 13px;
+  font-weight: bold;
+  color: #555;
+  text-align: left;
+  margin: 0 2rem 0.25rem;
+}
+
+/* 禁止事項: 画像とテキストの両方を出す。テキストは公式項目の箇条書き。 */
+.oc-jump-rule-image {
+  margin: 0.5rem 0;
+}
+
+.oc-jump-rule-list {
+  margin: 1rem 2rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.oc-jump-rule-list > li {
+  position: relative;
+  padding-left: 1.4em;
+  margin-bottom: 0.85rem;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #222;
+}
+
+.oc-jump-rule-list > li::before {
+  content: "🚫";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 0.95em;
+}
+
+.oc-jump-rule-list > li b {
+  display: block;
+  font-size: 14px;
+  font-weight: bold;
+  color: #111;
+  margin-bottom: 0.1rem;
+}
+
+.oc-jump-rule-list > li span {
+  display: block;
+  font-size: 13px;
+  color: #555;
+}
+
+/* 出典クレジット */
+.oc-jump-source {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  margin: 0.5rem 2rem 1rem;
+}
+
+.oc-jump-source a {
+  color: #888;
+  text-decoration: underline;
+}

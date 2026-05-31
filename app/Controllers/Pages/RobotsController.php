@@ -58,10 +58,12 @@ TXT;
 User-agent: Mediapartners-Google
 Allow: /oc/*/jump
 Allow: /th/oc/*/jump
+Allow: /tw/oc/*/jump
 
 User-agent: AdsBot-Google
 Allow: /oc/*/jump
 Allow: /th/oc/*/jump
+Allow: /tw/oc/*/jump
 
 # その他すべてのクローラー
 User-agent: *
@@ -71,6 +73,7 @@ Disallow: /th/recently-registered
 Disallow: /recently-registered
 Disallow: /oc/*/jump
 Disallow: /th/oc/*/jump
+Disallow: /tw/oc/*/jump
 
 Sitemap: https://openchat-review.me/sitemap.xml
 TXT;

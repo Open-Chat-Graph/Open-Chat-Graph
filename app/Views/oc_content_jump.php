@@ -15,30 +15,25 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
   </style>
   <?php viewComponent('site_header') ?>
   <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-  <?php GAd::output('siteTopRectangle', true) ?>
   <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
     <article class="unset" style="display: block;">
       <section class="oc-jump-section oc-info-section">
-        <h2 class="oc-jump-main-title">⚠️参加前の確認</h2>
-        <span class="oc-jump-instruction">以下の説明文をご確認ください。</span>
+        <h2 class="oc-jump-main-title"><?php echo t('⚠️参加前の確認') ?></h2>
+        <span class="oc-jump-instruction"><?php echo t('参加するオープンチャットの説明文をご確認ください。') ?></span>
         <div class="oc-jump-image-wrapper">
-          <img class="talkroom_banner_img" style="aspect-ratio: 1.8; border-radius: 0;"
+          <img class="talkroom_banner_img oc-jump-banner-img"
             alt="<?php echo $oc['name'] ?>"
             src="<?php echo imgUrl($oc['img_url']) ?>">
         </div>
         <div class="oc-jump-info-content">
-          <h1 class="talkroom_link_h1 unset" style="text-align: center; white-space: normal;">
-            <?php if ($oc['emblem'] === 1) : ?><span
-                class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span
-                class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
-          <div style="text-align: center;">
-            <span class="number_of_members"
-              style="color: #111; font-weight: normal;"><?php echo sprintfT('メンバー %s人', number_format($oc['member'])) ?></span>
+          <h1 class="talkroom_link_h1 unset oc-jump-chat-title"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
+          <div class="oc-jump-member-count">
+            <span class="number_of_members oc-jump-member-text"><?php echo sprintfT('メンバー %s人', number_format($oc['member'])) ?></span>
           </div>
+          <span class="oc-jump-content-label"><?php echo t('このオープンチャットについて') ?></span>
           <div class="talkroom_description_box" id="talkroom_description_box">
             <p class="talkroom_description" id="talkroom-description">
-              <span
-                id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
+              <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
             </p>
           </div>
         </div>
@@ -46,17 +41,27 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
       <?php GAd::output('siteSeparatorWide', true) ?>
       <section class="oc-jump-section oc-rules-section">
         <div class="oc-rule-item">
-          <h3 class="oc-jump-section-title">オープンチャットの禁止事項</h3>
-          <span class="oc-jump-instruction">以下の禁止事項をご確認後、「LINEで開く」を押してください。</span>
-          <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="オープンチャット禁止事項"
+          <h3 class="oc-jump-section-title"><?php echo t('オープンチャットの禁止事項') ?></h3>
+          <span class="oc-jump-instruction"><?php echo t('以下の禁止事項をご確認のうえ、「LINEで開く」を押してください。') ?></span>
+          <img src="<?php echo fileUrl('assets/line-guilde/line-guilde.webp') ?>" alt="<?php echo t('オープンチャット禁止事項') ?>"
             class="oc-jump-rule-image">
         </div>
-        <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 1rem;">
+        <ul class="oc-jump-rule-list">
+          <li><b><?php echo t('思いやりのある発言をしよう') ?></b><span><?php echo t('誹謗中傷や暴言、名誉や信用を傷つける行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('個人情報を大切に扱おう') ?></b><span><?php echo t('LINE ID・電話番号・住所など、個人が特定できる情報の投稿は控えましょう。') ?></span></li>
+          <li><b><?php echo t('知らない人と会わないようにしよう') ?></b><span><?php echo t('面識のない人との出会いや交際を目的とする行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('不適切な性的表現をさけよう') ?></b><span><?php echo t('露骨な性的描写やわいせつな表現・画像の投稿は禁止されています。') ?></span></li>
+          <li><b><?php echo t('著作権を守ろう') ?></b><span><?php echo t('他人の著作物を無断で投稿・利用する行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('スパム・違法行為・商用利用の禁止') ?></b><span><?php echo t('迷惑行為や法律に違反する行為、無断の宣伝・勧誘は禁止されています。') ?></span></li>
+          <li><b><?php echo t('青少年の安全を守ろう') ?></b><span><?php echo t('青少年との不健全な出会いや、危険・搾取につながる行為は一切禁止です。') ?></span></li>
+        </ul>
+        <span class="oc-jump-source"><?php echo t('出典：') ?><a href="https://guide.line.me/ja/safety/contributionStandard" target="_blank" rel="noopener nofollow"><?php echo t('LINE 投稿に関する基準') ?></a></span>
+        <div class="oc-jump-footer-info">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <div class="title-bar-oc-name-wrapper" style="padding-right: 1.5rem;">
-              <div class="title-bar-oc-name" style="color: #111; font-size: 12px;"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-              <div class="title-bar-oc-member" style="color: #111; font-size: 12px;">(<?php echo formatMember($oc['member']) ?>)</div>
+          <div class="oc-jump-footer-text">
+            <div class="oc-jump-footer-name-wrapper">
+              <div class="oc-jump-footer-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
+              <div class="oc-jump-footer-member">(<?php echo formatMember($oc['member']) ?>)</div>
             </div>
           </div>
         </div>
