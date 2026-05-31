@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Settings2, Sparkles, Activity, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,27 +8,38 @@ import {
   MovementCard,
   formatComputedAt,
 } from '@/components/Notifications'
-import { cn } from '@/lib/utils'
 import type { KeywordHit, Movement } from '@/types/api'
 
-type Tab = 'rooms' | 'movements'
+// 統合タイムラインの1アイテム。新着部屋（KeywordHit）と見張りの動き（Movement）を混在させる。
+type FeedItem =
+  | { kind: 'keyword'; createdAt: number; data: KeywordHit }
+  | { kind: 'movement'; createdAt: number; data: Movement }
 
 /**
- * 通知ページ。サーバー算出の通知を2区分で表示する。
- * (a) 新しい部屋 = キーワードの見張りヒット (b) 見張りの動き = 部屋/マイリストの増減。
- * 各アイテムは未読を左帯で強調し、開いた時点でそのアイテムを既読化する。
+ * 通知ページ。新着部屋（キーワード見張りヒット）と見張りの動き（部屋／マイリストの増減）を
+ * 1本のタイムラインに時系列（createdAt 降順）で混在表示する。
+ * 各アイテムは未読を強調し、開いた時点でそのアイテムを既読化する。
  */
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const { data, isLoading, markRead, markAllRead } = useAlerts()
-  const [tab, setTab] = useState<Tab>('rooms')
   const openWatchSettings = () => navigate('/watch')
 
-  const keywordHits = useMemo(() => data?.keywordHits ?? [], [data])
-  const movements = useMemo(() => data?.movements ?? [], [data])
+  // keywordHits と movements を1配列に統合し createdAt 降順で並べる。
+  const feed = useMemo<FeedItem[]>(() => {
+    const items: FeedItem[] = [
+      ...(data?.keywordHits ?? []).map(
+        (data): FeedItem => ({ kind: 'keyword', createdAt: data.createdAt, data }),
+      ),
+      ...(data?.movements ?? []).map(
+        (data): FeedItem => ({ kind: 'movement', createdAt: data.createdAt, data }),
+      ),
+    ]
+    items.sort((a, b) => b.createdAt - a.createdAt)
+    return items
+  }, [data])
 
-  const unreadKeyword = keywordHits.filter((h) => !h.isRead).length
-  const unreadMovement = movements.filter((m) => !m.isRead).length
+  const unreadCount = feed.filter((item) => !item.data.isRead).length
 
   const handleOpenKeyword = (hit: KeywordHit) => {
     if (!hit.isRead) markRead([hit.id])
@@ -51,7 +62,7 @@ export default function NotificationsPage() {
           )}
         </p>
         <div className="ml-auto flex items-center gap-2">
-          {(unreadKeyword > 0 || unreadMovement > 0) && (
+          {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -78,116 +89,66 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* 区分タブ（セグメント） */}
-      <div className="space-y-1.5">
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-          <TabButton
-            active={tab === 'rooms'}
-            onClick={() => setTab('rooms')}
-            icon={<Sparkles className="h-4 w-4" />}
-            label="新着部屋（キーワード）"
-            count={unreadKeyword}
-          />
-          <TabButton
-            active={tab === 'movements'}
-            onClick={() => setTab('movements')}
-            icon={<Activity className="h-4 w-4" />}
-            label="見張りの動き"
-            count={unreadMovement}
-          />
-        </div>
-        {/* タブ直下に常時表示する1行の区分説明。選択中タブの対象を明示する */}
-        <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-          {tab === 'rooms'
-            ? 'キーワード由来の新着 — 見張りキーワードに合う新しい部屋'
-            : '見張り対象の増減 — 部屋やマイリスト全体の大きな動き'}
-        </p>
-      </div>
-
       {isLoading && !data ? (
         <div className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
         </div>
-      ) : tab === 'rooms' ? (
-        keywordHits.length > 0 ? (
-          <div className="space-y-2.5">
-            {keywordHits.map((hit) => (
-              <KeywordHitCard key={hit.id} hit={hit} onOpen={handleOpenKeyword} />
-            ))}
-          </div>
-        ) : (
-          <EmptyMessage
-            title="新しい部屋はまだありません"
-            body="「見張り設定」でキーワードを見張ると、条件に合う新しい部屋をここでお知らせします。"
-            onSettings={openWatchSettings}
-          />
-        )
-      ) : movements.length > 0 ? (
+      ) : feed.length > 0 ? (
         <div className="space-y-2.5">
-          {movements.map((m) => (
-            <MovementCard key={m.id} movement={m} onOpen={handleOpenMovement} />
-          ))}
+          {feed.map((item) =>
+            item.kind === 'keyword' ? (
+              <FeedRow key={`k-${item.data.id}`} type="keyword">
+                <KeywordHitCard hit={item.data} onOpen={handleOpenKeyword} />
+              </FeedRow>
+            ) : (
+              <FeedRow key={`m-${item.data.id}`} type="movement">
+                <MovementCard movement={item.data} onOpen={handleOpenMovement} />
+              </FeedRow>
+            ),
+          )}
         </div>
       ) : (
-        <EmptyMessage
-          title="見張りの動きはまだありません"
-          body="部屋やマイリスト全体のしきい値を設定すると、大きな増減をここでお知らせします。"
-          onSettings={openWatchSettings}
-        />
+        <EmptyMessage onSettings={openWatchSettings} />
       )}
     </div>
   )
 }
 
-function TabButton({
-  active,
-  onClick,
-  icon,
-  label,
-  count,
+/**
+ * タイムライン上の1行。控えめな種別バッジ（新着部屋＝Sparkles／動き＝Activity）を添え、
+ * カード本体はそのまま描画する。
+ */
+function FeedRow({
+  type,
+  children,
 }: {
-  active: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  label: string
-  count: number
+  type: 'keyword' | 'movement'
+  children: React.ReactNode
 }) {
+  const isKeyword = type === 'keyword'
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors select-none',
-        active
-          ? 'bg-background text-foreground shadow-sm'
-          : 'text-muted-foreground hover:text-foreground',
-      )}
-    >
-      {icon}
-      <span>{label}</span>
-      {count > 0 && (
-        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
-    </button>
+    <div>
+      <div className="mb-1 flex items-center gap-1 px-0.5 text-[11px] font-medium text-muted-foreground">
+        {isKeyword ? (
+          <Sparkles className="h-3 w-3 text-primary" />
+        ) : (
+          <Activity className="h-3 w-3 text-primary" />
+        )}
+        <span>{isKeyword ? '新着部屋' : '見張りの動き'}</span>
+      </div>
+      {children}
+    </div>
   )
 }
 
-function EmptyMessage({
-  title,
-  body,
-  onSettings,
-}: {
-  title: string
-  body: string
-  onSettings: () => void
-}) {
+function EmptyMessage({ onSettings }: { onSettings: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <Bell className="h-10 w-10 text-muted-foreground/50" />
-      <p className="font-medium">{title}</p>
-      <p className="max-w-xs text-sm text-muted-foreground">{body}</p>
+      <p className="font-medium">見張り中の動きや新着部屋がここに出ます。</p>
+      <p className="max-w-xs text-sm text-muted-foreground">
+        キーワードや部屋・マイリスト全体を見張ると、ここに時系列で出ます。
+      </p>
       <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={onSettings}>
         <Settings2 className="h-4 w-4" />
         見張り設定を開く

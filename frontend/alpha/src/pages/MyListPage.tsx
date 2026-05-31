@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, memo } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import useSWR from 'swr'
-import { ArrowLeft, CheckSquare, FolderPlus, ArrowUpDown, Check, LineChart } from 'lucide-react'
+import { ArrowLeft, CheckSquare, FolderPlus, ArrowUpDown, Check, LineChart, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -275,21 +275,6 @@ const MyListPage = memo(() => {
 
               {/* 通常のツールバー（常に表示、右側） */}
               <div className="flex items-center gap-2 ml-auto">
-                {/* 統合グラフ（フォルダ内かつ非選択モードのとき）。配下ルームの成長を1つに重ねる */}
-                {folderNav.currentFolderId && !selection.selectionMode &&
-                  myListData.items.some(item => item.folderId === folderNav.currentFolderId) && (
-                    <Button
-                      variant="outline"
-                      className="h-10 w-10 md:w-auto md:px-3"
-                      onClick={() => navigate(`/mylist/${folderNav.currentFolderId}/chart`)}
-                      data-testid="folder-chart-button"
-                      title="統合グラフ"
-                    >
-                      <LineChart className="h-4 w-4 md:mr-2" />
-                      <span className="hidden md:inline">統合グラフ</span>
-                    </Button>
-                  )}
-
                 <Button
                   variant={selection.selectionMode ? 'default' : 'outline'}
                   className="h-10 w-10 md:w-auto md:px-3"
@@ -367,6 +352,35 @@ const MyListPage = memo(() => {
             <div className="text-muted-foreground">読み込み中...</div>
           </div>
         )}
+
+        {/* 統合グラフ導線（フォルダ内・配下に部屋あり・非選択モードのとき）。
+            配下ルームの人数推移を1つのグラフに重ねて比較できる、αの主要メタ機能。
+            スマホ幅でも見落とさないよう、フォルダ内容の先頭にラベル付きで配置。
+            作法は SearchPage の search-to-period-growth 橋渡しボタンに揃える。 */}
+        {statsData && folderNav.currentFolderId && !selection.selectionMode &&
+          myListData.items.some(item => item.folderId === folderNav.currentFolderId) && (
+            <button
+              type="button"
+              onClick={() => navigate(`/mylist/${folderNav.currentFolderId}/chart`)}
+              className="flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
+              data-testid="folder-chart-button"
+            >
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Layers className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <LineChart className="h-4 w-4 flex-shrink-0 text-primary" />
+                  <span className="truncate">
+                    {`「${myListData.folders.find(f => f.id === folderNav.currentFolderId)?.name ?? 'このフォルダ'}」の統合グラフを見る`}
+                  </span>
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  フォルダ内の部屋の人数推移を重ねて比較
+                </span>
+              </span>
+            </button>
+          )}
 
         {statsData && (
           <FolderList
