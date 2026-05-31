@@ -562,8 +562,9 @@ class AlphaApiController
         // scope=pages＝「その他ページ（非オプチャ）」タブ。既定 rooms。
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
         $keyword = mb_substr((string)Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error), 0, 100);
-        // 並び替え軸: pageviews（既定・アクセス数降順）/ jump_clicks（入室数＝参加リンク押下降順）。
-        $sort = Validator::str(Reception::input('sort', 'pageviews'), regex: ['pageviews', 'jump_clicks'], e: $error);
+        // 並び替え軸（部屋集合は常に PV>0 で固定）: pageviews（既定・アクセス数降順）/
+        // seo_total（SEO合計＝直接＋間接 降順）/ jump_clicks（入室数＝参加リンク押下降順）。
+        $sort = Validator::str(Reception::input('sort', 'pageviews'), regex: ['pageviews', 'seo_total', 'jump_clicks'], e: $error);
 
         // ETA計測: 実処理の wall time を query_key で upsert（プログレスバー用・付加機能）。
         $startMs = microtime(true);
@@ -578,7 +579,16 @@ class AlphaApiController
 
         $r = $repo->getAccessRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset, $keyword, $sort);
         $this->recordListTiming($timingRepo, 'access-ranking', $startMs);
-        $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
+
+        // 各部屋の流入キーワード（多い順 top8）を ID 群でまとめて1クエリ取得し紐付ける（N+1回避）。
+        $roomIds = array_map(static fn($item) => (int)$item['id'], $r['data']);
+        $keywordsByRoom = $repo->getRoomsTopKeywords($roomIds, $win['fromDate'], $win['toDate'], 8);
+        $data = array_map(
+            fn($item) => $this->formatRankingRoomFull($item) + [
+                'keywords' => $keywordsByRoom[(int)$item['id']] ?? [],
+            ],
+            $r['data'],
+        );
         return response($this->rankingEnvelope($data, $r, $win, $page));
     }
 
@@ -1077,7 +1087,8 @@ class AlphaApiController
                 $pgPeriod = ($startD !== '' && $endD !== '') ? "range:$startD:$endD" : "days:$pgDays";
                 return $this->etaKey('pg', [$this->normalizeKeyword($keyword), (string)$category, $pgPeriod, $order]);
             case 'access-ranking':
-                $arSort = ((string)Reception::input('sort', 'pageviews')) === 'jump_clicks' ? 'jump_clicks' : 'pageviews';
+                $rawSort = (string)Reception::input('sort', 'pageviews');
+                $arSort = in_array($rawSort, ['seo_total', 'jump_clicks'], true) ? $rawSort : 'pageviews';
                 return $this->etaKey('ar', [(string)$category, $period, $order, $this->scopeInput(), $this->normalizeKeyword((string)Reception::input('keyword', '')), $arSort]);
             case 'search-ranking':
                 return $this->etaKey('sr', [(string)$category, $period, $order, $this->scopeInput(), $this->normalizeKeyword((string)Reception::input('keyword', ''))]);

@@ -111,16 +111,11 @@ const LabsPage = memo(() => {
         }
         return alphaApi.getAccessRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
       }
-      // rooms タブは metric で叩くエンドポイントを切り替え、keyword も渡す。
+      // rooms タブは access-ranking に一本化し、metric は sort で並び替え軸だけ切り替える
+      // （部屋集合は常に PV>0 で固定）。keyword も渡す。
       // メソッドを変数に取り出すと this が外れる（_rankingQuery 参照で失敗）ので必ず alphaApi 経由で呼ぶ。
-      if (metric === 'seo') {
-        return alphaApi.getSearchRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
-      }
-      // jump＝入室数（参加リンク押下）降順は access-ranking を sort で切り替えて取得。
-      if (metric === 'jump') {
-        return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined, sort: 'jump_clicks' })
-      }
-      return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
+      const sort = metric === 'seo' ? 'seo_total' : metric === 'jump' ? 'jump_clicks' : 'pageviews'
+      return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined, sort })
     },
     [tab, period, category, metric, keyword],
   )
@@ -151,18 +146,23 @@ const LabsPage = memo(() => {
     loading: firstPageLoading,
     fetchEta: async () => {
       // タブ＋指標で叩く ETA の種別を決める（fetcher と同じ対応）。
+      // rooms は全 metric を access-ranking に一本化し sort で区別。pages の seo のみ search-ranking。
       let type: EtaListType
       if (tab === 'keywords') type = 'search-query-ranking'
-      else type = metric === 'seo' ? 'search-ranking' : 'access-ranking'
+      else if (tab === 'pages' && metric === 'seo') type = 'search-ranking'
+      else type = 'access-ranking'
       const periodParams = periodToParams(period)
       const scope = tab === 'pages' ? 'pages' : 'rooms'
+      // access-ranking の sort（record 側キーと一致させる）。seo=SEO合計 / jump=入室数。
+      const arSort = type === 'access-ranking'
+        ? (metric === 'seo' ? 'seo_total' : metric === 'jump' ? 'jump_clicks' : undefined)
+        : undefined
       return (
         await alphaApi.getEta({
           type,
           order: 'desc',
           scope,
-          // jump＝入室数は access-ranking を sort=jump_clicks で叩く。record 側キーと一致させる。
-          sort: metric === 'jump' ? 'jump_clicks' : undefined,
+          sort: arSort,
           category: tab === 'rooms' ? category || undefined : undefined,
           keyword: tab === 'rooms' ? keyword || undefined : undefined,
           days: periodParams.days ? Number(periodParams.days) : undefined,

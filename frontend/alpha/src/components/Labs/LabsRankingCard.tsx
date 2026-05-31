@@ -53,18 +53,12 @@ function Stat({
   )
 }
 
-// 部屋: アクセス数 / SEO流入(合計=直接+間接) / 入室数(うちSEO経由) の3指標。
+// 部屋: アクセス数 / SEO流入(合計=直接+間接) / 入室数(うちSEO経由(間接含む)) の3指標。
 function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPrimary }) {
   const seoTotal = room.searchClicks + room.seoIndirect
   return (
     <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
-      <Stat
-        label="アクセス数"
-        value={room.pageviews}
-        unit="PV"
-        sub={`うちSEO ${seoTotal.toLocaleString()}`}
-        emphasize={primary === 'pv'}
-      />
+      <Stat label="アクセス数" value={room.pageviews} unit="PV" emphasize={primary === 'pv'} />
       <Stat
         label="SEO流入(合計)"
         value={seoTotal}
@@ -74,7 +68,7 @@ function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPr
       <Stat
         label="入室数"
         value={room.jumpClicks}
-        sub={`うちSEO ${room.jumpClicksOrganic.toLocaleString()}`}
+        sub={`うちSEO経由（間接含む）${room.jumpClicksOrganic.toLocaleString()}`}
         emphasize={primary === 'jump'}
       />
     </div>
@@ -93,7 +87,12 @@ function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: Labs
         sub={`平均 ${page.searchPosition != null ? page.searchPosition.toFixed(1) : '—'}位`}
         emphasize={primary === 'seo'}
       />
-      <Stat label="入室数" value={page.jumpClicks} sub="経由(目安)" emphasize={primary === 'jump'} />
+      <Stat
+        label="入室数"
+        value={page.jumpClicks}
+        sub={`うちSEO経由（間接含む）${page.jumpClicksOrganic.toLocaleString()}`}
+        emphasize={primary === 'jump'}
+      />
       <Stat label="ユニークユーザー" value={page.activeUsers} unit="人" />
     </div>
   )
@@ -186,6 +185,12 @@ export const LabsRankingCard = memo(({ entity, rank, primary, onRoomClick }: Lab
             )}
           </div>
           <RoomMetrics room={room} primary={primary} />
+          {room.keywords && room.keywords.length > 0 && (
+            <p className="mt-1.5 break-words text-[11px] leading-snug text-muted-foreground/80 line-clamp-2">
+              <span className="text-muted-foreground/60">流入KW: </span>
+              {room.keywords.join('、')}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

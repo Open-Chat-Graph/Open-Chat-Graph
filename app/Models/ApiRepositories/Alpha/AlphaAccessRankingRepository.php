@@ -18,19 +18,28 @@ use App\Models\Repositories\DB;
 class AlphaAccessRankingRepository
 {
     /**
-     * アクセス数ランキング（指定期間のページビュー合計でソート）。各行に全指標を付ける。
+     * アクセス数ランキング（rooms タブの唯一の入口）。各行に全指標＋流入キーワードを付ける。
      *
-     * $sort で並べ替え軸を切替える: 'pageviews'（既定・PV合計降順）/ 'jump_clicks'（入室数＝参加リンク押下合計降順）。
-     * 'jump_clicks' のときは入室数が1件以上ある部屋だけに絞る（having）。返す指標は同じ全指標。
+     * 部屋集合は常に「期間内に PV が1件以上ある部屋」（having SUM(a.pageviews) > 0）で固定し、
+     * $sort で並べ替え軸だけを切替える:
+     *   'pageviews'  … アクセス数(PV)合計降順（既定）
+     *   'seo_total'  … SEO合計（直接 search_clicks ＋ 間接 indirect_seo）降順
+     *   'jump_clicks'… 入室数（参加リンク押下）合計降順
+     * いずれも同じ部屋集合（PV>0）で並べ替えるだけ。返す指標は全部同じ。
      *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
     public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0, string $keyword = '', string $sort = 'pageviews'): array
     {
-        $byJump = $sort === 'jump_clicks';
+        // 並び替え軸（部屋集合は常に PV>0 で固定）。
+        $orderColumn = match ($sort) {
+            'seo_total' => 'seo_total',
+            'jump_clicks' => 'jump_clicks',
+            default => 'pageviews',
+        };
         return $this->fetchRanking(
-            having: $byJump ? 'SUM(a.jump_clicks) > 0' : 'SUM(a.pageviews) > 0',
-            orderColumn: $byJump ? 'jump_clicks' : 'pageviews',
+            having: 'SUM(a.pageviews) > 0',
+            orderColumn: $orderColumn,
             category: $category,
             fromDate: $fromDate,
             toDate: $toDate,
@@ -42,7 +51,7 @@ class AlphaAccessRankingRepository
     }
 
     /**
-     * 検索流入(SEO)ランキング（指定期間の検索クリック合計でソート）。各行に全指標を付ける。
+     * 検索流入(SEO)ランキング（pages タブ seo 用途のみ。rooms は getAccessRanking に一本化）。
      * search_position は表示回数(impressions)で加重平均する。
      *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
@@ -117,6 +126,8 @@ class AlphaAccessRankingRepository
         $host = $this->ownDomainHost();
         if ($host !== '') {
             $indirectSelect = 'MAX(COALESCE(ref.indirect_seo, 0)) AS indirect_seo';
+            // SEO合計＝直接GSCクリック＋間接SEO（本家内SEOページ経由PV）。host 未設定時は search_clicks のみ。
+            $seoTotalSelect = '(SUM(a.search_clicks) + MAX(COALESCE(ref.indirect_seo, 0))) AS seo_total';
             $indirectJoin = "
                 LEFT JOIN (
                     SELECT open_chat_id, SUM(pageviews) AS indirect_seo
@@ -133,6 +144,7 @@ class AlphaAccessRankingRepository
             $params['own2'] = '%//www.' . $host . '%';
         } else {
             $indirectSelect = '0 AS indirect_seo';
+            $seoTotalSelect = 'SUM(a.search_clicks) AS seo_total';
             $indirectJoin = '';
         }
 
@@ -161,7 +173,8 @@ class AlphaAccessRankingRepository
                 CASE WHEN SUM(a.search_impressions) > 0
                      THEN SUM(a.search_position * a.search_impressions) / SUM(a.search_impressions)
                      ELSE NULL END AS search_position,
-                {$indirectSelect}
+                {$indirectSelect},
+                {$seoTotalSelect}
             FROM alpha_room_access_daily AS a
             INNER JOIN open_chat AS oc ON oc.id = a.open_chat_id{$indirectJoin}
             WHERE a.`date` BETWEEN :fromDate AND :toDate{$categoryWhere}{$keywordWhere}
@@ -186,6 +199,53 @@ class AlphaAccessRankingRepository
     }
 
     /**
+     * 指定部屋群の流入検索キーワードを、各部屋ごとに clicks 多い順 上位N語まとめて取得する（N+1回避）。
+     *
+     * alpha_room_search_query_daily を期間で絞り open_chat_id・query 別に clicks を SUM、
+     * 部屋ごとに clicks 降順で上位 $perRoom 語を返す。各部屋カードの「流入キーワード」列挙用。
+     *
+     * @param array<int, int> $openChatIds
+     * @return array<int, array<int, string>> open_chat_id => [query, ...]（clicks 多い順）
+     */
+    public function getRoomsTopKeywords(array $openChatIds, string $fromDate, string $toDate, int $perRoom = 8): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $openChatIds), static fn($v) => $v > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        DB::connect();
+        $perRoom = max(1, $perRoom);
+        $in = implode(',', $ids); // 整数確定済みなので直接埋め込む
+
+        // 各部屋・各クエリの期間合計 clicks を出し、部屋内 clicks 降順に並べる。
+        // 上位N語の絞り込みは PHP 側で行う（MariaDB の window 関数依存を避ける）。
+        $sql = "
+            SELECT open_chat_id, query, SUM(clicks) AS clicks
+            FROM alpha_room_search_query_daily
+            WHERE open_chat_id IN ({$in})
+              AND `date` BETWEEN :fromDate AND :toDate
+            GROUP BY open_chat_id, query
+            HAVING SUM(clicks) > 0
+            ORDER BY open_chat_id ASC, clicks DESC
+        ";
+
+        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $ocId = (int)$r['open_chat_id'];
+            if (!isset($map[$ocId])) {
+                $map[$ocId] = [];
+            }
+            if (count($map[$ocId]) >= $perRoom) {
+                continue;
+            }
+            $map[$ocId][] = (string)$r['query'];
+        }
+        return $map;
+    }
+
+    /**
      * 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}' 等）の指定期間アクセス/検索流入ランキング。
      * 「その他ページ（非オプチャ）」タブ用。limit+1 で hasMore 判定。
      *
@@ -198,7 +258,7 @@ class AlphaAccessRankingRepository
      * referrer は URL の一部一致なので過大/重複しうる（複数ページpathが互いに前方部分一致する場合など）。
      * ページ数は少数なので相関サブクエリで都度集計してよい。
      *
-     * @return array{data: array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float, jumpClicks:int}>, baseDate:?string, updatedAt:?string, hasMore:bool}
+     * @return array{data: array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float, jumpClicks:int, jumpClicksOrganic:int}>, baseDate:?string, updatedAt:?string, hasMore:bool}
      */
     public function getPageScopeRanking(string $fromDate, string $toDate, string $order, int $limit, string $orderColumn = 'pageviews', int $offset = 0): array
     {
@@ -218,6 +278,9 @@ class AlphaAccessRankingRepository
 
         // ページ入室数（近似）: そのページを参照元とする部屋の jump_clicks 合計。
         // 相関サブクエリで p.path にマッチする referrer を持つ部屋・期間の jump_clicks を合算する。
+        // この重い LIKE スキャンは全候補 path で1回（ORDER BY も兼ねる）。
+        // 「うちSEO経由」の jump_clicks_organic は、ここで2本目の相関サブクエリを足すと走査が倍化するため、
+        // ソート確定後の表示分(≤limit)だけ別クエリ(getPagesJumpOrganic)でまとめて取る（N+1ではなく1クエリ）。
         $jumpClicksSelect = "(
             SELECT COALESCE(SUM(a.jump_clicks), 0)
             FROM alpha_room_referrer_daily AS rr
@@ -257,9 +320,20 @@ class AlphaAccessRankingRepository
             $rows = array_slice($rows, 0, $limit);
         }
 
-        $data = array_map(static function ($r) {
+        // 表示する path だけ「うちSEO経由（間接含む）」を補完（走査倍化を避けるため後段で1クエリ）。
+        // organic ⊆ jump_clicks なので jump_clicks が 0 の path はスキップ（0確定・無駄な LIKE 走査を省く）。
+        $organicPaths = [];
+        foreach ($rows as $r) {
+            if ((int)($r['jump_clicks'] ?? 0) > 0) {
+                $organicPaths[] = (string)$r['path'];
+            }
+        }
+        $organicByPath = $this->getPagesJumpOrganic($organicPaths, $fromDate, $toDate);
+
+        $data = array_map(static function ($r) use ($organicByPath) {
+            $path = (string)$r['path'];
             return [
-                'path' => (string)$r['path'],
+                'path' => $path,
                 'label' => (string)($r['label'] ?? ''),
                 'pageviews' => (int)$r['pageviews'],
                 'activeUsers' => (int)$r['active_users'],
@@ -267,10 +341,56 @@ class AlphaAccessRankingRepository
                 'searchImpressions' => (int)$r['search_impressions'],
                 'searchPosition' => $r['search_position'] === null ? null : round((float)$r['search_position'], 2),
                 'jumpClicks' => (int)($r['jump_clicks'] ?? 0),
+                'jumpClicksOrganic' => $organicByPath[$path] ?? 0,
             ];
         }, $rows);
 
         return ['data' => $data, 'baseDate' => $baseDate, 'updatedAt' => $baseDate, 'hasMore' => $hasMore];
+    }
+
+    /**
+     * 表示する非部屋ページの「うちSEO経由（間接含む）」入室数（近似）を path 別にまとめて取得する。
+     *
+     * jump_clicks と同じ近似（そのページを参照元とする部屋の jump_clicks_organic 合計）。
+     * 走査の倍化を避けるため、ソート確定後の表示 path 群（≤limit）だけを対象に1クエリで集計する。
+     * referrer は path の部分一致なので、各 path をプレースホルダ化し UNION ALL で1行ずつ集計する。
+     *
+     * @param array<int, string> $paths
+     * @return array<string, int> path => jump_clicks_organic 合計
+     */
+    private function getPagesJumpOrganic(array $paths, string $fromDate, string $toDate): array
+    {
+        $paths = array_values(array_unique(array_filter($paths, static fn($p) => $p !== '')));
+        if ($paths === []) {
+            return [];
+        }
+        DB::connect();
+
+        // path ごとに「referrer に当該 path を含む部屋・期間の jump_clicks_organic 合計」を1行で返す。
+        // UNION ALL で path 数ぶんの相関なし集計を並べる（path 数は表示分のみ＝少数）。
+        $parts = [];
+        $params = ['fromDate' => $fromDate, 'toDate' => $toDate];
+        foreach ($paths as $idx => $path) {
+            $ph = 'p' . $idx;
+            $parts[] = "
+                SELECT :{$ph}_path AS path, COALESCE(SUM(a.jump_clicks_organic), 0) AS organic
+                FROM alpha_room_referrer_daily AS rr
+                INNER JOIN alpha_room_access_daily AS a
+                    ON a.open_chat_id = rr.open_chat_id AND a.`date` = rr.`date`
+                WHERE rr.`date` BETWEEN :fromDate AND :toDate
+                  AND rr.referrer LIKE CONCAT('%', :{$ph}_like, '%')
+            ";
+            $params["{$ph}_path"] = $path;
+            $params["{$ph}_like"] = $path;
+        }
+        $sql = implode(' UNION ALL ', $parts);
+
+        $rows = DB::fetchAll($sql, $params);
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(string)$r['path']] = (int)$r['organic'];
+        }
+        return $map;
     }
 
     /**

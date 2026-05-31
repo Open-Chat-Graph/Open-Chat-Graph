@@ -183,8 +183,8 @@ export interface EtaParams {
   category?: number
   order?: 'asc' | 'desc'
   scope?: 'rooms' | 'pages'
-  // access-ranking の並び替え軸（jump=入室数）。record 側のキーに含まれるので一致させる。
-  sort?: 'pageviews' | 'jump_clicks'
+  // access-ranking の並び替え軸（seo_total=SEO合計 / jump=入室数）。record 側のキーに含まれるので一致させる。
+  sort?: 'pageviews' | 'seo_total' | 'jump_clicks'
   // 期間（Labs ランキング系）: days か start・end か all のいずれか。
   days?: number
   start?: string
@@ -334,6 +334,8 @@ export interface RankingPageMetric {
   // 入室数（近似）＝このページを参照元として到達した部屋の jump_clicks 合計。
   // ページ単体の参加リンク押下は計測していないため referrer ベースで近似（過大/重複しうる）。
   jumpClicks: number
+  // うちSEO経由（間接含む・近似）＝同じ参照元部屋群の jump_clicks_organic 合計。
+  jumpClicksOrganic: number
 }
 
 // ランキングの1部屋。アクセス/検索流入どちらのタブでも全指標を持つ
@@ -359,6 +361,7 @@ export interface LabsRankingRoom {
   seoIndirect: number  // 間接SEO流入（本家内SEOページ経由で到達したPV）
   jumpClicks: number  // 入室数＝参加リンク押下（LINEへの送客）
   jumpClicksOrganic: number  // うちSEO経由（Organic Search セッション起点）
+  keywords: string[]  // 流入検索キーワード（clicks 多い順 上位8語。無ければ空配列）
 }
 
 // 後方互換のためのエイリアス（旧名 import を温存）
@@ -390,8 +393,9 @@ export interface RankingParams {
   limit?: number  // 1ページの件数
   scope?: 'rooms' | 'pages'  // pages＝その他ページ（非オプチャ）タブ
   keyword?: string  // 部屋名キーワード絞り込み（rooms スコープのみ。空文字は全件）
-  // 並び替え軸（access-ranking のみ）。pageviews＝アクセス数降順（既定）/ jump_clicks＝入室数降順。
-  sort?: 'pageviews' | 'jump_clicks'
+  // 並び替え軸（access-ranking のみ）。部屋集合は常に PV>0 で固定し並びだけ切替える。
+  // pageviews＝アクセス数降順（既定）/ seo_total＝SEO合計（直接＋間接）降順 / jump_clicks＝入室数降順。
+  sort?: 'pageviews' | 'seo_total' | 'jump_clicks'
 }
 
 // ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====
