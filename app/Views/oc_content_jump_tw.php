@@ -1,86 +1,30 @@
-<!DOCTYPE html>
-<html lang="<?php echo t('ja') ?>">
 <?php
 
-use App\Views\Ads\GoogleAdsense as GAd;
+/** 加入前確認頁面（繁體中文）。版面集中於 components/oc_jump_page
+ *  禁止事項來源: LINE 台灣官方部落格「LINE 社群使用規範」 */
 
-$_css[] = 'oc-jump';
-viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']); ?>
+$htmlLang = t('ja'); // translation.json: ja => zh-TW
 
-<body>
-  <style>
-    .responsive-google-parent {
-      padding: 0;
-    }
-  </style>
-  <?php viewComponent('site_header') ?>
-  <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-  <div class="unset openchat body" style="overflow: hidden; max-width: 600px;">
-    <article class="unset" style="display: block;">
-      <section class="oc-jump-section oc-info-section">
-        <h2 class="oc-jump-main-title">⚠️加入前的確認</h2>
-        <span class="oc-jump-instruction">請確認您要加入的開放式聊天的說明內容</span>
-        <div class="oc-jump-image-wrapper">
-          <img class="talkroom_banner_img oc-jump-banner-img" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['img_url']) ?>">
-        </div>
-        <div class="oc-jump-info-content">
-          <h1 class="talkroom_link_h1 unset oc-jump-chat-title"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
-          <div class="oc-jump-member-count">
-            <span class="number_of_members oc-jump-member-text"><?php echo sprintfT('成員 %s 人', number_format($oc['member'])) ?></span>
-          </div>
-          <span class="oc-jump-content-label">關於此開放式聊天</span>
-          <div class="talkroom_description_box" id="talkroom_description_box">
-            <p class="talkroom_description" id="talkroom-description">
-              <span id="talkroom-description-btn"><?php echo trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description'])) ?></span>
-            </p>
-          </div>
-        </div>
-      </section>
-      <?php GAd::output('siteSeparatorWide', true) ?>
-      <section class="oc-jump-section oc-rules-section">
-        <div class="oc-rule-item">
-          <h3 class="oc-jump-section-title">LINE 社群（開放式聊天）禁止事項</h3>
-          <span class="oc-jump-instruction">請於點擊最下方的「以LINE開啟」按鈕前，先閱讀以下各項禁止事項。</span>
-        </div>
-        <ul class="oc-jump-rule-list">
-          <li><b>禁止揭露個人 LINE ID</b><span>禁止在聊天內容中揭露個人 LINE ID（如果是官方帳號的 ID 則沒關係）。</span></li>
-          <li><b>禁止單獨會面相關對話</b><span>禁止在 LINE 社群中溝通與「有單獨會面意圖」的所有對話。</span></li>
-          <li><b>禁止直銷相關討論</b><span>禁止傳直銷相關討論。</span></li>
-          <li><b>禁止有害兒少內容</b><span>禁止色情、暴力、血腥、恐怖等「有害兒少身心健康」相關討論及內容。</span></li>
-          <li><b>菸酒及管制物品討論應符合法令</b><span>菸（包括雪茄、加熱菸、類菸品如電子菸等）、酒類，或法令禁止或列管兒少接觸物品之討論，應符合法令。</span></li>
-          <li><b>禁止博弈與投注</b><span>禁止博弈（包括麻將、撲克）、運動賽事投注相關討論。</span></li>
-          <li><b>禁止違法行為</b><span>禁止任何違法行為（包括禁止販售：仿冒品、活體寵物、處方箋藥物…等，任何違法行為）。</span></li>
-        </ul>
-        <span class="oc-jump-source">資料來源：<a href="https://line-tw-official.weblog.to/archives/82859412.html" target="_blank" rel="noopener nofollow">LINE 台灣官方部落格・LINE 社群使用規範</a></span>
-        <div class="oc-jump-footer-info">
-          <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
-          <div class="oc-jump-footer-text">
-            <div class="oc-jump-footer-name-wrapper">
-              <div class="oc-jump-footer-name"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></div>
-              <div class="oc-jump-footer-member">(<?php echo formatMember($oc['member']) ?>)</div>
-            </div>
-          </div>
-        </div>
-        <?php if ($oc['url']) : ?>
-          <a href="<?php echo lineAppUrl($oc) ?>" id="line-open-button" class="openchat_link oc-jump-line-button" style="max-width: 100%;">
-            <div class="oc-jump-line-button-content">
-              <?php if ($oc['join_method_type'] !== 0) : ?>
-                <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
-                  <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
-                </svg>
-              <?php endif ?>
-              <span class="text"><?php echo t('LINEで開く') ?></span>
-            </div>
-          </a>
-        <?php endif ?>
-      </section>
-    </article>
-    <?php GAd::output('siteSeparatorResponsive', true) ?>
-    <?php viewComponent('footer_inner') ?>
-  </div>
-  <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
-  <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-  <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
-</body>
+$txt = [
+  'noticeTitle' => '加入前的確認',
+  'noticeLead'  => '請先確認此開放式聊天的說明內容與 LINE 的各項禁止事項，再加入。',
+  'aboutLabel'  => '關於此開放式聊天',
+  'rulesTitle'  => 'LINE 社群（開放式聊天）禁止事項',
+  'rulesLead'   => '請於點擊「以LINE開啟」按鈕前，先閱讀以下各項禁止事項。',
+  'sourceLabel' => '資料來源：',
+  'sourceText'  => 'LINE 台灣官方部落格・LINE 社群使用規範',
+  'sourceUrl'   => 'https://line-tw-official.weblog.to/archives/82859412.html',
+  'openButton'  => t('LINEで開く'),
+];
 
-</html>
+$rules = [
+  ['title' => '禁止揭露個人 LINE ID', 'desc' => '禁止在聊天內容中揭露個人 LINE ID（如果是官方帳號的 ID 則沒關係）。'],
+  ['title' => '禁止單獨會面相關對話', 'desc' => '禁止在 LINE 社群中溝通與「有單獨會面意圖」的所有對話。'],
+  ['title' => '禁止直銷相關討論', 'desc' => '禁止傳直銷相關討論。'],
+  ['title' => '禁止有害兒少內容', 'desc' => '禁止色情、暴力、血腥、恐怖等「有害兒少身心健康」相關討論及內容。'],
+  ['title' => '菸酒及管制物品討論應符合法令', 'desc' => '菸（包括雪茄、加熱菸、類菸品如電子菸等）、酒類，或法令禁止或列管兒少接觸物品之討論，應符合法令。'],
+  ['title' => '禁止博弈與投注', 'desc' => '禁止博弈（包括麻將、撲克）、運動賽事投注相關討論。'],
+  ['title' => '禁止違法行為', 'desc' => '禁止任何違法行為（包括禁止販售：仿冒品、活體寵物、處方箋藥物…等，任何違法行為）。'],
+];
+
+viewComponent('oc_jump_page', compact('_meta', '_css', 'oc', 'txt', 'rules', 'htmlLang'));
