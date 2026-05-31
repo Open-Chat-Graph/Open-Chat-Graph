@@ -14,6 +14,8 @@ interface PeriodRangePickerProps {
   value: PeriodValue
   onChange: (next: PeriodValue) => void
   className?: string
+  /** false にすると「全期間」ボタンを非表示にする（既定: true）。 */
+  allowAll?: boolean
 }
 
 // ローカル日付を Y-m-d へ（タイムゾーンずれ回避）。
@@ -27,7 +29,7 @@ const toYmd = (d: Date): string =>
  * カレンダー（開始〜終了）を出す。プリセット選択は即確定して閉じる。カレンダーは両端が
  * 揃った時点で range として確定する。重ね順は z-popover。
  */
-export function PeriodRangePicker({ value, onChange, className }: PeriodRangePickerProps) {
+export function PeriodRangePicker({ value, onChange, className, allowAll = true }: PeriodRangePickerProps) {
   const [open, setOpen] = useState(false)
   // カレンダーの編集中の値（確定前）。range のときは現在値を初期表示。
   const [start, setStart] = useState(value.mode === 'range' ? value.start : '')
@@ -84,16 +86,18 @@ export function PeriodRangePicker({ value, onChange, className }: PeriodRangePic
                 {p.label}
               </Button>
             ))}
-            <Button
-              type="button"
-              size="sm"
-              variant={value.mode === 'all' ? 'default' : 'outline'}
-              className="h-8 px-3 text-xs"
-              onClick={() => pickPreset({ mode: 'all' })}
-              data-testid="period-preset-all"
-            >
-              全期間
-            </Button>
+            {allowAll && (
+              <Button
+                type="button"
+                size="sm"
+                variant={value.mode === 'all' ? 'default' : 'outline'}
+                className="h-8 px-3 text-xs"
+                onClick={() => pickPreset({ mode: 'all' })}
+                data-testid="period-preset-all"
+              >
+                全期間
+              </Button>
+            )}
           </div>
 
           {/* カレンダー（開始〜終了） */}
@@ -127,9 +131,11 @@ export function PeriodRangePicker({ value, onChange, className }: PeriodRangePic
                 data-testid="period-end"
               />
             </div>
-            <p className="mt-1.5 text-[10px] leading-tight text-muted-foreground/70">
-              全期間ボタンで最古データから現在まで。指定した期間に含まれるデータを全部集計します。
-            </p>
+            {allowAll && (
+              <p className="mt-1.5 text-[10px] leading-tight text-muted-foreground/70">
+                全期間ボタンで最古データから現在まで。指定した期間に含まれるデータを全部集計します。
+              </p>
+            )}
           </div>
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>

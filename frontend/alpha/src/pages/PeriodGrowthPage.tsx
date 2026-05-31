@@ -8,10 +8,11 @@ import { ListProgressRegion, ListProgressFooter } from '@/components/Common/List
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
+import { periodKey, periodToParams, type PeriodValue } from '@/lib/period'
 import type { PeriodGrowthItem, PeriodGrowthResponse, OpenChat } from '@/types/api'
 
 const LIMIT = 30
-const DEFAULT_DAYS = 365
+const DEFAULT_DAYS = 30
 
 // "2024-05-30 12:00:00" → "2024/05/30"
 const formatDate = (raw?: string | null): string => {
@@ -44,6 +45,15 @@ const toOpenChat = (item: PeriodGrowthItem): OpenChat => ({
   url: item.url,
 })
 
+/** URLSearchParams から PeriodValue を復元する。既定は30日。 */
+function parsePeriodFromParams(params: URLSearchParams): PeriodValue {
+  const start = params.get('start') || ''
+  const end = params.get('end') || ''
+  if (start && end) return { mode: 'range', start, end }
+  const days = Number(params.get('days')) || DEFAULT_DAYS
+  return { mode: 'days', days }
+}
+
 const PeriodGrowthPage = memo(() => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -52,12 +62,7 @@ const PeriodGrowthPage = memo(() => {
   const keyword = searchParams.get('q') || ''
   const category = Number(searchParams.get('category')) || 0
   const order = (searchParams.get('order') as PeriodOrder) || 'desc'
-  const start = searchParams.get('start') || ''
-  const end = searchParams.get('end') || ''
-
-  // 開始日・終了日が両方あれば日付指定（days より優先）、無ければ従来の日数指定。
-  const hasRange = Boolean(start && end)
-  const days = hasRange ? 0 : Number(searchParams.get('days')) || DEFAULT_DAYS
+  const period = parsePeriodFromParams(searchParams)
 
   // 検索を実行したか。キーワードは任意（空欄＝全件）なので、キーワード有無では判定できない。
   // 検索画面からの遷移(q付き)か、このページで「検索」を押した(go=1)ときに結果を出す。
@@ -65,7 +70,7 @@ const PeriodGrowthPage = memo(() => {
 
   // 条件（キーワード/カテゴリ/期間/並び）をまとめた識別キー。変化で先頭ページへ戻す。
   const filterKey = searched
-    ? `${keyword}|${category}|${hasRange ? `range:${start}:${end}` : `days:${days}`}|${order}`
+    ? `${keyword}|${category}|${periodKey(period)}|${order}`
     : null
 
   // useSWRInfinite でページングを管理（Labs/Search と同パターン）。
@@ -81,13 +86,28 @@ const PeriodGrowthPage = memo(() => {
   const fetcher = useCallback(
     async ([, , pageIndex]: readonly [string, string | null, number]): Promise<PeriodGrowthResponse> => {
       const page = pageIndex + 1
-      return alphaApi.getPeriodGrowth(
-        hasRange
-          ? { keyword, category: category || undefined, startDate: start, endDate: end, order, limit: LIMIT, page }
-          : { keyword, category: category || undefined, days, order, limit: LIMIT, page },
-      )
+      const periodParams = periodToParams(period)
+      if (period.mode === 'range') {
+        return alphaApi.getPeriodGrowth({
+          keyword,
+          category: category || undefined,
+          startDate: periodParams.start,
+          endDate: periodParams.end,
+          order,
+          limit: LIMIT,
+          page,
+        })
+      }
+      return alphaApi.getPeriodGrowth({
+        keyword,
+        category: category || undefined,
+        days: Number(periodParams.days),
+        order,
+        limit: LIMIT,
+        page,
+      })
     },
-    [hasRange, keyword, category, start, end, order, days],
+    [period, keyword, category, order],
   )
 
   const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<PeriodGrowthResponse>(
@@ -121,14 +141,14 @@ const PeriodGrowthPage = memo(() => {
     requestKey: filterKey,
     loading: firstPageLoading,
     fetchEta: searched
-      ? async () =>
-          (
-            await alphaApi.getEta(
-              hasRange
-                ? { type: 'period-growth', keyword, category: category || undefined, startDate: start, endDate: end, order }
-                : { type: 'period-growth', keyword, category: category || undefined, days, order }
-            )
-          ).etaMs
+      ? async () => {
+          const periodParams = periodToParams(period)
+          const etaParams =
+            period.mode === 'range'
+              ? { type: 'period-growth' as const, keyword, category: category || undefined, startDate: periodParams.start, endDate: periodParams.end, order }
+              : { type: 'period-growth' as const, keyword, category: category || undefined, days: Number(periodParams.days), order }
+          return (await alphaApi.getEta(etaParams)).etaMs
+        }
       : undefined,
   })
 
@@ -154,18 +174,19 @@ const PeriodGrowthPage = memo(() => {
       if (next.keyword) params.set('q', next.keyword)
       if (next.category) params.set('category', String(next.category))
       if (next.order) params.set('order', next.order)
-      // 開始日・終了日が両方あれば日付で保持。片方でも欠ければ days(従来)に戻す。
-      if (next.start && next.end) {
-        params.set('start', next.start)
-        params.set('end', next.end)
-      } else if (days) {
-        params.set('days', String(days))
+      // 期間を URL パラメータに変換
+      const periodParams = periodToParams(next.period)
+      if (next.period.mode === 'range') {
+        params.set('start', periodParams.start)
+        params.set('end', periodParams.end)
+      } else {
+        params.set('days', periodParams.days)
       }
       // キーワード空でも検索実行を表す。これがあると結果を表示する。
       params.set('go', '1')
       setSearchParams(params)
     },
-    [setSearchParams, days]
+    [setSearchParams],
   )
 
   const handleCardClick = useCallback(
@@ -188,8 +209,7 @@ const PeriodGrowthPage = memo(() => {
       <PeriodGrowthControls
         keyword={keyword}
         category={category}
-        start={start}
-        end={end}
+        period={period}
         order={order}
         onSubmit={handleSubmit}
       />

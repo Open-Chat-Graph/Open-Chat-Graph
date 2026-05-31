@@ -9,15 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PeriodRangePicker } from '@/components/ui/period-range-picker'
 import { CATEGORIES } from '@/lib/categories'
+import type { PeriodValue } from '@/lib/period'
 
 export type PeriodOrder = 'desc' | 'asc'
 
 export interface PeriodGrowthQuery {
   keyword: string
   category: number
-  start: string // 開始日（Y-m-d）。空なら未指定
-  end: string // 終了日（Y-m-d）。空なら未指定
+  period: PeriodValue
   order: PeriodOrder
 }
 
@@ -25,63 +26,31 @@ interface PeriodGrowthControlsProps extends PeriodGrowthQuery {
   onSubmit: (next: PeriodGrowthQuery) => void
 }
 
-// ローカル日付を Y-m-d へ（タイムゾーンずれを避けるため UTC ではなくローカル基準）。
-const toYmd = (d: Date): string =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-// 「終了日=今日、開始日=今日-N日」のクイック選択プリセット。
-const DAY_PRESETS: { days: number; label: string }[] = [
-  { days: 7, label: '7日' },
-  { days: 30, label: '30日' },
-  { days: 90, label: '90日' },
-  { days: 180, label: '半年' },
-  { days: 365, label: '1年' },
-]
-
-// 開始/終了が「終了日=今日 かつ 開始日=今日-N日」に一致するプリセット日数を返す（一致しなければ null）。
-const matchedPresetDays = (start: string, end: string): number | null => {
-  if (!start || !end) return null
-  const today = toYmd(new Date())
-  if (end !== today) return null
-  for (const p of DAY_PRESETS) {
-    const d = new Date()
-    d.setDate(d.getDate() - p.days)
-    if (toYmd(d) === start) return p.days
-  }
-  return null
-}
-
 export const PeriodGrowthControls = memo(
-  ({ keyword, category, start, end, order, onSubmit }: PeriodGrowthControlsProps) => {
-    // 入力はローカルで持ち、「検索」または各操作で確定する
+  ({ keyword, category, period, order, onSubmit }: PeriodGrowthControlsProps) => {
     const [keywordInput, setKeywordInput] = useState(keyword)
     const [categoryInput, setCategoryInput] = useState(category)
-    const [startInput, setStartInput] = useState(start)
-    const [endInput, setEndInput] = useState(end)
+    const [periodInput, setPeriodInput] = useState<PeriodValue>(period)
     const [orderInput, setOrderInput] = useState<PeriodOrder>(order)
 
     // URL（親）側の変更に追随
     useEffect(() => setKeywordInput(keyword), [keyword])
     useEffect(() => setCategoryInput(category), [category])
-    useEffect(() => setStartInput(start), [start])
-    useEffect(() => setEndInput(end), [end])
+    useEffect(() => setPeriodInput(period), [period])
     useEffect(() => setOrderInput(order), [order])
 
     const commit = (overrides?: Partial<PeriodGrowthQuery>) => {
       onSubmit({
         keyword: (overrides?.keyword ?? keywordInput).trim(),
         category: overrides?.category ?? categoryInput,
-        start: overrides?.start ?? startInput,
-        end: overrides?.end ?? endInput,
+        period: overrides?.period ?? periodInput,
         order: overrides?.order ?? orderInput,
       })
     }
 
-    const activePreset = matchedPresetDays(startInput, endInput)
-
     return (
-      <div className="space-y-3 rounded-lg border bg-card p-3 md:p-4">
-        {/* キーワード ＋ 検索 */}
+      <div className="space-y-2 rounded-lg border bg-card p-3 md:p-4">
+        {/* 1段目: キーワード ＋ 検索 */}
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -95,7 +64,7 @@ export const PeriodGrowthControls = memo(
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               placeholder="キーワード（空欄で全件）"
-              className="pl-9"
+              className="pl-9 text-base md:text-sm"
               data-testid="period-growth-keyword"
             />
           </div>
@@ -104,8 +73,8 @@ export const PeriodGrowthControls = memo(
           </Button>
         </form>
 
-        {/* カテゴリ ＋ 並び順 */}
-        <div className="flex gap-2">
+        {/* 2段目: カテゴリ ＋ 並び順 ＋ 期間ピッカー */}
+        <div className="flex flex-wrap items-center gap-2">
           <Select
             value={String(categoryInput)}
             onValueChange={(v) => {
@@ -114,7 +83,7 @@ export const PeriodGrowthControls = memo(
               commit({ category: c })
             }}
           >
-            <SelectTrigger className="flex-1" data-testid="period-growth-category">
+            <SelectTrigger className="h-8 min-w-0 flex-1 text-xs" data-testid="period-growth-category">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -129,7 +98,8 @@ export const PeriodGrowthControls = memo(
           <Button
             type="button"
             variant="outline"
-            className="flex-shrink-0 gap-1.5"
+            size="sm"
+            className="h-8 flex-shrink-0 gap-1 px-3 text-xs"
             onClick={() => {
               const next: PeriodOrder = orderInput === 'desc' ? 'asc' : 'desc'
               setOrderInput(next)
@@ -139,76 +109,25 @@ export const PeriodGrowthControls = memo(
           >
             {orderInput === 'desc' ? (
               <>
-                <ArrowDownWideNarrow className="h-4 w-4" />
+                <ArrowDownWideNarrow className="h-3.5 w-3.5" />
                 増加順
               </>
             ) : (
               <>
-                <ArrowUpWideNarrow className="h-4 w-4" />
+                <ArrowUpWideNarrow className="h-3.5 w-3.5" />
                 減少順
               </>
             )}
           </Button>
-        </div>
 
-        {/* クイック選択プリセット（終了日=今日、開始日=今日-N日） */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">期間</span>
-          {DAY_PRESETS.map((p) => {
-            const today = new Date()
-            const from = new Date()
-            from.setDate(from.getDate() - p.days)
-            return (
-              <Button
-                key={p.days}
-                type="button"
-                size="sm"
-                variant={activePreset === p.days ? 'default' : 'outline'}
-                className="h-8 px-3"
-                onClick={() => {
-                  const s = toYmd(from)
-                  const e = toYmd(today)
-                  setStartInput(s)
-                  setEndInput(e)
-                  commit({ start: s, end: e })
-                }}
-                data-testid={`period-growth-days-${p.days}`}
-              >
-                {p.label}
-              </Button>
-            )
-          })}
-        </div>
-
-        {/* 任意の期間（開始日／終了日のカレンダー指定） */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">任意の期間</span>
-          <Input
-            type="date"
-            value={startInput}
-            max={endInput || undefined}
-            aria-label="開始日"
-            onChange={(e) => {
-              setStartInput(e.target.value)
-              commit({ start: e.target.value })
+          <PeriodRangePicker
+            value={periodInput}
+            allowAll={false}
+            onChange={(next) => {
+              setPeriodInput(next)
+              commit({ period: next })
             }}
-            className="h-8 w-[9.5rem] flex-shrink-0"
-            data-testid="period-growth-start"
-          />
-          <span aria-hidden className="text-xs text-muted-foreground">
-            〜
-          </span>
-          <Input
-            type="date"
-            value={endInput}
-            min={startInput || undefined}
-            aria-label="終了日"
-            onChange={(e) => {
-              setEndInput(e.target.value)
-              commit({ end: e.target.value })
-            }}
-            className="h-8 w-[9.5rem] flex-shrink-0"
-            data-testid="period-growth-end"
+            data-testid="period-growth-period"
           />
         </div>
       </div>
