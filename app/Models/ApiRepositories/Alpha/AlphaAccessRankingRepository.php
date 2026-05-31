@@ -359,6 +359,62 @@ class AlphaAccessRankingRepository
     }
 
     /**
+     * 本家ドメインのホスト名（SecretsConfig::$gscSiteUrl 由来。ハードコードしない）。
+     * 取れなければ ''（その場合 間接SEO は 0 になる）。
+     */
+    private function ownDomainHost(): string
+    {
+        $site = trim((string)\App\Config\SecretsConfig::$gscSiteUrl);
+        if ($site === '') {
+            return '';
+        }
+        if (str_starts_with($site, 'sc-domain:')) {
+            $host = substr($site, strlen('sc-domain:'));
+        } else {
+            $parsed = parse_url($site, PHP_URL_HOST);
+            $host = ($parsed !== null && $parsed !== false) ? $parsed : $site;
+        }
+        $host = strtolower(trim($host));
+        return preg_replace('/^www\./', '', $host) ?? $host;
+    }
+
+    /**
+     * 間接SEO流入＝本家内のSEOページ（おすすめ/検索結果/ランキング/トップ/他の部屋 等）から
+     * 回遊してこの部屋に到達したページビュー数。alpha_room_referrer_daily の本家内リファラ
+     * 合計（自分自身=再読込/グラフ操作 は除く）。直接GSCクリック(search_clicks)とは別軸。
+     *
+     * own ドメインが未設定なら 0。
+     */
+    public function getRoomIndirectSeo(int $openChatId, string $fromDate, string $toDate): int
+    {
+        DB::connect();
+        $host = $this->ownDomainHost();
+        if ($host === '') {
+            return 0;
+        }
+
+        $sql = "
+            SELECT COALESCE(SUM(pageviews), 0) AS indirect
+            FROM alpha_room_referrer_daily
+            WHERE open_chat_id = :id
+              AND `date` BETWEEN :fromDate AND :toDate
+              AND (referrer LIKE :own1 OR referrer LIKE :own2)
+              AND referrer NOT LIKE :self1
+              AND referrer NOT LIKE :self2
+        ";
+        $val = DB::fetchColumn($sql, [
+            'id' => $openChatId,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'own1' => '%//' . $host . '%',
+            'own2' => '%//www.' . $host . '%',
+            'self1' => '%/oc/' . $openChatId . '%',
+            'self2' => '%/openchat/' . $openChatId . '%',
+        ]);
+        return $val === false || $val === null ? 0 : (int)$val;
+    }
+
+    /**
      * 詳細画面用: 1部屋の直近N日 流入検索クエリ（多い順 上位N件）。
      *
      * alpha_room_search_query_daily を query で GROUP し clicks 降順。

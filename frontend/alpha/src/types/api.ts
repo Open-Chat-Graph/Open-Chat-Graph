@@ -376,9 +376,10 @@ export interface RoomMetricsResponse {
   updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
   pageviews: number  // ページビュー数
   activeUsers: number  // アクティブユーザー数
-  searchClicks: number  // 検索からのクリック数
+  searchClicks: number  // 直接SEO流入＝Googleからこのページへのクリック数（GSC）
   searchImpressions: number  // 検索結果の表示回数
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
+  seoIndirect: number  // 間接SEO流入＝本家内SEOページ経由で到達したPV（自己参照除く）
   jumpClicks: number  // 「LINEで開く」等の外部遷移クリック数
   jumpClicksOrganic: number  // うち SEO（Organic Search セッション）起点の参加リンク押下数
   avgEngagementSeconds: number  // 平均滞在（エンゲージメント）秒数

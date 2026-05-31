@@ -660,6 +660,7 @@ class AlphaApiController
         $win = $repo->resolveWindow($start, $end, (int)$days, $all);
 
         $m = $repo->getRoomMetrics($open_chat_id, $win['fromDate'], $win['toDate']);
+        $seoIndirect = $repo->getRoomIndirectSeo($open_chat_id, $win['fromDate'], $win['toDate']);
         $searchQueries = $repo->getRoomSearchQueries($open_chat_id, $win['fromDate'], $win['toDate'], 20);
         $referrerRows = $repo->getRoomReferrers($open_chat_id, $win['fromDate'], $win['toDate'], 20);
 
@@ -675,6 +676,7 @@ class AlphaApiController
             'searchClicks' => $m['searchClicks'],
             'searchImpressions' => $m['searchImpressions'],
             'searchPosition' => $m['searchPosition'],
+            'seoIndirect' => $seoIndirect,
             'jumpClicks' => $m['jumpClicks'],
             'jumpClicksOrganic' => $m['jumpClicksOrganic'],
             'avgEngagementSeconds' => $m['avgEngagementSeconds'],
@@ -722,13 +724,14 @@ class AlphaApiController
         if ($isInternal) {
             $path = (string)(parse_url($referrer, PHP_URL_PATH) ?? '');
             $query = (string)(parse_url($referrer, PHP_URL_QUERY) ?? '');
-            [$label, $detail] = $this->internalReferrerLabel($path, $query, $currentRoomId);
+            [$label, $detail, $isSeoOrigin] = $this->internalReferrerLabel($path, $query, $currentRoomId);
             return [
                 'referrer' => $referrer,
                 'label' => $label,
                 'detail' => $detail,
                 'pageviews' => $pageviews,
-                'isInternal' => true,
+                // SEO経由＝本家内SEOページ経由の間接流入。自己参照(このページ内)は除く。
+                'isInternal' => $isSeoOrigin,
             ];
         }
 
@@ -807,7 +810,8 @@ class AlphaApiController
      * 本家(openchat-review.me)内リファラの path/query から「どのページから来たか」を
      * 人間可読に整形する。本家のページ種別は限られるので各パターンを文言化する。
      *
-     * @return array{0:string, 1:string} [一覧用の短ラベル, チップ用の全文]
+     * @return array{0:string, 1:string, 2:bool} [一覧用の短ラベル, チップ用の全文, SEO経由(間接流入)とみなすか]
+     *   第3要素 false ＝ 自己参照「このページ内」（再読込/グラフ操作。SEO経由バッジを出さない）。
      */
     private function internalReferrerLabel(string $path, string $query, int $currentRoomId = 0): array
     {
@@ -824,61 +828,61 @@ class AlphaApiController
 
         // トップ
         if ($p === '/') {
-            return ['トップページ', 'オプチャグラフのトップページ'];
+            return ['トップページ', 'オプチャグラフのトップページ', true];
         }
         // ランキング（検索結果＝キーワード付き、カテゴリ別、急上昇）
         if ($p === '/ranking' || str_starts_with($p, '/ranking/')) {
-            // keyword=tag:◯◯ はおすすめタグからの遷移（検索ではなくタグ）
+            // keyword=tag:◯◯ はおすすめタグからの遷移（検索ではなくタグ）。1行にタグ名も出す。
             if (str_starts_with($keyword, 'tag:')) {
                 $tag = trim(substr($keyword, 4));
                 if ($tag !== '') {
-                    return ['おすすめ', 'おすすめタグ「' . $tag . '」'];
+                    return ['おすすめ（' . $tag . '）', 'おすすめタグ「' . $tag . '」', true];
                 }
             }
             if ($keyword !== '') {
-                return ['検索結果', '検索結果「' . $keyword . '」'];
+                return ['検索結果「' . $keyword . '」', '検索結果「' . $keyword . '」', true];
             }
             if (preg_match('#^/ranking/(.+)$#u', $p, $m)) {
                 $cat = urldecode($m[1]);
-                return ['ランキング', 'ランキング（カテゴリ: ' . $cat . '）'];
+                return ['ランキング（' . $cat . '）', 'ランキング（カテゴリ: ' . $cat . '）', true];
             }
-            return ['ランキング', '急上昇ランキング'];
+            return ['ランキング', '急上昇ランキング', true];
         }
         if ($p === '/official-ranking' || str_starts_with($p, '/official-ranking/')) {
-            return ['公式ランキング', '公式ランキング'];
+            return ['公式ランキング', '公式ランキング', true];
         }
-        // おすすめ（タグ別／一覧）
+        // おすすめ（タグ別＝1行にタグ名も／一覧）
         if (preg_match('#^/recommend/(.+)$#u', $p, $m)) {
             $tag = urldecode($m[1]);
-            return ['おすすめ', 'おすすめタグ「' . $tag . '」'];
+            return ['おすすめ（' . $tag . '）', 'おすすめタグ「' . $tag . '」', true];
         }
         if ($p === '/recommend') {
-            return ['おすすめ', 'おすすめタグ一覧'];
+            return ['おすすめ', 'おすすめタグ一覧', true];
         }
-        // 部屋詳細（自分自身＝再訪/グラフ操作 と 他の部屋 を区別する）
+        // 部屋詳細（自分自身＝再訪/グラフ操作 と 他の部屋 を区別する。自己参照は SEO経由ではない）
         if (preg_match('#^/(?:oc|openchat)/(\d+)#', $p, $m)) {
             if ($currentRoomId > 0 && (int)$m[1] === $currentRoomId) {
-                return ['このページ内', 'この部屋のページ内（再読み込み・グラフ操作など）'];
+                return ['このページ内', 'この部屋のページ内（再読み込み・グラフ操作など）', false];
             }
-            return ['他の部屋', '他の部屋（ID: ' . $m[1] . '）から'];
+            return ['他の部屋', '他の部屋（ID: ' . $m[1] . '）から', true];
         }
         if ($p === '/oclist') {
-            return ['部屋一覧', '部屋一覧ページ'];
+            return ['部屋一覧', '部屋一覧ページ', true];
         }
         if (str_starts_with($p, '/recently-registered')) {
-            return ['新着の部屋', '新着登録の部屋一覧'];
+            return ['新着の部屋', '新着登録の部屋一覧', true];
         }
         if (str_starts_with($p, '/comments-timeline')) {
-            return ['コメント新着', '新着コメント一覧'];
+            return ['コメント新着', '新着コメント一覧', true];
         }
         if (str_starts_with($p, '/comment/')) {
-            return ['コメント欄', 'コメント欄'];
+            return ['コメント欄', 'コメント欄', true];
         }
         if ($p === '/labs' || str_starts_with($p, '/labs/')) {
-            return ['ラボ', 'オプチャグラフ Labs'];
+            return ['ラボ', 'オプチャグラフ Labs', true];
         }
         // 既知パターン外の本家内ページ
-        return ['サイト内ページ', 'オプチャグラフ内のページ: ' . $path];
+        return ['サイト内ページ', 'オプチャグラフ内のページ: ' . $path, true];
     }
 
     /**

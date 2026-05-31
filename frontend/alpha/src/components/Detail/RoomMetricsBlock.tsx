@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useState, type ReactNode } from 'react'
 import useSWR from 'swr'
 import {
   BarChart3,
@@ -54,7 +54,7 @@ function MetricTile({
   label: string
   value: string
   unit?: string
-  sub?: string
+  sub?: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg border bg-muted/30 px-3 py-2.5">
@@ -98,6 +98,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       data.activeUsers > 0 ||
       data.searchClicks > 0 ||
       data.searchImpressions > 0 ||
+      data.seoIndirect > 0 ||
       data.jumpClicks > 0 ||
       data.avgEngagementSeconds > 0 ||
       // 指標ゼロでも、流入語/参照元が在れば「どう来たか」として出す価値がある
@@ -143,11 +144,22 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
           icon={Search}
           accent="text-emerald-600 dark:text-emerald-400"
           label="SEO流入"
-          value={data.searchClicks.toLocaleString()}
-          unit="クリック"
-          sub={`表示 ${data.searchImpressions.toLocaleString()} ・ 平均 ${
-            data.searchPosition != null ? data.searchPosition.toFixed(1) : '—'
-          }位`}
+          // 合計＝直接(Google→このページ)＋間接(本家内SEOページ経由で回遊到達)。
+          // 直接が0でも間接が多い部屋があるので合計で見せる。
+          value={(data.searchClicks + data.seoIndirect).toLocaleString()}
+          unit="流入"
+          sub={
+            <>
+              直接 {data.searchClicks.toLocaleString()} ・ 間接 {data.seoIndirect.toLocaleString()}
+              {data.searchClicks > 0 && (
+                <>
+                  <br />
+                  表示 {data.searchImpressions.toLocaleString()} ・ 平均{' '}
+                  {data.searchPosition != null ? data.searchPosition.toFixed(1) : '—'}位
+                </>
+              )}
+            </>
+          }
         />
         <MetricTile
           icon={ExternalLink}
