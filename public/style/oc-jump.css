@@ -262,15 +262,21 @@ body:has(.oc-jump-wrap) {
 }
 
 .oc-jump-rule-list > li {
+  /* recommend_page.css の `li { all: unset }` を打ち消してから組み直す
+     （all:unset は display 等も消すため revert で標準フローへ戻す） */
+  all: revert;
+  display: block;
   counter-increment: ocjrule;
   position: relative;
-  padding: 12px 0 12px 34px;
+  margin: 0;
+  padding: 13px 0 13px 34px;
   border-top: 1px solid #f0eeea;
+  list-style: none;
 }
 
 .oc-jump-rule-list > li:first-child {
   border-top: 0;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .oc-jump-rule-list > li::before {
@@ -293,19 +299,21 @@ body:has(.oc-jump-wrap) {
   top: 3px;
 }
 
-.oc-jump-rule-list > li b {
+.oc-jump-rule-list > li > b {
+  all: revert;
   display: block;
   font-size: 13.5px;
   font-weight: 700;
   color: var(--ocj-ink);
   line-height: 1.5;
-  margin-bottom: 2px;
+  margin: 0 0 3px;
 }
 
-.oc-jump-rule-list > li span {
+.oc-jump-rule-list > li > span {
+  all: revert;
   display: block;
   font-size: 12.5px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ocj-ink-soft);
 }
 
