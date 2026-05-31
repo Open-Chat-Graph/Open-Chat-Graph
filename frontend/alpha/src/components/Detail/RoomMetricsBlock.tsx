@@ -12,6 +12,7 @@ import {
 import { alphaApi } from '@/api/alpha'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { RoomFlowPanels } from './RoomFlowPanels'
 import type { RoomMetricsResponse } from '@/types/api'
 
 interface RoomMetricsBlockProps {
@@ -94,6 +95,8 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
 
   // creds 前（未集計）は静かな空表示＝ブロックごと出さない。
   // updatedAt が null かつ全指標ゼロを「まだ集計が無い」と判断する。
+  const searchQueries = data.searchQueries ?? []
+  const referrers = data.referrers ?? []
   const hasAnyData =
     data.updatedAt !== null &&
     (data.pageviews > 0 ||
@@ -101,7 +104,10 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       data.searchClicks > 0 ||
       data.searchImpressions > 0 ||
       data.jumpClicks > 0 ||
-      data.avgEngagementSeconds > 0)
+      data.avgEngagementSeconds > 0 ||
+      // 指標ゼロでも、流入語/参照元が在れば「どう来たか」として出す価値がある
+      searchQueries.length > 0 ||
+      referrers.length > 0)
   if (!hasAnyData) return null
 
   return (
@@ -167,7 +173,12 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
           label="参加リンク押下"
           value={data.jumpClicks.toLocaleString()}
           unit="回"
-          sub="LINEへの送客"
+          // 参加に至った押下のうち、Google検索起点で間接的に来た数（本家が出さない数字）
+          sub={
+            data.jumpClicks > 0
+              ? `うちSEO経由 ${(data.jumpClicksOrganic ?? 0).toLocaleString()}回`
+              : 'LINEへの送客'
+          }
         />
         <MetricTile
           icon={Timer}
@@ -176,6 +187,11 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
           value={formatEngagement(data.avgEngagementSeconds)}
         />
       </div>
+
+      {/* 「どう流入したか」の小窓（流入キーワード／参照元）。両方空なら領域ごと出さない */}
+      {(searchQueries.length > 0 || referrers.length > 0) && (
+        <RoomFlowPanels searchQueries={searchQueries} referrers={referrers} />
+      )}
 
       {/* 集計の鮮度を控えめに（更新日時） */}
       {data.updatedAt && (

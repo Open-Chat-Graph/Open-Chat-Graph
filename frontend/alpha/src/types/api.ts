@@ -351,6 +351,23 @@ export interface RankingParams {
 
 // ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====
 // 詳細ページ向け。GA4/GSC 由来の日次集計（creds 未投入時はゼロ／未集計で返る）。ja のみ。
+
+// このルームのページに流入した検索クエリ（多い順・GSC由来）。
+export interface RoomSearchQuery {
+  query: string  // 検索クエリ文字列
+  clicks: number  // クリック数
+  impressions: number  // 表示回数
+  position: number | null  // 平均掲載順位（未集計なら null）
+}
+
+// このルームのページの参照元（多い順・GA4 pageReferrer 由来）。
+export interface RoomReferrer {
+  referrer: string  // 生の参照元（ホスト/URL。(direct) は直接流入）
+  label: string  // 表示用ラベル（トップ/おすすめ/検索/直接・不明 など）
+  pageviews: number  // この参照元からのページビュー数
+  isInternal: boolean  // 本家(openchat-review.me)内からの遷移＝SEO経由で間接流入
+}
+
 export interface RoomMetricsResponse {
   days: number  // 集計対象の日数
   updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
@@ -360,7 +377,10 @@ export interface RoomMetricsResponse {
   searchImpressions: number  // 検索結果の表示回数
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
   jumpClicks: number  // 「LINEで開く」等の外部遷移クリック数
+  jumpClicksOrganic: number  // うち SEO（Organic Search セッション）起点の参加リンク押下数
   avgEngagementSeconds: number  // 平均滞在（エンゲージメント）秒数
+  searchQueries: RoomSearchQuery[]  // 流入キーワード（多い順）
+  referrers: RoomReferrer[]  // 参照元（多い順）
 }
 
 // ===== 検索クエリランキング（GET /alpha-api/search-query-ranking） =====
