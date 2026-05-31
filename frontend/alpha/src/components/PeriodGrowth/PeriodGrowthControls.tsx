@@ -94,12 +94,12 @@ export const PeriodGrowthControls = memo(
             <Input
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
-              placeholder="キーワード（必須）"
+              placeholder="キーワード（空欄で全件）"
               className="pl-9"
               data-testid="period-growth-keyword"
             />
           </div>
-          <Button type="submit" data-testid="period-growth-search" disabled={!keywordInput.trim()}>
+          <Button type="submit" data-testid="period-growth-search">
             検索
           </Button>
         </form>

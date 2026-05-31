@@ -56,8 +56,12 @@ const PeriodGrowthPage = memo(() => {
   const hasRange = Boolean(start && end)
   const days = hasRange ? 0 : Number(searchParams.get('days')) || DEFAULT_DAYS
 
+  // 検索を実行したか。キーワードは任意（空欄＝全件）なので、キーワード有無では判定できない。
+  // 検索画面からの遷移(q付き)か、このページで「検索」を押した(go=1)ときに結果を出す。
+  const searched = keyword !== '' || searchParams.has('go')
+
   const { data, error, isLoading } = useSWR<PeriodGrowthResponse>(
-    keyword ? ['period-growth', keyword, category, days, order, start, end] : null,
+    searched ? ['period-growth', keyword, category, days, order, start, end] : null,
     () =>
       alphaApi.getPeriodGrowth(
         hasRange
@@ -87,6 +91,8 @@ const PeriodGrowthPage = memo(() => {
       } else if (days) {
         params.set('days', String(days))
       }
+      // キーワード空でも検索実行を表す。これがあると結果を表示する。
+      params.set('go', '1')
       setSearchParams(params)
     },
     [setSearchParams, days]
@@ -118,22 +124,22 @@ const PeriodGrowthPage = memo(() => {
         onSubmit={handleSubmit}
       />
 
-      {/* キーワード未入力時の案内 */}
-      {!keyword && (
+      {/* 未検索時の案内（キーワードは任意・空欄で全件） */}
+      {!searched && (
         <Card>
           <CardContent className="py-12 text-center">
             <CalendarRange className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <p className="mt-4 text-sm text-muted-foreground">
-              キーワードを入力して検索してください
+              期間とカテゴリを選んで「検索」を押してください
             </p>
             <p className="mt-1 text-xs text-muted-foreground/80">
-              例: 「ポケモン」で1年前から今も続く部屋の1年間の増加ランキング
+              キーワードは任意。空欄なら全部屋から、その期間に伸びた部屋を一覧します
             </p>
           </CardContent>
         </Card>
       )}
 
-      {keyword && error && (
+      {searched && error && (
         <Card className="border-destructive">
           <CardContent className="pt-6">
             <p className="text-sm text-destructive">データの取得に失敗しました</p>
@@ -141,19 +147,19 @@ const PeriodGrowthPage = memo(() => {
         </Card>
       )}
 
-      {keyword && isLoading && !data && (
+      {searched && isLoading && !data && (
         <div className="flex justify-center py-8">
           <div className="text-muted-foreground">読み込み中...</div>
         </div>
       )}
 
-      {keyword && data && (
+      {searched && data && (
         <>
           {/* サマリ（ラベル付き・数値は tabular-nums で軽く構造化） */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span>
               <span className="text-xs text-muted-foreground/80">対象</span>{' '}
-              <span className="font-semibold text-foreground">{keyword}</span>
+              <span className="font-semibold text-foreground">{keyword || '全部屋'}</span>
               {category > 0 && (
                 <span className="text-foreground">（{categoryName(category)}）</span>
               )}

@@ -899,7 +899,7 @@ Route::path('alpha-api/insights/{open_chat_id}', [AlphaApiController::class, 'in
 
 // Alpha API - 任意のN日増減検索
 Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth'])
-    ->matchStr('keyword', maxLen: 1000)
+    ->matchStr('keyword', maxLen: 1000, emptyAble: true, default: '')
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('startDate', emptyAble: true, maxLen: 10, default: '')

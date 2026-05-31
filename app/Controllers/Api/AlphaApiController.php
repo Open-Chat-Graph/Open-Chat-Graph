@@ -447,11 +447,9 @@ class AlphaApiController
         $error = BadRequestException::class;
         Reception::$isJson = true;
 
-        // キーワードは必須
-        $keyword = Validator::str(Reception::input('keyword', ''), maxLen: 1000, e: $error);
-        if (trim($keyword) === '') {
-            throw new BadRequestException('keyword parameter is required');
-        }
+        // キーワードは任意（空なら全件対象。リポジトリ側で member 降順の候補プール上限内で扱う）。
+        // emptyAble:true で空文字は default('') を返す（既定は空文字で例外→404になるため）。
+        $keyword = (string)Validator::str(Reception::input('keyword', ''), maxLen: 1000, emptyAble: true, e: $error);
 
         $category = (int)Validator::str(
             (string)Reception::input('category', '0'),
