@@ -381,12 +381,15 @@ class AlphaAlertService
                 $diff = $diffMap[$ocId]['diff_member'];
                 $percent = $diffMap[$ocId]['percent_increase'];
 
-                $direction = null;
-                if ($t['up_percent'] !== null && $percent >= $t['up_percent'] && $percent > 0) {
-                    $direction = 'up';
-                } elseif ($t['down_percent'] !== null && $percent <= -abs($t['down_percent']) && $percent < 0) {
-                    $direction = 'down';
-                }
+                // 部屋ウォッチと同じ判定器を共用。人数(up_member/down_member)が
+                // しきい値に含まれていればそれでも発火する（現状マイリストは%設定のみだが、
+                // 将来人数しきい値が来ても通知が出るよう取りこぼさない）。
+                $direction = $this->evaluateRoomThreshold([
+                    'up_member' => $t['up_member'] ?? null,
+                    'up_percent' => $t['up_percent'] ?? null,
+                    'down_member' => $t['down_member'] ?? null,
+                    'down_percent' => $t['down_percent'] ?? null,
+                ], $diff, $percent);
                 if ($direction === null) {
                     continue;
                 }

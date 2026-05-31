@@ -1,0 +1,192 @@
+import { memo, useState } from 'react'
+import useSWR from 'swr'
+import {
+  BarChart3,
+  Eye,
+  Users,
+  Search,
+  ExternalLink,
+  Timer,
+  type LucideIcon,
+} from 'lucide-react'
+import { alphaApi } from '@/api/alpha'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import type { RoomMetricsResponse } from '@/types/api'
+
+interface RoomMetricsBlockProps {
+  openChatId: number
+}
+
+/**
+ * GA/GSC 由来のアクセス・検索メトリクスブロック（詳細ページ向け）。
+ *
+ * グラフ（メンバー数の推移）が見せられない「人がどう訪れているか」を補う補助ブロック。
+ * 純PV・ユニークユーザー・SEO流入・参加リンク押下・平均エンゲージメント時間を、
+ * 数字を主役に静かに並べる。期間は 7日/30日 を切替（既定30日）。
+ *
+ * creds 投入前は updatedAt が null で全指標がゼロで返る。その場合は「壊れている」のではなく
+ * 「まだ集計が無い」状態なので、ブロックごと無表示にして注意を奪わない。
+ */
+
+// 期間プリセット。本家の日次集計に合わせ 7/30 日のみ。
+const DAY_PRESETS: { value: number; label: string }[] = [
+  { value: 7, label: '7日' },
+  { value: 30, label: '30日' },
+]
+
+// 秒 → 「M分S秒」/「S秒」。エンゲージメント時間の整形。
+function formatEngagement(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  if (m === 0) return `${s}秒`
+  return `${m}分${s}秒`
+}
+
+// 1指標タイル。数値は Sora の tabular-nums で構造化。アイコンは控えめなアクセント。
+function MetricTile({
+  icon: Icon,
+  accent,
+  label,
+  value,
+  unit,
+  sub,
+}: {
+  icon: LucideIcon
+  accent: string
+  label: string
+  value: string
+  unit?: string
+  sub?: string
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border bg-muted/30 px-3 py-2.5">
+      <div className="flex items-center gap-1.5">
+        <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', accent)} aria-hidden />
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="font-display text-xl font-bold leading-none tabular-nums text-foreground">
+          {value}
+        </span>
+        {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
+      </div>
+      {sub && (
+        <span className="text-[11px] leading-tight tabular-nums text-muted-foreground">{sub}</span>
+      )}
+    </div>
+  )
+}
+
+export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => {
+  const [days, setDays] = useState(30)
+
+  // 遅延取得。詳細の主役はグラフなので、メトリクスは後追いで静かに現れればよい。
+  const { data, error, isLoading } = useSWR<RoomMetricsResponse>(
+    ['room-metrics', openChatId, days],
+    () => alphaApi.getRoomMetrics(openChatId, days),
+    { revalidateOnFocus: false, revalidateOnReconnect: false, keepPreviousData: true },
+  )
+
+  // ローディング/エラーは無表示。補助ブロックなので存在を主張しない。
+  if (isLoading || error || !data) return null
+
+  // creds 前（未集計）は静かな空表示＝ブロックごと出さない。
+  // updatedAt が null かつ全指標ゼロを「まだ集計が無い」と判断する。
+  const hasAnyData =
+    data.updatedAt !== null &&
+    (data.pageviews > 0 ||
+      data.activeUsers > 0 ||
+      data.searchClicks > 0 ||
+      data.searchImpressions > 0 ||
+      data.jumpClicks > 0 ||
+      data.avgEngagementSeconds > 0)
+  if (!hasAnyData) return null
+
+  return (
+    <section
+      className="max-w-[var(--content-w)] mx-auto overflow-hidden rounded-xl border bg-card shadow-sm"
+      aria-label="アクセス・検索の指標"
+    >
+      {/* 見出し帯：オプチャグラフ上での“見られ方・送客”を示す控えめなヘッダー */}
+      <header className="flex items-center gap-2 border-b bg-muted/30 px-4 py-2.5">
+        <BarChart3 className="h-4 w-4 flex-shrink-0 text-primary" />
+        <h2 className="text-sm font-bold">アクセス・検索の指標</h2>
+        <span className="hidden text-[11px] font-normal text-muted-foreground sm:inline">
+          オプチャグラフ上での見られ方
+        </span>
+        {/* 期間切替：7日/30日 */}
+        <div className="ml-auto flex gap-1">
+          {DAY_PRESETS.map((p) => (
+            <Button
+              key={p.value}
+              type="button"
+              size="sm"
+              variant={days === p.value ? 'default' : 'outline'}
+              className="h-7 px-2.5 text-xs"
+              onClick={() => setDays(p.value)}
+              aria-pressed={days === p.value}
+              data-testid={`room-metrics-days-${p.value}`}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      </header>
+
+      {/* 指標タイル。数字を主役に。SEO流入は表示回数/平均順位を sub に添える */}
+      <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3">
+        <MetricTile
+          icon={Eye}
+          accent="text-sky-600 dark:text-sky-400"
+          label="純PV"
+          value={data.pageviews.toLocaleString()}
+          unit="回"
+        />
+        <MetricTile
+          icon={Users}
+          accent="text-indigo-600 dark:text-indigo-400"
+          label="ユニークユーザー"
+          value={data.activeUsers.toLocaleString()}
+          unit="人"
+        />
+        <MetricTile
+          icon={Search}
+          accent="text-emerald-600 dark:text-emerald-400"
+          label="SEO流入"
+          value={data.searchClicks.toLocaleString()}
+          unit="クリック"
+          sub={`表示 ${data.searchImpressions.toLocaleString()} ・ 平均 ${
+            data.searchPosition != null ? data.searchPosition.toFixed(1) : '—'
+          }位`}
+        />
+        <MetricTile
+          icon={ExternalLink}
+          accent="text-amber-600 dark:text-amber-400"
+          label="参加リンク押下"
+          value={data.jumpClicks.toLocaleString()}
+          unit="回"
+          sub="LINEへの送客"
+        />
+        <MetricTile
+          icon={Timer}
+          accent="text-violet-600 dark:text-violet-400"
+          label="平均滞在時間"
+          value={formatEngagement(data.avgEngagementSeconds)}
+        />
+      </div>
+
+      {/* 集計の鮮度を控えめに（更新日時） */}
+      {data.updatedAt && (
+        <footer className="border-t bg-muted/20 px-4 py-1.5 text-right">
+          <span className="text-[10px] tabular-nums text-muted-foreground/70">
+            直近{data.days}日 ・ {data.updatedAt} 時点
+          </span>
+        </footer>
+      )}
+    </section>
+  )
+})
+
+RoomMetricsBlock.displayName = 'RoomMetricsBlock'

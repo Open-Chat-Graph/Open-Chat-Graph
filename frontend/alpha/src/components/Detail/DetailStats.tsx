@@ -121,19 +121,28 @@ export const DetailStats = memo(({
             ]}
       </div>
 
-      {/* メタ：カテゴリ ・ 入室方式 ・ 開設日 ＋ 非掲載バッジ */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      {/* メタ：カテゴリ ・ 入室方式 ・ 開設日 ＋ 非掲載バッジ。
+          以前は text-xs で小さすぎ読みづらかったため text-sm に引き上げ、
+          値（カテゴリ名・入室タイプ・開設日）は foreground でコントラストを確保。
+          ラベル相当の語（「入室」「開設」）と区切り「・」だけを muted で控えめにする。 */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground">
         {categoryName && (
           <>
-            <span className="truncate">{categoryName}</span>
-            <span aria-hidden className="opacity-50">・</span>
+            <span className="truncate font-medium">{categoryName}</span>
+            <span aria-hidden className="text-muted-foreground/60">・</span>
           </>
         )}
-        <span>入室 {getJoinMethodLabel(joinMethodType ?? 0)}</span>
+        <span>
+          <span className="text-muted-foreground">入室</span>{' '}
+          <span className="font-medium">{getJoinMethodLabel(joinMethodType ?? 0)}</span>
+        </span>
         {registeredAt && (
           <>
-            <span aria-hidden className="opacity-50">・</span>
-            <span>{formatTimestamp(registeredAt)} 開設</span>
+            <span aria-hidden className="text-muted-foreground/60">・</span>
+            <span>
+              <span className="font-medium tabular-nums">{formatTimestamp(registeredAt)}</span>{' '}
+              <span className="text-muted-foreground">開設</span>
+            </span>
           </>
         )}
         {isNotInRanking && (

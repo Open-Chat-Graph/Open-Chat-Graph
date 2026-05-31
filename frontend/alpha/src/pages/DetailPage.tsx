@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { History, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, InsightsBlock, RankingHistoryOverlay } from '@/components/Detail'
+import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, InsightsBlock, RoomMetricsBlock, RankingHistoryOverlay } from '@/components/Detail'
 import { WatchRoomControl } from '@/components/Notifications'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
@@ -181,6 +181,10 @@ const DetailPage = memo(() => {
 
         {/* 部屋のアラート: 未設定なら開始ボタン、設定中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
         <WatchRoomControl openChatId={basicInfo.id} />
+
+        {/* アクセス・検索の指標(GA/GSC): 純PV/UU/SEO流入/参加リンク押下/平均滞在。
+            遅延取得・creds前は無表示。考察ブロックの近くに置き“見られ方”の文脈を補う */}
+        <RoomMetricsBlock openChatId={basicInfo.id} />
 
         {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
         <InsightsBlock openChatId={basicInfo.id} />

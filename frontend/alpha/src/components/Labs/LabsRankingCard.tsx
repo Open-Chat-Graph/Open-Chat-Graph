@@ -18,25 +18,35 @@ interface LabsRankingCardProps {
 const isAccess = (room: LabsRoom): room is AccessRankingRoom =>
   'pageviews' in room
 
-// 主指標の小単位（PV / クリック）。数値は Sora の tabular-nums で構造化する。
+// 主指標の1枠。大きな数字（Sora・tabular-nums）の下に小さなラベルを添えて構造化する。
+function PrimaryStat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="font-display text-xl font-bold tabular-nums leading-none text-primary">
+        {value.toLocaleString()}
+      </span>
+      <span className="text-[11px] leading-none text-muted-foreground">{label}</span>
+    </div>
+  )
+}
+
+// 主指標ブロック。
+// アクセス: 純PV と ユニークユーザー(UU) を両方主役で並べる。
+// 検索流入: クリック数を主役にしつつ UU も並置する。
 function PrimaryMetric({ room, mode }: { room: LabsRoom; mode: LabsMode }) {
   if (mode === 'access' && isAccess(room)) {
     return (
-      <div className="flex items-baseline gap-1">
-        <span className="font-display text-xl font-bold tabular-nums leading-none text-primary">
-          {room.pageviews.toLocaleString()}
-        </span>
-        <span className="text-xs text-muted-foreground">PV</span>
+      <div className="flex items-end gap-5">
+        <PrimaryStat value={room.pageviews} label="純PV" />
+        <PrimaryStat value={room.activeUsers} label="ユニークユーザー" />
       </div>
     )
   }
   if (!isAccess(room)) {
     return (
-      <div className="flex items-baseline gap-1">
-        <span className="font-display text-xl font-bold tabular-nums leading-none text-primary">
-          {room.searchClicks.toLocaleString()}
-        </span>
-        <span className="text-xs text-muted-foreground">クリック</span>
+      <div className="flex items-end gap-5">
+        <PrimaryStat value={room.searchClicks} label="検索クリック" />
+        <PrimaryStat value={room.activeUsers} label="ユニークユーザー" />
       </div>
     )
   }

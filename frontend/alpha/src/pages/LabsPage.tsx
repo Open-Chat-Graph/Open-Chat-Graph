@@ -3,18 +3,27 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { FlaskConical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { LabsControls, LabsRankingCard, type LabsMode } from '@/components/Labs'
+import {
+  LabsControls,
+  LabsRankingCard,
+  LabsPagesSection,
+  LabsQuerySection,
+  type LabsMode,
+} from '@/components/Labs'
 import { alphaApi } from '@/api/alpha'
 import type {
   AccessRankingResponse,
   AccessRankingRoom,
   SearchRankingResponse,
   SearchRankingRoom,
+  SearchQueryRankingResponse,
   OpenChat,
 } from '@/types/api'
 
-const LIMIT = 20
+const DEFAULT_LIMIT = 20
 const DEFAULT_DAYS = 30
+// 表示件数は選択式（10/20/50）。想定外の値は既定へ丸める。
+const ALLOWED_LIMITS = [10, 20, 50]
 
 type LabsRoom = AccessRankingRoom | SearchRankingRoom
 
@@ -57,13 +66,27 @@ const LabsPage = memo(() => {
 
   const mode: LabsMode = searchParams.get('mode') === 'search' ? 'search' : 'access'
   const days = Number(searchParams.get('days')) || DEFAULT_DAYS
+  const limitParam = Number(searchParams.get('limit'))
+  const limit = ALLOWED_LIMITS.includes(limitParam) ? limitParam : DEFAULT_LIMIT
 
   const { data, error, isLoading } = useSWR<AccessRankingResponse | SearchRankingResponse>(
-    ['labs-ranking', mode, days],
+    ['labs-ranking', mode, days, limit],
     () =>
       mode === 'access'
-        ? alphaApi.getAccessRanking({ days, order: 'desc', limit: LIMIT })
-        : alphaApi.getSearchRanking({ days, order: 'desc', limit: LIMIT }),
+        ? alphaApi.getAccessRanking({ days, order: 'desc', limit })
+        : alphaApi.getSearchRanking({ days, order: 'desc', limit }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
+      keepPreviousData: true,
+    }
+  )
+
+  // 検索流入モードのときだけ、サイト全体の検索キーワード（流入クエリ）も取得する。
+  const { data: queryData } = useSWR<SearchQueryRankingResponse>(
+    mode === 'search' ? ['labs-query-ranking', days, limit] : null,
+    () => alphaApi.getSearchQueryRanking({ days, limit }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -73,12 +96,15 @@ const LabsPage = memo(() => {
   )
 
   const rooms = useMemo<LabsRoom[]>(() => data?.data ?? [], [data])
+  const pages = useMemo(() => data?.pages ?? [], [data])
+  const queries = useMemo(() => queryData?.data ?? [], [queryData])
 
   const setParam = useCallback(
-    (next: Partial<{ mode: LabsMode; days: number }>) => {
+    (next: Partial<{ mode: LabsMode; days: number; limit: number }>) => {
       const params = new URLSearchParams(searchParams)
       if (next.mode !== undefined) params.set('mode', next.mode)
       if (next.days !== undefined) params.set('days', String(next.days))
+      if (next.limit !== undefined) params.set('limit', String(next.limit))
       setSearchParams(params, { replace: true })
     },
     [searchParams, setSearchParams]
@@ -100,15 +126,23 @@ const LabsPage = memo(() => {
     <div className="space-y-4">
       {/* 見出し＋戻るは固定タイトルバー（DashboardLayout）が担うので、ここでは説明のみ。 */}
       <p className="text-sm text-muted-foreground">
-        本家ページ（openchat-review.me）のアクセスと検索からの流入で並べた、初見・SEO向けの指標です。
+        本家ページ（openchat-review.me）への Google
+        からの流入を、Google アナリティクスで分析した指標です。
       </p>
 
       <LabsControls
         mode={mode}
         days={days}
+        limit={limit}
         onModeChange={(m) => setParam({ mode: m })}
         onDaysChange={(d) => setParam({ days: d })}
+        onLimitChange={(l) => setParam({ limit: l })}
       />
+
+      {/* 指標の読み方（純PV と ユニークユーザーの違い）を一度だけ明示する。 */}
+      <p className="text-[11px] leading-relaxed text-muted-foreground/80">
+        純PV＝ページ閲覧数（同じ人の連続表示も加算）／ ユニークユーザー＝その期間の実訪問者数
+      </p>
 
       {error && (
         <Card className="border-destructive">
@@ -140,18 +174,28 @@ const LabsPage = memo(() => {
               </CardContent>
             </Card>
           ) : (
-            <>
-              <div className="grid gap-2 md:gap-3">
-                {rooms.map((room, index) => (
-                  <LabsRankingCard
-                    key={room.id}
-                    room={room}
-                    rank={index + 1}
-                    mode={mode}
-                    onCardClick={handleCardClick}
-                  />
-                ))}
-              </div>
+            <div className="space-y-5">
+              {/* 部屋ランキング */}
+              <section className="space-y-2" data-testid="labs-rooms-section">
+                <h2 className="px-0.5 text-sm font-semibold text-foreground">部屋ランキング</h2>
+                <div className="grid gap-2 md:gap-3">
+                  {rooms.map((room, index) => (
+                    <LabsRankingCard
+                      key={room.id}
+                      room={room}
+                      rank={index + 1}
+                      mode={mode}
+                      onCardClick={handleCardClick}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {/* ページ全体（トップ・おすすめ等）。部屋ランキングと並置する。 */}
+              <LabsPagesSection pages={pages} />
+
+              {/* 検索流入モードのときだけ、流入キーワードの一覧を添える。 */}
+              {mode === 'search' && <LabsQuerySection queries={queries} />}
 
               {/* 集計の最終更新は控えめに足元へ */}
               {updatedAt && (
@@ -159,7 +203,7 @@ const LabsPage = memo(() => {
                   最終更新 {formatUpdatedAt(updatedAt)}
                 </p>
               )}
-            </>
+            </div>
           )}
         </>
       )}

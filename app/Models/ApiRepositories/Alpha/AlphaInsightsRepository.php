@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ApiRepositories\Alpha;
 
 use App\Models\Repositories\DB;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 
 /**
  * α の「高次の考察」用、カテゴリ文脈データ取得リポジトリ。
@@ -75,6 +76,78 @@ class AlphaInsightsRepository
             'total' => $total,
             'avgMember' => $row['avg_member'] !== null ? (float)$row['avg_member'] : null,
             'sumMember' => $row['sum_member'] !== null ? (int)$row['sum_member'] : null,
+        ];
+    }
+
+    /**
+     * 公式ランキング（全体）の最新総件数。
+     *
+     * line_official_ranking_total_count に毎時記録される category_id=0（すべて）の
+     * activity_ranking_total_count（公式「ランキング」総件数）の最新値を返す。
+     * 「{順位}位／{総数}件中」の総数に使う。取れなければ null（呼び出し側は百分位だけ出す等で吸収）。
+     *
+     * @return ?int
+     */
+    public function getOfficialRankingTotalCount(): ?int
+    {
+        $query =
+            "SELECT activity_ranking_total_count AS cnt
+               FROM line_official_ranking_total_count
+              WHERE category_id = 0
+              ORDER BY recorded_at DESC
+              LIMIT 1";
+
+        try {
+            SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+            $row = SQLiteOcgraphSqlapi::fetch($query);
+            SQLiteOcgraphSqlapi::$pdo = null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        if (!$row || !is_array($row) || $row['cnt'] === null) {
+            return null;
+        }
+
+        $cnt = (int)$row['cnt'];
+        return $cnt > 0 ? $cnt : null;
+    }
+
+    /**
+     * オプチャグラフ独自の成長ランキング（1時間 / 24時間 / 1週間）の総件数。
+     * 各テーブルの行数（= その期間に伸びていてランキングに載っている部屋数）。
+     * 「全体{順位}位／{総数}件中」の総数に使う。取れなければ各 null。
+     *
+     * @return array{hour: ?int, day: ?int, week: ?int}
+     */
+    public function getGrowthRankingTotalCounts(): array
+    {
+        $query =
+            "SELECT
+                (SELECT COUNT(*) FROM growth_ranking_past_hour)     AS hour_total,
+                (SELECT COUNT(*) FROM growth_ranking_past_24_hours) AS day_total,
+                (SELECT COUNT(*) FROM growth_ranking_past_week)     AS week_total";
+
+        try {
+            SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+            $row = SQLiteOcgraphSqlapi::fetch($query);
+            SQLiteOcgraphSqlapi::$pdo = null;
+        } catch (\Throwable $e) {
+            return ['hour' => null, 'day' => null, 'week' => null];
+        }
+
+        $norm = static function ($v): ?int {
+            if ($v === null) {
+                return null;
+            }
+            $n = (int)$v;
+            return $n > 0 ? $n : null;
+        };
+
+        return [
+            'hour' => $row ? $norm($row['hour_total'] ?? null) : null,
+            'day'  => $row ? $norm($row['day_total'] ?? null)  : null,
+            'week' => $row ? $norm($row['week_total'] ?? null) : null,
         ];
     }
 }

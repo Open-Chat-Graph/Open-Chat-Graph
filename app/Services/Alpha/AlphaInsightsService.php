@@ -15,14 +15,15 @@ use App\Models\Repositories\OcNarrativeRepositoryInterface;
  *   α 詳細ページは既に メンバー数・1h/24h/1w 増減・推移グラフ・掲載履歴 を数値で持っているので、
  *   それらを見れば一目で分かる事実は **出さない** (ユーザー却下済)。
  * - ここで出すのは「一目では分からない高次の洞察」だけ:
- *     1. category_rank      : 同カテゴリ内で現在 N 位 / M 件中 (上位 X%)
- *     2. category_share     : 同カテゴリ総メンバーに占めるシェア (代表的ルームか)
- *     3. category_scale     : カテゴリ平均/中央値に対する規模倍率
- *     4. position_trend     : 全体ランキング順位が N 日で X→Y に変化 (上昇/下降)
- *     5. best_rank          : 直近の最高順位 (過去最高位の更新文脈)
- *     6. record_single_day  : 単日最大の増加は ◯月◯日の +N 人 (今がそれを更新中か)
- *     7. pace_anomaly       : 直近の伸びが過去平均ペースの N 倍 (普段と違う急変)
- *     8. growth_rank        : オプチャグラフ独自 1h/24h/1w 成長ランキングでの全体順位
+ *     1. category_rank      : {カテゴリ名}カテゴリ内で現在 N 位 / M 件中 (上位 X%)
+ *     2. category_share     : {カテゴリ名}カテゴリ内の総メンバーに占めるシェア (代表的ルームか)
+ *     3. position_trend     : 全体ランキング順位が N 日で X→Y に変化 (上昇/下降。順位は総数/百分位付き)
+ *     4. best_rank          : 直近の最高順位 (過去最高位の更新文脈。順位は総数/百分位付き)
+ *     5. record_single_day  : 単日最大の増加は ◯月◯日の +N 人 (今がそれを更新中か)
+ *     6. pace_anomaly       : 直近の伸びが過去平均ペースの N 倍 (普段と違う急変)
+ *     7. growth_rank        : オプチャグラフ独自 1h/24h/1w 成長ランキングでの全体順位 (総数/百分位付き)
+ *
+ * ※ category_scale (カテゴリ平均の N 倍の規模) は廃止。分布がロングテールで平均が無意味なため。
  *
  * ## 嘘を出さない安全策
  * - すべて try/catch。データ不足は「黙る」(その洞察を配列に入れない)。
@@ -54,9 +55,6 @@ class AlphaInsightsService
 
     /** カテゴリシェアを言及する下限 (%) */
     private const CATEGORY_SHARE_MIN_PCT = 1.0;
-
-    /** カテゴリ規模倍率を言及する下限 (平均の何倍以上か) */
-    private const CATEGORY_SCALE_MIN_RATIO = 3.0;
 
     /** 単日最大の伸びを「記録級」として出す最小絶対値 */
     private const RECORD_SINGLE_DAY_MIN = 30;
@@ -128,16 +126,26 @@ class AlphaInsightsService
             return;
         }
 
+        // 各期間の総件数 (ランキング掲載部屋数)。取れなければ null（百分位だけ出す等で吸収）
+        try {
+            $totals = $this->insightsRepository->getGrowthRankingTotalCounts();
+        } catch (\Throwable $e) {
+            $totals = ['hour' => null, 'day' => null, 'week' => null];
+        }
+
         // 週 > 日 > 時 の優先で 1 つだけ (最も意味のある期間)
         foreach ([['week', '1週間', 50], ['day', '24時間', 50], ['hour', '1時間', 50]] as [$key, $label, $limit]) {
             $p = $pos[$key] ?? null;
             if ($p !== null && $p >= 1 && $p <= $limit) {
-                $insights[] = [
+                $total = $totals[$key] ?? null;
+                $item = [
                     'type' => 'growth_rank',
                     'period' => $key,
                     'position' => $p,
-                    'text' => "過去{$label}で人数の伸びが全体{$p}位",
                 ];
+                $item += $this->rankFields($p, $total);
+                $item['text'] = "過去{$label}で人数の伸びが全体" . $this->rankPhrase($p, $total);
+                $insights[] = $item;
                 return;
             }
         }
@@ -163,6 +171,14 @@ class AlphaInsightsService
         $latest = $mv['latest_close'] ?? null;
         $best = $mv['best_high'] ?? null;
 
+        // 公式ランキング（全体）の最新総件数。順位に「／M件中（上位X%）」を付けるのに使う。
+        // 取れなければ null（百分位も付けられないが、順位＋方向だけは出す）。
+        try {
+            $total = $this->insightsRepository->getOfficialRankingTotalCount();
+        } catch (\Throwable $e) {
+            $total = null;
+        }
+
         // 順位の変化 (close_position は小さいほど上位)。
         // 数千位の上下はノイズなので、上位(=MEANINGFUL_POSITION_MAX以内)に居た/居る時だけ語る。
         $meaningful = ($oldest !== null && $oldest <= self::MEANINGFUL_POSITION_MAX)
@@ -171,7 +187,7 @@ class AlphaInsightsService
             $delta = $oldest - $latest; // 正 = 上昇 (順位が小さくなった)
             if (abs($delta) >= self::POSITION_MOVE_MIN_DELTA) {
                 $dir = $delta > 0 ? '上昇' : '下降';
-                $insights[] = [
+                $item = [
                     'type' => 'position_trend',
                     'category' => 0,
                     'from' => (int)$oldest,
@@ -179,20 +195,26 @@ class AlphaInsightsService
                     'delta' => (int)$delta,
                     'fromDate' => $mv['oldest_date'] ?? null,
                     'toDate' => $mv['latest_date'] ?? null,
-                    'text' => "公式ランキング（全体）が直近30日で{$oldest}→{$latest}位に{$dir}",
                 ];
+                // 現在(to)の順位に総数/百分位を付ける（推移の到達点を意味づける）
+                $item += $this->rankFields((int)$latest, $total);
+                $item['text'] = "公式ランキング（全体）が直近30日で{$oldest}→"
+                    . $this->rankPhrase((int)$latest, $total) . "に{$dir}";
+                $insights[] = $item;
             }
         }
 
         // 直近 30 日の最高順位 (現在より明確に上 かつ 上位のときだけ = 過去にもっと上だった文脈)
         if ($best !== null && $latest !== null && $best < $latest && $best <= self::MEANINGFUL_POSITION_MAX) {
-            $insights[] = [
+            $item = [
                 'type' => 'best_rank',
                 'category' => 0,
                 'bestPosition' => (int)$best,
                 'currentPosition' => (int)$latest,
-                'text' => "公式ランキング（全体）での直近30日の最高は{$best}位",
             ];
+            $item += $this->rankFields((int)$best, $total);
+            $item['text'] = "公式ランキング（全体）での直近30日の最高は" . $this->rankPhrase((int)$best, $total);
+            $insights[] = $item;
         }
     }
 
@@ -213,16 +235,20 @@ class AlphaInsightsService
             return;
         }
 
+        $catName = $this->categoryName($category); // 「ゲーム」等。取れなければ空
+        $catLabel = $catName !== '' ? "{$catName}カテゴリ内" : '同カテゴリ内';
+
         // 1) カテゴリ内順位 (上位 X% のときのみ強調。下位は黙る)
         $pct = ($rank / $total) * 100;
         if ($pct <= self::CATEGORY_TOP_PCT) {
             $insights[] = [
                 'type' => 'category_rank',
                 'category' => $category,
+                'categoryName' => $catName !== '' ? $catName : null,
                 'rank' => $rank,
                 'total' => $total,
                 'percentile' => $this->roundPct($pct),
-                'text' => "同カテゴリのメンバー数で{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
+                'text' => "{$catLabel}のメンバー数で{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
             ];
         }
 
@@ -235,25 +261,37 @@ class AlphaInsightsService
                 $insights[] = [
                     'type' => 'category_share',
                     'category' => $category,
+                    'categoryName' => $catName !== '' ? $catName : null,
                     'sharePercent' => $shareR,
-                    'text' => "同カテゴリの人数の約{$shareR}%を占める",
+                    'text' => "{$catLabel}の人数の約{$shareR}%を占める",
                 ];
             }
         }
 
-        // 3) カテゴリ平均に対する規模倍率 (平均より桁違いに大きいときのみ)
-        $avg = $ctx['avgMember'] ?? null;
-        if ($avg !== null && $avg > 0) {
-            $ratio = $curr / $avg;
-            if ($ratio >= self::CATEGORY_SCALE_MIN_RATIO) {
-                $insights[] = [
-                    'type' => 'category_scale',
-                    'category' => $category,
-                    'ratio' => round($ratio, 1),
-                    'avgMember' => (int)round($avg),
-                    'text' => "カテゴリ平均の" . round($ratio, 1) . "倍の規模",
-                ];
+        // ※ category_scale（カテゴリ平均の N 倍の規模）は廃止。
+        //   メンバー数分布はロングテールで平均がほぼ無意味になり、倍率が誤解を招くため出さない。
+    }
+
+    /**
+     * カテゴリ ID から表示名を引く。グローバルヘルパ getCategoryName() があればそれを使い、
+     * 無ければ AppConfig の定義を直接逆引きする。取れなければ空文字。
+     */
+    private function categoryName(int $category): string
+    {
+        try {
+            if (function_exists('getCategoryName')) {
+                return (string)getCategoryName($category);
             }
+        } catch (\Throwable $e) {
+            // フォールバックへ
+        }
+
+        try {
+            $map = \App\Config\AppConfig::OPEN_CHAT_CATEGORY[''] ?? [];
+            $name = array_search($category, $map, true);
+            return $name !== false ? (string)$name : '';
+        } catch (\Throwable $e) {
+            return '';
         }
     }
 
@@ -316,6 +354,37 @@ class AlphaInsightsService
                 'text' => "増加ペースが平常の約" . round($ratio, 1) . "倍に加速",
             ];
         }
+    }
+
+    /**
+     * 順位の構造化フィールド（total / percentile）を組み立てる。
+     * 総数が取れない場合は total/percentile を入れない（呼び出し側は順位だけ出す）。
+     *
+     * @return array{total?: int, percentile?: float}
+     */
+    private function rankFields(int $rank, ?int $total): array
+    {
+        if ($total === null || $total <= 0 || $rank < 1) {
+            return [];
+        }
+        return [
+            'total' => $total,
+            'percentile' => $this->roundPct(($rank / $total) * 100),
+        ];
+    }
+
+    /**
+     * 順位の表示句を組み立てる。
+     * - 総数あり: 「{順位}位／{総数}件中（上位{X}%）」
+     * - 総数なし: 「{順位}位」（百分位は順位/総数なので総数が無いと出せない）
+     */
+    private function rankPhrase(int $rank, ?int $total): string
+    {
+        if ($total === null || $total <= 0 || $rank < 1) {
+            return $rank . '位';
+        }
+        $pct = ($rank / $total) * 100;
+        return $rank . '位／' . number_format($total) . '件中（上位' . $this->fmtPct($pct) . '）';
     }
 
     /**

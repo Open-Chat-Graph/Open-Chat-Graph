@@ -71,8 +71,8 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  // 詳細画面からの部屋追加（ワンタップ）。既定しきい値は ±10%。重複は足さない。
-  // 細かいしきい値は詳細画面の「アラートON」カードで調整できる。
+  // 詳細画面からの部屋追加（ワンタップ）。既定しきい値は ±100人。重複は足さない。
+  // 細かいしきい値・単位は詳細画面の「アラートON」カードで調整できる。
   const addRoom = useCallback(
     async (openChatId: number): Promise<{ added: boolean }> => {
       const current = data ?? (await alphaApi.getAlertsConfig())
@@ -80,7 +80,7 @@ export function useAlertsConfig() {
       const req = configToRequest(current)
       req.rooms = [
         ...(req.rooms ?? []),
-        { openChatId, upPercent: 10, downPercent: 10, upMember: null, downMember: null },
+        { openChatId, upMember: 100, downMember: 100, upPercent: null, downPercent: null },
       ]
       await save(req)
       return { added: true }
@@ -121,5 +121,41 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  return { config: data, isLoading, error, save, addKeyword, addRoom, removeRoom, setRoomPercent }
+  // 詳細画面の「アラートON」カードからの「数値＋単位」設定。増減同値（up=down）の対称しきい値にする。
+  // unit='member' → up_member=down_member=value・percentはクリア。unit='percent' はその逆。
+  // value が正の有限数でなければ保存しない。
+  const setRoomThreshold = useCallback(
+    async (
+      openChatId: number,
+      value: number,
+      unit: 'member' | 'percent',
+    ): Promise<{ saved: boolean }> => {
+      const current = data ?? (await alphaApi.getAlertsConfig())
+      if (!current.rooms.some((r) => r.open_chat_id === openChatId)) return { saved: false }
+      if (!Number.isFinite(value) || value <= 0) return { saved: false }
+      const next =
+        unit === 'member'
+          ? { upMember: value, downMember: value, upPercent: null, downPercent: null }
+          : { upPercent: value, downPercent: value, upMember: null, downMember: null }
+      const req = configToRequest(current)
+      req.rooms = (req.rooms ?? []).map((r) =>
+        r.openChatId === openChatId ? { ...r, ...next } : r,
+      )
+      await save(req)
+      return { saved: true }
+    },
+    [data, save],
+  )
+
+  return {
+    config: data,
+    isLoading,
+    error,
+    save,
+    addKeyword,
+    addRoom,
+    removeRoom,
+    setRoomPercent,
+    setRoomThreshold,
+  }
 }

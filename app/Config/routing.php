@@ -838,6 +838,10 @@ Route::path('alpha/period-growth', [AlphaPageController::class, 'index'])
 Route::path('alpha/labs', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// 分析タブの SPA ページ（リロード/ディープリンク対応）
+Route::path('alpha/analysis', [AlphaPageController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path('alpha/openchat/{id}', [AlphaPageController::class, 'index'])
     ->matchNum('id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');

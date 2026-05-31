@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { CalendarRange, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder } from '@/components/PeriodGrowth'
+import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder, type PeriodGrowthQuery } from '@/components/PeriodGrowth'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
 import type { PeriodGrowthItem, PeriodGrowthResponse, OpenChat } from '@/types/api'
@@ -48,12 +48,22 @@ const PeriodGrowthPage = memo(() => {
 
   const keyword = searchParams.get('q') || ''
   const category = Number(searchParams.get('category')) || 0
-  const days = Number(searchParams.get('days')) || DEFAULT_DAYS
   const order = (searchParams.get('order') as PeriodOrder) || 'desc'
+  const start = searchParams.get('start') || ''
+  const end = searchParams.get('end') || ''
+
+  // 開始日・終了日が両方あれば日付指定（days より優先）、無ければ従来の日数指定。
+  const hasRange = Boolean(start && end)
+  const days = hasRange ? 0 : Number(searchParams.get('days')) || DEFAULT_DAYS
 
   const { data, error, isLoading } = useSWR<PeriodGrowthResponse>(
-    keyword ? ['period-growth', keyword, category, days, order] : null,
-    () => alphaApi.getPeriodGrowth({ keyword, category: category || undefined, days, order, limit: LIMIT }),
+    keyword ? ['period-growth', keyword, category, days, order, start, end] : null,
+    () =>
+      alphaApi.getPeriodGrowth(
+        hasRange
+          ? { keyword, category: category || undefined, startDate: start, endDate: end, order, limit: LIMIT }
+          : { keyword, category: category || undefined, days, order, limit: LIMIT }
+      ),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -65,15 +75,21 @@ const PeriodGrowthPage = memo(() => {
   const items = useMemo(() => data?.data ?? [], [data])
 
   const handleSubmit = useCallback(
-    (next: { keyword: string; category: number; days: number; order: PeriodOrder }) => {
+    (next: PeriodGrowthQuery) => {
       const params = new URLSearchParams()
       if (next.keyword) params.set('q', next.keyword)
       if (next.category) params.set('category', String(next.category))
-      if (next.days) params.set('days', String(next.days))
       if (next.order) params.set('order', next.order)
+      // 開始日・終了日が両方あれば日付で保持。片方でも欠ければ days(従来)に戻す。
+      if (next.start && next.end) {
+        params.set('start', next.start)
+        params.set('end', next.end)
+      } else if (days) {
+        params.set('days', String(days))
+      }
       setSearchParams(params)
     },
-    [setSearchParams]
+    [setSearchParams, days]
   )
 
   const handleCardClick = useCallback(
@@ -96,7 +112,8 @@ const PeriodGrowthPage = memo(() => {
       <PeriodGrowthControls
         keyword={keyword}
         category={category}
-        days={days}
+        start={start}
+        end={end}
         order={order}
         onSubmit={handleSubmit}
       />

@@ -19,6 +19,25 @@ const formatDate = (raw?: string | null): string => {
   return m ? `${m[1]}/${m[2]}/${m[3]}` : String(raw)
 }
 
+// 作成日(createdAt: unix秒) / 登録日(registeredAt: unix秒の文字列) を YYYY/MM/DD に整形。
+// unix秒(number/数値文字列)・日時文字列のいずれも吸収する（OpenChatCard と同作法）。
+const formatUnixDate = (raw?: string | number | null): string | null => {
+  if (raw === undefined || raw === null || raw === '') return null
+  let d: Date
+  if (typeof raw === 'number' || /^\d+$/.test(String(raw))) {
+    const n = Number(raw)
+    d = new Date(n > 9999999999 ? n : n * 1000) // 10桁以下は秒とみなしてミリ秒へ
+  } else {
+    const s = String(raw)
+    d = new Date(s.includes('T') ? s : s.replace(' ', 'T'))
+  }
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+  }
+  const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[1]}/${m[2]}/${m[3]}` : null
+}
+
 const diffColorClass = (diff: number): string =>
   diff > 0
     ? 'text-green-600 dark:text-green-500'
@@ -32,6 +51,8 @@ const formatDiff = (diff: number): string =>
 export const PeriodGrowthCard = memo(({ item, rank, onCardClick }: PeriodGrowthCardProps) => {
   const isUp = item.diff > 0
   const isDown = item.diff < 0
+  const createdAtText = formatUnixDate(item.createdAt)
+  const registeredAtText = formatUnixDate(item.registeredAt)
 
   return (
     <Card
@@ -84,6 +105,17 @@ export const PeriodGrowthCard = memo(({ item, rank, onCardClick }: PeriodGrowthC
               </>
             )}
           </div>
+
+          {/* 作成日・登録日（小さめの muted メタ行） */}
+          {(createdAtText || registeredAtText) && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-none text-muted-foreground/80 tabular-nums">
+              {createdAtText && <span>作成 {createdAtText}</span>}
+              {createdAtText && registeredAtText && (
+                <span aria-hidden className="opacity-50">・</span>
+              )}
+              {registeredAtText && <span>登録 {registeredAtText}</span>}
+            </div>
+          )}
 
           {/* 期間増減：pastMember → current の遷移 ＋ 実日付 */}
           <div className="mt-2 rounded-md border bg-muted/40 px-2.5 py-1.5">
