@@ -103,6 +103,16 @@ OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`l
 - 指定期間ランキング: キーワード空＝全件対象（route/controller 両方の `keyword` を `emptyAble` 化）。
 - PHPStan を実行可能化＋運用ルール化（上記コマンド）。
 
+## 2026-05-31 追加対応（コミット済み）
+
+- Labs固定ヘッダを上に密着（-mt相殺）。期間プリセットは「30日＋全期間＋カレンダー」のみ（7/90日削除＝`PERIOD_DAY_PRESETS`）。
+- 参照元チップはホバー廃止→クリックで開く・外側クリックで閉じる（`ui/info-chip.tsx`）。URL＋全文ラベル表示。
+- 参照元から自己参照「このページ内」を除外（`getRoomReferrers` で self を NOT LIKE）。間接SEOも自己参照除外済。
+- 「他の部屋（◯◯）」に部屋名解決（`getRoomNames`）。
+- **【重要・要バックフィル】GA/GSC集計のtw/th混入を修正**（`AlphaGaClient`：`isOtherLocalePath`＋`normalizePageScopePath`でtw/th除外、`extractOpenChatId`が`/th/oc/{id}`をja部屋IDへ誤畳みしていたのを阻止、`fetchTopSearchQueries`にGSC page除外フィルタ）。**既存蓄積データは混在のまま→クリーンには alpha_search_query_daily / alpha_room_* / alpha_page_* を消して `alpha_ga_sync --days=N` で再集計が要る（ユーザー許可が要る破壊操作なので未実行）。**
+- 30日と全期間が同値に見えるのはデータが約30日分(2026-05-01〜)しか無いため（バグでない。日数が貯まれば差が出る）。
+- 【保留】検索KWのタイ語が「Thai部屋(ja上)」由来か「/th混入」かは、上記修正で/th混入を断つ。再集計後に残れば前者（正当）。
+
 ## 未実装（ユーザー指示済み・このあと実装）
 
 優先度順。番号は会話中のタスク番号。
