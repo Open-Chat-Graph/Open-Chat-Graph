@@ -1,6 +1,10 @@
 import { Search, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { InfoChip } from '@/components/ui/info-chip'
 import type { RoomSearchQuery, RoomReferrer } from '@/types/api'
+
+// 参照元が外部の実URL（http/https）なら、チップ内にクリック可能なリンクとして出す。
+const isHttpUrl = (s: string): boolean => /^https?:\/\//i.test(s)
 
 /**
  * 詳細メトリクス下部の「どう流入したか」を示す 2 つの小窓。
@@ -78,8 +82,30 @@ export function RoomFlowPanels({
         >
           {referrers.map((r, i) => (
             <li key={`${r.referrer}-${i}`} className="flex items-center gap-2 px-3 py-1.5">
+              {/* ラベルは省略表示。タップ/ホバーでチップに全文＋元URL（どこから来たか）を出す。 */}
               <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                <span className="min-w-0 truncate text-xs text-foreground">{r.label}</span>
+                <InfoChip
+                  triggerClassName="min-w-0 flex-1"
+                  trigger={
+                    <span className="block truncate text-xs text-foreground underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">
+                      {r.label}
+                    </span>
+                  }
+                >
+                  <p className="font-medium text-foreground">{r.detail}</p>
+                  {isHttpUrl(r.referrer) ? (
+                    <a
+                      href={r.referrer}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block break-all text-[11px] text-primary underline underline-offset-2"
+                    >
+                      {r.referrer}
+                    </a>
+                  ) : (
+                    <p className="mt-1 break-all text-[11px] text-muted-foreground">{r.referrer}</p>
+                  )}
+                </InfoChip>
                 {/* isInternal＝本家のSEOページから流入してこの部屋に来た動線 */}
                 {r.isInternal && (
                   <span className="flex-shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">

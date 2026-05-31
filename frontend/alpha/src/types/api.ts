@@ -363,7 +363,8 @@ export interface RoomSearchQuery {
 // このルームのページの参照元（多い順・GA4 pageReferrer 由来）。
 export interface RoomReferrer {
   referrer: string  // 生の参照元（ホスト/URL。(direct) は直接流入）
-  label: string  // 表示用ラベル（トップ/おすすめ/検索/直接・不明 など）
+  label: string  // 一覧の1行に出す短ラベル（トップページ/おすすめ/検索結果/他の部屋 など）
+  detail: string  // タップ/ホバーのチップに出す全文（どこから来たかを明示）
   pageviews: number  // この参照元からのページビュー数
   isInternal: boolean  // 本家(openchat-review.me)内からの遷移＝SEO経由で間接流入
 }
