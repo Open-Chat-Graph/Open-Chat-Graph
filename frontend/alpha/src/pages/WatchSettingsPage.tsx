@@ -21,15 +21,15 @@ const toNum = (s: string): number | null => {
 }
 
 /**
- * 見張り設定ページ（`/watch`）。
+ * アラート設定ページ（`/watch`）。
  *
  * 旧 WatchSettingsDialog をルートを持つページに作り替えたもの。戻る/進むはブラウザ標準で効く。
  * GET config で初期化したローカル状態を編集し、PUT で全置き換え保存する。
- * 2セクション: (1)キーワードの見張り (2)マイリスト全体の変動。
+ * 2セクション: (1)キーワードのアラート (2)マイリスト全体の変動。
  *
- * 部屋ごとの見張り（config.rooms）の設定UIは各部屋の詳細画面に移管したので、ここでは編集しない。
+ * 部屋ごとのアラート（config.rooms）の設定UIは各部屋の詳細画面に移管したので、ここでは編集しない。
  * ただし PUT は全置き換えなので、保存時は configToRequest(config) を土台に rooms をそのまま温存し、
- * keywords と mylistThreshold だけ上書きして送る（既存の部屋見張りを消さない）。
+ * keywords と mylistThreshold だけ上書きして送る（既存の部屋アラートを消さない）。
  */
 export default function WatchSettingsPage() {
   const navigate = useNavigate()
@@ -90,7 +90,7 @@ export default function WatchSettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* 説明（見出し「見張り設定」は固定タイトルバーが表示） */}
+      {/* 説明（見出し「アラート設定」は固定タイトルバーが表示） */}
       <p className="text-sm text-muted-foreground">
         キーワードに合う新しい部屋や、マイリスト全体の変動があったとき、毎時の更新後にお知らせします。
       </p>
@@ -101,10 +101,10 @@ export default function WatchSettingsPage() {
         </div>
       ) : (
         <>
-          {/* (1) キーワードの見張り */}
+          {/* (1) キーワードのアラート */}
           <Section
             icon={<Sparkles className="h-4 w-4 text-primary" />}
-            title="キーワードの見張り"
+            title="キーワードのアラート"
             description="指定したキーワードを含む新しい部屋が見つかると通知します。追加は検索画面から行います。"
           >
             {keywords.length > 0 ? (
@@ -133,7 +133,7 @@ export default function WatchSettingsPage() {
               </ul>
             ) : (
               <EmptyHint>
-                見張っているキーワードはまだありません。検索画面の「このキーワードを見張る」から追加できます。
+                アラートを設定したキーワードはまだありません。検索画面の「このキーワードをアラート」から追加できます。
               </EmptyHint>
             )}
           </Section>

@@ -17,7 +17,7 @@ interface KeywordHitCardProps {
 }
 
 /**
- * 「新しい部屋」カード。キーワード見張りにヒットした新規部屋を表示する。
+ * 「新しい部屋」カード。キーワードアラートにヒットした新規部屋を表示する。
  * - openChatId があれば詳細ページへ遷移
  * - 未登録（openChatId=null）は詳細が無いので emid から「LINEで開く」導線だけ
  */

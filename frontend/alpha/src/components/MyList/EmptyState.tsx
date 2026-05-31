@@ -24,7 +24,7 @@ export const EmptyState = memo(() => {
           </p>
           {/* 価値訴求: なぜマイリスト（フォルダ）に入れると嬉しいのか */}
           <p className="mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
-            複数の部屋をフォルダにまとめると、成長を重ねたグラフで比較でき、増減をまとめて見張れます。
+            複数の部屋をフォルダにまとめると、成長を重ねたグラフで比較でき、増減をまとめてアラートできます。
           </p>
           <Button
             className="mt-5 gap-1.5"

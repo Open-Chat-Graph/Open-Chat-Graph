@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button'
 import { useAlertsConfig } from './useAlertsConfig'
 
 /**
- * 「このキーワードを見張る」ボタン（ラベル付き）。
- * 検索結果ヘッダに置く。現在のキーワード（＋カテゴリ）を見張り条件に追加し、
+ * 「このキーワードをアラート」ボタン（ラベル付き）。
+ * 検索結果ヘッダに置く。現在のキーワード（＋カテゴリ）をアラート条件に追加し、
  * 一致する新しい部屋が追加されたら通知タブに出るようにする。
- * idle → saving(スピナー) → done(チェック「見張り中」)。対象が変われば idle に戻る。
+ * idle → saving(スピナー) → done(チェック「アラート設定済み」)。対象が変われば idle に戻る。
  */
 export function WatchKeywordButton({ keyword, category }: { keyword: string; category: number }) {
   const { addKeyword } = useAlertsConfig()
@@ -44,7 +44,7 @@ export function WatchKeywordButton({ keyword, category }: { keyword: string; cat
       ) : (
         <Eye className="h-4 w-4" />
       )}
-      {state === 'done' ? '見張り中' : 'このキーワードを見張る'}
+      {state === 'done' ? 'アラート設定済み' : 'このキーワードをアラート'}
     </Button>
   )
 }

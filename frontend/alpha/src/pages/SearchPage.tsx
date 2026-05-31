@@ -166,8 +166,8 @@ const SearchPage = memo(() => {
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">{totalCount.toLocaleString()}</span>件
             </p>
-            {/* 見張る＝新しい部屋が出たら通知（保存条件の「再検索」とは別機能）。差を title で明示。 */}
-            <span title="この条件に合う新しい部屋が出たら通知" className="flex-shrink-0">
+            {/* アラート＝新しい部屋が出たら通知（保存条件の「再検索」とは別機能）。差を title で明示。 */}
+            <span title="この条件に合う新しい部屋が出たらアラート" className="flex-shrink-0">
               <WatchKeywordButton keyword={urlKeyword} category={category} />
             </span>
           </div>

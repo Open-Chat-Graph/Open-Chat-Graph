@@ -179,7 +179,7 @@ const DetailPage = memo(() => {
           onRemoveFromMyList={handleRemoveFromMyList}
         />
 
-        {/* 部屋の見張り: 未見張りなら開始ボタン、見張り中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
+        {/* 部屋のアラート: 未設定なら開始ボタン、設定中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
         <WatchRoomControl openChatId={basicInfo.id} />
 
         {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}

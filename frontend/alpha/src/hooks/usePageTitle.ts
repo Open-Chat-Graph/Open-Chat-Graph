@@ -57,7 +57,7 @@ function computeTitle(
   if (pathname === '/settings') return '設定'
   if (pathname === '/notifications') return '通知'
   if (pathname === '/period-growth') return '指定期間の増減ランキング'
-  if (pathname === '/watch') return '見張り設定'
+  if (pathname === '/watch') return 'アラート設定'
 
   if (pathname === '/') {
     const keyword = searchParams.get('q')

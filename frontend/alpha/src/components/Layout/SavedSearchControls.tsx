@@ -119,7 +119,7 @@ export function SavedSearchControls() {
 
   return (
     <>
-      {/* 現在の条件を保存（再検索用。通知の「見張る」とは別機能） */}
+      {/* 現在の条件を保存（再検索用。通知の「アラート」とは別機能） */}
       <Button
         variant="outline"
         size="icon"

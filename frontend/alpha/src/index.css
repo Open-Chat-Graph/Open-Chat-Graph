@@ -50,7 +50,7 @@
    * ===== オフセット契約（重ね＋位置の意図。重ね順は tailwind.config.js の zIndex を参照）=====
    * 固定ヘッダの上にコンテンツが潜らないための約束事。
    *  - --header-searchbar-h: 検索ページの固定ヘッダ（タイトル48 + 検索バー）の高さ。
-   *      検索バーは行数が増減する（カテゴリ行・見張り導線など）ので決め打ちしない。
+   *      検索バーは行数が増減する（カテゴリ行・アラート導線など）ので決め打ちしない。
    *      DashboardLayout が headerRef を ResizeObserver で実測し、この変数を上書きする。
    *      検索の keep-alive パネル（App.tsx）は top にこの変数を使う。
    *  - タイトルのみのページ（mylist/通知/設定/period-growth）のパネルは top-12（=--header-h）。

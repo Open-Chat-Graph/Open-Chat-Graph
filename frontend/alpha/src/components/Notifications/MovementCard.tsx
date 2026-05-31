@@ -15,8 +15,8 @@ interface MovementCardProps {
 }
 
 /**
- * 「見張りの動き」カード。見張り中の部屋／マイリスト全体のしきい値超え増減を表示する。
- * kind で「部屋の見張り」か「マイリスト全体」かをラベル分けする。
+ * 「増減アラート」カード。アラート中の部屋／マイリスト全体のしきい値超え増減を表示する。
+ * kind で「部屋のアラート」か「マイリスト全体」かをラベル分けする。
  */
 export const MovementCard = memo(({ movement, onOpen }: MovementCardProps) => {
   const navigate = useNavigate()
@@ -61,7 +61,7 @@ export const MovementCard = memo(({ movement, onOpen }: MovementCardProps) => {
               ) : (
                 <Eye className="h-3 w-3" />
               )}
-              {movement.kind === 'mylist' ? 'マイリスト' : '見張り'}
+              {movement.kind === 'mylist' ? 'マイリスト' : 'アラート'}
             </Badge>
             <span className="ml-auto flex-shrink-0 text-[11px] text-muted-foreground">
               {timeAgo(movement.createdAt)}

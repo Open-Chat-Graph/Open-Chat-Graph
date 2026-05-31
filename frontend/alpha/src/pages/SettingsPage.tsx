@@ -45,7 +45,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>通知</CardTitle>
           <CardDescription>
-            見張る部屋・キーワードや通知のしきい値を設定します。
+            アラートする部屋・キーワードや通知のしきい値を設定します。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -57,9 +57,9 @@ export default function SettingsPage() {
           >
             <Eye className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate font-medium">見張り設定</span>
+              <span className="block truncate font-medium">アラート設定</span>
               <span className="block truncate text-xs font-normal text-muted-foreground">
-                キーワード・部屋・マイリスト全体の見張り条件を設定
+                キーワード・部屋・マイリスト全体のアラート条件を設定
               </span>
             </span>
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />

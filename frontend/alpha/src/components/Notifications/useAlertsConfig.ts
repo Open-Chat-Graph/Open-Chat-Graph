@@ -29,10 +29,10 @@ export function configToRequest(config: AlertsConfigResponse): AlertsConfigReque
 }
 
 /**
- * 見張り条件（GET /alerts/config）を読み、保存（PUT・全置き換え）するフック。
+ * アラート条件（GET /alerts/config）を読み、保存（PUT・全置き換え）するフック。
  *
  * 保存後の最新が返るのでキャッシュへ反映する。`addKeyword` は検索バー等からの
- * 「このキーワードを見張る」導線用で、現在の設定に1件足して全置き換え保存する。
+ * 「このキーワードをアラート」導線用で、現在の設定に1件足して全置き換え保存する。
  */
 export function useAlertsConfig() {
   const { mutate } = useSWRConfig()
@@ -72,7 +72,7 @@ export function useAlertsConfig() {
   )
 
   // 詳細画面からの部屋追加（ワンタップ）。既定しきい値は ±10%。重複は足さない。
-  // 細かいしきい値は詳細画面の「見張り中」カードで調整できる。
+  // 細かいしきい値は詳細画面の「アラートON」カードで調整できる。
   const addRoom = useCallback(
     async (openChatId: number): Promise<{ added: boolean }> => {
       const current = data ?? (await alphaApi.getAlertsConfig())
@@ -88,7 +88,7 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  // 詳細画面からの見張り解除。openChatId で対象を特定して除外し全置き換え保存する。
+  // 詳細画面からのアラート解除。openChatId で対象を特定して除外し全置き換え保存する。
   const removeRoom = useCallback(
     async (openChatId: number): Promise<{ removed: boolean }> => {
       const current = data ?? (await alphaApi.getAlertsConfig())
@@ -101,7 +101,7 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  // 詳細画面の「見張り中」カードからの単一％設定。増減同値（up=down）の対称しきい値にし、
+  // 詳細画面の「アラートON」カードからの単一％設定。増減同値（up=down）の対称しきい値にし、
   // 人数しきい値はクリアする（％だけで運用する単純化）。空・非数なら保存しない。
   const setRoomPercent = useCallback(
     async (openChatId: number, raw: string): Promise<{ saved: boolean }> => {

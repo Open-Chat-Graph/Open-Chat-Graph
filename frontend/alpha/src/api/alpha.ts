@@ -68,9 +68,9 @@ export const alphaApi = {
     return res.json()
   },
 
-  // ===== 通知・見張り条件 =====
+  // ===== 通知・アラート条件 =====
 
-  // 見張り条件を取得（キーワードの見張り・部屋しきい値・マイリスト全体しきい値）
+  // アラート条件を取得（キーワードのアラート・部屋しきい値・マイリスト全体しきい値）
   async getAlertsConfig(): Promise<AlertsConfigResponse> {
     const res = await fetch(`${API_BASE}/alerts/config`)
     if (!res.ok) throw new Error('Alerts config API failed')
@@ -78,7 +78,7 @@ export const alphaApi = {
     return res.json()
   },
 
-  // 見張り条件を全置き換えで保存。レスポンスは保存後の最新（GET と同形）。
+  // アラート条件を全置き換えで保存。レスポンスは保存後の最新（GET と同形）。
   async putAlertsConfig(body: AlertsConfigRequest): Promise<AlertsConfigResponse> {
     const res = await fetch(`${API_BASE}/alerts/config`, {
       method: 'PUT',

@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Eye, Bell, Loader2 } from 'lucide-react'
+import { Eye, Bell, Loader2, BellOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { useAlertsConfig } from './useAlertsConfig'
 
 /**
- * 部屋詳細画面の「見張り」セクション。部屋ごとのしきい値をこの画面で完結させる。
+ * 部屋詳細画面の「アラート」セクション。部屋ごとのしきい値をこの画面で完結させる。
  *
- * - 未見張り: outline ボタン「この部屋を見張る」。押すと ±10% 既定で見張り開始。
- * - 見張り中: 枠付きカード。単一％入力で「±N% を超えたら通知」を設定（up=down 対称）。
- *   下部の ghost ボタンで見張りを解除。
+ * - 未設定: outline ボタン「この部屋の増減をアラート」。押すと ±10% 既定でアラート開始。
+ * - 設定中: 枠付きカード。単一％入力で「±N% を超えたら通知」を設定（up=down 対称）。
+ *   下部の ghost ボタンでアラートを解除。
  */
 export function WatchRoomControl({ openChatId }: { openChatId: number }) {
   const { config, addRoom, removeRoom, setRoomPercent } = useAlertsConfig()
+  const confirm = useConfirmDialog()
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState(false)
 
@@ -39,13 +42,21 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
 
   const onRemove = useCallback(async () => {
     if (!watched || removing) return
+    const ok = await confirm.confirm({
+      title: 'アラートを解除',
+      description: 'この部屋の増減アラートを解除しますか？解除すると通知が届かなくなります。',
+      confirmText: '解除する',
+      cancelText: 'やめる',
+      variant: 'destructive',
+    })
+    if (!ok) return
     setRemoving(true)
     try {
       await removeRoom(openChatId)
     } finally {
       setRemoving(false)
     }
-  }, [watched, removing, removeRoom, openChatId])
+  }, [watched, removing, removeRoom, openChatId, confirm])
 
   // 確定（blur / Enter）で保存。空・非数・同値なら何もしない。
   const commitPercent = useCallback(() => {
@@ -66,7 +77,7 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
           data-testid="watch-room-start"
         >
           {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
-          この部屋を見張る
+          この部屋の増減をアラート
         </Button>
       </div>
     )
@@ -76,7 +87,7 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
     <div className="max-w-[var(--content-w)] mx-auto rounded-lg border bg-card p-4" data-testid="watch-room-control">
       <div className="flex items-center gap-2 text-primary">
         <Bell className="h-4 w-4" />
-        <span className="text-sm font-semibold">見張り中</span>
+        <span className="text-sm font-semibold">アラートON</span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
@@ -102,14 +113,26 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
         type="button"
         variant="ghost"
         size="sm"
-        className="mt-2 h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+        className="mt-3 gap-1.5 text-muted-foreground hover:text-destructive"
         onClick={onRemove}
         disabled={removing}
         data-testid="watch-room-remove"
       >
-        {removing ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-        見張りを解除
+        {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
+        アラートを解除
       </Button>
+
+      <ConfirmDialog
+        open={confirm.isOpen}
+        onOpenChange={confirm.handleOpenChange}
+        title={confirm.options?.title ?? ''}
+        description={confirm.options?.description ?? ''}
+        confirmText={confirm.options?.confirmText}
+        cancelText={confirm.options?.cancelText}
+        variant={confirm.options?.variant}
+        onConfirm={confirm.handleConfirm}
+        onCancel={confirm.handleCancel}
+      />
     </div>
   )
 }

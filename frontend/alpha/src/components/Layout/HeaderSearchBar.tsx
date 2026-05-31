@@ -110,7 +110,7 @@ export function HeaderSearchBar() {
         )}
       </div>
 
-      {/* 2行目: 並び順・ソート軸・カテゴリ・見張り・保存 */}
+      {/* 2行目: 並び順・ソート軸・カテゴリ・アラート・保存 */}
       <div className="flex items-center gap-2">
         {/* 昇順/降順トグル */}
         <Button
@@ -166,7 +166,7 @@ export function HeaderSearchBar() {
           </SelectContent>
         </Select>
 
-        {/* 検索条件の保存・呼び出し（「このキーワードを見張る」は検索結果ヘッダへ移設） */}
+        {/* 検索条件の保存・呼び出し（「このキーワードをアラート」は検索結果ヘッダへ移設） */}
         <SavedSearchControls />
       </div>
     </div>

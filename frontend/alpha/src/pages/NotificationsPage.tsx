@@ -10,13 +10,13 @@ import {
 } from '@/components/Notifications'
 import type { KeywordHit, Movement } from '@/types/api'
 
-// 統合タイムラインの1アイテム。新着部屋（KeywordHit）と見張りの動き（Movement）を混在させる。
+// 統合タイムラインの1アイテム。新着部屋（KeywordHit）と増減アラート（Movement）を混在させる。
 type FeedItem =
   | { kind: 'keyword'; createdAt: number; data: KeywordHit }
   | { kind: 'movement'; createdAt: number; data: Movement }
 
 /**
- * 通知ページ。新着部屋（キーワード見張りヒット）と見張りの動き（部屋／マイリストの増減）を
+ * 通知ページ。新着部屋（キーワードアラートヒット）と増減アラート（部屋／マイリストの増減）を
  * 1本のタイムラインに時系列（createdAt 降順）で混在表示する。
  * 各アイテムは未読を強調し、開いた時点でそのアイテムを既読化する。
  */
@@ -80,8 +80,8 @@ export default function NotificationsPage() {
             size="icon"
             className="h-8 w-8"
             onClick={openWatchSettings}
-            aria-label="見張り設定"
-            title="見張り設定"
+            aria-label="アラート設定"
+            title="アラート設定"
             data-testid="open-watch-settings"
           >
             <Settings2 className="h-4 w-4" />
@@ -134,7 +134,7 @@ function FeedRow({
         ) : (
           <Activity className="h-3 w-3 text-primary" />
         )}
-        <span>{isKeyword ? '新着部屋' : '見張りの動き'}</span>
+        <span>{isKeyword ? '新着部屋' : '増減アラート'}</span>
       </div>
       {children}
     </div>
@@ -145,13 +145,13 @@ function EmptyMessage({ onSettings }: { onSettings: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <Bell className="h-10 w-10 text-muted-foreground/50" />
-      <p className="font-medium">見張り中の動きや新着部屋がここに出ます。</p>
+      <p className="font-medium">アラートの動きや新着部屋がここに出ます。</p>
       <p className="max-w-xs text-sm text-muted-foreground">
-        キーワードや部屋・マイリスト全体を見張ると、ここに時系列で出ます。
+        キーワードや部屋・マイリスト全体にアラートを設定すると、ここに時系列で出ます。
       </p>
       <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={onSettings}>
         <Settings2 className="h-4 w-4" />
-        見張り設定を開く
+        アラート設定を開く
       </Button>
     </div>
   )
