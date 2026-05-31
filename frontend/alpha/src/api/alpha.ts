@@ -141,7 +141,7 @@ export const alphaApi = {
   // ===== Labs: アクセス数 / 検索流入ランキング =====
   // どちらも GA4/GSC 由来の日次集計。creds 未投入時は data が空配列で返る（集計待ち）。
 
-  // ランキング共通のクエリ組み立て（期間/カテゴリ/並び/ページ/件数/スコープ）。
+  // ランキング共通のクエリ組み立て（期間/カテゴリ/並び/ページ/件数/スコープ/キーワード）。
   _rankingQuery(params: RankingParams): URLSearchParams {
     const query = new URLSearchParams(params.period ? periodToParams(params.period) : {})
     if (params.category) query.set('category', params.category.toString())
@@ -149,6 +149,7 @@ export const alphaApi = {
     if (params.page) query.set('page', params.page.toString())
     if (params.limit) query.set('limit', params.limit.toString())
     if (params.scope) query.set('scope', params.scope)
+    if (params.keyword) query.set('keyword', params.keyword)
     return query
   },
 

@@ -22,7 +22,7 @@ class AlphaAccessRankingRepository
      *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
-    public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0): array
+    public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0, string $keyword = ''): array
     {
         return $this->fetchRanking(
             having: 'SUM(a.pageviews) > 0',
@@ -33,6 +33,7 @@ class AlphaAccessRankingRepository
             order: $order,
             limit: $limit,
             offset: $offset,
+            keyword: $keyword,
         );
     }
 
@@ -42,7 +43,7 @@ class AlphaAccessRankingRepository
      *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
-    public function getSearchRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0): array
+    public function getSearchRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0, string $keyword = ''): array
     {
         return $this->fetchRanking(
             having: 'SUM(a.search_clicks) > 0',
@@ -53,6 +54,7 @@ class AlphaAccessRankingRepository
             order: $order,
             limit: $limit,
             offset: $offset,
+            keyword: $keyword,
         );
     }
 
@@ -65,6 +67,8 @@ class AlphaAccessRankingRepository
      *
      * 無限スクロール用に limit+1 件取って hasMore を判定し、返却は limit 件に丸める。
      *
+     * keyword が '' でないとき oc.name LIKE :kw でさらに絞り込む。
+     *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
     private function fetchRanking(
@@ -76,6 +80,7 @@ class AlphaAccessRankingRepository
         string $order,
         int $limit,
         int $offset,
+        string $keyword = '',
     ): array {
         DB::connect();
 
@@ -95,6 +100,12 @@ class AlphaAccessRankingRepository
         if ($category) {
             $categoryWhere = ' AND oc.category = :category';
             $params['category'] = $category;
+        }
+
+        $keywordWhere = '';
+        if ($keyword !== '') {
+            $keywordWhere = ' AND oc.name LIKE :kw';
+            $params['kw'] = '%' . $keyword . '%';
         }
 
         // 間接SEO（本家内SEOページ経由で到達したPV、自己参照は除く）を部屋ごとに LEFT JOIN。
@@ -149,7 +160,7 @@ class AlphaAccessRankingRepository
                 {$indirectSelect}
             FROM alpha_room_access_daily AS a
             INNER JOIN open_chat AS oc ON oc.id = a.open_chat_id{$indirectJoin}
-            WHERE a.`date` BETWEEN :fromDate AND :toDate{$categoryWhere}
+            WHERE a.`date` BETWEEN :fromDate AND :toDate{$categoryWhere}{$keywordWhere}
             GROUP BY oc.id
             HAVING {$having}
             ORDER BY {$orderColumn} {$orderSql}

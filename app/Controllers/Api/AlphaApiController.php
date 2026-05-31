@@ -550,13 +550,14 @@ class AlphaApiController
         $offset = ($page - 1) * $limit;
         // scope=pages＝「その他ページ（非オプチャ）」タブ。既定 rooms。
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
+        $keyword = mb_substr((string)Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error), 0, 100);
 
         if ($scope === 'pages') {
             $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'pageviews', $offset);
             return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
-        $r = $repo->getAccessRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset);
+        $r = $repo->getAccessRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset, $keyword);
         $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
         return response($this->rankingEnvelope($data, $r, $win, $page));
     }
@@ -644,13 +645,14 @@ class AlphaApiController
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
+        $keyword = mb_substr((string)Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error), 0, 100);
 
         if ($scope === 'pages') {
             $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'search_clicks', $offset);
             return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
-        $r = $repo->getSearchRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset);
+        $r = $repo->getSearchRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset, $keyword);
         $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
         return response($this->rankingEnvelope($data, $r, $win, $page));
     }

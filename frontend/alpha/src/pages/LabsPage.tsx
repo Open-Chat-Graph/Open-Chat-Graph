@@ -11,6 +11,7 @@ import {
   type LabsTab,
   type LabsEntity,
 } from '@/components/Labs'
+import type { LabsMetric } from '@/components/Labs/LabsControls'
 import { alphaApi } from '@/api/alpha'
 import { DEFAULT_PERIOD, periodKey, type PeriodValue } from '@/lib/period'
 import type {
@@ -63,13 +64,23 @@ const LabsPage = memo(() => {
   const navigate = useNavigate()
 
   // 状態は keep-alive パネルが保持するので、URL ではなくローカルで持つ。
-  const [tab, setTab] = useState<LabsTab>('access')
+  const [tab, setTab] = useState<LabsTab>('rooms')
   const [period, setPeriod] = useState<PeriodValue>(DEFAULT_PERIOD)
   const [category, setCategory] = useState(0)
+  // 指標（アクセス数 pv / 検索流入 seo）。rooms/pages タブで共通。
+  const [metric, setMetric] = useState<LabsMetric>('pv')
+  // キーワード絞り込み（rooms タブのみ）。
+  const [keyword, setKeyword] = useState('')
   const observerTarget = useRef<HTMLDivElement>(null!)
 
-  // タブ/期間/カテゴリが変わるたび、ページングを先頭へ戻して取り直す。
-  const filterKey = `${tab}|${periodKey(period)}|${tab === 'access' || tab === 'search' ? category : 0}`
+  // タブが変わったらキーワードをリセット。
+  const handleTabChange = useCallback((t: LabsTab) => {
+    setTab(t)
+    setKeyword('')
+  }, [])
+
+  // タブ/期間/カテゴリ/metric/keyword が変わるたびページングを先頭へ戻して取り直す。
+  const filterKey = `${tab}|${periodKey(period)}|${tab === 'rooms' ? category : 0}|${metric}|${tab === 'rooms' ? keyword : ''}`
 
   const getKey = useCallback(
     (pageIndex: number, prev: LabsPageResponse | null) => {
@@ -86,15 +97,20 @@ const LabsPage = memo(() => {
         return alphaApi.getSearchQueryRanking({ period, page, limit: PAGE_SIZE })
       }
       if (tab === 'pages') {
+        // pages タブは metric で叩くエンドポイントを切り替える。
+        if (metric === 'seo') {
+          return alphaApi.getSearchRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
+        }
         return alphaApi.getAccessRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
       }
+      // rooms タブは metric で叩くエンドポイントを切り替え、keyword も渡す。
       // メソッドを変数に取り出すと this が外れる（_rankingQuery 参照で失敗）ので必ず alphaApi 経由で呼ぶ。
-      if (tab === 'access') {
-        return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc' })
+      if (metric === 'seo') {
+        return alphaApi.getSearchRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
       }
-      return alphaApi.getSearchRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc' })
+      return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
     },
-    [tab, period, category],
+    [tab, period, category, metric, keyword],
   )
 
   const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<LabsPageResponse>(
@@ -117,7 +133,7 @@ const LabsPage = memo(() => {
 
   // 全ページのデータを結合（タブごとに型が違うので必要箇所でキャストして読む）。
   const rooms = useMemo<LabsRankingRoom[]>(() => {
-    if (tab !== 'access' && tab !== 'search') return []
+    if (tab !== 'rooms') return []
     return pages.flatMap((p) => (p as AccessRankingResponse).data)
   }, [pages, tab])
 
@@ -155,7 +171,8 @@ const LabsPage = memo(() => {
     [navigate, rooms],
   )
 
-  const primary = tab === 'search' ? 'seo' : 'pv'
+  // primary は metric から決める。
+  const primary = metric === 'seo' ? 'seo' : 'pv'
 
   // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
   const entities = useMemo<LabsEntity[]>(() => {
@@ -165,14 +182,18 @@ const LabsPage = memo(() => {
 
   return (
     <div className="space-y-4">
-      {/* 検索条件ヘッダ（タブ＋期間＋カテゴリ）。上部固定。 */}
+      {/* 検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。上部固定。 */}
       <LabsControls
         tab={tab}
         period={period}
         category={category}
-        onTabChange={setTab}
+        metric={metric}
+        keyword={keyword}
+        onTabChange={handleTabChange}
         onPeriodChange={setPeriod}
         onCategoryChange={setCategory}
+        onMetricChange={setMetric}
+        onKeywordChange={setKeyword}
       />
 
       <p className="text-[11px] leading-relaxed text-muted-foreground/80">

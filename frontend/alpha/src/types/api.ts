@@ -342,6 +342,7 @@ export interface RankingParams {
   page?: number  // 1始まり。無限スクロールでインクリメント
   limit?: number  // 1ページの件数
   scope?: 'rooms' | 'pages'  // pages＝その他ページ（非オプチャ）タブ
+  keyword?: string  // 部屋名キーワード絞り込み（rooms スコープのみ。空文字は全件）
 }
 
 // ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====
