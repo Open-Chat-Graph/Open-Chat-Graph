@@ -1,21 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import useSWR from 'swr'
-import { Trash2, Sparkles, Eye, ListChecks } from 'lucide-react'
+import { Trash2, Sparkles, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { alphaApi } from '@/api/alpha'
-import { imgPreviewUrl } from '@/lib/imageUrl'
 import { categoryName } from '@/lib/categories'
 import { loadMyList } from '@/services/storage'
 import { useAlertsConfig, configToRequest } from '@/components/Notifications/useAlertsConfig'
-import type {
-  AlertsConfigRequestKeyword,
-  AlertsConfigRequestRoom,
-  BatchStatsResponse,
-} from '@/types/api'
+import type { AlertsConfigRequestKeyword } from '@/types/api'
 
 /** number|null を入力欄文字列に。null/未設定は空。 */
 const toInput = (v: number | null | undefined): string => (v == null ? '' : String(v))
@@ -32,8 +25,11 @@ const toNum = (s: string): number | null => {
  *
  * 旧 WatchSettingsDialog をルートを持つページに作り替えたもの。戻る/進むはブラウザ標準で効く。
  * GET config で初期化したローカル状態を編集し、PUT で全置き換え保存する。
- * 3セクション: (1)キーワードの見張り (2)部屋の見張り (3)マイリスト全体の変動。
- * 部屋は openChatId だけ持つので batchStats で名前/画像/現在人数を引いて表示する。
+ * 2セクション: (1)キーワードの見張り (2)マイリスト全体の変動。
+ *
+ * 部屋ごとの見張り（config.rooms）の設定UIは各部屋の詳細画面に移管したので、ここでは編集しない。
+ * ただし PUT は全置き換えなので、保存時は configToRequest(config) を土台に rooms をそのまま温存し、
+ * keywords と mylistThreshold だけ上書きして送る（既存の部屋見張りを消さない）。
  */
 export default function WatchSettingsPage() {
   const navigate = useNavigate()
@@ -41,7 +37,6 @@ export default function WatchSettingsPage() {
 
   // ローカル編集状態（保存形→送信形に正規化したもの）
   const [keywords, setKeywords] = useState<AlertsConfigRequestKeyword[]>([])
-  const [rooms, setRooms] = useState<AlertsConfigRequestRoom[]>([])
   const [mylistEnabled, setMylistEnabled] = useState(false)
   const [mylistUp, setMylistUp] = useState('')
   const [mylistDown, setMylistDown] = useState('')
@@ -59,49 +54,26 @@ export default function WatchSettingsPage() {
     if (!config) return
     const req = configToRequest(config)
     setKeywords(req.keywords ?? [])
-    setRooms(req.rooms ?? [])
     setMylistEnabled(req.mylistThreshold?.enabled ?? false)
     setMylistUp(toInput(req.mylistThreshold?.upPercent))
     setMylistDown(toInput(req.mylistThreshold?.downPercent))
     setSaveError(false)
   }, [config])
 
-  // 見張り中の部屋の名前/画像/現在人数（バッチ取得）
-  const roomIds = useMemo(() => rooms.map((r) => r.openChatId), [rooms])
-  const { data: statsData } = useSWR<BatchStatsResponse>(
-    roomIds.length > 0 ? ['watch-rooms-batch', roomIds.join(',')] : null,
-    () => alphaApi.batchStats(roomIds),
-    { revalidateOnFocus: false, revalidateOnReconnect: false },
-  )
-  const statById = useMemo(
-    () => new Map(statsData?.data.map((s) => [s.id, s]) ?? []),
-    [statsData?.data],
-  )
-
   const removeKeyword = (idx: number) =>
     setKeywords((prev) => prev.filter((_, i) => i !== idx))
 
-  const removeRoom = (idx: number) =>
-    setRooms((prev) => prev.filter((_, i) => i !== idx))
-
-  // 部屋ごとの見張りは「増減 ±N%」の1値だけに簡素化（普通の人向け）。
-  // 上下とも同じ％にし、人数しきい値は使わない（null）。
-  const setRoomPercent = (idx: number, raw: string) =>
-    setRooms((prev) =>
-      prev.map((r, i) =>
-        i === idx
-          ? { ...r, upPercent: toNum(raw), downPercent: toNum(raw), upMember: null, downMember: null }
-          : r,
-      ),
-    )
-
   const handleSave = async () => {
+    if (!config) return
     setSaving(true)
     setSaveError(false)
     try {
+      // PUT は全置き換え。config の rooms をそのまま温存し（各部屋の詳細画面で管理）、
+      // このページで編集した keywords と mylistThreshold だけ上書きする。
+      const req = configToRequest(config)
       await save({
+        ...req,
         keywords,
-        rooms,
         mylistThreshold: {
           enabled: mylistEnabled,
           upPercent: toNum(mylistUp),
@@ -120,7 +92,7 @@ export default function WatchSettingsPage() {
     <div className="space-y-6">
       {/* 説明（見出し「見張り設定」は固定タイトルバーが表示） */}
       <p className="text-sm text-muted-foreground">
-        条件に合う部屋や変動があったとき、毎時の更新後にお知らせします。
+        キーワードに合う新しい部屋や、マイリスト全体の変動があったとき、毎時の更新後にお知らせします。
       </p>
 
       {isLoading && !config ? (
@@ -166,75 +138,7 @@ export default function WatchSettingsPage() {
             )}
           </Section>
 
-          {/* (2) 部屋の見張り */}
-          <Section
-            icon={<Eye className="h-4 w-4 text-primary" />}
-            title="部屋の見張り"
-            description="見張っている部屋で、設定した割合を超える増減があれば通知します。追加は各部屋の詳細画面から行います。"
-          >
-            {rooms.length > 0 ? (
-              <ul className="space-y-3">
-                {rooms.map((r, i) => {
-                  const s = statById.get(r.openChatId)
-                  const thumb = imgPreviewUrl(s?.img) || undefined
-                  return (
-                    <li key={r.openChatId} className="rounded-lg border bg-card p-3">
-                      <div className="flex items-center gap-3">
-                        {thumb ? (
-                          <img
-                            src={thumb}
-                            alt=""
-                            className="h-10 w-10 flex-shrink-0 rounded-md object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <span className="h-10 w-10 flex-shrink-0 rounded-md bg-muted" aria-hidden />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {s?.name ?? `部屋 #${r.openChatId}`}
-                          </p>
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            {s ? `${s.member.toLocaleString('ja-JP')}人` : '読み込み中…'}
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 flex-shrink-0"
-                          onClick={() => removeRoom(i)}
-                          aria-label="この見張りを削除"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3 text-sm text-muted-foreground">
-                        <span>増減が ±</span>
-                        <Input
-                          type="number"
-                          min={1}
-                          inputMode="numeric"
-                          value={toInput(r.upPercent ?? r.downPercent)}
-                          onChange={(e) => setRoomPercent(i, e.target.value)}
-                          className="h-10 w-20"
-                          aria-label="通知する増減の割合（％）"
-                        />
-                        <span>% を超えたら通知</span>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            ) : (
-              <EmptyHint>
-                見張っている部屋はまだありません。各部屋の詳細画面の「この部屋を見張る」から追加できます。
-              </EmptyHint>
-            )}
-          </Section>
-
-          {/* (3) マイリスト全体の変動 */}
+          {/* (2) マイリスト全体の変動 */}
           <Section
             icon={<ListChecks className="h-4 w-4 text-primary" />}
             title="マイリスト全体の変動"

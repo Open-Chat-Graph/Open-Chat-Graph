@@ -179,7 +179,7 @@ class AlphaInsightsService
                     'delta' => (int)$delta,
                     'fromDate' => $mv['oldest_date'] ?? null,
                     'toDate' => $mv['latest_date'] ?? null,
-                    'text' => "総合ランキングが直近30日で{$oldest}→{$latest}位に{$dir}",
+                    'text' => "公式ランキング（全体）が直近30日で{$oldest}→{$latest}位に{$dir}",
                 ];
             }
         }
@@ -191,7 +191,7 @@ class AlphaInsightsService
                 'category' => 0,
                 'bestPosition' => (int)$best,
                 'currentPosition' => (int)$latest,
-                'text' => "総合ランキングでの直近30日の最高は{$best}位",
+                'text' => "公式ランキング（全体）での直近30日の最高は{$best}位",
             ];
         }
     }
@@ -222,7 +222,7 @@ class AlphaInsightsService
                 'rank' => $rank,
                 'total' => $total,
                 'percentile' => $this->roundPct($pct),
-                'text' => "同カテゴリで{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
+                'text' => "同カテゴリのメンバー数で{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
             ];
         }
 

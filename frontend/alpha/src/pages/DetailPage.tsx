@@ -5,6 +5,7 @@ import { History, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, InsightsBlock, RankingHistoryOverlay } from '@/components/Detail'
+import { WatchRoomControl } from '@/components/Notifications'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
 import { useTheme } from '@/providers/theme-provider'
@@ -172,12 +173,14 @@ const DetailPage = memo(() => {
         />
 
         <DetailActions
-          openChatId={basicInfo.id}
           url={basicInfo.url}
           isInList={isInList}
           onAddToMyList={handleAddToMyList}
           onRemoveFromMyList={handleRemoveFromMyList}
         />
+
+        {/* 部屋の見張り: 未見張りなら開始ボタン、見張り中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
+        <WatchRoomControl openChatId={basicInfo.id} />
 
         {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
         <InsightsBlock openChatId={basicInfo.id} />

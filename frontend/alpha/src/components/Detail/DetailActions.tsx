@@ -1,17 +1,15 @@
 import { memo } from 'react'
 import { ExternalLink, Check, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { WatchRoomButton } from '@/components/Notifications'
 
 interface DetailActionsProps {
-  openChatId: number
   url?: string
   isInList: boolean
   onAddToMyList: () => void
   onRemoveFromMyList: () => void
 }
 
-export const DetailActions = memo(({ openChatId, url, isInList, onAddToMyList, onRemoveFromMyList }: DetailActionsProps) => {
+export const DetailActions = memo(({ url, isInList, onAddToMyList, onRemoveFromMyList }: DetailActionsProps) => {
   return (
     <div className="max-w-[var(--content-w)] mx-auto flex justify-center gap-3 flex-wrap pb-4">
       {url && (
@@ -49,8 +47,6 @@ export const DetailActions = memo(({ openChatId, url, isInList, onAddToMyList, o
           マイリストに追加
         </Button>
       )}
-      {/* この部屋を見張る（通知の見張り条件に追加。詳細＝部屋の見張りの追加導線） */}
-      <WatchRoomButton openChatId={openChatId} />
     </div>
   )
 })

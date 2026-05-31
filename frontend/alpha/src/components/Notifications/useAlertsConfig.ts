@@ -72,7 +72,7 @@ export function useAlertsConfig() {
   )
 
   // 詳細画面からの部屋追加（ワンタップ）。既定しきい値は ±10%。重複は足さない。
-  // 細かいしきい値は通知タブの「見張り設定」で調整できる。
+  // 細かいしきい値は詳細画面の「見張り中」カードで調整できる。
   const addRoom = useCallback(
     async (openChatId: number): Promise<{ added: boolean }> => {
       const current = data ?? (await alphaApi.getAlertsConfig())
@@ -88,5 +88,38 @@ export function useAlertsConfig() {
     [data, save],
   )
 
-  return { config: data, isLoading, error, save, addKeyword, addRoom }
+  // 詳細画面からの見張り解除。openChatId で対象を特定して除外し全置き換え保存する。
+  const removeRoom = useCallback(
+    async (openChatId: number): Promise<{ removed: boolean }> => {
+      const current = data ?? (await alphaApi.getAlertsConfig())
+      if (!current.rooms.some((r) => r.open_chat_id === openChatId)) return { removed: false }
+      const req = configToRequest(current)
+      req.rooms = (req.rooms ?? []).filter((r) => r.openChatId !== openChatId)
+      await save(req)
+      return { removed: true }
+    },
+    [data, save],
+  )
+
+  // 詳細画面の「見張り中」カードからの単一％設定。増減同値（up=down）の対称しきい値にし、
+  // 人数しきい値はクリアする（％だけで運用する単純化）。空・非数なら保存しない。
+  const setRoomPercent = useCallback(
+    async (openChatId: number, raw: string): Promise<{ saved: boolean }> => {
+      const current = data ?? (await alphaApi.getAlertsConfig())
+      if (!current.rooms.some((r) => r.open_chat_id === openChatId)) return { saved: false }
+      const n = Number(raw)
+      if (raw.trim() === '' || !Number.isFinite(n) || n <= 0) return { saved: false }
+      const req = configToRequest(current)
+      req.rooms = (req.rooms ?? []).map((r) =>
+        r.openChatId === openChatId
+          ? { ...r, upPercent: n, downPercent: n, upMember: null, downMember: null }
+          : r,
+      )
+      await save(req)
+      return { saved: true }
+    },
+    [data, save],
+  )
+
+  return { config: data, isLoading, error, save, addKeyword, addRoom, removeRoom, setRoomPercent }
 }
