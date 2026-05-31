@@ -95,10 +95,10 @@ export const alphaApi = {
     return res.json()
   },
 
-  // サイト全体の検索クエリ別流入ランキング（GSC 由来）。
+  // サイト全体の検索クエリ別流入ランキング（GSC 由来）。無限スクロール（page）対応。
   async getSearchQueryRanking(params: SearchQueryRankingParams = {}): Promise<SearchQueryRankingResponse> {
-    const query = new URLSearchParams()
-    if (params.days !== undefined) query.set('days', params.days.toString())
+    const query = new URLSearchParams(params.period ? periodToParams(params.period) : {})
+    if (params.page) query.set('page', params.page.toString())
     if (params.limit) query.set('limit', params.limit.toString())
 
     const res = await fetch(`${API_BASE}/search-query-ranking?${query}`)
@@ -141,31 +141,28 @@ export const alphaApi = {
   // ===== Labs: アクセス数 / 検索流入ランキング =====
   // どちらも GA4/GSC 由来の日次集計。creds 未投入時は data が空配列で返る（集計待ち）。
 
-  // アクセス数（ページビュー）ランキング
-  async getAccessRanking(params: RankingParams = {}): Promise<AccessRankingResponse> {
-    const query = new URLSearchParams()
+  // ランキング共通のクエリ組み立て（期間/カテゴリ/並び/ページ/件数/スコープ）。
+  _rankingQuery(params: RankingParams): URLSearchParams {
+    const query = new URLSearchParams(params.period ? periodToParams(params.period) : {})
     if (params.category) query.set('category', params.category.toString())
-    if (params.days !== undefined) query.set('days', params.days.toString())
     if (params.order) query.set('order', params.order)
+    if (params.page) query.set('page', params.page.toString())
     if (params.limit) query.set('limit', params.limit.toString())
+    if (params.scope) query.set('scope', params.scope)
+    return query
+  },
 
-    const res = await fetch(`${API_BASE}/access-ranking?${query}`)
+  // アクセス数（ページビュー）ランキング。scope=pages で「その他ページ（非オプチャ）」。
+  async getAccessRanking(params: RankingParams = {}): Promise<AccessRankingResponse> {
+    const res = await fetch(`${API_BASE}/access-ranking?${this._rankingQuery(params)}`)
     if (!res.ok) throw new Error('Access ranking API failed')
-
     return res.json()
   },
 
-  // 検索流入（クリック数・表示回数・平均順位）ランキング
+  // 検索流入（直接/間接SEO・入室数）ランキング。scope=pages で非オプチャページ。
   async getSearchRanking(params: RankingParams = {}): Promise<SearchRankingResponse> {
-    const query = new URLSearchParams()
-    if (params.category) query.set('category', params.category.toString())
-    if (params.days !== undefined) query.set('days', params.days.toString())
-    if (params.order) query.set('order', params.order)
-    if (params.limit) query.set('limit', params.limit.toString())
-
-    const res = await fetch(`${API_BASE}/search-ranking?${query}`)
+    const res = await fetch(`${API_BASE}/search-ranking?${this._rankingQuery(params)}`)
     if (!res.ok) throw new Error('Search ranking API failed')
-
     return res.json()
   },
 }

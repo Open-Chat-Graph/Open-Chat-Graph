@@ -1,31 +1,31 @@
-import { memo, useCallback, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import useSWR from 'swr'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import useSWRInfinite from 'swr/infinite'
 import { FlaskConical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { InfiniteScrollLoader } from '@/components/OpenChat'
 import {
   LabsControls,
   LabsRankingCard,
   LabsQuerySection,
-  type LabsMode,
+  type LabsTab,
   type LabsEntity,
 } from '@/components/Labs'
 import { alphaApi } from '@/api/alpha'
+import { DEFAULT_PERIOD, periodKey, type PeriodValue } from '@/lib/period'
 import type {
   AccessRankingResponse,
-  AccessRankingRoom,
-  SearchRankingResponse,
-  SearchRankingRoom,
+  PageRankingResponse,
   SearchQueryRankingResponse,
+  LabsRankingRoom,
+  SearchQueryRankingItem,
   OpenChat,
 } from '@/types/api'
 
-const DEFAULT_LIMIT = 20
-const DEFAULT_DAYS = 30
-// 表示件数は選択式（10/20/50）。想定外の値は既定へ丸める。
-const ALLOWED_LIMITS = [10, 20, 50]
+const PAGE_SIZE = 30
 
-type LabsRoom = AccessRankingRoom | SearchRankingRoom
+// 任意のタブのページ応答（無限スクロールの1ページ分）。
+type LabsPageResponse = AccessRankingResponse | PageRankingResponse | SearchQueryRankingResponse
 
 // "2024-05-30 12:00:00" → "2024/05/30 12:00"
 const formatUpdatedAt = (raw?: string | null): string => {
@@ -36,9 +36,8 @@ const formatUpdatedAt = (raw?: string | null): string => {
   return d ? `${d[1]}/${d[2]}/${d[3]}` : String(raw)
 }
 
-// ランキングの1部屋を DetailPage が期待する OpenChat 形へ写像（即時表示用の初期データ）。
-// アクセス/検索の指標は OpenChat に対応フィールドが無いため持ち越さない（詳細側で再取得される）。
-const toOpenChat = (room: LabsRoom): OpenChat => ({
+// 部屋ランキングの1行を DetailPage が期待する OpenChat 形へ写像（即時表示用）。
+const toOpenChat = (room: LabsRankingRoom): OpenChat => ({
   id: room.id,
   name: room.name,
   desc: room.desc,
@@ -62,105 +61,123 @@ const toOpenChat = (room: LabsRoom): OpenChat => ({
 
 const LabsPage = memo(() => {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
 
-  const mode: LabsMode = searchParams.get('mode') === 'search' ? 'search' : 'access'
-  const days = Number(searchParams.get('days')) || DEFAULT_DAYS
-  const limitParam = Number(searchParams.get('limit'))
-  const limit = ALLOWED_LIMITS.includes(limitParam) ? limitParam : DEFAULT_LIMIT
+  // 状態は keep-alive パネルが保持するので、URL ではなくローカルで持つ。
+  const [tab, setTab] = useState<LabsTab>('access')
+  const [period, setPeriod] = useState<PeriodValue>(DEFAULT_PERIOD)
+  const [category, setCategory] = useState(0)
+  const observerTarget = useRef<HTMLDivElement>(null!)
 
-  const { data, error, isLoading } = useSWR<AccessRankingResponse | SearchRankingResponse>(
-    ['labs-ranking', mode, days, limit],
-    () =>
-      mode === 'access'
-        ? alphaApi.getAccessRanking({ days, order: 'desc', limit })
-        : alphaApi.getSearchRanking({ days, order: 'desc', limit }),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-      keepPreviousData: true,
-    }
-  )
+  // タブ/期間/カテゴリが変わるたび、ページングを先頭へ戻して取り直す。
+  const filterKey = `${tab}|${periodKey(period)}|${tab === 'access' || tab === 'search' ? category : 0}`
 
-  // 検索流入モードのときだけ、サイト全体の検索キーワード（流入クエリ）も取得する。
-  const { data: queryData } = useSWR<SearchQueryRankingResponse>(
-    mode === 'search' ? ['labs-query-ranking', days, limit] : null,
-    () => alphaApi.getSearchQueryRanking({ days, limit }),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-      keepPreviousData: true,
-    }
-  )
-
-  const rooms = useMemo<LabsRoom[]>(() => data?.data ?? [], [data])
-  const pages = useMemo(() => data?.pages ?? [], [data])
-  const queries = useMemo(() => queryData?.data ?? [], [queryData])
-
-  // 部屋とページ全体を1つの並びに統合し、アクティブ指標（access=純PV / search=検索クリック）で降順ソート。
-  // ソート値はエンティティ構築時に mode を見て安全に取り出す（room の型は mode と一致する）。
-  const entities = useMemo<(LabsEntity & { sortValue: number })[]>(() => {
-    const list: (LabsEntity & { sortValue: number })[] = []
-    for (const room of rooms) {
-      const sortValue =
-        mode === 'access'
-          ? (room as AccessRankingRoom).pageviews
-          : (room as SearchRankingRoom).searchClicks
-      list.push({ kind: 'room', room, sortValue })
-    }
-    for (const page of pages) {
-      const sortValue = mode === 'access' ? page.pageviews : page.searchClicks
-      list.push({ kind: 'page', page, sortValue })
-    }
-    list.sort((a, b) => b.sortValue - a.sortValue)
-    return list
-  }, [rooms, pages, mode])
-
-  const setParam = useCallback(
-    (next: Partial<{ mode: LabsMode; days: number; limit: number }>) => {
-      const params = new URLSearchParams(searchParams)
-      if (next.mode !== undefined) params.set('mode', next.mode)
-      if (next.days !== undefined) params.set('days', String(next.days))
-      if (next.limit !== undefined) params.set('limit', String(next.limit))
-      setSearchParams(params, { replace: true })
+  const getKey = useCallback(
+    (pageIndex: number, prev: LabsPageResponse | null) => {
+      if (prev && !prev.hasMore) return null
+      return ['labs', filterKey, pageIndex] as const
     },
-    [searchParams, setSearchParams]
+    [filterKey],
   )
+
+  const fetcher = useCallback(
+    async ([, , pageIndex]: readonly [string, string, number]): Promise<LabsPageResponse> => {
+      const page = pageIndex + 1
+      if (tab === 'keywords') {
+        return alphaApi.getSearchQueryRanking({ period, page, limit: PAGE_SIZE })
+      }
+      if (tab === 'pages') {
+        return alphaApi.getAccessRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
+      }
+      // メソッドを変数に取り出すと this が外れる（_rankingQuery 参照で失敗）ので必ず alphaApi 経由で呼ぶ。
+      if (tab === 'access') {
+        return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc' })
+      }
+      return alphaApi.getSearchRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc' })
+    },
+    [tab, period, category],
+  )
+
+  const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<LabsPageResponse>(
+    getKey,
+    fetcher,
+    { revalidateFirstPage: false, revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 },
+  )
+
+  // フィルタが変わったら先頭ページへ。
+  useEffect(() => {
+    setSize(1)
+  }, [filterKey, setSize])
+
+  const pages = useMemo(() => data ?? [], [data])
+  const lastPage = pages[pages.length - 1]
+  const hasMore = lastPage?.hasMore ?? false
+  const updatedAt = pages[0]?.updatedAt ?? null
+  const isLoadingMore = isValidating && size > 1
+  const isEmpty = !isLoading && pages.length > 0 && (pages[0]?.data.length ?? 0) === 0
+
+  // 全ページのデータを結合（タブごとに型が違うので必要箇所でキャストして読む）。
+  const rooms = useMemo<LabsRankingRoom[]>(() => {
+    if (tab !== 'access' && tab !== 'search') return []
+    return pages.flatMap((p) => (p as AccessRankingResponse).data)
+  }, [pages, tab])
+
+  const pageRows = useMemo(() => {
+    if (tab !== 'pages') return []
+    return pages.flatMap((p) => (p as PageRankingResponse).data)
+  }, [pages, tab])
+
+  const queries = useMemo<SearchQueryRankingItem[]>(() => {
+    if (tab !== 'keywords') return []
+    return pages.flatMap((p) => (p as SearchQueryRankingResponse).data)
+  }, [pages, tab])
+
+  // 無限スクロール
+  useEffect(() => {
+    const el = observerTarget.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isValidating) {
+          setSize((s) => s + 1)
+        }
+      },
+      { threshold: 0.1 },
+    )
+    observer.observe(el)
+    return () => observer.unobserve(el)
+  }, [hasMore, isValidating, setSize])
 
   const handleCardClick = useCallback(
     (id: number) => {
       const room = rooms.find((r) => r.id === id)
-      navigate(`/openchat/${id}`, {
-        state: room ? { initialData: toOpenChat(room) } : undefined,
-      })
+      navigate(`/openchat/${id}`, { state: room ? { initialData: toOpenChat(room) } : undefined })
     },
-    [navigate, rooms]
+    [navigate, rooms],
   )
 
-  const updatedAt = data?.updatedAt ?? null
+  const primary = tab === 'search' ? 'seo' : 'pv'
+
+  // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
+  const entities = useMemo<LabsEntity[]>(() => {
+    if (tab === 'pages') return pageRows.map((page) => ({ kind: 'page', page }))
+    return rooms.map((room) => ({ kind: 'room', room }))
+  }, [tab, rooms, pageRows])
 
   return (
     <div className="space-y-4">
-      {/* 見出し＋戻るは固定タイトルバー（DashboardLayout）が担うので、ここでは説明のみ。 */}
-      <p className="text-sm text-muted-foreground">
-        本家ページ（openchat-review.me）への Google
-        からの流入を、Google アナリティクスで分析した指標です。
-      </p>
-
+      {/* 検索条件ヘッダ（タブ＋期間＋カテゴリ）。上部固定。 */}
       <LabsControls
-        mode={mode}
-        days={days}
-        limit={limit}
-        onModeChange={(m) => setParam({ mode: m })}
-        onDaysChange={(d) => setParam({ days: d })}
-        onLimitChange={(l) => setParam({ limit: l })}
+        tab={tab}
+        period={period}
+        category={category}
+        onTabChange={setTab}
+        onPeriodChange={setPeriod}
+        onCategoryChange={setCategory}
       />
 
-      {/* 指標の読み方（純PV と ユニークユーザーの違い）を一度だけ明示する。 */}
       <p className="text-[11px] leading-relaxed text-muted-foreground/80">
-        純PV＝ページ閲覧数（同じ人の連続表示も加算）／ ユニークユーザー＝その期間の実訪問者数
+        本家ページ（openchat-review.me）への Google からの流入を GA/GSC で分析。
+        SEO流入＝合計（直接＝Google→該当ページ ＋ 間接＝本家内SEOページ経由の回遊）。入室数＝参加リンク押下。
       </p>
 
       {error && (
@@ -171,54 +188,51 @@ const LabsPage = memo(() => {
         </Card>
       )}
 
-      {!error && isLoading && !data && (
+      {!error && isLoading && pages.length === 0 && (
         <div className="flex justify-center py-8">
           <div className="text-muted-foreground">読み込み中...</div>
         </div>
       )}
 
-      {!error && data && (
+      {!error && isEmpty && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FlaskConical className="mx-auto h-12 w-12 text-muted-foreground/40" />
+            <p className="mt-4 text-sm text-muted-foreground">
+              該当データがありません（集計待ち or 条件に一致なし）
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/80">
+              GA連携後に日次で集計されます。期間やカテゴリを広げてみてください。
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!error && !isEmpty && (
         <>
-          {rooms.length === 0 ? (
-            // creds 投入前は空配列が返る。集計待ちを丁寧に案内する。
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FlaskConical className="mx-auto h-12 w-12 text-muted-foreground/40" />
-                <p className="mt-4 text-sm text-muted-foreground">
-                  集計待ち（GA連携の設定後に表示されます）
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground/80">
-                  GA連携後に集計されます。集計は日次で更新されます。
-                </p>
-              </CardContent>
-            </Card>
+          {tab === 'keywords' ? (
+            <LabsQuerySection queries={queries} />
           ) : (
-            <div className="space-y-5">
-              {/* 部屋とページ全体（トップ/おすすめ等）を同じ並びに統合し、指標で通し順に表示。 */}
-              <section className="space-y-2" data-testid="labs-rooms-section">
-                <div className="grid gap-2 md:gap-3">
-                  {entities.map((entity, index) => (
-                    <LabsRankingCard
-                      key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
-                      entity={entity}
-                      rank={index + 1}
-                      mode={mode}
-                      onRoomClick={handleCardClick}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              {/* 検索流入モードのときだけ、流入キーワードの一覧を添える。 */}
-              {mode === 'search' && <LabsQuerySection queries={queries} />}
-
-              {/* 集計の最終更新は控えめに足元へ */}
-              {updatedAt && (
-                <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">
-                  最終更新 {formatUpdatedAt(updatedAt)}
-                </p>
-              )}
+            <div className="grid gap-2 md:gap-3">
+              {entities.map((entity, index) => (
+                <LabsRankingCard
+                  key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
+                  entity={entity}
+                  rank={index + 1}
+                  primary={primary}
+                  onRoomClick={handleCardClick}
+                />
+              ))}
             </div>
+          )}
+
+          {/* 無限スクロールの番兵＋ローディング */}
+          <InfiniteScrollLoader isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+
+          {updatedAt && (
+            <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">
+              最終更新 {formatUpdatedAt(updatedAt)}
+            </p>
           )}
         </>
       )}

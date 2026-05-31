@@ -1,103 +1,99 @@
 import { memo } from 'react'
-import { Eye, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Eye, Search, Tag, FileText, type LucideIcon } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { PeriodRangePicker } from '@/components/ui/period-range-picker'
+import { CATEGORIES } from '@/lib/categories'
+import { cn } from '@/lib/utils'
+import type { PeriodValue } from '@/lib/period'
 
-// Labs の2つのランキング。アクセス=PV、検索流入=GSC由来。
-export type LabsMode = 'access' | 'search'
+// Labs の4タブ。アクセス/検索流入/検索KW＋その他ページ(非オプチャ)。
+export type LabsTab = 'access' | 'search' | 'keywords' | 'pages'
 
-interface LabsControlsProps {
-  mode: LabsMode
-  days: number
-  limit: number
-  onModeChange: (mode: LabsMode) => void
-  onDaysChange: (days: number) => void
-  onLimitChange: (limit: number) => void
+export const LABS_TABS: { value: LabsTab; label: string; icon: LucideIcon }[] = [
+  { value: 'access', label: 'アクセス', icon: Eye },
+  { value: 'search', label: '検索流入', icon: Search },
+  { value: 'keywords', label: '検索KW', icon: Tag },
+  { value: 'pages', label: 'その他ページ', icon: FileText },
+]
+
+// カテゴリ指定は部屋ランキング（access/search）のみ。KW/ページはサイト全体。
+const TAB_HAS_CATEGORY: Record<LabsTab, boolean> = {
+  access: true,
+  search: true,
+  keywords: false,
+  pages: false,
 }
 
-// 期間プリセット（日数）。本家データの日次集計に合わせ 7/30/90 日のみ。
-const DAY_PRESETS: { value: number; label: string }[] = [
-  { value: 7, label: '7日' },
-  { value: 30, label: '30日' },
-  { value: 90, label: '90日' },
-]
+interface LabsControlsProps {
+  tab: LabsTab
+  period: PeriodValue
+  category: number
+  onTabChange: (tab: LabsTab) => void
+  onPeriodChange: (period: PeriodValue) => void
+  onCategoryChange: (category: number) => void
+}
 
-// 表示件数プリセット。API の limit は min=1 だが UI では分析に十分な刻みだけ出す。
-const LIMIT_PRESETS: { value: number; label: string }[] = [
-  { value: 10, label: '10件' },
-  { value: 20, label: '20件' },
-  { value: 50, label: '50件' },
-]
-
-const MODES: { value: LabsMode; label: string; icon: typeof Eye }[] = [
-  { value: 'access', label: 'アクセス数', icon: Eye },
-  { value: 'search', label: '検索流入', icon: Search },
-]
-
+/**
+ * Labs の検索条件ヘッダ（タブ＋期間＋カテゴリ）。通常検索と同様に上部固定（sticky）。
+ * 重ね順は z-subheader。期間は既定30日＋カレンダー＋全期間（PeriodRangePicker）。
+ */
 export const LabsControls = memo(
-  ({ mode, days, limit, onModeChange, onDaysChange, onLimitChange }: LabsControlsProps) => {
+  ({ tab, period, category, onTabChange, onPeriodChange, onCategoryChange }: LabsControlsProps) => {
     return (
-      <div className="space-y-3 rounded-lg border bg-card p-3 md:p-4">
-        {/* モード切替（PeriodGrowthControls のチップ作法に倣う） */}
-        <div className="flex gap-1.5">
-          {MODES.map((m) => {
-            const Icon = m.icon
-            const active = mode === m.value
+      <div className="sticky top-0 z-subheader -mx-3 border-b bg-background/95 px-3 py-2 backdrop-blur md:-mx-6 md:px-6">
+        {/* タブ（横スクロール可。4つ） */}
+        <div className="flex gap-1 overflow-x-auto pb-0.5">
+          {LABS_TABS.map((t) => {
+            const Icon = t.icon
+            const active = tab === t.value
             return (
-              <Button
-                key={m.value}
+              <button
+                key={t.value}
                 type="button"
-                size="sm"
-                variant={active ? 'default' : 'outline'}
-                className="h-9 flex-1 gap-1.5"
-                onClick={() => onModeChange(m.value)}
+                onClick={() => onTabChange(t.value)}
                 aria-pressed={active}
-                data-testid={`labs-mode-${m.value}`}
+                data-testid={`labs-tab-${t.value}`}
+                className={cn(
+                  'flex flex-shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                )}
               >
-                <Icon className="h-4 w-4" />
-                {m.label}
-              </Button>
+                <Icon className="h-3.5 w-3.5" />
+                {t.label}
+              </button>
             )
           })}
         </div>
 
-        {/* 期間プリセット */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">期間</span>
-          {DAY_PRESETS.map((p) => (
-            <Button
-              key={p.value}
-              type="button"
-              size="sm"
-              variant={days === p.value ? 'default' : 'outline'}
-              className="h-8 px-3"
-              onClick={() => onDaysChange(p.value)}
-              data-testid={`labs-days-${p.value}`}
-            >
-              {p.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* 表示件数プリセット */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-xs text-muted-foreground">表示</span>
-          {LIMIT_PRESETS.map((p) => (
-            <Button
-              key={p.value}
-              type="button"
-              size="sm"
-              variant={limit === p.value ? 'default' : 'outline'}
-              className="h-8 px-3"
-              onClick={() => onLimitChange(p.value)}
-              data-testid={`labs-limit-${p.value}`}
-            >
-              {p.label}
-            </Button>
-          ))}
+        {/* 期間＋カテゴリ */}
+        <div className="mt-2 flex items-center gap-2">
+          <PeriodRangePicker value={period} onChange={onPeriodChange} />
+          {TAB_HAS_CATEGORY[tab] && (
+            <Select value={String(category)} onValueChange={(v) => onCategoryChange(Number(v))}>
+              <SelectTrigger className="h-7 flex-1 text-xs" data-testid="labs-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
     )
-  }
+  },
 )
 
 LabsControls.displayName = 'LabsControls'

@@ -543,30 +543,82 @@ class AlphaApiController
             regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
             e: $error
         );
-        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
-        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $win = $this->resolveRankingWindow($repo, $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
+        $offset = ($page - 1) * $limit;
+        // scope=pages＝「その他ページ（非オプチャ）」タブ。既定 rooms。
+        $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
 
-        $result = $repo->getAccessRanking($category, (int)$days, $order, (int)$limit);
-
-        $data = [];
-        foreach ($result['data'] as $item) {
-            $data[] = $this->formatRankingRoom($item) + [
-                'pageviews' => (int)($item['pageviews'] ?? 0),
-                'activeUsers' => (int)($item['active_users'] ?? 0),
-            ];
+        if ($scope === 'pages') {
+            $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'pageviews', $offset);
+            return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
-        // トップ/おすすめページも含めた上位（rooms とは別枠）
-        $pages = $repo->getPageScopeRanking((int)$days, $order, (int)$limit, 'pageviews');
+        $r = $repo->getAccessRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset);
+        $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
+        return response($this->rankingEnvelope($data, $r, $win, $page));
+    }
 
-        return response([
+    /**
+     * Labs ランキングの期間ウィンドウを request から解決する（days / start・end / all）。
+     *
+     * @param class-string<\Throwable> $error
+     * @return array{fromDate:string, toDate:string, days:int}
+     */
+    private function resolveRankingWindow(AlphaAccessRankingRepository $repo, string $error): array
+    {
+        $days = (int)Validator::num(Reception::input('days', 30), min: 1, max: 3650, e: $error);
+        $start = trim((string)Reception::input('start', ''));
+        $end = trim((string)Reception::input('end', ''));
+        $all = (string)Reception::input('all', '') === '1';
+        return $repo->resolveWindow($start, $end, $days, $all);
+    }
+
+    /**
+     * ランキング応答の共通封筒。
+     *
+     * @param array<int, mixed> $data
+     * @param array{baseDate:?string, updatedAt:?string, hasMore:bool} $r
+     * @param array{fromDate:string, toDate:string, days:int} $win
+     * @return array<string, mixed>
+     */
+    private function rankingEnvelope(array $data, array $r, array $win, int $page): array
+    {
+        return [
             'data' => $data,
-            'pages' => $pages,
-            'days' => $result['days'],
-            'baseDate' => $result['baseDate'],
-            'updatedAt' => $result['updatedAt'],
-        ]);
+            'page' => $page,
+            'hasMore' => $r['hasMore'],
+            'days' => $win['days'],
+            'fromDate' => $win['fromDate'],
+            'toDate' => $win['toDate'],
+            'baseDate' => $r['baseDate'],
+            'updatedAt' => $r['updatedAt'],
+        ];
+    }
+
+    /**
+     * ランキング1行を表示用に整形し、全指標（合計・うちSEO経由・間接SEO・入室数）を付ける。
+     *
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    private function formatRankingRoomFull(array $item): array
+    {
+        $position = isset($item['search_position']) && $item['search_position'] !== null
+            ? round((float)$item['search_position'], 2)
+            : null;
+        return $this->formatRankingRoom($item) + [
+            'pageviews' => (int)($item['pageviews'] ?? 0),
+            'activeUsers' => (int)($item['active_users'] ?? 0),
+            'searchClicks' => (int)($item['search_clicks'] ?? 0),
+            'searchImpressions' => (int)($item['search_impressions'] ?? 0),
+            'searchPosition' => $position,
+            'seoIndirect' => (int)($item['indirect_seo'] ?? 0),
+            'jumpClicks' => (int)($item['jump_clicks'] ?? 0),
+            'jumpClicksOrganic' => (int)($item['jump_clicks_organic'] ?? 0),
+        ];
     }
 
     /**
@@ -586,35 +638,21 @@ class AlphaApiController
             regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
             e: $error
         );
-        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
-        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $win = $this->resolveRankingWindow($repo, $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
+        $offset = ($page - 1) * $limit;
+        $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
 
-        $result = $repo->getSearchRanking($category, (int)$days, $order, (int)$limit);
-
-        $data = [];
-        foreach ($result['data'] as $item) {
-            $position = isset($item['search_position']) && $item['search_position'] !== null
-                ? round((float)$item['search_position'], 2)
-                : null;
-            $data[] = $this->formatRankingRoom($item) + [
-                'searchClicks' => (int)($item['search_clicks'] ?? 0),
-                'searchImpressions' => (int)($item['search_impressions'] ?? 0),
-                'searchPosition' => $position,
-                'activeUsers' => (int)($item['active_users'] ?? 0),
-            ];
+        if ($scope === 'pages') {
+            $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'search_clicks', $offset);
+            return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
-        // トップ/おすすめページも含めた上位（rooms とは別枠。検索クリック順）
-        $pages = $repo->getPageScopeRanking((int)$days, $order, (int)$limit, 'search_clicks');
-
-        return response([
-            'data' => $data,
-            'pages' => $pages,
-            'days' => $result['days'],
-            'baseDate' => $result['baseDate'],
-            'updatedAt' => $result['updatedAt'],
-        ]);
+        $r = $repo->getSearchRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset);
+        $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
+        return response($this->rankingEnvelope($data, $r, $win, $page));
     }
 
     /**
@@ -628,15 +666,21 @@ class AlphaApiController
         $error = BadRequestException::class;
         Reception::$isJson = true;
 
-        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
-        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $win = $this->resolveRankingWindow($repo, $error);
+        $limit = (int)Validator::num(Reception::input('limit', 30), min: 1, max: 100, e: $error);
+        $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
+        $offset = ($page - 1) * $limit;
 
-        $result = $repo->getSearchQueryRanking((int)$days, (int)$limit);
+        $r = $repo->getSearchQueryRanking($win['fromDate'], $win['toDate'], $limit, $offset);
 
         return response([
-            'data' => $result['data'],
-            'days' => $result['days'],
-            'updatedAt' => $result['updatedAt'],
+            'data' => $r['data'],
+            'page' => $page,
+            'hasMore' => $r['hasMore'],
+            'days' => $win['days'],
+            'fromDate' => $win['fromDate'],
+            'toDate' => $win['toDate'],
+            'updatedAt' => $r['updatedAt'],
         ]);
     }
 

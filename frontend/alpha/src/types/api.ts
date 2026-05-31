@@ -1,3 +1,5 @@
+import type { PeriodValue } from '@/lib/period'
+
 export interface OpenChat {
   id: number
   name: string
@@ -287,8 +289,9 @@ export interface RankingPageMetric {
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
 }
 
-// アクセス数ランキングの1部屋（主指標は pageviews）
-export interface AccessRankingRoom {
+// ランキングの1部屋。アクセス/検索流入どちらのタブでも全指標を持つ
+// （合計・直接/間接SEO・入室数=参加リンク押下・うちSEO経由）。主指標はタブ側で選ぶ。
+export interface LabsRankingRoom {
   id: number
   name: string
   desc: string
@@ -301,52 +304,44 @@ export interface AccessRankingRoom {
   createdAt: number | null
   registeredAt: string
   url: string
-  pageviews: number  // 集計期間内のページビュー数
-  activeUsers: number  // 集計期間内のアクティブユーザー数
-}
-
-export interface AccessRankingResponse {
-  data: AccessRankingRoom[]
-  days: number
-  baseDate: string | null  // 集計の基準日（未集計なら null）
-  updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
-  pages?: RankingPageMetric[]  // ページ単位の指標（未集計なら省略）
-}
-
-// 検索流入ランキングの1部屋（主指標は searchClicks / searchImpressions / searchPosition）
-export interface SearchRankingRoom {
-  id: number
-  name: string
-  desc: string
-  member: number
-  img: string
-  emblem: 0 | 1 | 2
-  category: number
-  categoryName: string
-  join_method_type: number
-  createdAt: number | null
-  registeredAt: string
-  url: string
-  searchClicks: number  // 検索からのクリック数
+  pageviews: number  // アクセス数（PV）
+  activeUsers: number  // ユニークユーザー
+  searchClicks: number  // 直接SEO流入（Google→このページのクリック）
   searchImpressions: number  // 検索結果の表示回数
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
-  activeUsers: number  // 集計期間内のアクティブユーザー数
+  seoIndirect: number  // 間接SEO流入（本家内SEOページ経由で到達したPV）
+  jumpClicks: number  // 入室数＝参加リンク押下（LINEへの送客）
+  jumpClicksOrganic: number  // うちSEO経由（Organic Search セッション起点）
 }
 
-export interface SearchRankingResponse {
-  data: SearchRankingRoom[]
-  days: number
-  baseDate: string | null
-  updatedAt: string | null
-  pages?: RankingPageMetric[]  // ページ単位の指標（未集計なら省略）
+// 後方互換のためのエイリアス（旧名 import を温存）
+export type AccessRankingRoom = LabsRankingRoom
+export type SearchRankingRoom = LabsRankingRoom
+
+// ランキング応答の共通封筒（無限スクロール対応）。T は room / page / query。
+export interface LabsRankingResponse<T> {
+  data: T[]
+  page: number  // 取得したページ番号（1始まり）
+  hasMore: boolean  // 次ページがあるか
+  days: number  // 集計対象の実日数
+  fromDate?: string  // 集計開始日
+  toDate?: string  // 集計終了日
+  baseDate: string | null  // 集計の基準日（未集計なら null）
+  updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
 }
 
-// 2つのランキングは並び/期間/カテゴリの指定を共有する
+export type AccessRankingResponse = LabsRankingResponse<LabsRankingRoom>
+export type SearchRankingResponse = LabsRankingResponse<LabsRankingRoom>
+export type PageRankingResponse = LabsRankingResponse<RankingPageMetric>
+
+// ランキング共通の指定（並び/期間/カテゴリ/ページング/対象スコープ）
 export interface RankingParams {
   category?: number
-  days?: number
   order?: 'asc' | 'desc'
-  limit?: number
+  period?: PeriodValue  // 期間（日数/範囲/全期間）。未指定なら既定30日
+  page?: number  // 1始まり。無限スクロールでインクリメント
+  limit?: number  // 1ページの件数
+  scope?: 'rooms' | 'pages'  // pages＝その他ページ（非オプチャ）タブ
 }
 
 // ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====
@@ -397,12 +392,17 @@ export interface SearchQueryRankingItem {
 }
 
 export interface SearchQueryRankingParams {
-  days?: number
+  period?: PeriodValue
+  page?: number
   limit?: number
 }
 
 export interface SearchQueryRankingResponse {
   data: SearchQueryRankingItem[]
+  page: number
+  hasMore: boolean
   days: number
+  fromDate?: string
+  toDate?: string
   updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
 }

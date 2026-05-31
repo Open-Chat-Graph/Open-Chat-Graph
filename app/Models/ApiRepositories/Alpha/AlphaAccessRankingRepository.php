@@ -18,84 +18,78 @@ use App\Models\Repositories\DB;
 class AlphaAccessRankingRepository
 {
     /**
-     * アクセス数ランキング（直近N日のページビュー合計）。
+     * アクセス数ランキング（指定期間のページビュー合計でソート）。各行に全指標を付ける。
      *
-     * @param int    $category カテゴリID（0=全カテゴリ）
-     * @param int    $days     集計対象の直近日数
-     * @param string $order    'desc' / 'asc'
-     * @param int    $limit    返却件数の上限
-     * @return array{data: array<int, array<string, mixed>>, days: int, baseDate: ?string, updatedAt: ?string}
+     * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
-    public function getAccessRanking(int $category, int $days, string $order, int $limit): array
+    public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0): array
     {
         return $this->fetchRanking(
-            metricSelect: 'SUM(a.pageviews) AS pageviews, SUM(a.active_users) AS active_users',
             having: 'SUM(a.pageviews) > 0',
             orderColumn: 'pageviews',
             category: $category,
-            days: $days,
+            fromDate: $fromDate,
+            toDate: $toDate,
             order: $order,
             limit: $limit,
+            offset: $offset,
         );
     }
 
     /**
-     * 検索流入(SEO)ランキング（直近N日の検索クリック合計＋表示回数＋平均掲載順位）。
-     *
+     * 検索流入(SEO)ランキング（指定期間の検索クリック合計でソート）。各行に全指標を付ける。
      * search_position は表示回数(impressions)で加重平均する。
      *
-     * @return array{data: array<int, array<string, mixed>>, days: int, baseDate: ?string, updatedAt: ?string}
+     * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
-    public function getSearchRanking(int $category, int $days, string $order, int $limit): array
+    public function getSearchRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0): array
     {
         return $this->fetchRanking(
-            metricSelect: 'SUM(a.search_clicks) AS search_clicks, '
-                . 'SUM(a.search_impressions) AS search_impressions, '
-                . 'SUM(a.active_users) AS active_users, '
-                . 'CASE WHEN SUM(a.search_impressions) > 0 '
-                . 'THEN SUM(a.search_position * a.search_impressions) / SUM(a.search_impressions) '
-                . 'ELSE NULL END AS search_position',
             having: 'SUM(a.search_clicks) > 0',
             orderColumn: 'search_clicks',
             category: $category,
-            days: $days,
+            fromDate: $fromDate,
+            toDate: $toDate,
             order: $order,
             limit: $limit,
+            offset: $offset,
         );
     }
 
     /**
-     * アクセス/検索 共通のランキング取得。
+     * アクセス/検索 共通のランキング取得。指定期間で各行の全指標を集計し open_chat と join。
      *
-     * @return array{data: array<int, array<string, mixed>>, days: int, baseDate: ?string, updatedAt: ?string}
+     * 各行: pageviews / active_users / search_clicks(直接SEO) / search_impressions /
+     * search_position / jump_clicks(入室=参加リンク押下) / jump_clicks_organic(うちSEO経由) /
+     * indirect_seo(間接SEO＝本家内SEOページ経由PV・自己参照除く)。
+     *
+     * 無限スクロール用に limit+1 件取って hasMore を判定し、返却は limit 件に丸める。
+     *
+     * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
     private function fetchRanking(
-        string $metricSelect,
         string $having,
         string $orderColumn,
         int $category,
-        int $days,
+        string $fromDate,
+        string $toDate,
         string $order,
         int $limit,
+        int $offset,
     ): array {
         DB::connect();
 
-        // 基準日（保存済みの最新日付）。テーブルが空ならデータ無しとして空を返す。
         $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
         if ($baseDate === false || $baseDate === null) {
-            return ['data' => [], 'days' => $days, 'baseDate' => null, 'updatedAt' => null];
+            return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
         $baseDate = (string)$baseDate;
 
-        // 直近N日 = 基準日から (N-1) 日前まで（基準日を含めてN日）
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
-
         $orderSql = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
+        $limit = max(1, $limit);
+        $offset = max(0, $offset);
 
-        $params = [
-            'fromDate' => $fromDate,
-            'baseDate' => $baseDate,
-        ];
+        $params = ['fromDate' => $fromDate, 'toDate' => $toDate];
 
         $categoryWhere = '';
         if ($category) {
@@ -103,8 +97,32 @@ class AlphaAccessRankingRepository
             $params['category'] = $category;
         }
 
-        // LIMIT は整数確定済みなので直接埋め込む（プレースホルダ不可な実装差を避ける）
-        $limit = max(1, $limit);
+        // 間接SEO（本家内SEOページ経由で到達したPV、自己参照は除く）を部屋ごとに LEFT JOIN。
+        // own ドメイン未設定なら 0。
+        $host = $this->ownDomainHost();
+        if ($host !== '') {
+            $indirectSelect = 'MAX(COALESCE(ref.indirect_seo, 0)) AS indirect_seo';
+            $indirectJoin = "
+                LEFT JOIN (
+                    SELECT open_chat_id, SUM(pageviews) AS indirect_seo
+                    FROM alpha_room_referrer_daily
+                    WHERE `date` BETWEEN :fromDateR AND :toDateR
+                      AND (referrer LIKE :own1 OR referrer LIKE :own2)
+                      AND referrer NOT LIKE CONCAT('%/oc/', open_chat_id, '%')
+                      AND referrer NOT LIKE CONCAT('%/openchat/', open_chat_id, '%')
+                    GROUP BY open_chat_id
+                ) ref ON ref.open_chat_id = oc.id";
+            $params['fromDateR'] = $fromDate;
+            $params['toDateR'] = $toDate;
+            $params['own1'] = '%//' . $host . '%';
+            $params['own2'] = '%//www.' . $host . '%';
+        } else {
+            $indirectSelect = '0 AS indirect_seo';
+            $indirectJoin = '';
+        }
+
+        // 次ページ有無の判定用に1件多く取る。
+        $fetch = $limit + 1;
 
         $sql = "
             SELECT
@@ -119,50 +137,62 @@ class AlphaAccessRankingRepository
                 oc.created_at,
                 oc.api_created_at,
                 oc.url,
-                {$metricSelect}
+                SUM(a.pageviews) AS pageviews,
+                SUM(a.active_users) AS active_users,
+                SUM(a.search_clicks) AS search_clicks,
+                SUM(a.search_impressions) AS search_impressions,
+                SUM(a.jump_clicks) AS jump_clicks,
+                SUM(a.jump_clicks_organic) AS jump_clicks_organic,
+                CASE WHEN SUM(a.search_impressions) > 0
+                     THEN SUM(a.search_position * a.search_impressions) / SUM(a.search_impressions)
+                     ELSE NULL END AS search_position,
+                {$indirectSelect}
             FROM alpha_room_access_daily AS a
-            INNER JOIN open_chat AS oc ON oc.id = a.open_chat_id
-            WHERE a.`date` BETWEEN :fromDate AND :baseDate{$categoryWhere}
+            INNER JOIN open_chat AS oc ON oc.id = a.open_chat_id{$indirectJoin}
+            WHERE a.`date` BETWEEN :fromDate AND :toDate{$categoryWhere}
             GROUP BY oc.id
             HAVING {$having}
             ORDER BY {$orderColumn} {$orderSql}
-            LIMIT {$limit}
+            LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $data = DB::fetchAll($sql, $params);
+        $rows = DB::fetchAll($sql, $params);
+        $hasMore = count($rows) > $limit;
+        if ($hasMore) {
+            $rows = array_slice($rows, 0, $limit);
+        }
 
-        // 集計テーブルの更新時刻（基準日の日次データが書かれた最後の瞬間の目安）。
-        // 行ごとの更新時刻カラムは持たないので baseDate を更新日として返す。
         return [
-            'data' => $data,
-            'days' => $days,
+            'data' => $rows,
             'baseDate' => $baseDate,
             'updatedAt' => $baseDate,
+            'hasMore' => $hasMore,
         ];
     }
 
     /**
-     * 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}'）の直近N日アクセス/検索流入ランキング。
-     * access/search 両APIの「pages」別枠で返す（rooms とは別配列）。
+     * 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}' 等）の指定期間アクセス/検索流入ランキング。
+     * 「その他ページ（非オプチャ）」タブ用。limit+1 で hasMore 判定。
      *
      * $orderColumn は 'pageviews'（access用）/ 'search_clicks'（search用）。
      *
-     * @return array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float}>
+     * @return array{data: array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float}>, baseDate:?string, updatedAt:?string, hasMore:bool}
      */
-    public function getPageScopeRanking(int $days, string $order, int $limit, string $orderColumn = 'pageviews'): array
+    public function getPageScopeRanking(string $fromDate, string $toDate, string $order, int $limit, string $orderColumn = 'pageviews', int $offset = 0): array
     {
         DB::connect();
 
         $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_page_access_daily');
         if ($baseDate === false || $baseDate === null) {
-            return [];
+            return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
         $baseDate = (string)$baseDate;
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
 
         $orderSql = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
         $orderColumn = $orderColumn === 'search_clicks' ? 'search_clicks' : 'pageviews';
         $limit = max(1, $limit);
+        $offset = max(0, $offset);
+        $fetch = $limit + 1;
 
         $sql = "
             SELECT
@@ -176,15 +206,19 @@ class AlphaAccessRankingRepository
                      THEN SUM(search_position * search_impressions) / SUM(search_impressions)
                      ELSE NULL END AS search_position
             FROM alpha_page_access_daily
-            WHERE `date` BETWEEN :fromDate AND :baseDate
+            WHERE `date` BETWEEN :fromDate AND :toDate
             GROUP BY path
             ORDER BY {$orderColumn} {$orderSql}
-            LIMIT {$limit}
+            LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'baseDate' => $baseDate]);
+        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+        $hasMore = count($rows) > $limit;
+        if ($hasMore) {
+            $rows = array_slice($rows, 0, $limit);
+        }
 
-        return array_map(static function ($r) {
+        $data = array_map(static function ($r) {
             return [
                 'path' => (string)$r['path'],
                 'label' => (string)($r['label'] ?? ''),
@@ -195,24 +229,27 @@ class AlphaAccessRankingRepository
                 'searchPosition' => $r['search_position'] === null ? null : round((float)$r['search_position'], 2),
             ];
         }, $rows);
+
+        return ['data' => $data, 'baseDate' => $baseDate, 'updatedAt' => $baseDate, 'hasMore' => $hasMore];
     }
 
     /**
-     * 上位検索クエリランキング（直近N日の clicks 合計）。
+     * 上位検索クエリランキング（指定期間の clicks 合計）。無限スクロール用に limit+1 で hasMore 判定。
      *
-     * @return array{data: array<int, array{query:string, clicks:int, impressions:int, position:?float}>, days:int, baseDate:?string, updatedAt:?string}
+     * @return array{data: array<int, array{query:string, clicks:int, impressions:int, position:?float}>, baseDate:?string, updatedAt:?string, hasMore:bool}
      */
-    public function getSearchQueryRanking(int $days, int $limit): array
+    public function getSearchQueryRanking(string $fromDate, string $toDate, int $limit, int $offset = 0): array
     {
         DB::connect();
 
         $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_search_query_daily');
         if ($baseDate === false || $baseDate === null) {
-            return ['data' => [], 'days' => $days, 'baseDate' => null, 'updatedAt' => null];
+            return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
         $baseDate = (string)$baseDate;
-        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
         $limit = max(1, $limit);
+        $offset = max(0, $offset);
+        $fetch = $limit + 1;
 
         $sql = "
             SELECT
@@ -223,14 +260,18 @@ class AlphaAccessRankingRepository
                      THEN SUM(position * impressions) / SUM(impressions)
                      ELSE NULL END AS position
             FROM alpha_search_query_daily
-            WHERE `date` BETWEEN :fromDate AND :baseDate
+            WHERE `date` BETWEEN :fromDate AND :toDate
             GROUP BY query
             HAVING SUM(clicks) > 0
             ORDER BY clicks DESC
-            LIMIT {$limit}
+            LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'baseDate' => $baseDate]);
+        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+        $hasMore = count($rows) > $limit;
+        if ($hasMore) {
+            $rows = array_slice($rows, 0, $limit);
+        }
 
         $data = array_map(static function ($r) {
             return [
@@ -241,7 +282,7 @@ class AlphaAccessRankingRepository
             ];
         }, $rows);
 
-        return ['data' => $data, 'days' => $days, 'baseDate' => $baseDate, 'updatedAt' => $baseDate];
+        return ['data' => $data, 'baseDate' => $baseDate, 'updatedAt' => $baseDate, 'hasMore' => $hasMore];
     }
 
     /**
