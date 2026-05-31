@@ -7,20 +7,8 @@
 - 禁止は「本番DBを壊す操作」だけ。**`php -l`・phpunit（`docker compose exec app vendor/bin/phpunit <path>`）・ローカルへの `curl`・SELECT・スキーマの加算反映は普通に実行してよい**。
 - `DATA_PROTECTION=false` のときは mock操作もテストも自由。
 
-## エージェント運用（featureパイプライン）
-非自明な実装は4段パイプライン `/ship <要望>` を使う（定義は `.claude/agents/`、コマンドは `.claude/commands/ship.md`、受け渡しは `.pipeline/`）:
-- **planner(opus)** → `.pipeline/spec.md`（コードは書かない。曖昧点はOPEN QUESTION）
-- **coder(sonnet)** → 実装＋`.pipeline/changes.md`（仕様外を足さない）
-- **tester(sonnet)** → 検証＋`.pipeline/test-results.md`（フロント=`tsc`/`npm run build`、PHP=`php -l`/phpunit/curl。失敗で停止。UIはスマホ390/PC1280＋対話状態のスクショを撮る）
-- **reviewer(opus, 読取専用)** → `git diff` を見て `.pipeline/review.md` に VERDICT(SHIP/NEEDS WORK/BLOCK)。緑≠正しさ。
-オーケストレータはマージしない。コミット/マージは人間の指示で。
-
-### UIレビューは3名体制（最重要・最大ボトルネック）
-UIをユーザーに出す前に必ず: ①操作担当（ヘッドレスChrome/playwrightで全画面×モバイル/PC＋対話状態を撮影）②デザイン担当（`frontend-design`スキルで階層/余白/タイポ/文言/αトーンを評価）③スクショ矛盾＋動線担当（潜り/はみ出し/z-index/不統一・入口の発見性）。**ユーザーに目視レベルの崩れを指摘させない**。reviewer 段がUI変更でこれを実施する。
-
 ### 進め方
-- 論理単位ごとに小さく頻繁にコミット（依存追加→UI部品→機能→統合→修正…）。一括大コミット禁止。常にビルド可能を保つ。並行サブエージェントは専用ファイルが分離できる時だけ。
-- コミットは commit-message スキルで整形。
+- 論理単位ごとに小さく頻繁にコミット（依存追加→UI部品→機能→統合→修正…）。一括大コミット禁止。常にビルド可能を保つ。
 
 ### 静的解析（PHPStan）
 - **PHPを変更したら適宜 PHPStan を通す**（level 0、`phpstan.neon`）。実行は必ず `--autoload-file` 付き:

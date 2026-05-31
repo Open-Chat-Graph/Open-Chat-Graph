@@ -507,18 +507,27 @@ class AlphaAccessRankingRepository
         DB::connect();
         $limit = max(1, $limit);
 
+        // 自己参照（このページ内＝再読込/グラフ操作）は初期アクセスではないので除外する。
         $sql = "
             SELECT
                 referrer,
                 SUM(pageviews) AS pageviews
             FROM alpha_room_referrer_daily
             WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
+              AND referrer NOT LIKE :self1
+              AND referrer NOT LIKE :self2
             GROUP BY referrer
             ORDER BY pageviews DESC
             LIMIT {$limit}
         ";
 
-        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
+        $rows = DB::fetchAll($sql, [
+            'id' => $openChatId,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'self1' => '%/oc/' . $openChatId . '%',
+            'self2' => '%/openchat/' . $openChatId . '%',
+        ]);
 
         return array_map(static function ($r) {
             return [
@@ -526,5 +535,27 @@ class AlphaAccessRankingRepository
                 'pageviews' => (int)$r['pageviews'],
             ];
         }, $rows);
+    }
+
+    /**
+     * 指定 id 群の部屋名を取得（参照元「他の部屋（◯◯）」の名前解決用）。
+     *
+     * @param array<int, int> $ids
+     * @return array<int, string> id => name
+     */
+    public function getRoomNames(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn($v) => $v > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        DB::connect();
+        $in = implode(',', $ids); // 整数確定済みなので直接埋め込む
+        $rows = DB::fetchAll("SELECT id, name FROM open_chat WHERE id IN ({$in})");
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int)$r['id']] = (string)$r['name'];
+        }
+        return $map;
     }
 }

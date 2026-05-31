@@ -20,8 +20,8 @@ interface InfoChipProps {
  * Radix Popover を Portal で body に出すので、overflow-y-auto の窓の中でもクリップされない。
  * 重ね順は tailwind の `z-popover`(75) トークン（ヘッダ60 より上）。生 z-[NN] は使わない。
  *
- * - タップ／クリックで開閉（モバイル対応）
- * - デスクトップ（hover:hover かつ pointer:fine）はホバーでも開く
+ * - クリック／タップで開く。外側クリック（や Esc）で閉じる（Radix Popover の既定）。
+ *   ホバーでは開かない（誤爆・タッチでの張り付き回避）。
  */
 export function InfoChip({
   trigger,
@@ -31,20 +31,12 @@ export function InfoChip({
   align = 'start',
   triggerClassName,
 }: InfoChipProps) {
-  const [open, setOpen] = React.useState(false)
-  // ホバーはマウス環境のみ（タッチでは hover が張り付くため）。
-  const canHover =
-    typeof window !== 'undefined' &&
-    !!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
-
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+    <PopoverPrimitive.Root>
       <PopoverPrimitive.Trigger asChild>
         <button
           type="button"
-          className={cn('min-w-0 cursor-help text-left', triggerClassName)}
-          onMouseEnter={canHover ? () => setOpen(true) : undefined}
-          onMouseLeave={canHover ? () => setOpen(false) : undefined}
+          className={cn('min-w-0 cursor-pointer text-left', triggerClassName)}
         >
           {trigger}
         </button>

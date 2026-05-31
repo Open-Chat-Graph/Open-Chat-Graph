@@ -13,11 +13,9 @@ export type PeriodValue =
 /** 既定は過去30日。 */
 export const DEFAULT_PERIOD: PeriodValue = { mode: 'days', days: 30 }
 
-/** プルダウンの日数プリセット。 */
+/** プルダウンの日数プリセット（既定30日のみ。あとは全期間＋カレンダー）。 */
 export const PERIOD_DAY_PRESETS: { days: number; label: string }[] = [
-  { days: 7, label: '7日' },
   { days: 30, label: '30日' },
-  { days: 90, label: '90日' },
 ]
 
 /** API クエリパラメータへ変換。 */

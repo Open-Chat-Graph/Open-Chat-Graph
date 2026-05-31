@@ -708,7 +708,19 @@ class AlphaApiController
         $searchQueries = $repo->getRoomSearchQueries($open_chat_id, $win['fromDate'], $win['toDate'], 20);
         $referrerRows = $repo->getRoomReferrers($open_chat_id, $win['fromDate'], $win['toDate'], 20);
 
-        $referrers = array_map(fn($r) => $this->formatReferrer($r, $open_chat_id), $referrerRows);
+        // 「他の部屋（◯◯）」用に、参照元 URL から他部屋IDを拾って名前を解決する。
+        $otherRoomIds = [];
+        foreach ($referrerRows as $rr) {
+            if (preg_match('#/(?:oc|openchat)/(\d+)#', (string)$rr['referrer'], $mm)) {
+                $rid = (int)$mm[1];
+                if ($rid !== $open_chat_id) {
+                    $otherRoomIds[] = $rid;
+                }
+            }
+        }
+        $roomNames = $repo->getRoomNames($otherRoomIds);
+
+        $referrers = array_map(fn($r) => $this->formatReferrer($r, $open_chat_id, $roomNames), $referrerRows);
 
         return response([
             'days' => $win['days'],
@@ -738,11 +750,12 @@ class AlphaApiController
      *
      * @param array{referrer:string, pageviews:int} $r
      * @param int $currentRoomId この詳細ページの部屋ID（自分自身からの参照を判別する）
+     * @param array<int, string> $roomNames 他部屋 id => name（「他の部屋（◯◯）」用）
      * @return array{referrer:string, label:string, detail:string, pageviews:int, isInternal:bool}
      *   label  … 一覧の1行に出す短い文言（はみ出す分は省略表示）
      *   detail … タップ/ホバーのチップに出す全文（どこから来たかを明示）
      */
-    private function formatReferrer(array $r, int $currentRoomId = 0): array
+    private function formatReferrer(array $r, int $currentRoomId = 0, array $roomNames = []): array
     {
         $referrer = (string)$r['referrer'];
         $pageviews = (int)$r['pageviews'];
@@ -768,7 +781,7 @@ class AlphaApiController
         if ($isInternal) {
             $path = (string)(parse_url($referrer, PHP_URL_PATH) ?? '');
             $query = (string)(parse_url($referrer, PHP_URL_QUERY) ?? '');
-            [$label, $detail, $isSeoOrigin] = $this->internalReferrerLabel($path, $query, $currentRoomId);
+            [$label, $detail, $isSeoOrigin] = $this->internalReferrerLabel($path, $query, $currentRoomId, $roomNames);
             return [
                 'referrer' => $referrer,
                 'label' => $label,
@@ -854,10 +867,11 @@ class AlphaApiController
      * 本家(openchat-review.me)内リファラの path/query から「どのページから来たか」を
      * 人間可読に整形する。本家のページ種別は限られるので各パターンを文言化する。
      *
+     * @param array<int, string> $roomNames 他部屋 id => name
      * @return array{0:string, 1:string, 2:bool} [一覧用の短ラベル, チップ用の全文, SEO経由(間接流入)とみなすか]
      *   第3要素 false ＝ 自己参照「このページ内」（再読込/グラフ操作。SEO経由バッジを出さない）。
      */
-    private function internalReferrerLabel(string $path, string $query, int $currentRoomId = 0): array
+    private function internalReferrerLabel(string $path, string $query, int $currentRoomId = 0, array $roomNames = []): array
     {
         // 末尾スラッシュを正規化（'/ranking/' と '/ranking' を同一視）
         $p = $path === '' ? '/' : rtrim($path, '/');
@@ -905,10 +919,15 @@ class AlphaApiController
         }
         // 部屋詳細（自分自身＝再訪/グラフ操作 と 他の部屋 を区別する。自己参照は SEO経由ではない）
         if (preg_match('#^/(?:oc|openchat)/(\d+)#', $p, $m)) {
-            if ($currentRoomId > 0 && (int)$m[1] === $currentRoomId) {
+            $rid = (int)$m[1];
+            if ($currentRoomId > 0 && $rid === $currentRoomId) {
                 return ['このページ内', 'この部屋のページ内（再読み込み・グラフ操作など）', false];
             }
-            return ['他の部屋', '他の部屋（ID: ' . $m[1] . '）から', true];
+            $name = $roomNames[$rid] ?? '';
+            if ($name !== '') {
+                return ['他の部屋（' . $name . '）', '他の部屋「' . $name . '」（ID: ' . $rid . '）から', true];
+            }
+            return ['他の部屋', '他の部屋（ID: ' . $rid . '）から', true];
         }
         if ($p === '/oclist') {
             return ['部屋一覧', '部屋一覧ページ', true];

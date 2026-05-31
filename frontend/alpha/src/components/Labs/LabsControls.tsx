@@ -46,7 +46,7 @@ interface LabsControlsProps {
 export const LabsControls = memo(
   ({ tab, period, category, onTabChange, onPeriodChange, onCategoryChange }: LabsControlsProps) => {
     return (
-      <div className="sticky top-0 z-subheader -mx-3 border-b bg-background/95 px-3 py-2 backdrop-blur md:-mx-6 md:px-6">
+      <div className="sticky top-0 z-subheader -mx-3 -mt-3 border-b bg-background/95 px-3 py-2 backdrop-blur md:-mx-6 md:-mt-6 md:px-6">
         {/* タブ（横スクロール可。4つ） */}
         <div className="flex gap-1 overflow-x-auto pb-0.5">
           {LABS_TABS.map((t) => {
