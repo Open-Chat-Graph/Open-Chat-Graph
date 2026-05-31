@@ -113,6 +113,17 @@ OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`l
 - 30日と全期間が同値に見えるのはデータが約30日分(2026-05-01〜)しか無いため（バグでない。日数が貯まれば差が出る）。
 - 【保留】検索KWのタイ語が「Thai部屋(ja上)」由来か「/th混入」かは、上記修正で/th混入を断つ。再集計後に残れば前者（正当）。
 
+## GA/GSC トークン失効（2026-05-31・要ユーザー対応）
+
+- 症状: cron/同期で `Token has been expired or revoked`（HTTP400）。`AlphaGaClient::getAccessToken` は refresh_token 交換あり＝ロジックは存在。**refresh_token 自体が失効**。
+- 対応(ユーザー): refresh_token 再発行→local-secrets 更新／OAuth同意画面を本番(Production)化（テストだと7日で失効＝再発）。
+- 直後にやる: `alpha_ga_sync --days=2` で直近補正 → truncate+`--days=30` で ja限定クリーン再集計（#33のtw/th除外修正が効く）。**トークンが通るまで truncate 厳禁**（取得失敗時に本番消失）。プローブはupsert故に無害。
+
+## 未実装（追加・2026-05-31）
+
+- **Labsの部屋ランキング(アクセス/検索流入)をキーワードでも絞り込み**（部屋名/キーワード）。access/search-ranking に keyword パラメータ＋WHERE。
+- **PWAキャッシュで新ビルドが反映されない件**（ユーザーが何度も旧ビルドを見る）。SWは `registerType:autoUpdate`＋/js/alpha は StaleWhileRevalidate＋precache。ファイル名ハッシュ無し(index.js固定)。要: 反映を1リロードで確実にする（ファイル名ハッシュ化 or JSをNetworkFirst）。今はハードリフレッシュ回避で運用。
+
 ## 未実装（ユーザー指示済み・このあと実装）
 
 優先度順。番号は会話中のタスク番号。
