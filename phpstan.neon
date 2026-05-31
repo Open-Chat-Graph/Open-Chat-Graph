@@ -1,6 +1,18 @@
+# PHPStan 静的解析の設定。
+#
+# 実行（重要）: 必ず --autoload-file=phpstan-bootstrap.php を付けて実行する。
+#   docker compose exec app php vendor/bin/phpstan analyse --autoload-file=phpstan-bootstrap.php
+#
+# 理由: phpstan は解析のため composer autoload を読み込むが、その際
+#   shared/MimimalCMS_ExceptionHandler.php が「全 warning を ErrorException に昇格」する
+#   グローバルハンドラを登録する。PHP 8 では @ がもう error_reporting() を 0 にしないため
+#   この抑制判定が効かず、phpstan 内部の @include（初回キャッシュ未生成時）まで例外化して
+#   phpstan 自体がクラッシュする。phpstan-bootstrap.php がそのハンドラを外す（本番挙動は不変）。
+#   ※ neon の bootstrapFiles はコンテナ生成後で手遅れ。--autoload-file でないと間に合わない。
 parameters:
     phpVersion: 80500
     level: 0
+    tmpDir: .phpstan-tmp
     paths:
         - app
         - shadow

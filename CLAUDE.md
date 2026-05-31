@@ -22,6 +22,13 @@ UIをユーザーに出す前に必ず: ①操作担当（ヘッドレスChrome/
 - 論理単位ごとに小さく頻繁にコミット（依存追加→UI部品→機能→統合→修正…）。一括大コミット禁止。常にビルド可能を保つ。並行サブエージェントは専用ファイルが分離できる時だけ。
 - コミットは commit-message スキルで整形。
 
+### 静的解析（PHPStan）
+- **PHPを変更したら適宜 PHPStan を通す**（level 0、`phpstan.neon`）。実行は必ず `--autoload-file` 付き:
+  `docker compose exec app php vendor/bin/phpstan analyse --autoload-file=phpstan-bootstrap.php [<変更したパス>]`
+  - これを付けないとアプリのエラーハンドラが phpstan 内部の `@include` を例外化して **phpstan 自体がクラッシュ**する（理由は `phpstan.neon` 冒頭コメント）。
+  - 引数に変更したファイル/ディレクトリを渡せば速い。**自分が触ったPHPで新規エラーを出さない**こと。
+  - 全体実行で出る5件（comment/openchat リポジトリ系）は**α無関係の既存エラー**。αコードは0件。
+
 ## 開発環境
 `docker compose`（ハイフン無し）。Makefile管理:
 ```bash

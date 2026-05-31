@@ -91,6 +91,9 @@ test-logs/
 # featureパイプラインの受け渡しファイル（一時物）
 .pipeline/
 
+# PHPStan のキャッシュ（tmpDir）
+.phpstan-tmp/
+
 # 例外: .gitkeepは含める
 !*.gitkeep
 local-secrets.php.bak
