@@ -150,7 +150,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
           unit="流入"
           sub={
             <>
-              直接 {data.searchClicks.toLocaleString()} ・ 間接 {data.seoIndirect.toLocaleString()}
+              直接 {data.searchClicks.toLocaleString()}クリック ・ 間接 {data.seoIndirect.toLocaleString()}PV
               {data.searchClicks > 0 && (
                 <>
                   <br />
