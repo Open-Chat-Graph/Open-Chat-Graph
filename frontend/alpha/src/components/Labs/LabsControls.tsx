@@ -116,7 +116,7 @@ export const LabsControls = memo(
           <PeriodRangePicker value={period} onChange={onPeriodChange} />
           {tab !== 'keywords' && (
             <Select value={metric} onValueChange={(v) => onMetricChange(v as LabsMetric)}>
-              <SelectTrigger className="h-7 w-auto flex-shrink-0 text-xs" data-testid="labs-metric">
+              <SelectTrigger className="h-7 !w-28 flex-shrink-0 text-xs" data-testid="labs-metric">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
