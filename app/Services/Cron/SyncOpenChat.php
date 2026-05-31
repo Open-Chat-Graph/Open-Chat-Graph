@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Cron;
 
 use App\Config\AppConfig;
+use App\Config\SecretsConfig;
 use App\Models\Repositories\OcSitemapLastmodRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
@@ -159,6 +160,14 @@ class SyncOpenChat
                 'CDNキャッシュ削除'
             ],
         );
+
+        // Alpha Labs: 部屋別アクセス/検索流入の日次同期（ja のみ・creds 設定時のみ）。
+        // バックグラウンドで起動し本体を止めない。creds 未設定なら即 exit 0 する。
+        if (!MimimalCmsConfig::$urlRoot && SecretsConfig::isGoogleAnalyticsConfigured()) {
+            $gaSyncPath = AppConfig::ROOT_PATH . 'batch/exec/alpha_ga_sync.php';
+            exec(PHP_BINARY . " {$gaSyncPath} >/dev/null 2>&1 &");
+            CronUtility::addVerboseCronLog('Alpha GA/GSC 日次同期をバックグラウンドで開始');
+        }
 
         CronUtility::addCronLog('【日次処理】完了');
     }

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CalendarRange, ChevronRight, Eye } from 'lucide-react'
+import { CalendarRange, ChevronRight, Eye, FlaskConical } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/Settings/ThemeToggle'
@@ -22,7 +22,7 @@ export default function SettingsPage() {
             キーワードと期間を指定して増減を分析します。
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <Button
             variant="outline"
             className="w-full justify-start gap-3 h-auto py-3"
@@ -34,6 +34,22 @@ export default function SettingsPage() {
               <span className="block truncate font-medium">指定期間の増減ランキング</span>
               <span className="block truncate text-xs font-normal text-muted-foreground">
                 キーワードと期間を指定して増減ランキングを表示
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-3 h-auto py-3"
+            onClick={() => navigate('/labs')}
+            data-testid="settings-labs-link"
+          >
+            <FlaskConical className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate font-medium">アクセス・流入ランキング</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
+                本家ページのアクセス数・検索流入で部屋を並べる（SEO/初見向け）
               </span>
             </span>
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />

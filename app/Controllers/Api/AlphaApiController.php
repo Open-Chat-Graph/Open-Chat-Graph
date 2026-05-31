@@ -9,6 +9,7 @@ use App\Models\ApiRepositories\Alpha\AlphaOpenChatRepository;
 use App\Models\ApiRepositories\Alpha\AlphaPeriodGrowthRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
+use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaInsightsService;
@@ -502,6 +503,127 @@ class AlphaApiController
             'baseDate' => $result['baseDate'],
             'targetPastDate' => $result['pastDate'],
         ]);
+    }
+
+    /**
+     * アクセス数ランキング（Labs）
+     * GET /alpha-api/access-ranking?category=0&days=30&order=desc&limit=20
+     *
+     * alpha_room_access_daily の直近N日ページビュー合計でソートして返す。
+     * データが無い間（creds未投入/未集計）は data:[], updatedAt:null を 200 で返す。
+     */
+    function accessRanking(AlphaAccessRankingRepository $repo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $category = (int)Validator::str(
+            (string)Reception::input('category', '0'),
+            regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
+            e: $error
+        );
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+        $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
+        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+
+        $result = $repo->getAccessRanking($category, (int)$days, $order, (int)$limit);
+
+        $data = [];
+        foreach ($result['data'] as $item) {
+            $data[] = $this->formatRankingRoom($item) + [
+                'pageviews' => (int)($item['pageviews'] ?? 0),
+            ];
+        }
+
+        return response([
+            'data' => $data,
+            'days' => $result['days'],
+            'baseDate' => $result['baseDate'],
+            'updatedAt' => $result['updatedAt'],
+        ]);
+    }
+
+    /**
+     * 検索流入(SEO)ランキング（Labs）
+     * GET /alpha-api/search-ranking?category=0&days=30&order=desc&limit=20
+     *
+     * alpha_room_access_daily の直近N日 検索クリック合計でソートして返す。
+     * 各部屋に searchClicks / searchImpressions / searchPosition を付ける。
+     */
+    function searchRanking(AlphaAccessRankingRepository $repo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $category = (int)Validator::str(
+            (string)Reception::input('category', '0'),
+            regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
+            e: $error
+        );
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+        $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
+        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+
+        $result = $repo->getSearchRanking($category, (int)$days, $order, (int)$limit);
+
+        $data = [];
+        foreach ($result['data'] as $item) {
+            $position = isset($item['search_position']) && $item['search_position'] !== null
+                ? round((float)$item['search_position'], 2)
+                : null;
+            $data[] = $this->formatRankingRoom($item) + [
+                'searchClicks' => (int)($item['search_clicks'] ?? 0),
+                'searchImpressions' => (int)($item['search_impressions'] ?? 0),
+                'searchPosition' => $position,
+            ];
+        }
+
+        return response([
+            'data' => $data,
+            'days' => $result['days'],
+            'baseDate' => $result['baseDate'],
+            'updatedAt' => $result['updatedAt'],
+        ]);
+    }
+
+    /**
+     * ランキング行を共通の RankingRoom 形（指標フィールドを除く）に整形。
+     * search / periodGrowth と同じ img_url(obsハッシュ)・LINE URL 組み立てを踏襲する。
+     *
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    private function formatRankingRoom(array $item): array
+    {
+        return [
+            'id' => (int)$item['id'],
+            'name' => $item['name'],
+            'desc' => $item['description'] ?? '',
+            'member' => (int)$item['member'],
+            'img' => $item['img_url'] ?? '',
+            'emblem' => (int)$item['emblem'],
+            'category' => (int)$item['category'],
+            'categoryName' => $this->getCategoryName((int)$item['category']),
+            'join_method_type' => (int)$item['join_method_type'],
+            'createdAt' => !empty($item['created_at']) ? strtotime($item['created_at']) : null,
+            'registeredAt' => $item['api_created_at'] ?? '',
+            'url' => $this->buildLineUrl($item['url'] ?? ''),
+        ];
+    }
+
+    /**
+     * URL/ハッシュを LINE 形式の完全URLに変換（search/batchStats/periodGrowth と同一ロジック）。
+     */
+    private function buildLineUrl(?string $url): string
+    {
+        if (empty($url)) {
+            return '';
+        }
+        if (strpos($url, 'http') === 0) {
+            return $url;
+        }
+        $hash = trim($url, '/');
+        return $hash !== '' ? AppConfig::LINE_APP_URL . $hash : '';
     }
 
     // ============================================================

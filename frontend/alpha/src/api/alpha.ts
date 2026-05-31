@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse } from '../types/api'
 
 const API_BASE = '/alpha-api'
 
@@ -95,6 +95,37 @@ export const alphaApi = {
     const query = markRead ? `?markRead=${encodeURIComponent(markRead)}` : ''
     const res = await fetch(`${API_BASE}/alerts${query}`)
     if (!res.ok) throw new Error('Alerts API failed')
+
+    return res.json()
+  },
+
+  // ===== Labs: アクセス数 / 検索流入ランキング =====
+  // どちらも GA4/GSC 由来の日次集計。creds 未投入時は data が空配列で返る（集計待ち）。
+
+  // アクセス数（ページビュー）ランキング
+  async getAccessRanking(params: RankingParams = {}): Promise<AccessRankingResponse> {
+    const query = new URLSearchParams()
+    if (params.category) query.set('category', params.category.toString())
+    if (params.days !== undefined) query.set('days', params.days.toString())
+    if (params.order) query.set('order', params.order)
+    if (params.limit) query.set('limit', params.limit.toString())
+
+    const res = await fetch(`${API_BASE}/access-ranking?${query}`)
+    if (!res.ok) throw new Error('Access ranking API failed')
+
+    return res.json()
+  },
+
+  // 検索流入（クリック数・表示回数・平均順位）ランキング
+  async getSearchRanking(params: RankingParams = {}): Promise<SearchRankingResponse> {
+    const query = new URLSearchParams()
+    if (params.category) query.set('category', params.category.toString())
+    if (params.days !== undefined) query.set('days', params.days.toString())
+    if (params.order) query.set('order', params.order)
+    if (params.limit) query.set('limit', params.limit.toString())
+
+    const res = await fetch(`${API_BASE}/search-ranking?${query}`)
+    if (!res.ok) throw new Error('Search ranking API failed')
 
     return res.json()
   },

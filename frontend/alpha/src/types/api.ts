@@ -253,3 +253,66 @@ export interface AlertsResponse {
   unreadCount: number
   computedAt: string | null
 }
+
+// ===== Labs: アクセス数 / 検索流入ランキング（/alpha-api/access-ranking, /search-ranking） =====
+// 本家ページ（SEO/初見向け）の指標。データは GA4/GSC 由来でバックエンドが日次集計する。
+// GA連携の creds 投入前は data が空配列（200）で返る → 画面側で「集計待ち」を出す。
+// ja のみ。img は OBS ハッシュ（imgPreviewUrl で前置）。
+
+// アクセス数ランキングの1部屋（主指標は pageviews）
+export interface AccessRankingRoom {
+  id: number
+  name: string
+  desc: string
+  member: number
+  img: string
+  emblem: 0 | 1 | 2
+  category: number
+  categoryName: string
+  join_method_type: number
+  createdAt: number | null
+  registeredAt: string
+  url: string
+  pageviews: number  // 集計期間内のページビュー数
+}
+
+export interface AccessRankingResponse {
+  data: AccessRankingRoom[]
+  days: number
+  baseDate: string | null  // 集計の基準日（未集計なら null）
+  updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
+}
+
+// 検索流入ランキングの1部屋（主指標は searchClicks / searchImpressions / searchPosition）
+export interface SearchRankingRoom {
+  id: number
+  name: string
+  desc: string
+  member: number
+  img: string
+  emblem: 0 | 1 | 2
+  category: number
+  categoryName: string
+  join_method_type: number
+  createdAt: number | null
+  registeredAt: string
+  url: string
+  searchClicks: number  // 検索からのクリック数
+  searchImpressions: number  // 検索結果の表示回数
+  searchPosition: number | null  // 平均掲載順位（未集計なら null）
+}
+
+export interface SearchRankingResponse {
+  data: SearchRankingRoom[]
+  days: number
+  baseDate: string | null
+  updatedAt: string | null
+}
+
+// 2つのランキングは並び/期間/カテゴリの指定を共有する
+export interface RankingParams {
+  category?: number
+  days?: number
+  order?: 'asc' | 'desc'
+  limit?: number
+}

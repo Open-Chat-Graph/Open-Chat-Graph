@@ -56,6 +56,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const showBackButton = isDetailPage
     || location.pathname === '/period-growth'
     || location.pathname === '/watch'
+    || location.pathname === '/labs'
 
   // 戻るボタンの動作: 履歴があればブラウザバック、なければトップページへ
   const handleBack = () => {

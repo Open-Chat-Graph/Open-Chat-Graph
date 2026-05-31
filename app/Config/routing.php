@@ -834,6 +834,10 @@ Route::path('alpha/watch', [AlphaPageController::class, 'index'])
 Route::path('alpha/period-growth', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Labs（アクセス数ランキング / 検索流入ランキング）の SPA ページ
+Route::path('alpha/labs', [AlphaPageController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path('alpha/openchat/{id}', [AlphaPageController::class, 'index'])
     ->matchNum('id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
@@ -884,6 +888,22 @@ Route::path('alpha-api/insights/{open_chat_id}', [AlphaApiController::class, 'in
 // Alpha API - 任意のN日増減検索
 Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth'])
     ->matchStr('keyword', maxLen: 1000)
+    ->matchNum('category', min: 0, emptyAble: true, default: 0)
+    ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
+    ->matchStr('order', emptyAble: true, default: 'desc')
+    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - アクセス数ランキング（Labs）
+Route::path('alpha-api/access-ranking', [AlphaApiController::class, 'accessRanking'])
+    ->matchNum('category', min: 0, emptyAble: true, default: 0)
+    ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
+    ->matchStr('order', emptyAble: true, default: 'desc')
+    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - 検索流入(SEO)ランキング（Labs）
+Route::path('alpha-api/search-ranking', [AlphaApiController::class, 'searchRanking'])
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')

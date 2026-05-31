@@ -179,3 +179,16 @@ CREATE TABLE `user_log` (
   `ua` varchar(512) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Alpha Labs: 部屋別の日次アクセス/検索流入（GA4 / Search Console を日次バッチで集計して保存）。
+-- ja(base)専用。open_chat と join して「アクセス数ランキング」「検索流入(SEO)ランキング」を出す。
+DROP TABLE IF EXISTS `alpha_room_access_daily`;
+CREATE TABLE `alpha_room_access_daily` (
+  `open_chat_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `pageviews` int(11) NOT NULL DEFAULT 0,
+  `search_clicks` int(11) NOT NULL DEFAULT 0,
+  `search_impressions` int(11) NOT NULL DEFAULT 0,
+  `search_position` float DEFAULT NULL,
+  PRIMARY KEY (`open_chat_id`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
