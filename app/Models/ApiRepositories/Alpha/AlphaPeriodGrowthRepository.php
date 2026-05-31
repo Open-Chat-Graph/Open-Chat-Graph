@@ -47,21 +47,23 @@ class AlphaPeriodGrowthRepository
      * @param int      $category カテゴリID（0=全カテゴリ）
      * @param int      $days     N（日数）
      * @param string   $order    'desc'（増加多い順）/ 'asc'（少ない順）
-     * @param int      $limit    返却件数の上限
-     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string}
+     * @param int      $limit    返却件数の上限（1ページ分）
+     * @param int      $offset   先頭から読み飛ばす件数（ページング用）
+     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool}
      */
     public function findPeriodGrowth(
         string $keyword,
         int $category,
         int $days,
         string $order,
-        int $limit
+        int $limit,
+        int $offset = 0
     ): array {
         // 1. MySQL: キーワード(＋カテゴリ)一致のルームを候補として取得（member降順上限付き）
         $candidates = $this->fetchCandidates($keyword, $category);
 
         if (empty($candidates)) {
-            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null];
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false];
         }
 
         $ids = array_map(static fn($c) => (int)$c['id'], $candidates);
@@ -72,7 +74,7 @@ class AlphaPeriodGrowthRepository
         $baseDate = $this->resolveBaseDate($pdo);
         if ($baseDate === null) {
             // 統計がまだ無い
-            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null];
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false];
         }
         // N日前の「狙う」日付。実データはこの日付以下で最も近い日を採用する。
         $targetPastDate = (new \DateTime($baseDate))->modify("-{$days} day")->format('Y-m-d');
@@ -86,15 +88,33 @@ class AlphaPeriodGrowthRepository
 
         $totalMatched = count($rows);
 
-        $rows = array_slice($rows, 0, $limit);
+        // 5. ページング（limit+1 で hasMore を判定し、表示は limit 件に切る）
+        [$paged, $hasMore] = $this->paginate($rows, $offset, $limit);
 
         return [
-            'data'         => $rows,
+            'data'         => $paged,
             'days'         => $days,
             'totalMatched' => $totalMatched,
             'baseDate'     => $baseDate,
             'pastDate'     => $targetPastDate,
+            'hasMore'      => $hasMore,
         ];
+    }
+
+    /**
+     * ソート済み全行を offset/limit で切り出し、次ページ有無(hasMore)を返す。
+     * limit+1 件を読む方式ではなく既に全件 PHP 側に持っているので、offset 以降の
+     * 残件数で hasMore を判定する（access-ranking の limit+1 と意味は同じ）。
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array{0: array<int, array<string, mixed>>, 1: bool}
+     */
+    private function paginate(array $rows, int $offset, int $limit): array
+    {
+        $offset = max(0, $offset);
+        $paged = array_slice($rows, $offset, $limit);
+        $hasMore = (count($rows) > $offset + $limit);
+        return [$paged, $hasMore];
     }
 
     /**
@@ -107,7 +127,8 @@ class AlphaPeriodGrowthRepository
      *
      * @param string $startDate 期間開始日 (Y-m-d)
      * @param string $endDate   期間終了日 (Y-m-d)
-     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string}
+     * @param int    $offset    先頭から読み飛ばす件数（ページング用）
+     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool}
      */
     public function findPeriodGrowthByDateRange(
         string $keyword,
@@ -115,7 +136,8 @@ class AlphaPeriodGrowthRepository
         string $startDate,
         string $endDate,
         string $order,
-        int $limit
+        int $limit,
+        int $offset = 0
     ): array {
         // 終了日 < 開始日なら入れ替えて常に start <= end にする
         if ($startDate > $endDate) {
@@ -125,7 +147,7 @@ class AlphaPeriodGrowthRepository
 
         $candidates = $this->fetchCandidates($keyword, $category);
         if (empty($candidates)) {
-            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null];
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false];
         }
 
         $ids = array_map(static fn($c) => (int)$c['id'], $candidates);
@@ -138,14 +160,15 @@ class AlphaPeriodGrowthRepository
 
         $rows = $this->buildRows($candidates, $currentMap, $pastMap, $order);
         $totalMatched = count($rows);
-        $rows = array_slice($rows, 0, $limit);
+        [$paged, $hasMore] = $this->paginate($rows, $offset, $limit);
 
         return [
-            'data'         => $rows,
+            'data'         => $paged,
             'days'         => $days,
             'totalMatched' => $totalMatched,
             'baseDate'     => $endDate,
             'pastDate'     => $startDate,
+            'hasMore'      => $hasMore,
         ];
     }
 

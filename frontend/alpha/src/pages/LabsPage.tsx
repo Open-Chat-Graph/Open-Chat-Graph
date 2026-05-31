@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import useSWRInfinite from 'swr/infinite'
 import { FlaskConical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { InfiniteScrollLoader } from '@/components/OpenChat'
 import {
   LabsControls,
   LabsRankingCard,
@@ -12,7 +11,7 @@ import {
   type LabsEntity,
 } from '@/components/Labs'
 import type { LabsMetric } from '@/components/Labs/LabsControls'
-import { ListProgressRegion } from '@/components/Common/ListProgress'
+import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { ListScreen } from '@/components/Layout'
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
@@ -273,8 +272,8 @@ const LabsPage = memo(() => {
               </div>
             )}
 
-            {/* 無限スクロールの番兵＋ローディング */}
-            <InfiniteScrollLoader isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+            {/* 無限スクロールの番兵＋ローディング（初回・再取得と同じ ListProgressBar に統一） */}
+            <ListProgressFooter isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
 
             {updatedAt && (
               <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">

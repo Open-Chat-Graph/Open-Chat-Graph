@@ -458,7 +458,10 @@ class AlphaApiController
         );
         $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
-        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        $limit = (int)Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+        // 無限スクロールのページ番号（1始まり）。offset に展開してリポジトリへ渡す。
+        $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
+        $offset = ($page - 1) * $limit;
 
         // 任意の期間指定（両方そろっていれば days より優先）
         $startDate = $this->validDateOrNull(Reception::input('startDate', ''));
@@ -468,9 +471,9 @@ class AlphaApiController
         $startMs = microtime(true);
 
         if ($startDate !== null && $endDate !== null) {
-            $result = $repo->findPeriodGrowthByDateRange($keyword, $category, $startDate, $endDate, $order, (int)$limit);
+            $result = $repo->findPeriodGrowthByDateRange($keyword, $category, $startDate, $endDate, $order, $limit, $offset);
         } else {
-            $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, (int)$limit);
+            $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, $limit, $offset);
         }
 
         $this->recordListTiming($timingRepo, 'period-growth', $startMs);
@@ -525,6 +528,9 @@ class AlphaApiController
             'data' => $data,
             'days' => $result['days'],
             'totalMatched' => $result['totalMatched'],
+            // 無限スクロール（page 始点1・hasMore で次ページ有無）。access-ranking と同形。
+            'page' => $page,
+            'hasMore' => $result['hasMore'],
             // リスト全体の基準日/狙ったN日前日付（フロント表示用）
             'baseDate' => $result['baseDate'],
             'targetPastDate' => $result['pastDate'],

@@ -4,9 +4,9 @@ import useSWRInfinite from 'swr/infinite'
 import { Search, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
+import { OpenChatCard } from '@/components/OpenChat'
 import { WatchKeywordButton } from '@/components/Notifications'
-import { ListProgressRegion } from '@/components/Common/ListProgress'
+import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { SearchLanding } from '@/components/Common/SearchLanding'
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
@@ -254,8 +254,8 @@ const SearchPage = memo(() => {
             ))}
           </div>
 
-          {/* Infinite scroll loading indicator */}
-          <InfiniteScrollLoader
+          {/* 追加読み込み（無限スクロール）。初回・再取得と同じ ListProgressBar に統一。 */}
+          <ListProgressFooter
             isLoading={isLoadingMore}
             hasMore={hasMore}
             observerRef={observerTarget}

@@ -62,6 +62,7 @@ export const alphaApi = {
     if (params.days !== undefined) query.set('days', params.days.toString())
     if (params.order) query.set('order', params.order)
     if (params.limit) query.set('limit', params.limit.toString())
+    if (params.page) query.set('page', params.page.toString())
     if (params.startDate) query.set('startDate', params.startDate)
     if (params.endDate) query.set('endDate', params.endDate)
 

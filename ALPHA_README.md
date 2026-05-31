@@ -6,11 +6,11 @@
 
 ## 実装済み機能
 
-- 検索: キーワード＋カテゴリ絞り込み、ソート軸（人数 / 1時間・24時間・1週間増減 / 作成日）＋昇降トグル、検索条件の保存（localStorage）、無限スクロール。初回ロードは上部ETAプログレスバー、結果表示中の再検索は前回結果に薄いぼかし＋スピナー。初期/空状態のランディングに「最近の検索」（自動履歴・チップ・タップで再検索・個別/一括削除）と「保存した検索条件」（タップで再検索・削除）を表示。カードは本家風のコンパクト行で、ソート軸に対応する増減を表示。
+- 検索: キーワード＋カテゴリ絞り込み、ソート軸（人数 / 1時間・24時間・1週間増減 / 作成日）＋昇降トグル、検索条件の保存（localStorage）、無限スクロール。読み込み表示は全状態で同一の細いプログレスバーに統一（初回＝上部バー＋キャプション／再検索＝前回結果を薄くdim＋同じ上部バー／追加読み込み＝リスト末尾に同じバー。スピナーは使わない）。初期/空状態のランディングに「最近の検索」（自動履歴・チップ・タップで再検索・個別/一括削除）と「保存した検索条件」（タップで再検索・削除）を表示。カードは本家風のコンパクト行で、ソート軸に対応する増減を表示。
 - 詳細: 丸アイコンヘッダ＋画像モーダル（URL駆動）、人数＋3期間の増減、Preactグラフ（人数＋順位線。操作タブ列の高さを `--chart-controls-h` で予約し描画完了時のレイアウトシフト無し）、ランキング掲載履歴（遅延オーバーレイ・件数表示／0件はグレーアウト）、高次の考察ブロック、アクション（LINEで開く / マイリスト）、増減アラート（枠上部の開閉トグル。未有効時は「解除」を出さず「ONにする」のみ／有効時は人数・％しきい値の編集と「解除」）。
 - 詳細のアクセス・検索指標ブロック: 純PV / UU / SEO流入 / 参加リンク押下（うちSEO=Organic起点を併記）/ 平均滞在 ＋ 流入キーワード窓（GSC・多い順）＋ 参照元窓（GA4 pageReferrer・多い順、本家内からの遷移は「SEO経由」バッジ＝SEO動線で間接流入した部屋が分かる）。本家が出さない数字を出すαの中核価値。
 - 高次の考察: 一目で分からない高次シグナルだけを提示。種類: 急上昇ランキング順位 / 公式ランキング（全体, 上位300位以内のみ）の推移・最高位 / 同カテゴリのメンバー数順位・シェア・規模 / 単日最大増加 / ペース異常。データ不足・下位・ノイズは黙る。
-- 任意のN日増減 (`/period-growth`): キーワード(＋カテゴリ)一致のうち「N日前と現在の両方に統計がある部屋」に絞り、その期間の増減で並べる。**キーワードは任意（空欄＝全部屋対象。member降順の候補プール上限内）**。期間 7/30/90/半年/1年/任意（カレンダー範囲）。作成日/登録日も表示。本家ソートより長い任意期間＋「始点から継続」絞り込みが差別点。
+- 任意のN日増減 (`/period-growth`): キーワード(＋カテゴリ)一致のうち「N日前と現在の両方に統計がある部屋」に絞り、その期間の増減で並べる。**キーワードは任意（空欄＝全部屋対象。member降順の候補プール上限内）**。期間 7/30/90/半年/1年/任意（カレンダー範囲）。作成日/登録日も表示。**無限スクロール（useSWRInfinite＋page/limit。読み込み表示は検索・Labsと同一のプログレスバー＝初回上部バー／再取得dim＋同バー／末尾の追加読み込みバー）**。本家ソートより長い任意期間＋「始点から継続」絞り込みが差別点。
 - フォルダ統合グラフ (`/mylist/:folderId/chart`): マイリストのフォルダ配下の全部屋の人数推移を1グラフに重ねる(recharts)。期間 24時間/1週間/1ヶ月/全期間/任意。下のチェックで線の表示/非表示。
 - マイリスト: フォルダ管理・並べ替え・一括操作・モバイル下部ナビ。フォルダ内に統合グラフ導線。
 - アラート通知: 毎時クロール後のα処理(`alpha_hourly`)で3種検出 — ①アラートキーワードに一致する新しい部屋（LINE公式検索APIで未登録部屋も最速）②アラート対象部屋の±％ ③マイリスト全体の±％。通知タブは新着部屋＋増減を1本の時系列タイムラインに混在表示、未読バッジ・既読化。アラート設定(`/watch`)はキーワードとマイリスト全体の2つ。部屋ごとのアラートは詳細画面で設定/解除（解除は確認ダイアログ）。ユーザー識別はマイリストと同じCookie。
@@ -25,7 +25,7 @@
 - モーダル/上に重ねる画面は全てブラウザバックで閉じる（`useBackDismiss`＋ルート駆動）。ドリルダウン到達ページ(period-growth/watch/labs)は固定タイトルバーに戻る矢印。
 - 重ね順は `tailwind.config.js` の zIndex トークンが唯一の定義元（subheader/overlay/nav/header/sidebar/popover/modal。生 `z-[NN]` 禁止、dropdown/selectはpopover>header）。固定ヘッダ高さは ResizeObserver で実測し `--header-searchbar-h` に反映。入力は `text-base md:text-sm`（iOS拡大防止）。
 - 画面骨格（固定サブヘッダ＋スクロール領域）は `components/Layout/ListScreen.tsx` に集約。ヘッダをスクロール外の flex 兄弟に置きカードの覗き込みを物理的に防ぐ（旧 `sticky -mt -mx` 方式を廃止）。利用ページ(labs/watch)は `KEEP_ALIVE_PAGES` で `scrollable:false`。
-- リスト取得の応答待ち表示は `components/Common/ListProgress.tsx` の `ListProgressRegion` に集約（初回＝上部バー＋キャプション／再取得＝薄ぼかし＋スピナー）。検索・Labs・period-growth が共用し同一描画（進行値は `useListProgress`）。
+- リスト取得の応答待ち表示は `components/Common/ListProgress.tsx` に集約し、3状態すべて同一の `ListProgressBar`（細い primary バー・スピナー不使用）に統一: 初回＝`ListProgressRegion` の上部バー＋キャプション／再取得＝`ListRefetchBar`（前回結果を薄くdim＋同じ上部バー）／追加読み込み（無限スクロール次ページ）＝`ListProgressFooter`（リスト末尾に同じバー。次ページETAは取れないので約900msの軽いindeterminate ramp）。検索・Labs・period-growth が共用し同一描画（先頭ページ進行値は `useListProgress`）。旧 `InfiniteScrollLoader`（Loader2スピナー）は廃止。
 - ビルド: `make build-frontend:alpha` → `public/js/alpha`（成果物コミット＝gitベースデプロイ）。
 - 主要ディレクトリ: `src/{pages,components,api,hooks,lib,services,contexts,types}`。
 
@@ -48,7 +48,7 @@
 | POST | `/alpha-api/batch-stats` | 複数IDの一括基本情報 |
 | GET | `/alpha-api/ranking-history/{id}` | ランキング掲載履歴 |
 | GET | `/alpha-api/insights/{id}` | 高次の考察 |
-| GET | `/alpha-api/period-growth` | 任意N日増減 |
+| GET | `/alpha-api/period-growth` | 任意N日増減（無限スクロール: `page`(1始) / `limit`、応答に `page`/`hasMore`。access-ranking と同形） |
 | GET/PUT | `/alpha-api/alerts/config` | アラート設定（キーワード/部屋/マイリスト） |
 | GET | `/alpha-api/alerts` | 通知一覧（新着部屋＋増減） |
 | GET | `/alpha-api/access-ranking` | Labs: アクセス数(GA4) |
@@ -140,7 +140,7 @@ OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`l
    - **【2026-05-31 追加指示】アクセス流入ランキングでも「SEO経由合算表示」にし各項目に "うちSEO経由 X" を出す（詳細の合計／うちSEO経由と同じ表現）。指標に「入室数（参加リンク押下＝jump_clicks）」も加える。** つまり各ランキング行＝合計値＋"うちSEO経由"を、アクセス数・検索流入・入室数の各指標で表示。
 3. **Labs 検索KWを別タブ化＋無限スクロール（#34）** ※決定: **4タブ＝アクセス/検索流入/検索KW/その他ページ(非オプチャ)**。主指標は**タブごとに変える**おまかせ（各行=主指標＋小さく「うちSEO経由」）。**ランキング行の左の連番(rank)が右に無駄な大マージンを作っているのを是正**（番号で幅を食わない詰めたレイアウトに）。 — 流入クエリ一覧を「アクセス/検索」とは別タブに。件数(limit)セレクタ廃止し**無限スクロールで全件**。検索条件ヘッダを通常検索と同様に上部固定。
    - **【2026-05-31 追加指示】部屋（openchat）以外のページのエンティティは別枠タブに分離して出す**（以前アクセス数・検索流入のリストに openchat 以外のページも混ぜたが、やはりオプチャ以外は別タブに、分かりやすい方法で）。タブ構成イメージ: 「アクセス」「検索流入」「検索キーワード」＋「その他ページ（非オプチャ）」。表示は**無限スクロールで全件**・期間は**既定30日**＋カレンダーで任意期間選択。
-4. **【完了 2026-06-01】リスト全般にETAプログレスバー（#35）** — 既存の検索ETA方式を汎用化。フックは `hooks/useListProgress.ts`（旧 `components/Search/useSearchProgress` を一般化し置換）、表示は `components/Common/ListProgress.tsx`（`ListProgressBar`＋`ListRefetchOverlay`。overlay の z は `z-overlay` トークン）。検索・period-growth・Labs（rooms/pages/keywords 各タブ）が共用: 初回ロード＝上部バー、結果表示中の再取得＝前回結果にぼかし＋スピナー、ETA時間で 0→90% 漸近・応答到着で必ず100・到着前は100にしない。バックエンドは `alpha_search_timing`（既存テーブル・スキーマ変更なし）を任意 query_key で再利用。各リスト処理が実 wall time を record し、汎用 `GET /alpha-api/eta?type=...` が同一規則のキーで見込みを返す。queryKey は「種別接頭辞（pg/ar/sr/sq）＋正規化条件を `|` 連結」、190超は安定ハッシュへ。フォールバック中央値は同種別（接頭辞 LIKE）に絞る。record と eta は `AlphaApiController::buildListEtaKey` が唯一の組み立て元。
+4. **【完了 2026-06-01】リスト全般にETAプログレスバー（#35）→ 全状態のバー統一＋period-growth無限スクロール（#39）** — 既存の検索ETA方式を汎用化。フックは `hooks/useListProgress.ts`（旧 `components/Search/useSearchProgress` を一般化し置換）、表示は `components/Common/ListProgress.tsx`。**#39 で読み込み表示を全状態同一の `ListProgressBar` に統一**: 初回＝`ListProgressRegion` 上部バー＋キャプション／再取得＝`ListRefetchBar`（前回結果を薄くdim＋同じ上部バー。旧 `ListRefetchOverlay` のスピナーを廃止）／追加読み込み＝`ListProgressFooter`（リスト末尾に同じバー。次ページETAは取れないので約900msのindeterminate ramp。旧 `InfiniteScrollLoader` のLoader2スピナーを廃止し削除）。**period-growth を useSWR→useSWRInfinite 化**し IntersectionObserver で次ページ取得（filterKey変化で `setSize(1)` リセット。Labs/Searchと同パターン）。BE: `periodGrowth`＋`AlphaPeriodGrowthRepository` に `page`/`offset`/`limit` ＋ `hasMore`（ソート済み全行を offset/limit で切り出し残件で判定）を追加、応答に `page`/`hasMore` を載せる（access-ranking と同形）。ETA時間で 0→90% 漸近・応答到着で必ず100・到着前は100にしない。バックエンドは `alpha_search_timing`（既存テーブル・スキーマ変更なし）を任意 query_key で再利用。各リスト処理が実 wall time を record し、汎用 `GET /alpha-api/eta?type=...` が同一規則のキーで見込みを返す。queryKey は「種別接頭辞（pg/ar/sr/sq）＋正規化条件を `|` 連結」、190超は安定ハッシュへ。フォールバック中央値は同種別（接頭辞 LIKE）に絞る。record と eta は `AlphaApiController::buildListEtaKey` が唯一の組み立て元。
 5. **【完了 2026-06-01】アラート設定画面の拡充（#36）** — `/watch`(`WatchSettingsPage`) に①キーワードのアラートを画面内の入力＋カテゴリ選択で追加（一覧から削除も）②設定済みルーム一覧（部屋名は `batch-stats` で解決・しきい値表示・個別解除）③最終更新ヒント＋保存/キャンセルを置いた上部 sticky ヘッダーバー（`top-0 z-subheader`、生z-[NN]不使用）を実装。保存は従来どおり PUT 全置き換え（rooms も温存）。
 6. **【完了 2026-06-01】マイリスト変動アラート3パターン（#37）** — `/watch` のマイリスト変動セクションで scope=全体/ルート直下のみ/特定フォルダ を選択。しきい値は部屋詳細と**同じ %/人数 プルダウン**（新 `components/Notifications/ThresholdInput.tsx` に共通化し `WatchRoomControl` と共用）。スキーマ加算: `alpha_mylist_threshold` に `up_member`/`down_member`/`scope`/`target_oc_ids`(JSON) を追加。フォルダ構造は localStorage のみでサーバに無いため、対象 open_chat_id 集合はフロント（`mylistScope.ts`）が解決し PUT で送り cron はそれを直接使う（scope='all'/旧行は従来どおり `oc_list_user` 全体にフォールバック）。**二重通知回避**: `AlphaAlertService::computeMylistMovements` が、同毎時に部屋単体(type='room')で通知済みの (user_id, open_chat_id) を `getRoomNotificationKeys($hourBucket)` で集め、マイリスト側はそれをスキップ（部屋単体を優先・どちらか一方のみ）。**デプロイ時に schema-sync で4列追加が要る（dry-run確認済み・+4 column）。**
 7. **詳細/Labs 指標の期間プルダウン（#38）** — 詳細のアクセス・検索指標を**既定「過去30日」**にし、カレンダー（開始〜終了）で範囲指定。**カレンダーでは全期間まで選べる**こと＋**どこかに「全期間」ボタン**を置く。Labsも同様（既定30日＋カレンダー＋全期間ボタン）。期間に含まれるデータは全部集計。**バックエンド**: room-metrics/ranking に開始-終了日(date range)パラメータを追加（`*_daily` を範囲SUM。全期間＝下限なし）。

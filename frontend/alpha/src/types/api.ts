@@ -142,6 +142,8 @@ export interface PeriodGrowthResponse {
   data: PeriodGrowthItem[]
   days: number
   totalMatched: number
+  page: number  // 取得したページ番号（1始まり）
+  hasMore: boolean  // 次ページがあるか（無限スクロール）
   baseDate: string
   targetPastDate: string
 }
@@ -152,6 +154,7 @@ export interface PeriodGrowthParams {
   days?: number
   order?: 'asc' | 'desc'
   limit?: number
+  page?: number  // 無限スクロールのページ番号（1始まり）
   startDate?: string  // 比較の起点日（Y-m-d）。days より優先される明示指定
   endDate?: string  // 比較の終点日（Y-m-d）。days より優先される明示指定
 }
