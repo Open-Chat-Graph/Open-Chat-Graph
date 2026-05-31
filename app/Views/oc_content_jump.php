@@ -47,15 +47,23 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
             class="oc-jump-rule-image">
         </div>
         <ul class="oc-jump-rule-list">
-          <li><b><?php echo t('思いやりのある発言をしよう') ?></b><span><?php echo t('誹謗中傷や暴言、名誉や信用を傷つける行為は禁止されています。') ?></span></li>
-          <li><b><?php echo t('個人情報を大切に扱おう') ?></b><span><?php echo t('LINE ID・電話番号・住所など、個人が特定できる情報の投稿は控えましょう。') ?></span></li>
-          <li><b><?php echo t('知らない人と会わないようにしよう') ?></b><span><?php echo t('面識のない人との出会いや交際を目的とする行為は禁止されています。') ?></span></li>
-          <li><b><?php echo t('不適切な性的表現をさけよう') ?></b><span><?php echo t('露骨な性的描写やわいせつな表現・画像の投稿は禁止されています。') ?></span></li>
-          <li><b><?php echo t('著作権を守ろう') ?></b><span><?php echo t('他人の著作物を無断で投稿・利用する行為は禁止されています。') ?></span></li>
-          <li><b><?php echo t('スパム・違法行為・商用利用の禁止') ?></b><span><?php echo t('迷惑行為や法律に違反する行為、無断の宣伝・勧誘は禁止されています。') ?></span></li>
-          <li><b><?php echo t('青少年の安全を守ろう') ?></b><span><?php echo t('青少年との不健全な出会いや、危険・搾取につながる行為は一切禁止です。') ?></span></li>
+          <li><b><?php echo t('1. 個人情報の掲載') ?></b><span><?php echo t('自分自身や他人の個人を特定できる情報（LINE ID・電話番号・氏名・住所・顔写真など）を掲載することは禁止されています。') ?></span></li>
+          <li><b><?php echo t('2. 誹謗中傷・過度な批判的表現') ?></b><span><?php echo t('特定の個人等に対し、名誉を毀損する行為や、苛烈な表現・他人に不快感や嫌悪感を感じさせる表現を用いることは禁止されています。') ?></span></li>
+          <li><b><?php echo t('3. 差別的発言・ヘイトスピーチ') ?></b><span><?php echo t('人種・民族・国・性別・性的指向・病気・障がい・宗教などへの差別やヘイトスピーチに当たる投稿、又はこれらを煽動する行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('4. 知的財産権・プライバシー・肖像権等の権利侵害') ?></b><span><?php echo t('第三者の著作物・商標・肖像等を無断で掲載・利用するなど、第三者の権利を侵害する行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('5. 自殺・自傷、他人に対する危害等の予告等') ?></b><span><?php echo t('自殺や自傷行為、他人や物に対する危害を予告・示唆したり、これらの方法を具体的に提示したりする行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('6. 児童ポルノコンテンツの投稿または青少年を危険に晒す行為') ?></b><span><?php echo t('18歳未満の児童を性的に描写・搾取すると判断される画像・動画等の投稿、又は青少年を危険に晒す行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('7. わいせつ・暴力的など一般人が不快と感じる内容を投稿する行為') ?></b><span><?php echo t('わいせつ・暴力的・猟奇的、過激な描写、動物虐待等、一般人が不快だと感じる可能性のある内容の投稿は禁止されています。') ?></span></li>
+          <li><b><?php echo t('8. 出会いを目的とする行為') ?></b><span><?php echo t('面識のない他人との出会いや交際のみを目的とする投稿、又は不健全な目的で人を引き合わせる行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('9. 法令違反または法令違反につながる恐れのある行為') ?></b><span><?php echo t('投稿自体が法令違反（犯罪を含む）を構成し得る内容、又は法令違反を誘発・助長する恐れのある行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('10. 明らかな偽誤情報の拡散・流布') ?></b><span><?php echo t('明らかに事実と異なり社会的に混乱を招くおそれのある投稿や、健康被害等をもたらす可能性のある偽誤情報の拡散・流布は禁止されています。') ?></span></li>
+          <li><b><?php echo t('11. なりすまし') ?></b><span><?php echo t('ユーザー本人以外の人物や組織などになりすます行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('12. サイバーセキュリティリスクの恐れがある行為') ?></b><span><?php echo t('システムにアクセス負荷をかけたり脆弱性の詮索を行うなど、サーバー又はネットワークの機能を破壊・妨害する行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('13. サービス運営の妨害（荒らし行為）') ?></b><span><?php echo t('ユーザー間の意見交換・交流を著しく困難なものとするなど、サービスの適正な運営を阻害するおそれがある行為は禁止されています。') ?></span></li>
+          <li><b><?php echo t('14. 商用宣伝を目的とする行為') ?></b><span><?php echo t('本サービスを商業目的や広告目的に利用することは禁止されています（身元が明確かつ違法でない場合を除く）。') ?></span></li>
+          <li><b><?php echo t('15. その他当社が不適切とみなす行為') ?></b><span><?php echo t('社会通念上、他人やほかのユーザーが不快・迷惑と感じる行為や、サービスの趣旨にそぐわない行為は禁止されています。') ?></span></li>
         </ul>
-        <span class="oc-jump-source"><?php echo t('出典：') ?><a href="https://guide.line.me/ja/safety/contributionStandard" target="_blank" rel="noopener nofollow"><?php echo t('LINE 投稿に関する基準') ?></a></span>
+        <span class="oc-jump-source"><?php echo t('出典：') ?><a href="https://openchat-jp.line.me/other/prohibited_activities" target="_blank" rel="noopener nofollow"><?php echo t('LINEオープンチャット 禁止規定') ?></a></span>
         <div class="oc-jump-footer-info">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div class="oc-jump-footer-text">

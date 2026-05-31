@@ -221,6 +221,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           หาก LINE พบการกระทำดังกล่าวผ่านการรายงานปัญหา หรืออื่นๆ จะดำเนินการตามความเหมาะสม เช่น ซ่อนโพสต์ หรือระงับการใช้งานบัญชี (ชั่วคราวและถาวร)
         </span>
         <hr class="hr-bottom">
+        <span class="oc-jump-source">ที่มา：<a href="https://guide.line.me/th/safety/contributionStandard" target="_blank" rel="noopener nofollow">มาตรฐานเกี่ยวกับการโพสต์บน LINE</a></span>
       </section>
       <div class="oc-jump-footer-info">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
