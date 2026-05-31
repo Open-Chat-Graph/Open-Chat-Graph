@@ -6,9 +6,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   LabsControls,
   LabsRankingCard,
-  LabsPagesSection,
   LabsQuerySection,
   type LabsMode,
+  type LabsEntity,
 } from '@/components/Labs'
 import { alphaApi } from '@/api/alpha'
 import type {
@@ -99,6 +99,25 @@ const LabsPage = memo(() => {
   const pages = useMemo(() => data?.pages ?? [], [data])
   const queries = useMemo(() => queryData?.data ?? [], [queryData])
 
+  // 部屋とページ全体を1つの並びに統合し、アクティブ指標（access=純PV / search=検索クリック）で降順ソート。
+  // ソート値はエンティティ構築時に mode を見て安全に取り出す（room の型は mode と一致する）。
+  const entities = useMemo<(LabsEntity & { sortValue: number })[]>(() => {
+    const list: (LabsEntity & { sortValue: number })[] = []
+    for (const room of rooms) {
+      const sortValue =
+        mode === 'access'
+          ? (room as AccessRankingRoom).pageviews
+          : (room as SearchRankingRoom).searchClicks
+      list.push({ kind: 'room', room, sortValue })
+    }
+    for (const page of pages) {
+      const sortValue = mode === 'access' ? page.pageviews : page.searchClicks
+      list.push({ kind: 'page', page, sortValue })
+    }
+    list.sort((a, b) => b.sortValue - a.sortValue)
+    return list
+  }, [rooms, pages, mode])
+
   const setParam = useCallback(
     (next: Partial<{ mode: LabsMode; days: number; limit: number }>) => {
       const params = new URLSearchParams(searchParams)
@@ -175,24 +194,20 @@ const LabsPage = memo(() => {
             </Card>
           ) : (
             <div className="space-y-5">
-              {/* 部屋ランキング */}
+              {/* 部屋とページ全体（トップ/おすすめ等）を同じ並びに統合し、指標で通し順に表示。 */}
               <section className="space-y-2" data-testid="labs-rooms-section">
-                <h2 className="px-0.5 text-sm font-semibold text-foreground">部屋ランキング</h2>
                 <div className="grid gap-2 md:gap-3">
-                  {rooms.map((room, index) => (
+                  {entities.map((entity, index) => (
                     <LabsRankingCard
-                      key={room.id}
-                      room={room}
+                      key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
+                      entity={entity}
                       rank={index + 1}
                       mode={mode}
-                      onCardClick={handleCardClick}
+                      onRoomClick={handleCardClick}
                     />
                   ))}
                 </div>
               </section>
-
-              {/* ページ全体（トップ・おすすめ等）。部屋ランキングと並置する。 */}
-              <LabsPagesSection pages={pages} />
 
               {/* 検索流入モードのときだけ、流入キーワードの一覧を添える。 */}
               {mode === 'search' && <LabsQuerySection queries={queries} />}

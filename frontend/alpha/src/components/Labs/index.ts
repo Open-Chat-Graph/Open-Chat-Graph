@@ -1,4 +1,3 @@
 export { LabsControls, type LabsMode } from './LabsControls'
-export { LabsRankingCard } from './LabsRankingCard'
-export { LabsPagesSection } from './LabsPagesSection'
+export { LabsRankingCard, type LabsEntity } from './LabsRankingCard'
 export { LabsQuerySection } from './LabsQuerySection'
