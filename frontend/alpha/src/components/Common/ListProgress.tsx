@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -62,5 +63,54 @@ export function ListRefetchOverlay({ active, label = '更新中…' }: ListRefet
         {label}
       </div>
     </div>
+  )
+}
+
+interface ListProgressRegionProps {
+  /** 0..100。useListProgress の progress をそのまま渡す。 */
+  progress: number
+  /** バー/オーバーレイを表示すべきか。useListProgress の active。 */
+  active: boolean
+  /** すでにリスト結果が見えているか（再取得＝オーバーレイ／初回＝上部バー の振り分け）。 */
+  hasResults: boolean
+  /** 応答待ち中に出す文言（既定「読み込み中…」。検索は「検索中…」等）。 */
+  caption?: string
+  /** リスト本体 */
+  children: ReactNode
+}
+
+/**
+ * リスト取得の応答待ち表示を1箇所に集約した領域コンポーネント。
+ * 検索・Labs・period-growth はこれを使って完全に同一の見た目／挙動になる。
+ *
+ *  - `active && !hasResults`（初回ロード）→ 上部に細いプログレスバー＋中央キャプション。
+ *  - `active && hasResults`（再取得）     → children を relative で包み、薄いぼかし＋スピナーを被せる。
+ *  - それ以外                              → children をそのまま描画。
+ *
+ * 進行値・最小表示時間等のロジックは useListProgress が持つ（このコンポーネントは描画のみ）。
+ */
+export function ListProgressRegion({
+  progress,
+  active,
+  hasResults,
+  caption = '読み込み中…',
+  children,
+}: ListProgressRegionProps) {
+  const showTopBar = active && !hasResults
+  const showRefetchOverlay = active && hasResults
+
+  return (
+    <>
+      {showTopBar && (
+        <div className="pt-1">
+          <ListProgressBar progress={progress} active={showTopBar} />
+          <p className="mt-2 text-center text-xs text-muted-foreground">{caption}</p>
+        </div>
+      )}
+      <div className="relative">
+        <ListRefetchOverlay active={showRefetchOverlay} label={caption} />
+        {children}
+      </div>
+    </>
   )
 }

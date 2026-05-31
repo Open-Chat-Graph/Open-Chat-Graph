@@ -205,6 +205,9 @@ const MyListPage = memo(() => {
 
   return (
     <>
+      {/* TODO: 画面骨格は将来 ListScreen（components/Layout/ListScreen.tsx）へ寄せる。
+          いまは選択モード時のスクロール方向連動ツールバー等この画面固有の挙動が多く、
+          リスク回避のため自前の固定ツールバー＋absoluteスクロール領域を維持する。 */}
       {/* ツールバー - fixedで全幅表示 */}
       <div
         className={`fixed top-12 left-0 right-0 z-subheader bg-background border-b transition-transform duration-300 select-none md:left-[var(--main-offset-md)] lg:left-[var(--main-offset-lg)] md:w-[var(--content-w)] md:border-r ${

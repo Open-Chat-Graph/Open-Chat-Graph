@@ -12,7 +12,8 @@ import {
   type LabsEntity,
 } from '@/components/Labs'
 import type { LabsMetric } from '@/components/Labs/LabsControls'
-import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { ListProgressRegion } from '@/components/Common/ListProgress'
+import { ListScreen } from '@/components/Layout'
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
 import { DEFAULT_PERIOD, periodKey, periodToParams, type PeriodValue } from '@/lib/period'
@@ -163,8 +164,6 @@ const LabsPage = memo(() => {
     },
   })
   const hasResults = pages.length > 0 && (pages[0]?.data.length ?? 0) > 0
-  const showTopBar = progressActive && !hasResults
-  const showRefetchOverlay = progressActive && hasResults
 
   // 全ページのデータを結合（タブごとに型が違うので必要箇所でキャストして読む）。
   const rooms = useMemo<LabsRankingRoom[]>(() => {
@@ -216,56 +215,48 @@ const LabsPage = memo(() => {
   }, [tab, rooms, pageRows])
 
   return (
-    <div className="space-y-4">
-      {/* 検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。上部固定。 */}
-      <LabsControls
-        tab={tab}
-        period={period}
-        category={category}
-        metric={metric}
-        keyword={keyword}
-        onTabChange={handleTabChange}
-        onPeriodChange={setPeriod}
-        onCategoryChange={setCategory}
-        onMetricChange={setMetric}
-        onKeywordChange={setKeyword}
-      />
+    <ListScreen
+      header={
+        /* 検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。骨格は ListScreen が固定する。 */
+        <LabsControls
+          tab={tab}
+          period={period}
+          category={category}
+          metric={metric}
+          keyword={keyword}
+          onTabChange={handleTabChange}
+          onPeriodChange={setPeriod}
+          onCategoryChange={setCategory}
+          onMetricChange={setMetric}
+          onKeywordChange={setKeyword}
+        />
+      }
+    >
+      <div className="space-y-4">
+        {error && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <p className="text-sm text-destructive">データの取得に失敗しました</p>
+            </CardContent>
+          </Card>
+        )}
 
-      {error && (
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-sm text-destructive">データの取得に失敗しました</p>
-          </CardContent>
-        </Card>
-      )}
+        {!error && isEmpty && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FlaskConical className="mx-auto h-12 w-12 text-muted-foreground/40" />
+              <p className="mt-4 text-sm text-muted-foreground">
+                該当データがありません（集計待ち or 条件に一致なし）
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground/80">
+                GA連携後に日次で集計されます。期間やカテゴリを広げてみてください。
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。 */}
-      {!error && showTopBar && (
-        <div className="pt-1">
-          <ListProgressBar progress={progress} active={showTopBar} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">読み込み中…</p>
-        </div>
-      )}
-
-      {!error && isEmpty && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FlaskConical className="mx-auto h-12 w-12 text-muted-foreground/40" />
-            <p className="mt-4 text-sm text-muted-foreground">
-              該当データがありません（集計待ち or 条件に一致なし）
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground/80">
-              GA連携後に日次で集計されます。期間やカテゴリを広げてみてください。
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!error && !isEmpty && (
-        <>
-          <div className="relative">
-            {/* 既存リスト表示中のフィルタ変更は薄いレイヤー＋スピナーで応答待ちを明示 */}
-            <ListRefetchOverlay active={showRefetchOverlay} />
+        {!error && !isEmpty && (
+          <ListProgressRegion progress={progress} active={progressActive} hasResults={hasResults}>
             {tab === 'keywords' ? (
               <LabsQuerySection queries={queries} />
             ) : (
@@ -281,19 +272,19 @@ const LabsPage = memo(() => {
                 ))}
               </div>
             )}
-          </div>
 
-          {/* 無限スクロールの番兵＋ローディング */}
-          <InfiniteScrollLoader isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+            {/* 無限スクロールの番兵＋ローディング */}
+            <InfiniteScrollLoader isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
 
-          {updatedAt && (
-            <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">
-              最終更新 {formatUpdatedAt(updatedAt)}
-            </p>
-          )}
-        </>
-      )}
-    </div>
+            {updatedAt && (
+              <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">
+                最終更新 {formatUpdatedAt(updatedAt)}
+              </p>
+            )}
+          </ListProgressRegion>
+        )}
+      </div>
+    </ListScreen>
   )
 })
 

@@ -78,18 +78,20 @@ const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
     scrollable: true,
   },
   {
+    // ListScreen 方式（固定ヘッダ＋自前スクロール）。パネルは padding/overflow を付けない。
     key: 'watch',
     isActive: (p) => p === '/watch',
     element: <WatchSettingsPage />,
     top: 'title',
-    scrollable: true,
+    scrollable: false,
   },
   {
+    // ListScreen 方式（固定ヘッダ＋自前スクロール）。パネルは padding/overflow を付けない。
     key: 'labs',
     isActive: (p) => p === '/labs',
     element: <LabsPage />,
     top: 'title',
-    scrollable: true,
+    scrollable: false,
   },
 ]
 

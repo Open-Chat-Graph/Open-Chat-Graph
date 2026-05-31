@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ListScreen } from '@/components/Layout'
 import { CATEGORIES, categoryName } from '@/lib/categories'
 import { loadMyList } from '@/services/storage'
 import { useAlertsConfig, configToRequest } from '@/components/Notifications/useAlertsConfig'
@@ -198,28 +199,30 @@ export default function WatchSettingsPage() {
   }
 
   return (
-    <div>
-      {/* (固定) ヘッダーバー: 最終更新ヒント＋保存。z は header(60) と衝突しない subheader。 */}
-      <div className="sticky top-0 z-subheader -mx-3 mb-4 flex items-center gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur md:-mx-6 md:px-6">
-        <p className="text-xs text-muted-foreground">
-          設定は毎時のデータ更新後に反映されます
-        </p>
-        <div className="ml-auto flex items-center gap-2">
-          {saveError && <span className="text-xs text-destructive">保存に失敗</span>}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            disabled={saving}
-          >
-            キャンセル
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || isLoading} data-testid="watch-save">
-            {saving ? '保存中…' : '保存'}
-          </Button>
+    <ListScreen
+      header={
+        /* 固定ヘッダーバー: 最終更新ヒント＋保存。骨格（固定／背景／border／z）は ListScreen が持つ。 */
+        <div className="flex items-center gap-2 px-3 py-2 md:px-6">
+          <p className="text-xs text-muted-foreground">
+            設定は毎時のデータ更新後に反映されます
+          </p>
+          <div className="ml-auto flex items-center gap-2">
+            {saveError && <span className="text-xs text-destructive">保存に失敗</span>}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              disabled={saving}
+            >
+              キャンセル
+            </Button>
+            <Button size="sm" onClick={handleSave} disabled={saving || isLoading} data-testid="watch-save">
+              {saving ? '保存中…' : '保存'}
+            </Button>
+          </div>
         </div>
-      </div>
-
+      }
+    >
       {isLoading && !config ? (
         <div className="flex justify-center py-12">
           <div className="h-7 w-7 animate-spin rounded-full border-b-2 border-primary" />
@@ -438,7 +441,7 @@ export default function WatchSettingsPage() {
           </Section>
         </div>
       )}
-    </div>
+    </ListScreen>
   )
 }
 

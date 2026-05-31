@@ -46,8 +46,9 @@ interface LabsControlsProps {
 }
 
 /**
- * Labs の検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。上部固定（sticky）。
- * 重ね順は z-subheader。期間は既定30日＋カレンダー＋全期間（PeriodRangePicker）。
+ * Labs の検索条件ヘッダ（タブ＋期間＋指標＋カテゴリ＋キーワード）。
+ * 画面骨格（固定／背景／border／重ね順）は ListScreen.header が持つので、ここでは中身だけを描く。
+ * 期間は既定30日＋カレンダー＋全期間（PeriodRangePicker）。
  * キーワード入力は onChange を 300ms デバウンスして親に渡す（rooms タブのみ表示）。
  * 指標プルダウン（アクセス数/検索流入）は rooms/pages タブのみ表示。
  */
@@ -83,7 +84,7 @@ export const LabsControls = memo(
     }
 
     return (
-      <div className="sticky top-0 z-subheader -mx-3 -mt-3 border-b bg-background/95 px-3 py-2 backdrop-blur md:-mx-6 md:-mt-6 md:px-6">
+      <div className="px-3 py-2 md:px-6">
         {/* タブ（横スクロール可。3つ） */}
         <div className="flex gap-1 overflow-x-auto pb-0.5">
           {LABS_TABS.map((t) => {

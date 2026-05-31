@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { CalendarRange, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder, type PeriodGrowthQuery } from '@/components/PeriodGrowth'
-import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { ListProgressRegion } from '@/components/Common/ListProgress'
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
@@ -100,8 +100,6 @@ const PeriodGrowthPage = memo(() => {
       : undefined,
   })
   const hasResults = items.length > 0
-  const showTopBar = progressActive && !hasResults
-  const showRefetchOverlay = progressActive && hasResults
 
   const handleSubmit = useCallback(
     (next: PeriodGrowthQuery) => {
@@ -172,16 +170,10 @@ const PeriodGrowthPage = memo(() => {
         </Card>
       )}
 
-      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。 */}
-      {showTopBar && (
-        <div className="pt-1">
-          <ListProgressBar progress={progress} active={showTopBar} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">読み込み中…</p>
-        </div>
-      )}
-
+      {/* プログレス（初回＝上部バー／再取得＝薄レイヤー）。検索・Labs と同一実装。 */}
+      <ListProgressRegion progress={progress} active={progressActive} hasResults={hasResults}>
       {searched && data && (
-        <>
+        <div className="space-y-4">
           {/* サマリ（ラベル付き・数値は tabular-nums で軽く構造化） */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span>
@@ -219,23 +211,20 @@ const PeriodGrowthPage = memo(() => {
               </CardContent>
             </Card>
           ) : (
-            <div className="relative">
-              {/* 既存リスト表示中の再取得は薄いレイヤー＋スピナーで応答待ちを明示 */}
-              <ListRefetchOverlay active={showRefetchOverlay} />
-              <div className="grid gap-2 md:gap-3">
-                {items.map((item, index) => (
-                  <PeriodGrowthCard
-                    key={item.id}
-                    item={item}
-                    rank={index + 1}
-                    onCardClick={handleCardClick}
-                  />
-                ))}
-              </div>
+            <div className="grid gap-2 md:gap-3">
+              {items.map((item, index) => (
+                <PeriodGrowthCard
+                  key={item.id}
+                  item={item}
+                  rank={index + 1}
+                  onCardClick={handleCardClick}
+                />
+              ))}
             </div>
           )}
-        </>
+        </div>
       )}
+      </ListProgressRegion>
     </div>
   )
 })

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
 import { WatchKeywordButton } from '@/components/Notifications'
-import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { ListProgressRegion } from '@/components/Common/ListProgress'
 import { SearchLanding } from '@/components/Common/SearchLanding'
 import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
@@ -119,10 +119,6 @@ const SearchPage = memo(() => {
       : undefined,
   })
   const hasResults = results.length > 0
-  // 初回（リスト未表示）の応答待ち → 上部プログレスバー
-  const showTopBar = progressActive && !hasResults
-  // 既存リスト表示中の再検索 → 薄いレイヤー＋スピナー
-  const showRefetchOverlay = progressActive && hasResults
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -189,15 +185,12 @@ const SearchPage = memo(() => {
 
   return (
     <div className="space-y-6">
-      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。
-          結果が出たら畳まれ、以降の再検索はオーバーレイ側に切り替わる。 */}
-      {showTopBar && (
-        <div className="pt-1">
-          <ListProgressBar progress={progress} active={showTopBar} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">検索中…</p>
-        </div>
-      )}
-
+      <ListProgressRegion
+        progress={progress}
+        active={progressActive}
+        hasResults={hasResults}
+        caption="検索中…"
+      >
       {error && (
         <Card className="border-destructive">
           <CardContent className="pt-6">
@@ -217,9 +210,7 @@ const SearchPage = memo(() => {
       )}
 
       {urlKeyword && results.length > 0 && (
-        <div className="relative space-y-4">
-          {/* 既存リスト表示中の再検索は薄いレイヤー＋スピナーで応答待ちを明示 */}
-          <ListRefetchOverlay active={showRefetchOverlay} label="再検索中…" />
+        <div className="space-y-4">
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">{totalCount.toLocaleString()}</span>件
@@ -271,6 +262,7 @@ const SearchPage = memo(() => {
           />
         </div>
       )}
+      </ListProgressRegion>
 
       {!urlKeyword && !isLoading && (
         <>
