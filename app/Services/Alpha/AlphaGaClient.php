@@ -369,10 +369,17 @@ class AlphaGaClient
 
         $rowLimit = min(max(1, $limit), 25000);
 
+        // ja 専用: tw/th ロケール配下のページに着地したクエリ（タイ語/中国語など）を除外する。
+        // query 次元のみだと page で畳めないので GSC 側の page フィルタで弾く。
         $body = [
             'startDate' => $startDate,
             'endDate' => $endDate,
             'dimensions' => ['query'],
+            'dimensionFilterGroups' => [[
+                'filters' => [
+                    ['dimension' => 'page', 'operator' => 'excludingRegex', 'expression' => '/(?:tw|th)(?:/|$)'],
+                ],
+            ]],
             'rowLimit' => $rowLimit,
             'startRow' => 0,
         ];
@@ -639,10 +646,29 @@ class AlphaGaClient
     }
 
     /**
-     * pagePath / page URL から /openchat/{id} の数値idを抽出。
+     * 本家 ja セクション以外（/tw, /th ロケール配下）の URL/パスか。
+     *
+     * GSC/GA4 のプロパティはドメイン全体（/tw・/th も同一ドメインのサブパス）なので、
+     * ja 専用のαに tw/th の流入が混ざる。さらに /th/oc/{id} は PATH_ID_PATTERN が
+     * /oc/{id} に一致して**別ロケールの部屋idをja部屋idへ誤って畳む**。これを弾く。
+     */
+    private function isOtherLocalePath(string $urlOrPath): bool
+    {
+        $path = $urlOrPath;
+        if (preg_match('#^https?://[^/]+(/.*)$#', $urlOrPath, $m)) {
+            $path = $m[1];
+        }
+        return (bool)preg_match('#^/(?:tw|th)(?:/|$)#', $path);
+    }
+
+    /**
+     * pagePath / page URL から /openchat/{id} の数値idを抽出。tw/th ロケール配下は除外（ja専用）。
      */
     private function extractOpenChatId(string $path): ?int
     {
+        if ($this->isOtherLocalePath($path)) {
+            return null;
+        }
         if (preg_match(self::PATH_ID_PATTERN, $path, $m)) {
             $id = (int)$m[1];
             return $id > 0 ? $id : null;
@@ -651,10 +677,13 @@ class AlphaGaClient
     }
 
     /**
-     * /oc/{id}/jump の id を抽出（参加リンク計測ページ専用）。
+     * /oc/{id}/jump の id を抽出（参加リンク計測ページ専用）。tw/th 配下は除外。
      */
     private function extractJumpOpenChatId(string $path): ?int
     {
+        if ($this->isOtherLocalePath($path)) {
+            return null;
+        }
         if (preg_match('#/oc/(\d+)/jump#', $path, $m)) {
             $id = (int)$m[1];
             return $id > 0 ? $id : null;
@@ -679,6 +708,11 @@ class AlphaGaClient
         }
         // クエリ/フラグメント除去
         $path = preg_replace('/[?#].*$/', '', $path) ?? $path;
+
+        // tw/th ロケール配下は ja 専用αの対象外
+        if (preg_match('#^/(?:tw|th)(?:/|$)#', $path)) {
+            return null;
+        }
 
         // トップ
         if ($path === '' || $path === '/' || $path === '/index.html') {
