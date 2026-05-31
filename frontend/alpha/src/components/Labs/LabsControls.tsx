@@ -16,8 +16,8 @@ import type { PeriodValue } from '@/lib/period'
 // Labs の3タブ。ランキング(rooms) / その他ページ(pages) / 検索KW(keywords)。
 export type LabsTab = 'rooms' | 'pages' | 'keywords'
 
-// 指標の選択肢。rooms/pages タブで使う。
-export type LabsMetric = 'pv' | 'seo'
+// 指標の選択肢。rooms/pages タブで使う。jump＝入室数（参加リンク押下）。
+export type LabsMetric = 'pv' | 'seo' | 'jump'
 
 export const LABS_TABS: { value: LabsTab; label: string; icon: LucideIcon }[] = [
   { value: 'rooms', label: 'ランキング', icon: BarChart2 },
@@ -122,6 +122,7 @@ export const LabsControls = memo(
               <SelectContent>
                 <SelectItem value="pv">アクセス数</SelectItem>
                 <SelectItem value="seo">検索流入</SelectItem>
+                <SelectItem value="jump">入室数</SelectItem>
               </SelectContent>
             </Select>
           )}

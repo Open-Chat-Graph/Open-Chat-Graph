@@ -19,6 +19,18 @@ use App\Config\SecretsConfig;
  * open_chat_id 別に集計して返す。
  *
  * ※ creds 未設定時はこのクラスを生成しないこと（呼び出し側でガードする）。
+ *
+ * ## access_token キャッシュ戦略
+ *
+ * - プロセス内キャッシュ: $cachedToken（リクエスト/バッチ1回内）
+ * - プロセス跨ぎキャッシュ: TOKEN_STORE_PATH に JSON で保存（expiry 60秒マージン）
+ *   - ストア形式: {"access_token":"...", "expiry":1234567890, "refresh_token":"..."}
+ *   - refresh 応答に refresh_token が含まれる場合（Google rotation）はストアを更新して永続化
+ *   - ストアの書込が不可な環境では従来どおり SecretsConfig の refresh_token で毎回 refresh
+ *
+ * ## invalid_grant（refresh_token 失効）時
+ * - 明確な RuntimeException を投げてバッチログへ記録する。
+ *   OAuth 再同意（ブラウザ操作）が必要なためコードでは自動回復できない。
  */
 class AlphaGaClient
 {
@@ -26,6 +38,16 @@ class AlphaGaClient
 
     /** 本家詳細ページ /oc/{id}（念のため /openchat/{id} も）から数字idを拾う */
     private const PATH_ID_PATTERN = '#/(?:oc|openchat)/(\d+)#';
+
+    /**
+     * プロセス跨ぎトークンストアのパス。
+     * storage/ja は drwxrwxrwx（アプリ書込可）。
+     * コミット対象外（.gitignore に追記済み）。
+     */
+    private const TOKEN_STORE_PATH = __DIR__ . '/../../../storage/ja/alpha_ga_token.json';
+
+    /** access_token の有効期限の何秒前から refresh するか（通常 3600s - 60s） */
+    private const EXPIRY_MARGIN_SECONDS = 60;
 
     private string $clientId;
     private string $clientSecret;
@@ -730,27 +752,131 @@ class AlphaGaClient
     }
 
     /**
-     * refresh_token を使って OAuth2 アクセストークンを取得する（GA4/GSC共通・1リクエスト内でキャッシュ）。
+     * refresh_token を使って OAuth2 アクセストークンを取得する（GA4/GSC共通）。
+     *
+     * 優先順位:
+     * 1. プロセス内キャッシュ ($cachedToken) が有れば即返す。
+     * 2. トークンストア (TOKEN_STORE_PATH) のキャッシュが有効期限内ならそれを返す。
+     * 3. Google に refresh して新しい access_token を取得し、ストアに保存する。
+     *
+     * ストア書込失敗はログのみで握りつぶし、毎回 refresh する従来動作に劣化フォールバック。
+     *
+     * @throws \RuntimeException invalid_grant（refresh_token 失効）または HTTP エラー時
      */
     private function getAccessToken(): string
     {
+        // 1. プロセス内キャッシュ
         if ($this->cachedToken !== null) {
             return $this->cachedToken;
+        }
+
+        // 2. プロセス跨ぎストアキャッシュ
+        $stored = $this->loadTokenStore();
+        if (
+            $stored !== null
+            && isset($stored['access_token'], $stored['expiry'])
+            && is_string($stored['access_token'])
+            && is_int($stored['expiry'])
+            && $stored['access_token'] !== ''
+            && time() < $stored['expiry'] - self::EXPIRY_MARGIN_SECONDS
+        ) {
+            return $this->cachedToken = $stored['access_token'];
+        }
+
+        // 3. refresh_token はストアに保持されている場合はそちらを使う（rotation 対応）
+        $refreshToken = $this->refreshToken; // SecretsConfig のデフォルト
+        if (
+            $stored !== null
+            && isset($stored['refresh_token'])
+            && is_string($stored['refresh_token'])
+            && $stored['refresh_token'] !== ''
+        ) {
+            $refreshToken = $stored['refresh_token'];
         }
 
         $res = $this->httpPostForm(self::TOKEN_ENDPOINT, [
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
-            'refresh_token' => $this->refreshToken,
+            'refresh_token' => $refreshToken,
             'grant_type' => 'refresh_token',
         ]);
 
         if (empty($res['access_token'])) {
             $err = $res['error_description'] ?? ($res['error'] ?? 'unknown');
-            throw new \RuntimeException('Failed to refresh access token: ' . (string)$err);
+            $errStr = (string)$err;
+            // invalid_grant はコードで自動回復不可（OAuth 再同意が必要）
+            if (isset($res['error']) && $res['error'] === 'invalid_grant') {
+                throw new \RuntimeException(
+                    'refresh_tokenが失効しています。OAuth再同意が必要です（ブラウザでGoogle認証→token.jsonを更新し、local-secrets.phpの$googleApiRefreshTokenを差し替えてください）。詳細: ' . $errStr
+                );
+            }
+            throw new \RuntimeException('Failed to refresh access token: ' . $errStr);
         }
 
-        return $this->cachedToken = (string)$res['access_token'];
+        $newAccessToken = (string)$res['access_token'];
+        $expiresIn = isset($res['expires_in']) ? (int)$res['expires_in'] : 3600;
+
+        // ストアに保存（書込失敗は握りつぶし）
+        $newRefreshToken = isset($res['refresh_token']) && is_string($res['refresh_token']) && $res['refresh_token'] !== ''
+            ? $res['refresh_token']
+            : $refreshToken;
+
+        $this->saveTokenStore([
+            'access_token' => $newAccessToken,
+            'expiry' => time() + $expiresIn,
+            'refresh_token' => $newRefreshToken,
+        ]);
+
+        return $this->cachedToken = $newAccessToken;
+    }
+
+    /**
+     * トークンストアを読み込む。存在しない・読めない場合は null を返す。
+     *
+     * @return array<string, mixed>|null
+     */
+    private function loadTokenStore(): ?array
+    {
+        $path = self::TOKEN_STORE_PATH;
+        if (!file_exists($path) || !is_readable($path)) {
+            return null;
+        }
+        $raw = @file_get_contents($path);
+        if ($raw === false || $raw === '') {
+            return null;
+        }
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * トークンストアに書き込む。書込失敗時はエラーログのみ（例外を投げない）。
+     *
+     * @param array<string, mixed> $data
+     */
+    private function saveTokenStore(array $data): void
+    {
+        $path = self::TOKEN_STORE_PATH;
+        $dir = dirname($path);
+        if (!is_dir($dir) || !is_writable($dir)) {
+            error_log('[AlphaGaClient] トークンストアのディレクトリが書込不可のためキャッシュをスキップ: ' . $dir);
+            return;
+        }
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if ($json === false) {
+            error_log('[AlphaGaClient] トークンストアのJSON生成に失敗');
+            return;
+        }
+        // アトミック書込（tmpファイル→rename）
+        $tmp = $path . '.tmp.' . getmypid();
+        if (@file_put_contents($tmp, $json) === false) {
+            error_log('[AlphaGaClient] トークンストアの書込に失敗: ' . $tmp);
+            return;
+        }
+        if (!@rename($tmp, $path)) {
+            error_log('[AlphaGaClient] トークンストアのrenameに失敗: ' . $tmp . ' -> ' . $path);
+            @unlink($tmp);
+        }
     }
 
     /**

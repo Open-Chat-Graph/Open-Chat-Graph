@@ -27,7 +27,7 @@ import type {
   OpenChat,
 } from '@/types/api'
 
-const PAGE_SIZE = 1000
+const PAGE_SIZE = 300
 
 // 任意のタブのページ応答（無限スクロールの1ページ分）。
 type LabsPageResponse = AccessRankingResponse | PageRankingResponse | SearchQueryRankingResponse
@@ -105,12 +105,20 @@ const LabsPage = memo(() => {
         if (metric === 'seo') {
           return alphaApi.getSearchRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
         }
+        // jump＝入室数（近似）も pages では access-ranking を sort で切り替えて取得。
+        if (metric === 'jump') {
+          return alphaApi.getAccessRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc', sort: 'jump_clicks' })
+        }
         return alphaApi.getAccessRanking({ period, page, limit: PAGE_SIZE, scope: 'pages', order: 'desc' })
       }
       // rooms タブは metric で叩くエンドポイントを切り替え、keyword も渡す。
       // メソッドを変数に取り出すと this が外れる（_rankingQuery 参照で失敗）ので必ず alphaApi 経由で呼ぶ。
       if (metric === 'seo') {
         return alphaApi.getSearchRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
+      }
+      // jump＝入室数（参加リンク押下）降順は access-ranking を sort で切り替えて取得。
+      if (metric === 'jump') {
+        return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined, sort: 'jump_clicks' })
       }
       return alphaApi.getAccessRanking({ period, category, page, limit: PAGE_SIZE, order: 'desc', keyword: keyword || undefined })
     },
@@ -153,6 +161,8 @@ const LabsPage = memo(() => {
           type,
           order: 'desc',
           scope,
+          // jump＝入室数は access-ranking を sort=jump_clicks で叩く。record 側キーと一致させる。
+          sort: metric === 'jump' ? 'jump_clicks' : undefined,
           category: tab === 'rooms' ? category || undefined : undefined,
           keyword: tab === 'rooms' ? keyword || undefined : undefined,
           days: periodParams.days ? Number(periodParams.days) : undefined,
@@ -183,7 +193,7 @@ const LabsPage = memo(() => {
 
   // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
   // ※ useInfiniteReveal の loadedCount 計算に必要なため observer より先に定義する。
-  const primary = metric === 'seo' ? 'seo' : 'pv'
+  const primary = metric === 'seo' ? 'seo' : metric === 'jump' ? 'jump' : 'pv'
 
   const entities = useMemo<LabsEntity[]>(() => {
     if (tab === 'pages') return pageRows.map((page) => ({ kind: 'page', page }))

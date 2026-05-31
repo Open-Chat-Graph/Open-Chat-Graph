@@ -183,6 +183,8 @@ export interface EtaParams {
   category?: number
   order?: 'asc' | 'desc'
   scope?: 'rooms' | 'pages'
+  // access-ranking の並び替え軸（jump=入室数）。record 側のキーに含まれるので一致させる。
+  sort?: 'pageviews' | 'jump_clicks'
   // 期間（Labs ランキング系）: days か start・end か all のいずれか。
   days?: number
   start?: string
@@ -329,6 +331,9 @@ export interface RankingPageMetric {
   searchClicks: number  // 検索からのクリック数
   searchImpressions: number  // 検索結果の表示回数
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
+  // 入室数（近似）＝このページを参照元として到達した部屋の jump_clicks 合計。
+  // ページ単体の参加リンク押下は計測していないため referrer ベースで近似（過大/重複しうる）。
+  jumpClicks: number
 }
 
 // ランキングの1部屋。アクセス/検索流入どちらのタブでも全指標を持つ
@@ -385,6 +390,8 @@ export interface RankingParams {
   limit?: number  // 1ページの件数
   scope?: 'rooms' | 'pages'  // pages＝その他ページ（非オプチャ）タブ
   keyword?: string  // 部屋名キーワード絞り込み（rooms スコープのみ。空文字は全件）
+  // 並び替え軸（access-ranking のみ）。pageviews＝アクセス数降順（既定）/ jump_clicks＝入室数降順。
+  sort?: 'pageviews' | 'jump_clicks'
 }
 
 // ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====

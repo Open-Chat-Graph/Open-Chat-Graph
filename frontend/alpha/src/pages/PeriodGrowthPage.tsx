@@ -12,7 +12,7 @@ import { categoryName } from '@/lib/categories'
 import { periodKey, periodToParams, type PeriodValue } from '@/lib/period'
 import type { PeriodGrowthItem, PeriodGrowthResponse, OpenChat } from '@/types/api'
 
-const LIMIT = 1000
+const LIMIT = 300
 const DEFAULT_DAYS = 30
 
 // "2024-05-30 12:00:00" → "2024/05/30"

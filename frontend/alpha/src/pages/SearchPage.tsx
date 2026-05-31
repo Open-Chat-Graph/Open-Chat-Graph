@@ -18,7 +18,7 @@ import type { SortType, SortOrder } from '@/lib/sort-options'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
 import { useLayout } from '@/contexts/layout-context'
 
-const LIMIT = 1000
+const LIMIT = 300
 
 const SearchPage = memo(() => {
   const navigate = useNavigate()

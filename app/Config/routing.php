@@ -928,6 +928,7 @@ Route::path('alpha-api/access-ranking', [AlphaApiController::class, 'accessRanki
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')
+    ->matchStr('sort', emptyAble: true, default: 'pageviews')
     ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 

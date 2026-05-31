@@ -20,13 +20,17 @@ class AlphaAccessRankingRepository
     /**
      * アクセス数ランキング（指定期間のページビュー合計でソート）。各行に全指標を付ける。
      *
+     * $sort で並べ替え軸を切替える: 'pageviews'（既定・PV合計降順）/ 'jump_clicks'（入室数＝参加リンク押下合計降順）。
+     * 'jump_clicks' のときは入室数が1件以上ある部屋だけに絞る（having）。返す指標は同じ全指標。
+     *
      * @return array{data: array<int, array<string, mixed>>, baseDate: ?string, updatedAt: ?string, hasMore: bool}
      */
-    public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0, string $keyword = ''): array
+    public function getAccessRanking(int $category, string $fromDate, string $toDate, string $order, int $limit, int $offset = 0, string $keyword = '', string $sort = 'pageviews'): array
     {
+        $byJump = $sort === 'jump_clicks';
         return $this->fetchRanking(
-            having: 'SUM(a.pageviews) > 0',
-            orderColumn: 'pageviews',
+            having: $byJump ? 'SUM(a.jump_clicks) > 0' : 'SUM(a.pageviews) > 0',
+            orderColumn: $byJump ? 'jump_clicks' : 'pageviews',
             category: $category,
             fromDate: $fromDate,
             toDate: $toDate,
@@ -185,9 +189,16 @@ class AlphaAccessRankingRepository
      * 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}' 等）の指定期間アクセス/検索流入ランキング。
      * 「その他ページ（非オプチャ）」タブ用。limit+1 で hasMore 判定。
      *
-     * $orderColumn は 'pageviews'（access用）/ 'search_clicks'（search用）。
+     * $orderColumn は 'pageviews'（access用）/ 'search_clicks'（search用）/ 'jump_clicks'（入室数＝近似）。
      *
-     * @return array{data: array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float}>, baseDate:?string, updatedAt:?string, hasMore:bool}
+     * 【入室数(jumpClicks)は近似】ページ単体では参加リンク押下(jump)を計測していないため、
+     * 「そのページを参照元(referrer)として到達した部屋の jump_clicks 合計」で代用する。
+     * alpha_room_referrer_daily で referrer がそのページ path を含む(LIKE '%path%')部屋・期間を特定し、
+     * alpha_room_access_daily の当該部屋・当該期間の jump_clicks を合算する。
+     * referrer は URL の一部一致なので過大/重複しうる（複数ページpathが互いに前方部分一致する場合など）。
+     * ページ数は少数なので相関サブクエリで都度集計してよい。
+     *
+     * @return array{data: array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float, jumpClicks:int}>, baseDate:?string, updatedAt:?string, hasMore:bool}
      */
     public function getPageScopeRanking(string $fromDate, string $toDate, string $order, int $limit, string $orderColumn = 'pageviews', int $offset = 0): array
     {
@@ -200,30 +211,47 @@ class AlphaAccessRankingRepository
         $baseDate = (string)$baseDate;
 
         $orderSql = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
-        $orderColumn = $orderColumn === 'search_clicks' ? 'search_clicks' : 'pageviews';
+        $orderColumn = in_array($orderColumn, ['search_clicks', 'jump_clicks'], true) ? $orderColumn : 'pageviews';
         $limit = max(1, $limit);
         $offset = max(0, $offset);
         $fetch = $limit + 1;
 
+        // ページ入室数（近似）: そのページを参照元とする部屋の jump_clicks 合計。
+        // 相関サブクエリで p.path にマッチする referrer を持つ部屋・期間の jump_clicks を合算する。
+        $jumpClicksSelect = "(
+            SELECT COALESCE(SUM(a.jump_clicks), 0)
+            FROM alpha_room_referrer_daily AS rr
+            INNER JOIN alpha_room_access_daily AS a
+                ON a.open_chat_id = rr.open_chat_id AND a.`date` = rr.`date`
+            WHERE rr.`date` BETWEEN :fromDateJ AND :toDateJ
+              AND rr.referrer LIKE CONCAT('%', p.path, '%')
+        ) AS jump_clicks";
+
         $sql = "
             SELECT
-                path,
-                MAX(label) AS label,
-                SUM(pageviews) AS pageviews,
-                SUM(active_users) AS active_users,
-                SUM(search_clicks) AS search_clicks,
-                SUM(search_impressions) AS search_impressions,
-                CASE WHEN SUM(search_impressions) > 0
-                     THEN SUM(search_position * search_impressions) / SUM(search_impressions)
-                     ELSE NULL END AS search_position
-            FROM alpha_page_access_daily
-            WHERE `date` BETWEEN :fromDate AND :toDate
-            GROUP BY path
+                p.path,
+                MAX(p.label) AS label,
+                SUM(p.pageviews) AS pageviews,
+                SUM(p.active_users) AS active_users,
+                SUM(p.search_clicks) AS search_clicks,
+                SUM(p.search_impressions) AS search_impressions,
+                CASE WHEN SUM(p.search_impressions) > 0
+                     THEN SUM(p.search_position * p.search_impressions) / SUM(p.search_impressions)
+                     ELSE NULL END AS search_position,
+                {$jumpClicksSelect}
+            FROM alpha_page_access_daily AS p
+            WHERE p.`date` BETWEEN :fromDate AND :toDate
+            GROUP BY p.path
             ORDER BY {$orderColumn} {$orderSql}
             LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+        $rows = DB::fetchAll($sql, [
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'fromDateJ' => $fromDate,
+            'toDateJ' => $toDate,
+        ]);
         $hasMore = count($rows) > $limit;
         if ($hasMore) {
             $rows = array_slice($rows, 0, $limit);
@@ -238,6 +266,7 @@ class AlphaAccessRankingRepository
                 'searchClicks' => (int)$r['search_clicks'],
                 'searchImpressions' => (int)$r['search_impressions'],
                 'searchPosition' => $r['search_position'] === null ? null : round((float)$r['search_position'], 2),
+                'jumpClicks' => (int)($r['jump_clicks'] ?? 0),
             ];
         }, $rows);
 

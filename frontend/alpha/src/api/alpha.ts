@@ -95,6 +95,7 @@ export const alphaApi = {
     if (params.category) query.set('category', params.category.toString())
     if (params.order) query.set('order', params.order)
     if (params.scope) query.set('scope', params.scope)
+    if (params.sort) query.set('sort', params.sort)
     if (params.days !== undefined) query.set('days', params.days.toString())
     if (params.start) query.set('start', params.start)
     if (params.end) query.set('end', params.end)
@@ -173,6 +174,7 @@ export const alphaApi = {
     if (params.limit) query.set('limit', params.limit.toString())
     if (params.scope) query.set('scope', params.scope)
     if (params.keyword) query.set('keyword', params.keyword)
+    if (params.sort) query.set('sort', params.sort)
     return query
   },
 

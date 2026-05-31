@@ -73,6 +73,7 @@
 OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`local-secrets.php`(gitignore) に5値:
 `$ga4PropertyId='373602810'` / `$gscSiteUrl='sc-domain:openchat-review.me'` / `$googleApiClientId` / `$googleApiClientSecret` / `$googleApiRefreshToken`。
 本番反映: 同5値を本番local-secretsへ → スキーマ自動追加 → 日次cronで集計（初回 `php batch/exec/alpha_ga_sync.php --days=90` で遡及）。
+access_tokenは `storage/ja/alpha_ga_token.json`（gitignore済み）にキャッシュし、有効期限60秒前まで再利用（cron毎のrefresh不要）。refresh応答にrefresh_tokenが含まれる場合（Google rotation）はストアを自動更新して永続化。書込不可環境ではSecretsConfigのrefresh_tokenで毎回refresh（従来動作）にフォールバック。
 
 ## 重要な前提
 

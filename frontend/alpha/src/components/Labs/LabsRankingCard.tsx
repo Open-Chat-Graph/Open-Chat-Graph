@@ -12,8 +12,8 @@ export type LabsEntity =
   | { kind: 'room'; room: LabsRankingRoom }
   | { kind: 'page'; page: RankingPageMetric }
 
-// どの指標を主役（大きく・primary色）にするか。タブに対応。
-export type LabsPrimary = 'pv' | 'seo'
+// どの指標を主役（大きく・primary色）にするか。指標プルダウンに対応。jump＝入室数。
+export type LabsPrimary = 'pv' | 'seo' | 'jump'
 
 interface LabsRankingCardProps {
   entity: LabsEntity
@@ -75,12 +75,14 @@ function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPr
         label="入室数"
         value={room.jumpClicks}
         sub={`うちSEO ${room.jumpClicksOrganic.toLocaleString()}`}
+        emphasize={primary === 'jump'}
       />
     </div>
   )
 }
 
-// 非オプチャページ: アクセス数 / SEO流入(直接のみ・GSC)。
+// 非オプチャページ: アクセス数 / SEO流入(直接のみ・GSC) / 入室数(近似) / ユニークユーザー。
+// 入室数はこのページを参照元として到達した部屋の参加リンク押下合計（近似）。
 function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: LabsPrimary }) {
   return (
     <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
@@ -91,6 +93,7 @@ function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: Labs
         sub={`平均 ${page.searchPosition != null ? page.searchPosition.toFixed(1) : '—'}位`}
         emphasize={primary === 'seo'}
       />
+      <Stat label="入室数" value={page.jumpClicks} sub="経由(目安)" emphasize={primary === 'jump'} />
       <Stat label="ユニークユーザー" value={page.activeUsers} unit="人" />
     </div>
   )
