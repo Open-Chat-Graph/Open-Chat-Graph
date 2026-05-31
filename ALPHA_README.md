@@ -50,11 +50,13 @@
 | GET | `/alpha-api/alerts` | 通知一覧（新着部屋＋増減） |
 | GET | `/alpha-api/access-ranking` | Labs: アクセス数(GA4) |
 | GET | `/alpha-api/search-ranking` | Labs: 検索流入(GSC) |
+| GET | `/alpha-api/search-query-ranking` | Labs: 上位検索クエリ(GSC) |
+| GET | `/alpha-api/room-metrics/{id}` | 詳細: 1部屋のGA/GSC指標（PV/UU/SEO/参加クリック/エンゲージ＋流入キーワード＋リファラ元＋SEO起点の参加クリック） |
 
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
 
 - userlog: `alpha_keyword_watch` / `alpha_room_watch` / `alpha_mylist_threshold` / `alpha_keyword_seen` / `alpha_notification`
-- ocreview: `alpha_room_access_daily`（GA4/GSC集計）
+- ocreview: `alpha_room_access_daily`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily`（非部屋ページ）／ `alpha_search_query_daily`（上位検索クエリ）／ `alpha_room_search_query_daily`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily`（部屋別 リファラ元）
 
 ### バッチ / cron
 

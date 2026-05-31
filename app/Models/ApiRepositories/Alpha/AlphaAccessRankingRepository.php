@@ -252,7 +252,8 @@ class AlphaAccessRankingRepository
      *
      * @return array{
      *   updatedAt:?string, pageviews:int, activeUsers:int, searchClicks:int,
-     *   searchImpressions:int, searchPosition:?float, jumpClicks:int, avgEngagementSeconds:?float
+     *   searchImpressions:int, searchPosition:?float, jumpClicks:int, jumpClicksOrganic:int,
+     *   avgEngagementSeconds:?float
      * }
      */
     public function getRoomMetrics(int $openChatId, int $days): array
@@ -267,6 +268,7 @@ class AlphaAccessRankingRepository
             'searchImpressions' => 0,
             'searchPosition' => null,
             'jumpClicks' => 0,
+            'jumpClicksOrganic' => 0,
             'avgEngagementSeconds' => null,
         ];
 
@@ -284,6 +286,7 @@ class AlphaAccessRankingRepository
                 SUM(search_clicks) AS search_clicks,
                 SUM(search_impressions) AS search_impressions,
                 SUM(jump_clicks) AS jump_clicks,
+                SUM(jump_clicks_organic) AS jump_clicks_organic,
                 CASE WHEN SUM(search_impressions) > 0
                      THEN SUM(search_position * search_impressions) / SUM(search_impressions)
                      ELSE NULL END AS search_position,
@@ -310,7 +313,95 @@ class AlphaAccessRankingRepository
             'searchImpressions' => (int)($row['search_impressions'] ?? 0),
             'searchPosition' => $row['search_position'] === null ? null : round((float)$row['search_position'], 2),
             'jumpClicks' => (int)($row['jump_clicks'] ?? 0),
+            'jumpClicksOrganic' => (int)($row['jump_clicks_organic'] ?? 0),
             'avgEngagementSeconds' => $row['engagement_seconds'] === null ? null : round((float)$row['engagement_seconds'], 1),
         ];
+    }
+
+    /**
+     * 詳細画面用: 1部屋の直近N日 流入検索クエリ（多い順 上位N件）。
+     *
+     * alpha_room_search_query_daily を query で GROUP し clicks 降順。
+     * position は表示回数(impressions)で加重平均。
+     *
+     * @return array<int, array{query:string, clicks:int, impressions:int, position:?float}>
+     */
+    public function getRoomSearchQueries(int $openChatId, int $days, int $limit = 20): array
+    {
+        DB::connect();
+
+        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_search_query_daily');
+        if ($baseDate === false || $baseDate === null) {
+            return [];
+        }
+        $baseDate = (string)$baseDate;
+        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
+        $limit = max(1, $limit);
+
+        $sql = "
+            SELECT
+                query,
+                SUM(clicks) AS clicks,
+                SUM(impressions) AS impressions,
+                CASE WHEN SUM(impressions) > 0
+                     THEN SUM(position * impressions) / SUM(impressions)
+                     ELSE NULL END AS position
+            FROM alpha_room_search_query_daily
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+            GROUP BY query
+            ORDER BY clicks DESC
+            LIMIT {$limit}
+        ";
+
+        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+
+        return array_map(static function ($r) {
+            return [
+                'query' => (string)$r['query'],
+                'clicks' => (int)$r['clicks'],
+                'impressions' => (int)$r['impressions'],
+                'position' => $r['position'] === null ? null : round((float)$r['position'], 2),
+            ];
+        }, $rows);
+    }
+
+    /**
+     * 詳細画面用: 1部屋の直近N日 リファラ元（多い順 上位N件）。
+     *
+     * alpha_room_referrer_daily を referrer で GROUP し pageviews 降順。
+     *
+     * @return array<int, array{referrer:string, pageviews:int}>
+     */
+    public function getRoomReferrers(int $openChatId, int $days, int $limit = 20): array
+    {
+        DB::connect();
+
+        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_referrer_daily');
+        if ($baseDate === false || $baseDate === null) {
+            return [];
+        }
+        $baseDate = (string)$baseDate;
+        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
+        $limit = max(1, $limit);
+
+        $sql = "
+            SELECT
+                referrer,
+                SUM(pageviews) AS pageviews
+            FROM alpha_room_referrer_daily
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+            GROUP BY referrer
+            ORDER BY pageviews DESC
+            LIMIT {$limit}
+        ";
+
+        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+
+        return array_map(static function ($r) {
+            return [
+                'referrer' => (string)$r['referrer'],
+                'pageviews' => (int)$r['pageviews'],
+            ];
+        }, $rows);
     }
 }

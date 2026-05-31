@@ -401,6 +401,244 @@ class AlphaGaClient
     }
 
     /**
+     * GSC: 期間内の /oc(または/openchat)/{id} 詳細ページに流入した検索クエリを open_chat_id 別に集計。
+     *
+     * dimensions=[page, query] で叩き、page を PATH_ID_PATTERN で open_chat_id に畳む。
+     * 同一idに複数pageが畳まれた場合、同一クエリは clicks/impressions を合算し
+     * position はインプレッション加重平均で再集計する。
+     * room毎に clicks 降順で上位20件に切る。
+     *
+     * GSC は最大25000行/リクエスト。startRow でページングする。
+     *
+     * @return array<int, array<int, array{query:string, clicks:int, impressions:int, position:?float}>>
+     */
+    public function fetchRoomSearchQueries(string $startDate, string $endDate): array
+    {
+        $token = $this->getAccessToken();
+
+        $url = 'https://searchconsole.googleapis.com/webmasters/v3/sites/'
+            . rawurlencode($this->gscSiteUrl) . '/searchAnalytics/query';
+
+        $rowLimit = 25000;
+        $startRow = 0;
+
+        // open_chat_id => query => [clicks, impressions, posWeighted]
+        $acc = [];
+
+        while (true) {
+            $body = [
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'dimensions' => ['page', 'query'],
+                'rowLimit' => $rowLimit,
+                'startRow' => $startRow,
+            ];
+
+            $res = $this->httpPostJson($url, $body, $token);
+            $rows = $res['rows'] ?? [];
+            if (empty($rows)) {
+                break;
+            }
+
+            foreach ($rows as $row) {
+                $page = (string)($row['keys'][0] ?? '');
+                $query = (string)($row['keys'][1] ?? '');
+                if ($query === '') {
+                    continue;
+                }
+                $id = $this->extractOpenChatId($page);
+                if ($id === null) {
+                    continue;
+                }
+                $query = mb_strlen($query) > 190 ? mb_substr($query, 0, 190) : $query;
+                $clicks = (int)round((float)($row['clicks'] ?? 0));
+                $impr = (int)round((float)($row['impressions'] ?? 0));
+                $pos = (float)($row['position'] ?? 0);
+
+                if (!isset($acc[$id][$query])) {
+                    $acc[$id][$query] = ['clicks' => 0, 'impressions' => 0, 'posWeighted' => 0.0];
+                }
+                $acc[$id][$query]['clicks'] += $clicks;
+                $acc[$id][$query]['impressions'] += $impr;
+                $acc[$id][$query]['posWeighted'] += $pos * $impr;
+            }
+
+            if (count($rows) < $rowLimit) {
+                break;
+            }
+            $startRow += $rowLimit;
+        }
+
+        $result = [];
+        foreach ($acc as $id => $queries) {
+            $list = [];
+            foreach ($queries as $query => $v) {
+                $list[] = [
+                    'query' => (string)$query,
+                    'clicks' => $v['clicks'],
+                    'impressions' => $v['impressions'],
+                    'position' => $v['impressions'] > 0
+                        ? round($v['posWeighted'] / $v['impressions'], 2)
+                        : null,
+                ];
+            }
+            // clicks 降順 上位20件
+            usort($list, static fn($a, $b) => $b['clicks'] <=> $a['clicks']);
+            $result[$id] = array_slice($list, 0, 20);
+        }
+
+        return $result;
+    }
+
+    /**
+     * GA4: /oc(または/openchat)/{id} 詳細ページのリファラ元を open_chat_id 別に集計。
+     *
+     * dimensions=[pagePath, pageReferrer], metrics=[screenPageViews] で叩き、
+     * pagePath を PATH_ID_PATTERN で open_chat_id に畳む。
+     * pageReferrer が空/'(not set)' の場合は '(direct)' に正規化し、190字に丸める。
+     * room毎に pageviews 降順で上位20件に切る。
+     *
+     * @return array<int, array<int, array{referrer:string, pageviews:int}>>
+     */
+    public function fetchRoomReferrers(string $startDate, string $endDate): array
+    {
+        $token = $this->getAccessToken();
+
+        $url = 'https://analyticsdata.googleapis.com/v1beta/properties/'
+            . rawurlencode($this->ga4PropertyId) . ':runReport';
+
+        $pageLimit = 100000;
+        $offset = 0;
+
+        // open_chat_id => referrer => pageviews
+        $acc = [];
+
+        while (true) {
+            $body = [
+                'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                'dimensions' => [['name' => 'pagePath'], ['name' => 'pageReferrer']],
+                'metrics' => [['name' => 'screenPageViews']],
+                'orderBys' => [[
+                    'metric' => ['metricName' => 'screenPageViews'],
+                    'desc' => true,
+                ]],
+                'limit' => $pageLimit,
+                'offset' => $offset,
+                'keepEmptyRows' => false,
+            ];
+
+            $res = $this->httpPostJson($url, $body, $token);
+            $rows = $res['rows'] ?? [];
+            if (empty($rows)) {
+                break;
+            }
+
+            foreach ($rows as $row) {
+                $path = (string)($row['dimensionValues'][0]['value'] ?? '');
+                $id = $this->extractOpenChatId($path);
+                if ($id === null) {
+                    continue;
+                }
+                $referrer = $this->normalizeReferrer((string)($row['dimensionValues'][1]['value'] ?? ''));
+                $pv = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
+
+                $acc[$id][$referrer] = ($acc[$id][$referrer] ?? 0) + $pv;
+            }
+
+            if (count($rows) < $pageLimit) {
+                break;
+            }
+            $offset += $pageLimit;
+        }
+
+        $result = [];
+        foreach ($acc as $id => $referrers) {
+            $list = [];
+            foreach ($referrers as $referrer => $pv) {
+                $list[] = ['referrer' => (string)$referrer, 'pageviews' => $pv];
+            }
+            // pv 降順 上位20件
+            usort($list, static fn($a, $b) => $b['pageviews'] <=> $a['pageviews']);
+            $result[$id] = array_slice($list, 0, 20);
+        }
+
+        return $result;
+    }
+
+    /**
+     * GA4: 参加リンク押下(/oc/{id}/jump の click & line.me)のうち
+     * セッションのチャネルが Organic Search のものだけを open_chat_id 別に合算する。
+     *
+     * fetchJumpClicks に sessionDefaultChannelGroup ディメンションを足したバリアント。
+     * 既存 fetchJumpClicks の戻り型は変えず、organic 分だけをこのメソッドで別取得する。
+     *
+     * @return array<int, int> open_chat_id => organicJumpClicks
+     */
+    public function fetchJumpClicksByChannel(string $startDate, string $endDate): array
+    {
+        $token = $this->getAccessToken();
+
+        $url = 'https://analyticsdata.googleapis.com/v1beta/properties/'
+            . rawurlencode($this->ga4PropertyId) . ':runReport';
+
+        $body = [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'dimensions' => [
+                ['name' => 'pagePath'],
+                ['name' => 'linkDomain'],
+                ['name' => 'sessionDefaultChannelGroup'],
+            ],
+            'metrics' => [['name' => 'eventCount']],
+            'dimensionFilter' => [
+                'filter' => [
+                    'fieldName' => 'eventName',
+                    'stringFilter' => ['matchType' => 'EXACT', 'value' => 'click'],
+                ],
+            ],
+            'limit' => 250000,
+            'keepEmptyRows' => false,
+        ];
+
+        $res = $this->httpPostJson($url, $body, $token);
+
+        $result = [];
+        foreach (($res['rows'] ?? []) as $row) {
+            $path = (string)($row['dimensionValues'][0]['value'] ?? '');
+            $linkDomain = (string)($row['dimensionValues'][1]['value'] ?? '');
+            $channel = (string)($row['dimensionValues'][2]['value'] ?? '');
+            // 参加リンク（line.me）以外のクリックは除外
+            if (stripos($linkDomain, 'line.me') === false) {
+                continue;
+            }
+            // Organic Search セッション由来のみ
+            if ($channel !== 'Organic Search') {
+                continue;
+            }
+            $id = $this->extractJumpOpenChatId($path);
+            if ($id === null) {
+                continue;
+            }
+            $clicks = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
+            $result[$id] = ($result[$id] ?? 0) + $clicks;
+        }
+
+        return $result;
+    }
+
+    /**
+     * GA4 pageReferrer を保存・表示しやすい形に正規化する。
+     * 空 / '(not set)' は '(direct)'。190字を超える場合は丸める。
+     */
+    private function normalizeReferrer(string $referrer): string
+    {
+        $referrer = trim($referrer);
+        if ($referrer === '' || $referrer === '(not set)') {
+            return '(direct)';
+        }
+        return mb_strlen($referrer) > 190 ? mb_substr($referrer, 0, 190) : $referrer;
+    }
+
+    /**
      * pagePath / page URL から /openchat/{id} の数値idを抽出。
      */
     private function extractOpenChatId(string $path): ?int

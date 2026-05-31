@@ -191,6 +191,7 @@ CREATE TABLE `alpha_room_access_daily` (
   `search_position` float DEFAULT NULL,
   `active_users` int(11) NOT NULL DEFAULT 0,
   `jump_clicks` int(11) NOT NULL DEFAULT 0,
+  `jump_clicks_organic` int(11) NOT NULL DEFAULT 0,
   `engagement_seconds` float DEFAULT NULL,
   PRIMARY KEY (`open_chat_id`,`date`),
   KEY `date_idx` (`date`)
@@ -222,5 +223,31 @@ CREATE TABLE `alpha_search_query_daily` (
   `impressions` int(11) NOT NULL DEFAULT 0,
   `position` float DEFAULT NULL,
   PRIMARY KEY (`query`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alpha Labs: 部屋別の流入検索クエリ（GSC searchAnalytics dimensions=[page, query] を /oc/{id} に畳んで日次保存）。
+-- 詳細画面「流入キーワード」(room-metrics の searchQueries)の元データ。
+DROP TABLE IF EXISTS `alpha_room_search_query_daily`;
+CREATE TABLE `alpha_room_search_query_daily` (
+  `open_chat_id` int(11) NOT NULL,
+  `query` varchar(190) NOT NULL,
+  `date` date NOT NULL,
+  `clicks` int(11) NOT NULL DEFAULT 0,
+  `impressions` int(11) NOT NULL DEFAULT 0,
+  `position` float DEFAULT NULL,
+  PRIMARY KEY (`open_chat_id`,`query`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alpha Labs: 部屋別のリファラ元（GA4 dimensions=[pagePath, pageReferrer] を /oc/{id} に畳んで日次保存）。
+-- 詳細画面「リファラ元」(room-metrics の referrers)の元データ。空/(not set) は '(direct)' に正規化済み。
+DROP TABLE IF EXISTS `alpha_room_referrer_daily`;
+CREATE TABLE `alpha_room_referrer_daily` (
+  `open_chat_id` int(11) NOT NULL,
+  `referrer` varchar(190) NOT NULL,
+  `date` date NOT NULL,
+  `pageviews` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`open_chat_id`,`referrer`,`date`),
   KEY `date_idx` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

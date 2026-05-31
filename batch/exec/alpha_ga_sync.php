@@ -108,6 +108,15 @@ try {
             $errors[] = "GA4 jump {$date}: " . $e->getMessage();
         }
 
+        // GA4: 参加リンク押下のうち Organic Search セッション由来の件数
+        try {
+            foreach ($client->fetchJumpClicksByChannel($date, $date) as $id => $jco) {
+                $merged[$id]['jump_clicks_organic'] = $jco;
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GA4 jump-organic {$date}: " . $e->getMessage();
+        }
+
         // GSC: 検索クリック/表示/順位
         try {
             foreach ($client->fetchSearchAnalytics($date, $date) as $id => $s) {
@@ -123,8 +132,8 @@ try {
             DB::execute(
                 "INSERT INTO alpha_room_access_daily
                     (open_chat_id, `date`, pageviews, search_clicks, search_impressions, search_position,
-                     active_users, jump_clicks, engagement_seconds)
-                 VALUES (:id, :date, :pv, :clicks, :impr, :pos, :uu, :jump, :eng)
+                     active_users, jump_clicks, jump_clicks_organic, engagement_seconds)
+                 VALUES (:id, :date, :pv, :clicks, :impr, :pos, :uu, :jump, :jump_organic, :eng)
                  ON DUPLICATE KEY UPDATE
                     pageviews = VALUES(pageviews),
                     search_clicks = VALUES(search_clicks),
@@ -132,6 +141,7 @@ try {
                     search_position = VALUES(search_position),
                     active_users = VALUES(active_users),
                     jump_clicks = VALUES(jump_clicks),
+                    jump_clicks_organic = VALUES(jump_clicks_organic),
                     engagement_seconds = VALUES(engagement_seconds)",
                 [
                     'id' => (int)$id,
@@ -142,10 +152,63 @@ try {
                     'pos' => $row['search_position'] ?? null,
                     'uu' => (int)($row['active_users'] ?? 0),
                     'jump' => (int)($row['jump_clicks'] ?? 0),
+                    'jump_organic' => (int)($row['jump_clicks_organic'] ?? 0),
                     'eng' => $row['engagement_seconds'] ?? null,
                 ]
             );
             $totalUpserts++;
+        }
+
+        // ---- 1b) 部屋別 流入検索クエリ (alpha_room_search_query_daily) ----
+        try {
+            foreach ($client->fetchRoomSearchQueries($date, $date) as $id => $queries) {
+                foreach ($queries as $q) {
+                    DB::execute(
+                        "INSERT INTO alpha_room_search_query_daily
+                            (open_chat_id, query, `date`, clicks, impressions, position)
+                         VALUES (:id, :q, :date, :clicks, :impr, :pos)
+                         ON DUPLICATE KEY UPDATE
+                            clicks = VALUES(clicks),
+                            impressions = VALUES(impressions),
+                            position = VALUES(position)",
+                        [
+                            'id' => (int)$id,
+                            'q' => $q['query'],
+                            'date' => $date,
+                            'clicks' => $q['clicks'],
+                            'impr' => $q['impressions'],
+                            'pos' => $q['position'],
+                        ]
+                    );
+                    $totalUpserts++;
+                }
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GSC room-query {$date}: " . $e->getMessage();
+        }
+
+        // ---- 1c) 部屋別 リファラ元 (alpha_room_referrer_daily) ----
+        try {
+            foreach ($client->fetchRoomReferrers($date, $date) as $id => $referrers) {
+                foreach ($referrers as $r) {
+                    DB::execute(
+                        "INSERT INTO alpha_room_referrer_daily
+                            (open_chat_id, referrer, `date`, pageviews)
+                         VALUES (:id, :ref, :date, :pv)
+                         ON DUPLICATE KEY UPDATE
+                            pageviews = VALUES(pageviews)",
+                        [
+                            'id' => (int)$id,
+                            'ref' => $r['referrer'],
+                            'date' => $date,
+                            'pv' => $r['pageviews'],
+                        ]
+                    );
+                    $totalUpserts++;
+                }
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GA4 room-referrer {$date}: " . $e->getMessage();
         }
 
         // ---- 2) 非部屋ページ (alpha_page_access_daily): トップ / おすすめ ----

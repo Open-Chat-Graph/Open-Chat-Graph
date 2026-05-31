@@ -657,6 +657,10 @@ class AlphaApiController
         $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
 
         $m = $repo->getRoomMetrics($open_chat_id, (int)$days);
+        $searchQueries = $repo->getRoomSearchQueries($open_chat_id, (int)$days, 20);
+        $referrerRows = $repo->getRoomReferrers($open_chat_id, (int)$days, 20);
+
+        $referrers = array_map(fn($r) => $this->formatReferrer($r), $referrerRows);
 
         return response([
             'days' => (int)$days,
@@ -667,8 +671,130 @@ class AlphaApiController
             'searchImpressions' => $m['searchImpressions'],
             'searchPosition' => $m['searchPosition'],
             'jumpClicks' => $m['jumpClicks'],
+            'jumpClicksOrganic' => $m['jumpClicksOrganic'],
             'avgEngagementSeconds' => $m['avgEngagementSeconds'],
+            'searchQueries' => $searchQueries,
+            'referrers' => $referrers,
         ]);
+    }
+
+    /**
+     * リファラ行を表示用に整形する（label / isInternal を付ける）。
+     *
+     * isInternal は host が本家ドメイン（SecretsConfig::$gscSiteUrl 由来）かどうか。
+     * label は (direct)→「直接・不明」/ 検索エンジン→「検索」/ 本家内部→パスからページ種別 /
+     * 外部→ホスト名。
+     *
+     * @param array{referrer:string, pageviews:int} $r
+     * @return array{referrer:string, label:string, pageviews:int, isInternal:bool}
+     */
+    private function formatReferrer(array $r): array
+    {
+        $referrer = (string)$r['referrer'];
+        $pageviews = (int)$r['pageviews'];
+
+        if ($referrer === '(direct)') {
+            return [
+                'referrer' => $referrer,
+                'label' => '直接・不明',
+                'pageviews' => $pageviews,
+                'isInternal' => false,
+            ];
+        }
+
+        $host = (string)(parse_url($referrer, PHP_URL_HOST) ?? '');
+        $host = strtolower($host);
+        // 先頭の www. は無視して比較する
+        $bareHost = preg_replace('/^www\./', '', $host) ?? $host;
+
+        $ownDomain = $this->ownDomainHost();
+        $isInternal = $ownDomain !== '' && ($bareHost === $ownDomain || str_ends_with($bareHost, '.' . $ownDomain));
+
+        if ($isInternal) {
+            $path = (string)(parse_url($referrer, PHP_URL_PATH) ?? '');
+            return [
+                'referrer' => $referrer,
+                'label' => $this->internalReferrerLabel($path),
+                'pageviews' => $pageviews,
+                'isInternal' => true,
+            ];
+        }
+
+        // 検索エンジン判定（host ベース）
+        if ($this->isSearchEngineHost($bareHost)) {
+            return [
+                'referrer' => $referrer,
+                'label' => '検索',
+                'pageviews' => $pageviews,
+                'isInternal' => false,
+            ];
+        }
+
+        // それ以外の外部はホスト名（取れなければ生 referrer）
+        return [
+            'referrer' => $referrer,
+            'label' => $bareHost !== '' ? $bareHost : $referrer,
+            'pageviews' => $pageviews,
+            'isInternal' => false,
+        ];
+    }
+
+    /**
+     * 本家ドメインのホスト名を SecretsConfig::$gscSiteUrl から取り出す（ハードコードしない）。
+     * 例 'sc-domain:openchat-review.me' / 'https://openchat-review.me/' → 'openchat-review.me'。
+     * 設定が空なら ''（その場合 isInternal は常に false）。
+     */
+    private function ownDomainHost(): string
+    {
+        $site = trim(\App\Config\SecretsConfig::$gscSiteUrl);
+        if ($site === '') {
+            return '';
+        }
+        // sc-domain:example.com 形式
+        if (str_starts_with($site, 'sc-domain:')) {
+            $host = substr($site, strlen('sc-domain:'));
+        } else {
+            // URLプレフィックス形式 https://example.com/
+            $parsed = parse_url($site, PHP_URL_HOST);
+            $host = $parsed !== null && $parsed !== false ? $parsed : $site;
+        }
+        $host = strtolower(trim($host));
+        return preg_replace('/^www\./', '', $host) ?? $host;
+    }
+
+    /**
+     * 検索エンジンのホストか（Google / Yahoo / Bing 等）。
+     */
+    private function isSearchEngineHost(string $host): bool
+    {
+        if ($host === '') {
+            return false;
+        }
+        $needles = ['google.', 'bing.', 'yahoo.', 'duckduckgo.', 'baidu.', 'yandex.', 'ecosia.', 'naver.'];
+        foreach ($needles as $n) {
+            if (str_contains($host, $n)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 本家内部リファラの path からページ種別ラベルを返す。
+     * '/'→「トップ」 / '/recommend...'→「おすすめ」 / '/oc/{id}'→「他の部屋」 / それ以外→「グラフ内ページ」。
+     */
+    private function internalReferrerLabel(string $path): string
+    {
+        if ($path === '' || $path === '/') {
+            return 'トップ';
+        }
+        if (str_starts_with($path, '/recommend')) {
+            return 'おすすめ';
+        }
+        if (preg_match('#^/(?:oc|openchat)/\d+#', $path)) {
+            return '他の部屋';
+        }
+        return 'グラフ内ページ';
     }
 
     /**
