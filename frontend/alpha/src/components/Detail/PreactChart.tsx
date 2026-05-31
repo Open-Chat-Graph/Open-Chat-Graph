@@ -96,12 +96,11 @@ export function PreactChart({ chatId, categoryKey, theme }: PreactChartProps) {
         style={{
           position: 'relative',
           marginTop: '1.5rem',
-          // 読み込み前の最低限の高さだけ確保（中身に応じて伸びる）。
-          // 以前は clamp(400px,50vh,600px) で縦長画面だと最大600px予約され、
-          // 中身が短いとグラフ下に巨大な空白が出ていた。
-          minHeight: '300px',
         }}
       >
+        {/* canvas 領域は .chart-canvas-box(ダミー枠)が aspect-ratio で予約。
+            操作タブ列は #app の min-height(--chart-controls-h, index.css)で予約。
+            両方を事前予約することで描画完了時に下要素がずれない。 */}
         <div className="chart-canvas-box" id="dummy-canvas"></div>
         <div id="app"></div>
       </div>
