@@ -222,6 +222,7 @@ viewComponent('oc_head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']
           若 LINE 透過檢舉等方式發現上述行為，將採取隱藏貼文或停用帳號（暫時及永久）等適當處置。
         </span>
         <hr class="hr-bottom">
+        <span class="oc-jump-source">資料來源：<a href="https://guide.line.me/tw/safety/contributionStandard" target="_blank" rel="noopener nofollow">LINE 貼文準則</a></span>
       </section>
       <div class="oc-jump-footer-info">
         <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
