@@ -189,9 +189,20 @@ export interface AlertsConfigRoom {
   down_percent: number | null
 }
 
+// マイリスト変動アラートのスコープ。
+//   all    … マイリスト全体
+//   root   … ルート直下（フォルダ未分類）のみ
+//   folder … 特定フォルダ配下のみ
+export type MylistAlertScope = 'all' | 'root' | 'folder'
+
 export interface AlertsConfigMylistThreshold {
   up_percent: number | null
   down_percent: number | null
+  up_member: number | null
+  down_member: number | null
+  scope: MylistAlertScope
+  // scope!=='all' のとき、フロントが解決した対象 open_chat_id 集合。'all'/未保存は null。
+  target_oc_ids: number[] | null
   enabled: boolean
 }
 
@@ -218,6 +229,11 @@ export interface AlertsConfigRequestRoom {
 export interface AlertsConfigRequestMylistThreshold {
   upPercent?: number | null
   downPercent?: number | null
+  upMember?: number | null
+  downMember?: number | null
+  scope?: MylistAlertScope
+  // scope!=='all' のとき送る。対象 open_chat_id 集合（サーバ側で最大1000件）。
+  targetOcIds?: number[]
   enabled: boolean
 }
 

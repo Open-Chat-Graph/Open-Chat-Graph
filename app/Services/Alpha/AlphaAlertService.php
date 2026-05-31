@@ -345,11 +345,15 @@ class AlphaAlertService
             return 0;
         }
 
-        // 全対象ユーザーのマイリスト id を集約してまとめて差分取得
+        // 全対象ユーザーのマイリスト id を集約してまとめて差分取得。
+        // scope='all' / target_oc_ids=null は従来どおり oc_list_user（全体）にフォールバック。
+        // scope='root'/'folder' はフロントが解決済みの target_oc_ids をそのまま使う。
         $userIdsToOcIds = [];
         $allIds = [];
         foreach ($thresholds as $t) {
-            $ocIds = $this->repo->getMylistOpenChatIds($t['user_id']);
+            $ocIds = ($t['target_oc_ids'] !== null)
+                ? $t['target_oc_ids']
+                : $this->repo->getMylistOpenChatIds($t['user_id']);
             if (empty($ocIds)) {
                 continue;
             }
@@ -371,6 +375,10 @@ class AlphaAlertService
             $thresholdByUser[$t['user_id']] = $t;
         }
 
+        // 二重通知の回避: 部屋単体でその毎時に room 通知を出した (user_id, open_chat_id) は
+        // マイリスト側ではスキップする（どちらか一方のみ通知。部屋単体を優先）。
+        $roomNotified = $this->collectRoomNotifiedKeys($hourBucket);
+
         $count = 0;
         foreach ($userIdsToOcIds as $userId => $ocIds) {
             $t = $thresholdByUser[$userId];
@@ -378,12 +386,14 @@ class AlphaAlertService
                 if (!isset($diffMap[$ocId])) {
                     continue;
                 }
+                // 部屋単体アラートで既に通知済みなら、マイリスト側は出さない（重複排除）。
+                if (isset($roomNotified[$userId . ':' . $ocId])) {
+                    continue;
+                }
                 $diff = $diffMap[$ocId]['diff_member'];
                 $percent = $diffMap[$ocId]['percent_increase'];
 
-                // 部屋ウォッチと同じ判定器を共用。人数(up_member/down_member)が
-                // しきい値に含まれていればそれでも発火する（現状マイリストは%設定のみだが、
-                // 将来人数しきい値が来ても通知が出るよう取りこぼさない）。
+                // 部屋ウォッチと同じ判定器を共用。%／人数のどちらの指定でも発火する。
                 $direction = $this->evaluateRoomThreshold([
                     'up_member' => $t['up_member'] ?? null,
                     'up_percent' => $t['up_percent'] ?? null,
@@ -403,6 +413,23 @@ class AlphaAlertService
         }
 
         return $count;
+    }
+
+    /**
+     * この毎時に部屋単体アラート(type='room')で通知を出した (user_id, open_chat_id) の集合を返す。
+     * computeRoomMovements が computeMylistMovements より先に走るので、ここで拾える。
+     * 重複排除（どちらか一方のみ通知）のため。
+     *
+     * @return array<string, true> "user_id:open_chat_id" => true
+     */
+    private function collectRoomNotifiedKeys(string $hourBucket): array
+    {
+        $rows = $this->repo->getRoomNotificationKeys($hourBucket);
+        $set = [];
+        foreach ($rows as $r) {
+            $set[$r['user_id'] . ':' . $r['open_chat_id']] = true;
+        }
+        return $set;
     }
 
     // ====================== 共通: movement payload ======================

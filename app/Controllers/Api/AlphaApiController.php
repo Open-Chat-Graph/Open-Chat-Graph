@@ -1108,13 +1108,28 @@ class AlphaApiController
         $repo->replaceRoomWatches($userId, $rooms);
 
         // mylistThreshold
+        // scope: 'all'(全体) | 'root'(ルート直下のみ) | 'folder'(特定フォルダ配下)。
+        // targetOcIds: 'all' 以外で、フロントが解決した対象 open_chat_id 配列（最大1000件）。
         if (isset($body['mylistThreshold']) && is_array($body['mylistThreshold'])) {
             $mt = $body['mylistThreshold'];
+            $scope = in_array(($mt['scope'] ?? 'all'), ['all', 'root', 'folder'], true)
+                ? (string)$mt['scope'] : 'all';
+            $targetOcIds = null;
+            if ($scope !== 'all' && isset($mt['targetOcIds']) && is_array($mt['targetOcIds'])) {
+                $targetOcIds = array_slice(array_values(array_filter(
+                    array_map('intval', $mt['targetOcIds']),
+                    static fn($i) => $i > 0
+                )), 0, 1000);
+            }
             $repo->saveMylistThreshold(
                 $userId,
                 $this->floatOrNull($mt['upPercent'] ?? null),
                 $this->floatOrNull($mt['downPercent'] ?? null),
-                !empty($mt['enabled'])
+                !empty($mt['enabled']),
+                $this->numOrNull($mt['upMember'] ?? null),
+                $this->numOrNull($mt['downMember'] ?? null),
+                $scope,
+                $targetOcIds,
             );
         }
 

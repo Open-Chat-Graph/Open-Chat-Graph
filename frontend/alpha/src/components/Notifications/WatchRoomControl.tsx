@@ -1,21 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Bell, ChevronDown, Loader2, BellOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { useAlertsConfig } from './useAlertsConfig'
-
-type ThresholdUnit = 'member' | 'percent'
-
-const unitLabel = (u: ThresholdUnit) => (u === 'percent' ? '％' : '人')
+import { ThresholdInput, thresholdUnitLabel, type ThresholdUnit } from './ThresholdInput'
 
 /**
  * 部屋詳細画面の「増減アラート」セクション。1枚のカードで完結する開閉トグル式。
@@ -125,7 +114,7 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
   const statusText = active ? (
     <span className="text-primary tabular-nums">
       ±{serverValue}
-      {unitLabel(serverUnit)}で通知中
+      {thresholdUnitLabel(serverUnit)}で通知中
     </span>
   ) : (
     <span className="text-muted-foreground">オフ</span>
@@ -159,37 +148,13 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
       {/* 本文（展開時のみ） */}
       {expanded && (
         <div className="border-t p-4">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-            <span>増減が ±</span>
-            <Input
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onBlur={commitValue}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur()
-              }}
-              className="h-10 w-20"
-              aria-label="通知する増減のしきい値"
-              data-testid="watch-room-value"
-            />
-            <Select value={unit} onValueChange={onUnitChange}>
-              <SelectTrigger
-                className="h-10 w-20"
-                aria-label="しきい値の単位"
-                data-testid="watch-room-unit"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="member">人</SelectItem>
-                <SelectItem value="percent">％</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>を超えたら通知</span>
-          </div>
+          <ThresholdInput
+            value={value}
+            unit={unit}
+            onValueChange={setValue}
+            onUnitChange={onUnitChange}
+            onCommit={commitValue}
+          />
 
           {active ? (
             <Button

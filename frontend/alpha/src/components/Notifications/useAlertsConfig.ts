@@ -23,6 +23,13 @@ export function configToRequest(config: AlertsConfigResponse): AlertsConfigReque
     mylistThreshold: {
       upPercent: config.mylistThreshold.up_percent,
       downPercent: config.mylistThreshold.down_percent,
+      upMember: config.mylistThreshold.up_member,
+      downMember: config.mylistThreshold.down_member,
+      scope: config.mylistThreshold.scope,
+      // scope!=='all' のときだけ対象集合を送る（'all' はサーバ側で oc_list_user 全体）。
+      ...(config.mylistThreshold.scope !== 'all' && config.mylistThreshold.target_oc_ids
+        ? { targetOcIds: config.mylistThreshold.target_oc_ids }
+        : {}),
       enabled: config.mylistThreshold.enabled,
     },
   }

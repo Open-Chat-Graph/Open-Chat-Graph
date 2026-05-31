@@ -149,36 +149,103 @@ class AlphaAlertRepository
         }
     }
 
-    // ====================== ウォッチ設定: マイリスト既定閾値 ======================
+    // ====================== ウォッチ設定: マイリスト変動閾値 ======================
 
-    /** @return array{up_percent:?float, down_percent:?float, enabled:bool} */
+    /** @return array{up_percent:?float, down_percent:?float, up_member:?int, down_member:?int, scope:string, target_oc_ids:?array<int,int>, enabled:bool} */
     public function getMylistThreshold(string $userId): array
     {
         $row = UserLogDB::fetch(
-            "SELECT up_percent, down_percent, enabled FROM alpha_mylist_threshold WHERE user_id = :uid",
+            "SELECT up_percent, down_percent, up_member, down_member, scope, target_oc_ids, enabled
+             FROM alpha_mylist_threshold WHERE user_id = :uid",
             ['uid' => $userId]
         );
         if (!$row) {
-            return ['up_percent' => null, 'down_percent' => null, 'enabled' => false];
+            return [
+                'up_percent' => null,
+                'down_percent' => null,
+                'up_member' => null,
+                'down_member' => null,
+                'scope' => 'all',
+                'target_oc_ids' => null,
+                'enabled' => false,
+            ];
         }
         return [
             'up_percent' => $row['up_percent'] === null ? null : (float)$row['up_percent'],
             'down_percent' => $row['down_percent'] === null ? null : (float)$row['down_percent'],
+            'up_member' => $row['up_member'] === null ? null : (int)$row['up_member'],
+            'down_member' => $row['down_member'] === null ? null : (int)$row['down_member'],
+            'scope' => $this->normalizeScope($row['scope'] ?? 'all'),
+            'target_oc_ids' => $this->decodeOcIds($row['target_oc_ids'] ?? null),
             'enabled' => (bool)$row['enabled'],
         ];
     }
 
-    public function saveMylistThreshold(string $userId, ?float $upPercent, ?float $downPercent, bool $enabled): void
-    {
+    /**
+     * @param int[]|null $targetOcIds scope='all' は null（全体＝oc_list_user フォールバック）、
+     *                                それ以外はフロントが解決した対象 open_chat_id の集合。
+     */
+    public function saveMylistThreshold(
+        string $userId,
+        ?float $upPercent,
+        ?float $downPercent,
+        bool $enabled,
+        ?int $upMember = null,
+        ?int $downMember = null,
+        string $scope = 'all',
+        ?array $targetOcIds = null,
+    ): void {
+        $scope = $this->normalizeScope($scope);
+        $idsJson = $targetOcIds === null
+            ? null
+            : json_encode(array_values(array_filter(
+                array_map('intval', $targetOcIds),
+                static fn($i) => $i > 0
+            )));
+
         UserLogDB::execute(
-            "INSERT INTO alpha_mylist_threshold (user_id, up_percent, down_percent, enabled)
-             VALUES (:uid, :up, :dp, :en)
+            "INSERT INTO alpha_mylist_threshold
+                (user_id, up_percent, down_percent, up_member, down_member, scope, target_oc_ids, enabled)
+             VALUES (:uid, :up, :dp, :um, :dm, :scope, :ids, :en)
              ON DUPLICATE KEY UPDATE up_percent = VALUES(up_percent),
                                      down_percent = VALUES(down_percent),
+                                     up_member = VALUES(up_member),
+                                     down_member = VALUES(down_member),
+                                     scope = VALUES(scope),
+                                     target_oc_ids = VALUES(target_oc_ids),
                                      enabled = VALUES(enabled),
                                      updated_at = current_timestamp()",
-            ['uid' => $userId, 'up' => $upPercent, 'dp' => $downPercent, 'en' => $enabled ? 1 : 0]
+            [
+                'uid' => $userId,
+                'up' => $upPercent,
+                'dp' => $downPercent,
+                'um' => $upMember,
+                'dm' => $downMember,
+                'scope' => $scope,
+                'ids' => $idsJson,
+                'en' => $enabled ? 1 : 0,
+            ]
         );
+    }
+
+    /** scope を既知の値に丸める（不明値は 'all'）。 */
+    private function normalizeScope(mixed $scope): string
+    {
+        $s = (string)$scope;
+        return in_array($s, ['all', 'root', 'folder'], true) ? $s : 'all';
+    }
+
+    /** target_oc_ids JSON を int 配列に。空/不正は null（＝全体フォールバック）。 */
+    private function decodeOcIds(mixed $json): ?array
+    {
+        if ($json === null || $json === '') {
+            return null;
+        }
+        $arr = json_decode((string)$json, true);
+        if (!is_array($arr)) {
+            return null;
+        }
+        return array_values(array_filter(array_map('intval', $arr), static fn($i) => $i > 0));
     }
 
     // ====================== 全ユーザー走査（cron用） ======================
@@ -243,16 +310,21 @@ class AlphaAlertRepository
         ], $rows);
     }
 
-    /** @return array<int, array{user_id:string, up_percent:?float, down_percent:?float}> enabled なものだけ */
+    /** @return array<int, array{user_id:string, up_percent:?float, down_percent:?float, up_member:?int, down_member:?int, scope:string, target_oc_ids:?array<int,int>}> enabled なものだけ */
     public function getAllEnabledMylistThresholds(): array
     {
         $rows = UserLogDB::fetchAll(
-            "SELECT user_id, up_percent, down_percent FROM alpha_mylist_threshold WHERE enabled = 1"
+            "SELECT user_id, up_percent, down_percent, up_member, down_member, scope, target_oc_ids
+             FROM alpha_mylist_threshold WHERE enabled = 1"
         );
-        return array_map(static fn($r) => [
+        return array_map(fn($r) => [
             'user_id' => (string)$r['user_id'],
             'up_percent' => $r['up_percent'] === null ? null : (float)$r['up_percent'],
             'down_percent' => $r['down_percent'] === null ? null : (float)$r['down_percent'],
+            'up_member' => $r['up_member'] === null ? null : (int)$r['up_member'],
+            'down_member' => $r['down_member'] === null ? null : (int)$r['down_member'],
+            'scope' => $this->normalizeScope($r['scope'] ?? 'all'),
+            'target_oc_ids' => $this->decodeOcIds($r['target_oc_ids'] ?? null),
         ], $rows);
     }
 
@@ -474,6 +546,38 @@ class AlphaAlertRepository
                 'created_at' => (string)$r['created_at'],
             ];
         }, $rows);
+    }
+
+    /**
+     * この毎時(hourBucket)に部屋単体アラート(type='room')で通知を出した
+     * (user_id, open_chat_id) を返す。マイリスト変動との二重通知回避に使う。
+     *
+     * dedup_key は 'room:{open_chat_id}:{direction}:{hourBucket}' 形式。
+     * hourBucket 接尾で絞り、key から open_chat_id を取り出す。
+     *
+     * @return array<int, array{user_id:string, open_chat_id:int}>
+     */
+    public function getRoomNotificationKeys(string $hourBucket): array
+    {
+        $rows = UserLogDB::fetchAll(
+            "SELECT user_id, dedup_key FROM alpha_notification
+             WHERE type = 'room' AND dedup_key LIKE :pat",
+            ['pat' => 'room:%:' . $hourBucket]
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            // 'room:{ocId}:{direction}:{hourBucket}'
+            $parts = explode(':', (string)$r['dedup_key']);
+            if (count($parts) < 4 || $parts[0] !== 'room') {
+                continue;
+            }
+            $ocId = (int)$parts[1];
+            if ($ocId < 1) {
+                continue;
+            }
+            $out[] = ['user_id' => (string)$r['user_id'], 'open_chat_id' => $ocId];
+        }
+        return $out;
     }
 
     public function markAllRead(string $userId): void

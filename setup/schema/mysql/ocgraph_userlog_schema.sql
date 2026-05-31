@@ -63,12 +63,22 @@ CREATE TABLE `alpha_room_watch` (
   KEY `open_chat_id` (`open_chat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- マイリスト全体に効く既定%しきい値 (ユーザーにつき1組)
+-- マイリスト変動しきい値 (ユーザーにつき1組)
+-- scope: 'all'(マイリスト全体) | 'root'(ルート直下のみ) | 'folder'(特定フォルダ配下のみ)
+-- up_member/down_member: 人数しきい値（%と併用可。部屋ウォッチと同じ意味）
+-- target_oc_ids: scope に応じてフロントが解決した対象 open_chat_id の JSON 配列。
+--   マイリストのフォルダ構造は localStorage のみでサーバに無いため、対象集合は
+--   フロント（構造を持つ側）が解決してここに保存する。NULL の旧行は従来どおり
+--   oc_list_user.oc_list（全体）にフォールバックする。
 DROP TABLE IF EXISTS `alpha_mylist_threshold`;
 CREATE TABLE `alpha_mylist_threshold` (
   `user_id` varchar(64) NOT NULL,
   `up_percent` float DEFAULT NULL,
   `down_percent` float DEFAULT NULL,
+  `up_member` int(11) DEFAULT NULL,
+  `down_member` int(11) DEFAULT NULL,
+  `scope` varchar(16) NOT NULL DEFAULT 'all',
+  `target_oc_ids` text DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 0,
   `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`user_id`)
