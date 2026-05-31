@@ -124,9 +124,6 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (FileStorageInterface $fileStorage) {
-        if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
-
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
