@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse, EtaParams, EtaResponse } from '../types/api'
 import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
@@ -81,6 +81,28 @@ export const alphaApi = {
 
     const res = await fetch(`${API_BASE}/search-eta?${query}`)
     if (!res.ok) throw new Error('Search ETA API failed')
+
+    return res.json()
+  },
+
+  // 汎用 ETA（リスト系プログレスバー用）。type＋取得条件を渡すと予測 ms を返す。
+  // 検索は専用の getSearchEta を使う。
+  async getEta(params: EtaParams): Promise<EtaResponse> {
+    const query = new URLSearchParams()
+    query.set('type', params.type)
+    if (params.keyword) query.set('keyword', params.keyword)
+    if (params.category) query.set('category', params.category.toString())
+    if (params.order) query.set('order', params.order)
+    if (params.scope) query.set('scope', params.scope)
+    if (params.days !== undefined) query.set('days', params.days.toString())
+    if (params.start) query.set('start', params.start)
+    if (params.end) query.set('end', params.end)
+    if (params.all) query.set('all', '1')
+    if (params.startDate) query.set('startDate', params.startDate)
+    if (params.endDate) query.set('endDate', params.endDate)
+
+    const res = await fetch(`${API_BASE}/eta?${query}`)
+    if (!res.ok) throw new Error('ETA API failed')
 
     return res.json()
   },

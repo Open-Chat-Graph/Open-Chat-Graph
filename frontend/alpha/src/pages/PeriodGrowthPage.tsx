@@ -4,6 +4,8 @@ import useSWR from 'swr'
 import { CalendarRange, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder, type PeriodGrowthQuery } from '@/components/PeriodGrowth'
+import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
 import type { PeriodGrowthItem, PeriodGrowthResponse, OpenChat } from '@/types/api'
@@ -60,7 +62,7 @@ const PeriodGrowthPage = memo(() => {
   // 検索画面からの遷移(q付き)か、このページで「検索」を押した(go=1)ときに結果を出す。
   const searched = keyword !== '' || searchParams.has('go')
 
-  const { data, error, isLoading } = useSWR<PeriodGrowthResponse>(
+  const { data, error, isLoading, isValidating } = useSWR<PeriodGrowthResponse>(
     searched ? ['period-growth', keyword, category, days, order, start, end] : null,
     () =>
       alphaApi.getPeriodGrowth(
@@ -77,6 +79,29 @@ const PeriodGrowthPage = memo(() => {
   )
 
   const items = useMemo(() => data?.data ?? [], [data])
+
+  // ETAプログレス: 条件が変わるたびに ETA を取り直し 0→90%、応答到着で 100%。
+  // 既存リスト表示中の再取得（keepPreviousData で前回結果が残る）はオーバーレイへ。
+  const requestKey = searched
+    ? `${keyword}|${category}|${hasRange ? `range:${start}:${end}` : `days:${days}`}|${order}`
+    : null
+  const { progress, active: progressActive } = useListProgress({
+    requestKey,
+    loading: searched && (isLoading || isValidating),
+    fetchEta: searched
+      ? async () =>
+          (
+            await alphaApi.getEta(
+              hasRange
+                ? { type: 'period-growth', keyword, category: category || undefined, startDate: start, endDate: end, order }
+                : { type: 'period-growth', keyword, category: category || undefined, days, order }
+            )
+          ).etaMs
+      : undefined,
+  })
+  const hasResults = items.length > 0
+  const showTopBar = progressActive && !hasResults
+  const showRefetchOverlay = progressActive && hasResults
 
   const handleSubmit = useCallback(
     (next: PeriodGrowthQuery) => {
@@ -147,9 +172,11 @@ const PeriodGrowthPage = memo(() => {
         </Card>
       )}
 
-      {searched && isLoading && !data && (
-        <div className="flex justify-center py-8">
-          <div className="text-muted-foreground">読み込み中...</div>
+      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。 */}
+      {showTopBar && (
+        <div className="pt-1">
+          <ListProgressBar progress={progress} active={showTopBar} />
+          <p className="mt-2 text-center text-xs text-muted-foreground">読み込み中…</p>
         </div>
       )}
 
@@ -192,15 +219,19 @@ const PeriodGrowthPage = memo(() => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-2 md:gap-3">
-              {items.map((item, index) => (
-                <PeriodGrowthCard
-                  key={item.id}
-                  item={item}
-                  rank={index + 1}
-                  onCardClick={handleCardClick}
-                />
-              ))}
+            <div className="relative">
+              {/* 既存リスト表示中の再取得は薄いレイヤー＋スピナーで応答待ちを明示 */}
+              <ListRefetchOverlay active={showRefetchOverlay} />
+              <div className="grid gap-2 md:gap-3">
+                {items.map((item, index) => (
+                  <PeriodGrowthCard
+                    key={item.id}
+                    item={item}
+                    rank={index + 1}
+                    onCardClick={handleCardClick}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </>

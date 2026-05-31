@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { alphaApi } from '@/api/alpha'
-import type { SearchEtaParams } from '@/types/api'
 
 /** ETA 取得に失敗／未指定のときの想定応答時間（ms）。これを基準に 0→90% を進める。 */
 const FALLBACK_ETA_MS = 1500
 /** 完了時に 100% を見せてから消えるまでの猶予（ms）。一瞬の達成感を出すため。 */
 const FINISH_HOLD_MS = 280
 
-export interface UseSearchProgress {
+export interface UseListProgress {
   /** 0..100。進行中は 0→約90、完了で 100。非表示時は 0 */
   progress: number
   /** バー/オーバーレイを表示すべきか（完了直後の 100% 表示中も true） */
@@ -15,25 +13,31 @@ export interface UseSearchProgress {
 }
 
 interface Options {
-  /** 検索キー（キーワード・ソート・カテゴリ・再実行 nonce 等の合成）。変化で新しい検索とみなす */
-  searchKey: string | null
-  /** いま応答待ちか（SWR の isLoading || isValidating など） */
+  /** 取得の識別キー（条件・再実行 nonce 等の合成）。変化で新しい取得とみなす */
+  requestKey: string | null
+  /** いま応答待ちか（SWR の isLoading || isValidating など。append は除外して渡すこと） */
   loading: boolean
-  /** ETA 取得に渡す検索条件。searchKey 変化時にこの条件で getSearchEta する */
-  etaParams: SearchEtaParams | null
+  /**
+   * ETA(ms) を取得する関数。requestKey 変化時に1回呼ぶ。
+   * 失敗／null は無視してフォールバック値で進める。表示は待たずに動き出す。
+   */
+  fetchEta?: () => Promise<number | null | undefined>
 }
 
 /**
- * 検索プログレスの進行を管理するフック。
+ * リスト取得（検索 / 期間増減 / Labs ランキング等）の応答待ちプログレスを管理する汎用フック。
  *
- * - `searchKey` が変化したら getSearchEta で ETA(ms) を取り、その時間で 0→約90% へ
+ * - `requestKey` が変化したら `fetchEta` で ETA(ms) を取り、その時間で 0→約90% へ
  *   requestAnimationFrame で滑らかに進める（90% で頭打ち。応答が遅くても張り付かせない）。
  * - 応答到着（loading=false）で一気に 100% にして少し見せてから非表示にする。
+ *   見込みより早く来ても遅く来ても、到着時に必ず 100 まで詰める。
+ * - 応答到着前に 100 にはしない（90% 頭打ち→到着で100）。
  * - ETA 取得は表示を遅らせないよう即座にフォールバック値で開始し、結果が来たら速度だけ補正。
  *
- * 所要時間の記録はサーバー側（search）で行う前提。フロントは記録しない。
+ * 所要時間の記録はサーバー側（各リスト処理）で行う前提。フロントは記録しない。
+ * （旧 useSearchProgress を一般化したもの。検索もこれを使う）
  */
-export function useSearchProgress({ searchKey, loading, etaParams }: Options): UseSearchProgress {
+export function useListProgress({ requestKey, loading, fetchEta }: Options): UseListProgress {
   const [progress, setProgress] = useState(0)
   const [active, setActive] = useState(false)
 
@@ -43,6 +47,9 @@ export function useSearchProgress({ searchKey, loading, etaParams }: Options): U
   const etaRef = useRef(FALLBACK_ETA_MS)
   // 完了演出が走っている間は進行 rAF を止めておく
   const finishingRef = useRef(false)
+  // fetchEta は毎レンダーで参照が変わりうるので ref 経由で最新を読む（依存は requestKey に集約）
+  const fetchEtaRef = useRef(fetchEta)
+  fetchEtaRef.current = fetchEta
 
   const clearRaf = () => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
@@ -53,9 +60,9 @@ export function useSearchProgress({ searchKey, loading, etaParams }: Options): U
     finishTimerRef.current = null
   }
 
-  // searchKey 変化 = 新しい検索の開始。アニメをリセットして 0→90% を回し始める。
+  // requestKey 変化 = 新しい取得の開始。アニメをリセットして 0→90% を回し始める。
   useEffect(() => {
-    if (!searchKey) {
+    if (!requestKey) {
       clearRaf()
       clearFinishTimer()
       finishingRef.current = false
@@ -73,12 +80,12 @@ export function useSearchProgress({ searchKey, loading, etaParams }: Options): U
 
     // ETA を取得して進行速度を補正（取得を待たずに動き出している）
     let cancelled = false
-    if (etaParams) {
-      alphaApi
-        .getSearchEta(etaParams)
-        .then((res) => {
+    const fetcher = fetchEtaRef.current
+    if (fetcher) {
+      fetcher()
+        .then((ms) => {
           if (cancelled) return
-          if (Number.isFinite(res.etaMs) && res.etaMs > 0) etaRef.current = res.etaMs
+          if (ms != null && Number.isFinite(ms) && ms > 0) etaRef.current = ms
         })
         .catch(() => {
           /* ETA は補助。失敗してもフォールバックで進める */
@@ -100,9 +107,9 @@ export function useSearchProgress({ searchKey, loading, etaParams }: Options): U
       cancelled = true
       clearRaf()
     }
-    // etaParams はキー変化と連動するため依存に含めない（searchKey が代表）
+    // fetchEta は requestKey と連動するため依存に含めない（requestKey が代表）
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchKey])
+  }, [requestKey])
 
   // 応答到着で 100% → 少し見せて非表示
   useEffect(() => {

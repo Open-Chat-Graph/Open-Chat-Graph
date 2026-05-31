@@ -169,6 +169,29 @@ export interface SearchEtaResponse {
   etaMs: number  // 予測応答時間（ミリ秒）
 }
 
+// ===== 汎用 ETA（GET /alpha-api/eta） =====
+// リスト系（期間増減 / Labs ランキング）のプログレスバー用。検索は search-eta を使う。
+export type EtaListType = 'period-growth' | 'access-ranking' | 'search-ranking' | 'search-query-ranking'
+
+export interface EtaParams {
+  type: EtaListType
+  // type ごとに使う条件（その取得 API へ渡すのと同じ値）。サーバーが record と同じ規則でキー化する。
+  keyword?: string
+  category?: number
+  order?: 'asc' | 'desc'
+  scope?: 'rooms' | 'pages'
+  // 期間（Labs ランキング系）: days か start・end か all のいずれか。
+  days?: number
+  start?: string
+  end?: string
+  all?: boolean
+  // period-growth の期間（startDate・endDate か days）。
+  startDate?: string
+  endDate?: string
+}
+
+export type EtaResponse = SearchEtaResponse
+
 // ===== 通知・アラート条件（/alpha-api/alerts*） =====
 // すべて ja のみ。通知は毎時クロール後に算出（即時ではない）。
 

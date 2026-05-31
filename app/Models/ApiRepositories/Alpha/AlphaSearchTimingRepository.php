@@ -56,17 +56,28 @@ class AlphaSearchTimingRepository
     /**
      * ETA を解決する。
      *   1. 該当 query_key の elapsed_ms があればそれ
-     *   2. 無ければ全体の中央値（無ければ平均）
+     *   2. 無ければ（リクエスト種別の）中央値（無ければ平均）
      *   3. それも無ければ DEFAULT_ETA_MS
+     *
+     * $fallbackLikePrefix を渡すと、フォールバック中央値の母集団を同種別
+     * （その接頭辞で始まる query_key）に絞る。種別ごとに所要時間の傾向が
+     * 大きく違う（検索 vs ランキング集計）ため、種別内で見込む方が当たる。
      */
-    public function resolveEtaMs(string $queryKey): int
+    public function resolveEtaMs(string $queryKey, ?string $fallbackLikePrefix = null): int
     {
         $exact = $this->getElapsedMs($queryKey);
         if ($exact !== null) {
             return $exact;
         }
 
-        $rows = UserLogDB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing");
+        if ($fallbackLikePrefix !== null && $fallbackLikePrefix !== '') {
+            $rows = UserLogDB::fetchAll(
+                "SELECT elapsed_ms FROM alpha_search_timing WHERE query_key LIKE :p",
+                ['p' => str_replace(['%', '_'], ['\%', '\_'], $fallbackLikePrefix) . '%']
+            );
+        } else {
+            $rows = UserLogDB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing");
+        }
         if (empty($rows)) {
             return self::DEFAULT_ETA_MS;
         }

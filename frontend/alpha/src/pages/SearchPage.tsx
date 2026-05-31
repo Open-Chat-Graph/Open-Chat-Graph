@@ -6,8 +6,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
 import { WatchKeywordButton } from '@/components/Notifications'
-import { SearchProgressBar, SearchRefetchOverlay, useSearchProgress } from '@/components/Search'
+import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { SearchLanding } from '@/components/Common/SearchLanding'
+import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
+import { addSearchHistory } from '@/services/searchHistory'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
 import type { SearchResponse, SearchEtaParams } from '@/types/api'
 import type { SortType, SortOrder } from '@/lib/sort-options'
@@ -85,6 +88,17 @@ const SearchPage = memo(() => {
     [urlKeyword, category, sort, order],
   )
 
+  // 検索が完了したら（キーワードありで結果が返ったら）最近の検索履歴に自動追記する。
+  // localStorage 駆動・上限件数で古いものを捨てる（searchHistory サービス側）。
+  useEffect(() => {
+    if (!urlKeyword.trim()) return
+    if (isLoading) return
+    if (!data) return
+    addSearchHistory({ q: urlKeyword, category, sort, order })
+    // urlKeyword/カテゴリ/ソートの組と「結果が来た」ことをトリガに1回だけ追記
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey, data, isLoading])
+
   // 検索キー（キーワード/ソート/カテゴリ/再実行）が変わったらページングを先頭へ戻す。
   // これで「再検索＝size===1 の validation」「追加読み込み＝size>1 の validation」と素直に分けられ、
   // 再検索のたびにスクロール位置・ページ数を持ち越さない（UX的にも先頭から見せたい）。
@@ -97,10 +111,12 @@ const SearchPage = memo(() => {
   // 1ページ目（=検索そのもの）の応答待ちか。append は除外する。
   // 初回ロードは上部バー、結果が見えている再検索はオーバーレイに振り分ける。
   const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
-  const { progress, active: progressActive } = useSearchProgress({
-    searchKey,
+  const { progress, active: progressActive } = useListProgress({
+    requestKey: searchKey,
     loading: firstPageLoading,
-    etaParams,
+    fetchEta: etaParams
+      ? async () => (await alphaApi.getSearchEta(etaParams)).etaMs
+      : undefined,
   })
   const hasResults = results.length > 0
   // 初回（リスト未表示）の応答待ち → 上部プログレスバー
@@ -177,7 +193,7 @@ const SearchPage = memo(() => {
           結果が出たら畳まれ、以降の再検索はオーバーレイ側に切り替わる。 */}
       {showTopBar && (
         <div className="pt-1">
-          <SearchProgressBar progress={progress} active={showTopBar} />
+          <ListProgressBar progress={progress} active={showTopBar} />
           <p className="mt-2 text-center text-xs text-muted-foreground">検索中…</p>
         </div>
       )}
@@ -203,7 +219,7 @@ const SearchPage = memo(() => {
       {urlKeyword && results.length > 0 && (
         <div className="relative space-y-4">
           {/* 既存リスト表示中の再検索は薄いレイヤー＋スピナーで応答待ちを明示 */}
-          <SearchRefetchOverlay active={showRefetchOverlay} />
+          <ListRefetchOverlay active={showRefetchOverlay} label="再検索中…" />
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">{totalCount.toLocaleString()}</span>件
@@ -257,14 +273,18 @@ const SearchPage = memo(() => {
       )}
 
       {!urlKeyword && !isLoading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-sm text-muted-foreground">
-              キーワードを入力して検索してください
-            </p>
-          </CardContent>
-        </Card>
+        <>
+          {/* 初期/空状態のランディング: 最近の検索＋保存した検索条件（あれば）。 */}
+          <SearchLanding />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <p className="mt-4 text-sm text-muted-foreground">
+                キーワードを入力して検索してください
+              </p>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       <FolderSelectDialog

@@ -442,7 +442,7 @@ class AlphaApiController
      * キーワード(＋カテゴリ)一致のうち「N日前と現在のどちらにも統計がある」
      * ルームに絞り、その期間のメンバー増減でソートして返す。
      */
-    function periodGrowth(AlphaPeriodGrowthRepository $repo)
+    function periodGrowth(AlphaPeriodGrowthRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
         $error = BadRequestException::class;
         Reception::$isJson = true;
@@ -464,11 +464,16 @@ class AlphaApiController
         $startDate = $this->validDateOrNull(Reception::input('startDate', ''));
         $endDate = $this->validDateOrNull(Reception::input('endDate', ''));
 
+        // ETA計測: 実処理の wall time を query_key で upsert（プログレスバー用・付加機能）。
+        $startMs = microtime(true);
+
         if ($startDate !== null && $endDate !== null) {
             $result = $repo->findPeriodGrowthByDateRange($keyword, $category, $startDate, $endDate, $order, (int)$limit);
         } else {
             $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, (int)$limit);
         }
+
+        $this->recordListTiming($timingRepo, 'period-growth', $startMs);
 
         $data = [];
         foreach ($result['data'] as $row) {
@@ -533,7 +538,7 @@ class AlphaApiController
      * alpha_room_access_daily の直近N日ページビュー合計でソートして返す。
      * データが無い間（creds未投入/未集計）は data:[], updatedAt:null を 200 で返す。
      */
-    function accessRanking(AlphaAccessRankingRepository $repo)
+    function accessRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
         $error = BadRequestException::class;
         Reception::$isJson = true;
@@ -552,12 +557,17 @@ class AlphaApiController
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
         $keyword = mb_substr((string)Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error), 0, 100);
 
+        // ETA計測: 実処理の wall time を query_key で upsert（プログレスバー用・付加機能）。
+        $startMs = microtime(true);
+
         if ($scope === 'pages') {
             $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'pageviews', $offset);
+            $this->recordListTiming($timingRepo, 'access-ranking', $startMs);
             return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
         $r = $repo->getAccessRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset, $keyword);
+        $this->recordListTiming($timingRepo, 'access-ranking', $startMs);
         $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
         return response($this->rankingEnvelope($data, $r, $win, $page));
     }
@@ -629,7 +639,7 @@ class AlphaApiController
      * alpha_room_access_daily の直近N日 検索クリック合計でソートして返す。
      * 各部屋に searchClicks / searchImpressions / searchPosition を付ける。
      */
-    function searchRanking(AlphaAccessRankingRepository $repo)
+    function searchRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
         $error = BadRequestException::class;
         Reception::$isJson = true;
@@ -647,12 +657,17 @@ class AlphaApiController
         $scope = Validator::str(Reception::input('scope', 'rooms'), regex: ['rooms', 'pages'], e: $error);
         $keyword = mb_substr((string)Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error), 0, 100);
 
+        // ETA計測: 実処理の wall time を query_key で upsert（プログレスバー用・付加機能）。
+        $startMs = microtime(true);
+
         if ($scope === 'pages') {
             $r = $repo->getPageScopeRanking($win['fromDate'], $win['toDate'], $order, $limit, 'search_clicks', $offset);
+            $this->recordListTiming($timingRepo, 'search-ranking', $startMs);
             return response($this->rankingEnvelope($r['data'], $r, $win, $page));
         }
 
         $r = $repo->getSearchRanking($category, $win['fromDate'], $win['toDate'], $order, $limit, $offset, $keyword);
+        $this->recordListTiming($timingRepo, 'search-ranking', $startMs);
         $data = array_map(fn($item) => $this->formatRankingRoomFull($item), $r['data']);
         return response($this->rankingEnvelope($data, $r, $win, $page));
     }
@@ -663,7 +678,7 @@ class AlphaApiController
      *
      * alpha_search_query_daily の直近N日 検索クリック合計でソートして上位クエリを返す。
      */
-    function searchQueryRanking(AlphaAccessRankingRepository $repo)
+    function searchQueryRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
         $error = BadRequestException::class;
         Reception::$isJson = true;
@@ -673,7 +688,10 @@ class AlphaApiController
         $page = (int)Validator::num(Reception::input('page', 1), min: 1, max: 100000, e: $error);
         $offset = ($page - 1) * $limit;
 
+        // ETA計測: 実処理の wall time を query_key で upsert（プログレスバー用・付加機能）。
+        $startMs = microtime(true);
         $r = $repo->getSearchQueryRanking($win['fromDate'], $win['toDate'], $limit, $offset);
+        $this->recordListTiming($timingRepo, 'search-query-ranking', $startMs);
 
         return response([
             'data' => $r['data'],
@@ -978,6 +996,127 @@ class AlphaApiController
         $etaMs = $timingRepo->resolveEtaMs($this->buildSearchKey($keyword, $category, $sort, $order));
 
         return response(['etaMs' => $etaMs]);
+    }
+
+    /**
+     * 汎用 ETA（プログレスバー用）取得API
+     * GET /alpha-api/eta?type=...&<typeごとの条件>
+     *
+     * リスト系（period-growth / access-ranking / search-ranking / search-query-ranking）の
+     * 「次に同条件で取得したら何ms くらいか」を返す。query_key は各リスト処理が record する
+     * のと同じ規則（種別＋条件）で組み立てる（下の build*EtaKey）。
+     * 検索だけは従来の /alpha-api/search-eta（searchEta）を使う。
+     *
+     * 無ければ同種別の中央値、それも無ければ既定値(800ms)。
+     */
+    function eta(AlphaSearchTimingRepository $timingRepo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $type = Validator::str(
+            Reception::input('type', ''),
+            regex: ['period-growth', 'access-ranking', 'search-ranking', 'search-query-ranking'],
+            e: $error
+        );
+
+        [$key, $prefix] = $this->buildListEtaKey((string)$type);
+        $etaMs = $timingRepo->resolveEtaMs($key, $prefix);
+
+        return response(['etaMs' => $etaMs]);
+    }
+
+    /**
+     * リスト処理の所要時間を、種別＋条件の query_key で記録する（プログレスバーETA用）。
+     * 失敗は握りつぶす（本体レスポンスは止めない）。key は eta 取得側と同一規則。
+     */
+    private function recordListTiming(AlphaSearchTimingRepository $timingRepo, string $type, float $startMs): void
+    {
+        $elapsedMs = (int)round((microtime(true) - $startMs) * 1000);
+        try {
+            [$key] = $this->buildListEtaKey($type);
+            $timingRepo->record($key, $elapsedMs);
+        } catch (\Throwable $e) {
+            // ETA記録失敗は無視
+        }
+    }
+
+    /**
+     * リスト系 ETA の query_key を request から組み立てる。
+     * record 側（各リスト処理）と完全一致させるため、ここを唯一の組み立て元にする。
+     *
+     * @return array{0:string, 1:string} [query_key, フォールバック中央値の種別接頭辞]
+     */
+    private function buildListEtaKey(string $type): array
+    {
+        $category = (int)($this->numInput('category', 0));
+        $order = (string)Reception::input('order', 'desc');
+        // 期間（days / start・end / all）。文字列のまま連結すれば search/record と一致する。
+        $days = (int)($this->numInput('days', 30));
+        $start = trim((string)Reception::input('start', ''));
+        $end = trim((string)Reception::input('end', ''));
+        $all = (string)Reception::input('all', '') === '1';
+        $period = $all ? 'all' : (($start !== '' && $end !== '') ? "range:$start:$end" : "days:$days");
+
+        switch ($type) {
+            case 'period-growth':
+                $keyword = (string)Reception::input('keyword', '');
+                $startD = trim((string)Reception::input('startDate', ''));
+                $endD = trim((string)Reception::input('endDate', ''));
+                $pgDays = (int)($this->numInput('days', 30));
+                $pgPeriod = ($startD !== '' && $endD !== '') ? "range:$startD:$endD" : "days:$pgDays";
+                return $this->etaKey('pg', [$this->normalizeKeyword($keyword), (string)$category, $pgPeriod, $order]);
+            case 'access-ranking':
+                return $this->etaKey('ar', [(string)$category, $period, $order, $this->scopeInput(), $this->normalizeKeyword((string)Reception::input('keyword', ''))]);
+            case 'search-ranking':
+                return $this->etaKey('sr', [(string)$category, $period, $order, $this->scopeInput(), $this->normalizeKeyword((string)Reception::input('keyword', ''))]);
+            case 'search-query-ranking':
+            default:
+                return $this->etaKey('sq', [$period]);
+        }
+    }
+
+    private function scopeInput(): string
+    {
+        $s = (string)Reception::input('scope', 'rooms');
+        return ($s === 'pages') ? 'pages' : 'rooms';
+    }
+
+    private function numInput(string $name, int $default): int
+    {
+        $v = Reception::input($name, $default);
+        return is_numeric($v) ? (int)$v : $default;
+    }
+
+    /**
+     * keyword を ETA キー用に正規化（全角スペース→半角・トリム・空除去・小文字化・カンマ連結）。
+     * search の buildSearchKey と同じ規則。
+     */
+    private function normalizeKeyword(string $keyword): string
+    {
+        $normalized = str_replace('　', ' ', $keyword);
+        $parts = array_values(array_filter(
+            array_map(static fn($k) => mb_strtolower(trim($k)), explode(' ', $normalized)),
+            static fn($k) => $k !== ''
+        ));
+        return implode(',', $parts);
+    }
+
+    /**
+     * 種別接頭辞＋条件配列から query_key を作る。長すぎる場合は安定ハッシュへ丸める。
+     * 接頭辞（'pg:' 等）はフォールバック中央値を同種別に絞る LIKE 用にも返す。
+     *
+     * @param list<string> $parts
+     * @return array{0:string, 1:string} [query_key, 接頭辞('pg:'等)]
+     */
+    private function etaKey(string $type, array $parts): array
+    {
+        $prefix = $type . ':';
+        $key = $prefix . implode('|', $parts);
+        if (mb_strlen($key) > 190) {
+            $key = $prefix . 'h:' . substr(hash('sha256', $key), 0, 48);
+        }
+        return [$key, $prefix];
     }
 
     /**

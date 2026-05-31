@@ -6,7 +6,7 @@
 
 ## 実装済み機能
 
-- 検索: キーワード＋カテゴリ絞り込み、ソート軸（人数 / 1時間・24時間・1週間増減 / 作成日）＋昇降トグル、検索条件の保存（localStorage）、無限スクロール、読み込みスピナー。カードは本家風のコンパクト行で、ソート軸に対応する増減を表示。
+- 検索: キーワード＋カテゴリ絞り込み、ソート軸（人数 / 1時間・24時間・1週間増減 / 作成日）＋昇降トグル、検索条件の保存（localStorage）、無限スクロール。初回ロードは上部ETAプログレスバー、結果表示中の再検索は前回結果に薄いぼかし＋スピナー。初期/空状態のランディングに「最近の検索」（自動履歴・チップ・タップで再検索・個別/一括削除）と「保存した検索条件」（タップで再検索・削除）を表示。カードは本家風のコンパクト行で、ソート軸に対応する増減を表示。
 - 詳細: 丸アイコンヘッダ＋画像モーダル（URL駆動）、人数＋3期間の増減、Preactグラフ（人数＋順位線。操作タブ列の高さを `--chart-controls-h` で予約し描画完了時のレイアウトシフト無し）、ランキング掲載履歴（遅延オーバーレイ・件数表示／0件はグレーアウト）、高次の考察ブロック、アクション（LINEで開く / マイリスト）、増減アラート（枠上部の開閉トグル。未有効時は「解除」を出さず「ONにする」のみ／有効時は人数・％しきい値の編集と「解除」）。
 - 詳細のアクセス・検索指標ブロック: 純PV / UU / SEO流入 / 参加リンク押下（うちSEO=Organic起点を併記）/ 平均滞在 ＋ 流入キーワード窓（GSC・多い順）＋ 参照元窓（GA4 pageReferrer・多い順、本家内からの遷移は「SEO経由」バッジ＝SEO動線で間接流入した部屋が分かる）。本家が出さない数字を出すαの中核価値。
 - 高次の考察: 一目で分からない高次シグナルだけを提示。種類: 急上昇ランキング順位 / 公式ランキング（全体, 上位300位以内のみ）の推移・最高位 / 同カテゴリのメンバー数順位・シェア・規模 / 単日最大増加 / ペース異常。データ不足・下位・ノイズは黙る。
@@ -52,6 +52,7 @@
 | GET | `/alpha-api/access-ranking` | Labs: アクセス数(GA4) |
 | GET | `/alpha-api/search-ranking` | Labs: 検索流入(GSC) |
 | GET | `/alpha-api/search-query-ranking` | Labs: 上位検索クエリ(GSC) |
+| GET | `/alpha-api/eta` | 汎用ETA（リスト系プログレスバー用。type=period-growth/access-ranking/search-ranking/search-query-ranking）。検索だけは従来の `/alpha-api/search-eta` |
 | GET | `/alpha-api/room-metrics/{id}` | 詳細: 1部屋のGA/GSC指標（PV/UU/SEO/参加クリック/エンゲージ＋流入キーワード＋リファラ元＋SEO起点の参加クリック） |
 
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
@@ -137,11 +138,11 @@ OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`l
    - **【2026-05-31 追加指示】アクセス流入ランキングでも「SEO経由合算表示」にし各項目に "うちSEO経由 X" を出す（詳細の合計／うちSEO経由と同じ表現）。指標に「入室数（参加リンク押下＝jump_clicks）」も加える。** つまり各ランキング行＝合計値＋"うちSEO経由"を、アクセス数・検索流入・入室数の各指標で表示。
 3. **Labs 検索KWを別タブ化＋無限スクロール（#34）** ※決定: **4タブ＝アクセス/検索流入/検索KW/その他ページ(非オプチャ)**。主指標は**タブごとに変える**おまかせ（各行=主指標＋小さく「うちSEO経由」）。**ランキング行の左の連番(rank)が右に無駄な大マージンを作っているのを是正**（番号で幅を食わない詰めたレイアウトに）。 — 流入クエリ一覧を「アクセス/検索」とは別タブに。件数(limit)セレクタ廃止し**無限スクロールで全件**。検索条件ヘッダを通常検索と同様に上部固定。
    - **【2026-05-31 追加指示】部屋（openchat）以外のページのエンティティは別枠タブに分離して出す**（以前アクセス数・検索流入のリストに openchat 以外のページも混ぜたが、やはりオプチャ以外は別タブに、分かりやすい方法で）。タブ構成イメージ: 「アクセス」「検索流入」「検索キーワード」＋「その他ページ（非オプチャ）」。表示は**無限スクロールで全件**・期間は**既定30日**＋カレンダーで任意期間選択。
-4. **リスト全般にETAプログレスバー（#35）** — 既存の検索ETA方式（`components/Search/useSearchProgress`/`SearchProgressBar`/`SearchRefetchOverlay`＋`alpha_search_timing` テーブル）を Labs/period-growth 等へ展開。前回結果にぼかし重ね＋プログレスバー。クエリ別所要時間を保存し次回ETAに。早/遅で一気に100へ、レスポンス前に100にしない調整。
+4. **【完了 2026-06-01】リスト全般にETAプログレスバー（#35）** — 既存の検索ETA方式を汎用化。フックは `hooks/useListProgress.ts`（旧 `components/Search/useSearchProgress` を一般化し置換）、表示は `components/Common/ListProgress.tsx`（`ListProgressBar`＋`ListRefetchOverlay`。overlay の z は `z-overlay` トークン）。検索・period-growth・Labs（rooms/pages/keywords 各タブ）が共用: 初回ロード＝上部バー、結果表示中の再取得＝前回結果にぼかし＋スピナー、ETA時間で 0→90% 漸近・応答到着で必ず100・到着前は100にしない。バックエンドは `alpha_search_timing`（既存テーブル・スキーマ変更なし）を任意 query_key で再利用。各リスト処理が実 wall time を record し、汎用 `GET /alpha-api/eta?type=...` が同一規則のキーで見込みを返す。queryKey は「種別接頭辞（pg/ar/sr/sq）＋正規化条件を `|` 連結」、190超は安定ハッシュへ。フォールバック中央値は同種別（接頭辞 LIKE）に絞る。record と eta は `AlphaApiController::buildListEtaKey` が唯一の組み立て元。
 5. **【完了 2026-06-01】アラート設定画面の拡充（#36）** — `/watch`(`WatchSettingsPage`) に①キーワードのアラートを画面内の入力＋カテゴリ選択で追加（一覧から削除も）②設定済みルーム一覧（部屋名は `batch-stats` で解決・しきい値表示・個別解除）③最終更新ヒント＋保存/キャンセルを置いた上部 sticky ヘッダーバー（`top-0 z-subheader`、生z-[NN]不使用）を実装。保存は従来どおり PUT 全置き換え（rooms も温存）。
 6. **【完了 2026-06-01】マイリスト変動アラート3パターン（#37）** — `/watch` のマイリスト変動セクションで scope=全体/ルート直下のみ/特定フォルダ を選択。しきい値は部屋詳細と**同じ %/人数 プルダウン**（新 `components/Notifications/ThresholdInput.tsx` に共通化し `WatchRoomControl` と共用）。スキーマ加算: `alpha_mylist_threshold` に `up_member`/`down_member`/`scope`/`target_oc_ids`(JSON) を追加。フォルダ構造は localStorage のみでサーバに無いため、対象 open_chat_id 集合はフロント（`mylistScope.ts`）が解決し PUT で送り cron はそれを直接使う（scope='all'/旧行は従来どおり `oc_list_user` 全体にフォールバック）。**二重通知回避**: `AlphaAlertService::computeMylistMovements` が、同毎時に部屋単体(type='room')で通知済みの (user_id, open_chat_id) を `getRoomNotificationKeys($hourBucket)` で集め、マイリスト側はそれをスキップ（部屋単体を優先・どちらか一方のみ）。**デプロイ時に schema-sync で4列追加が要る（dry-run確認済み・+4 column）。**
 7. **詳細/Labs 指標の期間プルダウン（#38）** — 詳細のアクセス・検索指標を**既定「過去30日」**にし、カレンダー（開始〜終了）で範囲指定。**カレンダーでは全期間まで選べる**こと＋**どこかに「全期間」ボタン**を置く。Labsも同様（既定30日＋カレンダー＋全期間ボタン）。期間に含まれるデータは全部集計。**バックエンド**: room-metrics/ranking に開始-終了日(date range)パラメータを追加（`*_daily` を範囲SUM。全期間＝下限なし）。
-8. **検索の履歴・保存クエリ（#30/#39）** — 検索画面に「最近の検索キーワード履歴」と「保存した検索クエリ」をいい感じに表示。localStorage駆動、タップで再検索（カテゴリも復元）、保存/削除。初期/空状態のランディングに出す。※前回エージェントがセッション上限で未着手。
+8. **【完了 2026-06-01】検索の履歴・保存クエリ（#30/#39）** — 検索の初期/空状態ランディング `components/Common/SearchLanding.tsx` に「最近の検索」（自動履歴）と「保存した検索条件」を表示。履歴は新サービス `services/searchHistory.ts`（localStorage `alpha_search_history`・上限12件・キーワード＋カテゴリで重複排除し先頭繰り上げ・空キーワードは残さない）、SearchPage が検索完了時に自動追記。保存クエリは既存 `services/savedSearches.ts`/`SavedSearchControls`（ヘッダの保存UI）をそのまま流用しランディングでも一覧/再適用/削除。どちらもタップで再検索（キーワード＋カテゴリ＋ソート復元）・個別削除（履歴は一括消去も）。重複実装なし。
 10. **詳細 SEO 内訳 第3波（#40d・2026-05-31）** — (a)「このページ内」(自己参照)は **SEO経由バッジを出さない**（isInternal=false。再読込/グラフ操作でありSEO流入ではない）。(b) 参照元ラベルの**おすすめにタグ名**を出す＝「おすすめ（下ネタ）」（1行に。`/recommend/{tag}` も `keyword=tag:◯◯` も）。(c) **詳細「SEO流入」タイルに間接SEO**を出す：直接GSCクリックが0でも本家内SEOページ経由(間接)が多い場合があるので 合計＝直接+間接、sub「直接X・間接Y」。間接=`getRoomIndirectSeo`(本家内リファラPV、自己参照除外)。(d)【要設計・よしなに】**中間ページ(おすすめ等)経由の流入キーワードと、その語経由でroomに到達した件数**も知りたい＝room←おすすめ(tag)←Google検索語 のアトリビューション。per-pageの検索クエリ(中間ページのGSC query)が必要で現状データが足りない可能性＝GA/GSC取得拡張を検討。まずは出せる範囲で。
 9. **詳細の SEO 内訳をさらに拡充（#40・2026-05-31 追加指示）** — 部屋詳細（例 `/alpha/openchat/209299`）で現在「参加リンク押下 626回・うちSEO経由 587回」「平均滞在時間 3秒」を表示中。**平均滞在時間も "うちSEO経由 X秒" を出す**（GAをsource=organicでセグメントした平均滞在/エンゲージ時間）。**入室数指標**も同様に合計／うちSEO経由で。**バックエンド**: `alpha_ga_sync` で organic セグメントの avg engagement time を取得し `alpha_room_access_daily` 等に列追加、`room-metrics` 応答へ。
    - **参照元（referrer）にページタイトル＋URLを出す（#40b）** — 現状の参照元窓に「ページタイトル」と「URL」が無い。タイトルを主表示にし、幅制限ではみ出す分は省略（truncate）、**タップ/ホバーでチップ(tooltip)に全貌**。`alpha_room_referrer_daily` の referrer 値を人間可読ラベル＋原URLに整形して返す。

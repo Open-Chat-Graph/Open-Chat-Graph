@@ -12,8 +12,11 @@ import {
   type LabsEntity,
 } from '@/components/Labs'
 import type { LabsMetric } from '@/components/Labs/LabsControls'
+import { ListProgressBar, ListRefetchOverlay } from '@/components/Common/ListProgress'
+import { useListProgress } from '@/hooks/useListProgress'
 import { alphaApi } from '@/api/alpha'
-import { DEFAULT_PERIOD, periodKey, type PeriodValue } from '@/lib/period'
+import { DEFAULT_PERIOD, periodKey, periodToParams, type PeriodValue } from '@/lib/period'
+import type { EtaListType } from '@/types/api'
 import type {
   AccessRankingResponse,
   PageRankingResponse,
@@ -131,6 +134,38 @@ const LabsPage = memo(() => {
   const isLoadingMore = isValidating && size > 1
   const isEmpty = !isLoading && pages.length > 0 && (pages[0]?.data.length ?? 0) === 0
 
+  // ETAプログレス: filterKey（タブ/期間/カテゴリ/指標/キーワード）が変わるたびに ETA を取り直す。
+  // 初回ロードは上部バー、結果表示中のフィルタ変更はオーバーレイへ振り分ける（append は除外）。
+  const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
+  const { progress, active: progressActive } = useListProgress({
+    requestKey: filterKey,
+    loading: firstPageLoading,
+    fetchEta: async () => {
+      // タブ＋指標で叩く ETA の種別を決める（fetcher と同じ対応）。
+      let type: EtaListType
+      if (tab === 'keywords') type = 'search-query-ranking'
+      else type = metric === 'seo' ? 'search-ranking' : 'access-ranking'
+      const periodParams = periodToParams(period)
+      const scope = tab === 'pages' ? 'pages' : 'rooms'
+      return (
+        await alphaApi.getEta({
+          type,
+          order: 'desc',
+          scope,
+          category: tab === 'rooms' ? category || undefined : undefined,
+          keyword: tab === 'rooms' ? keyword || undefined : undefined,
+          days: periodParams.days ? Number(periodParams.days) : undefined,
+          start: periodParams.start,
+          end: periodParams.end,
+          all: periodParams.all === '1',
+        })
+      ).etaMs
+    },
+  })
+  const hasResults = pages.length > 0 && (pages[0]?.data.length ?? 0) > 0
+  const showTopBar = progressActive && !hasResults
+  const showRefetchOverlay = progressActive && hasResults
+
   // 全ページのデータを結合（タブごとに型が違うので必要箇所でキャストして読む）。
   const rooms = useMemo<LabsRankingRoom[]>(() => {
     if (tab !== 'rooms') return []
@@ -196,11 +231,6 @@ const LabsPage = memo(() => {
         onKeywordChange={setKeyword}
       />
 
-      <p className="text-[11px] leading-relaxed text-muted-foreground/80">
-        本家ページ（openchat-review.me）への Google からの流入を GA/GSC で分析。
-        SEO流入＝合計（直接＝Google→該当ページ ＋ 間接＝本家内SEOページ経由の回遊）。入室数＝参加リンク押下。
-      </p>
-
       {error && (
         <Card className="border-destructive">
           <CardContent className="pt-6">
@@ -209,9 +239,11 @@ const LabsPage = memo(() => {
         </Card>
       )}
 
-      {!error && isLoading && pages.length === 0 && (
-        <div className="flex justify-center py-8">
-          <div className="text-muted-foreground">読み込み中...</div>
+      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。 */}
+      {!error && showTopBar && (
+        <div className="pt-1">
+          <ListProgressBar progress={progress} active={showTopBar} />
+          <p className="mt-2 text-center text-xs text-muted-foreground">読み込み中…</p>
         </div>
       )}
 
@@ -231,21 +263,25 @@ const LabsPage = memo(() => {
 
       {!error && !isEmpty && (
         <>
-          {tab === 'keywords' ? (
-            <LabsQuerySection queries={queries} />
-          ) : (
-            <div className="grid gap-2 md:gap-3">
-              {entities.map((entity, index) => (
-                <LabsRankingCard
-                  key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
-                  entity={entity}
-                  rank={index + 1}
-                  primary={primary}
-                  onRoomClick={handleCardClick}
-                />
-              ))}
-            </div>
-          )}
+          <div className="relative">
+            {/* 既存リスト表示中のフィルタ変更は薄いレイヤー＋スピナーで応答待ちを明示 */}
+            <ListRefetchOverlay active={showRefetchOverlay} />
+            {tab === 'keywords' ? (
+              <LabsQuerySection queries={queries} />
+            ) : (
+              <div className="grid gap-2 md:gap-3">
+                {entities.map((entity, index) => (
+                  <LabsRankingCard
+                    key={entity.kind === 'room' ? `r${entity.room.id}` : `p${entity.page.path}`}
+                    entity={entity}
+                    rank={index + 1}
+                    primary={primary}
+                    onRoomClick={handleCardClick}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* 無限スクロールの番兵＋ローディング */}
           <InfiniteScrollLoader isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />

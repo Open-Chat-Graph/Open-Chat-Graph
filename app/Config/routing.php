@@ -871,6 +871,21 @@ Route::path('alpha-api/search-eta', [AlphaApiController::class, 'searchEta'])
     ->matchStr('order', emptyAble: true, maxLen: 4, default: 'desc')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - 汎用ETA（リスト系プログレスバー用: period-growth/access-ranking/search-ranking/search-query-ranking）
+Route::path('alpha-api/eta', [AlphaApiController::class, 'eta'])
+    ->matchStr('type', maxLen: 32)
+    ->matchStr('keyword', emptyAble: true, maxLen: 1000)
+    ->matchNum('category', min: 0, emptyAble: true, default: 0)
+    ->matchStr('order', emptyAble: true, maxLen: 4, default: 'desc')
+    ->matchNum('days', min: 1, max: 3650, emptyAble: true, default: 30)
+    ->matchStr('start', emptyAble: true, maxLen: 10, default: '')
+    ->matchStr('end', emptyAble: true, maxLen: 10, default: '')
+    ->matchStr('startDate', emptyAble: true, maxLen: 10, default: '')
+    ->matchStr('endDate', emptyAble: true, maxLen: 10, default: '')
+    ->matchStr('all', emptyAble: true, maxLen: 1, default: '')
+    ->matchStr('scope', emptyAble: true, maxLen: 8, default: 'rooms')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 // Alpha API - 基本情報取得（軽量）
 Route::path('alpha-api/stats/{open_chat_id}', [AlphaApiController::class, 'stats'])
     ->matchNum('open_chat_id', min: 1)
