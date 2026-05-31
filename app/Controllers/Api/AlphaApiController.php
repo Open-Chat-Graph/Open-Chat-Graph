@@ -10,6 +10,7 @@ use App\Models\ApiRepositories\Alpha\AlphaPeriodGrowthRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
+use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaInsightsService;
@@ -47,7 +48,7 @@ class AlphaApiController
      * 検索API
      * GET /alpha-api/search?keyword=xxx&category=0&page=0&limit=20&sort=member&order=desc
      */
-    function search(AlphaOpenChatRepository $repo)
+    function search(AlphaOpenChatRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
         $error = BadRequestException::class;
         Reception::$isJson = true;
@@ -72,6 +73,10 @@ class AlphaApiController
             $this->args->keyword = $keyword;
         }
 
+        // ETA計測: 実処理(クエリ)の wall time を測り、query_key で upsert する。
+        // 失敗してもETAは付加機能なので握りつぶす（検索本体は止めない）。
+        $startMs = microtime(true);
+
         // ソート条件に応じて適切なリポジトリメソッドを呼ぶ（1回のクエリで全データ取得）
         switch ($this->args->sort) {
             case 'hourly_diff':
@@ -95,6 +100,16 @@ class AlphaApiController
                 // メンバー数または作成日でソート
                 $data = $repo->findByMemberOrCreatedAt($this->args);
                 break;
+        }
+
+        $elapsedMs = (int)round((microtime(true) - $startMs) * 1000);
+        try {
+            $timingRepo->record(
+                $this->buildSearchKey($keyword, $this->args->category, $this->args->sort, $this->args->order),
+                $elapsedMs
+            );
+        } catch (\Throwable $e) {
+            // ETA記録失敗は無視
         }
 
         $totalCount = $data[0]['totalCount'] ?? 0;
@@ -447,7 +462,15 @@ class AlphaApiController
         $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
         $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
 
-        $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, (int)$limit);
+        // 任意の期間指定（両方そろっていれば days より優先）
+        $startDate = $this->validDateOrNull(Reception::input('startDate', ''));
+        $endDate = $this->validDateOrNull(Reception::input('endDate', ''));
+
+        if ($startDate !== null && $endDate !== null) {
+            $result = $repo->findPeriodGrowthByDateRange($keyword, $category, $startDate, $endDate, $order, (int)$limit);
+        } else {
+            $result = $repo->findPeriodGrowth($keyword, $category, (int)$days, $order, (int)$limit);
+        }
 
         $data = [];
         foreach ($result['data'] as $row) {
@@ -532,11 +555,16 @@ class AlphaApiController
         foreach ($result['data'] as $item) {
             $data[] = $this->formatRankingRoom($item) + [
                 'pageviews' => (int)($item['pageviews'] ?? 0),
+                'activeUsers' => (int)($item['active_users'] ?? 0),
             ];
         }
 
+        // トップ/おすすめページも含めた上位（rooms とは別枠）
+        $pages = $repo->getPageScopeRanking((int)$days, $order, (int)$limit, 'pageviews');
+
         return response([
             'data' => $data,
+            'pages' => $pages,
             'days' => $result['days'],
             'baseDate' => $result['baseDate'],
             'updatedAt' => $result['updatedAt'],
@@ -575,15 +603,123 @@ class AlphaApiController
                 'searchClicks' => (int)($item['search_clicks'] ?? 0),
                 'searchImpressions' => (int)($item['search_impressions'] ?? 0),
                 'searchPosition' => $position,
+                'activeUsers' => (int)($item['active_users'] ?? 0),
             ];
         }
 
+        // トップ/おすすめページも含めた上位（rooms とは別枠。検索クリック順）
+        $pages = $repo->getPageScopeRanking((int)$days, $order, (int)$limit, 'search_clicks');
+
         return response([
             'data' => $data,
+            'pages' => $pages,
             'days' => $result['days'],
             'baseDate' => $result['baseDate'],
             'updatedAt' => $result['updatedAt'],
         ]);
+    }
+
+    /**
+     * 検索クエリランキング（Labs）
+     * GET /alpha-api/search-query-ranking?days=30&limit=20
+     *
+     * alpha_search_query_daily の直近N日 検索クリック合計でソートして上位クエリを返す。
+     */
+    function searchQueryRanking(AlphaAccessRankingRepository $repo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+        $limit = Validator::num(Reception::input('limit', 20), min: 1, max: 100, e: $error);
+
+        $result = $repo->getSearchQueryRanking((int)$days, (int)$limit);
+
+        return response([
+            'data' => $result['data'],
+            'days' => $result['days'],
+            'updatedAt' => $result['updatedAt'],
+        ]);
+    }
+
+    /**
+     * 詳細画面のGA/GSC指標 取得API
+     * GET /alpha-api/room-metrics/{open_chat_id}?days=30
+     *
+     * alpha_room_access_daily を直近N日で集計して1部屋の指標を返す。
+     * データが無い間（creds未投入/未集計）は 0 / null を 200 で返す。
+     */
+    function roomMetrics(AlphaAccessRankingRepository $repo, int $open_chat_id)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $days = Validator::num(Reception::input('days', 30), min: 1, max: 365, e: $error);
+
+        $m = $repo->getRoomMetrics($open_chat_id, (int)$days);
+
+        return response([
+            'days' => (int)$days,
+            'updatedAt' => $m['updatedAt'],
+            'pageviews' => $m['pageviews'],
+            'activeUsers' => $m['activeUsers'],
+            'searchClicks' => $m['searchClicks'],
+            'searchImpressions' => $m['searchImpressions'],
+            'searchPosition' => $m['searchPosition'],
+            'jumpClicks' => $m['jumpClicks'],
+            'avgEngagementSeconds' => $m['avgEngagementSeconds'],
+        ]);
+    }
+
+    /**
+     * 検索ETA（プログレスバー用）取得API
+     * GET /alpha-api/search-eta?keyword=&category=&sort=&order=
+     *
+     * 同条件の query_key に記録された直近の elapsed_ms を返す。
+     * 無ければ全体の中央値、それも無ければ既定値(800ms)。
+     */
+    function searchEta(AlphaSearchTimingRepository $timingRepo)
+    {
+        $error = BadRequestException::class;
+        Reception::$isJson = true;
+
+        $keyword = Validator::str(Reception::input('keyword', ''), emptyAble: true, maxLen: 1000, e: $error);
+        $category = (int)Validator::str(
+            (string)Reception::input('category', '0'),
+            regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot],
+            e: $error
+        );
+        $sort = Validator::str(
+            Reception::input('sort', 'member'),
+            regex: ['member', 'created_at', 'hourly_diff', 'diff_24h', 'diff_1w'],
+            e: $error
+        );
+        $order = Validator::str(Reception::input('order', 'desc'), regex: ['asc', 'desc'], e: $error);
+
+        $etaMs = $timingRepo->resolveEtaMs($this->buildSearchKey($keyword, $category, $sort, $order));
+
+        return response(['etaMs' => $etaMs]);
+    }
+
+    /**
+     * 検索条件を ETA 用の query_key に正規化する。
+     * keyword は parseKeywords と同じ正規化（全角スペース→半角・トリム・空除去・小文字化）後に
+     * カンマ連結し、category|sort|order を付ける。search と search-eta で完全一致させること。
+     */
+    private function buildSearchKey(string $keyword, int $category, string $sort, string $order): string
+    {
+        $normalized = str_replace('　', ' ', $keyword);
+        $parts = array_values(array_filter(
+            array_map(static fn($k) => mb_strtolower(trim($k)), explode(' ', $normalized)),
+            static fn($k) => $k !== ''
+        ));
+        $kw = implode(',', $parts);
+        $key = $kw . '|' . $category . '|' . $sort . '|' . $order;
+        // query_key は varchar(190)。超過時は安定キー（ハッシュ）に丸める。
+        if (mb_strlen($key) > 190) {
+            $key = 'h:' . substr(hash('sha256', $key), 0, 32) . '|' . $category . '|' . $sort . '|' . $order;
+        }
+        return $key;
     }
 
     /**
@@ -744,6 +880,14 @@ class AlphaApiController
             ] + $n['payload'];
 
             if ($n['type'] === 'keyword') {
+                // KeywordHit は member:int|null と detectedAt:int(unix秒) を必ず含める。
+                // 旧通知（payload にこれらが無い）は member=null / detectedAt=通知作成時刻 で補完。
+                if (!array_key_exists('member', $item)) {
+                    $item['member'] = null;
+                }
+                if (!array_key_exists('detectedAt', $item) || !is_int($item['detectedAt'])) {
+                    $item['detectedAt'] = (int)$item['createdAt'];
+                }
                 $keywordHits[] = $item;
             } else {
                 $movements[] = $item;
@@ -756,6 +900,23 @@ class AlphaApiController
             'unreadCount' => $unreadCount,
             'computedAt' => $notifications[0]['created_at'] ?? null,
         ]);
+    }
+
+    /**
+     * Y-m-d 形式として妥当な日付文字列だけを返す（不正・空は null）。
+     */
+    private function validDateOrNull(mixed $v): ?string
+    {
+        $s = trim((string)($v ?? ''));
+        if ($s === '') {
+            return null;
+        }
+        $d = \DateTime::createFromFormat('Y-m-d', $s);
+        if ($d === false) {
+            return null;
+        }
+        // createFromFormat は '2026-02-30' 等を繰り上げて受理するので往復一致を確認
+        return $d->format('Y-m-d') === $s ? $s : null;
     }
 
     private function numOrNull(mixed $v): ?int

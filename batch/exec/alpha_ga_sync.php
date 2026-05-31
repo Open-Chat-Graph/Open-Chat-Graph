@@ -84,16 +84,28 @@ try {
     foreach ($period as $day) {
         $date = $day->format('Y-m-d');
 
+        // ---- 1) 部屋別 (alpha_room_access_daily) ----
         // open_chat_id => 各指標 を統合
         $merged = [];
 
-        // GA4: ページビュー
+        // GA4: PV/UU/平均エンゲージ秒（1リクエストで取得）
         try {
-            foreach ($client->fetchPageviews($date, $date) as $id => $pv) {
-                $merged[$id]['pageviews'] = $pv;
+            foreach ($client->fetchRoomMetrics($date, $date) as $id => $m) {
+                $merged[$id]['pageviews'] = $m['pageviews'];
+                $merged[$id]['active_users'] = $m['activeUsers'];
+                $merged[$id]['engagement_seconds'] = $m['engagementSeconds'];
             }
         } catch (\Throwable $e) {
-            $errors[] = "GA4 {$date}: " . $e->getMessage();
+            $errors[] = "GA4 room {$date}: " . $e->getMessage();
+        }
+
+        // GA4: 参加リンク押下数（/oc/{id}/jump の click & line.me）
+        try {
+            foreach ($client->fetchJumpClicks($date, $date) as $id => $jc) {
+                $merged[$id]['jump_clicks'] = $jc;
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GA4 jump {$date}: " . $e->getMessage();
         }
 
         // GSC: 検索クリック/表示/順位
@@ -104,19 +116,23 @@ try {
                 $merged[$id]['search_position'] = $s['position'];
             }
         } catch (\Throwable $e) {
-            $errors[] = "GSC {$date}: " . $e->getMessage();
+            $errors[] = "GSC room {$date}: " . $e->getMessage();
         }
 
         foreach ($merged as $id => $row) {
             DB::execute(
                 "INSERT INTO alpha_room_access_daily
-                    (open_chat_id, `date`, pageviews, search_clicks, search_impressions, search_position)
-                 VALUES (:id, :date, :pv, :clicks, :impr, :pos)
+                    (open_chat_id, `date`, pageviews, search_clicks, search_impressions, search_position,
+                     active_users, jump_clicks, engagement_seconds)
+                 VALUES (:id, :date, :pv, :clicks, :impr, :pos, :uu, :jump, :eng)
                  ON DUPLICATE KEY UPDATE
                     pageviews = VALUES(pageviews),
                     search_clicks = VALUES(search_clicks),
                     search_impressions = VALUES(search_impressions),
-                    search_position = VALUES(search_position)",
+                    search_position = VALUES(search_position),
+                    active_users = VALUES(active_users),
+                    jump_clicks = VALUES(jump_clicks),
+                    engagement_seconds = VALUES(engagement_seconds)",
                 [
                     'id' => (int)$id,
                     'date' => $date,
@@ -124,9 +140,86 @@ try {
                     'clicks' => (int)($row['search_clicks'] ?? 0),
                     'impr' => (int)($row['search_impressions'] ?? 0),
                     'pos' => $row['search_position'] ?? null,
+                    'uu' => (int)($row['active_users'] ?? 0),
+                    'jump' => (int)($row['jump_clicks'] ?? 0),
+                    'eng' => $row['engagement_seconds'] ?? null,
                 ]
             );
             $totalUpserts++;
+        }
+
+        // ---- 2) 非部屋ページ (alpha_page_access_daily): トップ / おすすめ ----
+        $pages = [];
+
+        try {
+            foreach ($client->fetchPageMetrics($date, $date) as $path => $m) {
+                $pages[$path]['label'] = $m['label'];
+                $pages[$path]['pageviews'] = $m['pageviews'];
+                $pages[$path]['active_users'] = $m['activeUsers'];
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GA4 page {$date}: " . $e->getMessage();
+        }
+
+        try {
+            foreach ($client->fetchPageSearchAnalytics($date, $date) as $path => $s) {
+                $pages[$path]['search_clicks'] = $s['clicks'];
+                $pages[$path]['search_impressions'] = $s['impressions'];
+                $pages[$path]['search_position'] = $s['position'];
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GSC page {$date}: " . $e->getMessage();
+        }
+
+        foreach ($pages as $path => $row) {
+            DB::execute(
+                "INSERT INTO alpha_page_access_daily
+                    (path, `date`, label, pageviews, active_users, search_clicks, search_impressions, search_position)
+                 VALUES (:path, :date, :label, :pv, :uu, :clicks, :impr, :pos)
+                 ON DUPLICATE KEY UPDATE
+                    label = VALUES(label),
+                    pageviews = VALUES(pageviews),
+                    active_users = VALUES(active_users),
+                    search_clicks = VALUES(search_clicks),
+                    search_impressions = VALUES(search_impressions),
+                    search_position = VALUES(search_position)",
+                [
+                    'path' => (string)$path,
+                    'date' => $date,
+                    'label' => (string)($row['label'] ?? ''),
+                    'pv' => (int)($row['pageviews'] ?? 0),
+                    'uu' => (int)($row['active_users'] ?? 0),
+                    'clicks' => (int)($row['search_clicks'] ?? 0),
+                    'impr' => (int)($row['search_impressions'] ?? 0),
+                    'pos' => $row['search_position'] ?? null,
+                ]
+            );
+            $totalUpserts++;
+        }
+
+        // ---- 3) 上位検索クエリ (alpha_search_query_daily) ----
+        try {
+            foreach ($client->fetchTopSearchQueries($date, $date) as $q) {
+                DB::execute(
+                    "INSERT INTO alpha_search_query_daily
+                        (query, `date`, clicks, impressions, position)
+                     VALUES (:q, :date, :clicks, :impr, :pos)
+                     ON DUPLICATE KEY UPDATE
+                        clicks = VALUES(clicks),
+                        impressions = VALUES(impressions),
+                        position = VALUES(position)",
+                    [
+                        'q' => $q['query'],
+                        'date' => $date,
+                        'clicks' => $q['clicks'],
+                        'impr' => $q['impressions'],
+                        'pos' => $q['position'],
+                    ]
+                );
+                $totalUpserts++;
+            }
+        } catch (\Throwable $e) {
+            $errors[] = "GSC query {$date}: " . $e->getMessage();
         }
     }
 

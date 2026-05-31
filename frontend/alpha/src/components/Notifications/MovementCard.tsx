@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
 import { categoryName } from '@/lib/categories'
-import { timeAgo } from './timeAgo'
+import { timeAgo, formatDateTime } from './timeAgo'
 import type { Movement } from '@/types/api'
 
 interface MovementCardProps {
@@ -96,6 +96,11 @@ export const MovementCard = memo(({ movement, onOpen }: MovementCardProps) => {
               </span>
             </span>
           </div>
+
+          {/* タイムラインの各行に明示的な算出時刻を出す（相対時間だけにしない） */}
+          <p className="mt-1 text-[11px] text-muted-foreground/80 tabular-nums">
+            {formatDateTime(movement.createdAt)} に算出
+          </p>
         </div>
       </CardContent>
     </Card>

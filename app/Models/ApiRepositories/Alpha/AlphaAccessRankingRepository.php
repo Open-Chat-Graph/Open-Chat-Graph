@@ -29,7 +29,7 @@ class AlphaAccessRankingRepository
     public function getAccessRanking(int $category, int $days, string $order, int $limit): array
     {
         return $this->fetchRanking(
-            metricSelect: 'SUM(a.pageviews) AS pageviews',
+            metricSelect: 'SUM(a.pageviews) AS pageviews, SUM(a.active_users) AS active_users',
             having: 'SUM(a.pageviews) > 0',
             orderColumn: 'pageviews',
             category: $category,
@@ -51,6 +51,7 @@ class AlphaAccessRankingRepository
         return $this->fetchRanking(
             metricSelect: 'SUM(a.search_clicks) AS search_clicks, '
                 . 'SUM(a.search_impressions) AS search_impressions, '
+                . 'SUM(a.active_users) AS active_users, '
                 . 'CASE WHEN SUM(a.search_impressions) > 0 '
                 . 'THEN SUM(a.search_position * a.search_impressions) / SUM(a.search_impressions) '
                 . 'ELSE NULL END AS search_position',
@@ -137,6 +138,179 @@ class AlphaAccessRankingRepository
             'days' => $days,
             'baseDate' => $baseDate,
             'updatedAt' => $baseDate,
+        ];
+    }
+
+    /**
+     * 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}'）の直近N日アクセス/検索流入ランキング。
+     * access/search 両APIの「pages」別枠で返す（rooms とは別配列）。
+     *
+     * $orderColumn は 'pageviews'（access用）/ 'search_clicks'（search用）。
+     *
+     * @return array<int, array{path:string, label:string, pageviews:int, activeUsers:int, searchClicks:int, searchImpressions:int, searchPosition:?float}>
+     */
+    public function getPageScopeRanking(int $days, string $order, int $limit, string $orderColumn = 'pageviews'): array
+    {
+        DB::connect();
+
+        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_page_access_daily');
+        if ($baseDate === false || $baseDate === null) {
+            return [];
+        }
+        $baseDate = (string)$baseDate;
+        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
+
+        $orderSql = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
+        $orderColumn = $orderColumn === 'search_clicks' ? 'search_clicks' : 'pageviews';
+        $limit = max(1, $limit);
+
+        $sql = "
+            SELECT
+                path,
+                MAX(label) AS label,
+                SUM(pageviews) AS pageviews,
+                SUM(active_users) AS active_users,
+                SUM(search_clicks) AS search_clicks,
+                SUM(search_impressions) AS search_impressions,
+                CASE WHEN SUM(search_impressions) > 0
+                     THEN SUM(search_position * search_impressions) / SUM(search_impressions)
+                     ELSE NULL END AS search_position
+            FROM alpha_page_access_daily
+            WHERE `date` BETWEEN :fromDate AND :baseDate
+            GROUP BY path
+            ORDER BY {$orderColumn} {$orderSql}
+            LIMIT {$limit}
+        ";
+
+        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'baseDate' => $baseDate]);
+
+        return array_map(static function ($r) {
+            return [
+                'path' => (string)$r['path'],
+                'label' => (string)($r['label'] ?? ''),
+                'pageviews' => (int)$r['pageviews'],
+                'activeUsers' => (int)$r['active_users'],
+                'searchClicks' => (int)$r['search_clicks'],
+                'searchImpressions' => (int)$r['search_impressions'],
+                'searchPosition' => $r['search_position'] === null ? null : round((float)$r['search_position'], 2),
+            ];
+        }, $rows);
+    }
+
+    /**
+     * 上位検索クエリランキング（直近N日の clicks 合計）。
+     *
+     * @return array{data: array<int, array{query:string, clicks:int, impressions:int, position:?float}>, days:int, baseDate:?string, updatedAt:?string}
+     */
+    public function getSearchQueryRanking(int $days, int $limit): array
+    {
+        DB::connect();
+
+        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_search_query_daily');
+        if ($baseDate === false || $baseDate === null) {
+            return ['data' => [], 'days' => $days, 'baseDate' => null, 'updatedAt' => null];
+        }
+        $baseDate = (string)$baseDate;
+        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
+        $limit = max(1, $limit);
+
+        $sql = "
+            SELECT
+                query,
+                SUM(clicks) AS clicks,
+                SUM(impressions) AS impressions,
+                CASE WHEN SUM(impressions) > 0
+                     THEN SUM(position * impressions) / SUM(impressions)
+                     ELSE NULL END AS position
+            FROM alpha_search_query_daily
+            WHERE `date` BETWEEN :fromDate AND :baseDate
+            GROUP BY query
+            HAVING SUM(clicks) > 0
+            ORDER BY clicks DESC
+            LIMIT {$limit}
+        ";
+
+        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'baseDate' => $baseDate]);
+
+        $data = array_map(static function ($r) {
+            return [
+                'query' => (string)$r['query'],
+                'clicks' => (int)$r['clicks'],
+                'impressions' => (int)$r['impressions'],
+                'position' => $r['position'] === null ? null : round((float)$r['position'], 2),
+            ];
+        }, $rows);
+
+        return ['data' => $data, 'days' => $days, 'baseDate' => $baseDate, 'updatedAt' => $baseDate];
+    }
+
+    /**
+     * 詳細画面用: 1部屋の直近N日 GA/GSC 指標を集計。
+     *
+     * pv/uu/clicks/impr/jump = SUM、position = impression加重平均、engagement = 平均。
+     * updatedAt はテーブル全体の最新日付（その部屋の最終取得日ではなくバッチ基準日）。
+     *
+     * @return array{
+     *   updatedAt:?string, pageviews:int, activeUsers:int, searchClicks:int,
+     *   searchImpressions:int, searchPosition:?float, jumpClicks:int, avgEngagementSeconds:?float
+     * }
+     */
+    public function getRoomMetrics(int $openChatId, int $days): array
+    {
+        DB::connect();
+
+        $empty = [
+            'updatedAt' => null,
+            'pageviews' => 0,
+            'activeUsers' => 0,
+            'searchClicks' => 0,
+            'searchImpressions' => 0,
+            'searchPosition' => null,
+            'jumpClicks' => 0,
+            'avgEngagementSeconds' => null,
+        ];
+
+        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
+        if ($baseDate === false || $baseDate === null) {
+            return $empty;
+        }
+        $baseDate = (string)$baseDate;
+        $fromDate = (new \DateTime($baseDate))->modify('-' . ($days - 1) . ' day')->format('Y-m-d');
+
+        $sql = "
+            SELECT
+                SUM(pageviews) AS pageviews,
+                SUM(active_users) AS active_users,
+                SUM(search_clicks) AS search_clicks,
+                SUM(search_impressions) AS search_impressions,
+                SUM(jump_clicks) AS jump_clicks,
+                CASE WHEN SUM(search_impressions) > 0
+                     THEN SUM(search_position * search_impressions) / SUM(search_impressions)
+                     ELSE NULL END AS search_position,
+                CASE WHEN SUM(active_users) > 0
+                     THEN SUM(engagement_seconds * active_users) / SUM(active_users)
+                     ELSE NULL END AS engagement_seconds
+            FROM alpha_room_access_daily
+            WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :baseDate
+        ";
+
+        $row = DB::fetch($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'baseDate' => $baseDate]);
+
+        // 期間内にこの部屋の行が無ければ SUM は全て NULL（GROUP無し集計は1行返る）
+        if (!$row || $row['pageviews'] === null) {
+            $empty['updatedAt'] = $baseDate;
+            return $empty;
+        }
+
+        return [
+            'updatedAt' => $baseDate,
+            'pageviews' => (int)($row['pageviews'] ?? 0),
+            'activeUsers' => (int)($row['active_users'] ?? 0),
+            'searchClicks' => (int)($row['search_clicks'] ?? 0),
+            'searchImpressions' => (int)($row['search_impressions'] ?? 0),
+            'searchPosition' => $row['search_position'] === null ? null : round((float)$row['search_position'], 2),
+            'jumpClicks' => (int)($row['jump_clicks'] ?? 0),
+            'avgEngagementSeconds' => $row['engagement_seconds'] === null ? null : round((float)$row['engagement_seconds'], 1),
         ];
     }
 }

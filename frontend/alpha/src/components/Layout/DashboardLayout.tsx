@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, Bell } from 'lucide-react'
+import { Search, BarChart3, FolderOpen, X as XIcon, ArrowLeft, Settings, Bell, LineChart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from './MobileBottomNav'
 import { HeaderSearchBar } from './HeaderSearchBar'
@@ -44,6 +44,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return [
       { name: '検索', href: '/', icon: Search, badge: 0 },
       { name: 'マイリスト', href: '/mylist', icon: FolderOpen, badge: 0 },
+      { name: '分析', href: '/analysis', icon: LineChart, badge: 0 },
       { name: '通知', href: '/notifications', icon: Bell, badge: unreadCount },
       { name: '設定', href: '/settings', icon: Settings, badge: 0 },
     ]

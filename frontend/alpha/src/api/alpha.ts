@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse } from '../types/api'
 
 const API_BASE = '/alpha-api'
 
@@ -61,9 +61,48 @@ export const alphaApi = {
     if (params.days !== undefined) query.set('days', params.days.toString())
     if (params.order) query.set('order', params.order)
     if (params.limit) query.set('limit', params.limit.toString())
+    if (params.startDate) query.set('startDate', params.startDate)
+    if (params.endDate) query.set('endDate', params.endDate)
 
     const res = await fetch(`${API_BASE}/period-growth?${query}`)
     if (!res.ok) throw new Error('Period growth API failed')
+
+    return res.json()
+  },
+
+  // 検索の所要時間予測。プログレスバーの進行速度に使う（実応答は別途 search で取得）。
+  async getSearchEta(params: SearchEtaParams): Promise<SearchEtaResponse> {
+    const query = new URLSearchParams()
+    if (params.keyword) query.set('keyword', params.keyword)
+    if (params.category) query.set('category', params.category.toString())
+    if (params.sort) query.set('sort', params.sort)
+    if (params.order) query.set('order', params.order)
+
+    const res = await fetch(`${API_BASE}/search-eta?${query}`)
+    if (!res.ok) throw new Error('Search ETA API failed')
+
+    return res.json()
+  },
+
+  // 部屋ごとのアクセス・検索メトリクス（詳細ページ向け）。days で集計期間を指定。
+  async getRoomMetrics(openChatId: number, days?: number): Promise<RoomMetricsResponse> {
+    const query = new URLSearchParams()
+    if (days !== undefined) query.set('days', days.toString())
+
+    const res = await fetch(`${API_BASE}/room-metrics/${openChatId}?${query}`)
+    if (!res.ok) throw new Error('Room metrics API failed')
+
+    return res.json()
+  },
+
+  // サイト全体の検索クエリ別流入ランキング（GSC 由来）。
+  async getSearchQueryRanking(params: SearchQueryRankingParams = {}): Promise<SearchQueryRankingResponse> {
+    const query = new URLSearchParams()
+    if (params.days !== undefined) query.set('days', params.days.toString())
+    if (params.limit) query.set('limit', params.limit.toString())
+
+    const res = await fetch(`${API_BASE}/search-query-ranking?${query}`)
+    if (!res.ok) throw new Error('Search query ranking API failed')
 
     return res.json()
   },

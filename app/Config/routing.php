@@ -859,6 +859,14 @@ Route::path('alpha-api/search', [AlphaApiController::class, 'search'])
     ->matchNum('limit', min: 1, max: 50, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - 検索ETA（プログレスバー用）
+Route::path('alpha-api/search-eta', [AlphaApiController::class, 'searchEta'])
+    ->matchStr('keyword', emptyAble: true, maxLen: 1000)
+    ->matchNum('category', min: 0, emptyAble: true, default: 0)
+    ->matchStr('sort', emptyAble: true, maxLen: 20, default: 'member')
+    ->matchStr('order', emptyAble: true, maxLen: 4, default: 'desc')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 // Alpha API - 基本情報取得（軽量）
 Route::path('alpha-api/stats/{open_chat_id}', [AlphaApiController::class, 'stats'])
     ->matchNum('open_chat_id', min: 1)
@@ -890,6 +898,8 @@ Route::path('alpha-api/period-growth', [AlphaApiController::class, 'periodGrowth
     ->matchStr('keyword', maxLen: 1000)
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
+    ->matchStr('startDate', emptyAble: true, maxLen: 10, default: '')
+    ->matchStr('endDate', emptyAble: true, maxLen: 10, default: '')
     ->matchStr('order', emptyAble: true, default: 'desc')
     ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
@@ -908,6 +918,18 @@ Route::path('alpha-api/search-ranking', [AlphaApiController::class, 'searchRanki
     ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->matchStr('order', emptyAble: true, default: 'desc')
     ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - 検索クエリランキング（Labs）
+Route::path('alpha-api/search-query-ranking', [AlphaApiController::class, 'searchQueryRanking'])
+    ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
+    ->matchNum('limit', min: 1, max: 100, emptyAble: true, default: 20)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - 詳細画面のGA/GSC指標
+Route::path('alpha-api/room-metrics/{open_chat_id}', [AlphaApiController::class, 'roomMetrics'])
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('days', min: 1, max: 365, emptyAble: true, default: 30)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 通知/アラート: ウォッチ設定の取得(GET)/保存(PUT)

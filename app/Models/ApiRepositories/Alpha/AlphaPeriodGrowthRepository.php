@@ -81,18 +81,94 @@ class AlphaPeriodGrowthRepository
         $currentMap = $this->fetchMemberAtOrBeforeDate($pdo, $ids, $baseDate);
         $pastMap    = $this->fetchMemberAtOrBeforeDate($pdo, $ids, $targetPastDate);
 
-        // 3 & 4. 突き合わせ・フィルタ・差分計算
+        // 3 & 4. 突き合わせ・フィルタ・差分計算・ソート（order=desc:増加多い順／asc:少ない順）
+        $rows = $this->buildRows($candidates, $currentMap, $pastMap, $order);
+
+        $totalMatched = count($rows);
+
+        $rows = array_slice($rows, 0, $limit);
+
+        return [
+            'data'         => $rows,
+            'days'         => $days,
+            'totalMatched' => $totalMatched,
+            'baseDate'     => $baseDate,
+            'pastDate'     => $targetPastDate,
+        ];
+    }
+
+    /**
+     * 期間（開始日〜終了日）指定の増減リストを取得する。
+     *
+     * findPeriodGrowth が「基準日とそのN日前」で比較するのに対し、こちらは
+     * 明示した startDate / endDate で比較する（フロントの日付ピッカー用）。
+     * 各idについて「endDate 以下で最も近い日」と「startDate 以下で最も近い日」の
+     * メンバー数を取り、両方そろうものだけを残す。
+     *
+     * @param string $startDate 期間開始日 (Y-m-d)
+     * @param string $endDate   期間終了日 (Y-m-d)
+     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string}
+     */
+    public function findPeriodGrowthByDateRange(
+        string $keyword,
+        int $category,
+        string $startDate,
+        string $endDate,
+        string $order,
+        int $limit
+    ): array {
+        // 終了日 < 開始日なら入れ替えて常に start <= end にする
+        if ($startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+        $days = (int)((new \DateTime($startDate))->diff(new \DateTime($endDate))->days);
+
+        $candidates = $this->fetchCandidates($keyword, $category);
+        if (empty($candidates)) {
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null];
+        }
+
+        $ids = array_map(static fn($c) => (int)$c['id'], $candidates);
+
+        $pdo = SQLiteStatistics::connect(['mode' => '?mode=ro']);
+
+        // endDate 以下で最も近い日（＝基準）と startDate 以下で最も近い日（＝過去）
+        $currentMap = $this->fetchMemberAtOrBeforeDate($pdo, $ids, $endDate);
+        $pastMap    = $this->fetchMemberAtOrBeforeDate($pdo, $ids, $startDate);
+
+        $rows = $this->buildRows($candidates, $currentMap, $pastMap, $order);
+        $totalMatched = count($rows);
+        $rows = array_slice($rows, 0, $limit);
+
+        return [
+            'data'         => $rows,
+            'days'         => $days,
+            'totalMatched' => $totalMatched,
+            'baseDate'     => $endDate,
+            'pastDate'     => $startDate,
+        ];
+    }
+
+    /**
+     * 候補×（基準時点マップ, 過去時点マップ）から差分行を組み立ててソートする。
+     * findPeriodGrowth / findPeriodGrowthByDateRange 共通。
+     *
+     * @param array<int, array<string, mixed>> $candidates
+     * @param array<int, array{member:int, date:string}> $currentMap
+     * @param array<int, array{member:int, date:string}> $pastMap
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildRows(array $candidates, array $currentMap, array $pastMap, string $order): array
+    {
         $rows = [];
         foreach ($candidates as $c) {
             $id = (int)$c['id'];
 
-            // N日前時点のデータが無い → 弾く（その時点には存在しなかった/統計が無い）
             if (!isset($pastMap[$id])) {
                 continue;
             }
             $pastMember = (int)$pastMap[$id]['member'];
 
-            // 現在(基準日)のデータが無いものも比較不能なので弾く
             if (!isset($currentMap[$id])) {
                 continue;
             }
@@ -112,9 +188,6 @@ class AlphaPeriodGrowthRepository
             ];
         }
 
-        $totalMatched = count($rows);
-
-        // ソート（order=desc: 増加多い順／asc: 少ない順）。同点はmember降順で安定化。
         usort($rows, function ($a, $b) use ($order) {
             if ($a['diff'] !== $b['diff']) {
                 return $order === 'asc'
@@ -124,15 +197,7 @@ class AlphaPeriodGrowthRepository
             return (int)$b['candidate']['member'] <=> (int)$a['candidate']['member'];
         });
 
-        $rows = array_slice($rows, 0, $limit);
-
-        return [
-            'data'         => $rows,
-            'days'         => $days,
-            'totalMatched' => $totalMatched,
-            'baseDate'     => $baseDate,
-            'pastDate'     => $targetPastDate,
-        ];
+        return $rows;
     }
 
     /**

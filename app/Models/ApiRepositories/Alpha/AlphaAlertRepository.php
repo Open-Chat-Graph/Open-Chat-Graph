@@ -211,17 +211,18 @@ class AlphaAlertRepository
         ], $rows);
     }
 
-    /** @return array<int, array{id:int, user_id:string, keyword:string, category:?int}> */
+    /** @return array<int, array{id:int, user_id:string, keyword:string, category:?int, created_at:string}> */
     public function getAllKeywordWatches(): array
     {
         $rows = UserLogDB::fetchAll(
-            "SELECT id, user_id, keyword, category FROM alpha_keyword_watch ORDER BY id ASC"
+            "SELECT id, user_id, keyword, category, created_at FROM alpha_keyword_watch ORDER BY id ASC"
         );
         return array_map(static fn($r) => [
             'id' => (int)$r['id'],
             'user_id' => (string)$r['user_id'],
             'keyword' => (string)$r['keyword'],
             'category' => $r['category'] === null ? null : (int)$r['category'],
+            'created_at' => (string)$r['created_at'],
         ], $rows);
     }
 
@@ -275,6 +276,130 @@ class AlphaAlertRepository
             return [];
         }
         return array_values(array_filter(array_map('intval', $ids), static fn($i) => $i > 0));
+    }
+
+    // ====================== 未登録部屋プール (alpha_search_seen_room) ======================
+
+    /**
+     * 検索に出た「未登録部屋」を共有プールに upsert する。
+     *
+     * 既存行があれば name/member/last_seen_at を更新し、keywords に $keyword を
+     * （未収録なら）カンマ連結で追加する。新規行は first_seen_at = now。
+     *
+     * keywords はユーザー横断で「この部屋を見つけたアラートキーワードの集合」。
+     * 配信時に「K が keywords のいずれかに完全一致」で判定する。
+     *
+     * @param string  $emid    LINE square の emid（未登録）
+     * @param string  $name    部屋名
+     * @param int|null $member 人数（squareには無いので基本 null）
+     * @param string  $keyword この部屋を見つけたアラートキーワード
+     */
+    public function upsertSeenRoom(string $emid, string $name, ?int $member, string $keyword): void
+    {
+        if ($emid === '') {
+            return;
+        }
+
+        // keywords はカンマ区切り集合。keyword 自体のカンマは FIND_IN_SET を壊すので除去。
+        $keyword = $this->normalizeKeyword($keyword);
+
+        $row = UserLogDB::fetch(
+            "SELECT keywords FROM alpha_search_seen_room WHERE emid = :emid",
+            ['emid' => $emid]
+        );
+
+        if ($row) {
+            // 既存: keywords に keyword を（未収録なら）足し、name/member/last_seen を更新
+            $keywords = $this->mergeKeyword((string)$row['keywords'], $keyword);
+            UserLogDB::execute(
+                "UPDATE alpha_search_seen_room
+                 SET name = :name, member = :member, keywords = :kw, last_seen_at = current_timestamp()
+                 WHERE emid = :emid",
+                [
+                    'name' => $this->truncate($name, 190),
+                    'member' => $member,
+                    'kw' => $keywords,
+                    'emid' => $emid,
+                ]
+            );
+        } else {
+            UserLogDB::execute(
+                "INSERT INTO alpha_search_seen_room (emid, name, member, keywords)
+                 VALUES (:emid, :name, :member, :kw)
+                 ON DUPLICATE KEY UPDATE
+                    name = VALUES(name),
+                    member = VALUES(member),
+                    keywords = VALUES(keywords),
+                    last_seen_at = current_timestamp()",
+                [
+                    'emid' => $emid,
+                    'name' => $this->truncate($name, 190),
+                    'member' => $member,
+                    'kw' => $keyword,
+                ]
+            );
+        }
+    }
+
+    /**
+     * あるキーワード K にヒットする未登録部屋のうち、配信条件を満たすものを返す。
+     *
+     * 条件:
+     *   - K が keywords（カンマ集合）のいずれかに完全一致
+     *   - first_seen_at >= :createdAt（このウォッチ登録時刻以降に初めて見つかった部屋）
+     *
+     * 重複排除（そのユーザーに未配信か）は呼び出し側で alpha_keyword_seen を使って行う。
+     *
+     * @return array<int, array{emid:string, name:string, member:?int, first_seen_at:string}>
+     */
+    public function getDeliverableSeenRooms(string $keyword, string $createdAt): array
+    {
+        // upsert 時と同じ正規化（カンマ除去）で照合する。
+        $keyword = $this->normalizeKeyword($keyword);
+
+        // keywords は「a,b,c」形式。完全一致のため FIND_IN_SET を使う。
+        $rows = UserLogDB::fetchAll(
+            "SELECT emid, name, member, first_seen_at
+             FROM alpha_search_seen_room
+             WHERE first_seen_at >= :created
+               AND FIND_IN_SET(:kw, keywords)
+             ORDER BY first_seen_at ASC",
+            ['created' => $createdAt, 'kw' => $keyword]
+        );
+        return array_map(static fn($r) => [
+            'emid' => (string)$r['emid'],
+            'name' => (string)($r['name'] ?? ''),
+            'member' => $r['member'] === null ? null : (int)$r['member'],
+            'first_seen_at' => (string)$r['first_seen_at'],
+        ], $rows);
+    }
+
+    /**
+     * keywords のカンマ集合に keyword を（未収録なら）追加して返す。
+     * keyword 自体にカンマを含む場合は FIND_IN_SET が壊れるためカンマを除去して正規化する。
+     */
+    private function mergeKeyword(string $keywords, string $keyword): string
+    {
+        $keyword = $this->normalizeKeyword($keyword);
+        $set = array_values(array_filter(
+            array_map('trim', explode(',', $keywords)),
+            static fn($k) => $k !== ''
+        ));
+        if (!in_array($keyword, $set, true)) {
+            $set[] = $keyword;
+        }
+        return implode(',', $set);
+    }
+
+    /** keywords 集合に入れる前のキーワード正規化（カンマ除去・トリム）。 */
+    private function normalizeKeyword(string $keyword): string
+    {
+        return trim(str_replace(',', ' ', $keyword));
+    }
+
+    private function truncate(string $s, int $max): string
+    {
+        return mb_strlen($s) > $max ? mb_substr($s, 0, $max) : $s;
     }
 
     // ====================== キーワード検出: 重複防止 ======================

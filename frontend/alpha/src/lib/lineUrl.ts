@@ -11,3 +11,14 @@ export function lineOpenUrl(emid: string | null | undefined): string {
   if (!emid) return ''
   return LINE_INVITE_BASE + encodeURIComponent(emid)
 }
+
+/**
+ * LINE オープンチャットの「カバー（公開ページ）」URL生成。
+ *
+ * 未登録（オプチャグラフに未収録）の新規部屋は emid からこの cover URL でしか開けない
+ * （招待リンクではなく公開カバーページに送る）。検索由来の発見部屋の導線に使う。
+ */
+export function coverUrl(emid: string | null | undefined): string {
+  if (!emid) return ''
+  return `https://openchat.line.me/jp/cover/${encodeURIComponent(emid)}?utm_source=line-openchat-seo&utm_medium=category&utm_campaign=default`
+}

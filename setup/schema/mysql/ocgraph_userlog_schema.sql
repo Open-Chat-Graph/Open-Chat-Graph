@@ -86,6 +86,33 @@ CREATE TABLE `alpha_keyword_seen` (
   KEY `keyword_watch_id` (`keyword_watch_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 検索に出るが「オプチャグラフ未登録」の部屋を共有プールとして管理する。
+-- 毎時、全ユーザーのアラートキーワードのユニーク集合で LINE公式検索を叩き、
+-- open_chat に未登録の emid をここに upsert する（ユーザー横断で1行/部屋）。
+-- keywords: その部屋を見つけたアラートキーワードの集合（カンマ連結・ユニーク）。
+-- 配信は keyword_watch.created_at <= first_seen_at かつ K が keywords に完全一致 のものだけ。
+DROP TABLE IF EXISTS `alpha_search_seen_room`;
+CREATE TABLE `alpha_search_seen_room` (
+  `emid` varchar(255) NOT NULL,
+  `name` varchar(190) DEFAULT NULL,
+  `member` int(11) DEFAULT NULL,
+  `keywords` text NOT NULL,
+  `first_seen_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `last_seen_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`emid`),
+  KEY `first_seen_at` (`first_seen_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- 検索ETA（プログレスバー用）: 正規化した query_key ごとに直近の検索処理 wall time を記録。
+-- /alpha-api/search が毎回 upsert し、/alpha-api/search-eta が読む。
+DROP TABLE IF EXISTS `alpha_search_timing`;
+CREATE TABLE `alpha_search_timing` (
+  `query_key` varchar(190) NOT NULL,
+  `elapsed_ms` int(11) NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`query_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- 算出済み通知アイテム
 -- type: 'keyword' | 'room' | 'mylist'
 -- dedup_key: 同一通知の重複保存防止 (UNIQUE)

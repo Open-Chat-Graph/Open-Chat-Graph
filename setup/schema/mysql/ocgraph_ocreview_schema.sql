@@ -189,6 +189,38 @@ CREATE TABLE `alpha_room_access_daily` (
   `search_clicks` int(11) NOT NULL DEFAULT 0,
   `search_impressions` int(11) NOT NULL DEFAULT 0,
   `search_position` float DEFAULT NULL,
+  `active_users` int(11) NOT NULL DEFAULT 0,
+  `jump_clicks` int(11) NOT NULL DEFAULT 0,
+  `engagement_seconds` float DEFAULT NULL,
   PRIMARY KEY (`open_chat_id`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alpha Labs: 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}'）の日次アクセス/検索流入。
+-- path をキーに日次で upsert。ランキングAPIの pages 別枠で返す。
+DROP TABLE IF EXISTS `alpha_page_access_daily`;
+CREATE TABLE `alpha_page_access_daily` (
+  `path` varchar(190) NOT NULL,
+  `date` date NOT NULL,
+  `label` varchar(190) NOT NULL DEFAULT '',
+  `pageviews` int(11) NOT NULL DEFAULT 0,
+  `active_users` int(11) NOT NULL DEFAULT 0,
+  `search_clicks` int(11) NOT NULL DEFAULT 0,
+  `search_impressions` int(11) NOT NULL DEFAULT 0,
+  `search_position` float DEFAULT NULL,
+  PRIMARY KEY (`path`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alpha Labs: GSC の上位検索クエリ（query ディメンション）を日次で保存。
+-- 検索クエリランキング(/alpha-api/search-query-ranking)の元データ。
+DROP TABLE IF EXISTS `alpha_search_query_daily`;
+CREATE TABLE `alpha_search_query_daily` (
+  `query` varchar(190) NOT NULL,
+  `date` date NOT NULL,
+  `clicks` int(11) NOT NULL DEFAULT 0,
+  `impressions` int(11) NOT NULL DEFAULT 0,
+  `position` float DEFAULT NULL,
+  PRIMARY KEY (`query`,`date`),
   KEY `date_idx` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

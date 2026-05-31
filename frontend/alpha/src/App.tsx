@@ -13,6 +13,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import PeriodGrowthPage from './pages/PeriodGrowthPage'
 import WatchSettingsPage from './pages/WatchSettingsPage'
 import LabsPage from './pages/LabsPage'
+import AnalysisPage from './pages/AnalysisPage'
 import FolderChartPage from './pages/FolderChartPage'
 
 /**
@@ -46,6 +47,13 @@ const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
     element: <MyListPage />,
     top: 'title',
     scrollable: false,
+  },
+  {
+    key: 'analysis',
+    isActive: (p) => p === '/analysis',
+    element: <AnalysisPage />,
+    top: 'title',
+    scrollable: true,
   },
   {
     key: 'notifications',

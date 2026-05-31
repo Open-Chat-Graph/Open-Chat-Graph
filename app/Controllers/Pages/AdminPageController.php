@@ -179,6 +179,31 @@ class AdminPageController
     }
 
     /**
+     * Alpha(α) Labs のGA/GSC日次同期だけを手動実行する（テスト用）。
+     * 本家の Google Analytics 4 と Search Console から /oc/{id} 詳細ページ・トップ・おすすめページの
+     * アクセス/UU/参加リンク押下/平均エンゲージ秒・検索流入・上位検索クエリを取得し、
+     * alpha_room_access_daily / alpha_page_access_daily / alpha_search_query_daily に日次集計して保存する。
+     * GA4/GSCのcreds(local-secrets)が未設定なら何もせず正常終了する。結果は cronログ（/admin/log/cron、タグ「【Alpha GA同期】」）に残る。
+     * 既定では直近数日を再取得して上書きする（GAの確定遅延に追従）。
+     */
+    function alphagasync()
+    {
+        $path = AppConfig::ROOT_PATH . 'batch/exec/alpha_ga_sync.php';
+
+        CronUtility::addCronLog('【Alpha GA同期】手動実行を /admin/alphagasync からトリガー');
+
+        // 同期実行（完了してから結果を表示）。バッチ内で完了/失敗を addCronLog に記録する。
+        exec(AppConfig::$phpBinary . " {$path} 2>&1", $output, $exit);
+
+        return view('admin/admin_message_page', [
+            'title' => 'Alpha GA同期 手動実行',
+            'message' => "alpha_ga_sync を実行しました（exit={$exit}）。"
+                . "結果は cronログ（/admin/log/cron のタグ「【Alpha GA同期】」）で確認してください。"
+                . (empty($output) ? '' : "\n出力: " . implode("\n", array_slice($output, -10))),
+        ]);
+    }
+
+    /**
      * 毎時処理途中経過チェックバッチ実行
      */
     private function halfcheck()

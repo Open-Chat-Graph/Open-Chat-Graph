@@ -4,10 +4,10 @@ import { ExternalLink, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { imgPreviewUrl } from '@/lib/imageUrl'
-import { lineOpenUrl } from '@/lib/lineUrl'
+import { coverUrl } from '@/lib/lineUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
 import { categoryName } from '@/lib/categories'
-import { timeAgo } from './timeAgo'
+import { timeAgo, formatDateTime } from './timeAgo'
 import type { KeywordHit } from '@/types/api'
 
 interface KeywordHitCardProps {
@@ -18,19 +18,22 @@ interface KeywordHitCardProps {
 
 /**
  * 「新しい部屋」カード。キーワードアラートにヒットした新規部屋を表示する。
- * - openChatId があれば詳細ページへ遷移
- * - 未登録（openChatId=null）は詳細が無いので emid から「LINEで開く」導線だけ
+ * - 登録済み（openChatId あり）は詳細ページへ遷移（cover は使わない）
+ * - 未登録（isRegistered=false / openChatId=null）はまだ詳細が無いので、
+ *   emid の cover URL（公開ページ）で「LINEで開く」導線だけにする。
+ *   この部屋は招待リンクではなく cover URL でないと開けない。
  */
 export const KeywordHitCard = memo(({ hit, onOpen }: KeywordHitCardProps) => {
   const navigate = useNavigate()
-  const lineUrl = lineOpenUrl(hit.emid)
+  const isRegistered = hit.isRegistered && hit.openChatId != null
+  const lineCoverUrl = coverUrl(hit.emid)
 
   const handleClick = () => {
     onOpen(hit)
-    if (hit.openChatId != null) {
+    if (isRegistered) {
       navigate(`/openchat/${hit.openChatId}`)
-    } else if (lineUrl) {
-      window.open(lineUrl, '_blank', 'noopener')
+    } else if (lineCoverUrl) {
+      window.open(lineCoverUrl, '_blank', 'noopener')
     }
   }
 
@@ -64,6 +67,14 @@ export const KeywordHitCard = memo(({ hit, onOpen }: KeywordHitCardProps) => {
               <Sparkles className="h-3 w-3" />
               「{hit.keyword}」の新着
             </Badge>
+            {!isRegistered && (
+              <Badge
+                variant="outline"
+                className="h-5 gap-1 px-1.5 text-[11px] font-normal border-primary/40 bg-primary/5 text-primary"
+              >
+                未登録・検索で発見
+              </Badge>
+            )}
             <span className="ml-auto flex-shrink-0 text-[11px] text-muted-foreground">
               {timeAgo(hit.createdAt)}
             </span>
@@ -91,13 +102,18 @@ export const KeywordHitCard = memo(({ hit, onOpen }: KeywordHitCardProps) => {
                 <span className="truncate">{categoryName(hit.category)}</span>
               </>
             )}
-            {!hit.isRegistered && (
+            {!isRegistered && (
               <Badge variant="outline" className="ml-auto h-5 gap-1 px-1.5 text-[11px] font-normal">
                 <ExternalLink className="h-3 w-3" />
                 LINEで開く
               </Badge>
             )}
           </div>
+
+          {/* 検出時刻は明示的な日時で出す（相対時間だけにしない） */}
+          <p className="mt-1 text-[11px] text-muted-foreground/80 tabular-nums">
+            {formatDateTime(hit.detectedAt)} に検出
+          </p>
         </div>
       </CardContent>
     </Card>

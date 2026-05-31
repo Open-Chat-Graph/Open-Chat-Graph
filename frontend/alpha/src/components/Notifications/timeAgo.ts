@@ -19,3 +19,11 @@ export function formatComputedAt(raw: string): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
+
+/** unix秒を「YYYY/MM/DD HH:mm」に整形（検出/算出時刻の明示表示用。相対表記の timeAgo とは別用途）。 */
+export function formatDateTime(unixSec: number): string {
+  const d = new Date(unixSec * 1000)
+  if (isNaN(d.getTime())) return ''
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}

@@ -10,7 +10,11 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  * Alpha 通知/アラートの算出サービス（毎時 cron から呼ばれる）。
  *
  * 全ユーザーのウォッチを走査し、以下を算出して alpha_notification に保存する:
- *   ① ウォッチキーワード … LINE公式検索APIで一致する「新しい部屋」を検出（未通知 emid のみ）
+ *   ① ウォッチキーワード … LINE公式検索APIで一致する「新着部屋」を検出
+ *        - 登録済み(open_chat にある)部屋  … 従来どおり即時検出（カテゴリ照合あり）
+ *        - 未登録(オプチャグラフ未登録)部屋 … 共有プール alpha_search_seen_room に貯め、
+ *          「ウォッチ登録時刻(created_at)以降に初出 ＆ 未配信」のものだけ配信
+ *          （ウォッチ登録より前から在った部屋を初回に大量配信しないため）
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
  *   ③ マイリスト          … %しきい値での上昇・下降を検出
  *
@@ -19,7 +23,7 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *   - ②③の差分は既存の statistics_ranking_hour（毎時クロールで確定済み）をまとめて1クエリで取得。
  *
  * 重複防止:
- *   - ① emid は alpha_keyword_seen に記録、2回目以降は通知しない。
+ *   - ① emid は alpha_keyword_seen(keyword_watch_id, emid) に記録、2回目以降は通知しない。
  *   - ②③ は alpha_notification.dedup_key（時刻 bucket 込み）で同一毎時の重複保存を防ぐ。
  *
  * 毎時処理を止めないため、各ステップは try/catch で握りつぶしログのみ（呼び出し側で集約）。
@@ -95,56 +99,159 @@ class AlphaAlertService
             }
         }
 
+        // ① 検索結果を走査し、未登録 emid を共有プール(alpha_search_seen_room)へ upsert する。
+        //    各検索結果はそれを見つけたキーワードで keywords 集合に足される（ユーザー横断・1行/部屋）。
+        $this->syncSeenRooms($searchCache);
+
+        // ② 各ユーザーのウォッチについて、登録済み一致（即時）と未登録一致（プール経由）を配信する。
         $count = 0;
         foreach ($watches as $w) {
             $squares = $searchCache[$w['keyword']] ?? [];
+
+            // 登録済み一致は従来どおり即時検出（squareにcategory無いのでopen_chat側で照合）
+            $count += $this->deliverRegisteredHits($w, $squares);
+
+            // 未登録一致は共有プールから「登録時刻以降に初出 ＆ 未配信」のみ配信
+            $count += $this->deliverUnregisteredHits($w);
+        }
+
+        return $count;
+    }
+
+    /**
+     * 検索結果の未登録 emid を共有プール(alpha_search_seen_room)へ upsert する。
+     * 同一 emid が複数キーワードでヒットしても、各キーワードを keywords 集合に足す。
+     *
+     * @param array<string, array<int, array{emid:string,name:string,desc:string,profileImageObsHash:string,joinMethodType:int}>> $searchCache
+     */
+    private function syncSeenRooms(array $searchCache): void
+    {
+        foreach ($searchCache as $keyword => $squares) {
             if (empty($squares)) {
                 continue;
             }
-
-            // カテゴリ絞り込み: LINE検索 square にはカテゴリが無いため、open_chat 既登録のものは
-            // そのカテゴリで照合、未登録（=真の新規）はカテゴリ不問で拾う（本家登録を待たない方針）。
             $emids = array_map(static fn($s) => $s['emid'], $squares);
-            $registered = $this->repo->getRegisteredEmidMap($emids); // emid => open_chat_id
-            $ocMap = $this->repo->getOpenChatMap(array_values($registered));
-
-            $seen = $this->repo->getSeenEmids($w['id']);
+            $registered = $this->repo->getRegisteredEmidMap($emids); // emid => open_chat_id（登録済み）
 
             foreach ($squares as $sq) {
                 $emid = $sq['emid'];
-                if (isset($seen[$emid])) {
-                    continue; // 既に通知済み
+                if ($emid === '' || isset($registered[$emid])) {
+                    continue; // 登録済みはプールに入れない（②の登録済み経路で扱う）
                 }
+                // square には member が無いので null（登録されれば後日 open_chat 側に出る）
+                $this->repo->upsertSeenRoom($emid, $sq['name'], null, (string)$keyword);
+            }
+        }
+    }
 
-                $ocId = $registered[$emid] ?? null;
+    /**
+     * 登録済み部屋がキーワード一致したら即時通知（従来挙動を維持）。
+     *
+     * @param array{id:int,user_id:string,keyword:string,category:?int,created_at:string} $w
+     * @param array<int, array{emid:string,name:string,desc:string,profileImageObsHash:string,joinMethodType:int}> $squares
+     */
+    private function deliverRegisteredHits(array $w, array $squares): int
+    {
+        if (empty($squares)) {
+            return 0;
+        }
 
-                // カテゴリ指定があり、既登録部屋のカテゴリが一致しなければスキップ
-                if ($w['category'] !== null && $ocId !== null) {
-                    $cat = isset($ocMap[$ocId]['category']) ? (int)$ocMap[$ocId]['category'] : null;
-                    if ($cat !== $w['category']) {
-                        continue;
-                    }
+        $emids = array_map(static fn($s) => $s['emid'], $squares);
+        $registered = $this->repo->getRegisteredEmidMap($emids); // emid => open_chat_id
+        if (empty($registered)) {
+            return 0;
+        }
+        $ocMap = $this->repo->getOpenChatMap(array_values($registered));
+        $seen = $this->repo->getSeenEmids($w['id']);
+
+        $count = 0;
+        foreach ($squares as $sq) {
+            $emid = $sq['emid'];
+            $ocId = $registered[$emid] ?? null;
+            if ($ocId === null) {
+                continue; // 未登録は別経路（プール）で扱う
+            }
+            if (isset($seen[$emid])) {
+                continue; // 既に通知済み
+            }
+
+            // カテゴリ指定があり、登録部屋のカテゴリが一致しなければスキップ
+            if ($w['category'] !== null) {
+                $cat = isset($ocMap[$ocId]['category']) ? (int)$ocMap[$ocId]['category'] : null;
+                if ($cat !== $w['category']) {
+                    continue;
                 }
+            }
 
-                $payload = [
-                    'keyword' => $w['keyword'],
-                    'category' => $w['category'],
-                    'emid' => $emid,
-                    'openChatId' => $ocId, // 未登録なら null
-                    'name' => $sq['name'],
-                    'desc' => $sq['desc'],
-                    'img' => $sq['profileImageObsHash'],
-                    'joinMethodType' => $sq['joinMethodType'],
-                    'isRegistered' => $ocId !== null,
-                    'member' => $ocId !== null && isset($ocMap[$ocId]['member']) ? (int)$ocMap[$ocId]['member'] : null,
-                ];
+            $payload = [
+                'keyword' => $w['keyword'],
+                'category' => $w['category'],
+                'emid' => $emid,
+                'openChatId' => $ocId,
+                'name' => $sq['name'],
+                'desc' => $sq['desc'],
+                'img' => $sq['profileImageObsHash'],
+                'joinMethodType' => $sq['joinMethodType'],
+                'isRegistered' => true,
+                'member' => isset($ocMap[$ocId]['member']) ? (int)$ocMap[$ocId]['member'] : null,
+                'detectedAt' => time(), // 登録済みは初出時刻が無いので検出時刻
+            ];
 
-                $dedup = 'kw:' . $w['id'] . ':' . $emid;
-                $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
-                $this->repo->markEmidSeen($w['id'], $emid);
-                if ($inserted) {
-                    $count++;
-                }
+            $dedup = 'kw:' . $w['id'] . ':' . $emid;
+            $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
+            $this->repo->markEmidSeen($w['id'], $emid);
+            if ($inserted) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * 未登録部屋（共有プール）から、このウォッチに配信すべきものを通知する。
+     *
+     * 条件: keyword が keywords 集合に完全一致 ＆ first_seen_at >= watch.created_at
+     *       ＆ そのユーザー(watch)に未配信(alpha_keyword_seen で重複排除)。
+     * これにより、ウォッチ登録より前から存在した部屋が初回に大量配信されるのを防ぐ。
+     *
+     * @param array{id:int,user_id:string,keyword:string,category:?int,created_at:string} $w
+     */
+    private function deliverUnregisteredHits(array $w): int
+    {
+        $rooms = $this->repo->getDeliverableSeenRooms($w['keyword'], $w['created_at']);
+        if (empty($rooms)) {
+            return 0;
+        }
+
+        $seen = $this->repo->getSeenEmids($w['id']);
+
+        $count = 0;
+        foreach ($rooms as $room) {
+            $emid = $room['emid'];
+            if ($emid === '' || isset($seen[$emid])) {
+                continue; // 既に配信済み
+            }
+
+            $payload = [
+                'keyword' => $w['keyword'],
+                'category' => $w['category'],
+                'emid' => $emid,
+                'openChatId' => null, // 未登録
+                'name' => $room['name'],
+                'desc' => '',
+                'img' => '', // square の obsハッシュは保持していないので空（フロントは name 主体で表示）
+                'joinMethodType' => 0,
+                'isRegistered' => false,
+                'member' => $room['member'],
+                'detectedAt' => strtotime($room['first_seen_at']) ?: time(),
+            ];
+
+            $dedup = 'kw:' . $w['id'] . ':' . $emid;
+            $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
+            $this->repo->markEmidSeen($w['id'], $emid);
+            if ($inserted) {
+                $count++;
             }
         }
 

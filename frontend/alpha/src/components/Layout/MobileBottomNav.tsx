@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Search, List, Bell, Settings } from 'lucide-react'
+import { Search, List, Bell, Settings, LineChart } from 'lucide-react'
 import { useNavigationHandler } from '@/hooks/useNavigationHandler'
 import { useAlerts } from '@/hooks/useAlerts'
 import { useMemo } from 'react'
@@ -13,6 +13,7 @@ export function MobileBottomNav() {
     return [
       { path: '/', icon: Search, label: '検索' },
       { path: '/mylist', icon: List, label: 'マイリスト' },
+      { path: '/analysis', icon: LineChart, label: '分析' },
       { path: '/notifications', icon: Bell, label: '通知', badge: unreadCount },
       { path: '/settings', icon: Settings, label: '設定' },
     ]

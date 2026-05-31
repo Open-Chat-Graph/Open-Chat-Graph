@@ -150,6 +150,21 @@ export interface PeriodGrowthParams {
   days?: number
   order?: 'asc' | 'desc'
   limit?: number
+  startDate?: string  // 比較の起点日（Y-m-d）。days より優先される明示指定
+  endDate?: string  // 比較の終点日（Y-m-d）。days より優先される明示指定
+}
+
+// ===== 検索の所要時間予測（GET /alpha-api/search-eta） =====
+// 同条件の過去の検索応答時間からサーバーが見積もる。プログレスバーの進行速度に使う。
+export interface SearchEtaParams {
+  keyword: string
+  category?: number
+  sort?: SearchParams['sort']
+  order?: 'asc' | 'desc'
+}
+
+export interface SearchEtaResponse {
+  etaMs: number  // 予測応答時間（ミリ秒）
 }
 
 // ===== 通知・アラート条件（/alpha-api/alerts*） =====
@@ -230,7 +245,8 @@ export interface KeywordHit extends AlertBase {
   img: string // obsハッシュ → imgPreviewUrl で前置
   joinMethodType: number
   isRegistered: boolean
-  member: number | null
+  member: number | null  // 検出時点のメンバー数（取得できなければ null）
+  detectedAt: number  // 検索で発見した時刻（unix秒）。明示的な検出時刻表示に使う
 }
 
 // 増減アラート（部屋／マイリストの増減）
@@ -259,6 +275,18 @@ export interface AlertsResponse {
 // GA連携の creds 投入前は data が空配列（200）で返る → 画面側で「集計待ち」を出す。
 // ja のみ。img は OBS ハッシュ（imgPreviewUrl で前置）。
 
+// ランキング全体に対する各ページ（本家のページ単位）の指標。
+// access/search ランキングのレスポンスに任意で付く（GA4/GSC 由来・未集計なら省略）。
+export interface RankingPageMetric {
+  path: string  // ページのパス
+  label: string  // 表示用ラベル
+  pageviews: number  // ページビュー数
+  activeUsers: number  // アクティブユーザー数
+  searchClicks: number  // 検索からのクリック数
+  searchImpressions: number  // 検索結果の表示回数
+  searchPosition: number | null  // 平均掲載順位（未集計なら null）
+}
+
 // アクセス数ランキングの1部屋（主指標は pageviews）
 export interface AccessRankingRoom {
   id: number
@@ -274,6 +302,7 @@ export interface AccessRankingRoom {
   registeredAt: string
   url: string
   pageviews: number  // 集計期間内のページビュー数
+  activeUsers: number  // 集計期間内のアクティブユーザー数
 }
 
 export interface AccessRankingResponse {
@@ -281,6 +310,7 @@ export interface AccessRankingResponse {
   days: number
   baseDate: string | null  // 集計の基準日（未集計なら null）
   updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
+  pages?: RankingPageMetric[]  // ページ単位の指標（未集計なら省略）
 }
 
 // 検索流入ランキングの1部屋（主指標は searchClicks / searchImpressions / searchPosition）
@@ -300,6 +330,7 @@ export interface SearchRankingRoom {
   searchClicks: number  // 検索からのクリック数
   searchImpressions: number  // 検索結果の表示回数
   searchPosition: number | null  // 平均掲載順位（未集計なら null）
+  activeUsers: number  // 集計期間内のアクティブユーザー数
 }
 
 export interface SearchRankingResponse {
@@ -307,6 +338,7 @@ export interface SearchRankingResponse {
   days: number
   baseDate: string | null
   updatedAt: string | null
+  pages?: RankingPageMetric[]  // ページ単位の指標（未集計なら省略）
 }
 
 // 2つのランキングは並び/期間/カテゴリの指定を共有する
@@ -315,4 +347,38 @@ export interface RankingParams {
   days?: number
   order?: 'asc' | 'desc'
   limit?: number
+}
+
+// ===== 部屋ごとのアクセス・検索メトリクス（GET /alpha-api/room-metrics/{id}） =====
+// 詳細ページ向け。GA4/GSC 由来の日次集計（creds 未投入時はゼロ／未集計で返る）。ja のみ。
+export interface RoomMetricsResponse {
+  days: number  // 集計対象の日数
+  updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
+  pageviews: number  // ページビュー数
+  activeUsers: number  // アクティブユーザー数
+  searchClicks: number  // 検索からのクリック数
+  searchImpressions: number  // 検索結果の表示回数
+  searchPosition: number | null  // 平均掲載順位（未集計なら null）
+  jumpClicks: number  // 「LINEで開く」等の外部遷移クリック数
+  avgEngagementSeconds: number  // 平均滞在（エンゲージメント）秒数
+}
+
+// ===== 検索クエリランキング（GET /alpha-api/search-query-ranking） =====
+// サイト全体の検索クエリ別の流入（GSC 由来）。ja のみ。
+export interface SearchQueryRankingItem {
+  query: string  // 検索クエリ文字列
+  clicks: number  // クリック数
+  impressions: number  // 表示回数
+  position: number  // 平均掲載順位
+}
+
+export interface SearchQueryRankingParams {
+  days?: number
+  limit?: number
+}
+
+export interface SearchQueryRankingResponse {
+  data: SearchQueryRankingItem[]
+  days: number
+  updatedAt: string | null  // 集計の最終更新日時（未集計なら null）
 }

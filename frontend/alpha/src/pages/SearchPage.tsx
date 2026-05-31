@@ -6,9 +6,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
 import { WatchKeywordButton } from '@/components/Notifications'
+import { SearchProgressBar, SearchRefetchOverlay, useSearchProgress } from '@/components/Search'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
-import type { SearchResponse } from '@/types/api'
+import type { SearchResponse, SearchEtaParams } from '@/types/api'
 import type { SortType, SortOrder } from '@/lib/sort-options'
 import { STORAGE_KEYS } from '@/lib/storage-keys'
 import { useLayout } from '@/contexts/layout-context'
@@ -72,7 +73,40 @@ const SearchPage = memo(() => {
 
   const totalCount = data?.[0]?.totalCount || 0
   const hasMore = results.length < totalCount
+
+  // 検索プログレス: SWR の getKey と同じ識別（pageIndex を除く）を1キーにまとめる。
+  // これが変わるたびに ETA を取り直し、0→90% のアニメを仕切り直す。
+  const searchKey = urlKeyword ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
+  const etaParams = useMemo<SearchEtaParams | null>(
+    () =>
+      urlKeyword
+        ? { keyword: urlKeyword, category: category || undefined, sort, order }
+        : null,
+    [urlKeyword, category, sort, order],
+  )
+
+  // 検索キー（キーワード/ソート/カテゴリ/再実行）が変わったらページングを先頭へ戻す。
+  // これで「再検索＝size===1 の validation」「追加読み込み＝size>1 の validation」と素直に分けられ、
+  // 再検索のたびにスクロール位置・ページ数を持ち越さない（UX的にも先頭から見せたい）。
+  useEffect(() => {
+    setSize(1)
+  }, [searchKey, setSize])
+
+  // size===1 の validation は検索そのもの（初回/再検索）、size>1 は追加読み込み（append）。
   const isLoadingMore = isValidating && size > 1
+  // 1ページ目（=検索そのもの）の応答待ちか。append は除外する。
+  // 初回ロードは上部バー、結果が見えている再検索はオーバーレイに振り分ける。
+  const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
+  const { progress, active: progressActive } = useSearchProgress({
+    searchKey,
+    loading: firstPageLoading,
+    etaParams,
+  })
+  const hasResults = results.length > 0
+  // 初回（リスト未表示）の応答待ち → 上部プログレスバー
+  const showTopBar = progressActive && !hasResults
+  // 既存リスト表示中の再検索 → 薄いレイヤー＋スピナー
+  const showRefetchOverlay = progressActive && hasResults
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -136,9 +170,12 @@ const SearchPage = memo(() => {
 
   return (
     <div className="space-y-6">
-      {isLoading && size === 1 && results.length === 0 && (
-        <div className="flex justify-center py-10" role="status" aria-label="読み込み中">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      {/* 初回ロード時の上部プログレスバー（ETA時間で 0→約90%、応答到着で 100%）。
+          結果が出たら畳まれ、以降の再検索はオーバーレイ側に切り替わる。 */}
+      {showTopBar && (
+        <div className="pt-1">
+          <SearchProgressBar progress={progress} active={showTopBar} />
+          <p className="mt-2 text-center text-xs text-muted-foreground">検索中…</p>
         </div>
       )}
 
@@ -150,7 +187,7 @@ const SearchPage = memo(() => {
         </Card>
       )}
 
-      {urlKeyword && !isLoading && results.length === 0 && (
+      {urlKeyword && !isLoading && !progressActive && results.length === 0 && (
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground text-center">
@@ -161,7 +198,9 @@ const SearchPage = memo(() => {
       )}
 
       {urlKeyword && results.length > 0 && (
-        <div className="space-y-4">
+        <div className="relative space-y-4">
+          {/* 既存リスト表示中の再検索は薄いレイヤー＋スピナーで応答待ちを明示 */}
+          <SearchRefetchOverlay active={showRefetchOverlay} />
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">{totalCount.toLocaleString()}</span>件
