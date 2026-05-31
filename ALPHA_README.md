@@ -92,6 +92,7 @@ OAuth(installed) refresh_token方式（[`oc-pdca`] と同じ資格情報）。`l
 ## 直近セッションで完了済み（コミット済み・実画面検証済み）
 
 - **【#31 完了】画面表示状態カーネル** — `src/lib/viewNavigation.ts`（宣言的ビュー表＋enter/reclick/back 正規化）＋`hooks/useViewNavigation.ts` に集約。全タブがここを経由。reclick は LayoutContext の `resetNonces`(パネル別) を bump → keep-aliveパネルを `key` で強制再マウント＋scrollTop。enter は記憶（検索クエリ／フォルダ／分析サブ画面 `analysisLastSub`）を復元。検索→period-growth「みる」も `bumpReset('period-growth')` で同契約。旧 `useNavigationHandler`/`useScrollToTopOnReclick` 廃止。※ヘッドレス実機検証はMCP Chrome未接続のため未実施＝ユーザー目視待ち。
+- **【#38 詳細部分 完了】詳細メトリクスの期間指定** — 7/30トグル→`ui/period-range-picker.tsx`（プリセット7/30/90＋カレンダー＋全期間、Popover/z-popover、Labsでも再利用予定）。既定30日。バックエンドは `resolveWindow(start,end,days,all)`＋`getRoomMetrics/SearchQueries/Referrers` を fromDate/toDate 受けに変更、応答に `fromDate/toDate/days`。`lib/period.ts`(PeriodValue/periodToParams/periodKey/periodLabel)を共通定義に。**残: Labs(access/search ranking)側の期間ピッカー対応（#33/#34と一緒に）。**
 - **【#40c 完了】参照元の文言網羅＋チップ** — `formatReferrer`/`internalReferrerLabel` を本家URLパターン別の人間可読ラベルに（トップ/ランキング/検索結果「語」/おすすめタグ「タグ」/他の部屋/このページ内(自己参照)/新着/コメント/ラボ/検索エンジン名）。`keyword=tag:◯◯`→おすすめ扱い。応答に `detail`(全文) 追加。フロントは省略表示＋`ui/info-chip.tsx`(Radix Popover/Portal/z-popover)でタップ・ホバーに全文＋元URL。**残: 「他の部屋(ID:◯)」「おすすめタグ(slug)」の name 解決（部屋名/タグ表示名のlookup）は未対応＝今は ID/slug 表示。**
 
 - 詳細のSEO深掘り（流入キーワード窓・参照元窓「SEO経由」バッジ・参加リンクのOrganic起点内訳）＋バックエンド（新テーブル `alpha_room_search_query_daily`/`alpha_room_referrer_daily`、`alpha_room_access_daily.jump_clicks_organic`、`alpha_ga_sync` 拡張、`room-metrics` 応答拡張）。実データ検証済み（例: 参加1,146中1,099がSEO起点）。
