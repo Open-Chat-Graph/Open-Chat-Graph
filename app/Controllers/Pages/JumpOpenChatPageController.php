@@ -36,6 +36,9 @@ class JumpOpenChatPageController
             case '/th':
                 $view = 'oc_content_jump_th';
                 break;
+            case '/tw':
+                $view = 'oc_content_jump_tw';
+                break;
             default:
                 $view = 'oc_content_jump';
                 break;
