@@ -43,6 +43,12 @@ class AlphaInsightsService
     /** 全体順位の「変化した」とみなす最小順位差 */
     private const POSITION_MOVE_MIN_DELTA = 3;
 
+    /**
+     * 総合ランキング順位を語る上限（これより下位＝数千位の上下はノイズなので黙る）。
+     * 全オープンチャット中で“上位”と言える範囲のときだけ総合順位の推移/最高位を出す。
+     */
+    private const MEANINGFUL_POSITION_MAX = 300;
+
     /** カテゴリ順位を「上位」として語る上限パーセンタイル */
     private const CATEGORY_TOP_PCT = 25.0;
 
@@ -157,8 +163,11 @@ class AlphaInsightsService
         $latest = $mv['latest_close'] ?? null;
         $best = $mv['best_high'] ?? null;
 
-        // 順位の変化 (close_position は小さいほど上位)
-        if ($oldest !== null && $latest !== null) {
+        // 順位の変化 (close_position は小さいほど上位)。
+        // 数千位の上下はノイズなので、上位(=MEANINGFUL_POSITION_MAX以内)に居た/居る時だけ語る。
+        $meaningful = ($oldest !== null && $oldest <= self::MEANINGFUL_POSITION_MAX)
+            || ($latest !== null && $latest <= self::MEANINGFUL_POSITION_MAX);
+        if ($oldest !== null && $latest !== null && $meaningful) {
             $delta = $oldest - $latest; // 正 = 上昇 (順位が小さくなった)
             if (abs($delta) >= self::POSITION_MOVE_MIN_DELTA) {
                 $dir = $delta > 0 ? '上昇' : '下降';
@@ -170,19 +179,19 @@ class AlphaInsightsService
                     'delta' => (int)$delta,
                     'fromDate' => $mv['oldest_date'] ?? null,
                     'toDate' => $mv['latest_date'] ?? null,
-                    'text' => "直近30日で全体順位 {$oldest}→{$latest}位（{$dir}）",
+                    'text' => "総合ランキングが直近30日で{$oldest}→{$latest}位に{$dir}",
                 ];
             }
         }
 
-        // 直近 30 日の最高順位 (現在より明確に上なら言及 = 過去にもっと上だった文脈)
-        if ($best !== null && $latest !== null && $best < $latest) {
+        // 直近 30 日の最高順位 (現在より明確に上 かつ 上位のときだけ = 過去にもっと上だった文脈)
+        if ($best !== null && $latest !== null && $best < $latest && $best <= self::MEANINGFUL_POSITION_MAX) {
             $insights[] = [
                 'type' => 'best_rank',
                 'category' => 0,
                 'bestPosition' => (int)$best,
                 'currentPosition' => (int)$latest,
-                'text' => "直近30日の最高は全体{$best}位",
+                'text' => "総合ランキングでの直近30日の最高は{$best}位",
             ];
         }
     }
