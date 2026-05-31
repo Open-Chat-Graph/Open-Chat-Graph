@@ -5,9 +5,7 @@ import type { GraphDataResponse } from '@/types/api'
 /** 統合グラフで一度に重ねるルーム数の上限。これを超えた分は対象外にする（負荷・可読性対策）。 */
 export const MAX_ROOMS = 12
 
-export type Metric = 'members' | 'rankings'
-
-/** マージ後の1行（1日付）。各ルームは `r{openChatId}` キーで値を持つ。欠損は null。 */
+/** マージ後の1行（1日付）。各ルームは `m{openChatId}` キーで人数を持つ。欠損は null。 */
 export type MergedRow = { date: string; [key: string]: number | string | null }
 
 export interface FolderGraphResult {
@@ -22,9 +20,8 @@ export interface FolderGraphResult {
  * 複数ルームの時系列を取得し、日付軸を和集合でマージして1データセットにする。
  *
  * - 並列フェッチ（Promise.all）。呼び出し側で MAX_ROOMS に丸めて渡す前提。
- * - 日付の和集合をソートし、各ルームの値を date→値 の引き当てで埋める。
+ * - 日付の和集合をソートし、各ルームの人数を date→値 の引き当てで埋める。
  *   あるルームにその日付が無ければ null（recharts の connectNulls=false なら線が途切れる）。
- * - rankings は (number|null) をそのまま採用（非掲載日は null）。
  */
 export function useFolderGraphData(ids: number[]): FolderGraphResult {
   const key = ids.length > 0 ? ['folder-graph', ids.join(',')] : null
@@ -61,16 +58,13 @@ export function useFolderGraphData(ids: number[]): FolderGraphResult {
   }
   const allDates = Array.from(dateSet).sort()
 
-  // 各ルームを date→{member, ranking} に引き当てやすい形へ
-  const perRoom = new Map<number, Map<string, { member: number | null; ranking: number | null }>>()
+  // 各ルームを date→人数 に引き当てやすい形へ
+  const perRoom = new Map<number, Map<string, number | null>>()
   for (const r of loaded) {
     const g = r.graph!
-    const m = new Map<string, { member: number | null; ranking: number | null }>()
+    const m = new Map<string, number | null>()
     for (let i = 0; i < g.dates.length; i++) {
-      m.set(g.dates[i], {
-        member: g.members[i] ?? null,
-        ranking: g.rankings[i] ?? null,
-      })
+      m.set(g.dates[i], g.members[i] ?? null)
     }
     perRoom.set(r.id, m)
   }
@@ -78,9 +72,8 @@ export function useFolderGraphData(ids: number[]): FolderGraphResult {
   const rows: MergedRow[] = allDates.map((date) => {
     const row: MergedRow = { date }
     for (const id of loadedIds) {
-      const point = perRoom.get(id)?.get(date)
-      row[`m${id}`] = point ? point.member : null
-      row[`p${id}`] = point ? point.ranking : null
+      const member = perRoom.get(id)?.get(date)
+      row[`m${id}`] = member ?? null
     }
     return row
   })
@@ -88,7 +81,7 @@ export function useFolderGraphData(ids: number[]): FolderGraphResult {
   return { rows, loadedIds, isLoading, error }
 }
 
-/** メトリクスごとの dataKey プレフィックス。members=`m`, rankings=`p`。 */
-export function dataKeyFor(metric: Metric, id: number): string {
-  return `${metric === 'members' ? 'm' : 'p'}${id}`
+/** ルーム id → 人数系列の dataKey（`m{id}`）。 */
+export function dataKeyFor(id: number): string {
+  return `m${id}`
 }

@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react'
+import { memo } from 'react'
 import {
   ResponsiveContainer,
   LineChart,
@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
-import type { MergedRow, Metric } from './useFolderGraphData'
+import type { MergedRow } from './useFolderGraphData'
 import { dataKeyFor } from './useFolderGraphData'
 
 export interface RoomMeta {
@@ -22,7 +22,6 @@ interface FolderOverlayChartProps {
   rows: MergedRow[]
   /** グラフに描く（チェックON）ルーム。順序は色割当と同じ。 */
   rooms: RoomMeta[]
-  metric: Metric
 }
 
 // 日付ラベルを M/D に短縮（YYYY-MM-DD 前提。想定外はそのまま）
@@ -41,22 +40,21 @@ const CustomTooltip = ({
   payload,
   label,
   rooms,
-  metric,
-}: TooltipContentProps<number, string> & { rooms: RoomMeta[]; metric: Metric }) => {
+}: TooltipContentProps<number, string> & { rooms: RoomMeta[] }) => {
   if (!active || !payload || payload.length === 0) return null
 
-  // dataKey からルームを引いて、色チップ付きで値を並べる。値が大きい順に。
+  // dataKey からルームを引いて、色チップ付きで人数を多い順に並べる。
   const lines = payload
     .map((p) => {
       const key = String(p.dataKey ?? '')
-      const room = rooms.find((r) => dataKeyFor(metric, r.id) === key)
+      const room = rooms.find((r) => dataKeyFor(r.id) === key)
       if (!room) return null
       const value = p.value
       if (value == null) return null
       return { room, value: Number(value) }
     })
     .filter((x): x is { room: RoomMeta; value: number } => x !== null)
-    .sort((a, b) => (metric === 'members' ? b.value - a.value : a.value - b.value))
+    .sort((a, b) => b.value - a.value)
 
   if (lines.length === 0) return null
 
@@ -72,7 +70,7 @@ const CustomTooltip = ({
             />
             <span className="max-w-[140px] truncate text-muted-foreground">{room.name}</span>
             <span className="ml-auto font-medium tabular-nums text-popover-foreground">
-              {metric === 'members' ? formatMember(value) : `${value}位`}
+              {formatMember(value)}
             </span>
           </div>
         ))}
@@ -82,26 +80,16 @@ const CustomTooltip = ({
 }
 
 /**
- * フォルダ配下ルームを1つに重ねる線グラフ。
- * - metric=members は人数（左下原点）、rankings は順位（小さいほど上位 → Y軸反転）。
+ * フォルダ配下ルームのメンバー数を1つに重ねる線グラフ。
  * - 表示するのは props.rooms（チェックON）だけ。OFFは Line を描かない。
  * - 欠損(null)は connectNulls={false} で線を途切れさせ、データの実態を偽らない。
+ * - 期間の絞り込みは呼び出し側で rows を加工して渡す（ここは渡された行をそのまま描く）。
  */
-export const FolderOverlayChart = memo(({ rows, rooms, metric }: FolderOverlayChartProps) => {
+export const FolderOverlayChart = memo(({ rows, rooms }: FolderOverlayChartProps) => {
   const tickColor = 'hsl(var(--muted-foreground))'
   const gridColor = 'hsl(var(--border))'
 
-  // 順位は値が小さいほど上位なので Y軸を反転。人数はそのまま。
-  const yAxisProps = useMemo(
-    () =>
-      metric === 'rankings'
-        ? { reversed: true, allowDecimals: false, width: 44 }
-        : { allowDecimals: false, width: 52 },
-    [metric],
-  )
-
   const formatYTick = (v: number) => {
-    if (metric === 'rankings') return `${v}位`
     if (v >= 10000) return `${(v / 10000).toFixed(v % 10000 === 0 ? 0 : 1)}万`
     return v.toLocaleString('ja-JP')
   }
@@ -119,15 +107,16 @@ export const FolderOverlayChart = memo(({ rows, rooms, metric }: FolderOverlayCh
           tickMargin={6}
         />
         <YAxis
-          {...yAxisProps}
+          allowDecimals={false}
+          width={52}
           tick={{ fill: tickColor, fontSize: 11 }}
           stroke={gridColor}
           tickFormatter={formatYTick}
-          domain={metric === 'rankings' ? [1, 'auto'] : ['auto', 'auto']}
+          domain={['auto', 'auto']}
         />
         <Tooltip
           content={(props) => (
-            <CustomTooltip {...(props as TooltipContentProps<number, string>)} rooms={rooms} metric={metric} />
+            <CustomTooltip {...(props as TooltipContentProps<number, string>)} rooms={rooms} />
           )}
           cursor={{ stroke: gridColor, strokeWidth: 1 }}
         />
@@ -135,7 +124,7 @@ export const FolderOverlayChart = memo(({ rows, rooms, metric }: FolderOverlayCh
           <Line
             key={room.id}
             type="monotone"
-            dataKey={dataKeyFor(metric, room.id)}
+            dataKey={dataKeyFor(room.id)}
             name={room.name}
             stroke={room.color}
             strokeWidth={2}

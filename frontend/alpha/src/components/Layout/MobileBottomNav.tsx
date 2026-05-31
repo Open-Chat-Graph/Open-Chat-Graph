@@ -20,7 +20,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-nav bg-background border-t md:hidden">
-      <div className="flex items-center justify-around h-12">
+      <div className="flex items-stretch justify-around h-[var(--bottomnav-h)]">
         {navItems.map((item) => {
           const Icon = item.icon
           // マイリストの場合は/mylist/*すべてでアクティブ判定
@@ -43,21 +43,21 @@ export function MobileBottomNav() {
                   navigateToSettings(e)
                 }
               }}
-              className={`flex flex-col items-center justify-center flex-1 gap-1 transition-colors select-none ${
+              className={`flex flex-1 flex-col items-center justify-center gap-1 py-1.5 transition-colors select-none ${
                 isActive
                   ? 'text-primary font-medium'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <span className="relative">
-                <Icon className="h-6 w-6" />
+                <Icon className="h-[18px] w-[18px]" />
                 {badge > 0 && (
-                  <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </span>
-              <span className="text-xs">{item.label}</span>
+              <span className="text-[11px] leading-none">{item.label}</span>
             </Link>
           )
         })}

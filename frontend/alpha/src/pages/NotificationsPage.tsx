@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, Settings2, Sparkles, Activity, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAlerts } from '@/hooks/useAlerts'
 import {
   KeywordHitCard,
   MovementCard,
-  WatchSettingsDialog,
   formatComputedAt,
 } from '@/components/Notifications'
 import { cn } from '@/lib/utils'
@@ -15,13 +15,14 @@ type Tab = 'rooms' | 'movements'
 
 /**
  * 通知ページ。サーバー算出の通知を2区分で表示する。
- * (a) 新しい部屋 = キーワード見張りヒット (b) ウォッチの動き = 部屋/マイリストの増減。
+ * (a) 新しい部屋 = キーワードの見張りヒット (b) 見張りの動き = 部屋/マイリストの増減。
  * 各アイテムは未読を左帯で強調し、開いた時点でそのアイテムを既読化する。
  */
 export default function NotificationsPage() {
+  const navigate = useNavigate()
   const { data, isLoading, markRead, markAllRead } = useAlerts()
   const [tab, setTab] = useState<Tab>('rooms')
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const openWatchSettings = () => navigate('/watch')
 
   const keywordHits = useMemo(() => data?.keywordHits ?? [], [data])
   const movements = useMemo(() => data?.movements ?? [], [data])
@@ -66,11 +67,11 @@ export default function NotificationsPage() {
             variant="outline"
             size="sm"
             className="h-8 gap-1.5 text-xs"
-            onClick={() => setSettingsOpen(true)}
+            onClick={openWatchSettings}
             data-testid="open-watch-settings"
           >
             <Settings2 className="h-4 w-4" />
-            ウォッチ設定
+            見張り設定
           </Button>
         </div>
       </div>
@@ -88,7 +89,7 @@ export default function NotificationsPage() {
           active={tab === 'movements'}
           onClick={() => setTab('movements')}
           icon={<Activity className="h-4 w-4" />}
-          label="ウォッチの動き"
+          label="見張りの動き"
           count={unreadMovement}
         />
       </div>
@@ -107,8 +108,8 @@ export default function NotificationsPage() {
         ) : (
           <EmptyMessage
             title="新しい部屋はまだありません"
-            body="「ウォッチ設定」でキーワードを見張ると、条件に合う新しい部屋をここでお知らせします。"
-            onSettings={() => setSettingsOpen(true)}
+            body="「見張り設定」でキーワードを見張ると、条件に合う新しい部屋をここでお知らせします。"
+            onSettings={openWatchSettings}
           />
         )
       ) : movements.length > 0 ? (
@@ -119,13 +120,11 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <EmptyMessage
-          title="ウォッチの動きはまだありません"
+          title="見張りの動きはまだありません"
           body="部屋やマイリスト全体のしきい値を設定すると、大きな増減をここでお知らせします。"
-          onSettings={() => setSettingsOpen(true)}
+          onSettings={openWatchSettings}
         />
       )}
-
-      <WatchSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   )
 }
@@ -181,7 +180,7 @@ function EmptyMessage({
       <p className="max-w-xs text-sm text-muted-foreground">{body}</p>
       <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={onSettings}>
         <Settings2 className="h-4 w-4" />
-        ウォッチ設定を開く
+        見張り設定を開く
       </Button>
     </div>
   )

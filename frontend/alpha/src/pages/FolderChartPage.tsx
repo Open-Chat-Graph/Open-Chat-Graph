@@ -1,8 +1,10 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import useSWR from 'swr'
-import { ArrowLeft, Layers, TrendingUp, Trophy } from 'lucide-react'
+import { ArrowLeft, Layers } from 'lucide-react'
 import { alphaApi } from '@/api/alpha'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { loadMyList, getFolderItems } from '@/services/storage'
 import { buildColorMap } from '@/components/FolderChart/colors'
 import {
@@ -10,18 +12,50 @@ import {
   RoomListRow,
   useFolderGraphData,
   MAX_ROOMS,
-  type Metric,
+  type MergedRow,
   type RoomMeta,
   type RoomListItem,
 } from '@/components/FolderChart'
 import type { BatchStatsResponse } from '@/types/api'
 
+/** 期間プリセット（日数）。任意入力も可能。0 は「全期間」。初期は 30日（1ヶ月）。 */
+const PERIOD_PRESETS: { value: number; label: string }[] = [
+  { value: 1, label: '24時間' },
+  { value: 7, label: '1週間' },
+  { value: 30, label: '1ヶ月' },
+  { value: 0, label: '全期間' },
+]
+const DEFAULT_DAYS = 30
+
+// "YYYY-MM-DD..." の先頭10桁を取り、Date(UTC正午) にして比較に使う。想定外は null。
+function parseDate(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!m) return null
+  return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12)
+}
+
 /**
- * フォルダ統合グラフ。マイリストのあるフォルダ配下の全ルームの時系列を1つのグラフに重ねる。
+ * 基準日（rows 末尾＝最新）から days 日前までに rows を絞る。
+ * days<=0 は全期間（絞らない）。日付パース不能な行は安全側で残す。
+ */
+function filterRowsByDays(rows: MergedRow[], days: number): MergedRow[] {
+  if (days <= 0 || rows.length === 0) return rows
+  const latest = parseDate(rows[rows.length - 1].date)
+  if (latest == null) return rows
+  const from = latest - (days - 1) * 86_400_000
+  return rows.filter((r) => {
+    const t = parseDate(r.date)
+    return t == null || t >= from
+  })
+}
+
+/**
+ * フォルダ統合グラフ。マイリストのあるフォルダ配下の全ルームのメンバー数推移を1つのグラフに重ねる。
  * 本家に無いαの標準メタ機能。`/mylist/:folderId/chart` で DetailOverlay 内に表示される。
  *
- * 構成: ヘッダ(フォルダ名・対象数・人数/順位トグル) → 重ね線グラフ → チェック式ルームリスト。
+ * 構成: ヘッダ(フォルダ名・対象数) → 期間チップ → 重ね線グラフ → チェック式ルームリスト。
  * リスト行クリックでその線の表示/非表示を切替（visibleIds state）。
+ * 期間チップで最新からN日前までにクライアント側で絞る（初期=1ヶ月）。
  */
 const FolderChartPage = memo(() => {
   const navigate = useNavigate()
@@ -46,8 +80,9 @@ const FolderChartPage = memo(() => {
   // id→色（並び順で安定割当。凡例/線/チェックリストで共通）
   const colorMap = useMemo(() => buildColorMap(targetIds), [targetIds])
 
-  // 表示メトリクス（人数 / ランキング順位）
-  const [metric, setMetric] = useState<Metric>('members')
+  // 表示期間（日数）。0 は全期間。初期は 1ヶ月。
+  const [days, setDays] = useState<number>(DEFAULT_DAYS)
+  const isPreset = PERIOD_PRESETS.some((p) => p.value === days)
 
   // チェックON（線を描く）ルームの集合。初期は全ON。
   const [visibleIds, setVisibleIds] = useState<Set<number>>(() => new Set(targetIds))
@@ -73,6 +108,9 @@ const FolderChartPage = memo(() => {
 
   // 時系列（並列フェッチ＋日付マージ）
   const { rows, loadedIds, isLoading, error } = useFolderGraphData(targetIds)
+
+  // 選択期間で最新からN日前までに絞る
+  const visibleRows = useMemo(() => filterRowsByDays(rows, days), [rows, days])
 
   // ルームのメタ情報（名前/人数/画像 + 色）。グラフで取得できたルームのみ。
   const roomItems: RoomListItem[] = useMemo(() => {
@@ -136,34 +174,38 @@ const FolderChartPage = memo(() => {
           </div>
         ) : (
           <>
-            {/* メトリクス切替（人数 / 順位） */}
-            <div className="mb-3 inline-flex rounded-lg border bg-card p-0.5 text-sm">
-              <button
-                type="button"
-                onClick={() => setMetric('members')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors ${
-                  metric === 'members'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                data-testid="metric-members"
-              >
-                <TrendingUp className="h-3.5 w-3.5" />
-                人数
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetric('rankings')}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors ${
-                  metric === 'rankings'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                data-testid="metric-rankings"
-              >
-                <Trophy className="h-3.5 w-3.5" />
-                ランキング順位
-              </button>
+            {/* 期間プリセット ＋ 任意入力 */}
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs text-muted-foreground">期間</span>
+              {PERIOD_PRESETS.map((p) => (
+                <Button
+                  key={p.value}
+                  type="button"
+                  size="sm"
+                  variant={days === p.value ? 'default' : 'outline'}
+                  className="h-8 px-3"
+                  onClick={() => setDays(p.value)}
+                  data-testid={`folder-chart-days-${p.value}`}
+                >
+                  {p.label}
+                </Button>
+              ))}
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={isPreset ? '' : String(days)}
+                  placeholder="任意"
+                  onChange={(e) => {
+                    const n = Number(e.target.value)
+                    if (Number.isFinite(n) && n > 0) setDays(Math.floor(n))
+                  }}
+                  className="h-8 w-20"
+                  data-testid="folder-chart-days-custom"
+                />
+                <span className="text-xs text-muted-foreground">日</span>
+              </div>
             </div>
 
             {truncated && (
@@ -190,7 +232,7 @@ const FolderChartPage = memo(() => {
                     </p>
                   </div>
                 ) : (
-                  <FolderOverlayChart rows={rows} rooms={visibleRooms} metric={metric} />
+                  <FolderOverlayChart rows={visibleRows} rooms={visibleRooms} />
                 )}
               </div>
             </div>

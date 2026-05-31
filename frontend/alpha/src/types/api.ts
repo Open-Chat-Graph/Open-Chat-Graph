@@ -152,10 +152,10 @@ export interface PeriodGrowthParams {
   limit?: number
 }
 
-// ===== 通知・ウォッチ条件（/alpha-api/alerts*） =====
+// ===== 通知・見張り条件（/alpha-api/alerts*） =====
 // すべて ja のみ。通知は毎時クロール後に算出（即時ではない）。
 
-// --- ウォッチ条件の取得（GET /alpha-api/alerts/config） ---
+// --- 見張り条件の取得（GET /alpha-api/alerts/config） ---
 export interface AlertsConfigKeyword {
   id: number
   keyword: string
@@ -184,7 +184,7 @@ export interface AlertsConfigResponse {
   mylistThreshold: AlertsConfigMylistThreshold
 }
 
-// --- ウォッチ条件の保存（PUT /alpha-api/alerts/config、全置き換え） ---
+// --- 見張り条件の保存（PUT /alpha-api/alerts/config、全置き換え） ---
 export interface AlertsConfigRequestKeyword {
   keyword: string // 必須・最大190字
   category?: number | null
@@ -233,7 +233,7 @@ export interface KeywordHit extends AlertBase {
   member: number | null
 }
 
-// ウォッチの動き（部屋／マイリストの増減）
+// 見張りの動き（部屋／マイリストの増減）
 export interface Movement extends AlertBase {
   type: 'room' | 'mylist'
   kind: 'room' | 'mylist'

@@ -11,6 +11,7 @@ import DetailPage from './pages/DetailPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import PeriodGrowthPage from './pages/PeriodGrowthPage'
+import WatchSettingsPage from './pages/WatchSettingsPage'
 import FolderChartPage from './pages/FolderChartPage'
 
 /**
@@ -63,6 +64,13 @@ const KEEP_ALIVE_PAGES: KeepAlivePage[] = [
     key: 'settings',
     isActive: (p) => p === '/settings',
     element: <SettingsPage />,
+    top: 'title',
+    scrollable: true,
+  },
+  {
+    key: 'watch',
+    isActive: (p) => p === '/watch',
+    element: <WatchSettingsPage />,
     top: 'title',
     scrollable: true,
   },
@@ -145,6 +153,7 @@ function App() {
         <Route path="/settings" element={<AppContent />} />
         <Route path="/notifications" element={<AppContent />} />
         <Route path="/period-growth" element={<AppContent />} />
+        <Route path="/watch" element={<AppContent />} />
         <Route path="/openchat/:id" element={<AppContent />} />
         <Route path="/openchat/:id/ranking-history" element={<AppContent />} />
         <Route path="/openchat/:id/image" element={<AppContent />} />

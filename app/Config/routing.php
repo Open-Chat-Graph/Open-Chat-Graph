@@ -815,10 +815,19 @@ Route::path('alpha/mylist/{hash}', [AlphaPageController::class, 'index'])
     ->matchStr('hash', maxLen: 100)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// フォルダ統合グラフ（マイリストの上に重ねるオーバーレイ。ディープリンク/リロード対応）
+Route::path('alpha/mylist/{hash}/chart', [AlphaPageController::class, 'index'])
+    ->matchStr('hash', maxLen: 100)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 Route::path('alpha/settings', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path('alpha/notifications', [AlphaPageController::class, 'index'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// 見張り設定ページ（URLを持つので戻る/進む・リロード・共有が効く）
+Route::path('alpha/watch', [AlphaPageController::class, 'index'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // 任意N日増減ビュー（フロントの SPA ページが到達できるように）

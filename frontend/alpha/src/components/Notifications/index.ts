@@ -1,6 +1,5 @@
 export { KeywordHitCard } from './KeywordHitCard'
 export { MovementCard } from './MovementCard'
-export { WatchSettingsDialog } from './WatchSettingsDialog'
 export { useAlertsConfig } from './useAlertsConfig'
 export { WatchKeywordButton } from './WatchKeywordButton'
 export { WatchRoomButton } from './WatchRoomButton'

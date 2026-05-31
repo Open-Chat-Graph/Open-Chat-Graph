@@ -29,7 +29,7 @@ export function configToRequest(config: AlertsConfigResponse): AlertsConfigReque
 }
 
 /**
- * ウォッチ条件（GET /alerts/config）を読み、保存（PUT・全置き換え）するフック。
+ * 見張り条件（GET /alerts/config）を読み、保存（PUT・全置き換え）するフック。
  *
  * 保存後の最新が返るのでキャッシュへ反映する。`addKeyword` は検索バー等からの
  * 「このキーワードを見張る」導線用で、現在の設定に1件足して全置き換え保存する。
