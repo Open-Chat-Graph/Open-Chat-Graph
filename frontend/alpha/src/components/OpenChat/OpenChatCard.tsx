@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { OfficialIcon, SpecialIcon } from '@/components/icons'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
+import { searchHighlightClass } from '@/lib/theme-colors'
 import type { OpenChat } from '@/types/api'
 
 interface OpenChatCardProps {
@@ -138,7 +139,7 @@ const highlightText = (text: string, keyword: string): React.ReactElement => {
       {parts.map((part, i) => {
         // キーワードに一致するか確認
         const isMatch = keywords.some(k => part.toLowerCase() === k.toLowerCase())
-        return isMatch ? <strong key={i} className="font-bold text-blue-600 dark:text-blue-400">{part}</strong> : <span key={i}>{part}</span>
+        return isMatch ? <strong key={i} className={searchHighlightClass}>{part}</strong> : <span key={i}>{part}</span>
       })}
     </>
   )
@@ -357,7 +358,7 @@ export const OpenChatCard = memo(({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="relative h-8 w-8 before:absolute before:-inset-1.5 before:content-['']"
                 onClick={(e) => {
                   e.stopPropagation()
                   onRemove(chat.id)
@@ -370,7 +371,7 @@ export const OpenChatCard = memo(({
               <Button
                 variant={inMyList ? 'secondary' : 'ghost'}
                 size="icon"
-                className="h-8 w-8"
+                className="relative h-8 w-8 before:absolute before:-inset-1.5 before:content-['']"
                 onClick={(e) => onAddToMyList(chat.id, e)}
                 disabled={inMyList}
               >

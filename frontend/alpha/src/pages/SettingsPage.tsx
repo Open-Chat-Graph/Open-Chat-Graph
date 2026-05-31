@@ -30,9 +30,9 @@ export default function SettingsPage() {
             data-testid="settings-period-growth-link"
           >
             <CalendarRange className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-            <span className="flex-1 text-left">
-              <span className="block font-medium">任意のN日増減</span>
-              <span className="block text-xs font-normal text-muted-foreground">
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate font-medium">指定期間の増減ランキング</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
                 キーワードと期間を指定して増減ランキングを表示
               </span>
             </span>
@@ -56,9 +56,9 @@ export default function SettingsPage() {
             data-testid="settings-watch-link"
           >
             <Eye className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-            <span className="flex-1 text-left">
-              <span className="block font-medium">見張り設定</span>
-              <span className="block text-xs font-normal text-muted-foreground">
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate font-medium">見張り設定</span>
+              <span className="block truncate text-xs font-normal text-muted-foreground">
                 キーワード・部屋・マイリスト全体の見張り条件を設定
               </span>
             </span>

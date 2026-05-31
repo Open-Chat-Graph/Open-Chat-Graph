@@ -91,7 +91,9 @@ function InsightRow({ item }: { item: InsightItem }) {
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1 space-y-0.5">
-        <span className={cn('text-[11px] font-medium tracking-wide', accent)}>{label}</span>
+        {/* 見出し階層: 帯ヘッダ(text-sm font-bold) を基準に、行ラベルはその一段下として
+            text-xs font-semibold で揃える。text(本文)が主役なので強くしすぎない。 */}
+        <span className={cn('text-xs font-semibold tracking-wide', accent)}>{label}</span>
         {/* text を主役に。読み物として落ち着いた行間で */}
         <p className="text-sm leading-relaxed text-foreground">{item.text}</p>
       </div>

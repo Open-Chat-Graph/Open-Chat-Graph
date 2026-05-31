@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { Trash2, Sparkles, Eye, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { alphaApi } from '@/api/alpha'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { categoryName } from '@/lib/categories'
+import { loadMyList } from '@/services/storage'
 import { useAlertsConfig, configToRequest } from '@/components/Notifications/useAlertsConfig'
 import type {
   AlertsConfigRequestKeyword,
@@ -48,6 +49,11 @@ export default function WatchSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
 
+  // マイリスト全体の変動セクションは、マイリストに部屋が無いと空振りする。
+  // 件数を見て 0 件なら入力欄を無効化し、追加への導線を出す。
+  const [myListItemCount] = useState(() => loadMyList().items.length)
+  const myListEmpty = myListItemCount === 0
+
   // config 到着時にローカル状態を初期化
   useEffect(() => {
     if (!config) return
@@ -78,13 +84,15 @@ export default function WatchSettingsPage() {
   const removeRoom = (idx: number) =>
     setRooms((prev) => prev.filter((_, i) => i !== idx))
 
-  const updateRoom = (
-    idx: number,
-    field: keyof Omit<AlertsConfigRequestRoom, 'openChatId'>,
-    raw: string,
-  ) =>
+  // 部屋ごとの見張りは「増減 ±N%」の1値だけに簡素化（普通の人向け）。
+  // 上下とも同じ％にし、人数しきい値は使わない（null）。
+  const setRoomPercent = (idx: number, raw: string) =>
     setRooms((prev) =>
-      prev.map((r, i) => (i === idx ? { ...r, [field]: toNum(raw) } : r)),
+      prev.map((r, i) =>
+        i === idx
+          ? { ...r, upPercent: toNum(raw), downPercent: toNum(raw), upMember: null, downMember: null }
+          : r,
+      ),
     )
 
   const handleSave = async () => {
@@ -112,7 +120,7 @@ export default function WatchSettingsPage() {
     <div className="space-y-6">
       {/* 説明（見出し「見張り設定」は固定タイトルバーが表示） */}
       <p className="text-sm text-muted-foreground">
-        条件に合う部屋や増減があると、毎時のデータ更新後に通知でお知らせします。
+        条件に合う部屋や変動があったとき、毎時の更新後にお知らせします。
       </p>
 
       {isLoading && !config ? (
@@ -142,7 +150,7 @@ export default function WatchSettingsPage() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="ml-auto h-7 w-7 flex-shrink-0"
+                      className="ml-auto h-10 w-10 flex-shrink-0"
                       onClick={() => removeKeyword(i)}
                       aria-label="削除"
                     >
@@ -162,7 +170,7 @@ export default function WatchSettingsPage() {
           <Section
             icon={<Eye className="h-4 w-4 text-primary" />}
             title="部屋の見張り"
-            description="見張っている部屋で、設定した増減（人数 / 割合）を超えたら通知します。追加は各部屋の詳細画面から行います。"
+            description="見張っている部屋で、設定した割合を超える増減があれば通知します。追加は各部屋の詳細画面から行います。"
           >
             {rooms.length > 0 ? (
               <ul className="space-y-3">
@@ -185,7 +193,7 @@ export default function WatchSettingsPage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">
-                            {s?.name ?? `ルームID ${r.openChatId}`}
+                            {s?.name ?? `部屋 #${r.openChatId}`}
                           </p>
                           <p className="text-xs text-muted-foreground tabular-nums">
                             {s ? `${s.member.toLocaleString('ja-JP')}人` : '読み込み中…'}
@@ -195,34 +203,25 @@ export default function WatchSettingsPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 flex-shrink-0"
+                          className="h-10 w-10 flex-shrink-0"
                           onClick={() => removeRoom(i)}
                           aria-label="この見張りを削除"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t pt-3">
-                        <ThresholdField
-                          label="増加（人数）"
-                          value={toInput(r.upMember)}
-                          onChange={(v) => updateRoom(i, 'upMember', v)}
+                      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-3 text-sm text-muted-foreground">
+                        <span>増減が ±</span>
+                        <Input
+                          type="number"
+                          min={1}
+                          inputMode="numeric"
+                          value={toInput(r.upPercent ?? r.downPercent)}
+                          onChange={(e) => setRoomPercent(i, e.target.value)}
+                          className="h-10 w-20"
+                          aria-label="通知する増減の割合（％）"
                         />
-                        <ThresholdField
-                          label="増加（％）"
-                          value={toInput(r.upPercent)}
-                          onChange={(v) => updateRoom(i, 'upPercent', v)}
-                        />
-                        <ThresholdField
-                          label="減少（人数）"
-                          value={toInput(r.downMember)}
-                          onChange={(v) => updateRoom(i, 'downMember', v)}
-                        />
-                        <ThresholdField
-                          label="減少（％）"
-                          value={toInput(r.downPercent)}
-                          onChange={(v) => updateRoom(i, 'downPercent', v)}
-                        />
+                        <span>% を超えたら通知</span>
                       </div>
                     </li>
                   )
@@ -241,25 +240,36 @@ export default function WatchSettingsPage() {
             title="マイリスト全体の変動"
             description="マイリストに入れた部屋全体で、設定した割合を超える増減があれば通知します。"
           >
-            <label className="flex items-center gap-2 text-sm">
+            {myListEmpty && (
+              <EmptyHint>
+                マイリストに部屋を追加すると有効になります。
+                <Link to="/mylist" className="ml-1 font-medium text-primary underline-offset-4 hover:underline">
+                  マイリストを開く
+                </Link>
+              </EmptyHint>
+            )}
+            <label
+              className={`flex items-center gap-2 text-sm ${myListEmpty ? 'opacity-50' : ''}`}
+            >
               <Checkbox
                 checked={mylistEnabled}
+                disabled={myListEmpty}
                 onCheckedChange={(c) => setMylistEnabled(c === true)}
                 data-testid="watch-mylist-enabled"
               />
-              マイリストのルームの増減を通知する
+              マイリストの部屋の増減を通知する
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <ThresholdField
                 label="増加（％）"
                 value={mylistUp}
-                disabled={!mylistEnabled}
+                disabled={myListEmpty || !mylistEnabled}
                 onChange={setMylistUp}
               />
               <ThresholdField
                 label="減少（％）"
                 value={mylistDown}
-                disabled={!mylistEnabled}
+                disabled={myListEmpty || !mylistEnabled}
                 onChange={setMylistDown}
               />
             </div>

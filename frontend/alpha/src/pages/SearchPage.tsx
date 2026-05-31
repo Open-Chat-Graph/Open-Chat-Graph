@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import useSWRInfinite from 'swr/infinite'
-import { Search } from 'lucide-react'
+import { Search, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard, InfiniteScrollLoader } from '@/components/OpenChat'
@@ -126,6 +126,14 @@ const SearchPage = memo(() => {
     setSelectedChatId(null)
   }, [selectedChatId, myListData])
 
+  // 検索→期間分析の橋渡し。今のキーワード（＋カテゴリ）を引き継いで期間の伸びで並べ直す。
+  const handleViewPeriodGrowth = useCallback(() => {
+    const params = new URLSearchParams()
+    params.set('q', urlKeyword)
+    if (category) params.set('category', String(category))
+    navigate(`/period-growth?${params.toString()}`)
+  }, [navigate, urlKeyword, category])
+
   return (
     <div className="space-y-6">
       {isLoading && size === 1 && results.length === 0 && (
@@ -156,10 +164,31 @@ const SearchPage = memo(() => {
         <div className="space-y-4">
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
-              {totalCount.toLocaleString()}件
+              <span className="font-medium text-foreground tabular-nums">{totalCount.toLocaleString()}</span>件
             </p>
-            <WatchKeywordButton keyword={urlKeyword} category={category} />
+            {/* 見張る＝新しい部屋が出たら通知（保存条件の「再検索」とは別機能）。差を title で明示。 */}
+            <span title="この条件に合う新しい部屋が出たら通知" className="flex-shrink-0">
+              <WatchKeywordButton keyword={urlKeyword} category={category} />
+            </span>
           </div>
+
+          {/* 検索→期間分析の橋渡し。「今の人数」ではなく「期間の伸び」で並べ直す分析へ。 */}
+          <button
+            type="button"
+            onClick={handleViewPeriodGrowth}
+            className="flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
+            data-testid="search-to-period-growth"
+          >
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <TrendingUp className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">この条件で期間の伸びを見る</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                今の人数ではなく「期間の伸び」で並べる分析
+              </span>
+            </span>
+          </button>
 
           <div className="grid gap-2 md:gap-4">
             {results.map((chat) => (

@@ -49,8 +49,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     ]
   }, [unreadCount])
 
-  // 詳細ページ判定（戻るボタンを表示）
+  // 詳細ページ判定（タイトルに人数等を出す用）
   const isDetailPage = location.pathname.startsWith('/openchat/')
+  // ドリルダウン到達のページ（検索/設定から開く）はタイトルバーに戻る矢印を出す。
+  // 各ページ内で見出しを重複させない（タイトルバーが見出し＋戻るを担う）。
+  const showBackButton = isDetailPage
+    || location.pathname === '/period-growth'
+    || location.pathname === '/watch'
 
   // 戻るボタンの動作: 履歴があればブラウザバック、なければトップページへ
   const handleBack = () => {
@@ -174,11 +179,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* タイトルバー (h-12: 48px) */}
             <header className="flex h-12 items-center justify-between px-4 select-none">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                {isDetailPage && (
+                {showBackButton && (
                   <Button
                     variant="ghost"
                     size="icon"
                     className="flex-shrink-0"
+                    aria-label="戻る"
                     onClick={handleBack}
                   >
                     <ArrowLeft className="h-5 w-5" />

@@ -185,12 +185,15 @@ const DetailPage = memo(() => {
         {/* ランキング掲載履歴: 件数を先読み表示。0件はグレーアウトして開けない。
             1件以上なら「N件」を出し、押すと上に重ねる個別画面（キャッシュ即ヒット）を開く。 */}
         {historyCount === 0 ? (
+          // 0件は「壊れている」ではなく「まだ無い」と読めるよう、全体を薄くする opacity ではなく
+          // 破線ボーダー＋muted背景で“意図的に空”と示す。文字は muted-foreground を維持しコントラストを確保。
           <div
-            className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left opacity-50"
+            className="flex w-full items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-left"
             aria-disabled="true"
+            title="ランキングに掲載されると履歴がたまります"
             data-testid="ranking-history-empty"
           >
-            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground/70" />
             <span className="flex-1 text-sm font-medium text-muted-foreground">ランキング掲載履歴</span>
             <span className="text-xs tabular-nums text-muted-foreground">0件</span>
           </div>

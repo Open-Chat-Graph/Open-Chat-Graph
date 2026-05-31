@@ -11,6 +11,20 @@
 
 
 /**
+ * 検索語ハイライトの見た目（画面間で統一するための単一定義）。
+ *
+ * αブランドのアクセントは index.css / tailwind.config の `--primary`（indigo→violet）。
+ * 本ファイルの light/dark Colors は Preact グラフ用の旧 blue パレットなので、
+ * ハイライトはブランド色そのものである Tailwind の `primary` トークンを使う
+ * （ここで blue を流用すると本家の青と被り、かつリンクに誤認されるため避ける）。
+ *
+ * リンクと誤読されないよう、青系の素テキスト着色ではなく
+ * 「淡いマーカー帯（bg-primary/10）＋アクセント文字（text-primary）」で示す。
+ */
+export const searchHighlightClass =
+  'rounded-[3px] bg-primary/10 px-0.5 font-bold text-primary'
+
+/**
  * ライトモードのカラーパレット
  */
 export const lightColors = {

@@ -119,13 +119,13 @@ export function SavedSearchControls() {
 
   return (
     <>
-      {/* 現在の条件を保存 */}
+      {/* 現在の条件を保存（再検索用。通知の「見張る」とは別機能） */}
       <Button
         variant="outline"
         size="icon"
         className="h-10 w-10 flex-shrink-0"
-        aria-label="現在の検索条件を保存"
-        title="現在の検索条件を保存"
+        aria-label="再検索用に条件を保存"
+        title="再検索用に条件を保存"
         disabled={!hasConditions}
         onClick={openSaveDialog}
         data-testid="saved-search-save"
@@ -193,7 +193,7 @@ export function SavedSearchControls() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>検索条件を保存</DialogTitle>
+            <DialogTitle>再検索用に条件を保存</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">

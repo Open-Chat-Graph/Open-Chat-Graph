@@ -50,10 +50,10 @@ function filterRowsByDays(rows: MergedRow[], days: number): MergedRow[] {
 }
 
 /**
- * フォルダ統合グラフ。マイリストのあるフォルダ配下の全ルームのメンバー数推移を1つのグラフに重ねる。
+ * フォルダ統合グラフ。マイリストのあるフォルダ配下の全部屋のメンバー数推移を1つのグラフに重ねる。
  * 本家に無いαの標準メタ機能。`/mylist/:folderId/chart` で DetailOverlay 内に表示される。
  *
- * 構成: ヘッダ(フォルダ名・対象数) → 期間チップ → 重ね線グラフ → チェック式ルームリスト。
+ * 構成: ヘッダ(フォルダ名・対象数) → 期間チップ → 重ね線グラフ → チェック式の部屋リスト。
  * リスト行クリックでその線の表示/非表示を切替（visibleIds state）。
  * 期間チップで最新からN日前までにクライアント側で絞る（初期=1ヶ月）。
  */
@@ -69,7 +69,7 @@ const FolderChartPage = memo(() => {
   )
   const folderName = folder?.name ?? 'フォルダ'
 
-  // 配下ルームの openChatId（追加順）。上限を超えた分は対象外。
+  // 配下の部屋の openChatId（追加順）。上限を超えた分は対象外。
   const allItemIds = useMemo(
     () => getFolderItems(myList, folderId ?? null).map((i) => i.id),
     [myList, folderId],
@@ -84,7 +84,7 @@ const FolderChartPage = memo(() => {
   const [days, setDays] = useState<number>(DEFAULT_DAYS)
   const isPreset = PERIOD_PRESETS.some((p) => p.value === days)
 
-  // チェックON（線を描く）ルームの集合。初期は全ON。
+  // チェックON（線を描く）部屋の集合。初期は全ON。
   const [visibleIds, setVisibleIds] = useState<Set<number>>(() => new Set(targetIds))
   useEffect(() => {
     setVisibleIds(new Set(targetIds))
@@ -112,14 +112,14 @@ const FolderChartPage = memo(() => {
   // 選択期間で最新からN日前までに絞る
   const visibleRows = useMemo(() => filterRowsByDays(rows, days), [rows, days])
 
-  // ルームのメタ情報（名前/人数/画像 + 色）。グラフで取得できたルームのみ。
+  // 部屋のメタ情報（名前/人数/画像 + 色）。グラフで取得できた部屋のみ。
   const roomItems: RoomListItem[] = useMemo(() => {
     const byId = new Map(statsData?.data.map((s) => [s.id, s]) ?? [])
     return loadedIds.map((id) => {
       const s = byId.get(id)
       return {
         id,
-        name: s?.name ?? `#${id}`,
+        name: s?.name ?? `部屋 #${id}`,
         member: s?.member ?? 0,
         img: s?.img ?? '',
         color: colorMap.get(id) ?? '#888',
@@ -127,7 +127,7 @@ const FolderChartPage = memo(() => {
     })
   }, [loadedIds, statsData?.data, colorMap])
 
-  // グラフに描くルーム（チェックON）
+  // グラフに描く部屋（チェックON）
   const visibleRooms: RoomMeta[] = useMemo(
     () =>
       roomItems
@@ -167,9 +167,9 @@ const FolderChartPage = memo(() => {
           <div className="flex flex-col items-center gap-2 py-20 text-center">
             <Layers className="h-8 w-8 text-muted-foreground/60" />
             <p className="text-sm text-muted-foreground">
-              このフォルダにはルームがありません。
+              このフォルダには部屋がありません。
               <br />
-              ルームを追加すると成長の重ね線グラフが見られます。
+              部屋を追加すると成長の重ね線グラフが見られます。
             </p>
           </div>
         ) : (
@@ -210,7 +210,7 @@ const FolderChartPage = memo(() => {
 
             {truncated && (
               <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-                ルームが多いため、先頭の{MAX_ROOMS}件を表示しています。
+                部屋が多いため、先頭の{MAX_ROOMS}件を表示しています。
               </p>
             )}
 
@@ -228,7 +228,7 @@ const FolderChartPage = memo(() => {
                 ) : visibleRooms.length === 0 ? (
                   <div className="flex h-full items-center justify-center">
                     <p className="text-sm text-muted-foreground">
-                      下のリストでルームを選ぶと線が表示されます
+                      下のリストで部屋を選ぶと線が表示されます
                     </p>
                   </div>
                 ) : (
@@ -237,18 +237,18 @@ const FolderChartPage = memo(() => {
               </div>
             </div>
 
-            {/* ルームリスト（チェック式表示トグル） */}
+            {/* 部屋リスト（チェック式表示トグル） */}
             <div className="mt-4">
               <div className="mb-1 flex items-center justify-between px-2">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  ルーム（{roomItems.length}）
+                  部屋（{roomItems.length}）
                 </h2>
                 <span className="text-xs text-muted-foreground">タップで線を表示/非表示</span>
               </div>
               <div className="rounded-lg border bg-card p-1">
                 {roomItems.length === 0 && !isLoading ? (
                   <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-                    表示できるルームのデータがありません
+                    表示できる部屋のデータがありません
                   </p>
                 ) : (
                   roomItems.map((room) => (

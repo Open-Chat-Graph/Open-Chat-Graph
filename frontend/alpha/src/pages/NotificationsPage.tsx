@@ -63,35 +63,45 @@ export default function NotificationsPage() {
               すべて既読
             </Button>
           )}
+          {/* フィードの設定は控えめな歯車で（主たる入口は設定タブ）。慣習的な「通知の設定」位置。 */}
           <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
             onClick={openWatchSettings}
+            aria-label="見張り設定"
+            title="見張り設定"
             data-testid="open-watch-settings"
           >
             <Settings2 className="h-4 w-4" />
-            見張り設定
           </Button>
         </div>
       </div>
 
       {/* 区分タブ（セグメント） */}
-      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-        <TabButton
-          active={tab === 'rooms'}
-          onClick={() => setTab('rooms')}
-          icon={<Sparkles className="h-4 w-4" />}
-          label="新しい部屋"
-          count={unreadKeyword}
-        />
-        <TabButton
-          active={tab === 'movements'}
-          onClick={() => setTab('movements')}
-          icon={<Activity className="h-4 w-4" />}
-          label="見張りの動き"
-          count={unreadMovement}
-        />
+      <div className="space-y-1.5">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          <TabButton
+            active={tab === 'rooms'}
+            onClick={() => setTab('rooms')}
+            icon={<Sparkles className="h-4 w-4" />}
+            label="新着部屋（キーワード）"
+            count={unreadKeyword}
+          />
+          <TabButton
+            active={tab === 'movements'}
+            onClick={() => setTab('movements')}
+            icon={<Activity className="h-4 w-4" />}
+            label="見張りの動き"
+            count={unreadMovement}
+          />
+        </div>
+        {/* タブ直下に常時表示する1行の区分説明。選択中タブの対象を明示する */}
+        <p className="px-1 text-[11px] leading-snug text-muted-foreground">
+          {tab === 'rooms'
+            ? 'キーワード由来の新着 — 見張りキーワードに合う新しい部屋'
+            : '見張り対象の増減 — 部屋やマイリスト全体の大きな動き'}
+        </p>
       </div>
 
       {isLoading && !data ? (

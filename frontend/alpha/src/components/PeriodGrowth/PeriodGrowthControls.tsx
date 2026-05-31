@@ -21,7 +21,7 @@ interface PeriodGrowthControlsProps {
   onSubmit: (next: { keyword: string; category: number; days: number; order: PeriodOrder }) => void
 }
 
-// よく使うN日プリセット。任意入力も可能。
+// よく使う期間プリセット（日数）。任意入力も可能。
 const DAY_PRESETS: { value: number; label: string }[] = [
   { value: 7, label: '7日' },
   { value: 30, label: '30日' },
@@ -127,7 +127,7 @@ export const PeriodGrowthControls = memo(
           </Button>
         </div>
 
-        {/* N日プリセット ＋ 任意入力 */}
+        {/* 期間プリセット ＋ 任意入力 */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs text-muted-foreground">期間</span>
           {DAY_PRESETS.map((p) => (
@@ -152,7 +152,8 @@ export const PeriodGrowthControls = memo(
               min={1}
               inputMode="numeric"
               value={isPreset ? '' : String(daysInput)}
-              placeholder="任意"
+              placeholder="任意の日数"
+              aria-label="任意の日数"
               onChange={(e) => {
                 const n = Number(e.target.value)
                 if (Number.isFinite(n) && n > 0) setDaysInput(Math.floor(n))
@@ -163,7 +164,7 @@ export const PeriodGrowthControls = memo(
                   commit()
                 }
               }}
-              className="h-8 w-20"
+              className="h-8 w-28"
               data-testid="period-growth-days-custom"
             />
             <span className="text-xs text-muted-foreground">日</span>

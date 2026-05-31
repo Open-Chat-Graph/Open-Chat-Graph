@@ -88,9 +88,9 @@ const PeriodGrowthPage = memo(() => {
 
   return (
     <div className="space-y-4">
-      {/* 見出しは固定ヘッダ（タイトルバー）が「任意のN日増減」を表示するので、ここは説明のみ */}
+      {/* 見出し＋戻るは固定タイトルバー（DashboardLayout）が担うので、ここでは説明のみ。 */}
       <p className="text-sm text-muted-foreground">
-        キーワードに一致し「N日前と現在の両方に統計があるルーム」だけを、その期間の増減で並べます。
+        指定した期間の前後どちらにもデータがある部屋だけを並べます。
       </p>
 
       <PeriodGrowthControls
@@ -110,7 +110,7 @@ const PeriodGrowthPage = memo(() => {
               キーワードを入力して検索してください
             </p>
             <p className="mt-1 text-xs text-muted-foreground/80">
-              例: 「ポケモン」で1年前から今も続くルームの1年間の増加ランキング
+              例: 「ポケモン」で1年前から今も続く部屋の1年間の増加ランキング
             </p>
           </CardContent>
         </Card>
@@ -132,23 +132,28 @@ const PeriodGrowthPage = memo(() => {
 
       {keyword && data && (
         <>
-          {/* サマリ */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          {/* サマリ（ラベル付き・数値は tabular-nums で軽く構造化） */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             <span>
-              対象: <span className="font-semibold text-foreground">{keyword}</span>
+              <span className="text-xs text-muted-foreground/80">対象</span>{' '}
+              <span className="font-semibold text-foreground">{keyword}</span>
+              {category > 0 && (
+                <span className="text-foreground">（{categoryName(category)}）</span>
+              )}
             </span>
-            {category > 0 && (
-              <>
-                <span aria-hidden className="opacity-50">・</span>
-                <span>{categoryName(category)}</span>
-              </>
-            )}
-            <span aria-hidden className="opacity-50">・</span>
-            <span className="tabular-nums">
-              {formatDate(data.targetPastDate)} 〜 {formatDate(data.baseDate)}（{data.days}日）
+            <span aria-hidden className="opacity-40">|</span>
+            <span>
+              <span className="text-xs text-muted-foreground/80">期間</span>{' '}
+              <span className="tabular-nums text-foreground">
+                {formatDate(data.targetPastDate)} 〜 {formatDate(data.baseDate)}
+              </span>
+              <span className="tabular-nums">（{data.days.toLocaleString()}日）</span>
             </span>
-            <span aria-hidden className="opacity-50">・</span>
-            <span className="tabular-nums">{data.totalMatched.toLocaleString()}件中</span>
+            <span aria-hidden className="opacity-40">|</span>
+            <span>
+              <span className="text-xs text-muted-foreground/80">該当</span>{' '}
+              <span className="tabular-nums text-foreground">{data.totalMatched.toLocaleString()}</span>件
+            </span>
           </div>
 
           {items.length === 0 ? (
@@ -156,10 +161,10 @@ const PeriodGrowthPage = memo(() => {
               <CardContent className="py-10 text-center">
                 <Info className="mx-auto h-8 w-8 text-muted-foreground/50" />
                 <p className="mt-3 text-sm text-muted-foreground">
-                  条件に合うルームがありません
+                  条件に合う部屋がありません
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/80">
-                  N日前にも統計が存在するルームが見つかりませんでした。期間を短くするとヒットしやすくなります。
+                  指定した期間の開始時点にデータがある部屋が見つかりませんでした。期間を短くするとヒットしやすくなります。
                 </p>
               </CardContent>
             </Card>
