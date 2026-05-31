@@ -172,7 +172,8 @@ const SearchPage = memo(() => {
             </span>
           </div>
 
-          {/* 検索→期間分析の橋渡し。「今の人数」ではなく「期間の伸び」で並べ直す分析へ。 */}
+          {/* 検索→期間分析の橋渡し。ソートの1時間/24時間/1週間より長い任意の期間で、
+              かつ期間の始点から在る部屋だけに絞る、という点が検索ソートとの違い。 */}
           <button
             type="button"
             onClick={handleViewPeriodGrowth}
@@ -183,9 +184,9 @@ const SearchPage = memo(() => {
               <TrendingUp className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">この条件で期間の伸びを見る</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                今の人数ではなく「期間の伸び」で並べる分析
+              <span className="block truncate text-sm font-medium">指定期間の増減ランキングで見る</span>
+              <span className="block text-xs text-muted-foreground">
+                1週間より長い任意の期間で、期間の始点から続く部屋だけを増減順に
               </span>
             </span>
           </button>
