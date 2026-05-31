@@ -3,7 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 /** ETA 取得に失敗／未指定のときの想定応答時間（ms）。これを基準に 0→90% を進める。 */
 const FALLBACK_ETA_MS = 1500
 /** 完了時に 100% を見せてから消えるまでの猶予（ms）。一瞬の達成感を出すため。 */
-const FINISH_HOLD_MS = 280
+const FINISH_HOLD_MS = 320
+/**
+ * バーが視認できる最小表示時間（ms）。ローカル等で応答が一瞬だと 0→100 が速すぎて
+ * 「出ていない」ように見えるため、応答が来てもこの時間までは 0→90 の進行を見せてから
+ * 100 へスナップする（※応答前に 100 にはしない＝loading=false になってから働く）。
+ */
+const MIN_VISIBLE_MS = 450
 
 export interface UseListProgress {
   /** 0..100。進行中は 0→約90、完了で 100。非表示時は 0 */
@@ -43,6 +49,7 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
 
   const rafRef = useRef<number | null>(null)
   const finishTimerRef = useRef<number | null>(null)
+  const minVisibleTimerRef = useRef<number | null>(null)
   const startRef = useRef(0)
   const etaRef = useRef(FALLBACK_ETA_MS)
   // 完了演出が走っている間は進行 rAF を止めておく
@@ -59,12 +66,17 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
     if (finishTimerRef.current != null) window.clearTimeout(finishTimerRef.current)
     finishTimerRef.current = null
   }
+  const clearMinVisibleTimer = () => {
+    if (minVisibleTimerRef.current != null) window.clearTimeout(minVisibleTimerRef.current)
+    minVisibleTimerRef.current = null
+  }
 
   // requestKey 変化 = 新しい取得の開始。アニメをリセットして 0→90% を回し始める。
   useEffect(() => {
     if (!requestKey) {
       clearRaf()
       clearFinishTimer()
+      clearMinVisibleTimer()
       finishingRef.current = false
       setActive(false)
       setProgress(0)
@@ -73,6 +85,7 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
 
     finishingRef.current = false
     clearFinishTimer()
+    clearMinVisibleTimer()
     startRef.current = performance.now()
     etaRef.current = FALLBACK_ETA_MS
     setActive(true)
@@ -111,26 +124,41 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey])
 
-  // 応答到着で 100% → 少し見せて非表示
+  // 応答到着で 100% → 少し見せて非表示。
+  // ただし最小表示時間に満たないうちに来た場合は、その時間まで 0→90 の進行を見せてから 100 へ。
   useEffect(() => {
     if (!active) return
     if (loading) return
     if (finishingRef.current) return
+    if (minVisibleTimerRef.current != null) return // 既に最小表示待ちをスケジュール済み
 
-    finishingRef.current = true
-    clearRaf()
-    setProgress(100)
-    finishTimerRef.current = window.setTimeout(() => {
-      setActive(false)
-      setProgress(0)
-      finishingRef.current = false
-    }, FINISH_HOLD_MS)
+    const snap = () => {
+      finishingRef.current = true
+      clearRaf()
+      clearMinVisibleTimer()
+      setProgress(100)
+      finishTimerRef.current = window.setTimeout(() => {
+        setActive(false)
+        setProgress(0)
+        finishingRef.current = false
+      }, FINISH_HOLD_MS)
+    }
+
+    const elapsed = performance.now() - startRef.current
+    const remain = MIN_VISIBLE_MS - elapsed
+    if (remain <= 0) {
+      snap()
+    } else {
+      // 最小表示時間まで rAF の進行（0→90）を継続させ、その後 100 へスナップ
+      minVisibleTimerRef.current = window.setTimeout(snap, remain)
+    }
   }, [active, loading])
 
   useEffect(
     () => () => {
       clearRaf()
       clearFinishTimer()
+      clearMinVisibleTimer()
     },
     [],
   )
