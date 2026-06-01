@@ -55,7 +55,8 @@ class RecommendUpdater
         } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Tw\RecommendUpdaterTags::class);
         } else if (MimimalCmsConfig::$urlRoot === '/th') {
-            $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Th\RecommendUpdaterTags::class);
+            // th も ja と同じ JSON 駆動マッチングへ統一（data/th.json を読む）
+            $this->recommendUpdaterTags = \App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::forLocale('/th');
         } else {
             $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::class);
         }
@@ -76,11 +77,13 @@ class RecommendUpdater
      */
     protected function getOpenChatSubCategoriesTag(): array
     {
-        if (MimimalCmsConfig::$urlRoot === '') {
+        if (MimimalCmsConfig::$urlRoot === '' || MimimalCmsConfig::$urlRoot === '/th') {
+            // ja/th: JSON定義(subCategoriesTag)を使う。
+            // th はノイズ源だったクロール公式サブカテゴリを捨て、th.json に一本化する。
             return $this->recommendUpdaterTags->getSubCategoriesTag();
         }
 
-        // tw/th: 既存どおり LINE 公式 crawled サブカテゴリを読む
+        // tw: 既存どおり LINE 公式 crawled サブカテゴリを読む
         $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
         $data = json_decode(
             file_exists($path)
@@ -132,10 +135,13 @@ class RecommendUpdater
 
         $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
 
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $this->matchAllRowsNonJa();
-        } else {
+        if (MimimalCmsConfig::$urlRoot === '' || MimimalCmsConfig::$urlRoot === '/th') {
+            // ja/th: フル6キーカスケード（strongest/beforeCategory/nameStrong/subCategoriesTag/
+            // descStrong/afterDescStrong + oc_tag2）。th を本格タグロジックへ統一する。
             $this->matchAllRowsJa($onlyRecommend);
+        } else {
+            // tw: 従来の簡易マッチング（nameStrong + subCategoriesTag のみ）。次サイクルで統一予定。
+            $this->matchAllRowsNonJa();
         }
 
         // recommend テーブルに反映
