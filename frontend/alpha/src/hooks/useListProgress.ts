@@ -57,6 +57,10 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
   // fetchEta は毎レンダーで参照が変わりうるので ref 経由で最新を読む（依存は requestKey に集約）
   const fetchEtaRef = useRef(fetchEta)
   fetchEtaRef.current = fetchEta
+  // 直近で「取得開始」した requestKey。React19 <Activity> は visible 復帰でエフェクトを
+  // 再実行する（state/ref は保持）ため、requestKey の“値”が変わっていない再mountでは
+  // 新規取得ではない＝プログレスを起動しない（被せ復帰/タブ復帰の幽霊ローディング防止。仕様 D-1）。
+  const lastKeyRef = useRef<string | null>(null)
 
   const clearRaf = () => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
@@ -78,10 +82,18 @@ export function useListProgress({ requestKey, loading, fetchEta }: Options): Use
       clearFinishTimer()
       clearMinVisibleTimer()
       finishingRef.current = false
+      lastKeyRef.current = null
       setActive(false)
       setProgress(0)
       return
     }
+
+    // 同じ requestKey でエフェクトが再実行された（Activity の visible 復帰・再mount 等）。
+    // 新規取得ではないのでプログレスを起動しない（保持中の表示状態をそのまま維持）。
+    if (lastKeyRef.current === requestKey) {
+      return
+    }
+    lastKeyRef.current = requestKey
 
     finishingRef.current = false
     clearFinishTimer()
