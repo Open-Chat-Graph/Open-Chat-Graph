@@ -61,12 +61,13 @@
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
 
 - userlog: `alpha_keyword_watch` / `alpha_room_watch` / `alpha_mylist_threshold` / `alpha_keyword_seen` / `alpha_notification`
-- ocreview: `alpha_room_access_daily`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily`（非部屋ページ）／ `alpha_search_query_daily`（上位検索クエリ）／ `alpha_room_search_query_daily`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily`（部屋別 リファラ元）
+- ocreview: `alpha_room_access_daily`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily`（非部屋ページ）／ `alpha_search_query_daily`（上位検索クエリ）／ `alpha_room_search_query_daily`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily`（部屋別 リファラ元）／ `alpha_page_jump_daily`（非部屋ページの入室数近似・日次事前集計。`alpha_room_referrer_daily` × `alpha_room_access_daily` を page_path 別に SUM。`alpha_ga_sync.php` が各日書込み後に自動更新。初回投入は `batch/exec/alpha_rebuild_page_jump.php` でバックフィル）
 
 ### バッチ / cron
 
 - `batch/exec/alpha_hourly.php`: 毎時クロール後にアラート3種を算出・保存（ja限定、`cron_crawling.php`から）。
-- `batch/exec/alpha_ga_sync.php`: 日次でGA4/GSCを部屋別集計（`SyncOpenChat::dailyTask()`末尾、設定済みのときのみ）。
+- `batch/exec/alpha_ga_sync.php`: 日次でGA4/GSCを部屋別集計（`SyncOpenChat::dailyTask()`末尾、設定済みのときのみ）。各日の room/referrer 書込み後に `rebuildPageJumpDaily` を呼び `alpha_page_jump_daily` を自動更新。
+- `batch/exec/alpha_rebuild_page_jump.php`: `alpha_page_jump_daily` の派生バックフィル CLI。`alpha_room_referrer_daily` に存在する全日付（または `--from`/`--to` 指定範囲）を再集計（GA再取得不要・DB内完結）。
 
 ### Labs の認証設定（GA4/GSC）
 

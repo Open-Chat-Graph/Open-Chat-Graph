@@ -251,3 +251,16 @@ CREATE TABLE `alpha_room_referrer_daily` (
   PRIMARY KEY (`open_chat_id`,`referrer`,`date`),
   KEY `date_idx` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alpha Labs: 非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}'）の日次入室数（近似）事前集計。
+-- alpha_room_referrer_daily × alpha_room_access_daily の LIKE 相関スキャンを日次バッチで事前集計し、
+-- getPageScopeRanking の高速化に使う（リクエスト毎の重い LIKE スキャンを廃止）。
+-- 意味: 日 D において「参照元(referrer)が page_path である部屋」の当日 jump_clicks / jump_clicks_organic 合算。
+CREATE TABLE IF NOT EXISTS `alpha_page_jump_daily` (
+  `page_path` varchar(190) NOT NULL,
+  `date` date NOT NULL,
+  `jump_clicks` int(11) NOT NULL DEFAULT 0,
+  `jump_clicks_organic` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`page_path`,`date`),
+  KEY `date_idx` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

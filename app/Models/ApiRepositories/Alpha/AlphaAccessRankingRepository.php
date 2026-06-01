@@ -276,20 +276,8 @@ class AlphaAccessRankingRepository
         $offset = max(0, $offset);
         $fetch = $limit + 1;
 
-        // ページ入室数（近似）: そのページを参照元とする部屋の jump_clicks 合計。
-        // 相関サブクエリで p.path にマッチする referrer を持つ部屋・期間の jump_clicks を合算する。
-        // この重い LIKE スキャンは全候補 path で1回（ORDER BY も兼ねる）。
-        // 「うちSEO経由」の jump_clicks_organic は、ここで2本目の相関サブクエリを足すと走査が倍化するため、
-        // ソート確定後の表示分(≤limit)だけ別クエリ(getPagesJumpOrganic)でまとめて取る（N+1ではなく1クエリ）。
-        $jumpClicksSelect = "(
-            SELECT COALESCE(SUM(a.jump_clicks), 0)
-            FROM alpha_room_referrer_daily AS rr
-            INNER JOIN alpha_room_access_daily AS a
-                ON a.open_chat_id = rr.open_chat_id AND a.`date` = rr.`date`
-            WHERE rr.`date` BETWEEN :fromDateJ AND :toDateJ
-              AND rr.referrer LIKE CONCAT('%', p.path, '%')
-        ) AS jump_clicks";
-
+        // ページ入室数は alpha_page_jump_daily の事前集計を期間 SUM して JOIN する。
+        // 旧来の LIKE 相関スキャンを廃止し、path 完全一致の高速 JOIN に変更。
         $sql = "
             SELECT
                 p.path,
@@ -301,8 +289,11 @@ class AlphaAccessRankingRepository
                 CASE WHEN SUM(p.search_impressions) > 0
                      THEN SUM(p.search_position * p.search_impressions) / SUM(p.search_impressions)
                      ELSE NULL END AS search_position,
-                {$jumpClicksSelect}
+                COALESCE(SUM(pj.jump_clicks), 0) AS jump_clicks,
+                COALESCE(SUM(pj.jump_clicks_organic), 0) AS jump_clicks_organic
             FROM alpha_page_access_daily AS p
+            LEFT JOIN alpha_page_jump_daily AS pj
+                ON pj.page_path = p.path AND pj.`date` = p.`date`
             WHERE p.`date` BETWEEN :fromDate AND :toDate
             GROUP BY p.path
             ORDER BY {$orderColumn} {$orderSql}
@@ -312,28 +303,15 @@ class AlphaAccessRankingRepository
         $rows = DB::fetchAll($sql, [
             'fromDate' => $fromDate,
             'toDate' => $toDate,
-            'fromDateJ' => $fromDate,
-            'toDateJ' => $toDate,
         ]);
         $hasMore = count($rows) > $limit;
         if ($hasMore) {
             $rows = array_slice($rows, 0, $limit);
         }
 
-        // 表示する path だけ「うちSEO経由（間接含む）」を補完（走査倍化を避けるため後段で1クエリ）。
-        // organic ⊆ jump_clicks なので jump_clicks が 0 の path はスキップ（0確定・無駄な LIKE 走査を省く）。
-        $organicPaths = [];
-        foreach ($rows as $r) {
-            if ((int)($r['jump_clicks'] ?? 0) > 0) {
-                $organicPaths[] = (string)$r['path'];
-            }
-        }
-        $organicByPath = $this->getPagesJumpOrganic($organicPaths, $fromDate, $toDate);
-
-        $data = array_map(static function ($r) use ($organicByPath) {
-            $path = (string)$r['path'];
+        $data = array_map(static function ($r) {
             return [
-                'path' => $path,
+                'path' => (string)$r['path'],
                 'label' => (string)($r['label'] ?? ''),
                 'pageviews' => (int)$r['pageviews'],
                 'activeUsers' => (int)$r['active_users'],
@@ -341,56 +319,11 @@ class AlphaAccessRankingRepository
                 'searchImpressions' => (int)$r['search_impressions'],
                 'searchPosition' => $r['search_position'] === null ? null : round((float)$r['search_position'], 2),
                 'jumpClicks' => (int)($r['jump_clicks'] ?? 0),
-                'jumpClicksOrganic' => $organicByPath[$path] ?? 0,
+                'jumpClicksOrganic' => (int)($r['jump_clicks_organic'] ?? 0),
             ];
         }, $rows);
 
         return ['data' => $data, 'baseDate' => $baseDate, 'updatedAt' => $baseDate, 'hasMore' => $hasMore];
-    }
-
-    /**
-     * 表示する非部屋ページの「うちSEO経由（間接含む）」入室数（近似）を path 別にまとめて取得する。
-     *
-     * jump_clicks と同じ近似（そのページを参照元とする部屋の jump_clicks_organic 合計）。
-     * 走査の倍化を避けるため、ソート確定後の表示 path 群（≤limit）だけを対象に1クエリで集計する。
-     * referrer は path の部分一致なので、各 path をプレースホルダ化し UNION ALL で1行ずつ集計する。
-     *
-     * @param array<int, string> $paths
-     * @return array<string, int> path => jump_clicks_organic 合計
-     */
-    private function getPagesJumpOrganic(array $paths, string $fromDate, string $toDate): array
-    {
-        $paths = array_values(array_unique(array_filter($paths, static fn($p) => $p !== '')));
-        if ($paths === []) {
-            return [];
-        }
-        DB::connect();
-
-        // path ごとに「referrer に当該 path を含む部屋・期間の jump_clicks_organic 合計」を1行で返す。
-        // UNION ALL で path 数ぶんの相関なし集計を並べる（path 数は表示分のみ＝少数）。
-        $parts = [];
-        $params = ['fromDate' => $fromDate, 'toDate' => $toDate];
-        foreach ($paths as $idx => $path) {
-            $ph = 'p' . $idx;
-            $parts[] = "
-                SELECT :{$ph}_path AS path, COALESCE(SUM(a.jump_clicks_organic), 0) AS organic
-                FROM alpha_room_referrer_daily AS rr
-                INNER JOIN alpha_room_access_daily AS a
-                    ON a.open_chat_id = rr.open_chat_id AND a.`date` = rr.`date`
-                WHERE rr.`date` BETWEEN :fromDate AND :toDate
-                  AND rr.referrer LIKE CONCAT('%', :{$ph}_like, '%')
-            ";
-            $params["{$ph}_path"] = $path;
-            $params["{$ph}_like"] = $path;
-        }
-        $sql = implode(' UNION ALL ', $parts);
-
-        $rows = DB::fetchAll($sql, $params);
-        $map = [];
-        foreach ($rows as $r) {
-            $map[(string)$r['path']] = (int)$r['organic'];
-        }
-        return $map;
     }
 
     /**
@@ -695,6 +628,151 @@ class AlphaAccessRankingRepository
                 'pageviews' => (int)$r['pageviews'],
             ];
         }, $rows);
+    }
+
+    /**
+     * 指定日 D の alpha_page_jump_daily を alpha_room_referrer_daily × alpha_room_access_daily
+     * から再計算して upsert する。
+     *
+     * 処理:
+     *   1. $date の alpha_room_referrer_daily を全件取得。
+     *   2. referrer を page_path に正規化（'/' or '/recommend/{tag}' のみ対象・外部や自己参照は除外）。
+     *   3. (room, page_path) をグループに、当日の alpha_room_access_daily の
+     *      jump_clicks / jump_clicks_organic を page_path 別に SUM して upsert。
+     *
+     * PHP 側で正規化する（LIKE のない完全一致 JOIN では正規化できないため）。
+     * 当日分のみなので referrer 行数は限定的（実質数千〜数万行）。
+     */
+    public function rebuildPageJumpDaily(string $date): void
+    {
+        DB::connect();
+
+        // 当日の referrer 一覧を取得（open_chat_id, referrer）
+        $refRows = DB::fetchAll(
+            "SELECT open_chat_id, referrer FROM alpha_room_referrer_daily WHERE `date` = :date",
+            ['date' => $date]
+        );
+
+        if ($refRows === []) {
+            return;
+        }
+
+        // referrer → page_path 正規化し、(open_chat_id, page_path) のセットを収集
+        // page_path => [open_chat_id, ...] のマップ
+        /** @var array<string, list<int>> $pathToIds */
+        $pathToIds = [];
+        foreach ($refRows as $r) {
+            $ocId = (int)$r['open_chat_id'];
+            $norm = self::normalizeReferrerToPagePath((string)($r['referrer'] ?? ''));
+            if ($norm === null) {
+                continue;
+            }
+            $pathToIds[$norm][] = $ocId;
+        }
+
+        if ($pathToIds === []) {
+            return;
+        }
+
+        // 当日の alpha_room_access_daily を in 句で一括取得して集計
+        $allIds = array_unique(array_merge(...array_values($pathToIds)));
+        $in = implode(',', array_map('intval', $allIds));
+
+        $accessRows = DB::fetchAll(
+            "SELECT open_chat_id, jump_clicks, jump_clicks_organic
+             FROM alpha_room_access_daily
+             WHERE `date` = :date AND open_chat_id IN ({$in})",
+            ['date' => $date]
+        );
+
+        // open_chat_id => [jump_clicks, jump_clicks_organic]
+        /** @var array<int, array{jump_clicks:int, jump_clicks_organic:int}> $accessMap */
+        $accessMap = [];
+        foreach ($accessRows as $a) {
+            $accessMap[(int)$a['open_chat_id']] = [
+                'jump_clicks' => (int)$a['jump_clicks'],
+                'jump_clicks_organic' => (int)$a['jump_clicks_organic'],
+            ];
+        }
+
+        // page_path 別に SUM
+        /** @var array<string, array{jump_clicks:int, jump_clicks_organic:int}> $pageAgg */
+        $pageAgg = [];
+        foreach ($pathToIds as $path => $ids) {
+            $jc = 0;
+            $jco = 0;
+            foreach (array_unique($ids) as $ocId) {
+                if (isset($accessMap[$ocId])) {
+                    $jc += $accessMap[$ocId]['jump_clicks'];
+                    $jco += $accessMap[$ocId]['jump_clicks_organic'];
+                }
+            }
+            $pageAgg[$path] = ['jump_clicks' => $jc, 'jump_clicks_organic' => $jco];
+        }
+
+        // upsert
+        foreach ($pageAgg as $path => $agg) {
+            DB::execute(
+                "INSERT INTO alpha_page_jump_daily (page_path, `date`, jump_clicks, jump_clicks_organic)
+                 VALUES (:path, :date, :jc, :jco)
+                 ON DUPLICATE KEY UPDATE
+                    jump_clicks = VALUES(jump_clicks),
+                    jump_clicks_organic = VALUES(jump_clicks_organic)",
+                [
+                    'path' => $path,
+                    'date' => $date,
+                    'jc' => $agg['jump_clicks'],
+                    'jco' => $agg['jump_clicks_organic'],
+                ]
+            );
+        }
+    }
+
+    /**
+     * referrer URL / path を非部屋ページの page_path に正規化する。
+     * '/' または '/recommend/{tag}' のみを返し、それ以外（部屋ページ・外部・直接など）は null。
+     * AlphaGaClient::normalizePageScopePath と同じ正規化ロジック。
+     */
+    private static function normalizeReferrerToPagePath(string $raw): ?string
+    {
+        if ($raw === '' || $raw === '(direct)') {
+            return null;
+        }
+
+        // 完全URLならpath部だけ取り出す
+        $path = $raw;
+        if (preg_match('#^https?://[^/]+(/.*)$#', $raw, $m)) {
+            $path = $m[1];
+        } elseif (preg_match('#^https?://[^/]+$#', $raw)) {
+            $path = '/';
+        }
+
+        // クエリ/フラグメント除去
+        $path = preg_replace('/[?#].*$/', '', $path) ?? $path;
+
+        // tw/th ロケール配下は対象外
+        if (preg_match('#^/(?:tw|th)(?:/|$)#', $path)) {
+            return null;
+        }
+
+        // /oc/{id} や /openchat/{id} の部屋ページは対象外
+        if (preg_match('#/(?:oc|openchat)/\d+#', $path)) {
+            return null;
+        }
+
+        // トップ
+        if ($path === '' || $path === '/' || $path === '/index.html') {
+            return '/';
+        }
+
+        // おすすめ /recommend/{tag}
+        if (preg_match('#^/recommend/([^/]+)/?$#', $path, $mm)) {
+            $tag = rawurldecode($mm[1]);
+            $tag = mb_strlen($tag) > 150 ? mb_substr($tag, 0, 150) : $tag;
+            return '/recommend/' . $tag;
+        }
+
+        return null;
     }
 
     /**

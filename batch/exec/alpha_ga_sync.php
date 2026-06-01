@@ -35,6 +35,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Config\SecretsConfig;
+use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\Repositories\DB;
 use App\Services\Alpha\AlphaGaClient;
 use App\Services\Admin\AdminTool;
@@ -283,6 +284,15 @@ try {
             }
         } catch (\Throwable $e) {
             $errors[] = "GSC query {$date}: " . $e->getMessage();
+        }
+
+        // ---- 4) 非部屋ページ入室数の事前集計 (alpha_page_jump_daily) ----
+        // alpha_room_referrer_daily / alpha_room_access_daily 書込後に再計算して upsert。
+        // GA不要・DBのみで完結（当日分のみなので高速）。
+        try {
+            (new AlphaAccessRankingRepository())->rebuildPageJumpDaily($date);
+        } catch (\Throwable $e) {
+            $errors[] = "page-jump rebuild {$date}: " . $e->getMessage();
         }
     }
 
