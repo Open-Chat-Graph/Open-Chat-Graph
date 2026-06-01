@@ -27,7 +27,11 @@ class Metadata
 
     public function __construct()
     {
-        if (path('') ?? '/' === '/') {
+        // 演算子優先順位の修正: `===` は `??` より強く結合するため、
+        // 旧 `path('') ?? '/' === '/'` は `path('') ?? ('/' === '/')` = 実質 `path('')`
+        // と評価され（path() は常に非null文字列を返す）、全ページが 'website' に固定されていた。
+        // 本来の意図「トップ(=/)のみ website、下層は article」を括弧で復元する。
+        if ((path('') ?? '/') === '/') {
             $this->og_type = 'website';
         } else {
             $this->og_type = 'article';
