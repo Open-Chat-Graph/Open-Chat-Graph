@@ -2,8 +2,8 @@ import { langCode } from './config'
 
 const translation = {
   オプチャグラフ: {
-    tw: 'LINE社群圖表',
-    th: 'OpenChat กราฟ',
+    tw: 'LINE社群成長統計',
+    th: 'LINE OPENCHAT\nสถิติการเติบโต',
   },
   検索: {
     tw: '搜尋',
