@@ -8,11 +8,12 @@ use App\Services\Admin\AdminAuthService;
 use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shadow\Kernel\Reception;
 use Shared\Exceptions\NotFoundException;
+use Shared\MimimalCmsConfig;
 
 /**
- * おすすめタグ定義(Git管理JSON: data/ja.json)を編集する管理者専用GUIのバックエンド。
+ * おすすめタグ定義(Git管理JSON: data/{lang}.json)を編集する管理者専用GUIのバックエンド。
  *
- * - 日本語(ja)専用・管理者専用・ローカル編集用途。
+ * - ja/th/tw 各ロケール対応（編集対象は urlRoot に対応する data/{lang}.json）・管理者専用・ローカル編集用途。
  * - 本番DBには一切触れない（ファイルの読み書きのみ）。
  * - 表示(index)はファイルの生JSONとデコード済み配列をViewへ渡すだけ。
  * - 保存(save)は受け取ったJSONを検証し、一時ファイル経由のrenameで原子的に差し替える。
@@ -74,7 +75,10 @@ class AdminRecommendTagController
      */
     public function index()
     {
-        $jsonPath = TagMetadata::jsonPath();
+        $jsonPath = TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot);
+        // 画面に表示する「編集対象ファイル」の相対パス（ja.json ハードコードを避けロケール別に出す）
+        $lang = MimimalCmsConfig::$urlRoot === '' ? 'ja' : ltrim(MimimalCmsConfig::$urlRoot, '/');
+        $jsonRelPath = "app/Services/Recommend/TagDefinition/data/{$lang}.json";
 
         if (!is_file($jsonPath) || !is_readable($jsonPath)) {
             return view('admin/admin_message_page', [
@@ -120,20 +124,22 @@ class AdminRecommendTagController
             '_tagJson' => $tagJson,
             '_tagData' => $decoded,
             '_csrfToken' => $csrfToken,
+            '_jsonRelPath' => $jsonRelPath,
             '_meta' => $_meta,
         ]);
     }
 
     /**
-     * 全レコードへタグを即時再適用（無停止シャドウ再構築）をバックグラウンドで開始する。
+     * 全レコードへタグを即時再適用（ja=無停止シャドウ再構築 / th・tw=フル再構築）をバックグラウンドで開始する。
      * ローカルで結果をすぐ確認したいとき、デプロイ後の手動反映に使う。
-     * 通常はデプロイ後の毎時CRONが ja.json の変更を自動検知して再適用するため、これは任意。
+     * 通常はデプロイ後の毎時CRONが {lang}.json の変更を自動検知して再適用するため、これは任意。
      */
     public function rebuild()
     {
         $path = \App\Config\AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
-        // ja 専用（ルートで urlRoot==='' を保証済み）。バックグラウンドで起動。
-        exec(\App\Config\AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
+        // urlRoot を渡してロケール別に再構築（'' なら ja）。バックグラウンドで起動。
+        $urlRootArg = escapeshellarg((string)MimimalCmsConfig::$urlRoot);
+        exec(\App\Config\AppConfig::$phpBinary . " {$path} {$urlRootArg} >/dev/null 2>&1 &");
         return response(['ok' => true]);
     }
 
@@ -176,7 +182,7 @@ class AdminRecommendTagController
             return response(['ok' => false, 'error' => 'JSONの再エンコードに失敗しました。'], 500);
         }
 
-        $error = $this->writeAtomically(TagMetadata::jsonPath(), $encoded . "\n");
+        $error = $this->writeAtomically(TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot), $encoded . "\n");
         if ($error !== null) {
             return response(['ok' => false, 'error' => $error], 500);
         }
