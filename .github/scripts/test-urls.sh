@@ -434,7 +434,7 @@ main() {
 
     # レコメンドページ - 繁体字
     log "レコメンドページのテスト（繁体字）"
-    test_url "${BASE_URL}/tw/recommend/%E5%AF%B6%E5%8F%AF%E5%A4%A2" "レコメンド（繁体字/寶可夢）"
+    test_url "${BASE_URL}/tw/recommend/%E7%BE%BD%E7%90%83" "レコメンド（繁体字/羽球）"
     echo ""
 
     # レコメンドページ - タイ語
