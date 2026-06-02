@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend\TagDefinition;
 
-use App\Config\AppConfig;
-
 /**
  * JSONファイルからタグ定義を供給する実装。
  *
@@ -40,8 +38,7 @@ class JsonRecommendUpdaterTags implements RecommendUpdaterTagsInterface
 
     public function __construct(?string $jsonPath = null)
     {
-        $this->jsonPath = $jsonPath
-            ?? AppConfig::ROOT_PATH . 'app/Services/Recommend/TagDefinition/data/ja.json';
+        $this->jsonPath = $jsonPath ?? TagMetadata::jsonPath();
     }
 
     /**
@@ -51,8 +48,7 @@ class JsonRecommendUpdaterTags implements RecommendUpdaterTagsInterface
      */
     public static function forLocale(string $urlRoot): self
     {
-        $lang = $urlRoot === '' ? 'ja' : ltrim($urlRoot, '/');
-        return new self(AppConfig::ROOT_PATH . "app/Services/Recommend/TagDefinition/data/{$lang}.json");
+        return new self(TagMetadata::jsonPath($urlRoot));
     }
 
     /**

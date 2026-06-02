@@ -7,9 +7,15 @@ namespace App\Services\Recommend\TagDefinition;
 use App\Config\AppConfig;
 
 /**
- * Ja のタグ「メタデータ」を Git管理JSON(data/ja.json)から供給する共有ローダ。
+ * タグ「メタデータ」を Git管理JSON(data/{lang}.json)から供給する共有ローダ。
  *
- * 旧 PHP ハードコード const を JSON へ移行したもの。挙動完全一致が要件。
+ * jsonPath() は ja/th/tw 全ロケールのタグ定義JSONパスを返す唯一の解決点。
+ * 読込（本クラス・JsonRecommendUpdaterTags）と書込（管理GUI）・CRONのハッシュ検知が
+ * 全てこのメソッドを共有する（パス組み立てが各所に散らばらないようにするため）。
+ *
+ * 静的メタデータアクセサ(omitPattern/redirects/descriptions 等)は規定ロケール(ja)の
+ * data/ja.json を読む（th/tw のメタデータはインスタンスの
+ * JsonRecommendUpdaterTags::getMetadata() で参照する）。
  * 供給するメタデータ:
  *   - omitPattern            : { "<ラベル>": "<略称>", .. }   （旧 RecommendUtility::OmitPettern）
  *   - redirects              : { "<旧ラベル>": "<新ラベル>", .. }（旧 RecommendTagFilters::RedirectTags）
@@ -22,19 +28,21 @@ use App\Config\AppConfig;
  * 読めない/壊れている場合は例外を投げる（デプロイ事故を黙って劣化＝全メタデータ欠落させないため）。
  * 個々のキーが無いのは空配列で可。
  */
-class JaTagMetadata
+class TagMetadata
 {
     /** @var array<string,mixed>|null パース済みJSONの静的キャッシュ */
     private static ?array $data = null;
 
     /**
-     * タグ定義JSON(data/ja.json)の絶対パスを返す。
+     * ロケール(urlRoot)に対応するタグ定義JSON(data/{lang}.json)の絶対パスを返す。
+     * '' => ja.json, '/th' => th.json, '/tw' => tw.json。
      *
-     * 読込（本クラス・JsonRecommendUpdaterTags）と書込（管理GUI）でパスを共有するため公開する。
+     * ja/th/tw のパス組み立てを一本化するための唯一の解決点。
      */
-    public static function jsonPath(): string
+    public static function jsonPath(string $urlRoot = ''): string
     {
-        return AppConfig::ROOT_PATH . 'app/Services/Recommend/TagDefinition/data/ja.json';
+        $lang = $urlRoot === '' ? 'ja' : ltrim($urlRoot, '/');
+        return AppConfig::ROOT_PATH . "app/Services/Recommend/TagDefinition/data/{$lang}.json";
     }
 
     /**

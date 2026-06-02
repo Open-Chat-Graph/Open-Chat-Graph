@@ -35,22 +35,20 @@ class RecommendOpenChatPageController
 
             $extractTag = RecommendUtility::getValidTag($tag);
         } else {
-            // th: タグ定義刷新で改称した旧サブカテゴリ由来タグ(th.jsonのredirects)を
+            // th/tw: タグ定義刷新で改称した旧サブカテゴリ由来タグ({lang}.jsonのredirects)を
             // 301で新タグへ引き継ぎ、既存のGoogleランキング/被リンク資産を保全する。
-            if (MimimalCmsConfig::$urlRoot === '/th') {
-                $thRedirects = JsonRecommendUpdaterTags::forLocale('/th')->getMetadata('redirects');
-                if (isset($thRedirects[$tag]))
-                    return redirect(url('recommend/' . urlencode($thRedirects[$tag])), 301);
-            }
+            $redirects = JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot)->getMetadata('redirects');
+            if (isset($redirects[$tag]))
+                return redirect(url('recommend/' . urlencode($redirects[$tag])), 301);
             $extractTag = $tag;
         }
 
         $tag = $recommendPageList->getValidTag($tag);
         if (!$tag) {
-            // th: 刷新で廃止した旧タグページは 404 でなく 410 Gone を返す。
+            // th/tw: 刷新で廃止した旧タグページは 404 でなく 410 Gone を返す。
             // 「恒久的に削除された」ことを Google に明示し、再クロールキューから速やかに外す。
             // （移行で消える旧タグのうち受け皿があるものは上の 301 で引き継ぎ済み）
-            if (MimimalCmsConfig::$urlRoot === '/th') {
+            if (MimimalCmsConfig::$urlRoot !== '') {
                 http_response_code(410);
                 return view('errors/error', ['httpCode' => 410]);
             }
@@ -59,8 +57,11 @@ class RecommendOpenChatPageController
 
         $extractTag = $extractTag ?: $tag;
 
-        // 高需要タグ向けのテーマ固有紹介文(ja専用)。無ければ null でベースライン文のみ。
-        $tagDescription = MimimalCmsConfig::$urlRoot === '' ? RecommendTagDescription::get($tag) : null;
+        // 高需要タグ向けのテーマ固有紹介文。ja は ja.json、th/tw は {lang}.json の
+        // descriptions セクションから引く（日本版と同等にテーマ紹介文を表示）。無ければ null。
+        $tagDescription = MimimalCmsConfig::$urlRoot === ''
+            ? RecommendTagDescription::get($tag)
+            : (JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot)->getMetadata('descriptions')[$tag] ?? null);
 
         $_dto = $staticDataGeneration->getRecommendPageDto();
 

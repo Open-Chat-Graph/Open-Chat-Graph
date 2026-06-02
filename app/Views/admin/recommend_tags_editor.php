@@ -1,13 +1,14 @@
 <?php
 /**
- * おすすめタグ定義 (ja.json) 編集GUI — 管理者専用・日本語専用・ローカル編集用途。
+ * おすすめタグ定義 ({lang}.json) 編集GUI — 管理者専用・ja/th/tw対応・ローカル編集用途。
  *
  * バックエンド契約:
- *   $_tagJson (string) … 整形済みの ja.json 生文字列
- *   $_tagData (array)  … デコード済み連想配列
- *   $_meta            … meta() (title 設定済み・__toString で metaタグ出力)
+ *   $_tagJson (string)     … 整形済みの {lang}.json 生文字列
+ *   $_tagData (array)      … デコード済み連想配列
+ *   $_jsonRelPath (string) … 編集対象の相対パス（data/{lang}.json）。未設定時は ja.json 扱い
+ *   $_meta                 … meta() (title 設定済み・__toString で metaタグ出力)
  *
- * 保存: POST /admin/recommend-tags/save に ja.json 全体を JSON ボディで送信。
+ * 保存: POST {url}/admin/recommend-tags/save に {lang}.json 全体を JSON ボディで送信（url()でロケール別）。
  *       CSRF は HttpOnly クッキーを same-origin fetch が自動送信するため追加処理不要。
  *
  * データはサーバ側で安全にエンコードして <script type="application/json"> に埋め込み、
@@ -624,7 +625,7 @@ $categoryNameJson = json_encode(
         <div class="topbar__inner">
             <div class="brand">
                 <span class="brand__mark">おすすめタグ定義</span>
-                <span class="brand__sub">app/Services/Recommend/TagDefinition/data/ja.json</span>
+                <span class="brand__sub"><?php echo $_jsonRelPath ?? 'app/Services/Recommend/TagDefinition/data/ja.json' ?></span>
             </div>
             <div class="topbar__spacer"></div>
             <div class="topbar__status" id="status">
@@ -644,7 +645,7 @@ $categoryNameJson = json_encode(
 
         <div class="note">
             <span>💾</span>
-            <span>保存するとサーバー上の <code>ja.json</code> が直接書き換わります。反映後は <code>git commit</code> で変更を残す運用です。ラベルを改名すると <code>redirects</code> に旧→新が自動追記されます。</span>
+            <span>保存するとサーバー上の <code><?php echo isset($_jsonRelPath) ? basename($_jsonRelPath) : 'ja.json' ?></code> が直接書き換わります。反映後は <code>git commit</code> で変更を残す運用です。ラベルを改名すると <code>redirects</code> に旧→新が自動追記されます。</span>
         </div>
 
         <nav class="tabs" id="tabs">

@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Services\Recommend\TagDefinition\JaTagMetadata;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use PHPUnit\Framework\TestCase;
 use Shared\MimimalCmsConfig;
 
-// docker compose exec -T app vendor/bin/phpunit app/Services/Recommend/test/JaTagMetadataTest.php
+// docker compose exec -T app vendor/bin/phpunit app/Services/Recommend/test/TagMetadataTest.php
 //
 // Ja のタグメタデータ（略称/リダイレクト/説明文/フィルタ）が ja.json から供給され、
 // 旧ハードコード const と同じ「挙動」になることを検証する。
 // ※ タグは GUI で随時編集されるため、件数や特定タグ名をハードコードせず、
 //   ja.json の実データから動的に1件取り出して検証する（編集に強い）。
-class JaTagMetadataTest extends TestCase
+class TagMetadataTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -24,9 +24,9 @@ class JaTagMetadataTest extends TestCase
 
     public function testMetadataShape(): void
     {
-        foreach (['omitPattern' => JaTagMetadata::omitPattern(),
-                  'redirects'   => JaTagMetadata::redirects(),
-                  'descriptions' => JaTagMetadata::descriptions()] as $name => $map) {
+        foreach (['omitPattern' => TagMetadata::omitPattern(),
+                  'redirects'   => TagMetadata::redirects(),
+                  'descriptions' => TagMetadata::descriptions()] as $name => $map) {
             $this->assertIsArray($map, "{$name} は配列であるべき");
             $this->assertNotEmpty($map, "{$name} が空（ja.json の読み込み失敗の疑い）");
             foreach ($map as $k => $v) {
@@ -39,7 +39,7 @@ class JaTagMetadataTest extends TestCase
     public function testExtractTagUsesOmitPattern(): void
     {
         // 略称マップから1件取り出し、ラベル→略称に変換されることを確認（データ非依存）
-        $omit = JaTagMetadata::omitPattern();
+        $omit = TagMetadata::omitPattern();
         $label = array_key_first($omit);
         $this->assertSame($omit[$label], RecommendUtility::extractTag($label));
 
@@ -53,7 +53,7 @@ class JaTagMetadataTest extends TestCase
     public function testGetValidTagReverseLookup(): void
     {
         // 略称マップのキー（正規ラベル）を渡すと、対応する値が返る
-        $omit = JaTagMetadata::omitPattern();
+        $omit = TagMetadata::omitPattern();
         $key = array_key_first($omit);
         $this->assertSame($omit[$key], RecommendUtility::getValidTag($key));
 
@@ -63,7 +63,7 @@ class JaTagMetadataTest extends TestCase
     public function testRecommendTagDescriptionGet(): void
     {
         // 説明文マップから1件取り出し、その本文が返ることを確認
-        $descs = JaTagMetadata::descriptions();
+        $descs = TagMetadata::descriptions();
         $tag = array_key_first($descs);
         $this->assertSame($descs[$tag], RecommendTagDescription::get($tag));
 

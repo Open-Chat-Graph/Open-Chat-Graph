@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend\TagDefinition\Ja;
 
-use App\Services\Recommend\TagDefinition\JaTagMetadata;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 
 /**
  * /recommend/{tag} ページに表示する「タグ固有の紹介文」。
@@ -39,6 +39,6 @@ class RecommendTagDescription
      */
     public static function get(string $tag): ?string
     {
-        return JaTagMetadata::descriptions()[$tag] ?? null;
+        return TagMetadata::descriptions()[$tag] ?? null;
     }
 }
