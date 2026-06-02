@@ -536,31 +536,24 @@ Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
-// おすすめタグ定義(data/ja.json)編集GUI（管理者専用・日本語のみ・ローカル編集用途）
+// おすすめタグ定義(data/{lang}.json)編集GUI（管理者専用・ja/th/tw対応・ローカル編集用途）
+// 編集対象は urlRoot に対応する {lang}.json（'' => ja, /tw => tw, /th => th）。
 // GETでもVerifyCsrfTokenを通し、CSRF-Tokenクッキーを発行する（保存POSTのX-CSRF-Token用）
 Route::path('admin/recommend-tags', [AdminRecommendTagController::class, 'index'])
     ->middleware([VerifyCsrfToken::class])
     ->match(function (AdminAuthService $adminAuthService) {
-        if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
         if (!$adminAuthService->auth())
             return false;
         noStore();
     });
 
-// おすすめタグ定義の保存（CSRF必須・管理者専用）
+// おすすめタグ定義の保存（CSRF必須・管理者専用・urlRootの{lang}.jsonへ）
 Route::path('admin/recommend-tags/save@post', [AdminRecommendTagController::class, 'save'])
-    ->middleware([VerifyCsrfToken::class])
-    ->match(function () {
-        return MimimalCmsConfig::$urlRoot === '';
-    });
+    ->middleware([VerifyCsrfToken::class]);
 
-// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用）
+// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用・urlRoot別）
 Route::path('admin/recommend-tags/rebuild@post', [AdminRecommendTagController::class, 'rebuild'])
-    ->middleware([VerifyCsrfToken::class])
-    ->match(function () {
-        return MimimalCmsConfig::$urlRoot === '';
-    });
+    ->middleware([VerifyCsrfToken::class]);
 
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
