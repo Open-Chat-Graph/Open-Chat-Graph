@@ -10,6 +10,7 @@ use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
+use App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shared\MimimalCmsConfig;
@@ -34,12 +35,27 @@ class RecommendOpenChatPageController
 
             $extractTag = RecommendUtility::getValidTag($tag);
         } else {
+            // th: タグ定義刷新で改称した旧サブカテゴリ由来タグ(th.jsonのredirects)を
+            // 301で新タグへ引き継ぎ、既存のGoogleランキング/被リンク資産を保全する。
+            if (MimimalCmsConfig::$urlRoot === '/th') {
+                $thRedirects = JsonRecommendUpdaterTags::forLocale('/th')->getMetadata('redirects');
+                if (isset($thRedirects[$tag]))
+                    return redirect(url('recommend/' . urlencode($thRedirects[$tag])), 301);
+            }
             $extractTag = $tag;
         }
-        
+
         $tag = $recommendPageList->getValidTag($tag);
-        if (!$tag)
+        if (!$tag) {
+            // th: 刷新で廃止した旧タグページは 404 でなく 410 Gone を返す。
+            // 「恒久的に削除された」ことを Google に明示し、再クロールキューから速やかに外す。
+            // （移行で消える旧タグのうち受け皿があるものは上の 301 で引き継ぎ済み）
+            if (MimimalCmsConfig::$urlRoot === '/th') {
+                http_response_code(410);
+                return view('errors/error', ['httpCode' => 410]);
+            }
             return false;
+        }
 
         $extractTag = $extractTag ?: $tag;
 
