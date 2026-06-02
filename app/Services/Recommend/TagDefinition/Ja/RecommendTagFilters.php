@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend\TagDefinition\Ja;
 
-use App\Services\Recommend\TagDefinition\JaTagMetadata;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shared\MimimalCmsConfig;
 
 class RecommendTagFilters
@@ -12,19 +12,19 @@ class RecommendTagFilters
     /** @return string[] */
     static function recommendPageTagFilter(): array
     {
-        return JaTagMetadata::recommendPageTagFilter();
+        return TagMetadata::recommendPageTagFilter();
     }
 
     /** @return array<string,string[]> */
     static function filteredTagSort(): array
     {
-        return JaTagMetadata::filteredTagSort();
+        return TagMetadata::filteredTagSort();
     }
 
     /** @return array<string,string> */
     static function redirectTags(): array
     {
-        return JaTagMetadata::redirects();
+        return TagMetadata::redirects();
     }
 
     static function getTopPageTagFilter(): array
@@ -33,6 +33,6 @@ class RecommendTagFilters
             return [];
         }
 
-        return array_merge(JaTagMetadata::recommendPageTagFilter(), JaTagMetadata::topPageTagFilter());
+        return array_merge(TagMetadata::recommendPageTagFilter(), TagMetadata::topPageTagFilter());
     }
 }

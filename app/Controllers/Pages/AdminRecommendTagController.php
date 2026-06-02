@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Admin\AdminAuthService;
-use App\Services\Recommend\TagDefinition\JaTagMetadata;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shadow\Kernel\Reception;
 use Shared\Exceptions\NotFoundException;
 
@@ -74,7 +74,7 @@ class AdminRecommendTagController
      */
     public function index()
     {
-        $jsonPath = JaTagMetadata::jsonPath();
+        $jsonPath = TagMetadata::jsonPath();
 
         if (!is_file($jsonPath) || !is_readable($jsonPath)) {
             return view('admin/admin_message_page', [
@@ -176,7 +176,7 @@ class AdminRecommendTagController
             return response(['ok' => false, 'error' => 'JSONの再エンコードに失敗しました。'], 500);
         }
 
-        $error = $this->writeAtomically(JaTagMetadata::jsonPath(), $encoded . "\n");
+        $error = $this->writeAtomically(TagMetadata::jsonPath(), $encoded . "\n");
         if ($error !== null) {
             return response(['ok' => false, 'error' => $error], 500);
         }
