@@ -55,6 +55,20 @@ class SchemaParserTest extends TestCase
         $t = $this->parse($sql)['t'];
         $this->assertSame([], $t->indexes);
         $this->assertArrayNotHasKey('PRIMARY', $t->indexes);
+        // PRIMARY KEY は indexes には入らないが、不足PK追加のため primaryKey に原文を保持する
+        $this->assertSame('PRIMARY KEY (`id`)', $t->primaryKey);
+    }
+
+    public function test_table_without_primary_key_has_null_primary_key(): void
+    {
+        $sql = <<<SQL
+        CREATE TABLE `np` (
+          `a` int(11) NOT NULL,
+          KEY `a` (`a`)
+        ) ENGINE=InnoDB;
+        SQL;
+
+        $this->assertNull($this->parse($sql)['np']->primaryKey);
     }
 
     public function test_unique_key_with_using_btree_and_composite(): void

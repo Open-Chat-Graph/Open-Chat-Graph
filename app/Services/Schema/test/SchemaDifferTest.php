@@ -171,4 +171,77 @@ class SchemaDifferTest extends TestCase
             }
         }
     }
+
+    /** primaryKey 付きの ParsedTable (既存 table() に PRIMARY KEY 定義を足したもの) */
+    private function tableWithPk(): ParsedTable
+    {
+        return new ParsedTable(
+            name: 'oc_sitemap_lastmod',
+            columns: [
+                'open_chat_id'    => '`open_chat_id` int(11) NOT NULL',
+                'lastmod'         => '`lastmod` datetime NOT NULL',
+                'member_snapshot' => '`member_snapshot` int(11) NOT NULL',
+            ],
+            indexes: [
+                'lastmod' => 'KEY `lastmod` (`lastmod`)',
+            ],
+            columnOrder: ['open_chat_id', 'lastmod', 'member_snapshot'],
+            createStatement: 'CREATE TABLE IF NOT EXISTS `oc_sitemap_lastmod` (...)',
+            primaryKey: 'PRIMARY KEY (`open_chat_id`)',
+        );
+    }
+
+    public function test_missing_primary_key_is_added(): void
+    {
+        // スキーマは PRIMARY KEY を定義するが、実テーブルに PRIMARY が無い（旧 `id` 非ユニーク索引のみ等）
+        // → 不足PKとして ADD PRIMARY KEY を生成する（加算のみ。silent な非ユニーク残存を防ぐ）
+        $d = $this->differ->diff(
+            self::DB,
+            $this->tableWithPk(),
+            tableExists: true,
+            existingColumns: ['open_chat_id', 'lastmod', 'member_snapshot'],
+            existingIndexes: ['lastmod'], // PRIMARY が無い
+        );
+
+        $this->assertContains(
+            'ALTER TABLE `testdb`.`oc_sitemap_lastmod` ADD PRIMARY KEY (`open_chat_id`)',
+            $d->ddls,
+        );
+        // 破壊的キーワードは出さない
+        foreach ($d->ddls as $ddl) {
+            $this->assertDoesNotMatchRegularExpression('/\b(DROP|MODIFY|CHANGE)\b/i', $ddl);
+        }
+    }
+
+    public function test_existing_primary_key_is_not_re_added(): void
+    {
+        // 既に PRIMARY がある → ADD PRIMARY KEY は生成しない（冪等）
+        $d = $this->differ->diff(
+            self::DB,
+            $this->tableWithPk(),
+            tableExists: true,
+            existingColumns: ['open_chat_id', 'lastmod', 'member_snapshot'],
+            existingIndexes: ['PRIMARY', 'lastmod'],
+        );
+
+        foreach ($d->ddls as $ddl) {
+            $this->assertStringNotContainsString('ADD PRIMARY KEY', $ddl);
+        }
+    }
+
+    public function test_no_primary_key_in_schema_means_no_pk_ddl(): void
+    {
+        // primaryKey=null（従来どおり PK 非定義）なら、PRIMARY 不在でも ADD PRIMARY KEY は出さない
+        $d = $this->differ->diff(
+            self::DB,
+            $this->table(),
+            tableExists: true,
+            existingColumns: ['open_chat_id', 'lastmod', 'member_snapshot'],
+            existingIndexes: ['lastmod'],
+        );
+
+        foreach ($d->ddls as $ddl) {
+            $this->assertStringNotContainsString('ADD PRIMARY KEY', $ddl);
+        }
+    }
 }
