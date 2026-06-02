@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Models\RecommendRepositories\RecommendTagRepositoryInterface;
+use App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags;
 use App\Services\Recommend\TagDefinition\RecommendUpdaterTagsInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
@@ -52,47 +53,27 @@ class RecommendUpdater
         $this->repository = $repository;
         if ($recommendUpdaterTags) {
             $this->recommendUpdaterTags = $recommendUpdaterTags;
-        } elseif (MimimalCmsConfig::$urlRoot === '/tw') {
-            $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\Tw\RecommendUpdaterTags::class);
-        } else if (MimimalCmsConfig::$urlRoot === '/th') {
-            // th も ja と同じ JSON 駆動マッチングへ統一（data/th.json を読む）
-            $this->recommendUpdaterTags = \App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::forLocale('/th');
         } else {
-            $this->recommendUpdaterTags = app(\App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags::class);
+            // ja('')/th/tw を同一の JSON 駆動マッチングへ統一（data/{lang}.json を読む）。
+            // 旧 tw 専用の Tw\RecommendUpdaterTags と簡易マッチングは廃止し三言語を一本化。
+            $this->recommendUpdaterTags = JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot);
         }
     }
 
     /**
      * LINEカテゴリID別のサブカテゴリタグ定義を読み出す。
      *
-     * - ja: ja.json の "subCategoriesTag" セクション (RecommendUpdaterTagsInterface 経由)
-     * - tw/th: LINE 公式 crawled subcategories.json (storage/{tw|th}/open_chat_sub_categories/)
-     *   を従来どおり FileStorage から直接読む
+     * ja/th/tw とも自言語JSON(data/{lang}.json の "subCategoriesTag" セクション)に一本化。
+     * ノイズ源だったクロール公式サブカテゴリ(tw の旧経路)は廃止した。
      *
-     * 戻り値の形は旧 storage/ja/open_chat_sub_categories/subcategories_tag.json と同一で、
-     * `{category_id: [tagDef, ...]}` の構造。tagDef は keywords 有りなら `[tag, keywords[]]`、
-     * 無しなら `tag(string)`。
+     * 戻り値の形は `{category_id: [tagDef, ...]}` の構造。tagDef は keywords 有りなら
+     * `[tag, keywords[]]`、無しなら `tag(string)`。
      *
      * @return array<string,(string|array{string,string[]})[]>
      */
     protected function getOpenChatSubCategoriesTag(): array
     {
-        if (MimimalCmsConfig::$urlRoot === '' || MimimalCmsConfig::$urlRoot === '/th') {
-            // ja/th: JSON定義(subCategoriesTag)を使う。
-            // th はノイズ源だったクロール公式サブカテゴリを捨て、th.json に一本化する。
-            return $this->recommendUpdaterTags->getSubCategoriesTag();
-        }
-
-        // tw: 既存どおり LINE 公式 crawled サブカテゴリを読む
-        $path = $this->fileStorage->getStorageFilePath('openChatSubCategories');
-        $data = json_decode(
-            file_exists($path)
-                ? $this->fileStorage->getContents('@openChatSubCategories')
-                : '{}',
-            true
-        );
-
-        return is_array($data) ? $data : [];
+        return $this->recommendUpdaterTags->getSubCategoriesTag();
     }
 
     function updateRecommendTables(bool $betweenUpdateTime = true, bool $onlyRecommend = false)
@@ -135,14 +116,9 @@ class RecommendUpdater
 
         $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
 
-        if (MimimalCmsConfig::$urlRoot === '' || MimimalCmsConfig::$urlRoot === '/th') {
-            // ja/th: フル6キーカスケード（strongest/beforeCategory/nameStrong/subCategoriesTag/
-            // descStrong/afterDescStrong + oc_tag2）。th を本格タグロジックへ統一する。
-            $this->matchAllRowsJa($onlyRecommend);
-        } else {
-            // tw: 従来の簡易マッチング（nameStrong + subCategoriesTag のみ）。次サイクルで統一予定。
-            $this->matchAllRowsNonJa();
-        }
+        // ja/th/tw とも同一のフル6キーカスケード（strongest/beforeCategory/nameStrong/
+        // subCategoriesTag/descStrong/afterDescStrong + oc_tag2）に統一。
+        $this->matchAllRows($onlyRecommend);
 
         // recommend テーブルに反映
         $this->repository->bulkInsertViaTemp('recommend', $this->recommendResults);
@@ -185,7 +161,7 @@ class RecommendUpdater
         if (!empty($this->rows)) {
             $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
 
-            $this->matchAllRowsJa(false);
+            $this->matchAllRows(false);
 
             $this->repository->applyViaShadowSwap('recommend', $this->recommendResults);
             $this->repository->applyViaShadowSwap('oc_tag',    $this->ocTagResults);
@@ -226,13 +202,13 @@ class RecommendUpdater
     }
 
     // ========================================================================
-    // バルクマッチング: 日本語環境
+    // バルクマッチング: 全言語共通（ja/th/tw）
     // ========================================================================
 
     /**
-     * 日本語環境: 全行に対してタグマッチングを実行
+     * 全行に対してタグマッチングを実行（ja/th/tw 共通のフルカスケード）
      */
-    private function matchAllRowsJa(bool $onlyRecommend): void
+    private function matchAllRows(bool $onlyRecommend): void
     {
         $this->recommendResults = [];
         $this->ocTagResults = [];
@@ -377,76 +353,6 @@ class RecommendUpdater
                 }
             }
         }
-    }
-
-    // ========================================================================
-    // バルクマッチング: 台湾・タイ環境
-    // ========================================================================
-
-    /**
-     * 台湾・タイ環境: 全行に対してタグマッチングを実行
-     */
-    private function matchAllRowsNonJa(): void
-    {
-        $this->recommendResults = [];
-        $this->ocTagResults = [];
-        $this->ocTag2Results = [];
-
-        $allIds = array_keys($this->rows);
-
-        $nameTags = array_merge(
-            $this->recommendUpdaterTags->getNameStrongTags(),
-            array_merge(...$this->getOpenChatSubCategoriesTag())
-        );
-
-        // recommend: name + description（allowDuplicateEntries=true）
-        foreach ($nameTags as $tagDef) {
-            $formattedTag = $this->extractFormattedTag($tagDef);
-            foreach ($allIds as $id) {
-                if (isset($this->recommendResults[$id]) && $this->recommendResults[$id] !== $formattedTag) continue;
-                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
-                    $this->recommendResults[$id] = $formattedTag;
-                }
-            }
-        }
-        foreach ($nameTags as $tagDef) {
-            $formattedTag = $this->extractFormattedTag($tagDef);
-            foreach ($allIds as $id) {
-                if (isset($this->recommendResults[$id]) && $this->recommendResults[$id] !== $formattedTag) continue;
-                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
-                    $this->recommendResults[$id] = $formattedTag;
-                }
-            }
-        }
-
-        // Admin override - マッチしたIDのみ上書き
-        foreach ($this->modifyTags as $id => $tag) {
-            if (isset($this->recommendResults[$id])) {
-                $this->recommendResults[$id] = $tag;
-            }
-        }
-
-        // oc_tag: name + description（allowDuplicateEntries=true）
-        foreach ($nameTags as $tagDef) {
-            $formattedTag = $this->extractFormattedTag($tagDef);
-            foreach ($allIds as $id) {
-                if (isset($this->ocTagResults[$id]) && $this->ocTagResults[$id] !== $formattedTag) continue;
-                if ($this->matchesTagDef($tagDef, $this->rows[$id]['name'])) {
-                    $this->ocTagResults[$id] = $formattedTag;
-                }
-            }
-        }
-        foreach ($nameTags as $tagDef) {
-            $formattedTag = $this->extractFormattedTag($tagDef);
-            foreach ($allIds as $id) {
-                if (isset($this->ocTagResults[$id]) && $this->ocTagResults[$id] !== $formattedTag) continue;
-                if ($this->matchesTagDef($tagDef, $this->rows[$id]['description'])) {
-                    $this->ocTagResults[$id] = $formattedTag;
-                }
-            }
-        }
-
-        // oc_tag2: 全削除のみ（台湾・タイでは再挿入なし）
     }
 
     // ========================================================================
