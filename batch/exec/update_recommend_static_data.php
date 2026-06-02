@@ -8,6 +8,7 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
@@ -47,20 +48,15 @@ try {
      */
     $recommendUpdater = app(RecommendUpdater::class);
 
-    // タグ定義JSON(ja.json/th.json)に変更があれば全レコードを再適用、無ければ通常の差分更新。
+    // タグ定義JSON(ja.json/th.json/tw.json)に変更があれば全レコードを再適用、無ければ通常の差分更新。
     //  - ja: 無停止シャドウスワップ (rebuildAllViaShadowSwap)
-    //  - th: th.json を JSON 駆動マッチングで運用するため、定義変更を検知したら
+    //  - th/tw: data/{lang}.json を JSON 駆動マッチングで運用するため、定義変更を検知したら
     //        フル再構築 (updateRecommendTables(false))。shadow-swap は ja 専用のため使わない。
-    //        これによりデプロイ後やGUI編集後に、CRON が自動で th タグを反映する。
-    //  - tw: 従来どおり差分更新のみ（tw.json 未導入）。
+    //        これによりデプロイ後やGUI編集後に、CRON が自動で th/tw タグを反映する。
     $didRebuild = false;
-    $tagJsonPath = null;
-    if (MimimalCmsConfig::$urlRoot === '') {
-        $tagJsonPath = \App\Services\Recommend\TagDefinition\JaTagMetadata::jsonPath();
-    } elseif (MimimalCmsConfig::$urlRoot === '/th') {
-        $tagJsonPath = \App\Config\AppConfig::ROOT_PATH . 'app/Services/Recommend/TagDefinition/data/th.json';
-    }
-    if ($tagJsonPath !== null) {
+    // ja/th/tw とも TagMetadata::jsonPath() でロケール別パスを解決（パス組み立てを一本化）。
+    $tagJsonPath = TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot);
+    {
         $currentHash = is_file($tagJsonPath) ? hash('sha256', (string)file_get_contents($tagJsonPath)) : '';
         $storedHash = $state->getString(StateType::recommendTagsJsonHash);
         if ($currentHash !== '' && $currentHash !== $storedHash) {
@@ -73,7 +69,7 @@ try {
                     if (MimimalCmsConfig::$urlRoot === '') {
                         $recommendUpdater->rebuildAllViaShadowSwap();
                     } else {
-                        // th: ユニークキー付きテーブルへフル再構築（差分でなく全件）
+                        // th/tw: PRIMARY KEY(id) 付きテーブルへフル再構築（差分でなく全件）
                         $recommendUpdater->updateRecommendTables(false);
                     }
                     $state->setString(StateType::recommendTagsJsonHash, $currentHash);
