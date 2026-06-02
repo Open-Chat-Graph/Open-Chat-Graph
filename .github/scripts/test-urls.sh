@@ -439,7 +439,7 @@ main() {
 
     # レコメンドページ - タイ語
     log "レコメンドページのテスト（タイ語）"
-    test_url "${BASE_URL}/th/recommend/PUBG" "レコメンド（タイ語/PUBG）"
+    test_url "${BASE_URL}/th/recommend/Roblox" "レコメンド（タイ語/Roblox）"
     echo ""
 
     # コメントページ

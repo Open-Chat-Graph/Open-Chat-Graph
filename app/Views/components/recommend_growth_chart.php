@@ -81,15 +81,16 @@ if ($useRank) {
     : sprintfT('「%1$s」の掲載部屋の最高順位は全体%2$s位（%3$s）。', $displayTag, number_format($rankCurrent), $trend);
 } else {
   // フォールバック: 合計メンバー数。色は安心できる緑/灰(赤は使わない)。
-  $label = 'メンバー数（掲載部屋の合計）';
+  $label = t('メンバー数（掲載部屋の合計）');
   $improve = $memberInc;
   $color = $improve >= 0 ? '#06c755' : '#8a9097';
   $chartPoints = ($member !== null && !empty($member['points'])) ? $member['points'] : [];
   $chart = ThemeGrowthChartSvg::build($chartPoints);
 
-  $word = $improve > 0 ? ('約' . number_format(abs($improve)) . '人増えました')
-    : ($improve < 0 ? ('約' . number_format(abs($improve)) . '人減りました') : 'ほぼ横ばいでした');
-  $line = "「{$displayTag}」の掲載部屋の合計メンバーは、この{$period}で{$word}。";
+  // 多言語対応: 増減/横ばいの語句と文全体を t()/sprintfT() でローカライズ(語順は翻訳側で並べ替え)。
+  $word = $improve > 0 ? sprintfT('約%s人増えました', number_format(abs($improve)))
+    : ($improve < 0 ? sprintfT('約%s人減りました', number_format(abs($improve))) : t('ほぼ横ばいでした'));
+  $line = sprintfT('「%1$s」の掲載部屋の合計メンバーは、この%2$sで%3$s。', $displayTag, $period, $word);
 }
 
 // 「どの部屋の話か」を具体化: 最高順位を持つ部屋をリストから引き、サムネ+名前+順位+人数の
