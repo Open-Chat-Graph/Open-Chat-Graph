@@ -48,8 +48,17 @@ try {
                 $state->setString(StateType::recommendTagsJsonHash, hash('sha256', (string)file_get_contents($jsonPath)));
             }
         } else {
-            // tw/th: recommend系テーブルにユニークキーが無くシャドウ方式が使えないため従来のフル再構築
+            // tw/th: シャドウスワップは ja 専用（rebuildAllViaShadowSwap が非ja で例外）のため
+            // フル再構築（bulkInsertViaTemp）で全件再適用する。
             $recommendUpdater->updateRecommendTables(false);
+            // th は th.json 駆動。適用済みハッシュを更新し、毎時CRONの自動検知
+            // (update_recommend_static_data.php) が直後に再度フル再適用しないようにする。
+            if (MimimalCmsConfig::$urlRoot === '/th') {
+                $thJsonPath = \App\Config\AppConfig::ROOT_PATH . 'app/Services/Recommend/TagDefinition/data/th.json';
+                if (is_file($thJsonPath)) {
+                    $state->setString(StateType::recommendTagsJsonHash, hash('sha256', (string)file_get_contents($thJsonPath)));
+                }
+            }
         }
         AdminTool::sendDiscordNotify('rebuildAllViaShadowSwap done at ' . $now);
     } finally {

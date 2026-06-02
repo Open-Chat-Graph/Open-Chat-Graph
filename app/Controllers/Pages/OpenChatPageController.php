@@ -73,7 +73,10 @@ class OpenChatPageController
                 isset($oc['category']) ? (int)$oc['category'] : null
             );
         } else {
-            $oc = $ocRepo->getOpenChatById($open_chat_id);
+            // TW/TH も ja と同じくタグ表示・関連ルームを出す。
+            // tag(recommend) / oc_tag / oc_tag2 は言語別DBに格納済みのため、
+            // ja と同じ getOpenChatByIdWithTag で tag1/2/3 を引き、同じ生成ロジックを通す。
+            $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
             if (!$oc) {
                 if (!$ocRepo->isWithinIdRange($open_chat_id)) {
                     return false;
@@ -81,44 +84,13 @@ class OpenChatPageController
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
             }
 
-            /** @var RecommendRankingRepository $recommendRankingRepository */
-            $recommendRankingRepository = app(RecommendRankingRepository::class);
-            $tags1 = $recommendRankingRepository->getRecommendTags([$open_chat_id]);
-            $tags2 = array_filter($recommendRankingRepository->getOcTags([$open_chat_id]), fn($tag) => !in_array($tag, $tags1));
-
-            $tagFirst = null;
-            $tagSecond = null;
-            $tagThird = null;
-
-            switch (count($tags1)) {
-                case 0:
-                    break;
-                case 1:
-                    $tagFirst = $tags1[array_rand($tags1)];
-                    $tagSecond = $tags2 ? $tags2[array_rand($tags2)] : null;
-                    break;
-                case 2:
-                    $tagFirst = $tags1[array_rand($tags1)];
-                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagFirst);
-                    $tagSecond = $tags1[array_rand($tags1)];
-                    $tagThird = $tags2 ? $tags2[array_rand($tags2)] : null;
-                    break;
-                default:
-                    $tagFirst = $tags1[array_rand($tags1)];
-                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagFirst);
-                    $tagSecond = $tags1[array_rand($tags1)];
-                    $tags1 = array_filter($tags1, fn($tag) => $tag !== $tagSecond);
-                    $tagThird = $tags1[array_rand($tags1)];
-            }
-
-            $recommend = $recommendGenarator->getRecommend(
-                $tags1 ? $tags1[array_rand($tags1)] : null,
-                $tags2 ? $tags2[array_rand($tags2)] : null,
-                $oc['tag3'],
-                $oc['category']
+            $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+            $similarSize = $similarSizeRoomService->fetch(
+                (int)$oc['id'],
+                (int)$oc['member'],
+                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+                isset($oc['category']) ? (int)$oc['category'] : null
             );
-            // 非 ja は similarSize を出さない（既存挙動を維持）
-            $similarSize = null;
         }
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
