@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend\TagDefinition\Ja;
 
-use App\Services\Recommend\TagDefinition\JaTagMetadata;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shared\MimimalCmsConfig;
 
 class RecommendUtility
@@ -27,13 +27,13 @@ class RecommendUtility
             $str = array_pop($parts);
         }
 
-        return JaTagMetadata::omitPattern()[$str] ?? $str;
+        return TagMetadata::omitPattern()[$str] ?? $str;
     }
 
     static function getValidTag(string|int $str): string|false
     {
         $lowercaseTag = strtolower((string)$str);
-        foreach (JaTagMetadata::omitPattern() as $key => $originalTag) {
+        foreach (TagMetadata::omitPattern() as $key => $originalTag) {
             if (strtolower($key) === $lowercaseTag) {
                 return $originalTag;
             }
