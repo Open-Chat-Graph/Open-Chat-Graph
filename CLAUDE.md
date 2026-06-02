@@ -248,16 +248,12 @@ Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) 
 
 ## Frontend Components
 
-### Separate Repositories
+React ソースは**このリポ内 `frontend/`**（別リポではない）。各サブdirが Vite+TS: `ranking`(ランキング) / `oc-app`(個別ルーム) / `all-room-stats` / `stats-graph` / `comments`。
 
-- Ranking pages: https://github.com/mimimiku778/Open-Chat-Graph-Frontend
-- Graph display: https://github.com/mimimiku778/Open-Chat-Graph-Frontend-Stats-Graph
-- Comments: https://github.com/mimimiku778/Open-Chat-Graph-Comments
-
-### Integration
-
-- React components embedded in PHP templates
-- Pre-built JavaScript bundles (no build process in main repo)
+- **ビルド**: `cd frontend/<name> && npm run build` → `public/js/...` にハッシュ付きバンドル出力（成果物は **gitignore**、コミット不要）。手ビルドはローカル確認用。
+- **PHP参照**: `getFilePath('js/react','main-*.js')`（内部 glob、`app/Helpers/functions.php`）でハッシュ名を解決 → HTML側の手修正は不要。
+- **翻訳**: 各 `frontend/<name>/src/config/translation.ts` は PHP の `storage/translation.json` と**別物**。両方直す。
+- **デプロイ**: `deploy.yml` が `frontend/<name>/**` の変更を検知し自動で `npm ci && npm run build` → 配信。
 
 ## Creating New Pages (MVC Pattern)
 
