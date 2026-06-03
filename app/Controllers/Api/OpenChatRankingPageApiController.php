@@ -63,7 +63,7 @@ class OpenChatRankingPageApiController
         }
     }
 
-    private function officialRanking(RankingType $type)
+    private function officialRankingRooms(RankingType $type): array
     {
         /** @var OpenChatOfficialRankingApiRepository $repo */
         $repo = app(OpenChatOfficialRankingApiRepository::class);
@@ -72,24 +72,46 @@ class OpenChatRankingPageApiController
         $time->modify('-1hour');
         $timeStr = $time->format('Y-m-d H:i:s');
 
-        return response($repo->findOfficialRanking($this->args, $type, $timeStr));
+        return $repo->findOfficialRanking($this->args, $type, $timeStr);
+    }
+
+    /**
+     * 現在の絞り込み（list/category/keyword/sort/order）での上位ルームを返す。
+     * @return \App\Models\ApiRepositories\OpenChatListDto[]
+     */
+    private function dispatchRanking(OpenChatStatsRankingApiRepository $repo): array
+    {
+        switch ($this->args->list) {
+            case 'hourly':
+                return $repo->findHourlyStatsRanking($this->args);
+            case 'daily':
+                return $repo->findDailyStatsRanking($this->args);
+            case 'weekly':
+                return $repo->findWeeklyStatsRanking($this->args);
+            case 'all':
+                return $repo->findStatsAll($this->args);
+            case 'ranking':
+                return $this->officialRankingRooms(RankingType::Ranking);
+            case 'rising':
+                return $this->officialRankingRooms(RankingType::Rising);
+        }
+        return [];
     }
 
     function index(OpenChatStatsRankingApiRepository $repo)
     {
-        switch ($this->args->list) {
-            case 'hourly':
-                return response($repo->findHourlyStatsRanking($this->args));
-            case 'daily':
-                return response($repo->findDailyStatsRanking($this->args));
-            case 'weekly':
-                return response($repo->findWeeklyStatsRanking($this->args));
-            case 'all':
-                return response($repo->findStatsAll($this->args));
-            case 'ranking':
-                return $this->officialRanking(RankingType::Ranking);
-            case 'rising':
-                return $this->officialRanking(RankingType::Rising);
-        }
+        return response($this->dispatchRanking($repo));
+    }
+
+    /**
+     * 回遊導線: いま表示中（現在の絞り込み）の上位ルームが持つ recommend タグを集約して返す。
+     * カテゴリ/キーワード/list（時間軸）/sort/order に連動する。ページは先頭固定。
+     */
+    function themeTags(OpenChatStatsRankingApiRepository $repo)
+    {
+        $this->args->page = 0;
+        $ids = array_map(fn($dto) => $dto->id, $this->dispatchRanking($repo));
+
+        return response($repo->aggregateRecommendTags($ids, 12));
     }
 }
