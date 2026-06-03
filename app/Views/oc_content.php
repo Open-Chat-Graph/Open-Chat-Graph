@@ -129,13 +129,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <span class="openchat-list-date" style="flex-direction: column; height: fit-content; color: #111; margin: 0 auto; gap: 12px; align-items: flex-start;">
             <?php if (is_int($oc['api_created_at'])) : ?>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-weight: bold; min-width: 72px; white-space: nowrap;"><?php echo t('カテゴリー') ?></span>
+                <span style="display: inline-flex; align-items: center; font-weight: bold; min-width: 72px; white-space: nowrap;"><?php echo t('カテゴリー') ?></span>
                 <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
               </div>
             <?php endif ?>
             <?php if (isset($recommend[2]) && $recommend[2]) : ?>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-weight: bold; min-width: 72px; white-space: nowrap;"><?php echo t('タグ') ?></span>
+                <span style="display: inline-flex; align-items: center; font-weight: bold; min-width: 72px; white-space: nowrap;"><?php echo t('タグ') ?></span>
                 <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
               </div>
             <?php endif ?>

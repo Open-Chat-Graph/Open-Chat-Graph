@@ -120,7 +120,8 @@
 .MuiChip-root.openchat-item-header-chip.category {
   font-weight: normal;
   border-radius: 8px;
-  height: 32px;
+  height: 26px;
+  font-size: 12px;
 }
 
 .MuiChip-root.openchat-item-header-chip.category:hover {
@@ -132,6 +133,8 @@
   background-color: #eefcf3;
   color: #067a37;
   font-weight: 700;
+  font-size: 14px;
+  height: 32px;
   -webkit-user-drag: none;
 }
 

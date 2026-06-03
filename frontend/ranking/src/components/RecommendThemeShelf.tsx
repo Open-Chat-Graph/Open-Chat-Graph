@@ -54,23 +54,28 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf() {
   if (themes.length === 0) return null
 
   return (
-    <section aria-label={t('関連テーマ')} style={{ display: 'block', marginBottom: 10 }}>
+    <section
+      aria-label={t('関連テーマ')}
+      style={{ display: 'block', marginBottom: 10, fontFamily: 'var(--font-family, sans-serif)' }}
+    >
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#5b6573',
+          fontSize: 13,
+          fontWeight: 800,
+          color: '#06a34a',
           marginBottom: 8,
+          letterSpacing: '0.02em',
         }}
       >
         <span
           aria-hidden="true"
-          style={{ flex: '0 0 auto', width: 3, height: 13, background: '#06c755', borderRadius: 2 }}
+          style={{ flex: '0 0 auto', width: 3, height: 14, background: '#06c755', borderRadius: 2 }}
         />
         {t('関連テーマ')}
+        <span aria-hidden="true" style={{ fontSize: 12 }}>✨</span>
       </div>
       <div style={{ position: 'relative' }}>
         <div
