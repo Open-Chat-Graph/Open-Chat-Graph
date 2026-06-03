@@ -60,6 +60,7 @@ $shelves = array_values(array_filter([
             'nohit' => t('該当するテーマがありません'),
             'tags' => $discovery->searchIndex,
             'ocApi' => url('oclist'),
+            'ocTagsApi' => url('oclist-tags'),
             'ocRoom' => url('oc'),
             'roomsHeading' => t('一致するオープンチャット'),
             'noResultAll' => t('該当するテーマ・ルームがありません'),
@@ -114,7 +115,7 @@ $shelves = array_values(array_filter([
             const cfg = document.getElementById('theme-disco-data');
             if (!input || !results || !shelves || !cfg) return;
 
-            const { base, nohit, tags, ocApi, ocRoom, roomsHeading, noResultAll, memberFmt, increaseFmt } = JSON.parse(cfg.textContent);
+            const { base, nohit, tags, ocApi, ocTagsApi, ocRoom, roomsHeading, noResultAll, memberFmt, increaseFmt } = JSON.parse(cfg.textContent);
             const MAX = 60;
             let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
             let debounceTimer = null;
@@ -198,6 +199,21 @@ $shelves = array_values(array_filter([
                 });
             };
 
+            // タグ優先フォールバック: テーマ名が直接一致しなくても、一致する部屋が持つタグを表示する。
+            // タグが1つも無いときだけ部屋を表示する（ほぼ全キーワードで何かしらタグが出る）。
+            const showTagFallback = (q) => {
+                const token = ++reqToken;
+                getJson(ocTagsApi + '?keyword=' + encodeURIComponent(q) + '&list=all&sort=member&order=desc&limit=20')
+                    .then((tagItems) => {
+                        if (token !== reqToken) return;   // 古い検索の結果は捨てる
+                        if (tagItems && tagItems.length) {
+                            results.replaceChildren(...tagItems.map((it) => chip([it.name, it.slug])));
+                        } else {
+                            showRoomFallback(q);          // タグ0件のときだけ部屋
+                        }
+                    });
+            };
+
             const render = (raw) => {
                 const q = raw.trim();
                 if (!q) {
@@ -225,13 +241,10 @@ $shelves = array_values(array_filter([
                     results.replaceChildren(...hits);
                     return;
                 }
-                // テーマ0件 → オープンチャットのフォールバック（入力が落ち着いてから取得）
-                const note = document.createElement('div');
-                note.className = 'theme-disco__note';
-                note.textContent = nohit;
-                results.replaceChildren(note);
+                // テーマ名の直接一致なし → まず「一致する部屋が持つタグ」を表示（タグ優先）。無ければ部屋。
+                results.replaceChildren();
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => showRoomFallback(q), 250);
+                debounceTimer = setTimeout(() => showTagFallback(q), 250);
             };
 
             // 検索状態をセッションに保存し、ブラウザバック時に復元する。
