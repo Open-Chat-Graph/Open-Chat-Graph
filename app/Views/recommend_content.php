@@ -142,6 +142,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
     </section>
+
+    <?php if (isset($tagList) && $tagList) : ?>
+      <?php viewComponent('theme_discovery', ['tagList' => $tagList, 'tag' => $tag, 'topPageDto' => $topPageDto]) ?>
+    <?php endif ?>
+
     <?php viewComponent('footer_inner') ?>
 
   </article>

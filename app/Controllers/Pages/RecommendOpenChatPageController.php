@@ -119,6 +119,9 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
+        // テーマ発見セクション用（/recommend 着地客の回遊導線）。カテゴリ別グループのタグ一覧。
+        $tagList = $staticDataGeneration->getTagList();
+
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
@@ -134,6 +137,7 @@ class RecommendOpenChatPageController
                 '_schema',
                 '_dto',
                 'topPageDto',
+                'tagList',
                 'canonical',
                 'tagDescription',
             ));
@@ -175,6 +179,7 @@ class RecommendOpenChatPageController
             '_schema',
             '_dto',
             'topPageDto',
+            'tagList',
             'canonical',
             'hourlyUpdatedAt',
             'tagDescription',
