@@ -44,6 +44,9 @@ class AppConfig
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;
+    // おすすめランキング Tier4（増減実績が無い部屋を拾う際の最小メンバー数）。
+    // ランキングrepo群(SQL)と BulkRecommendRankingBuilder(PHP)で共有する単一の真実の源。
+    const RECOMMEND_MIN_MEMBER_TIER4 = 15;
 
     const COMMENT_FLAG_LABELS = [
         0 => '復元',
