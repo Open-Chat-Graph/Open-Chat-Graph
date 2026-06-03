@@ -22,6 +22,31 @@ class RecommendOpenChatPageController
         private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
+    /**
+     * リダイレクト表を大文字小文字を無視して引く。
+     *
+     * ルータ(shadow/Kernel/Dispatcher/RequestParser)が URI を strtolower 済みのため、
+     * URL の $tag は常に小文字で渡る。一方 redirects のキーは元の表記を保つので、
+     * 大文字を含むキー(例: BNK / Pokemon / Signal / GMM / ChatGPT / NBA)が
+     * case-sensitive な isset() でヒットせず、301 ではなく 410 を返していた。
+     * getValidTag() と同じく case-insensitive で照合し、旧URLのSEO資産を取りこぼさない。
+     *
+     * @param array<string,string> $redirects
+     * @return string|null 転送先タグ。該当なしは null。
+     */
+    private static function lookupRedirect(array $redirects, string $tag): ?string
+    {
+        if (isset($redirects[$tag]))
+            return $redirects[$tag];
+
+        $lowerTag = strtolower($tag);
+        foreach ($redirects as $key => $value) {
+            if (strtolower($key) === $lowerTag)
+                return $value;
+        }
+        return null;
+    }
+
     function index(
         RecommendPageList $recommendPageList,
         StaticDataFile $staticDataGeneration,
@@ -30,16 +55,18 @@ class RecommendOpenChatPageController
         AppConfig::$listLimitTopRanking = 5;
         if (MimimalCmsConfig::$urlRoot === '') {
             $redirectTags = RecommendTagFilters::redirectTags();
-            if (isset($redirectTags[$tag]))
-                return redirect('recommend/' . urlencode($redirectTags[$tag]), 301);
+            $redirectTo = self::lookupRedirect($redirectTags, $tag);
+            if ($redirectTo !== null)
+                return redirect('recommend/' . urlencode($redirectTo), 301);
 
             $extractTag = RecommendUtility::getValidTag($tag);
         } else {
             // th/tw: タグ定義刷新で改称した旧サブカテゴリ由来タグ({lang}.jsonのredirects)を
             // 301で新タグへ引き継ぎ、既存のGoogleランキング/被リンク資産を保全する。
             $redirects = JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot)->getMetadata('redirects');
-            if (isset($redirects[$tag]))
-                return redirect(url('recommend/' . urlencode($redirects[$tag])), 301);
+            $redirectTo = self::lookupRedirect($redirects, $tag);
+            if ($redirectTo !== null)
+                return redirect(url('recommend/' . urlencode($redirectTo)), 301);
             $extractTag = $tag;
         }
 
