@@ -119,6 +119,11 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
+        // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
+        // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
+        $_discovery = app(\App\Services\Recommend\ThemeDiscoveryService::class)
+            ->build($staticDataGeneration->getTagList(), $tag, $topPageDto);
+
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
@@ -134,6 +139,7 @@ class RecommendOpenChatPageController
                 '_schema',
                 '_dto',
                 'topPageDto',
+                '_discovery',
                 'canonical',
                 'tagDescription',
             ));
@@ -175,6 +181,7 @@ class RecommendOpenChatPageController
             '_schema',
             '_dto',
             'topPageDto',
+            '_discovery',
             'canonical',
             'hourlyUpdatedAt',
             'tagDescription',
