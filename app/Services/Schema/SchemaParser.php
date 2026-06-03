@@ -52,13 +52,14 @@ final class SchemaParser
                 $bodyLines[] = trim($raw);
             }
 
-            [$columns, $indexes, $order] = $this->parseBody($bodyLines);
+            [$columns, $indexes, $order, $primaryKey] = $this->parseBody($bodyLines);
             $tables[$tableName] = new ParsedTable(
                 $tableName,
                 $columns,
                 $indexes,
                 $order,
                 $this->buildCreateStatement($rawLines),
+                $primaryKey,
             );
         }
 
@@ -67,13 +68,14 @@ final class SchemaParser
 
     /**
      * @param list<string> $bodyLines トリム済みの CREATE TABLE 本体行
-     * @return array{0: array<string,string>, 1: array<string,string>, 2: list<string>}
+     * @return array{0: array<string,string>, 1: array<string,string>, 2: list<string>, 3: ?string}
      */
     private function parseBody(array $bodyLines): array
     {
         $columns = [];
         $indexes = [];
         $order = [];
+        $primaryKey = null;
 
         foreach ($bodyLines as $line) {
             $def = rtrim($line, ',');
@@ -81,8 +83,10 @@ final class SchemaParser
                 continue;
             }
 
-            // PRIMARY KEY は加算対象外 (新規は CREATE 本体が持つ。既存への PRIMARY 追加は破壊的になりうるので手動)
+            // PRIMARY KEY: 定義を保持する。新規 CREATE は本体が持つので不要だが、
+            // 既存テーブルに PRIMARY が無い場合に「不足PKの追加」として ADD するために使う。
             if (preg_match('/^PRIMARY\s+KEY/i', $def)) {
+                $primaryKey = $def;
                 continue;
             }
             // FOREIGN KEY / CONSTRAINT は非スコープ
@@ -101,7 +105,7 @@ final class SchemaParser
             }
         }
 
-        return [$columns, $indexes, $order];
+        return [$columns, $indexes, $order, $primaryKey];
     }
 
     /**
