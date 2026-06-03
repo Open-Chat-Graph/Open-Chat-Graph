@@ -19,11 +19,19 @@
 - `CREATE TABLE IF NOT EXISTS` (新規テーブル)
 - `ALTER TABLE ... ADD COLUMN ...` (不足カラム)
 - `ALTER TABLE ... ADD KEY/UNIQUE KEY ...` (不足索引)
+- `ALTER TABLE ... ADD PRIMARY KEY (...)` (不足PK: スキーマがPRIMARY KEYを定義し、実テーブルに
+  PRIMARYが無い場合のみ。**追加のみ**＝既存PKの変更/削除はしない)
 
 削除・変更系(`DROP` / `MODIFY` / `CHANGE`)は**構造的に作らない**(コードパスが無い)。
 冪等性は「実DBに足りない分だけ追加する」差分判定で担保。スキーマに無くDBにある要素(ドリフト)は
 **警告ログのみ・削除しない**。→ 仮にバグがあってもデータは失われない。破壊的変更・型変更・
-PRIMARY/FOREIGN KEY 追加は手動運用。
+FOREIGN KEY 追加は手動運用。
+
+> **不足PRIMARY KEYの追加について**: スキーマ刷新で既存テーブルに `PRIMARY KEY` を入れても、従来は
+> sync が反映できず silent に非ユニークのまま残る不具合があった(例: th/tw のタグ3テーブル)。
+> 現在は「PRIMARYが無いテーブルにスキーマ定義のPKを ADD」する。重複値があると ADD は失敗するが、
+> silent drift より明示エラーの方が安全(`--dry-run` で事前確認可能)。旧来の非ユニーク索引が残っていても
+> PK追加自体は可能で、冗長索引はドリフト警告で可視化される(削除は手動)。
 
 ### ロック競合・失敗時の挙動
 
