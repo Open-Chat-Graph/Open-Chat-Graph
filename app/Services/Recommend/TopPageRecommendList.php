@@ -4,51 +4,23 @@ declare(strict_types=1);
 
 namespace App\Services\Recommend;
 
-use App\Models\Repositories\DB;
+use App\Models\Repositories\Recommend\TrendingThemeRepositoryInterface;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 
 class TopPageRecommendList
 {
+    public function __construct(
+        private TrendingThemeRepositoryInterface $trendingThemeRepository,
+    ) {}
+
     function getList(int $limit)
     {
-        // 「いま伸びている部屋」を tag と増加量(diff_member)つきで取得。
-        // 旧実装は tag のみ取得し「伸びている部屋の件数」順に並べていたため、
-        // 小規模な室を多数持つ大テーマが、少数でも大きく伸びているテーマより上位になりがちだった。
-        $hour = DB::fetchAll(
-            "SELECT
-                t2.tag, t1.diff_member
-            FROM
-                recommend AS t2
-                JOIN statistics_ranking_hour AS t1 ON t1.open_chat_id = t2.id
-                LEFT JOIN statistics_ranking_hour24 AS t3 ON t3.open_chat_id = t1.open_chat_id
-            WHERE
-                t1.diff_member >= 4 AND t3.diff_member >= 4"
-        );
-
-        $hour2 = DB::fetchAll(
-            "SELECT
-                t2.tag, t1.diff_member
-            FROM
-                recommend AS t2
-                JOIN statistics_ranking_hour AS t1 ON t1.open_chat_id = t2.id
-                LEFT JOIN statistics_ranking_hour24 AS t3 ON t3.open_chat_id = t1.open_chat_id
-            WHERE
-                t1.diff_member >= 3
-                AND t3.diff_member >= 10"
-        );
-
-        $hour24 = DB::fetchAll(
-            "SELECT
-                t2.tag, t1.diff_member
-            FROM
-                recommend AS t2
-                JOIN statistics_ranking_hour24 AS t1 ON t1.open_chat_id = t2.id
-                LEFT JOIN statistics_ranking_week AS t3 ON t3.open_chat_id = t1.open_chat_id
-            WHERE
-                t1.diff_member >= 6
-                OR (t3.diff_member >= 10 AND t1.diff_member >= 0)
-                OR (t3.diff_member >= 20)"
-        );
+        // 取得(SQL)はリポジトリに委譲し、本サービスはテーマ別の集計・並びに専念する。
+        // 旧実装は「伸びている部屋の件数」順だったが、小規模室を多数持つ大テーマが
+        // 少数でも大きく伸びているテーマより上位になりがちだったため、増加量合計順に改善。
+        $hour = $this->trendingThemeRepository->fetchRisingRoomsByHour();
+        $hour2 = $this->trendingThemeRepository->fetchRisingRoomsByHourAnd24h();
+        $hour24 = $this->trendingThemeRepository->fetchRisingRoomsByDay();
 
         $filter = RecommendTagFilters::getTopPageTagFilter();
 
@@ -65,9 +37,8 @@ class TopPageRecommendList
     /**
      * 「いま伸びている部屋」をテーマ別に集計し、急上昇テーマを返す。
      *
-     * - breadth: 伸びている部屋が $minCount 室以上あるテーマだけを採用（単発室のノイズ除去。旧実装の最小件数と同じ）。
-     * - intensity: 増加量(diff_member)の合計が大きい順に並べる（件数のみだった旧実装の改善点）。
-     *   同点は件数の多い順。
+     * - breadth: 伸びている部屋が $minCount 室以上あるテーマだけを採用（単発室のノイズ除去）。
+     * - intensity: 増加量(diff_member)の合計が大きい順に並べる。同点は件数の多い順。
      *
      * @param array<int,array{tag?:?string,diff_member?:int|null}> $rows
      * @param string[] $exclude 除外するタグ（トップページ用フィルタ＋既に上位段で採用済みのタグ）
