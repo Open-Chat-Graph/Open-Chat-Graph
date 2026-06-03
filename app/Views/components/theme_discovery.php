@@ -249,6 +249,16 @@ $shelves = array_values(array_filter([
 
             input.addEventListener('input', () => { render(input.value); save(input.value); });
 
+            // iOS Safari は <form> の submit を伴わないと Enter でキーボード(IME)が閉じない。
+            // 変換確定中(IME composition)の Enter は「確定」用なので除外し、確定後の Enter で
+            // 明示的に blur してソフトキーボードを閉じる（keyCode 229 = 変換中の保険）。
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+                    e.preventDefault();
+                    input.blur();
+                }
+            });
+
             // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
             const nav = performance.getEntriesByType?.('navigation')?.[0];
             const isBackForward = nav ? nav.type === 'back_forward' : performance.navigation?.type === 2;
