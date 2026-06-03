@@ -142,6 +142,11 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
     </section>
+
+    <?php if (isset($_discovery) && !$_discovery->isEmpty()) : ?>
+      <?php viewComponent('theme_discovery', ['discovery' => $_discovery]) ?>
+    <?php endif ?>
+
     <?php viewComponent('footer_inner') ?>
 
   </article>
