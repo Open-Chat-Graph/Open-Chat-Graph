@@ -168,79 +168,41 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
     ): RecommendListDto {
         $limit = AppConfig::LIST_LIMIT_RECOMMEND;
 
-        // Tier 1: hour_diff >= 3, hour_diff DESCでソート
-        $tier1 = $this->filterAndSort(
-            $statsCandidateIds,
-            [],
-            'hour_diff',
-            AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR,
-            fn(array $a, array $b) =>
-                self::nullLastDesc($b['hour_diff'] ?? null, $a['hour_diff'] ?? null)
-                ?: ((int)$a['id'] <=> (int)$b['id']),
-            $limit,
-            $getTag1,
-            $getTag2,
-            AppConfig::RANKING_HOUR_TABLE_NAME,
+        // 24時間の人数増加が閾値以上の部屋を、24時間増の降順で（＝「いま伸びている」）。
+        $growing = [];
+        foreach ($statsCandidateIds as $id) {
+            $row = $this->allData[$id] ?? null;
+            if ($row === null) continue;
+            if (($row['hour24_diff'] ?? null) === null || (int)$row['hour24_diff'] < AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) continue;
+            $growing[] = $row;
+        }
+        usort($growing, fn(array $a, array $b) =>
+            ((int)$b['hour24_diff'] <=> (int)$a['hour24_diff'])
+            ?: ((int)$a['id'] <=> (int)$b['id'])
+        );
+        $growing = array_slice($growing, 0, $limit);
+        $growingRows = array_map(
+            fn(array $row) => $this->formatRow($row, $getTag1, $getTag2, AppConfig::RANKING_DAY_TABLE_NAME, (int)$row['hour24_diff']),
+            $growing
         );
 
-        // Tier 2: hour24_diff >= 8, hour_diff DESC → hour24_diff DESC
-        $excludeIds = array_column($tier1, 'id');
-        $tier2 = $this->filterAndSort(
-            $statsCandidateIds,
-            $excludeIds,
-            'hour24_diff',
-            AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24,
-            fn(array $a, array $b) =>
-                self::nullLastDesc($b['hour_diff'] ?? null, $a['hour_diff'] ?? null)
-                ?: (self::nullLastDesc($b['hour24_diff'] ?? null, $a['hour24_diff'] ?? null)
-                    ?: ((int)$a['id'] <=> (int)$b['id'])),
-            $limit,
-            $getTag1,
-            $getTag2,
-            AppConfig::RANKING_DAY_TABLE_NAME,
-        );
-
-        // Tier 3: week_diff >= 10, hour_diff DESC → week_diff DESC
-        $excludeIds = array_merge($excludeIds, array_column($tier2, 'id'));
-        $tier3 = $this->filterAndSort(
-            $statsCandidateIds,
-            $excludeIds,
-            'week_diff',
-            AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK,
-            fn(array $a, array $b) =>
-                self::nullLastDesc($b['hour_diff'] ?? null, $a['hour_diff'] ?? null)
-                ?: (self::nullLastDesc($b['week_diff'] ?? null, $a['week_diff'] ?? null)
-                    ?: ((int)$a['id'] <=> (int)$b['id'])),
-            $limit,
-            $getTag1,
-            $getTag2,
-            AppConfig::RANKING_WEEK_TABLE_NAME,
-        );
-
-        // Tier 4: member DESC → hour_diff DESC, member DESC
-        $count = count($tier1) + count($tier2) + count($tier3);
-        $excludeIds = array_merge($excludeIds, array_column($tier3, 'id'));
-        $tier4Limit = $count < AppConfig::LIST_LIMIT_RECOMMEND
-            ? ($count < (int)floor(AppConfig::LIST_LIMIT_RECOMMEND)
-                ? (int)floor(AppConfig::LIST_LIMIT_RECOMMEND) - $count
-                : 5)
-            : 3;
-
-        $tier4 = $this->buildMemberTier(
+        // 伸びていない部屋は member 降順で裾を埋める（痩せタグ対策・既存の大型部屋）。
+        $member = $this->buildMemberTier(
             $memberCandidateIds,
-            $excludeIds,
-            $tier4Limit,
+            array_column($growing, 'id'),
+            $limit,
             $getTag1,
             $getTag2,
         );
 
+        // DTO は先頭(=表示順)に伸び部屋、末尾に裾を渡す（旧 hour/day/week の4段は廃止）。
         $dto = new RecommendListDto(
             $type,
             $listName,
-            $tier1,
-            $tier2,
-            $tier3,
-            $tier4,
+            $growingRows,
+            [],
+            [],
+            $member,
             $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
         );
 
@@ -275,55 +237,7 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
     }
 
     /**
-     * 指定条件でフィルタリング・ソートして行フォーマットを適用する
-     *
-     * @param int[] $candidateIds 対象ID群
-     * @param int[] $excludeIds 除外ID群
-     * @param string $diffColumn diff_memberのカラム名（hour_diff/hour24_diff/week_diff）
-     * @param int $minDiff 最小差分値
-     * @param \Closure $sortFn usort比較関数
-     * @param int $limit 最大件数
-     * @param \Closure $getTag1 tag1取得クロージャ
-     * @param \Closure $getTag2 tag2取得クロージャ
-     * @param string $tableName table_nameに設定する値
-     * @return array フォーマット済み行の配列
-     */
-    private function filterAndSort(
-        array $candidateIds,
-        array $excludeIds,
-        string $diffColumn,
-        int $minDiff,
-        \Closure $sortFn,
-        int $limit,
-        \Closure $getTag1,
-        \Closure $getTag2,
-        string $tableName,
-    ): array {
-        $excludeMap = array_flip($excludeIds);
-        $filtered = [];
-
-        foreach ($candidateIds as $id) {
-            if (isset($excludeMap[$id])) continue;
-            $row = $this->allData[$id] ?? null;
-            if ($row === null) continue;
-            if (($row[$diffColumn] ?? null) === null || (int)$row[$diffColumn] < $minDiff) continue;
-            $filtered[] = $row;
-        }
-
-        usort($filtered, $sortFn);
-
-        if (count($filtered) > $limit) {
-            $filtered = array_slice($filtered, 0, $limit);
-        }
-
-        return array_map(
-            fn(array $row) => $this->formatRow($row, $getTag1, $getTag2, $tableName),
-            $filtered
-        );
-    }
-
-    /**
-     * Tier 4: member DESCで取得後、hour_diff DESC, member DESCで再ソート
+     * 伸びていない部屋を member DESC で裾埋めする（id ASC タイブレーク）。
      *
      * SQL条件と同一: (rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL)
      *   OR oc.member >= AppConfig::RECOMMEND_MIN_MEMBER_TIER4
@@ -381,6 +295,7 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         \Closure $getTag1,
         \Closure $getTag2,
         string $tableName,
+        ?int $diff24h = null,
     ): array {
         return [
             'id' => $row['id'],
@@ -400,6 +315,8 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             'tag1' => $getTag1($row),
             'tag2' => $getTag2($row),
             'table_name' => $tableName,
+            // 伸び部屋のみ24h増を持たせる（裾は null＝バッジ非表示）。SQLランキングの diff_member_24h と整合。
+            'diff_member_24h' => $diff24h,
         ];
     }
 }

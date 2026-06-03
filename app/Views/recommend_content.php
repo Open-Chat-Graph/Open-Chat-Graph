@@ -60,27 +60,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       ]) ?>
 
     </section>
-    <?php if (isset($recommend)) : ?>
-      <header class="recommend-ranking-section-header" style="padding: 0 0 4px 16px;">
-        <aside class="list-aside">
-          <details class="icon-desc">
-            <summary style="font-size: 13px; font-weight: normal; color: #b7b7b7"><?php echo t('人数増加アイコンの説明') ?></summary>
-            <div class="list-aside-details">
-              <small class="list-aside-desc">🔥：<?php echo sprintfT('過去1時間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR) ?></small>
-              <small class="list-aside-desc">🚀：<?php echo sprintfT('過去24時間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) ?></small>
-              <small class="list-aside-desc">
-                <span style="margin: 0 4px;">
-                  <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
-                    <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
-                  </svg>
-                </span>：<?php echo sprintfT('過去1週間で%s人以上増加', AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK) ?>
-              </small>
-              <small class="list-aside-desc">🏆：<?php echo t('リスト内で最も人数が多いトークルーム') ?></small>
-            </div>
-          </details>
-        </aside>
-      </header>
-    <?php endif ?>
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <?php if ($enableAdsense): ?>

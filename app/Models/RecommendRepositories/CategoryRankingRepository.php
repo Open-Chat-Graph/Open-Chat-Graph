@@ -18,7 +18,8 @@ class CategoryRankingRepository extends AbstractRecommendRankingRepository
         return DB::fetchAll(
             "SELECT
                 {$select},
-                '{$table}' AS table_name
+                '{$table}' AS table_name,
+                ranking.diff_member AS diff_member_24h
             FROM
                 open_chat AS oc
                 JOIN (
