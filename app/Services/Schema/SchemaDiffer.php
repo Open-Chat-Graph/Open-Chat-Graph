@@ -59,12 +59,21 @@ final class SchemaDiffer
             }
         }
 
-        // --- 不足索引を ADD (PRIMARY/CONSTRAINT は ParsedTable に含まれない) ---
+        // --- 不足索引を ADD (PRIMARY は別途下で扱う / CONSTRAINT は ParsedTable に含まれない) ---
         // indexDef は "UNIQUE KEY `x` (...)" 形式。ALTER TABLE ... ADD <indexDef> は MySQL/MariaDB 両対応。
         foreach ($expected->indexes as $indexName => $indexDef) {
             if (!isset($existingIdxSet[$indexName])) {
                 $ddls[] = "ALTER TABLE {$qualified} ADD {$indexDef}";
             }
+        }
+
+        // --- 不足している PRIMARY KEY を ADD (スキーマが定義しており、実テーブルに PRIMARY が無い時だけ) ---
+        // 「加算のみ」の方針を維持: 既存 PRIMARY の変更/削除はしない。スキーマ刷新で PRIMARY KEY を
+        // 入れても sync が既存テーブルへ反映できず silent に非ユニークのまま残る不具合を防ぐ。
+        // 重複値があると ADD は失敗するが、それは silent drift より明示エラーの方が安全（dry-run で事前確認可能）。
+        // 旧来の非ユニーク索引 (例 `id`) が残っていても PRIMARY 追加自体は可能（冗長索引はドリフト警告で可視化）。
+        if ($expected->primaryKey !== null && !isset($existingIdxSet['PRIMARY'])) {
+            $ddls[] = "ALTER TABLE {$qualified} ADD {$expected->primaryKey}";
         }
 
         // --- ドリフト検出 (削除はしない、警告のみ) ---

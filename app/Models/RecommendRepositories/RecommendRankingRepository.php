@@ -18,7 +18,8 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
         return DB::fetchAll(
             "SELECT
                 {$select},
-                '{$table}' AS table_name
+                '{$table}' AS table_name,
+                ranking.diff_member AS diff_member_24h
             FROM
                 (
                     SELECT
@@ -140,7 +141,7 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
                         LEFT JOIN statistics_ranking_hour AS rh2 ON oc.id = rh2.open_chat_id
                     WHERE
                         oc.id NOT IN ({$ids})
-                        AND ((rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= 15)
+                        AND ((rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= " . \App\Config\AppConfig::RECOMMEND_MIN_MEMBER_TIER4 . ")
                     ORDER BY
                         oc.member DESC
                     LIMIT

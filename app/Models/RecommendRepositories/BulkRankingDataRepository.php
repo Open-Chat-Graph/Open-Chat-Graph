@@ -49,7 +49,7 @@ class BulkRankingDataRepository implements BulkRankingDataRepositoryInterface
                 sh.open_chat_id IS NOT NULL
                 OR sh24.open_chat_id IS NOT NULL
                 OR sw.open_chat_id IS NOT NULL
-                OR oc.member >= 15"
+                OR oc.member >= " . \App\Config\AppConfig::RECOMMEND_MIN_MEMBER_TIER4
         );
 
         $indexed = [];
