@@ -325,8 +325,9 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
     /**
      * Tier 4: member DESCで取得後、hour_diff DESC, member DESCで再ソート
      *
-     * 旧SQLの条件: (rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= 15
-     * → hour_diffまたはhour24_diffが存在するか、member >= 15であること
+     * SQL条件と同一: (rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL)
+     *   OR oc.member >= AppConfig::RECOMMEND_MIN_MEMBER_TIER4
+     * → hour_diffまたはhour24_diffが存在するか、member が下限以上であること
      */
     private function buildMemberTier(
         array $candidateIds,
@@ -342,9 +343,10 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             if (isset($excludeMap[$id])) continue;
             $row = $this->allData[$id] ?? null;
             if ($row === null) continue;
-            // 旧SQLの条件を再現: (hour IS NOT NULL OR hour24 IS NOT NULL) OR member >= 15
+            // SQLランキング(BulkRankingDataRepository / 各RankingRepository)と同条件:
+            //   (hour IS NOT NULL OR hour24 IS NOT NULL) OR member >= RECOMMEND_MIN_MEMBER_TIER4
             $hasHourOrHour24 = $row['hour_diff'] !== null || $row['hour24_diff'] !== null;
-            if (!$hasHourOrHour24 && (int)$row['member'] < 15) continue;
+            if (!$hasHourOrHour24 && (int)$row['member'] < AppConfig::RECOMMEND_MIN_MEMBER_TIER4) continue;
             $filtered[] = $row;
         }
 
