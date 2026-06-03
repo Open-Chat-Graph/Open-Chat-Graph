@@ -127,6 +127,18 @@
   background-color: #f5f5f5;
 }
 
+/* 急上昇テーマ送客チップ（/ranking → /recommend）。形は既存 .category と共通（角丸8px）で、色だけ緑にしてサブカテゴリ絞り込みと区別する。-webkit-user-drag でリンクのネイティブドラッグを抑止（ドラッグ横スクロールを邪魔しない）。 */
+.MuiChip-root.openchat-item-header-chip.theme-link {
+  background-color: #eefcf3;
+  color: #067a37;
+  font-weight: 700;
+  -webkit-user-drag: none;
+}
+
+.MuiChip-root.openchat-item-header-chip.theme-link:hover {
+  background-color: #e2f9ea;
+}
+
 .MuiChip-root.openchat-item-header-chip.selected {
   background-color: #1f1f1f;
   color: #fff;
