@@ -60,7 +60,8 @@ $shelves = array_values(array_filter([
     ) ?></script>
 
     <style>
-        .theme-disco{margin-top:10px;padding:18px 1rem 6px;border-top:1px solid #eef0f3}
+        /* サイトのグローバル section{display:flex;justify-content:center} を打ち消す（既存 .recommend-ranking-section と同様） */
+        .theme-disco{display:block;text-align:left;margin-top:10px;padding:18px 1rem 6px;border-top:1px solid #eef0f3}
         .theme-disco__title{margin:0 0 12px;padding:0;display:flex;align-items:center;font-size:15px;font-weight:700;color:#0f1620;letter-spacing:.02em}
         .theme-disco__title::before{content:"";flex:0 0 auto;width:3px;height:15px;background:#06c755;border-radius:2px;margin-right:8px}
         .theme-disco__search{position:relative;display:block;width:100%}
@@ -133,7 +134,26 @@ $shelves = array_values(array_filter([
                 results.replaceChildren(...hits);
             };
 
-            input.addEventListener('input', () => render(input.value));
+            // 検索状態をセッションに保存し、ブラウザバック時に復元する。
+            // （チップで他テーマへ遷移→戻る、で検索語が消えて使いづらい問題への対処）
+            const STORE_KEY = 'themeDiscoQ:' + location.pathname;
+            const save = (q) => {
+                try { q ? sessionStorage.setItem(STORE_KEY, q) : sessionStorage.removeItem(STORE_KEY); } catch (e) { /* private mode 等は無視 */ }
+            };
+            const restore = () => {
+                let q = '';
+                try { q = sessionStorage.getItem(STORE_KEY) || ''; } catch (e) { /* noop */ }
+                if (q && !input.value) input.value = q;
+                if (input.value) render(input.value);
+            };
+
+            input.addEventListener('input', () => { render(input.value); save(input.value); });
+
+            // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
+            const nav = performance.getEntriesByType?.('navigation')?.[0];
+            const isBackForward = nav ? nav.type === 'back_forward' : performance.navigation?.type === 2;
+            if (isBackForward) restore();
+            window.addEventListener('pageshow', (e) => { if (e.persisted) restore(); });
         })();
     </script>
 </section>
