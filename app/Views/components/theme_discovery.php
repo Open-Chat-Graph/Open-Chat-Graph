@@ -119,6 +119,11 @@ $shelves = array_values(array_filter([
             let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
             let debounceTimer = null;
 
+            // 検索の正規化: 半角全角(NFKC)・大文字小文字(toLowerCase)・カタカナ/ひらがな(カナ→ひら) を無視して一致させる。
+            const norm = (s) => String(s).normalize('NFKC').toLowerCase()
+                .replace(/[ァ-ヶ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+            const normTags = tags.map((t) => norm(t[0])); // タグ表示名の正規化済みインデックス（初回のみ計算）
+
             const chip = ([name, slug]) => {
                 const a = document.createElement('a');
                 a.className = 'theme-disco-chip';
@@ -206,11 +211,11 @@ $shelves = array_values(array_filter([
                 shelves.hidden = true;
                 results.hidden = false;
 
-                const ql = q.toLowerCase();
+                const nq = norm(q);
                 const hits = [];
-                for (const tag of tags) {
-                    if (tag[0].toLowerCase().includes(ql)) {
-                        hits.push(chip(tag));
+                for (let i = 0; i < tags.length; i++) {
+                    if (normTags[i].includes(nq)) {
+                        hits.push(chip(tags[i]));
                         if (hits.length >= MAX) break;
                     }
                 }
