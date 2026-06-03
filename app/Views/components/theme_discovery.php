@@ -55,7 +55,17 @@ $shelves = array_values(array_filter([
     </div>
 
     <script type="application/json" id="theme-disco-data"><?php echo json_encode(
-        ['base' => $base, 'nohit' => t('該当するテーマがありません'), 'tags' => $discovery->searchIndex],
+        [
+            'base' => $base,
+            'nohit' => t('該当するテーマがありません'),
+            'tags' => $discovery->searchIndex,
+            'ocApi' => url('oclist'),
+            'ocRoom' => url('oc'),
+            'roomsHeading' => t('一致するオープンチャット'),
+            'noResultAll' => t('該当するテーマ・ルームがありません'),
+            'memberFmt' => t('メンバー %s人'),
+            'increaseFmt' => t('%s人増加'),
+        ],
         JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE
     ) ?></script>
 
@@ -86,6 +96,15 @@ $shelves = array_values(array_filter([
         .theme-disco-chip--hot{color:#067a37;background:#eefcf3;border-color:#bfead0;font-weight:700}
         .theme-disco-chip--hot:hover{background:#e2f9ea;border-color:#a6e0bd}
         .theme-disco__empty{font-size:13px;color:#9aa3af;padding:6px 2px}
+        /* テーマ0件時のフォールバック（一致するオープンチャット＝部屋。チップでなくリスト行で“部屋”と分かる見せ方） */
+        .theme-disco__rooms{display:block;width:100%}
+        .theme-disco__note{font-size:13px;color:#9aa3af;padding:2px 2px 0}
+        .theme-disco__rooms-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#5b6573;margin:10px 0 8px}
+        .theme-disco__rooms-h::before{content:"💬";font-size:12px}
+        .theme-disco__room{display:flex;flex-direction:column;gap:2px;padding:9px 11px;margin-bottom:8px;background:#fff;border:1px solid #eef0f3;border-radius:10px;text-decoration:none}
+        .theme-disco__room:active{background:#f6f8fa}
+        .theme-disco__room-name{font-size:14px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .theme-disco__room-meta{font-size:12px;color:#5b6573}
     </style>
     <script>
         (() => {
@@ -95,8 +114,10 @@ $shelves = array_values(array_filter([
             const cfg = document.getElementById('theme-disco-data');
             if (!input || !results || !shelves || !cfg) return;
 
-            const { base, nohit, tags } = JSON.parse(cfg.textContent);
+            const { base, nohit, tags, ocApi, ocRoom, roomsHeading, noResultAll, memberFmt, increaseFmt } = JSON.parse(cfg.textContent);
             const MAX = 60;
+            let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
+            let debounceTimer = null;
 
             const chip = ([name, slug]) => {
                 const a = document.createElement('a');
@@ -106,9 +127,77 @@ $shelves = array_values(array_filter([
                 return a;
             };
 
+            const fmt = (tpl, v) => String(tpl).replace('%s', v);
+
+            // テーマ0件時のフォールバック行（オープンチャット＝部屋）。textContent のみ＝XSS不可、href は /oc/<int id>。
+            const roomRow = (r) => {
+                const a = document.createElement('a');
+                a.className = 'theme-disco__room';
+                a.href = ocRoom + '/' + encodeURIComponent(r.id);
+                const name = document.createElement('span');
+                name.className = 'theme-disco__room-name';
+                name.textContent = r.name;
+                const meta = document.createElement('span');
+                meta.className = 'theme-disco__room-meta';
+                meta.textContent = fmt(memberFmt, Number(r.member || 0).toLocaleString());
+                const inc = Number(r.increasedMember || 0);
+                if (inc > 0) {
+                    const pos = document.createElement('span');
+                    pos.className = 'positive';
+                    const stat = document.createElement('span');
+                    stat.className = 'openchat-item-stats';
+                    stat.textContent = ' ・ ' + fmt(increaseFmt, inc.toLocaleString());
+                    pos.appendChild(stat);
+                    meta.appendChild(pos);
+                }
+                a.append(name, meta);
+                return a;
+            };
+
+            const getJson = (url) => fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then((res) => res.ok ? res.json() : null)
+                .then((data) => Array.isArray(data) ? data : null)
+                .catch(() => null);
+
+            // キーワードに一致する部屋: 24時間の増加TOP3 → 0件なら全体(member順)TOP3。
+            const fetchRooms = async (q) => {
+                const enc = encodeURIComponent(q);
+                let rooms = await getJson(ocApi + '?keyword=' + enc + '&list=daily&sort=increase&order=desc&limit=3');
+                if (!rooms || !rooms.length) {
+                    rooms = await getJson(ocApi + '?keyword=' + enc + '&list=all&sort=member&order=desc&limit=3');
+                }
+                return rooms || [];
+            };
+
+            const showRoomFallback = (q) => {
+                const token = ++reqToken;
+                fetchRooms(q).then((rooms) => {
+                    if (token !== reqToken) return; // 古い検索の結果は捨てる
+                    if (!rooms.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'theme-disco__empty';
+                        empty.textContent = noResultAll;
+                        results.replaceChildren(empty);
+                        return;
+                    }
+                    const box = document.createElement('div');
+                    box.className = 'theme-disco__rooms';
+                    const note = document.createElement('div');
+                    note.className = 'theme-disco__note';
+                    note.textContent = nohit;           // 一致するテーマはありません（フォールバックである旨）
+                    const head = document.createElement('div');
+                    head.className = 'theme-disco__rooms-h';
+                    head.textContent = roomsHeading;     // 一致するオープンチャット（＝部屋）
+                    box.append(note, head, ...rooms.map(roomRow));
+                    results.replaceChildren(box);
+                });
+            };
+
             const render = (raw) => {
-                const q = raw.trim().toLowerCase();
+                const q = raw.trim();
                 if (!q) {
+                    clearTimeout(debounceTimer);
+                    reqToken++;
                     results.hidden = true;
                     results.replaceChildren();
                     shelves.hidden = false;
@@ -117,21 +206,27 @@ $shelves = array_values(array_filter([
                 shelves.hidden = true;
                 results.hidden = false;
 
+                const ql = q.toLowerCase();
                 const hits = [];
                 for (const tag of tags) {
-                    if (tag[0].toLowerCase().includes(q)) {
+                    if (tag[0].toLowerCase().includes(ql)) {
                         hits.push(chip(tag));
                         if (hits.length >= MAX) break;
                     }
                 }
-                if (hits.length === 0) {
-                    const empty = document.createElement('div');
-                    empty.className = 'theme-disco__empty';
-                    empty.textContent = nohit;
-                    results.replaceChildren(empty);
+                if (hits.length) {
+                    clearTimeout(debounceTimer);
+                    reqToken++;                          // 進行中のフォールバック取得を無効化
+                    results.replaceChildren(...hits);
                     return;
                 }
-                results.replaceChildren(...hits);
+                // テーマ0件 → オープンチャットのフォールバック（入力が落ち着いてから取得）
+                const note = document.createElement('div');
+                note.className = 'theme-disco__note';
+                note.textContent = nohit;
+                results.replaceChildren(note);
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => showRoomFallback(q), 250);
             };
 
             // 検索状態をセッションに保存し、ブラウザバック時に復元する。
