@@ -41,23 +41,17 @@
                 <?php else : ?>
                   <span><?php echo sprintfT('メンバー %s人', formatMember($oc['member'])) ?></span>
                 <?php endif ?>
-                <?php if (isset($oc['table_name']) && $oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME) : ?>
-                  <span aria-hidden="true" style="font-size: 9px; user-select: none;">🔥</span>
-                <?php endif ?>
-                <?php if (isset($oc['table_name']) && $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME) : ?>
-                  <span aria-hidden="true" style="font-size: 9px; user-select: none;">🚀</span>
-                <?php endif ?>
-                <?php if (isset($oc['table_name']) && $oc['table_name'] === AppConfig::RANKING_WEEK_TABLE_NAME) : ?>
-                  <svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium show-north css-162gv95" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="NorthIcon">
-                    <path d="m5 9 1.41 1.41L11 5.83V22h2V5.83l4.59 4.59L19 9l-7-7-7 7z"></path>
-                  </svg>
-                <?php endif ?>
               </span>
             <?php endif ?>
             <?php if (isset($oc['api_created_at']) && $showApiCreatedAt) : ?>
               <span class="registration-date"><?php echo t('ルーム開設') . ' ' . convertDatetime($oc['api_created_at'], false) ?></span>
             <?php endif ?>
           </div>
+          <?php // 24時間の人数増加は独立行に（メンバー行に入れると溢れるため）。伸び部屋のみ表示。 ?>
+          <?php $diff24h = (int)($oc['diff_member_24h'] ?? 0); ?>
+          <?php if ($diff24h > 0) : ?>
+            <div class="positive" style="font-size: 13px; margin-top: 1px;"><span aria-hidden="true" style="font-size: 11px; user-select: none;">🚀</span> <span class="openchat-item-stats"><?php echo sprintfT('%s人増加', formatMember($diff24h)) ?></span></div>
+          <?php endif ?>
         </footer>
       </div>
     </li>
