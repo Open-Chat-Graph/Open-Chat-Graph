@@ -131,7 +131,12 @@ $shelves = array_values(array_filter([
             let debounceTimer = null;
             const clearBtn = document.getElementById('theme-disco-clear');
             const shelvesHeight = shelves.offsetHeight;   // 検索中の高さ確保（レイアウトシフト防止）
-            const toggleClear = () => { if (clearBtn) clearBtn.hidden = !input.value; };
+            // IME変換中フラグ。変換確定前は✕を隠す＝確定前クリアを物理的に起こさせない。
+            // これで iOS Safari の「変換中に value を消すとキーボードは出るが入力できない」ゾンビ状態を根本から回避。
+            let composing = false;
+            const toggleClear = () => { if (clearBtn) clearBtn.hidden = !input.value || composing; };
+            input.addEventListener('compositionstart', () => { composing = true; toggleClear(); });
+            input.addEventListener('compositionend', () => { composing = false; toggleClear(); });
             const reserve = (on) => { results.style.minHeight = (on && shelvesHeight) ? shelvesHeight + 'px' : ''; };
 
             // 検索の正規化: 半角全角(NFKC)・大文字小文字(toLowerCase)・カタカナ/ひらがな(カナ→ひら) を無視して一致させる。
@@ -291,31 +296,11 @@ $shelves = array_values(array_filter([
                 }
             });
 
-            // 変換(IME)中かどうかを追跡。クリア時の分岐に使う。
-            let composing = false;
-            input.addEventListener('compositionstart', () => { composing = true; });
-            input.addEventListener('compositionend', () => { composing = false; });
-
             if (clearBtn) {
                 // クリア✕は span（role=button・非フォーカス要素）。タップしても入力欄の focus(=IME/キーボード)を
-                // 奪わないので、確定済みテキストは「消すだけ」でそのまま入力を続けられる（touchstart/mousedown で
-                // focus 移動を抑止）。
-                // ただし iOS Safari は「変換中(IME composition)に value を消す」とキーボードは出るのに入力
-                // できないゾンビ状態が残る。そこで変換中のときだけ blur で composition を終了→消去→focus で
-                // IME を作り直す（同期実行なのでソフトキーボードは閉じない）。確定済みのときは余計な blur を
-                // しないのでフォーカスもキーボードも一切ぶれない。
-                const doClear = () => {
-                    if (composing) {
-                        input.blur();
-                        input.value = '';
-                        input.focus();
-                    } else {
-                        input.value = '';
-                    }
-                    render('');
-                    save('');
-                    toggleClear();
-                };
+                // 奪わないので、消去後そのまま入力を続けられる（touchstart/mousedown で focus 移動を抑止）。
+                // 変換中は toggleClear が✕を隠すため、ここに来る時点で必ず確定済み＝value消去は常に安全。
+                const doClear = () => { input.value = ''; render(''); save(''); toggleClear(); };
                 clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doClear(); }, { passive: false });
                 clearBtn.addEventListener('mousedown', (e) => e.preventDefault()); // PC: 入力欄のフォーカスを奪わない
                 clearBtn.addEventListener('click', () => { if (input.value) doClear(); });
