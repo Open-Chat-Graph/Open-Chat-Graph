@@ -59,20 +59,25 @@ class OpenChatStatsRankingApiRepository
         $rows = DB::fetchAll(
             "SELECT r.tag, COUNT(*) AS cnt
              FROM recommend AS r
-             WHERE r.id IN ({$in})
+             WHERE r.id IN ({$in}) AND TRIM(r.tag) <> ''
              GROUP BY r.tag
              ORDER BY cnt DESC, r.tag ASC
              LIMIT " . (int)$limit,
             $params
         );
 
-        return array_map(
-            fn($row) => [
-                'name' => RecommendUtility::extractTag($row['tag']),
-                'slug' => urlencode((string)$row['tag']),
-            ],
-            $rows
-        );
+        // 空タグ・表示名が空になるタグは出さない（空チップ防止）。
+        $items = [];
+        foreach ($rows as $row) {
+            $tag = (string)$row['tag'];
+            $name = RecommendUtility::extractTag($tag);
+            if ($tag === '' || trim($name) === '') {
+                continue;
+            }
+            $items[] = ['name' => $name, 'slug' => urlencode($tag)];
+        }
+
+        return $items;
     }
 
     private function getStatsRanking(string $tableName, OpenChatApiArgs $args): array
