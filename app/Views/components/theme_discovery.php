@@ -292,7 +292,10 @@ $shelves = array_values(array_filter([
             if (clearBtn) {
                 // クリア✕は span（role=button・非フォーカス要素）。タップしても入力欄の focus(=IME/キーボード)を
                 // 奪わないので消去後そのまま入力できる。iOS の保険として touchstart でも focus 移動を抑止。
-                const doClear = () => { input.value = ''; render(''); save(''); toggleClear(); };
+                // iOS Safari 対策: 変換(IME)中に value を消すと「キーボードは出るが入力できない」状態になる。
+                // blur で composition を確実に終了させてから消去し、即 focus し直して IME をリセットする
+                // （同期実行なのでソフトキーボードは閉じない）。
+                const doClear = () => { input.blur(); input.value = ''; render(''); save(''); toggleClear(); input.focus(); };
                 clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doClear(); }, { passive: false });
                 clearBtn.addEventListener('mousedown', (e) => e.preventDefault()); // PC: 入力欄のフォーカスを奪わない
                 clearBtn.addEventListener('click', () => { if (input.value) doClear(); });
