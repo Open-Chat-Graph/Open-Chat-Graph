@@ -142,7 +142,12 @@ class OpenChatPageController
             $_meta->title,
             $_meta->description,
             new \DateTime($oc['created_at']),
-            new \DateTime($_statsDto->endDate),
+            // dateModified は「ページ内容が実際に変わった日」(oc_sitemap_lastmod.lastmod) を優先する。
+            // 統計テーブルの最新日(endDate)を使うと、生きている全室が毎日 dateModified を更新し
+            // 「307,895室すべてが常時更新」に見えて鮮度シグナルが希釈される。lastmod は
+            // メンバー数が有意に動いた日 or メタ変更日のみ進むため、room ごとに安定する。
+            // oc_sitemap_lastmod 未登録の room (API/SQLite 経路含む) は従来どおり endDate にフォールバック。
+            new \DateTime($oc['lastmod'] ?? $_statsDto->endDate),
             $oc,
         );
 
