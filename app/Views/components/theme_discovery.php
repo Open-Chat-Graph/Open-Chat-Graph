@@ -83,6 +83,8 @@ $shelves = array_values(array_filter([
         /* font-size は必ず16px以上: iOS Safari のフォーカス時オートズーム回避 */
         .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
         .theme-disco__input::placeholder{color:#9aa3af}
+        /* type=search のネイティブ取消ボタンを抑止（自作✕と二重表示になるため）。iOS は元々非表示 */
+        .theme-disco__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
         .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
         .theme-disco__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
         .theme-disco__clear:hover{color:#5b6573}
@@ -289,13 +291,31 @@ $shelves = array_values(array_filter([
                 }
             });
 
+            // 変換(IME)中かどうかを追跡。クリア時の分岐に使う。
+            let composing = false;
+            input.addEventListener('compositionstart', () => { composing = true; });
+            input.addEventListener('compositionend', () => { composing = false; });
+
             if (clearBtn) {
                 // クリア✕は span（role=button・非フォーカス要素）。タップしても入力欄の focus(=IME/キーボード)を
-                // 奪わないので消去後そのまま入力できる。iOS の保険として touchstart でも focus 移動を抑止。
-                // iOS Safari 対策: 変換(IME)中に value を消すと「キーボードは出るが入力できない」状態になる。
-                // blur で composition を確実に終了させてから消去し、即 focus し直して IME をリセットする
-                // （同期実行なのでソフトキーボードは閉じない）。
-                const doClear = () => { input.blur(); input.value = ''; render(''); save(''); toggleClear(); input.focus(); };
+                // 奪わないので、確定済みテキストは「消すだけ」でそのまま入力を続けられる（touchstart/mousedown で
+                // focus 移動を抑止）。
+                // ただし iOS Safari は「変換中(IME composition)に value を消す」とキーボードは出るのに入力
+                // できないゾンビ状態が残る。そこで変換中のときだけ blur で composition を終了→消去→focus で
+                // IME を作り直す（同期実行なのでソフトキーボードは閉じない）。確定済みのときは余計な blur を
+                // しないのでフォーカスもキーボードも一切ぶれない。
+                const doClear = () => {
+                    if (composing) {
+                        input.blur();
+                        input.value = '';
+                        input.focus();
+                    } else {
+                        input.value = '';
+                    }
+                    render('');
+                    save('');
+                    toggleClear();
+                };
                 clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doClear(); }, { passive: false });
                 clearBtn.addEventListener('mousedown', (e) => e.preventDefault()); // PC: 入力欄のフォーカスを奪わない
                 clearBtn.addEventListener('click', () => { if (input.value) doClear(); });
