@@ -40,6 +40,10 @@ class IndexPageController
 
         $_updatedAt = $dto->rankingUpdatedAt;
 
+        // ホームの「テーマを探す」検索（searchOnly）用。getTagList は @tagList キャッシュ読みで安価。
+        $_discovery = app(\App\Services\Recommend\ThemeDiscoveryService::class)
+            ->build($staticDataGeneration->getTagList(), '', $dto);
+
         return view('top_content', compact(
             '_meta',
             '_css',
@@ -48,6 +52,7 @@ class IndexPageController
             'dto',
             'officialDto',
             'officialDto2',
+            '_discovery',
         ));
     }
 }
