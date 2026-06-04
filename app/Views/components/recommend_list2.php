@@ -30,7 +30,7 @@ if ($recommend->type === RecommendListType::Category) {
         </div>
     </header>
 
-    <?php viewComponent('open_chat_list_recommend', compact('recommend', 'id') + ['limit' => true, 'shuffle' => true]) ?>
+    <?php viewComponent('open_chat_list_recommend', compact('recommend', 'id') + ['limit' => true, 'shuffle' => true, 'hideIncrease' => $hideIncrease ?? false]) ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot][htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">
