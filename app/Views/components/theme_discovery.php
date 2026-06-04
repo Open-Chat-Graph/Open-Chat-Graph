@@ -86,8 +86,8 @@ $shelves = array_values(array_filter([
         .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
         .theme-disco__input{padding-right:44px}
         .theme-disco__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
-        .theme-disco__clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;color:#9aa3af;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0}
-        .theme-disco__clear:hover{background:#eef1f5;color:#5b6573}
+        .theme-disco__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;border:0;background:transparent;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+        .theme-disco__clear:hover{color:#5b6573}
         .theme-disco__clear[hidden]{display:none}
         .theme-disco__spinner{width:20px;height:20px;border:2.5px solid #d7dde6;border-top-color:#06c755;border-radius:50%;animation:theme-disco-spin .7s linear infinite;margin:8px 2px}
         @keyframes theme-disco-spin{to{transform:rotate(360deg)}}
@@ -291,13 +291,17 @@ $shelves = array_values(array_filter([
                 }
             });
 
-            if (clearBtn) clearBtn.addEventListener('click', () => {
-                input.value = '';
-                render('');
-                save('');
-                toggleClear();
-                input.focus();
-            });
+            if (clearBtn) {
+                // iOS Safari: ボタンタップで入力欄のフォーカスを奪うと、消去後に IME が出たまま文字が入らなくなる。
+                // mousedown（タップ時の合成含む）を preventDefault してフォーカスを保持し、refocus もしない。
+                clearBtn.addEventListener('mousedown', (e) => e.preventDefault());
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    render('');
+                    save('');
+                    toggleClear();
+                });
+            }
             toggleClear();
 
             // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
