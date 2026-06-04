@@ -12,7 +12,7 @@
   $showListMedal = $showListMedal ?? false;
   $currentCount = $currentCount ?? false;
   $showApiCreatedAt = $showApiCreatedAt ?? false;
-  $hideIncrease = $hideIncrease ?? false;   // トップの公式おすすめ等、24h増加が文脈上ノイズな面で非表示にする
+  $hideIncrease = $hideIncrease ?? false;   // おすすめ系wrapper(recommend_list2/similar_size_rooms)は true で24h増加を隠す。/recommendタグページのみ既定falseで表示
 
   foreach ($listArray as $key => $oc) : ?>
     <li class="unset">
