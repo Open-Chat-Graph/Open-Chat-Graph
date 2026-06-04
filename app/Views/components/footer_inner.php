@@ -13,11 +13,11 @@
         ][\Shared\MimimalCmsConfig::$urlRoot] ?? [];
         ?>
         <?php if ($_popularThemes): ?>
-            <section class="unset footer-link-box footer-popular-themes" style="padding: 0 1rem; margin-bottom: 10px;">
-                <div class="unset" style="font-size: 13px; color: #888; margin-bottom: 6px;"><?php echo t('人気テーマ') ?></div>
-                <ul class="footer-link-inner" style="flex-wrap: wrap;">
+            <section class="footer-popular-themes">
+                <div class="footer-theme-label"><?php echo t('人気テーマ') ?></div>
+                <ul class="footer-theme-list">
                     <?php foreach ($_popularThemes as $_theme) : ?>
-                        <li><a class="unset" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($_theme))) ?>"><?php echo \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($_theme) ?></a></li>
+                        <li><a class="footer-theme-chip" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($_theme))) ?>"><?php echo \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($_theme) ?></a></li>
                     <?php endforeach ?>
                 </ul>
             </section>

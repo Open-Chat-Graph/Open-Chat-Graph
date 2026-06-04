@@ -23,6 +23,49 @@
   color: #777;
 }
 
+/* 人気テーマ（フッター内部リンク）。サイト共通のタグチップ風だが、.tag-btn は
+   room_list 等に依存し全ページでは読み込まれないため、フッター常時表示用に
+   ここで自己完結のスタイルを定義する。 */
+.footer-popular-themes {
+  display: block;
+  padding: 0 1rem;
+  margin-bottom: 18px;
+}
+.footer-theme-label {
+  color: #777;
+  font-size: 13px;
+  margin-bottom: 9px;
+}
+.footer-theme-list {
+  all: unset;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-theme-list li {
+  all: unset;
+}
+.footer-theme-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 13px;
+  border: 1px solid #e8e8e8;
+  border-radius: 36px;
+  background-color: #fff;
+  color: #06c755;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+.footer-theme-chip:hover {
+  border-color: #06c755;
+  background-color: #f2fbf6;
+}
+
 .footer-link-inner {
   all: unset;
 }
