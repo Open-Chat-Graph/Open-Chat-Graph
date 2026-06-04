@@ -375,23 +375,35 @@ body:has(.oc-jump-wrap) {
   max-width: 100%;
   margin: 0;
   padding: 16px 20px;
-  background: var(--ocj-line-green);
+  /* /oc の主CTA(.openchat_link)と同じ緑グラデ＋pillで「LINEで開く」の見た目を統一。
+     /jump 側のポリッシュ(影/ホバー)は維持。 */
+  background: linear-gradient(
+    -156deg,
+    #0dc95a,
+    #11d871 23.96%,
+    #11d593 55.46%,
+    #12cfcd 83.85%,
+    #16c2c1
+  );
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: .02em;
-  border-radius: 12px;
+  border-radius: 99px;            /* /oc の pill CTA と角丸を統一 */
   box-shadow: var(--ocj-shadow-btn);
   text-decoration: none;
-  transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
 
 .oc-jump-line-button:hover {
-  background: var(--ocj-line-green-press);
+  /* グラデを保ったまま明度＋影で押下感を出す(flat緑に戻すとグラデが消えるため) */
+  filter: brightness(1.04);
+  box-shadow: 0 8px 20px rgba(6, 199, 85, .38);
 }
 
 .oc-jump-line-button:active {
   transform: translateY(1px) scale(.995);
+  filter: brightness(.98);
   box-shadow: 0 3px 10px rgba(6, 199, 85, .3);
 }
 

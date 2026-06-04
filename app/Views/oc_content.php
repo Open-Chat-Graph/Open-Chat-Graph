@@ -122,18 +122,28 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         .oc-nav-chip--category:hover{background:#e7eaee}
         .oc-nav-chip--tag{background:#eefcf3;color:#067a37;border-color:#bfead0}
         .oc-nav-chip--tag:hover{background:#e2f9ea;border-color:#a6e0bd}
+        /* チップ前置きラベル(カテゴリー/タグ)。チップを主役にし、ラベルは小さく控えめなグレーで補助。
+           「ラベル+チップ」を1ユニット(.oc-nav-pair)としてグルーピングし、左揃え・横並び→入らなければ
+           ユニット単位で改行(各チップが自分のラベルを連れて折り返すので列ズレが出ない)。 */
+        .oc-nav-chips{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:10px;width:100%}
+        .oc-nav-pair{display:inline-flex;align-items:center;gap:8px;min-width:0}
+        .oc-nav-pair__label{font-size:11.5px;font-weight:600;color:#9aa3af;white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
       </style>
 
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
-          <span class="openchat-list-date" style="display: grid; grid-template-columns: max-content max-content; column-gap: 10px; row-gap: 10px; align-items: center; justify-items: start; width: fit-content; height: fit-content; color: #111; margin: 0 auto;">
+          <span class="oc-nav-chips">
             <?php if (is_int($oc['api_created_at'])) : ?>
-              <span style="justify-self: end; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('カテゴリー') ?></span>
-              <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
+              <span class="oc-nav-pair">
+                <span class="oc-nav-pair__label"><?php echo t('カテゴリー') ?></span>
+                <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
+              </span>
             <?php endif ?>
             <?php if (isset($recommend[2]) && $recommend[2]) : ?>
-              <span style="justify-self: end; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('タグ') ?></span>
-              <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
+              <span class="oc-nav-pair">
+                <span class="oc-nav-pair__label"><?php echo t('タグ') ?></span>
+                <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
+              </span>
             <?php endif ?>
           </span>
         </aside>
