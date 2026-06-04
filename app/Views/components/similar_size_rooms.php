@@ -58,6 +58,7 @@ $isRanked = $mode === 'tag_top';
         'recommend'        => $recommend,
         'showListMedal'    => $isRanked,
         'showApiCreatedAt' => true,
+        'hideIncrease'     => true,
     ]) ?>
 
     <?php if ($isTagMode && $tag !== null && $tag !== ''): ?>
