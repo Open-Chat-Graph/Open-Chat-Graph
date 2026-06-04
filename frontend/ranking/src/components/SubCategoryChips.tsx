@@ -39,9 +39,10 @@ const Chips = memo(function Chips({
       <span
         style={{
           flexShrink: 0,
+          fontFamily: 'var(--font-family, sans-serif)',
           fontSize: '12px',
           fontWeight: 700,
-          color: '#9aa3af',
+          color: '#5b6573',
           whiteSpace: 'nowrap',
           paddingRight: '2px',
         }}
