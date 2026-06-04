@@ -16,7 +16,8 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php endif ?>
 
-    <?php viewComponent('site_header', compact('_updatedAt')) ?>
+    <?php // トップ表示時は最上部に独自の検索を置くため、ヘッダーの検索ボタンは隠す（hideSearchButton） ?>
+    <?php viewComponent('site_header', compact('_updatedAt') + ['hideSearchButton' => true]) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
         <div style="padding: 0 1rem; margin-bottom: 1rem;">
@@ -39,6 +40,31 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 <?php endforeach; ?>
             </small>
         </div>
+
+        <?php // 公式LINEオープンチャットのトップに倣い、最上部に「オープンチャットを検索」を設置。
+              // 見た目はテーマ検索(.theme-disco__input)と統一、送信先はヘッダー検索と同じ /ranking。 ?>
+        <div style="padding: 0 1rem; margin-bottom: 1rem;">
+            <form class="oc-hero-search" method="GET" action="<?php echo url('ranking') ?>" role="search">
+                <svg class="oc-hero-search__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
+                <input class="oc-hero-search__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
+                    autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required
+                    placeholder="<?php echo t('オープンチャットを検索') ?>" aria-label="<?php echo t('オープンチャットを検索') ?>">
+                <input type="hidden" name="list" value="all">
+                <input type="hidden" name="sort" value="member">
+                <input type="hidden" name="order" value="desc">
+            </form>
+        </div>
+        <style>
+            /* テーマを探す(.theme-disco__input)と同一デザインの検索入力。送信先は /ranking?keyword= */
+            .oc-hero-search{position:relative;display:block;width:100%;margin:0}
+            .oc-hero-search__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:#9aa3af;pointer-events:none}
+            /* iOS Safari のフォーカス時オートズーム回避のため font-size は16px以上 */
+            .oc-hero-search__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
+            .oc-hero-search__input::placeholder{color:#9aa3af}
+            .oc-hero-search__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+            .oc-hero-search__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
+        </style>
+
         <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
         ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
