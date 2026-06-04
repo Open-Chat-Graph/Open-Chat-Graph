@@ -14,7 +14,7 @@
         <a class="category-button" href="<?php echo url('ranking') ?>">
             <span><?php echo t('カテゴリーから探す') ?></span>
         </a>
-        <nav class="header-nav unset" style="height: 48px;">
+        <nav class="header-nav unset" style="height: 48px;<?php if ($hideSearchButton ?? false) echo ' display: none;' ?>">
             <button class="header-button unset" id="search_button" aria-label="><?php echo t('検索') ?>">
                 <span class="search-button-icon"></span>
             </button>
