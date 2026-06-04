@@ -42,7 +42,6 @@ $shelves = array_values(array_filter([
         <input id="theme-disco-input" class="theme-disco__input" type="search" inputmode="search" enterkeyhint="search"
             autocomplete="off" autocapitalize="off" spellcheck="false"
             placeholder="<?php echo t('テーマ名で検索') ?>" aria-label="<?php echo t('テーマ名で検索') ?>">
-        <button type="button" id="theme-disco-clear" class="theme-disco__clear" aria-label="クリア" hidden>&times;</button>
     </div>
 
     <div class="theme-disco__results" id="theme-disco-results" hidden></div>
@@ -81,14 +80,10 @@ $shelves = array_values(array_filter([
         .theme-disco__search{position:relative;display:block;width:100%}
         .theme-disco__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:#9aa3af;pointer-events:none}
         /* font-size は必ず16px以上: iOS Safari のフォーカス時オートズーム回避 */
-        .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 14px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
+        .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 16px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
+        .theme-disco__input::-webkit-search-cancel-button{cursor:pointer}
         .theme-disco__input::placeholder{color:#9aa3af}
         .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
-        .theme-disco__input{padding-right:44px}
-        .theme-disco__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
-        .theme-disco__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;border:0;background:transparent;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
-        .theme-disco__clear:hover{color:#5b6573}
-        .theme-disco__clear[hidden]{display:none}
         .theme-disco__spinner{width:20px;height:20px;border:2.5px solid #d7dde6;border-top-color:#06c755;border-radius:50%;animation:theme-disco-spin .7s linear infinite;margin:8px 2px}
         @keyframes theme-disco-spin{to{transform:rotate(360deg)}}
         .theme-disco__results{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:8px;margin-top:14px}
@@ -129,9 +124,7 @@ $shelves = array_values(array_filter([
             const MAX = 60;
             let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
             let debounceTimer = null;
-            const clearBtn = document.getElementById('theme-disco-clear');
             const shelvesHeight = shelves.offsetHeight;   // 検索中の高さ確保（レイアウトシフト防止）
-            const toggleClear = () => { if (clearBtn) clearBtn.hidden = !input.value; };
             const reserve = (on) => { results.style.minHeight = (on && shelvesHeight) ? shelvesHeight + 'px' : ''; };
 
             // 検索の正規化: 半角全角(NFKC)・大文字小文字(toLowerCase)・カタカナ/ひらがな(カナ→ひら) を無視して一致させる。
@@ -276,10 +269,9 @@ $shelves = array_values(array_filter([
                 try { q = sessionStorage.getItem(STORE_KEY) || ''; } catch (e) { /* noop */ }
                 if (q && !input.value) input.value = q;
                 if (input.value) render(input.value);
-                toggleClear();
             };
 
-            input.addEventListener('input', () => { render(input.value); save(input.value); toggleClear(); });
+            input.addEventListener('input', () => { render(input.value); save(input.value); });
 
             // iOS Safari は <form> の submit を伴わないと Enter でキーボード(IME)が閉じない。
             // 変換確定中(IME composition)の Enter は「確定」用なので除外し、確定後の Enter で
@@ -291,16 +283,8 @@ $shelves = array_values(array_filter([
                 }
             });
 
-            if (clearBtn) {
-                // クリアしても入力欄のフォーカス（＝IME/ソフトキーボード）を失わないようにする。
-                // iOS Safari は blur が touchend で起きるため mousedown では間に合わない。pointerdown（押下＝blur前）で
-                // preventDefault するとフォーカスが保持され、続けて文字入力できる。input.focus() の再フォーカスは
-                // iOS で「IMEは出るが入力できない」不具合を招くため使わない。
-                const doClear = () => { input.value = ''; render(''); save(''); toggleClear(); };
-                clearBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); doClear(); });
-                clearBtn.addEventListener('click', () => { if (input.value) doClear(); }); // pointer非対応ブラウザのフォールバック
-            }
-            toggleClear();
+            // クリアはブラウザ標準の検索クリアボタン（::-webkit-search-cancel-button）に任せる。
+            // OS がフォーカス・IME（変換）を正しく保持するため、消去後そのまま入力できる。
 
             // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
             const nav = performance.getEntriesByType?.('navigation')?.[0];

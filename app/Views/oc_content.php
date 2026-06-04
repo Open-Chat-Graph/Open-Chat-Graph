@@ -126,18 +126,14 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
-          <span class="openchat-list-date" style="flex-direction: column; height: fit-content; color: #111; margin: 0 auto; gap: 12px; align-items: flex-start;">
+          <span class="openchat-list-date" style="display: grid; grid-template-columns: max-content max-content; column-gap: 10px; row-gap: 10px; align-items: center; justify-items: start; width: fit-content; height: fit-content; color: #111; margin: 0 auto;">
             <?php if (is_int($oc['api_created_at'])) : ?>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-flex; align-items: center; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('カテゴリー') ?></span>
-                <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
-              </div>
+              <span style="justify-self: end; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('カテゴリー') ?></span>
+              <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
             <?php endif ?>
             <?php if (isset($recommend[2]) && $recommend[2]) : ?>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-flex; align-items: center; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('タグ') ?></span>
-                <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
-              </div>
+              <span style="justify-self: end; font-weight: bold; font-size: 13px; white-space: nowrap;"><?php echo t('タグ') ?></span>
+              <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
             <?php endif ?>
           </span>
         </aside>
