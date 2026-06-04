@@ -91,6 +91,10 @@ class SitemapGenerator
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
+            $sitemap->addItem($this->currentUrl . 'blog');
+            foreach (app(\App\Services\Blog\BlogService::class)->list() as $a) {
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a['slug'], lastmod: $a['date'] ?: $datetime);
+            }
         }
 
         $sitemap->addItem($this->currentUrl . 'policy');

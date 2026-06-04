@@ -26,6 +26,7 @@ use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
+use App\Controllers\Pages\BlogController;
 use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
@@ -81,6 +82,10 @@ Route::path('policy', [PolicyPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
+
+Route::path('blog', [BlogController::class, 'index']);
+
+Route::path('blog/{slug}', [BlogController::class, 'article']);
 
 Route::path('robots.txt', [RobotsController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
