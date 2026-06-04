@@ -42,7 +42,7 @@ $shelves = array_values(array_filter([
         <input id="theme-disco-input" class="theme-disco__input" type="search" inputmode="search" enterkeyhint="search"
             autocomplete="off" autocapitalize="off" spellcheck="false"
             placeholder="<?php echo t('テーマ名で検索') ?>" aria-label="<?php echo t('テーマ名で検索') ?>">
-        <span id="theme-disco-clear" class="theme-disco__clear" role="button" aria-label="クリア" hidden>&times;</span>
+        <span id="theme-disco-clear" class="theme-disco__clear" role="button" aria-label="<?php echo t('クリア') ?>" tabindex="0" hidden>&times;</span>
     </div>
 
     <div class="theme-disco__results" id="theme-disco-results" hidden></div>
@@ -304,6 +304,8 @@ $shelves = array_values(array_filter([
                 clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doClear(); }, { passive: false });
                 clearBtn.addEventListener('mousedown', (e) => e.preventDefault()); // PC: 入力欄のフォーカスを奪わない
                 clearBtn.addEventListener('click', () => { if (input.value) doClear(); });
+                // キーボード操作: Enter/Space でクリア（tabindex=0 でフォーカス可能に）
+                clearBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (input.value) doClear(); } });
             }
             toggleClear();
 
