@@ -877,3 +877,45 @@ function getBasicAuthCredentials(): array
 
     return ['user' => $user, 'pass' => $pass];
 }
+
+/**
+ * 「人気テーマ」= recommend タグを合計人数(total_member)順の上位 $limit 件。
+ *
+ * 静的データ @tagList（cron が毎時再生成・locale 別）から動的に算出するので、ハードコード不要で
+ * 自動更新され、改称/削除されたタグも自然に落ちる（ThemeDiscoveryService の「🔥人気」と同じ定義）。
+ * フッター等で全ページから呼ばれるためリクエスト内でメモ化する。@tagList の読み出しは副作用
+ * （noStore）を避けるため getSerializedFile を直接使う。
+ *
+ * @return array<int, array{name: string, slug: string}>
+ */
+function popularThemes(int $limit = 12): array
+{
+    static $cache = [];
+    if (isset($cache[$limit])) return $cache[$limit];
+
+    $tagList = app(\App\Services\Storage\FileStorageInterface::class)->getSerializedFile('@tagList');
+
+    $byMember = [];
+    if (is_array($tagList)) {
+        foreach ($tagList as $rows) {
+            if (!is_array($rows)) continue;
+            foreach ($rows as $row) {
+                $tag = (string)($row['tag'] ?? '');
+                if ($tag === '' || isset($byMember[$tag])) continue;
+                $byMember[$tag] = (int)($row['total_member'] ?? 0);
+            }
+        }
+    }
+    arsort($byMember);
+
+    $out = [];
+    foreach (array_keys($byMember) as $tag) {
+        $out[] = [
+            'name' => \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag),
+            'slug' => urlencode($tag),
+        ];
+        if (count($out) >= $limit) break;
+    }
+
+    return $cache[$limit] = $out;
+}

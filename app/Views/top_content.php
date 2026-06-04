@@ -99,6 +99,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
         <hr class="hr-top" style="margin-bottom: 8px;">
+        <div class="modify-top-padding" style="margin-bottom: 0rem;">
+            <?php viewComponent('popular_themes', ['prominent' => true]) ?>
+        </div>
+        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
