@@ -41,6 +41,7 @@ $shelves = array_values(array_filter([
         <input id="theme-disco-input" class="theme-disco__input" type="search" inputmode="search" enterkeyhint="search"
             autocomplete="off" autocapitalize="off" spellcheck="false"
             placeholder="<?php echo t('テーマ名で検索') ?>" aria-label="<?php echo t('テーマ名で検索') ?>">
+        <button type="button" id="theme-disco-clear" class="theme-disco__clear" aria-label="クリア" hidden>&times;</button>
     </div>
 
     <div class="theme-disco__results" id="theme-disco-results" hidden></div>
@@ -81,7 +82,14 @@ $shelves = array_values(array_filter([
         .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 14px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
         .theme-disco__input::placeholder{color:#9aa3af}
         .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
-        .theme-disco__results{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+        .theme-disco__input{padding-right:44px}
+        .theme-disco__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+        .theme-disco__clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;color:#9aa3af;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0}
+        .theme-disco__clear:hover{background:#eef1f5;color:#5b6573}
+        .theme-disco__clear[hidden]{display:none}
+        .theme-disco__spinner{width:20px;height:20px;border:2.5px solid #d7dde6;border-top-color:#06c755;border-radius:50%;animation:theme-disco-spin .7s linear infinite;margin:8px 2px}
+        @keyframes theme-disco-spin{to{transform:rotate(360deg)}}
+        .theme-disco__results{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:8px;margin-top:14px}
         .theme-disco__shelves{display:flex;flex-direction:column;gap:16px;margin-top:16px}
         /* [hidden] を確実に優先（display:flex に勝たせる） */
         .theme-disco__results[hidden],.theme-disco__shelves[hidden]{display:none}
@@ -119,6 +127,10 @@ $shelves = array_values(array_filter([
             const MAX = 60;
             let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
             let debounceTimer = null;
+            const clearBtn = document.getElementById('theme-disco-clear');
+            const shelvesHeight = shelves.offsetHeight;   // 検索中の高さ確保（レイアウトシフト防止）
+            const toggleClear = () => { if (clearBtn) clearBtn.hidden = !input.value; };
+            const reserve = (on) => { results.style.minHeight = (on && shelvesHeight) ? shelvesHeight + 'px' : ''; };
 
             // 検索の正規化: 半角全角(NFKC)・大文字小文字(toLowerCase)・カタカナ/ひらがな(カナ→ひら) を無視して一致させる。
             const norm = (s) => String(s).normalize('NFKC').toLowerCase()
@@ -222,10 +234,12 @@ $shelves = array_values(array_filter([
                     results.hidden = true;
                     results.replaceChildren();
                     shelves.hidden = false;
+                    reserve(false);
                     return;
                 }
                 shelves.hidden = true;
                 results.hidden = false;
+                reserve(true);
 
                 const nq = norm(q);
                 const hits = [];
@@ -241,8 +255,10 @@ $shelves = array_values(array_filter([
                     results.replaceChildren(...hits);
                     return;
                 }
-                // テーマ名の直接一致なし → まず「一致する部屋が持つタグ」を表示（タグ優先）。無ければ部屋。
-                results.replaceChildren();
+                // テーマ名の直接一致なし → 即スピナーを出し、落ち着いたら（debounce）タグ/部屋を fetch。
+                const spinner = document.createElement('div');
+                spinner.className = 'theme-disco__spinner';
+                results.replaceChildren(spinner);
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => showTagFallback(q), 250);
             };
@@ -258,9 +274,10 @@ $shelves = array_values(array_filter([
                 try { q = sessionStorage.getItem(STORE_KEY) || ''; } catch (e) { /* noop */ }
                 if (q && !input.value) input.value = q;
                 if (input.value) render(input.value);
+                toggleClear();
             };
 
-            input.addEventListener('input', () => { render(input.value); save(input.value); });
+            input.addEventListener('input', () => { render(input.value); save(input.value); toggleClear(); });
 
             // iOS Safari は <form> の submit を伴わないと Enter でキーボード(IME)が閉じない。
             // 変換確定中(IME composition)の Enter は「確定」用なので除外し、確定後の Enter で
@@ -271,6 +288,15 @@ $shelves = array_values(array_filter([
                     input.blur();
                 }
             });
+
+            if (clearBtn) clearBtn.addEventListener('click', () => {
+                input.value = '';
+                render('');
+                save('');
+                toggleClear();
+                input.focus();
+            });
+            toggleClear();
 
             // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
             const nav = performance.getEntriesByType?.('navigation')?.[0];
