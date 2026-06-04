@@ -11,6 +11,7 @@
  */
 
 $discovery = $discovery ?? null;
+$searchOnly = $searchOnly ?? false;   // ホーム等で棚を出さず検索だけ使うモード
 if (!$discovery || $discovery->isEmpty()) return;
 
 $base = url('recommend/');
@@ -33,7 +34,7 @@ $shelves = array_values(array_filter([
     ],
 ], fn($shelf) => !empty($shelf['items'])));
 ?>
-<section class="theme-disco" aria-labelledby="theme-disco-title">
+<section class="theme-disco<?php echo $searchOnly ? ' theme-disco--search-only' : '' ?>" aria-labelledby="theme-disco-title">
     <h2 class="theme-disco__title" id="theme-disco-title"><?php echo t('テーマを探す') ?></h2>
 
     <div class="theme-disco__search">
@@ -47,7 +48,7 @@ $shelves = array_values(array_filter([
     <div class="theme-disco__results" id="theme-disco-results" hidden></div>
 
     <div class="theme-disco__shelves" id="theme-disco-shelves">
-        <?php foreach ($shelves as $i => $shelf) : ?>
+        <?php if (!$searchOnly) foreach ($shelves as $i => $shelf) : ?>
             <div class="theme-disco__shelf" style="--i:<?php echo (int)$i ?>">
                 <div class="theme-disco__shelf-label"><span class="theme-disco__shelf-ico" aria-hidden="true"><?php echo $shelf['icon'] ?></span><?php echo htmlspecialchars((string)$shelf['label'], ENT_QUOTES, 'UTF-8') ?></div>
                 <div class="theme-disco__chips"><?php foreach ($shelf['items'] as $item) $chip($item, $shelf['hot']); ?></div>
@@ -74,6 +75,7 @@ $shelves = array_values(array_filter([
     <style>
         /* サイトのグローバル section{display:flex;justify-content:center} を打ち消す（既存 .recommend-ranking-section と同様） */
         .theme-disco{display:block;text-align:left;margin-top:10px;padding:18px 1rem 6px;border-top:1px solid #eef0f3}
+        .theme-disco--search-only{border-top:0;margin-top:6px;padding-top:2px}
         .theme-disco__title{margin:0 0 12px;padding:0;display:flex;align-items:center;font-size:15px;font-weight:700;color:#0f1620;letter-spacing:.02em}
         .theme-disco__title::before{content:"";flex:0 0 auto;width:3px;height:15px;background:#06c755;border-radius:2px;margin-right:8px}
         .theme-disco__search{position:relative;display:block;width:100%}

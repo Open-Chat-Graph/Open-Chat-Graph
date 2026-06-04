@@ -47,7 +47,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <div class="modify-top-padding" style="margin-bottom: 0rem;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
-            <?php viewComponent('home_theme_search') ?>
+            <?php if (isset($_discovery) && !$_discovery->isEmpty()) viewComponent('theme_discovery', ['discovery' => $_discovery, 'searchOnly' => true]) ?>
         </div>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
