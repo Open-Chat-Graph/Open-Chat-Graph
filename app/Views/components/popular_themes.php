@@ -5,11 +5,13 @@
  * cron 再生成の @tagList 由来）するため、ハードコード不要で自動更新され、改称/削除タグも自然に落ちる。
  * locale 別（@tagList が locale 別）。/recommend クラスタへ恒常的な内部リンクを供給する。
  *
- * @var bool $prominent  true=トップ本文用の強い見せ方 / false(既定)=フッター用のコンパクト表示
+ * @var bool  $prominent  true=トップ本文用の強い見せ方 / false(既定)=フッター用のコンパクト表示
+ * @var array $exclude    重複させたくない canonical タグ（例: トップでは急上昇テーマを渡す）
  */
 
 $prominent = $prominent ?? false;
-$_themes = popularThemes($prominent ? 16 : 12);
+$exclude = $exclude ?? [];
+$_themes = popularThemes($prominent ? 16 : 12, $exclude);
 if (!$_themes) return;
 ?>
 <?php if ($prominent): ?>

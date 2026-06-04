@@ -888,12 +888,14 @@ function getBasicAuthCredentials(): array
  *
  * @return array<int, array{name: string, slug: string}>
  */
-function popularThemes(int $limit = 12): array
+function popularThemes(int $limit = 12, array $exclude = []): array
 {
     static $cache = [];
-    if (isset($cache[$limit])) return $cache[$limit];
+    $ckey = $limit . '|' . implode(',', $exclude);
+    if (isset($cache[$ckey])) return $cache[$ckey];
 
     $tagList = app(\App\Services\Storage\FileStorageInterface::class)->getSerializedFile('@tagList');
+    $excludeSet = array_flip($exclude); // 例: 急上昇テーマと重複させない
 
     $byMember = [];
     if (is_array($tagList)) {
@@ -901,7 +903,7 @@ function popularThemes(int $limit = 12): array
             if (!is_array($rows)) continue;
             foreach ($rows as $row) {
                 $tag = (string)($row['tag'] ?? '');
-                if ($tag === '' || isset($byMember[$tag])) continue;
+                if ($tag === '' || isset($byMember[$tag]) || isset($excludeSet[$tag])) continue;
                 $byMember[$tag] = (int)($row['total_member'] ?? 0);
             }
         }
@@ -910,12 +912,12 @@ function popularThemes(int $limit = 12): array
 
     $out = [];
     foreach (array_keys($byMember) as $tag) {
-        $out[] = [
-            'name' => \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag),
-            'slug' => urlencode($tag),
-        ];
+        $name = \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag);
+        // 文章のように長いタグ（特定すぎてチップに不向き・近似タグの温床）は除外。
+        if (mb_strlen($name) > 11) continue;
+        $out[] = ['name' => $name, 'slug' => urlencode($tag)];
         if (count($out) >= $limit) break;
     }
 
-    return $cache[$limit] = $out;
+    return $cache[$ckey] = $out;
 }

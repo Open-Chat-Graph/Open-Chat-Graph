@@ -100,7 +100,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         </div>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <div class="modify-top-padding" style="margin-bottom: 0rem;">
-            <?php viewComponent('popular_themes', ['prominent' => true]) ?>
+            <?php // 急上昇テーマと重複しないよう、トレンドのタグを除外して「人気テーマ」を出す
+            $_trendingTags = array_merge(($dto->recommendList['hour'] ?? []), ($dto->recommendList['hour24'] ?? []));
+            viewComponent('popular_themes', ['prominent' => true, 'exclude' => $_trendingTags]) ?>
         </div>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
