@@ -116,7 +116,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       <style>
         /* /oc のカテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 */
-        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 12px;border-radius:8px;font-weight:700;font-size:13px;line-height:1.3;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
+        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
         .oc-nav-chip:active{transform:scale(.97)}
         .oc-nav-chip--category{background:#f1f3f5;color:#28303c;border-color:#e4e8ee}
         .oc-nav-chip--category:hover{background:#e7eaee}
