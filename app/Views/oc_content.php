@@ -116,7 +116,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       <style>
         /* /oc のカテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 */
-        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;white-space:nowrap;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
+        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
         .oc-nav-chip:active{transform:scale(.97)}
         .oc-nav-chip--category{background:#f1f3f5;color:#28303c;border-color:#e4e8ee}
         .oc-nav-chip--category:hover{background:#e7eaee}
@@ -138,11 +138,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </span>
         </aside>
 
-        <div style="display: flex; gap: 8px; width: 100%; margin: auto 0;">
+        <div class="oc-desc-nav-actions">
           <?php if (isset($_adminDto)) : ?>
-            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">✕</a>
+            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">✕</a>
           <?php else : ?>
-            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
           <?php endif ?>
           <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
