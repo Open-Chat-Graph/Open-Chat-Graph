@@ -65,9 +65,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
         <hr class="hr-top" style="margin-bottom: 8px;">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0, 'hideIncrease' => true]) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
+        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0, 'hideIncrease' => true]) ?>
 
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
