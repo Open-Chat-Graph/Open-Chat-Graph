@@ -292,15 +292,13 @@ $shelves = array_values(array_filter([
             });
 
             if (clearBtn) {
-                // iOS Safari: ボタンタップで入力欄のフォーカスを奪うと、消去後に IME が出たまま文字が入らなくなる。
-                // mousedown（タップ時の合成含む）を preventDefault してフォーカスを保持し、refocus もしない。
-                clearBtn.addEventListener('mousedown', (e) => e.preventDefault());
-                clearBtn.addEventListener('click', () => {
-                    input.value = '';
-                    render('');
-                    save('');
-                    toggleClear();
-                });
+                // クリアしても入力欄のフォーカス（＝IME/ソフトキーボード）を失わないようにする。
+                // iOS Safari は blur が touchend で起きるため mousedown では間に合わない。pointerdown（押下＝blur前）で
+                // preventDefault するとフォーカスが保持され、続けて文字入力できる。input.focus() の再フォーカスは
+                // iOS で「IMEは出るが入力できない」不具合を招くため使わない。
+                const doClear = () => { input.value = ''; render(''); save(''); toggleClear(); };
+                clearBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); doClear(); });
+                clearBtn.addEventListener('click', () => { if (input.value) doClear(); }); // pointer非対応ブラウザのフォールバック
             }
             toggleClear();
 
