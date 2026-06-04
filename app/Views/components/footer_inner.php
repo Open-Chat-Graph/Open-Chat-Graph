@@ -2,6 +2,26 @@
 <footer class="footer-elem-outer" style="padding: 0;">
     <hr class="hr-top" style="margin-bottom: 11px;">
     <nav class="footer-link-box-outer">
+        <?php
+        // 人気テーマ（locale別）。全ページ共通フッターから主要 /recommend ページへ恒常的な
+        // 内部リンクを張り、(ja)上位テーマの順位押し上げ・(th)ดีล等の未インデックス解消を狙う。
+        // slug は全て実機で 200 を確認済み。表示ラベルは extractTag で整形（非jaは原文のまま返る）。
+        $_popularThemes = [
+            '' => ['下ネタ', 'パチンコ・スロット（パチスロ）', 'なりきり', 'ポケモンカード（ポケカ）', '対荒らし', '恋愛', 'ポーランドボール', 'カラフルピーチ（からぴち）', 'ブロスタ', '雑談'],
+            '/tw' => ['代購', '團購', '台股・股市', '育兒・教養交流', '連鎖門市・好康情報'],
+            '/th' => ['ดีล', 'มวย', 'เชียงใหม่', 'รถตู้', 'ROV', 'อสังหา'],
+        ][\Shared\MimimalCmsConfig::$urlRoot] ?? [];
+        ?>
+        <?php if ($_popularThemes): ?>
+            <section class="unset footer-link-box footer-popular-themes" style="padding: 0 1rem; margin-bottom: 10px;">
+                <div class="unset" style="font-size: 13px; color: #888; margin-bottom: 6px;"><?php echo t('人気テーマ') ?></div>
+                <ul class="footer-link-inner" style="flex-wrap: wrap;">
+                    <?php foreach ($_popularThemes as $_theme) : ?>
+                        <li><a class="unset" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($_theme))) ?>"><?php echo \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($_theme) ?></a></li>
+                    <?php endforeach ?>
+                </ul>
+            </section>
+        <?php endif ?>
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></il>
