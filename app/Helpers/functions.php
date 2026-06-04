@@ -879,13 +879,14 @@ function getBasicAuthCredentials(): array
 }
 
 /**
- * 「人気テーマ」= recommend タグを合計人数(total_member)順の上位 $limit 件。
+ * 「人気テーマ」= /recommend 各ページの実検索需要(GSC impressions)で精選したテーマ上位 $limit 件。
  *
- * 静的データ @tagList（cron が毎時再生成・locale 別）から動的に算出するので、ハードコード不要で
- * 自動更新され、改称/削除されたタグも自然に落ちる（ThemeDiscoveryService の「🔥人気」と同じ定義）。
- * フッター等で全ページから呼ばれるためリクエスト内でメモ化する。@tagList の読み出しは副作用
- * （noStore）を避けるため getSerializedFile を直接使う。
+ * 基準を total_member 等のタグ付けロジック由来の指標にしない（広いキーワードほど大きくなるだけで
+ * テーマ価値を表さない）。委員リストは GSC 実需要から生成（gen_featured_themes.py、locale 別、
+ * 週〜月次で再生成）。さらに実行時に @tagList（現行有効タグ）と突合し、改称/削除されたタグは
+ * 自動で落として自己修復する。フッター等で全ページから呼ばれるためリクエスト内でメモ化。
  *
+ * @param array $exclude 重複除外する canonical タグ（トップでは急上昇テーマを渡す）
  * @return array<int, array{name: string, slug: string}>
  */
 function popularThemes(int $limit = 12, array $exclude = []): array
@@ -894,28 +895,38 @@ function popularThemes(int $limit = 12, array $exclude = []): array
     $ckey = $limit . '|' . implode(',', $exclude);
     if (isset($cache[$ckey])) return $cache[$ckey];
 
-    $tagList = app(\App\Services\Storage\FileStorageInterface::class)->getSerializedFile('@tagList');
-    $excludeSet = array_flip($exclude); // 例: 急上昇テーマと重複させない
+    // GSC 実需要で精選した委員リスト（locale 別の canonical タグ配列）
+    static $featured = null;
+    if ($featured === null) {
+        $path = \App\Config\AppConfig::ROOT_PATH . 'app/Services/Recommend/TagDefinition/data/featured_themes.json';
+        $featured = is_file($path) ? (json_decode(file_get_contents($path), true) ?: []) : [];
+    }
+    $list = $featured[\Shared\MimimalCmsConfig::$urlRoot] ?? [];
 
-    $byMember = [];
+    // 自己修復: 現行有効タグ(@tagList)に存在するものだけ採用。委員リスト再生成までの間に
+    // 改称/削除されたタグ（リンク切れ）を実行時に落とす。@tagList が無ければ素通し。
+    $valid = [];
+    $tagList = app(\App\Services\Storage\FileStorageInterface::class)->getSerializedFile('@tagList');
     if (is_array($tagList)) {
         foreach ($tagList as $rows) {
             if (!is_array($rows)) continue;
             foreach ($rows as $row) {
-                $tag = (string)($row['tag'] ?? '');
-                if ($tag === '' || isset($byMember[$tag]) || isset($excludeSet[$tag])) continue;
-                $byMember[$tag] = (int)($row['total_member'] ?? 0);
+                $t = (string)($row['tag'] ?? '');
+                if ($t !== '') $valid[$t] = true;
             }
         }
     }
-    arsort($byMember);
+    $excludeSet = array_flip($exclude);
 
     $out = [];
-    foreach (array_keys($byMember) as $tag) {
-        $name = \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag);
-        // 文章のように長いタグ（特定すぎてチップに不向き・近似タグの温床）は除外。
-        if (mb_strlen($name) > 11) continue;
-        $out[] = ['name' => $name, 'slug' => urlencode($tag)];
+    foreach ($list as $tag) {
+        $tag = (string)$tag;
+        if ($tag === '' || isset($excludeSet[$tag])) continue;
+        if ($valid && !isset($valid[$tag])) continue; // @tagList にあるのに不在=改称/削除
+        $out[] = [
+            'name' => \App\Services\Recommend\TagDefinition\Ja\RecommendUtility::extractTag($tag),
+            'slug' => urlencode($tag),
+        ];
         if (count($out) >= $limit) break;
     }
 
