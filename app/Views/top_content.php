@@ -47,9 +47,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <form method="GET" action="<?php echo url('ranking') ?>" role="search" class="oc-hero-search-form">
                 <div class="theme-disco__search">
                     <svg class="theme-disco__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:#9aa3af;pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
-                    <input class="theme-disco__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
+                    <input id="oc-hero-input" class="theme-disco__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
                         autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required
                         placeholder="<?php echo t('オープンチャットを検索') ?>" aria-label="<?php echo t('オープンチャットを検索') ?>">
+                    <span id="oc-hero-clear" class="theme-disco__clear" role="button" aria-label="クリア" hidden>&times;</span>
                 </div>
                 <input type="hidden" name="list" value="all">
                 <input type="hidden" name="sort" value="member">
@@ -60,6 +61,24 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             /* グローバルな汎用 form 枠(border/padding/影)を打ち消し、テーマ検索と完全に同一の見た目にする */
             .oc-hero-search-form{margin:0;padding:0;border:0;background:none;box-shadow:none}
         </style>
+        <script>
+            /* クリア✕: テーマ検索と同じ挙動。変換(IME)確定前は✕を隠し、iOSで「消去後に入力できない」状態を防ぐ。 */
+            (function () {
+                var input = document.getElementById('oc-hero-input');
+                var clearBtn = document.getElementById('oc-hero-clear');
+                if (!input || !clearBtn) return;
+                var composing = false;
+                var toggleClear = function () { clearBtn.hidden = !input.value || composing; };
+                input.addEventListener('compositionstart', function () { composing = true; toggleClear(); });
+                input.addEventListener('compositionend', function () { composing = false; toggleClear(); });
+                input.addEventListener('input', toggleClear);
+                var doClear = function () { input.value = ''; toggleClear(); };
+                clearBtn.addEventListener('touchstart', function (e) { e.preventDefault(); doClear(); }, { passive: false });
+                clearBtn.addEventListener('mousedown', function (e) { e.preventDefault(); }); // PC: 入力欄のフォーカスを奪わない
+                clearBtn.addEventListener('click', function () { if (input.value) doClear(); });
+                toggleClear();
+            })();
+        </script>
 
         <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO: 日本以外ではマイリストが無効
         ?>
