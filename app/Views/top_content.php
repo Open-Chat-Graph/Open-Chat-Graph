@@ -49,7 +49,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 <input id="oc-hero-input" class="oc-hero-search__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
                     autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required
                     placeholder="<?php echo t('オープンチャットを検索') ?>" aria-label="<?php echo t('オープンチャットを検索') ?>">
-                <span id="oc-hero-clear" class="oc-hero-search__clear" role="button" aria-label="クリア" hidden>&times;</span>
+                <span id="oc-hero-clear" class="oc-hero-search__clear" role="button" aria-label="<?php echo t('クリア') ?>" tabindex="0" hidden>&times;</span>
                 <input type="hidden" name="list" value="all">
                 <input type="hidden" name="sort" value="member">
                 <input type="hidden" name="order" value="desc">
@@ -83,6 +83,8 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 clearBtn.addEventListener('touchstart', function (e) { e.preventDefault(); doClear(); }, { passive: false });
                 clearBtn.addEventListener('mousedown', function (e) { e.preventDefault(); }); // PC: 入力欄のフォーカスを奪わない
                 clearBtn.addEventListener('click', function () { if (input.value) doClear(); });
+                // キーボード操作: Enter/Space でクリア（tabindex=0 でフォーカス可能に）
+                clearBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (input.value) doClear(); } });
                 toggleClear();
             })();
         </script>
