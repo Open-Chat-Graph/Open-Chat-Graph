@@ -131,6 +131,14 @@ const translation = {
     tw: '其他',
     th: 'อื่นๆ',
   },
+  関連テーマ: {
+    tw: '相關主題',
+    th: 'หัวข้อที่เกี่ยวข้อง',
+  },
+  サブカテゴリ: {
+    tw: '子分類',
+    th: 'หมวดย่อย',
+  },
 }
 
 const sprintfTranslation = {
