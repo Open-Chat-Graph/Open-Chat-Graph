@@ -142,6 +142,11 @@ Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
 Route::path(
     'oc/{open_chat_id}/position',
     [RankingPositionApiController::class, 'rankingPosition']

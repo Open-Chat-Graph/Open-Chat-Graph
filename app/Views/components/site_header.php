@@ -11,10 +11,11 @@
                 <p><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: #888;">' . t(' (開発環境)') . '</span>'; ?></p>
             <?php endif ?>
         </a>
-        <a class="category-button" href="<?php echo url('ranking') ?>">
+        <?php // トップでは検索ボタン(右端absolute)を消すため、その回避用に空けていた右余白(50px)を詰めて右端に寄せる ?>
+        <a class="category-button" href="<?php echo url('ranking') ?>"<?php if ($hideSearchButton ?? false) echo ' style="margin-right: 0;"' ?>>
             <span><?php echo t('カテゴリーから探す') ?></span>
         </a>
-        <nav class="header-nav unset" style="height: 48px;">
+        <nav class="header-nav unset" style="height: 48px;<?php if ($hideSearchButton ?? false) echo ' display: none;' ?>">
             <button class="header-button unset" id="search_button" aria-label="><?php echo t('検索') ?>">
                 <span class="search-button-icon"></span>
             </button>
