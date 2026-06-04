@@ -86,7 +86,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                     <div><?php echo sprintfT("「%s」でいま人数が伸びているルーム", $extractTag) ?>&nbsp;</div>
                     <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                   </h2>
-                  <div style="font-size: 11px; font-weight: normal; color: #9aa3af; margin-top: 3px;">🚀 <?php echo t('は過去24時間のメンバー増加数') ?></div>
                 <?php endif ?>
               </header>
               <?php $currentListCount = count($listArray) ?>
