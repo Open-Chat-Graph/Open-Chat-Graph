@@ -16,7 +16,6 @@ class BlogController
     {
         $_css = self::CSS;
         $_meta = meta()->setTitle('ブログ｜オープンチャットの運営・検索・トレンド情報');
-        $_meta->image_url = '';
         $desc = 'LINEオープンチャットの運営のコツ、検索・ランキングの仕組み、トレンドを、オプチャグラフ独自のデータをもとに解説します。';
         $_meta->setDescription($desc)->setOgpDescription($desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema('ブログ');
@@ -33,7 +32,6 @@ class BlogController
 
         $_css = self::CSS;
         $_meta = meta()->setTitle($article['title']);
-        $_meta->image_url = '';
         $_meta->setDescription($article['description'])->setOgpDescription($article['description']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema('ブログ', 'blog', $article['title']);
