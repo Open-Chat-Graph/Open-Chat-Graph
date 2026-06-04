@@ -38,10 +38,11 @@ $shelves = array_values(array_filter([
     <h2 class="theme-disco__title" id="theme-disco-title"><?php echo t('テーマを探す') ?></h2>
 
     <div class="theme-disco__search">
-        <svg class="theme-disco__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
+        <svg class="theme-disco__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:#9aa3af;pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
         <input id="theme-disco-input" class="theme-disco__input" type="search" inputmode="search" enterkeyhint="search"
             autocomplete="off" autocapitalize="off" spellcheck="false"
             placeholder="<?php echo t('テーマ名で検索') ?>" aria-label="<?php echo t('テーマ名で検索') ?>">
+        <span id="theme-disco-clear" class="theme-disco__clear" role="button" aria-label="クリア" hidden>&times;</span>
     </div>
 
     <div class="theme-disco__results" id="theme-disco-results" hidden></div>
@@ -80,10 +81,12 @@ $shelves = array_values(array_filter([
         .theme-disco__search{position:relative;display:block;width:100%}
         .theme-disco__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:#9aa3af;pointer-events:none}
         /* font-size は必ず16px以上: iOS Safari のフォーカス時オートズーム回避 */
-        .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 16px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
-        .theme-disco__input::-webkit-search-cancel-button{cursor:pointer}
+        .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
         .theme-disco__input::placeholder{color:#9aa3af}
         .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
+        .theme-disco__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
+        .theme-disco__clear:hover{color:#5b6573}
+        .theme-disco__clear[hidden]{display:none}
         .theme-disco__spinner{width:20px;height:20px;border:2.5px solid #d7dde6;border-top-color:#06c755;border-radius:50%;animation:theme-disco-spin .7s linear infinite;margin:8px 2px}
         @keyframes theme-disco-spin{to{transform:rotate(360deg)}}
         .theme-disco__results{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:8px;margin-top:14px}
@@ -124,7 +127,9 @@ $shelves = array_values(array_filter([
             const MAX = 60;
             let reqToken = 0;          // フォールバック取得のレース対策（最新の検索のみ反映）
             let debounceTimer = null;
+            const clearBtn = document.getElementById('theme-disco-clear');
             const shelvesHeight = shelves.offsetHeight;   // 検索中の高さ確保（レイアウトシフト防止）
+            const toggleClear = () => { if (clearBtn) clearBtn.hidden = !input.value; };
             const reserve = (on) => { results.style.minHeight = (on && shelvesHeight) ? shelvesHeight + 'px' : ''; };
 
             // 検索の正規化: 半角全角(NFKC)・大文字小文字(toLowerCase)・カタカナ/ひらがな(カナ→ひら) を無視して一致させる。
@@ -269,9 +274,10 @@ $shelves = array_values(array_filter([
                 try { q = sessionStorage.getItem(STORE_KEY) || ''; } catch (e) { /* noop */ }
                 if (q && !input.value) input.value = q;
                 if (input.value) render(input.value);
+                toggleClear();
             };
 
-            input.addEventListener('input', () => { render(input.value); save(input.value); });
+            input.addEventListener('input', () => { render(input.value); save(input.value); toggleClear(); });
 
             // iOS Safari は <form> の submit を伴わないと Enter でキーボード(IME)が閉じない。
             // 変換確定中(IME composition)の Enter は「確定」用なので除外し、確定後の Enter で
@@ -283,8 +289,15 @@ $shelves = array_values(array_filter([
                 }
             });
 
-            // クリアはブラウザ標準の検索クリアボタン（::-webkit-search-cancel-button）に任せる。
-            // OS がフォーカス・IME（変換）を正しく保持するため、消去後そのまま入力できる。
+            if (clearBtn) {
+                // クリア✕は span（role=button・非フォーカス要素）。タップしても入力欄の focus(=IME/キーボード)を
+                // 奪わないので消去後そのまま入力できる。iOS の保険として touchstart でも focus 移動を抑止。
+                const doClear = () => { input.value = ''; render(''); save(''); toggleClear(); };
+                clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doClear(); }, { passive: false });
+                clearBtn.addEventListener('mousedown', (e) => e.preventDefault()); // PC: 入力欄のフォーカスを奪わない
+                clearBtn.addEventListener('click', () => { if (input.value) doClear(); });
+            }
+            toggleClear();
 
             // 戻る/進む（bfcache無効＝no-store時も含む）でのみ復元。通常遷移や別テーマでは復元しない。
             const nav = performance.getEntriesByType?.('navigation')?.[0];
