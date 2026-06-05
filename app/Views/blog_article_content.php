@@ -5,42 +5,49 @@
 <body>
     <?php viewComponent('site_header') ?>
     <main style="overflow: hidden;">
-        <article class="terms blog-article" style="max-width: 760px; margin: 0 auto; padding: 0 1rem;">
-            <nav style="font-size:12.5px; color:#999; margin: 8px 0 4px;">
-                <a href="<?php echo url('') ?>" style="color:#999;">トップ</a> ›
-                <a href="<?php echo url('blog') ?>" style="color:#999;">ブログ</a>
+        <!-- $article のテキストは View 層で自動エスケープ済み。$_html/$_faqHtml は commonmark 済みの信頼ソースで生出力 -->
+        <article class="blog blog-article">
+            <nav class="blog-crumb">
+                <a href="<?php echo url('') ?>">トップ</a><span class="sep">›</span><a href="<?php echo url('blog') ?>">ブログ</a>
             </nav>
-            <!-- $article のテキストは View 層で自動エスケープ済み（h() で二重エスケープしないこと） -->
-            <h1 style="letter-spacing: 0;"><?php echo $article['title'] ?></h1>
-            <p style="color:#999; font-size:12.5px; margin:4px 0 1.5rem;">
-                オプチャグラフ編集部 ・ 公開 <?php echo $article['date'] ?><?php if (($article['updated'] ?? '') && $article['updated'] !== $article['date']): ?> ・ 更新 <?php echo $article['updated'] ?><?php endif ?> ・ 約<?php echo (int)($article['readingMinutes'] ?? 1) ?>分で読めます<?php if ($article['category']): ?> ・ <?php echo $article['category'] ?><?php endif ?>
-            </p>
 
-            <div class="blog-body" style="line-height:1.9;">
-                <?php echo $_html // commonmark 出力（運営者が執筆する信頼ソース・生出力） ?>
+            <h1 class="blog-title"><?php echo $article['title'] ?></h1>
+
+            <div class="blog-meta">
+                <span class="author">オプチャグラフ編集部</span>
+                <span>公開 <?php echo $article['date'] ?></span>
+                <?php if (($article['updated'] ?? '') && $article['updated'] !== $article['date']): ?><span>更新 <?php echo $article['updated'] ?></span><?php endif ?>
+                <span>約<?php echo (int)($article['readingMinutes'] ?? 1) ?>分</span>
+                <?php if ($article['category']): ?><span class="cat"><?php echo $article['category'] ?></span><?php endif ?>
             </div>
 
-            <aside style="margin:2.5rem 0 1rem; padding:1.25rem; border:1px solid #e8e8e8; border-radius:12px; background:#fafafa;">
-                <div style="font-weight:bold; margin-bottom:.6rem;">📈 オプチャグラフで見る</div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    <a href="<?php echo url('ranking') ?>" style="display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid #06c755; border-radius:36px; color:#06c755; font-weight:bold; font-size:13px; text-decoration:none;">人気ランキング</a>
-                    <a href="<?php echo url('') ?>" style="display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid #e8e8e8; border-radius:36px; color:#111; font-weight:bold; font-size:13px; text-decoration:none;">急上昇テーマ</a>
-                    <a href="<?php echo url('labs/publication-analytics') ?>" style="display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid #e8e8e8; border-radius:36px; color:#111; font-weight:bold; font-size:13px; text-decoration:none;">掲載・圏外の分析</a>
+            <div class="blog-body">
+                <?php echo $_html ?>
+            </div>
+
+            <div class="blog-cta">
+                <div class="blog-cta-h">📈 オプチャグラフで<span class="em">実データ</span>を見る</div>
+                <div class="blog-cta-row">
+                    <a class="blog-btn blog-btn--primary" href="<?php echo url('ranking') ?>">人気ランキング</a>
+                    <a class="blog-btn" href="<?php echo url('') ?>">急上昇テーマ</a>
+                    <a class="blog-btn" href="<?php echo url('labs/publication-analytics') ?>">掲載・圏外の分析</a>
                 </div>
-            </aside>
+            </div>
+
+            <?php if (!empty($_faqHtml)): ?>
+                <div class="blog-faq"><?php echo $_faqHtml ?></div>
+            <?php endif ?>
 
             <?php if (!empty($related)): ?>
-                <section style="margin:2rem 0 1rem;">
-                    <h2 style="font-size:16px;">関連記事</h2>
-                    <ul style="list-style:none; padding:0; margin:.75rem 0 0;">
-                        <?php foreach ($related as $r): ?>
-                            <li style="margin:0 0 .8rem;">
-                                <a href="<?php echo url('blog/' . $r['slug']) ?>" style="font-weight:bold; text-decoration:none; line-height:1.5;"><?php echo $r['title'] ?></a>
-                                <?php if ($r['category']): ?><span style="color:#999; font-size:12px;"> ・ <?php echo $r['category'] ?></span><?php endif ?>
-                            </li>
-                        <?php endforeach ?>
-                    </ul>
-                </section>
+                <nav class="blog-related">
+                    <div class="blog-related-h">関連記事</div>
+                    <?php foreach ($related as $r): ?>
+                        <a href="<?php echo url('blog/' . $r['slug']) ?>">
+                            <div class="t"><?php echo $r['title'] ?></div>
+                            <?php if ($r['category']): ?><div class="c"><?php echo $r['category'] ?></div><?php endif ?>
+                        </a>
+                    <?php endforeach ?>
+                </nav>
             <?php endif ?>
         </article>
     </main>

@@ -7,6 +7,7 @@ namespace App\Services\Blog;
 use App\Config\AppConfig;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\MarkdownConverter;
 
 /**
@@ -52,8 +53,17 @@ class BlogService
         [$fm, $body] = $this->parse((string)file_get_contents($path));
         if (($fm['draft'] ?? '') === 'true') return null;
 
-        $html = $this->render($body);
-        $plain = (string)preg_replace('/\s+/u', '', strip_tags($html));
+        // FAQ セクション（## よくある質問 以降）を本文から分離し、専用スタイルで表示できるようにする。
+        $mainBody = $body;
+        $faqBody = '';
+        if (preg_match('/^##[ \t]*(?:よくある質問|FAQ|Q&A).*$/mu', $body, $m, PREG_OFFSET_CAPTURE)) {
+            $mainBody = rtrim(substr($body, 0, $m[0][1]));
+            $faqBody = substr($body, $m[0][1]);
+        }
+
+        $html = $this->render($mainBody);
+        $faqHtml = $faqBody !== '' ? $this->render($faqBody) : '';
+        $plain = (string)preg_replace('/\s+/u', '', strip_tags($html . $faqHtml));
 
         return [
             'slug' => $slug,
@@ -66,6 +76,7 @@ class BlogService
             'readingMinutes' => max(1, (int)ceil(mb_strlen($plain) / 500)),
             'faq' => $this->extractFaq($body),
             'html' => $html,
+            'faqHtml' => $faqHtml,
         ];
     }
 
@@ -136,6 +147,7 @@ class BlogService
     {
         $environment = new Environment(['html_input' => 'allow', 'allow_unsafe_links' => false]);
         $environment->addExtension(new CommonMarkCoreExtension());
+        $environment->addExtension(new TaskListExtension()); // - [ ] チェックリストをチェックボックス描画に
         return (string)(new MarkdownConverter($environment))->convert($markdown);
     }
 }

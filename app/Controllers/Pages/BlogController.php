@@ -12,7 +12,7 @@ use Spatie\SchemaOrg\Schema;
 
 class BlogController
 {
-    private const CSS = ['site_header', 'site_footer', 'room_list', 'terms'];
+    private const CSS = ['site_header', 'site_footer', 'room_list', 'blog'];
 
     public function index(BlogService $blog, PageBreadcrumbsListSchema $breadcrumbsShema)
     {
@@ -84,9 +84,10 @@ class BlogController
         // 本文 HTML は commonmark 済みの信頼ソース。View の自動エスケープ(非 _ 変数)を避けるため
         // アンダースコア接頭辞で生出力。title 等のテキストは $article 側で自動エスケープされる。
         $_html = $article['html'];
-        unset($article['html'], $article['faq']);
+        $_faqHtml = $article['faqHtml'];
+        unset($article['html'], $article['faqHtml'], $article['faq']);
 
-        return view('blog_article_content', compact('_meta', '_css', '_breadcrumbsShema', '_schema', 'article', '_html', 'related'));
+        return view('blog_article_content', compact('_meta', '_css', '_breadcrumbsShema', '_schema', 'article', '_html', '_faqHtml', 'related'));
     }
 
     private function publisher(): Organization
