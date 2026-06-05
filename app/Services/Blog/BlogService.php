@@ -145,6 +145,10 @@ class BlogService
     /** 本文はサイト運営者が執筆する信頼ソースなので raw HTML を許可（CTA ブロック等を埋め込める）。 */
     private function render(string $markdown): string
     {
+        // CJK 特有の CommonMark バグ回避: 太字 ** が全角約物（（。、「等）に隣接すると emphasis を
+        // 閉じ/開きできず「**」が文字のまま残る。太字は先に <strong> へ変換しておく（html_input=allow で保持）。
+        $markdown = (string)preg_replace('/\*\*([^*\n]{1,120}?)\*\*/u', '<strong>$1</strong>', $markdown);
+
         $environment = new Environment(['html_input' => 'allow', 'allow_unsafe_links' => false]);
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addExtension(new TaskListExtension()); // - [ ] チェックリストをチェックボックス描画に
