@@ -90,7 +90,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     オプチャ公式ランキング掲載の分析
                 </h2>
                 <p>
-                    公式ランキング掲載・未掲載の履歴を表示します。
+                    公式ランキングから<b>消えた部屋（未掲載）</b>と、<b>消えてから復活した部屋（再掲載済み）</b>を一覧にする分析ツールです。<br>
+                    「<b>内容を変更した直後に消えたのか／それ以外の理由か</b>」で絞り込めるので、検索落ち・圏外の原因の切り分けに使えます（やや上級者向け）。
                 </p>
             </div>
         </header>
@@ -175,8 +176,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <form id="value-form" style="position: relative; margin-bottom: 12px; margin-top: 1rem;">
             <label for="pet-select0">💡掲載状況:</label>
             <select id="pet-select0" name="publish">
-                <option value="1" <?php if (R::input('publish') === 1) echo 'selected' ?>>現在未掲載</option>
-                <option value="0" <?php if (R::input('publish') === 0) echo 'selected' ?>>再掲載済み</option>
+                <option value="1" <?php if (R::input('publish') === 1) echo 'selected' ?>>現在未掲載（消えたまま）</option>
+                <option value="0" <?php if (R::input('publish') === 0) echo 'selected' ?>>再掲載済み（消えて復活）</option>
                 <option value="2" <?php if (R::input('publish') === 2) echo 'selected' ?>>すべて表示</option>
             </select>
             <label for="pet-select1">📝ルーム内容の変更:</label>
@@ -229,6 +230,18 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <?php if (isset($_pagerNavArg)) : ?>
             <?php viewComponent('pager_nav_ranking_ban', $_pagerNavArg) ?>
         <?php endif ?>
+
+        <div id="analytics-loading" aria-hidden="true">
+            <div class="al-spinner"></div>
+            <div class="al-text">データを集計中…</div>
+        </div>
+        <style>
+            #analytics-loading{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(255,255,255,.8);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+            #analytics-loading.is-loading{display:flex}
+            #analytics-loading .al-spinner{width:44px;height:44px;border:4px solid #e8e8e8;border-top-color:#06c755;border-radius:50%;animation:al-spin .8s linear infinite}
+            #analytics-loading .al-text{font-size:13px;font-weight:bold;color:#06c755}
+            @keyframes al-spin{to{transform:rotate(360deg)}}
+        </style>
     </main>
     <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
@@ -254,6 +267,19 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
             el.addEventListener('change', () => el.value && (location.href = el.value))
         })(document.getElementById('page-selector'));
+
+        // 重いクエリのリロード中、ローディングを表示して「待機中」と分かるようにする（非インタラクティブ感の解消）
+        (() => {
+            const loading = document.getElementById('analytics-loading');
+            if (!loading) return;
+            const show = () => loading.classList.add('is-loading');
+            const form = document.getElementById('value-form');
+            form && form.addEventListener('submit', show);
+            document.querySelectorAll('.eazy-btn').forEach((b) => b.addEventListener('click', show));
+            const ps = document.getElementById('page-selector');
+            ps && ps.addEventListener('change', show);
+            document.querySelectorAll('main a[href*="publication-analytics"]').forEach((a) => a.addEventListener('click', show));
+        })();
     </script>
 </body>
 
