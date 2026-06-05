@@ -18,18 +18,32 @@
   color: var(--text);
 }
 
-/* ---- パンくず ---- */
+/* ---- パンくず（押せると一目で分かるチップ。mvp.css の nav{justify:space-between} を打ち消す） ---- */
 .blog-crumb {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--muted);
-  margin: 10px 0 14px;
+  justify-content: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 10px 0 20px;
 }
-.blog-crumb a { color: var(--muted); text-decoration: none; }
-.blog-crumb a:hover { color: var(--g-deep); }
-.blog-crumb .sep { color: #d3d6da; }
+.blog-crumb a {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--g-deep); text-decoration: none;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--g-soft); line-height: 1.4;
+  transition: background .15s;
+}
+.blog-crumb a:first-child::before {
+  content: ""; width: 13px; height: 13px; flex: none;
+  background: var(--g-deep);
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
+}
+.blog-crumb a:hover { background: #e2f6ea; }
+.blog-crumb .sep { color: #c5c9ce; font-weight: 400; }
 
 /* ---- タイトル・メタ ---- */
 .blog-title {
@@ -90,18 +104,17 @@
 .blog-body li { margin: .35rem 0; }
 .blog-body li::marker { color: var(--g); }
 
-/* チェックリスト（- [ ]） */
-.blog-body li:has(input[type="checkbox"]) { list-style: none; margin-left: -1.1em; }
+/* 確認リスト（- [ ]）＝記事内の静的チェックポイント。フォーム入力ではなく緑✓の一覧として見せる。 */
+.blog-body li:has(input[type="checkbox"]) { list-style: none; margin-left: -1.4em; }
 .blog-body input[type="checkbox"] {
-  appearance: none; -webkit-appearance: none;
-  width: 18px; height: 18px; margin: 0 .55em -.22em 0;
-  border: 1.5px solid #cfd4d9; border-radius: 5px; background: #fff;
+  appearance: none; -webkit-appearance: none; pointer-events: none;
+  width: 20px; height: 20px; margin: 0 .55em -.28em 0;
+  border-radius: 50%; background: var(--g-soft); border: 1.5px solid #bfe7cd;
   position: relative; flex: none;
 }
-.blog-body input[type="checkbox"]:checked { background: var(--g); border-color: var(--g); }
-.blog-body input[type="checkbox"]:checked::after {
-  content: ""; position: absolute; left: 5px; top: 1px;
-  width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0;
+.blog-body input[type="checkbox"]::after {
+  content: ""; position: absolute; left: 6px; top: 3px;
+  width: 5px; height: 9px; border: solid var(--g-deep); border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
