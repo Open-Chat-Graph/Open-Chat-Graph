@@ -5,29 +5,34 @@
 <body>
     <?php viewComponent('site_header') ?>
     <main style="overflow: hidden;">
-        <article class="terms" style="max-width: 760px; margin: 0 auto; padding: 0 1rem;">
-            <h1 style="letter-spacing: 0;">ブログ</h1>
-            <p>LINEオープンチャットの<b>運営のコツ</b>・<b>検索やランキングの仕組み</b>・<b>トレンド</b>を、オプチャグラフ独自のデータをもとに解説します。</p>
+        <!-- $articles は View 層で自動エスケープ済み -->
+        <div class="blog">
+            <nav class="blog-crumb">
+                <a href="<?php echo url('') ?>">トップ</a><span class="sep">›</span><span>ブログ</span>
+            </nav>
+            <h1 class="blog-title">ブログ</h1>
+            <p class="blog-lead">LINEオープンチャットの<b>運営のコツ</b>・<b>検索やランキングの仕組み</b>・<b>トレンド</b>を、オプチャグラフ独自のデータをもとに解説します。</p>
 
             <?php if (empty($articles)): ?>
-                <p style="color:#888;">記事は準備中です。</p>
+                <p style="color:#8a9097;">記事は準備中です。</p>
             <?php else: ?>
-                <!-- $articles は View 層で自動エスケープ済み（h() で二重エスケープしないこと） -->
-                <ul style="list-style:none; padding:0; margin: 1.5rem 0 0;">
+                <ul class="blog-cards">
                     <?php foreach ($articles as $a): ?>
-                        <li style="margin:0 0 1.25rem; padding:0 0 1.25rem; border-bottom:1px solid #eee;">
-                            <a href="<?php echo url('blog/' . $a['slug']) ?>" style="font-size:18px; font-weight:bold; text-decoration:none; line-height:1.5;"><?php echo $a['title'] ?></a>
-                            <p style="color:#999; font-size:12.5px; margin:5px 0;">
-                                <?php echo $a['date'] ?><?php if ($a['category']): ?> ・ <?php echo $a['category'] ?><?php endif ?>
-                            </p>
-                            <?php if ($a['description']): ?>
-                                <p style="color:#555; font-size:14px; margin:0; line-height:1.7;"><?php echo $a['description'] ?></p>
-                            <?php endif ?>
+                        <li>
+                            <a class="blog-card" href="<?php echo url('blog/' . $a['slug']) ?>">
+                                <div class="t"><?php echo $a['title'] ?></div>
+                                <div class="m">
+                                    <?php if ($a['category']): ?><span class="cat"><?php echo $a['category'] ?></span><?php endif ?>
+                                    <span class="date"><?php echo $a['date'] ?></span>
+                                </div>
+                                <?php if ($a['description']): ?><p class="d"><?php echo $a['description'] ?></p><?php endif ?>
+                                <div class="go">続きを読む</div>
+                            </a>
                         </li>
                     <?php endforeach ?>
                 </ul>
             <?php endif ?>
-        </article>
+        </div>
     </main>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <?php viewComponent('footer_inner') ?>
