@@ -113,6 +113,11 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
+        <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。最大の入口から記事へ回遊。ja のみ。 ?>
+            <hr class="hr-top" style="margin-bottom: 8px;">
+            <?php viewComponent('home_blog_shelf') ?>
+        <?php endif ?>
+
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
