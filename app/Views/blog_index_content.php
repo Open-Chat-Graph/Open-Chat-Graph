@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
-<?php viewComponent('head', compact('_css', '_meta')) ?>
+<?php viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body>
     <?php viewComponent('site_header') ?>
