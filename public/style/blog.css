@@ -115,6 +115,30 @@
 .blog-body blockquote p { margin: 0; }
 .blog-body blockquote a { color: var(--g-deep); }
 
+/* ---- 結論ボックス（Smart Brevity の要点先出し / :::point） ---- */
+.blog-body .blog-point {
+  margin: .4rem 0 2rem; padding: 1.05rem 1.25rem 1.1rem;
+  border: 1.5px solid var(--g); border-radius: 14px;
+  background:
+    radial-gradient(130% 120% at 0% 0%, #eafaf1 0%, var(--g-soft) 60%);
+  box-shadow: 0 2px 12px rgba(6, 199, 85, .09);
+}
+.blog-body .blog-point__label {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin: 0 0 .7rem; padding: 3px 12px 3px 10px;
+  font-size: 12px; font-weight: 800; letter-spacing: .03em;
+  color: #fff; background: var(--g); border-radius: 999px;
+}
+.blog-body .blog-point__label::before { content: "🎯"; font-size: 11.5px; }
+.blog-body .blog-point ul { margin: 0; padding-left: 1.3em; }
+.blog-body .blog-point li { margin: .5rem 0; color: var(--text); line-height: 1.8; }
+.blog-body .blog-point li::marker { color: var(--g); }
+.blog-body .blog-point strong { color: var(--ink); }
+
+/* ---- 見出しシグナル：段落頭の太字（「なぜ重要か：」等）を緑で立て、Smart Brevity の流れを作る ---- */
+.blog-body > p > strong:first-child { color: var(--g-deep); }
+.blog-body blockquote p > strong:first-child { color: inherit; }
+
 /* ---- 本体への誘導 CTA カード ---- */
 .blog-cta {
   margin: 2.6rem 0 1.4rem; padding: 1.25rem 1.3rem 1.35rem;
