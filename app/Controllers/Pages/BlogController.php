@@ -7,6 +7,7 @@ namespace App\Controllers\Pages;
 use App\Config\AppConfig;
 use App\Services\Blog\BlogService;
 use App\Views\Schema\PageBreadcrumbsListSchema;
+use Spatie\SchemaOrg\Organization;
 use Spatie\SchemaOrg\Schema;
 
 class BlogController
@@ -88,7 +89,7 @@ class BlogController
         return view('blog_article_content', compact('_meta', '_css', '_breadcrumbsShema', '_schema', 'article', '_html', 'related'));
     }
 
-    private function publisher(): \Spatie\SchemaOrg\Organization
+    private function publisher(): Organization
     {
         return Schema::organization()
             ->name(t('オプチャグラフ'))
