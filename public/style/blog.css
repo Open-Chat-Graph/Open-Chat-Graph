@@ -108,7 +108,9 @@
 .blog-body li:has(input[type="checkbox"]) { list-style: none; margin-left: -1.4em; }
 .blog-body input[type="checkbox"] {
   appearance: none; -webkit-appearance: none; pointer-events: none;
-  width: 20px; height: 20px; margin: 0 .55em -.28em 0;
+  box-sizing: border-box;
+  width: 20px; min-width: 20px; height: 20px; padding: 0; /* mvp.css の input{padding:.4rem .8rem} を打ち消し楕円化を防ぐ */
+  margin: 0 .55em -.28em 0;
   border-radius: 50%; background: var(--g-soft); border: 1.5px solid #bfe7cd;
   position: relative; flex: none;
 }
