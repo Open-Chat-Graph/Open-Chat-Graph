@@ -22,6 +22,9 @@
     <?php endif ?>
     <?php if (isset($noindex)) : ?>
         <meta name="robots" content="noindex, nofollow">
+    <?php else : ?>
+        <?php // Google Discover / リッチリザルトで大きな画像プレビューを許可（要件）。 ?>
+        <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <?php endif ?>
     <?php if (!isset($disableGAd) || !$disableGAd) : ?>
         <?php //\App\Views\Ads\GoogleAdsense::gTag($dataOverlays ?? null) ?>
