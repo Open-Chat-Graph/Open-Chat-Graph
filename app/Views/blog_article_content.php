@@ -13,7 +13,7 @@
             <!-- $article のテキストは View 層で自動エスケープ済み（h() で二重エスケープしないこと） -->
             <h1 style="letter-spacing: 0;"><?php echo $article['title'] ?></h1>
             <p style="color:#999; font-size:12.5px; margin:4px 0 1.5rem;">
-                <?php echo $article['date'] ?><?php if ($article['category']): ?> ・ <?php echo $article['category'] ?><?php endif ?>
+                オプチャグラフ編集部 ・ 公開 <?php echo $article['date'] ?><?php if (($article['updated'] ?? '') && $article['updated'] !== $article['date']): ?> ・ 更新 <?php echo $article['updated'] ?><?php endif ?> ・ 約<?php echo (int)($article['readingMinutes'] ?? 1) ?>分で読めます<?php if ($article['category']): ?> ・ <?php echo $article['category'] ?><?php endif ?>
             </p>
 
             <div class="blog-body" style="line-height:1.9;">
@@ -28,6 +28,20 @@
                     <a href="<?php echo url('labs/publication-analytics') ?>" style="display:inline-flex; align-items:center; height:34px; padding:0 14px; border:1px solid #e8e8e8; border-radius:36px; color:#111; font-weight:bold; font-size:13px; text-decoration:none;">掲載・圏外の分析</a>
                 </div>
             </aside>
+
+            <?php if (!empty($related)): ?>
+                <section style="margin:2rem 0 1rem;">
+                    <h2 style="font-size:16px;">関連記事</h2>
+                    <ul style="list-style:none; padding:0; margin:.75rem 0 0;">
+                        <?php foreach ($related as $r): ?>
+                            <li style="margin:0 0 .8rem;">
+                                <a href="<?php echo url('blog/' . $r['slug']) ?>" style="font-weight:bold; text-decoration:none; line-height:1.5;"><?php echo $r['title'] ?></a>
+                                <?php if ($r['category']): ?><span style="color:#999; font-size:12px;"> ・ <?php echo $r['category'] ?></span><?php endif ?>
+                            </li>
+                        <?php endforeach ?>
+                    </ul>
+                </section>
+            <?php endif ?>
         </article>
     </main>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>

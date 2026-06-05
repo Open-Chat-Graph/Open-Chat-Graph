@@ -52,6 +52,9 @@ class BlogService
         [$fm, $body] = $this->parse((string)file_get_contents($path));
         if (($fm['draft'] ?? '') === 'true') return null;
 
+        $html = $this->render($body);
+        $plain = (string)preg_replace('/\s+/u', '', strip_tags($html));
+
         return [
             'slug' => $slug,
             'title' => $fm['title'] ?? $slug,
@@ -59,8 +62,52 @@ class BlogService
             'date' => $fm['date'] ?? '',
             'updated' => $fm['updated'] ?? ($fm['date'] ?? ''),
             'category' => $fm['category'] ?? '',
-            'html' => $this->render($body),
+            'wordCount' => mb_strlen($plain),
+            'readingMinutes' => max(1, (int)ceil(mb_strlen($plain) / 500)),
+            'faq' => $this->extractFaq($body),
+            'html' => $html,
         ];
+    }
+
+    /**
+     * 関連記事（同カテゴリ優先・日付降順・自身を除く）。
+     * @return array<int, array{slug:string,title:string,description:string,date:string,category:string}>
+     */
+    public function related(string $slug, string $category, int $limit = 4): array
+    {
+        $all = array_values(array_filter($this->list(), static fn($a) => $a['slug'] !== $slug));
+        usort($all, static function ($a, $b) use ($category) {
+            $sa = ($a['category'] === $category) ? 0 : 1;
+            $sb = ($b['category'] === $category) ? 0 : 1;
+            return ($sa <=> $sb) ?: strcmp($b['date'], $a['date']);
+        });
+        return array_slice($all, 0, $limit);
+    }
+
+    /**
+     * 本文中の「## よくある質問 / FAQ」セクションから Q&A を抽出（FAQPage 構造化データ用）。
+     * ### を質問、続くテキストを回答（プレーン化）とする。無ければ空配列。
+     * @return array<int, array{q:string,a:string}>
+     */
+    private function extractFaq(string $rawBody): array
+    {
+        if (!preg_match('/^##[ \t]*(?:よくある質問|FAQ|Q&A).*$/mu', $rawBody, $m, PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+        $rest = substr($rawBody, $m[0][1] + strlen($m[0][0]));
+        if (preg_match('/^##[ \t]+\S/mu', $rest, $mm, PREG_OFFSET_CAPTURE)) {
+            $rest = substr($rest, 0, $mm[0][1]); // 次の H2 までを FAQ セクションとする
+        }
+
+        $faq = [];
+        if (preg_match_all('/^###[ \t]+(.+?)[ \t]*$([\s\S]*?)(?=^###[ \t]+|\z)/mu', $rest, $sets, PREG_SET_ORDER)) {
+            foreach ($sets as $s) {
+                $q = trim($s[1]);
+                $a = trim((string)preg_replace('/\s+/u', ' ', strip_tags($this->render($s[2]))));
+                if ($q !== '' && $a !== '') $faq[] = ['q' => $q, 'a' => $a];
+            }
+        }
+        return $faq;
     }
 
     /**
