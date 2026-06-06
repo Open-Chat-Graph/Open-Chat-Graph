@@ -64,6 +64,8 @@ const SearchPage = memo(() => {
       alphaApi.search({ keyword, category: cat as number, page: page as number, limit: limit as number, sort: sortType as SortType, order: sortOrder as SortOrder }),
     {
       revalidateFirstPage: false,
+      // Activity 再表示（タブ復帰/オーバーレイ閉じ）の同一キー再検証を抑止（ALPHA_SPEC: 実フェッチの無い再描画で読み込み挙動を起こさない）
+      revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000,

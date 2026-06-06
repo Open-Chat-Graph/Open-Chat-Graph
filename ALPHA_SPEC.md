@@ -14,10 +14,7 @@
 - 画面骨格（固定サブヘッダ＋スクロール領域）は `ListScreen` 1つ。覗き込み禁止（ヘッダはスクロール外のflex兄弟）。
 
 ### 重要な前提（落とし穴）
-- **`<Activity mode="hidden">` は state/ref を保持するが、エフェクトは破棄→visibleで再実行する（mount相当）。** よって「visible復帰でエフェクトが再走る」前提で全フックを書くこと。requestKey等が変わっていないのに再走る＝**新規イベントとして誤発火させてはいけない**。
-
-### 現状の負債（D-1〜）
-- **D-1（ユーザー報告・最優先）**: 検索→詳細→ブラウザバックで「一瞬 dim フィルタ」が出る。原因＝`useListProgress` の requestKey エフェクトが Activity 再表示で再走り、実フェッチが無いのに `setActive(true)`→最小表示で再取得バー(dim)が約450ms出る。**契約違反（被せ復帰で読み込み表示を出さない）。** 修正＝requestKey の“値の変化”でのみ起動（ref で前回値を覚え、再mountの同値では起動しない）。SWRも復帰時に不要な revalidate をしない（revalidateOnMount/IfStale 制御）。
+- **`<Activity mode="hidden">` は state/ref を保持するが、エフェクトは破棄→visibleで再実行する（mount相当）。** よって「visible復帰でエフェクトが再走る」前提で全フックを書くこと。requestKey等が変わっていないのに再走る＝**新規イベントとして誤発火させてはいけない**。実装上の防御は2枚: `useListProgress` は requestKey の“値の変化”でのみ起動（ref で前回値を記憶）、SWR は `revalidateIfStale: false` で同一キーの復帰時再検証を抑止。
 
 ---
 
@@ -29,10 +26,7 @@
 - 検索条件（filterKey）が変わったら先頭ページへ（setSize(1)＋visibleCount=30）。
 - 読み込み表示は1種類のバー（`ListProgressBar`）に統一：①初回（結果0）＝上部バー＋キャプション ②再取得（結果あり・条件変更）＝淡いdim＋同じ上部バー ③追加読み込み＝末尾に同じバー。スピナーは使わない。
 - ETA：`alpha_search_timing` にクエリ別 wall time を記録し次回見込みに。応答到着で100へ、到着前は90頭打ち。**最小表示時間は“実フェッチがある時のみ”**。
-- **実フェッチが無い再描画（タブ復帰/オーバーレイ閉じ/Activity再mount）では progress を一切起動しない。**
-
-### 現状の負債
-- **D-1（再掲）**: useListProgress が Activity 再mountで誤起動。
+- **実フェッチが無い再描画（タブ復帰/オーバーレイ閉じ/Activity再mount）では progress も SWR 再検証も一切起動しない**（`revalidateIfStale: false`）。
 
 ---
 

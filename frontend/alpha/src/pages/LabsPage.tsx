@@ -123,7 +123,7 @@ const LabsPage = memo(() => {
   const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<LabsPageResponse>(
     getKey,
     fetcher,
-    { revalidateFirstPage: false, revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 },
+    { revalidateFirstPage: false, revalidateIfStale: false, revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 },
   )
 
   // フィルタが変わったら先頭ページへ。
