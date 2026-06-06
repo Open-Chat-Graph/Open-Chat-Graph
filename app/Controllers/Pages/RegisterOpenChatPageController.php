@@ -17,7 +17,7 @@ class RegisterOpenChatPageController
         if (Reception::input('recently-registered-page')!== null) return false;
 
         $view = [
-            '_css' => ['room_list', 'site_header', 'site_footer'],
+            '_css' => ['components/room_list', 'components/site_header', 'components/site_footer'],
             '_meta' => meta()
                 ->setTitle('オープンチャットを登録する')
                 ->setDescription('オプチャグラフは公式ランキングからオプチャを自動で登録します。このフォームは公式ランキングに未掲載のオプチャを手動で登録できます。'),

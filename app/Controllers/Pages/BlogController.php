@@ -15,7 +15,7 @@ use Spatie\SchemaOrg\Schema;
 
 class BlogController
 {
-    private const CSS = ['site_header', 'site_footer', 'room_list', 'blog'];
+    private const CSS = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/blog'];
 
     public function index(BlogService $blog, PageBreadcrumbsListSchema $breadcrumbsShema): ViewInterface
     {
