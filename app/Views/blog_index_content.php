@@ -4,7 +4,7 @@
 
 <body>
     <?php viewComponent('site_header') ?>
-    <main style="overflow: hidden;">
+    <main class="no-pad blog-main">
         <!-- $articles は BlogSummaryDto[]。プロパティ文字列は View 層で自動エスケープ済み -->
         <div class="blog">
             <nav class="blog-crumb">
@@ -23,7 +23,8 @@
                                 <div class="t"><?php echo $a->title ?></div>
                                 <div class="m">
                                     <?php if ($a->category): ?><span class="cat"><?php echo $a->category ?></span><?php endif ?>
-                                    <span class="date"><?php echo $a->date ?></span>
+                                    <?php // 一覧では鮮度が伝わる更新日を表示（公開日・更新日の両方は記事ページで表示） ?>
+                                    <span class="date"><?php echo $a->updated ?></span>
                                 </div>
                                 <?php if ($a->description): ?><p class="d"><?php echo $a->description ?></p><?php endif ?>
                                 <div class="go">続きを読む</div>

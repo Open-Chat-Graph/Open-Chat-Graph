@@ -95,7 +95,15 @@ class SitemapGenerator
             $sitemap->addItem($this->currentUrl . 'oc');
             $sitemap->addItem($this->currentUrl . 'blog');
             foreach ($this->blogService->list() as $a) {
-                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $a->date ?: $datetime);
+                // lastmod は鮮度を反映する更新日（BlogService が公開日へのフォールバック済み）。
+                // frontmatter の日付 typo 1件で毎時のサイトマップ生成全体が中断しないよう
+                // ここでパースを検証し、不正値は毎時更新時刻に倒す（BlogController::toDate と同趣旨）。
+                try {
+                    $lastmod = new \DateTimeImmutable($a->updated !== '' ? $a->updated : $datetime);
+                } catch (\Throwable) {
+                    $lastmod = new \DateTimeImmutable($datetime);
+                }
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $lastmod);
             }
         }
 
