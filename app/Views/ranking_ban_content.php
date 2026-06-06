@@ -37,7 +37,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </section>
 
         <?php // 現在の条件がプリセットに無い組み合わせなら、詳細設定を開いた状態で出す（効いている条件を隠さない） ?>
-        <?php $rbIsPreset = in_array([R::input('publish'), R::input('change'), R::input('percent')], [[1, 0, 50], [1, 1, 50], [0, 2, 50], [2, 2, 100]], true); ?>
+        <?php $rbIsPreset = $since === '' && $until === ''
+            && in_array([R::input('publish'), R::input('change'), R::input('percent')], [[1, 0, 50], [1, 1, 50], [0, 2, 50], [2, 2, 100]], true); ?>
         <!-- 詳細設定（プロ向け・普段は閉じる） -->
         <details class="rb-advanced" id="rb-advanced"<?php if (!$rbIsPreset) echo ' open' ?>>
             <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位を個別に指定</span></summary>
@@ -99,6 +100,17 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         </label>
                     </div>
                     <p class="rb-field-hint">下位の部屋は単純な圏外落ちが多いので除外できます</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-period">消えた時期</div>
+                <div class="rb-field-control">
+                    <div class="rb-dates" role="group" aria-labelledby="rb-label-period">
+                        <input type="date" id="rb-since" class="rb-date-input" aria-label="消えた日の開始" value="<?php echo $since ?>">
+                        <span class="rb-dates-sep" aria-hidden="true">〜</span>
+                        <input type="date" id="rb-until" class="rb-date-input" aria-label="消えた日の終了" value="<?php echo $until ?>">
+                    </div>
+                    <p class="rb-field-hint">ランキングから消えた日で絞り込み（空欄＝全期間）</p>
                 </div>
             </div>
             </div>
@@ -234,6 +246,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const summaryCount = document.getElementById('rb-summary-count');
             const keywordInput = document.getElementById('rb-keyword');
             const clearBtn = document.getElementById('rb-keyword-clear');
+            const sinceInput = document.getElementById('rb-since');
+            const untilInput = document.getElementById('rb-until');
 
             // publish-change の9通りの組み合わせを1本の日本語文に合成するテンプレート
             const SUMMARY = {
@@ -248,24 +262,32 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 '2-2': '掲載が途切れた記録すべて'
             };
 
+            const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
             const parseState = (search) => {
                 const q = new URLSearchParams(search);
                 const num = (k, def) => {
                     const v = parseInt(q.get(k), 10);
                     return isNaN(v) ? def : v;
                 };
+                const date = (k) => {
+                    const v = q.get(k) || '';
+                    return DATE_RE.test(v) ? v : '';
+                };
                 return {
                     publish: num('publish', 1),
                     change: num('change', 1),
                     percent: num('percent', 50),
                     page: num('page', 1),
-                    keyword: q.get('keyword') || ''
+                    keyword: q.get('keyword') || '',
+                    since: date('since'),
+                    until: date('until')
                 };
             };
 
             let state = parseState(location.search);
 
-            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword (→ page>1)
+            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword → since → until (→ page>1)
             // CDNキャッシュキーの分裂を防ぐため固定
             const buildQuery = (s) => {
                 const q = new URLSearchParams();
@@ -273,6 +295,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 q.set('publish', s.publish);
                 q.set('percent', s.percent);
                 q.set('keyword', s.keyword);
+                q.set('since', s.since);
+                q.set('until', s.until);
                 if (s.page > 1) q.set('page', s.page);
                 return q.toString();
             };
@@ -283,6 +307,9 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const updateSummary = () => {
                 let text = SUMMARY[state.publish + '-' + state.change] || '';
                 if (state.percent < 100) text += '・最終順位 上位' + state.percent + '%以内';
+                if (state.since !== '' || state.until !== '') {
+                    text += '・' + state.since.replaceAll('-', '/') + '〜' + state.until.replaceAll('-', '/') + 'に消えた';
+                }
                 if (state.keyword !== '') text += '・「' + state.keyword + '」を含む';
                 summaryText.textContent = text;
             };
@@ -298,10 +325,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     r.closest('.rb-seg-item').classList.toggle('is-selected', checked);
                 });
                 if (keywordInput.value !== state.keyword) keywordInput.value = state.keyword;
+                if (sinceInput.value !== state.since) sinceInput.value = state.since;
+                if (untilInput.value !== state.until) untilInput.value = state.until;
                 toggleClear();
                 let anyPreset = false;
                 document.querySelectorAll('.rb-preset').forEach((b) => {
                     const active =
+                        state.since === '' && state.until === '' &&
                         Number(b.dataset.publish) === state.publish &&
                         Number(b.dataset.change) === state.change &&
                         Number(b.dataset.percent) === state.percent;
@@ -386,12 +416,27 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 });
             });
 
-            // プリセットチップ
+            // プリセットチップ（プリセット＝完成された見え方なので、期間指定もリセットする）
             document.querySelectorAll('.rb-preset').forEach((b) => {
                 b.addEventListener('click', () => {
                     state.publish = Number(b.dataset.publish);
                     state.change = Number(b.dataset.change);
                     state.percent = Number(b.dataset.percent);
+                    state.since = '';
+                    state.until = '';
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // 期間（消えた時期）
+            [sinceInput, untilInput].forEach((input) => {
+                input.addEventListener('change', () => {
+                    const v = DATE_RE.test(input.value) ? input.value : '';
+                    const key = input === sinceInput ? 'since' : 'until';
+                    if (state[key] === v) return;
+                    state[key] = v;
                     state.page = 1;
                     syncControls();
                     load({ push: true });
