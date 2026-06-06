@@ -29,8 +29,18 @@ use App\Config\SecretsConfig;
  *   - ストアの書込が不可な環境では従来どおり SecretsConfig の refresh_token で毎回 refresh
  *
  * ## invalid_grant（refresh_token 失効）時
- * - 明確な RuntimeException を投げてバッチログへ記録する。
+ * - ストア由来の refresh_token（SecretsConfig 値と異なるもの）で invalid_grant になった場合は、
+ *   ストアを破棄して SecretsConfig（local-secrets.php）の値で1回だけフォールバック再試行する
+ *   （local-secrets を新トークンに差し替えた後も古いストアが残るケースの自動回復）。
+ * - それでも invalid_grant なら明確な RuntimeException を投げてバッチログへ記録する。
  *   OAuth 再同意（ブラウザ操作）が必要なためコードでは自動回復できない。
+ *
+ * ## 同時実行（cron と admin 手動実行など）
+ * - refresh が必要になった時点で TOKEN_STORE_PATH.lock に flock(LOCK_EX) して排他する
+ *   （本体 JSON は rename で inode が差し替わるため、ロック対象は別の .lock ファイル）。
+ * - ロック取得後にストアを再読込（double-checked）し、待機中に他プロセスが
+ *   refresh 済みなら HTTP を叩かずそれを返す（rotation の取りこぼし防止）。
+ * - fopen/flock 失敗時はロックなしで続行（書込不可環境では従来どおり劣化動作）。
  */
 class AlphaGaClient
 {
@@ -757,7 +767,9 @@ class AlphaGaClient
      * 優先順位:
      * 1. プロセス内キャッシュ ($cachedToken) が有れば即返す。
      * 2. トークンストア (TOKEN_STORE_PATH) のキャッシュが有効期限内ならそれを返す。
-     * 3. Google に refresh して新しい access_token を取得し、ストアに保存する。
+     *    （rename がアトミックなのでロックレス読みで安全）
+     * 3. flock で排他してから Google に refresh して新しい access_token を取得し、
+     *    ストアに保存する（refreshAndStoreLocked()）。
      *
      * ストア書込失敗はログのみで握りつぶし、毎回 refresh する従来動作に劣化フォールバック。
      *
@@ -770,8 +782,138 @@ class AlphaGaClient
             return $this->cachedToken;
         }
 
-        // 2. プロセス跨ぎストアキャッシュ
-        $stored = $this->loadTokenStore();
+        // 2. プロセス跨ぎストアキャッシュ（高速パス: ロックなし）
+        $storedToken = $this->extractValidAccessToken($this->loadTokenStore());
+        if ($storedToken !== null) {
+            return $this->cachedToken = $storedToken;
+        }
+
+        // 3. refresh が必要 → flock で排他して refresh＋ストア保存
+        return $this->refreshAndStoreLocked();
+    }
+
+    /**
+     * flock で排他しながら refresh_token → access_token の交換とストア保存を行う。
+     *
+     * - ロック対象は TOKEN_STORE_PATH.lock（本体 JSON は saveTokenStore の rename で
+     *   inode が差し替わるため、本体 fd への flock は無効）。
+     * - flock はブロッキング（呼び出し元は batch/admin のみで低頻度）。
+     * - fopen/flock 失敗時はロックなしで続行（書込不可環境では劣化、fatal にしない）。
+     * - ロック取得後にストアを再読込（double-checked）し、待機中に他プロセスが
+     *   refresh 済みで有効なら HTTP を叩かずそれを返す。
+     * - ストア由来の refresh_token（SecretsConfig 値と異なるもの）が invalid_grant の場合は、
+     *   ストアを破棄して SecretsConfig 値で1回だけ再試行する（自動回復）。
+     *
+     * @throws \RuntimeException invalid_grant（refresh_token 失効）または HTTP エラー時
+     */
+    private function refreshAndStoreLocked(): string
+    {
+        $lockPath = self::TOKEN_STORE_PATH . '.lock';
+        $fp = @fopen($lockPath, 'c');
+        $locked = $fp !== false && @flock($fp, LOCK_EX);
+
+        try {
+            // double-checked: ロック待機中に他プロセスが refresh 済みならそれを返す
+            $stored = $this->loadTokenStore();
+            $storedToken = $this->extractValidAccessToken($stored);
+            if ($storedToken !== null) {
+                return $this->cachedToken = $storedToken;
+            }
+
+            // refresh_token はストアに保持されている場合はそちらを使う（rotation 対応）
+            $refreshToken = $this->refreshToken; // SecretsConfig のデフォルト
+            $usedStoredToken = false;
+            if (
+                $stored !== null
+                && isset($stored['refresh_token'])
+                && is_string($stored['refresh_token'])
+                && $stored['refresh_token'] !== ''
+            ) {
+                $refreshToken = $stored['refresh_token'];
+                // SecretsConfig 値と同じならフォールバックしても同じ失敗を繰り返すだけなのでフラグを立てない
+                $usedStoredToken = $stored['refresh_token'] !== $this->refreshToken;
+            }
+
+            $res = $this->requestToken($refreshToken);
+
+            // ストア由来の refresh_token が invalid_grant → ストアを破棄して
+            // SecretsConfig（local-secrets.php 差し替え後の新トークン想定）で1回だけ再試行
+            if ($this->isInvalidGrant($res) && $usedStoredToken) {
+                $this->clearTokenStore();
+                $refreshToken = $this->refreshToken;
+                $res = $this->requestToken($refreshToken);
+            }
+
+            if (empty($res['access_token'])) {
+                $err = $res['error_description'] ?? ($res['error'] ?? 'unknown');
+                $errStr = (string)$err;
+                // invalid_grant はコードで自動回復不可（OAuth 再同意が必要）
+                if ($this->isInvalidGrant($res)) {
+                    throw new \RuntimeException(
+                        'refresh_tokenが失効しています。OAuth再同意が必要です（ブラウザでGoogle認証→token.jsonを更新し、local-secrets.phpの$googleApiRefreshTokenを差し替えてください）。詳細: ' . $errStr
+                    );
+                }
+                throw new \RuntimeException('Failed to refresh access token: ' . $errStr);
+            }
+
+            $newAccessToken = (string)$res['access_token'];
+            $expiresIn = isset($res['expires_in']) ? (int)$res['expires_in'] : 3600;
+
+            // ストアに保存（書込失敗は握りつぶし）
+            $newRefreshToken = isset($res['refresh_token']) && is_string($res['refresh_token']) && $res['refresh_token'] !== ''
+                ? $res['refresh_token']
+                : $refreshToken;
+
+            $this->saveTokenStore([
+                'access_token' => $newAccessToken,
+                'expiry' => time() + $expiresIn,
+                'refresh_token' => $newRefreshToken,
+            ]);
+
+            return $this->cachedToken = $newAccessToken;
+        } finally {
+            if ($fp !== false) {
+                if ($locked) {
+                    @flock($fp, LOCK_UN);
+                }
+                @fclose($fp);
+            }
+        }
+    }
+
+    /**
+     * token エンドポイントへ refresh_token を POST してレスポンスを返す。
+     *
+     * @return array<string, mixed>
+     * @throws \RuntimeException HTTP 通信自体の失敗時
+     */
+    private function requestToken(string $refreshToken): array
+    {
+        return $this->httpPostForm(self::TOKEN_ENDPOINT, [
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'refresh_token' => $refreshToken,
+            'grant_type' => 'refresh_token',
+        ]);
+    }
+
+    /**
+     * token エンドポイント応答が invalid_grant（refresh_token 失効）かどうか。
+     *
+     * @param array<string, mixed> $res
+     */
+    private function isInvalidGrant(array $res): bool
+    {
+        return isset($res['error']) && $res['error'] === 'invalid_grant';
+    }
+
+    /**
+     * ストア内容から有効期限内の access_token を取り出す。無ければ null。
+     *
+     * @param array<string, mixed>|null $stored
+     */
+    private function extractValidAccessToken(?array $stored): ?string
+    {
         if (
             $stored !== null
             && isset($stored['access_token'], $stored['expiry'])
@@ -780,54 +922,18 @@ class AlphaGaClient
             && $stored['access_token'] !== ''
             && time() < $stored['expiry'] - self::EXPIRY_MARGIN_SECONDS
         ) {
-            return $this->cachedToken = $stored['access_token'];
+            return $stored['access_token'];
         }
+        return null;
+    }
 
-        // 3. refresh_token はストアに保持されている場合はそちらを使う（rotation 対応）
-        $refreshToken = $this->refreshToken; // SecretsConfig のデフォルト
-        if (
-            $stored !== null
-            && isset($stored['refresh_token'])
-            && is_string($stored['refresh_token'])
-            && $stored['refresh_token'] !== ''
-        ) {
-            $refreshToken = $stored['refresh_token'];
-        }
-
-        $res = $this->httpPostForm(self::TOKEN_ENDPOINT, [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'refresh_token' => $refreshToken,
-            'grant_type' => 'refresh_token',
-        ]);
-
-        if (empty($res['access_token'])) {
-            $err = $res['error_description'] ?? ($res['error'] ?? 'unknown');
-            $errStr = (string)$err;
-            // invalid_grant はコードで自動回復不可（OAuth 再同意が必要）
-            if (isset($res['error']) && $res['error'] === 'invalid_grant') {
-                throw new \RuntimeException(
-                    'refresh_tokenが失効しています。OAuth再同意が必要です（ブラウザでGoogle認証→token.jsonを更新し、local-secrets.phpの$googleApiRefreshTokenを差し替えてください）。詳細: ' . $errStr
-                );
-            }
-            throw new \RuntimeException('Failed to refresh access token: ' . $errStr);
-        }
-
-        $newAccessToken = (string)$res['access_token'];
-        $expiresIn = isset($res['expires_in']) ? (int)$res['expires_in'] : 3600;
-
-        // ストアに保存（書込失敗は握りつぶし）
-        $newRefreshToken = isset($res['refresh_token']) && is_string($res['refresh_token']) && $res['refresh_token'] !== ''
-            ? $res['refresh_token']
-            : $refreshToken;
-
-        $this->saveTokenStore([
-            'access_token' => $newAccessToken,
-            'expiry' => time() + $expiresIn,
-            'refresh_token' => $newRefreshToken,
-        ]);
-
-        return $this->cachedToken = $newAccessToken;
+    /**
+     * トークンストアを削除する（invalid_grant 自動回復用）。
+     * refresh_token が失効している場合は access_token も期限切れ確定のためファイルごと削除する。
+     */
+    private function clearTokenStore(): void
+    {
+        @unlink(self::TOKEN_STORE_PATH);
     }
 
     /**

@@ -64,12 +64,11 @@
 
 ### 契約
 - access_token はストアにキャッシュ（プロセス跨ぎ）し期限内は再取得しない。refresh_token rotation は自動永続化。書込不可なら SecretsConfig 読取にフォールバック。
-- refresh_token フル失効（invalid_grant）＝コードで自動回復不可。OAuth再同意のみ（Google仕様）。
+- refresh は `.lock` ファイルへの flock(LOCK_EX) で排他（本体JSONはrename差し替えのため不可）。ロック取得後に double-checked 再読込し、他プロセスが refresh 済みなら HTTP を叩かない。fopen/flock 失敗時はロックなしで劣化続行。
+- ストア由来の refresh_token（SecretsConfig 値と異なる）が invalid_grant → ストアを破棄し SecretsConfig 値で1回だけ再試行（local-secrets 差し替え後の自動回復）。それでも invalid_grant＝OAuth再同意のみ（Google仕様）。
 - ja限定：GSC/GA4 はドメイン全体なので `/tw`,`/th` を全フェッチで除外（`isOtherLocalePath`/page正規化）。
 
 ### 現状の負債（中）
-- **D-7**: invalid_grant 時にストアの古い refresh_token から回復せず、`SecretsConfig` の更新値にフォールバック・リトライしない。→ local-secrets を差し替えても古いストアで invalid_grant が継続。修正＝invalid_grant でストアの refresh_token を破棄し SecretsConfig 値で1回リトライ。
-- **D-8**: token store の read-modify-write が無ロック。手動バックフィルとcron同時実行で rotation を取りこぼし得る。→ flock 保護（低頻度）。
 - **D-9**: referrer→page 正規化が `AlphaGaClient::normalizePageScopePath` と `AlphaAccessRankingRepository::normalizeReferrerToPagePath` で**二重定義**。乖離リスク＝共通化。
 
 ---
