@@ -664,3 +664,95 @@ body > .google-auto-placed {
   border: 1px solid #ededf0;
   background-color: #fff;
 }
+
+/* ---------- 消えていた期間チップ（プリセットの下の第2列） ---------- */
+
+.rb-durations-outer {
+  margin-top: 14px;
+}
+
+.rb-durations-outer .rb-presets-title {
+  margin-bottom: 6px;
+}
+
+.rb-durations .rb-preset {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.rb-durations-outer .rb-field-hint {
+  margin-top: 6px;
+}
+
+/* ---------- 0件時の逃げ道（ふつうの順位落ちの除外を解除） ---------- */
+
+.rb-empty-hint {
+  font-size: 13px;
+  color: #5b6066;
+  margin: 8px 0 0;
+}
+
+.rb-widen {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  margin-top: 12px;
+  border: 1px solid #06c755;
+  border-radius: 999px;
+  color: #06c755;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.rb-widen:hover {
+  background-color: #06c75514;
+}
+
+/* 「3日以上」＝区分チップの合算ショートカット。区切り線で同列の6個目に見えないようにする */
+.rb-duration--shortcut {
+  margin-left: 8px;
+  position: relative;
+}
+
+.rb-duration--shortcut::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 6px;
+  bottom: 6px;
+  border-left: 1px solid #ededf0;
+}
+
+/* チップ内の状態ドット（プリセットの未掲載/復活の対をスキャナブルに） */
+.rb-preset .rb-dot {
+  margin-right: 6px;
+}
+
+.rb-clear-duration {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  margin: 12px 0 0 8px;
+  border: 1px solid #d0d3d6;
+  border-radius: 999px;
+  color: #5b6066;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.rb-clear-duration:hover {
+  background-color: #f3f4f6;
+}

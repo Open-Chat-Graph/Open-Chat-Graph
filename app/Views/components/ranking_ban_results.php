@@ -7,6 +7,9 @@
 <!-- @param int $maxPageNumber -->
 <!-- @param int $page -->
 <!-- @param string $titleValue -->
+<!-- @param int $percent (optional・0件時の逃げ道表示用) -->
+<!-- @param int $dmin (optional・0件時の期間解除ボタン表示用) -->
+<!-- @param int $dmax (optional・同上) -->
 <div class="rb-results-inner"
     data-total-records="<?php echo $totalRecords ?>"
     data-max-page="<?php echo $maxPageNumber ?>"
@@ -30,7 +33,18 @@
     <?php if (isset($openChatList)) : ?>
         <?php viewComponent('open_chat_list_ranking_ban', compact('openChatList', '_now')) ?>
     <?php else : ?>
-        <p class="rb-empty">0件の結果</p>
+        <div class="rb-empty">
+            <p>0件の結果</p>
+            <?php if (isset($percent) && $percent < 100) : ?>
+                <p class="rb-empty-hint">いまは「ふつうの順位落ち」（最後に載っていた順位が下位の部屋）を除外しています。<br>探している部屋は、除外された中にあるかもしれません。</p>
+                <button type="button" class="rb-widen">除外せずにすべて表示する</button>
+            <?php else : ?>
+                <p class="rb-empty-hint">条件に合う部屋が見つかりませんでした。キーワードや期間の条件をゆるめてみてください。</p>
+            <?php endif ?>
+            <?php if (isset($dmin, $dmax) && ($dmin > 0 || $dmax > 0)) : ?>
+                <button type="button" class="rb-clear-duration">「消えていた期間」の絞り込みを解除する</button>
+            <?php endif ?>
+        </div>
     <?php endif ?>
     <!-- 次のページ・前のページボタン -->
     <?php if (isset($_pagerNavArg)) : ?>
