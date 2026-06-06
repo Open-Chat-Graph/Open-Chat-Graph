@@ -386,7 +386,7 @@ body {
   --c-ink-shadow: rgba(0, 0, 0, 0.2);
 
   /* ヘッダー・フッター */
-  --c-header-backdrop: rgba(15, 23, 42, 0.85);
+  --c-header-backdrop: rgba(0, 0, 0, 0.85);
   --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
   --c-text-dim: #d3d6d8 /* slate-300 */;
   --c-overlay: rgba(0, 0, 0, 0.85);
@@ -430,14 +430,14 @@ body {
   /* 白フェード → 背景色フェードへ追従 */
   --c-fade-right: linear-gradient(
     90deg,
-    rgba(15, 23, 42, 0),
-    rgba(15, 23, 42, 0.95) 37%,
-    rgba(15, 23, 42, 1) 99%
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.95) 37%,
+    rgba(0, 0, 0, 1) 99%
   );
-  --c-fade-bottom: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 1));
-  --c-fade-right-2: linear-gradient(90deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 1));
-  --c-bg-fade-end: rgba(15, 23, 42, 0);
-  --c-bg-93: rgba(15, 23, 42, 0.93);
+  --c-fade-bottom: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-fade-right-2: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-bg-fade-end: rgba(0, 0, 0, 0);
+  --c-bg-93: rgba(0, 0, 0, 0.93);
 
   /* ルーム詳細・labs 系 */
   --c-labs-blue: #1d9bf0;
@@ -627,7 +627,7 @@ body {
   --c-ink-shadow: rgba(0, 0, 0, 0.2);
 
   /* ヘッダー・フッター */
-  --c-header-backdrop: rgba(15, 23, 42, 0.85);
+  --c-header-backdrop: rgba(0, 0, 0, 0.85);
   --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
   --c-text-dim: #d3d6d8 /* slate-300 */;
   --c-overlay: rgba(0, 0, 0, 0.85);
@@ -671,14 +671,14 @@ body {
   /* 白フェード → 背景色フェードへ追従 */
   --c-fade-right: linear-gradient(
     90deg,
-    rgba(15, 23, 42, 0),
-    rgba(15, 23, 42, 0.95) 37%,
-    rgba(15, 23, 42, 1) 99%
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.95) 37%,
+    rgba(0, 0, 0, 1) 99%
   );
-  --c-fade-bottom: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 1));
-  --c-fade-right-2: linear-gradient(90deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 1));
-  --c-bg-fade-end: rgba(15, 23, 42, 0);
-  --c-bg-93: rgba(15, 23, 42, 0.93);
+  --c-fade-bottom: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-fade-right-2: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-bg-fade-end: rgba(0, 0, 0, 0);
+  --c-bg-93: rgba(0, 0, 0, 0.93);
 
   /* ルーム詳細・labs 系 */
   --c-labs-blue: #1d9bf0;
