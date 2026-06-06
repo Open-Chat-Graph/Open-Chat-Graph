@@ -11,7 +11,8 @@ if (!$_posts) return;
 ?>
 <article class="home-blog-shelf">
     <header class="hbs-head">
-        <h2 class="hbs-title"><span>読み物</span><span aria-hidden="true">📖</span></h2>
+        <?php // 見出しは他セクション（room_list.css .openchat-list-title=グラデ文字）とスタイルを共通化 ?>
+        <h2 class="hbs-title"><span class="openchat-list-title">読み物</span><span aria-hidden="true">📖</span></h2>
         <a class="hbs-more unset" href="<?php echo url('blog') ?>">ブログをもっと見る →</a>
     </header>
     <ul class="hbs-list">
@@ -29,11 +30,13 @@ if (!$_posts) return;
     </ul>
 </article>
 <style>
-    .home-blog-shelf { padding: 0 1rem; font-family: var(--font-family); }
-    .home-blog-shelf .hbs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .7rem; }
-    .home-blog-shelf .hbs-title { all: unset; display: flex; align-items: center; gap: 5px; font-size: 16px; font-weight: bold; color: #111; }
-    .home-blog-shelf .hbs-title span:last-child { font-size: 13px; }
-    .home-blog-shelf .hbs-more { font-size: 12.5px; font-weight: bold; color: #06c755; text-decoration: none; white-space: nowrap; }
+    /* 上下 .5rem は隣接セクション（.top-ranking の padding: .5rem 0）と同じ余白リズム */
+    .home-blog-shelf { padding: .5rem 1rem; font-family: var(--font-family); }
+    .home-blog-shelf .hbs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .home-blog-shelf .hbs-title { all: unset; display: flex; align-items: center; gap: 5px; }
+    .home-blog-shelf .hbs-title span:last-child { font-size: 15px; }
+    /* タップ領域は padding で広げ、負マージンで見た目の位置は変えない */
+    .home-blog-shelf .hbs-more { font-size: 13.5px; font-weight: bold; color: #06c755; text-decoration: none; white-space: nowrap; padding: .6rem 0 .6rem .6rem; margin: -.6rem 0; }
     .home-blog-shelf .hbs-list { all: unset; display: grid; gap: 8px; }
     .home-blog-shelf .hbs-list li { all: unset; }
     .home-blog-shelf .hbs-card { display: block; padding: .8rem .95rem; border: 1px solid #ededf0; border-radius: 12px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
