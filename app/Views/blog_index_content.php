@@ -23,7 +23,8 @@
                                 <div class="t"><?php echo $a->title ?></div>
                                 <div class="m">
                                     <?php if ($a->category): ?><span class="cat"><?php echo $a->category ?></span><?php endif ?>
-                                    <span class="date"><?php echo $a->date ?></span>
+                                    <?php // 一覧では鮮度が伝わる更新日を表示（公開日・更新日の両方は記事ページで表示） ?>
+                                    <span class="date"><?php echo $a->updated ?></span>
                                 </div>
                                 <?php if ($a->description): ?><p class="d"><?php echo $a->description ?></p><?php endif ?>
                                 <div class="go">続きを読む</div>

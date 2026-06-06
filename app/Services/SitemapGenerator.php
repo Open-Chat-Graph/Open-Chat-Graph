@@ -95,7 +95,8 @@ class SitemapGenerator
             $sitemap->addItem($this->currentUrl . 'oc');
             $sitemap->addItem($this->currentUrl . 'blog');
             foreach ($this->blogService->list() as $a) {
-                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $a->date ?: $datetime);
+                // lastmod は鮮度を反映する更新日（無ければ公開日）
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $a->updated ?: ($a->date ?: $datetime));
             }
         }
 
