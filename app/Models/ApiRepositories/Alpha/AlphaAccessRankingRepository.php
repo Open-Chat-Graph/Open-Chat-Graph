@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Models\ApiRepositories\Alpha;
 
 use App\Models\Repositories\DB;
+use App\Models\UserLogRepositories\UserLogDB;
 use App\Services\Alpha\AlphaPagePathNormalizer;
 
 /**
  * Alpha Labs「アクセス数ランキング」「検索流入(SEO)ランキング」専用リポジトリ。
  *
- * 日次バッチ(batch/exec/alpha_ga_sync.php)が alpha_room_access_daily に保存した
+ * 日次バッチ(batch/exec/alpha_ga_sync.php)が alpha_room_access_daily_ja に保存した
  * 部屋別の日次アクセス/検索流入を、直近N日で SUM 集計し open_chat と join して返す。
+ *
+ * 接続規約: αテーブル（alpha_xxx_ja）は userlog DB（UserLogDB）。多言語化時は _tw 等を増設。
+ * ocreview 側（open_chat 等）と同一クエリで跨ぐ場合は ocreview 側だけを
+ * AppConfig::$dbName[''] で実行時DB名修飾する（USE 依存・再接続の既定DB戻りを回避）。
+ * ocreview 単独参照（getRoomNames 等）は従来どおり DB を使う。
  *
  * ja(base)専用。データがまだ無い場合は空配列・baseDate/updatedAt は null を返す
  * （creds 未投入でもエンドポイントは 200 で空を返せる）。
@@ -96,9 +102,12 @@ class AlphaAccessRankingRepository
         int $offset,
         string $keyword = '',
     ): array {
-        DB::connect();
+        UserLogDB::connect();
 
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
+        // ocreview 側のテーブルは実行時DB名で修飾してクロスDB JOIN する（αはja専用＝キー''固定）。
+        $ocTable = '`' . \App\Config\AppConfig::$dbName[''] . '`.`open_chat`';
+
+        $baseDate = UserLogDB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily_ja');
         if ($baseDate === false || $baseDate === null) {
             return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
@@ -132,7 +141,7 @@ class AlphaAccessRankingRepository
             $indirectJoin = "
                 LEFT JOIN (
                     SELECT open_chat_id, SUM(pageviews) AS indirect_seo
-                    FROM alpha_room_referrer_daily
+                    FROM alpha_room_referrer_daily_ja
                     WHERE `date` BETWEEN :fromDateR AND :toDateR
                       AND (referrer LIKE :own1 OR referrer LIKE :own2)
                       AND referrer NOT LIKE CONCAT('%/oc/', open_chat_id, '%')
@@ -176,8 +185,8 @@ class AlphaAccessRankingRepository
                      ELSE NULL END AS search_position,
                 {$indirectSelect},
                 {$seoTotalSelect}
-            FROM alpha_room_access_daily AS a
-            INNER JOIN open_chat AS oc ON oc.id = a.open_chat_id{$indirectJoin}
+            FROM alpha_room_access_daily_ja AS a
+            INNER JOIN {$ocTable} AS oc ON oc.id = a.open_chat_id{$indirectJoin}
             WHERE a.`date` BETWEEN :fromDate AND :toDate{$categoryWhere}{$keywordWhere}
             GROUP BY oc.id
             HAVING {$having}
@@ -185,7 +194,7 @@ class AlphaAccessRankingRepository
             LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, $params);
+        $rows = UserLogDB::fetchAll($sql, $params);
         $hasMore = count($rows) > $limit;
         if ($hasMore) {
             $rows = array_slice($rows, 0, $limit);
@@ -202,7 +211,7 @@ class AlphaAccessRankingRepository
     /**
      * 指定部屋群の流入検索キーワードを、各部屋ごとに clicks 多い順 上位N語まとめて取得する（N+1回避）。
      *
-     * alpha_room_search_query_daily を期間で絞り open_chat_id・query 別に clicks を SUM、
+     * alpha_room_search_query_daily_ja を期間で絞り open_chat_id・query 別に clicks を SUM、
      * 部屋ごとに clicks 降順で上位 $perRoom 語を返す。各部屋カードの「流入キーワード」列挙用。
      *
      * @param array<int, int> $openChatIds
@@ -214,7 +223,7 @@ class AlphaAccessRankingRepository
         if ($ids === []) {
             return [];
         }
-        DB::connect();
+        UserLogDB::connect();
         $perRoom = max(1, $perRoom);
         $in = implode(',', $ids); // 整数確定済みなので直接埋め込む
 
@@ -225,7 +234,7 @@ class AlphaAccessRankingRepository
             FROM (
                 SELECT open_chat_id, query, SUM(clicks) AS clicks,
                        ROW_NUMBER() OVER (PARTITION BY open_chat_id ORDER BY SUM(clicks) DESC, query ASC) AS rn
-                FROM alpha_room_search_query_daily
+                FROM alpha_room_search_query_daily_ja
                 WHERE open_chat_id IN ({$in})
                   AND `date` BETWEEN :fromDate AND :toDate
                 GROUP BY open_chat_id, query
@@ -235,7 +244,7 @@ class AlphaAccessRankingRepository
             ORDER BY t.open_chat_id, t.rn
         ";
 
-        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+        $rows = UserLogDB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
 
         $map = [];
         foreach ($rows as $r) {
@@ -256,8 +265,8 @@ class AlphaAccessRankingRepository
      *
      * 【入室数(jumpClicks)は近似】ページ単体では参加リンク押下(jump)を計測していないため、
      * 「そのページを参照元(referrer)として到達した部屋の jump_clicks 合計」で代用する。
-     * alpha_room_referrer_daily で referrer がそのページ path を含む(LIKE '%path%')部屋・期間を特定し、
-     * alpha_room_access_daily の当該部屋・当該期間の jump_clicks を合算する。
+     * alpha_room_referrer_daily_ja で referrer がそのページ path を含む(LIKE '%path%')部屋・期間を特定し、
+     * alpha_room_access_daily_ja の当該部屋・当該期間の jump_clicks を合算する。
      * referrer は URL の一部一致なので過大/重複しうる（複数ページpathが互いに前方部分一致する場合など）。
      * ページ数は少数なので相関サブクエリで都度集計してよい。
      *
@@ -265,9 +274,9 @@ class AlphaAccessRankingRepository
      */
     public function getPageScopeRanking(string $fromDate, string $toDate, string $order, int $limit, string $orderColumn = 'pageviews', int $offset = 0): array
     {
-        DB::connect();
+        UserLogDB::connect();
 
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_page_access_daily');
+        $baseDate = UserLogDB::fetchColumn('SELECT MAX(`date`) FROM alpha_page_access_daily_ja');
         if ($baseDate === false || $baseDate === null) {
             return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
@@ -279,7 +288,7 @@ class AlphaAccessRankingRepository
         $offset = max(0, $offset);
         $fetch = $limit + 1;
 
-        // ページ入室数は alpha_page_jump_daily の事前集計を期間 SUM して JOIN する。
+        // ページ入室数は alpha_page_jump_daily_ja の事前集計を期間 SUM して JOIN する。
         // 旧来の LIKE 相関スキャンを廃止し、path 完全一致の高速 JOIN に変更。
         $sql = "
             SELECT
@@ -294,8 +303,8 @@ class AlphaAccessRankingRepository
                      ELSE NULL END AS search_position,
                 COALESCE(SUM(pj.jump_clicks), 0) AS jump_clicks,
                 COALESCE(SUM(pj.jump_clicks_organic), 0) AS jump_clicks_organic
-            FROM alpha_page_access_daily AS p
-            LEFT JOIN alpha_page_jump_daily AS pj
+            FROM alpha_page_access_daily_ja AS p
+            LEFT JOIN alpha_page_jump_daily_ja AS pj
                 ON pj.page_path = p.path AND pj.`date` = p.`date`
             WHERE p.`date` BETWEEN :fromDate AND :toDate
             GROUP BY p.path
@@ -303,7 +312,7 @@ class AlphaAccessRankingRepository
             LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, [
+        $rows = UserLogDB::fetchAll($sql, [
             'fromDate' => $fromDate,
             'toDate' => $toDate,
         ]);
@@ -336,9 +345,9 @@ class AlphaAccessRankingRepository
      */
     public function getSearchQueryRanking(string $fromDate, string $toDate, int $limit, int $offset = 0): array
     {
-        DB::connect();
+        UserLogDB::connect();
 
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_search_query_daily');
+        $baseDate = UserLogDB::fetchColumn('SELECT MAX(`date`) FROM alpha_search_query_daily_ja');
         if ($baseDate === false || $baseDate === null) {
             return ['data' => [], 'baseDate' => null, 'updatedAt' => null, 'hasMore' => false];
         }
@@ -355,7 +364,7 @@ class AlphaAccessRankingRepository
                 CASE WHEN SUM(impressions) > 0
                      THEN SUM(position * impressions) / SUM(impressions)
                      ELSE NULL END AS position
-            FROM alpha_search_query_daily
+            FROM alpha_search_query_daily_ja
             WHERE `date` BETWEEN :fromDate AND :toDate
             GROUP BY query
             HAVING SUM(clicks) > 0
@@ -363,7 +372,7 @@ class AlphaAccessRankingRepository
             LIMIT {$fetch} OFFSET {$offset}
         ";
 
-        $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
+        $rows = UserLogDB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
         $hasMore = count($rows) > $limit;
         if ($hasMore) {
             $rows = array_slice($rows, 0, $limit);
@@ -400,16 +409,16 @@ class AlphaAccessRankingRepository
      * - start/end が Y-m-d   → その範囲（含まれる日付の集計を全部見る。前後関係は自動補正）
      * - それ以外            → 直近 $days 日（既定 30）
      *
-     * 基準は alpha_room_access_daily の MIN/MAX。返り値の days は範囲の実日数。
+     * 基準は alpha_room_access_daily_ja の MIN/MAX。返り値の days は範囲の実日数。
      *
      * @return array{fromDate:string, toDate:string, days:int}
      */
     public function resolveWindow(string $start, string $end, int $days, bool $all): array
     {
-        DB::connect();
-        $maxRaw = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
+        UserLogDB::connect();
+        $maxRaw = UserLogDB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily_ja');
         $maxDate = ($maxRaw === false || $maxRaw === null) ? date('Y-m-d') : (string)$maxRaw;
-        $minRaw = DB::fetchColumn('SELECT MIN(`date`) FROM alpha_room_access_daily');
+        $minRaw = UserLogDB::fetchColumn('SELECT MIN(`date`) FROM alpha_room_access_daily_ja');
         $minDate = ($minRaw === false || $minRaw === null) ? $maxDate : (string)$minRaw;
 
         $isYmd = static fn(string $s): bool => preg_match('/^\d{4}-\d{2}-\d{2}$/', $s) === 1;
@@ -436,7 +445,7 @@ class AlphaAccessRankingRepository
      */
     public function getRoomMetrics(int $openChatId, string $fromDate, string $toDate): array
     {
-        DB::connect();
+        UserLogDB::connect();
 
         $empty = [
             'updatedAt' => null,
@@ -450,7 +459,7 @@ class AlphaAccessRankingRepository
             'avgEngagementSeconds' => null,
         ];
 
-        $baseDate = DB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily');
+        $baseDate = UserLogDB::fetchColumn('SELECT MAX(`date`) FROM alpha_room_access_daily_ja');
         if ($baseDate === false || $baseDate === null) {
             return $empty;
         }
@@ -470,11 +479,11 @@ class AlphaAccessRankingRepository
                 CASE WHEN SUM(active_users) > 0
                      THEN SUM(engagement_seconds * active_users) / SUM(active_users)
                      ELSE NULL END AS engagement_seconds
-            FROM alpha_room_access_daily
+            FROM alpha_room_access_daily_ja
             WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
         ";
 
-        $row = DB::fetch($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
+        $row = UserLogDB::fetch($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
 
         // 期間内にこの部屋の行が無ければ SUM は全て NULL（GROUP無し集計は1行返る）
         if (!$row || $row['pageviews'] === null) {
@@ -517,14 +526,14 @@ class AlphaAccessRankingRepository
 
     /**
      * 間接SEO流入＝本家内のSEOページ（おすすめ/検索結果/ランキング/トップ/他の部屋 等）から
-     * 回遊してこの部屋に到達したページビュー数。alpha_room_referrer_daily の本家内リファラ
+     * 回遊してこの部屋に到達したページビュー数。alpha_room_referrer_daily_ja の本家内リファラ
      * 合計（自分自身=再読込/グラフ操作 は除く）。直接GSCクリック(search_clicks)とは別軸。
      *
      * own ドメインが未設定なら 0。
      */
     public function getRoomIndirectSeo(int $openChatId, string $fromDate, string $toDate): int
     {
-        DB::connect();
+        UserLogDB::connect();
         $host = $this->ownDomainHost();
         if ($host === '') {
             return 0;
@@ -532,14 +541,14 @@ class AlphaAccessRankingRepository
 
         $sql = "
             SELECT COALESCE(SUM(pageviews), 0) AS indirect
-            FROM alpha_room_referrer_daily
+            FROM alpha_room_referrer_daily_ja
             WHERE open_chat_id = :id
               AND `date` BETWEEN :fromDate AND :toDate
               AND (referrer LIKE :own1 OR referrer LIKE :own2)
               AND referrer NOT LIKE :self1
               AND referrer NOT LIKE :self2
         ";
-        $val = DB::fetchColumn($sql, [
+        $val = UserLogDB::fetchColumn($sql, [
             'id' => $openChatId,
             'fromDate' => $fromDate,
             'toDate' => $toDate,
@@ -554,14 +563,14 @@ class AlphaAccessRankingRepository
     /**
      * 詳細画面用: 1部屋の直近N日 流入検索クエリ（多い順 上位N件）。
      *
-     * alpha_room_search_query_daily を query で GROUP し clicks 降順。
+     * alpha_room_search_query_daily_ja を query で GROUP し clicks 降順。
      * position は表示回数(impressions)で加重平均。
      *
      * @return array<int, array{query:string, clicks:int, impressions:int, position:?float}>
      */
     public function getRoomSearchQueries(int $openChatId, string $fromDate, string $toDate, int $limit = 20): array
     {
-        DB::connect();
+        UserLogDB::connect();
         $limit = max(1, $limit);
 
         $sql = "
@@ -572,14 +581,14 @@ class AlphaAccessRankingRepository
                 CASE WHEN SUM(impressions) > 0
                      THEN SUM(position * impressions) / SUM(impressions)
                      ELSE NULL END AS position
-            FROM alpha_room_search_query_daily
+            FROM alpha_room_search_query_daily_ja
             WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
             GROUP BY query
             ORDER BY clicks DESC
             LIMIT {$limit}
         ";
 
-        $rows = DB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
+        $rows = UserLogDB::fetchAll($sql, ['id' => $openChatId, 'fromDate' => $fromDate, 'toDate' => $toDate]);
 
         return array_map(static function ($r) {
             return [
@@ -594,13 +603,13 @@ class AlphaAccessRankingRepository
     /**
      * 詳細画面用: 1部屋の直近N日 リファラ元（多い順 上位N件）。
      *
-     * alpha_room_referrer_daily を referrer で GROUP し pageviews 降順。
+     * alpha_room_referrer_daily_ja を referrer で GROUP し pageviews 降順。
      *
      * @return array<int, array{referrer:string, pageviews:int}>
      */
     public function getRoomReferrers(int $openChatId, string $fromDate, string $toDate, int $limit = 20): array
     {
-        DB::connect();
+        UserLogDB::connect();
         $limit = max(1, $limit);
 
         // 自己参照（このページ内＝再読込/グラフ操作）は初期アクセスではないので除外する。
@@ -608,7 +617,7 @@ class AlphaAccessRankingRepository
             SELECT
                 referrer,
                 SUM(pageviews) AS pageviews
-            FROM alpha_room_referrer_daily
+            FROM alpha_room_referrer_daily_ja
             WHERE open_chat_id = :id AND `date` BETWEEN :fromDate AND :toDate
               AND referrer NOT LIKE :self1
               AND referrer NOT LIKE :self2
@@ -617,7 +626,7 @@ class AlphaAccessRankingRepository
             LIMIT {$limit}
         ";
 
-        $rows = DB::fetchAll($sql, [
+        $rows = UserLogDB::fetchAll($sql, [
             'id' => $openChatId,
             'fromDate' => $fromDate,
             'toDate' => $toDate,
@@ -634,11 +643,11 @@ class AlphaAccessRankingRepository
     }
 
     /**
-     * 指定日 D の alpha_page_jump_daily を alpha_room_referrer_daily × alpha_room_access_daily
+     * 指定日 D の alpha_page_jump_daily_ja を alpha_room_referrer_daily_ja × alpha_room_access_daily_ja
      * から再計算して upsert する。
      *
      * 処理:
-     *   1. $date の alpha_room_referrer_daily を全件取得（pageviews 込み）。
+     *   1. $date の alpha_room_referrer_daily_ja を全件取得（pageviews 込み）。
      *   2. referrer を page_path に正規化（'/' or '/recommend/{tag}' のみ対象・外部や自己参照は除外）。
      *   3. 部屋の当日 jump_clicks / jump_clicks_organic を「内部ページ流入PV比」で按分（近似）し、
      *      page_path 別に SUM して upsert。referrer 別の jump は存在しないため厳密な帰属は不可能で、
@@ -650,11 +659,11 @@ class AlphaAccessRankingRepository
      */
     public function rebuildPageJumpDaily(string $date): void
     {
-        DB::connect();
+        UserLogDB::connect();
 
         // 当日の referrer 一覧を取得（open_chat_id, referrer, pageviews）
-        $refRows = DB::fetchAll(
-            "SELECT open_chat_id, referrer, pageviews FROM alpha_room_referrer_daily WHERE `date` = :date",
+        $refRows = UserLogDB::fetchAll(
+            "SELECT open_chat_id, referrer, pageviews FROM alpha_room_referrer_daily_ja WHERE `date` = :date",
             ['date' => $date]
         );
 
@@ -685,7 +694,7 @@ class AlphaAccessRankingRepository
             return;
         }
 
-        // 当日の alpha_room_access_daily を in 句で一括取得して集計
+        // 当日の alpha_room_access_daily_ja を in 句で一括取得して集計
         $allIds = [];
         foreach ($pathRoomPv as $roomPv) {
             foreach (array_keys($roomPv) as $ocId) {
@@ -694,9 +703,9 @@ class AlphaAccessRankingRepository
         }
         $in = implode(',', array_map('intval', array_keys($allIds)));
 
-        $accessRows = DB::fetchAll(
+        $accessRows = UserLogDB::fetchAll(
             "SELECT open_chat_id, jump_clicks, jump_clicks_organic
-             FROM alpha_room_access_daily
+             FROM alpha_room_access_daily_ja
              WHERE `date` = :date AND open_chat_id IN ({$in})",
             ['date' => $date]
         );
@@ -731,8 +740,8 @@ class AlphaAccessRankingRepository
 
         // upsert
         foreach ($pageAgg as $path => $agg) {
-            DB::execute(
-                "INSERT INTO alpha_page_jump_daily (page_path, `date`, jump_clicks, jump_clicks_organic)
+            UserLogDB::execute(
+                "INSERT INTO alpha_page_jump_daily_ja (page_path, `date`, jump_clicks, jump_clicks_organic)
                  VALUES (:path, :date, :jc, :jco)
                  ON DUPLICATE KEY UPDATE
                     jump_clicks = VALUES(jump_clicks),

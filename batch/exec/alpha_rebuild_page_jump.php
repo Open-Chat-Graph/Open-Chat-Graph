@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Alpha Labs: alpha_page_jump_daily の派生バックフィル CLI。
+ * Alpha Labs: alpha_page_jump_daily_ja の派生バックフィル CLI。
  *
- * alpha_room_referrer_daily に存在する全日付（または --from/--to 指定範囲）について
+ * alpha_room_referrer_daily_ja に存在する全日付（または --from/--to 指定範囲）について
  * AlphaAccessRankingRepository::rebuildPageJumpDaily を走らせ、
- * 既存蓄積データから alpha_page_jump_daily を一括生成する。
+ * 既存蓄積データから alpha_page_jump_daily_ja を一括生成する。
  *
  * GA 再取得は不要・DB のみで完結。
  *
@@ -17,7 +17,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
-use App\Models\Repositories\DB;
+use App\Models\UserLogRepositories\UserLogDB;
 use Shared\MimimalCmsConfig;
 
 // Alpha は ja のみ稼働
@@ -34,9 +34,10 @@ foreach ($argv as $arg) {
     }
 }
 
-DB::connect();
+// αテーブル（alpha_xxx_ja）はすべて userlog DB（UserLogDB）。
+UserLogDB::connect();
 
-// alpha_room_referrer_daily に存在する日付一覧を取得
+// alpha_room_referrer_daily_ja に存在する日付一覧を取得
 $whereSql = '';
 $params = [];
 if ($from !== null) {
@@ -48,13 +49,13 @@ if ($to !== null) {
     $params['to'] = $to;
 }
 
-$dates = DB::fetchAll(
-    "SELECT DISTINCT `date` FROM alpha_room_referrer_daily WHERE 1=1{$whereSql} ORDER BY `date` ASC",
+$dates = UserLogDB::fetchAll(
+    "SELECT DISTINCT `date` FROM alpha_room_referrer_daily_ja WHERE 1=1{$whereSql} ORDER BY `date` ASC",
     $params
 );
 
 if ($dates === []) {
-    echo "alpha_room_referrer_daily にデータが見つかりませんでした。\n";
+    echo "alpha_room_referrer_daily_ja にデータが見つかりませんでした。\n";
     exit(0);
 }
 
@@ -77,7 +78,7 @@ foreach ($dates as $row) {
     }
 }
 
-echo "\n完了: {$done}/{$total} 日分を alpha_page_jump_daily に集計しました。\n";
+echo "\n完了: {$done}/{$total} 日分を alpha_page_jump_daily_ja に集計しました。\n";
 if (!empty($errors)) {
     echo "エラー " . count($errors) . " 件:\n";
     foreach ($errors as $err) {

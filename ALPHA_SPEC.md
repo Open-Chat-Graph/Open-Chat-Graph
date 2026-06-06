@@ -4,6 +4,8 @@
 
 運用: コードの逸脱（負債）を見つけたら該当セクションに「現状の負債」として追記し、返済したら消し込む。初版の負債 D-1〜D-9 は 2026-06-06 に全返済済み。
 
+データ配置の契約: **αのMySQLテーブルは userlog DB・テーブル名 `_ja` サフィックス**（言語はサフィックス方式。多言語化時は `_tw` 等を増設）。αテーブルへのクエリは `UserLogDB::`、`open_chat` 等 ocreview 側と跨ぐ JOIN は ocreview 側だけを実行時DB名（`AppConfig::$dbName['']`）で修飾する（`DB::execute` 自動再接続が既定DBへ戻るため USE 依存禁止）。`oc_list_user`（マイリスト本体）はαのテーブルではない＝サフィックス無し。
+
 ---
 
 ## 1. 画面ナビ＆オーバーレイ＆keep-alive
@@ -27,7 +29,7 @@
 - period-growth の集計対象は**メンバー数上位3000件のプール**（`CANDIDATE_LIMIT`）。仕様としての上限であり、頭打ち時は API が `poolLimited`/`candidateLimit` を返し、UI は件数補足とリスト末尾注記で「上位3,000件を対象に集計」と明示する。`hasMore`/`totalMatched` はプール内基準。
 - 検索条件（filterKey）が変わったら先頭ページへ（setSize(1)＋visibleCount=30）。
 - 読み込み表示は1種類のバー（`ListProgressBar`）に統一：①初回（結果0）＝上部バー＋キャプション ②再取得（結果あり・条件変更）＝淡いdim＋同じ上部バー ③追加読み込み＝末尾に同じバー。スピナーは使わない。
-- ETA：`alpha_search_timing` にクエリ別 wall time を記録し次回見込みに。応答到着で100へ、到着前は90頭打ち。**最小表示時間は“実フェッチがある時のみ”**。
+- ETA：`alpha_search_timing_ja` にクエリ別 wall time を記録し次回見込みに。応答到着で100へ、到着前は90頭打ち。**最小表示時間は“実フェッチがある時のみ”**。
 - **実フェッチが無い再描画（タブ復帰/オーバーレイ閉じ/Activity再mount）では progress も SWR 再検証も一切起動しない**（`revalidateIfStale: false`）。
 
 ---
@@ -37,7 +39,7 @@
 ### 契約
 - rooms ランキングは**1つの母集合（`HAVING SUM(pageviews)>0`）**。指標プルダウン＝**並び替え軸の切替のみ**：`pv`=pageviews / `seo`=seo_total(直接searchClicks+間接seoIndirect) / `jump`=jump_clicks。母集合は変えない（同じ部屋が並び順だけ変わる）。
 - 間接SEO＝本家内SEOページ経由PV（自己参照除外）。日付fan-outに対し `MAX(COALESCE(ref.indirect_seo,0))` で1:1値を保持（SUMで水増ししない）＝**これは正しい実装**。
-- ページ入室数（その他ページ）＝部屋の当日 jump を**内部ページ流入PV比で按分**した近似。分母は全referrer PV（外部・direct含む）のため外部由来分は内部ページに帰属させない（ページ合計≦部屋合計）。**日次事前集計 `alpha_page_jump_daily`** に持つ（リクエスト毎LIKE禁止）。UIにも「按分した近似値」と明示。
+- ページ入室数（その他ページ）＝部屋の当日 jump を**内部ページ流入PV比で按分**した近似。分母は全referrer PV（外部・direct含む）のため外部由来分は内部ページに帰属させない（ページ合計≦部屋合計）。**日次事前集計 `alpha_page_jump_daily_ja`** に持つ（リクエスト毎LIKE禁止）。UIにも「按分した近似値」と明示。
 - 期間は `resolveWindow`：days(既定30)/range(start,end)/all(最古〜最新)。`days` は実日数（+1）。
 
 ---
@@ -46,7 +48,7 @@
 
 ### 契約
 - 検出3種：①KW一致の新部屋 ②部屋しきい値(±%/人数) ③マイリスト変動（全体/ルート/フォルダの3スコープ、±%/人数）。
-- ①の「新着」定義（両経路で対称）: 登録済み部屋＝`open_chat.created_at`（DB収録日時）`>= watch.created_at` のみ通知（古い部屋が検索順位の揺れで top20 入りしても通知しない。skip 時も seen 記録）／未登録部屋＝`alpha_search_seen_room.first_seen_at >= watch.created_at`。kw系 dedup_key は (watch,emid) で hourBucket 非含有＝**同部屋×同ウォッチは生涯一度だけ**。未登録→後日DB収録も seen 共有で二重通知しない。
+- ①の「新着」定義（両経路で対称）: 登録済み部屋＝`open_chat.created_at`（DB収録日時）`>= watch.created_at` のみ通知（古い部屋が検索順位の揺れで top20 入りしても通知しない。skip 時も seen 記録）／未登録部屋＝`alpha_search_seen_room_ja.first_seen_at >= watch.created_at`。kw系 dedup_key は (watch,emid) で hourBucket 非含有＝**同部屋×同ウォッチは生涯一度だけ**。未登録→後日DB収録も seen 共有で二重通知しない。
 - **二重通知回避**：部屋単体としきい値が、マイリスト該当スコープにも含まれる場合、どちらか一方（部屋優先）。room→mylist の実行順で同毎時の (user,oc) を除外。**dedup は方向(up/down)を問わない＝同部屋・同毎時は1通のみ**（同毎時に up/down が両立するのは再実行やデータ更新レースに限られ、その場合も通知を増やさないのが意図的仕様）。
 
 ---

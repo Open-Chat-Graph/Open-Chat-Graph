@@ -10,7 +10,7 @@ use App\Config\AppConfig;
  * referrer URL / pagePath を内部の非部屋ページ（トップ '/' / おすすめ '/recommend/{tag}'）に正規化する。
  *
  * AlphaGaClient（GA4 pagePath / GSC page の集計）と
- * AlphaAccessRankingRepository（alpha_page_jump_daily 再計算の referrer 正規化）の
+ * AlphaAccessRankingRepository（alpha_page_jump_daily_ja 再計算の referrer 正規化）の
  * 2箇所に重複定義されていた同一ロジックの統合先。
  *
  * 処理: 完全URLなら自サイトホストのみ path 部を抽出（外部ホストは null）→

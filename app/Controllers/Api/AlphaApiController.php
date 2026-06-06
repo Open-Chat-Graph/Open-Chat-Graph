@@ -545,7 +545,7 @@ class AlphaApiController
      * アクセス数ランキング（Labs）
      * GET /alpha-api/access-ranking?category=0&days=30&order=desc&limit=20
      *
-     * alpha_room_access_daily の直近N日ページビュー合計でソートして返す。
+     * alpha_room_access_daily_ja の直近N日ページビュー合計でソートして返す。
      * データが無い間（creds未投入/未集計）は data:[], updatedAt:null を 200 で返す。
      */
     function accessRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
@@ -660,7 +660,7 @@ class AlphaApiController
      * 検索流入(SEO)ランキング（Labs）
      * GET /alpha-api/search-ranking?category=0&days=30&order=desc&limit=20
      *
-     * alpha_room_access_daily の直近N日 検索クリック合計でソートして返す。
+     * alpha_room_access_daily_ja の直近N日 検索クリック合計でソートして返す。
      * 各部屋に searchClicks / searchImpressions / searchPosition を付ける。
      */
     function searchRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
@@ -700,7 +700,7 @@ class AlphaApiController
      * 検索クエリランキング（Labs）
      * GET /alpha-api/search-query-ranking?days=30&limit=20
      *
-     * alpha_search_query_daily の直近N日 検索クリック合計でソートして上位クエリを返す。
+     * alpha_search_query_daily_ja の直近N日 検索クリック合計でソートして上位クエリを返す。
      */
     function searchQueryRanking(AlphaAccessRankingRepository $repo, AlphaSearchTimingRepository $timingRepo)
     {
@@ -732,7 +732,7 @@ class AlphaApiController
      * 詳細画面のGA/GSC指標 取得API
      * GET /alpha-api/room-metrics/{open_chat_id}?days=30
      *
-     * alpha_room_access_daily を直近N日で集計して1部屋の指標を返す。
+     * alpha_room_access_daily_ja を直近N日で集計して1部屋の指標を返す。
      * データが無い間（creds未投入/未集計）は 0 / null を 200 で返す。
      */
     function roomMetrics(AlphaAccessRankingRepository $repo, int $open_chat_id)
@@ -740,7 +740,7 @@ class AlphaApiController
         $error = BadRequestException::class;
         Reception::$isJson = true;
 
-        // 期間: days（既定30）／ start・end（Y-m-d 範囲）／ all=1（全期間）。範囲は alpha_room_access_daily の MIN〜MAX 基準で解決。
+        // 期間: days（既定30）／ start・end（Y-m-d 範囲）／ all=1（全期間）。範囲は alpha_room_access_daily_ja の MIN〜MAX 基準で解決。
         $days = Validator::num(Reception::input('days', 30), min: 1, max: 3650, e: $error);
         $start = trim((string)Reception::input('start', ''));
         $end = trim((string)Reception::input('end', ''));

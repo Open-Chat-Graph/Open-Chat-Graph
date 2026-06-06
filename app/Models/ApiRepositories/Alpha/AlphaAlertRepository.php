@@ -12,11 +12,11 @@ use App\Models\UserLogRepositories\UserLogDB;
  *
  * - ウォッチ設定（keyword/room/mylist閾値）の取得・保存
  * - 検出済み emid の重複防止記録
- * - 算出済み通知（alpha_notification）の保存・取得・既読更新
+ * - 算出済み通知（alpha_notification_ja）の保存・取得・既読更新
  *
- * alpha_* テーブルはすべて ocgraph_ocreview DB（DB）に対して行う。
- * open_chat / statistics_ranking_hour 等の参照も同 DB（DB）を使う。
- * oc_list_user（マイリスト本体）のみ ocgraph_userlog DB（UserLogDB）を使う。
+ * 接続規約: αテーブル（alpha_xxx_ja）は userlog DB（UserLogDB）。多言語化時は _tw 等を増設。
+ * oc_list_user（マイリスト本体・サフィックス無し）も userlog（UserLogDB）。
+ * open_chat / statistics_ranking_hour 等の ocreview 単独参照は従来どおり DB を使う。
  *
  * 追加のみ・既存破壊なし。ja（urlRoot==''）でのみ稼働する想定。
  */
@@ -27,9 +27,9 @@ class AlphaAlertRepository
     /** @return array<int, array{id:int, keyword:string, category:?int, created_at:string}> */
     public function getKeywordWatches(string $userId): array
     {
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT id, keyword, category, created_at
-             FROM alpha_keyword_watch WHERE user_id = :uid ORDER BY id ASC",
+             FROM alpha_keyword_watch_ja WHERE user_id = :uid ORDER BY id ASC",
             ['uid' => $userId]
         );
         return array_map(static fn($r) => [
@@ -65,8 +65,8 @@ class AlphaAlertRepository
             $keepKeys[$key] = true;
 
             if (!isset($existingMap[$key])) {
-                DB::execute(
-                    "INSERT IGNORE INTO alpha_keyword_watch (user_id, keyword, category)
+                UserLogDB::execute(
+                    "INSERT IGNORE INTO alpha_keyword_watch_ja (user_id, keyword, category)
                      VALUES (:uid, :kw, :cat)",
                     ['uid' => $userId, 'kw' => $kw, 'cat' => $cat]
                 );
@@ -77,8 +77,8 @@ class AlphaAlertRepository
         foreach ($existing as $e) {
             $key = $this->keywordKey($e['keyword'], $e['category']);
             if (!isset($keepKeys[$key])) {
-                DB::execute("DELETE FROM alpha_keyword_seen WHERE keyword_watch_id = :id", ['id' => $e['id']]);
-                DB::execute("DELETE FROM alpha_keyword_watch WHERE id = :id", ['id' => $e['id']]);
+                UserLogDB::execute("DELETE FROM alpha_keyword_seen_ja WHERE keyword_watch_id = :id", ['id' => $e['id']]);
+                UserLogDB::execute("DELETE FROM alpha_keyword_watch_ja WHERE id = :id", ['id' => $e['id']]);
             }
         }
     }
@@ -93,9 +93,9 @@ class AlphaAlertRepository
     /** @return array<int, array{id:int, open_chat_id:int, up_member:?int, up_percent:?float, down_member:?int, down_percent:?float}> */
     public function getRoomWatches(string $userId): array
     {
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT id, open_chat_id, up_member, up_percent, down_member, down_percent
-             FROM alpha_room_watch WHERE user_id = :uid ORDER BY id ASC",
+             FROM alpha_room_watch_ja WHERE user_id = :uid ORDER BY id ASC",
             ['uid' => $userId]
         );
         return array_map(static fn($r) => [
@@ -122,8 +122,8 @@ class AlphaAlertRepository
                 continue;
             }
             $keepIds[$ocId] = true;
-            DB::execute(
-                "INSERT INTO alpha_room_watch
+            UserLogDB::execute(
+                "INSERT INTO alpha_room_watch_ja
                     (user_id, open_chat_id, up_member, up_percent, down_member, down_percent)
                  VALUES (:uid, :oc, :um, :up, :dm, :dp)
                  ON DUPLICATE KEY UPDATE
@@ -145,7 +145,7 @@ class AlphaAlertRepository
         $existing = $this->getRoomWatches($userId);
         foreach ($existing as $e) {
             if (!isset($keepIds[$e['open_chat_id']])) {
-                DB::execute("DELETE FROM alpha_room_watch WHERE id = :id", ['id' => $e['id']]);
+                UserLogDB::execute("DELETE FROM alpha_room_watch_ja WHERE id = :id", ['id' => $e['id']]);
             }
         }
     }
@@ -155,9 +155,9 @@ class AlphaAlertRepository
     /** @return array{up_percent:?float, down_percent:?float, up_member:?int, down_member:?int, scope:string, target_oc_ids:?array<int,int>, enabled:bool} */
     public function getMylistThreshold(string $userId): array
     {
-        $row = DB::fetch(
+        $row = UserLogDB::fetch(
             "SELECT up_percent, down_percent, up_member, down_member, scope, target_oc_ids, enabled
-             FROM alpha_mylist_threshold WHERE user_id = :uid",
+             FROM alpha_mylist_threshold_ja WHERE user_id = :uid",
             ['uid' => $userId]
         );
         if (!$row) {
@@ -204,8 +204,8 @@ class AlphaAlertRepository
                 static fn($i) => $i > 0
             )));
 
-        DB::execute(
-            "INSERT INTO alpha_mylist_threshold
+        UserLogDB::execute(
+            "INSERT INTO alpha_mylist_threshold_ja
                 (user_id, up_percent, down_percent, up_member, down_member, scope, target_oc_ids, enabled)
              VALUES (:uid, :up, :dp, :um, :dm, :scope, :ids, :en)
              ON DUPLICATE KEY UPDATE up_percent = VALUES(up_percent),
@@ -254,10 +254,10 @@ class AlphaAlertRepository
     /** @return string[] ウォッチ設定を1件以上持つユーザーID */
     public function getAllUserIdsWithWatches(): array
     {
-        $rows = DB::fetchAll(
-            "SELECT user_id FROM alpha_keyword_watch
-             UNION SELECT user_id FROM alpha_room_watch
-             UNION SELECT user_id FROM alpha_mylist_threshold WHERE enabled = 1"
+        $rows = UserLogDB::fetchAll(
+            "SELECT user_id FROM alpha_keyword_watch_ja
+             UNION SELECT user_id FROM alpha_room_watch_ja
+             UNION SELECT user_id FROM alpha_mylist_threshold_ja WHERE enabled = 1"
         );
         return array_map(static fn($r) => (string)$r['user_id'], $rows);
     }
@@ -270,8 +270,8 @@ class AlphaAlertRepository
      */
     public function getDistinctKeywords(): array
     {
-        $rows = DB::fetchAll(
-            "SELECT DISTINCT keyword, category FROM alpha_keyword_watch"
+        $rows = UserLogDB::fetchAll(
+            "SELECT DISTINCT keyword, category FROM alpha_keyword_watch_ja"
         );
         return array_map(static fn($r) => [
             'keyword' => (string)$r['keyword'],
@@ -282,8 +282,8 @@ class AlphaAlertRepository
     /** @return array<int, array{id:int, user_id:string, keyword:string, category:?int, created_at:string}> */
     public function getAllKeywordWatches(): array
     {
-        $rows = DB::fetchAll(
-            "SELECT id, user_id, keyword, category, created_at FROM alpha_keyword_watch ORDER BY id ASC"
+        $rows = UserLogDB::fetchAll(
+            "SELECT id, user_id, keyword, category, created_at FROM alpha_keyword_watch_ja ORDER BY id ASC"
         );
         return array_map(static fn($r) => [
             'id' => (int)$r['id'],
@@ -297,9 +297,9 @@ class AlphaAlertRepository
     /** @return array<int, array{user_id:string, open_chat_id:int, up_member:?int, up_percent:?float, down_member:?int, down_percent:?float}> */
     public function getAllRoomWatches(): array
     {
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT user_id, open_chat_id, up_member, up_percent, down_member, down_percent
-             FROM alpha_room_watch"
+             FROM alpha_room_watch_ja"
         );
         return array_map(static fn($r) => [
             'user_id' => (string)$r['user_id'],
@@ -314,9 +314,9 @@ class AlphaAlertRepository
     /** @return array<int, array{user_id:string, up_percent:?float, down_percent:?float, up_member:?int, down_member:?int, scope:string, target_oc_ids:?array<int,int>}> enabled なものだけ */
     public function getAllEnabledMylistThresholds(): array
     {
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT user_id, up_percent, down_percent, up_member, down_member, scope, target_oc_ids
-             FROM alpha_mylist_threshold WHERE enabled = 1"
+             FROM alpha_mylist_threshold_ja WHERE enabled = 1"
         );
         return array_map(fn($r) => [
             'user_id' => (string)$r['user_id'],
@@ -353,7 +353,7 @@ class AlphaAlertRepository
         return array_values(array_filter(array_map('intval', $ids), static fn($i) => $i > 0));
     }
 
-    // ====================== 未登録部屋プール (alpha_search_seen_room) ======================
+    // ====================== 未登録部屋プール (alpha_search_seen_room_ja) ======================
 
     /**
      * 検索に出た「未登録部屋」を共有プールに upsert する。
@@ -378,16 +378,16 @@ class AlphaAlertRepository
         // keywords はカンマ区切り集合。keyword 自体のカンマは FIND_IN_SET を壊すので除去。
         $keyword = $this->normalizeKeyword($keyword);
 
-        $row = DB::fetch(
-            "SELECT keywords FROM alpha_search_seen_room WHERE emid = :emid",
+        $row = UserLogDB::fetch(
+            "SELECT keywords FROM alpha_search_seen_room_ja WHERE emid = :emid",
             ['emid' => $emid]
         );
 
         if ($row) {
             // 既存: keywords に keyword を（未収録なら）足し、name/member/last_seen を更新
             $keywords = $this->mergeKeyword((string)$row['keywords'], $keyword);
-            DB::execute(
-                "UPDATE alpha_search_seen_room
+            UserLogDB::execute(
+                "UPDATE alpha_search_seen_room_ja
                  SET name = :name, member = :member, keywords = :kw, last_seen_at = current_timestamp()
                  WHERE emid = :emid",
                 [
@@ -398,8 +398,8 @@ class AlphaAlertRepository
                 ]
             );
         } else {
-            DB::execute(
-                "INSERT INTO alpha_search_seen_room (emid, name, member, keywords)
+            UserLogDB::execute(
+                "INSERT INTO alpha_search_seen_room_ja (emid, name, member, keywords)
                  VALUES (:emid, :name, :member, :kw)
                  ON DUPLICATE KEY UPDATE
                     name = VALUES(name),
@@ -423,7 +423,7 @@ class AlphaAlertRepository
      *   - K が keywords（カンマ集合）のいずれかに完全一致
      *   - first_seen_at >= :createdAt（このウォッチ登録時刻以降に初めて見つかった部屋）
      *
-     * 重複排除（そのユーザーに未配信か）は呼び出し側で alpha_keyword_seen を使って行う。
+     * 重複排除（そのユーザーに未配信か）は呼び出し側で alpha_keyword_seen_ja を使って行う。
      *
      * @return array<int, array{emid:string, name:string, member:?int, first_seen_at:string}>
      */
@@ -433,9 +433,9 @@ class AlphaAlertRepository
         $keyword = $this->normalizeKeyword($keyword);
 
         // keywords は「a,b,c」形式。完全一致のため FIND_IN_SET を使う。
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT emid, name, member, first_seen_at
-             FROM alpha_search_seen_room
+             FROM alpha_search_seen_room_ja
              WHERE first_seen_at >= :created
                AND FIND_IN_SET(:kw, keywords)
              ORDER BY first_seen_at ASC",
@@ -486,8 +486,8 @@ class AlphaAlertRepository
      */
     public function getSeenEmids(int $keywordWatchId): array
     {
-        $rows = DB::fetchAll(
-            "SELECT emid FROM alpha_keyword_seen WHERE keyword_watch_id = :id",
+        $rows = UserLogDB::fetchAll(
+            "SELECT emid FROM alpha_keyword_seen_ja WHERE keyword_watch_id = :id",
             ['id' => $keywordWatchId]
         );
         $set = [];
@@ -499,8 +499,8 @@ class AlphaAlertRepository
 
     public function markEmidSeen(int $keywordWatchId, string $emid): void
     {
-        DB::execute(
-            "INSERT IGNORE INTO alpha_keyword_seen (keyword_watch_id, emid) VALUES (:id, :emid)",
+        UserLogDB::execute(
+            "INSERT IGNORE INTO alpha_keyword_seen_ja (keyword_watch_id, emid) VALUES (:id, :emid)",
             ['id' => $keywordWatchId, 'emid' => $emid]
         );
     }
@@ -513,8 +513,8 @@ class AlphaAlertRepository
      */
     public function insertNotification(string $userId, string $type, array $payload, string $dedupKey): bool
     {
-        $stmt = DB::execute(
-            "INSERT IGNORE INTO alpha_notification (user_id, type, payload, dedup_key)
+        $stmt = UserLogDB::execute(
+            "INSERT IGNORE INTO alpha_notification_ja (user_id, type, payload, dedup_key)
              VALUES (:uid, :type, :payload, :dedup)",
             [
                 'uid' => $userId,
@@ -533,9 +533,9 @@ class AlphaAlertRepository
      */
     public function getNotifications(string $userId, int $limit = 100): array
     {
-        $rows = DB::fetchAll(
+        $rows = UserLogDB::fetchAll(
             "SELECT id, type, payload, is_read, created_at
-             FROM alpha_notification WHERE user_id = :uid
+             FROM alpha_notification_ja WHERE user_id = :uid
              ORDER BY id DESC LIMIT :lim",
             ['uid' => $userId, 'lim' => $limit]
         );
@@ -562,8 +562,8 @@ class AlphaAlertRepository
      */
     public function getRoomNotificationKeys(string $hourBucket): array
     {
-        $rows = DB::fetchAll(
-            "SELECT user_id, dedup_key FROM alpha_notification
+        $rows = UserLogDB::fetchAll(
+            "SELECT user_id, dedup_key FROM alpha_notification_ja
              WHERE type = 'room' AND dedup_key LIKE :pat",
             ['pat' => 'room:%:' . $hourBucket]
         );
@@ -585,8 +585,8 @@ class AlphaAlertRepository
 
     public function markAllRead(string $userId): void
     {
-        DB::execute(
-            "UPDATE alpha_notification SET is_read = 1 WHERE user_id = :uid AND is_read = 0",
+        UserLogDB::execute(
+            "UPDATE alpha_notification_ja SET is_read = 1 WHERE user_id = :uid AND is_read = 0",
             ['uid' => $userId]
         );
     }
@@ -598,8 +598,8 @@ class AlphaAlertRepository
             return;
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        DB::execute(
-            "UPDATE alpha_notification SET is_read = 1 WHERE user_id = ? AND id IN ({$placeholders})",
+        UserLogDB::execute(
+            "UPDATE alpha_notification_ja SET is_read = 1 WHERE user_id = ? AND id IN ({$placeholders})",
             array_merge([$userId], $ids)
         );
     }

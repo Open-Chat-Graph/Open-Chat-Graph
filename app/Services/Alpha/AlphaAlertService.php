@@ -9,13 +9,13 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
 /**
  * Alpha 通知/アラートの算出サービス（毎時 cron から呼ばれる）。
  *
- * 全ユーザーのウォッチを走査し、以下を算出して alpha_notification に保存する:
+ * 全ユーザーのウォッチを走査し、以下を算出して alpha_notification_ja に保存する:
  *   ① ウォッチキーワード … LINE公式検索APIで一致する「新着部屋」を検出
  *        - 登録済み(open_chat にある)部屋  … open_chat.created_at（こちらのDBへの登録日時）が
  *          ウォッチ created_at 以降のものだけを「新着」として一度だけ通知（カテゴリ照合あり）。
  *          古い部屋（DB登録 < ウォッチ作成）は seen 記録だけ残してスキップする。
  *          open_chat.created_at が NULL の行は古い部屋とみなしスキップ（安全側）。
- *        - 未登録(オプチャグラフ未登録)部屋 … 共有プール alpha_search_seen_room に貯め、
+ *        - 未登録(オプチャグラフ未登録)部屋 … 共有プール alpha_search_seen_room_ja に貯め、
  *          「ウォッチ登録時刻(created_at)以降に初出（first_seen_at >= ウォッチ作成） ＆ 未配信」のものだけ配信。
  *          両経路とも「ウォッチ登録より前から在った部屋を初回に大量配信しない」点で対称。
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
@@ -26,8 +26,8 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *   - ②③の差分は既存の statistics_ranking_hour（毎時クロールで確定済み）をまとめて1クエリで取得。
  *
  * 重複防止:
- *   - ① emid は alpha_keyword_seen(keyword_watch_id, emid) に記録、2回目以降は通知しない。
- *   - ②③ は alpha_notification.dedup_key（時刻 bucket 込み）で同一毎時の重複保存を防ぐ。
+ *   - ① emid は alpha_keyword_seen_ja(keyword_watch_id, emid) に記録、2回目以降は通知しない。
+ *   - ②③ は alpha_notification_ja.dedup_key（時刻 bucket 込み）で同一毎時の重複保存を防ぐ。
  *
  * 毎時処理を止めないため、各ステップは try/catch で握りつぶしログのみ（呼び出し側で集約）。
  *
@@ -102,7 +102,7 @@ class AlphaAlertService
             }
         }
 
-        // ① 検索結果を走査し、未登録 emid を共有プール(alpha_search_seen_room)へ upsert する。
+        // ① 検索結果を走査し、未登録 emid を共有プール(alpha_search_seen_room_ja)へ upsert する。
         //    各検索結果はそれを見つけたキーワードで keywords 集合に足される（ユーザー横断・1行/部屋）。
         $this->syncSeenRooms($searchCache);
 
@@ -123,7 +123,7 @@ class AlphaAlertService
     }
 
     /**
-     * 検索結果の未登録 emid を共有プール(alpha_search_seen_room)へ upsert する。
+     * 検索結果の未登録 emid を共有プール(alpha_search_seen_room_ja)へ upsert する。
      * 同一 emid が複数キーワードでヒットしても、各キーワードを keywords 集合に足す。
      *
      * @param array<string, array<int, array{emid:string,name:string,desc:string,profileImageObsHash:string,joinMethodType:int}>> $searchCache
@@ -231,7 +231,7 @@ class AlphaAlertService
      * 未登録部屋（共有プール）から、このウォッチに配信すべきものを通知する。
      *
      * 条件: keyword が keywords 集合に完全一致 ＆ first_seen_at >= watch.created_at
-     *       ＆ そのユーザー(watch)に未配信(alpha_keyword_seen で重複排除)。
+     *       ＆ そのユーザー(watch)に未配信(alpha_keyword_seen_ja で重複排除)。
      * これにより、ウォッチ登録より前から存在した部屋が初回に大量配信されるのを防ぐ。
      *
      * @param array{id:int,user_id:string,keyword:string,category:?int,created_at:string} $w

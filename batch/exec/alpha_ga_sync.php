@@ -5,7 +5,7 @@
  *
  * 本家 openchat-review.me の GA4(Data API) と Search Console から、
  * /openchat/{id} 詳細ページのアクセス・検索流入を取得し、open_chat_id 別に集計して
- * alpha_room_access_daily に upsert(INSERT ... ON DUPLICATE KEY UPDATE)する。
+ * alpha_room_access_daily_ja に upsert(INSERT ... ON DUPLICATE KEY UPDATE)する。
  *
  * ja(urlRoot=='')専用。既定では直近数日（DEFAULT_DAYS_BACK）を毎回取り直して
  * 上書きする（GAは確定まで数日かかるため、直近を再取得して最終値に寄せる）。
@@ -36,7 +36,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Config\SecretsConfig;
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
-use App\Models\Repositories\DB;
+use App\Models\UserLogRepositories\UserLogDB;
 use App\Services\Alpha\AlphaGaClient;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Utility\CronUtility;
@@ -77,7 +77,8 @@ try {
         (new \DateTime($endDate))->modify('+1 day')
     );
 
-    DB::connect();
+    // αテーブル（alpha_xxx_ja）はすべて userlog DB（UserLogDB）に保存する。
+    UserLogDB::connect();
 
     $totalUpserts = 0;
     $errors = [];
@@ -85,7 +86,7 @@ try {
     foreach ($period as $day) {
         $date = $day->format('Y-m-d');
 
-        // ---- 1) 部屋別 (alpha_room_access_daily) ----
+        // ---- 1) 部屋別 (alpha_room_access_daily_ja) ----
         // open_chat_id => 各指標 を統合
         $merged = [];
 
@@ -130,8 +131,8 @@ try {
         }
 
         foreach ($merged as $id => $row) {
-            DB::execute(
-                "INSERT INTO alpha_room_access_daily
+            UserLogDB::execute(
+                "INSERT INTO alpha_room_access_daily_ja
                     (open_chat_id, `date`, pageviews, search_clicks, search_impressions, search_position,
                      active_users, jump_clicks, jump_clicks_organic, engagement_seconds)
                  VALUES (:id, :date, :pv, :clicks, :impr, :pos, :uu, :jump, :jump_organic, :eng)
@@ -160,12 +161,12 @@ try {
             $totalUpserts++;
         }
 
-        // ---- 1b) 部屋別 流入検索クエリ (alpha_room_search_query_daily) ----
+        // ---- 1b) 部屋別 流入検索クエリ (alpha_room_search_query_daily_ja) ----
         try {
             foreach ($client->fetchRoomSearchQueries($date, $date) as $id => $queries) {
                 foreach ($queries as $q) {
-                    DB::execute(
-                        "INSERT INTO alpha_room_search_query_daily
+                    UserLogDB::execute(
+                        "INSERT INTO alpha_room_search_query_daily_ja
                             (open_chat_id, query, `date`, clicks, impressions, position)
                          VALUES (:id, :q, :date, :clicks, :impr, :pos)
                          ON DUPLICATE KEY UPDATE
@@ -188,12 +189,12 @@ try {
             $errors[] = "GSC room-query {$date}: " . $e->getMessage();
         }
 
-        // ---- 1c) 部屋別 リファラ元 (alpha_room_referrer_daily) ----
+        // ---- 1c) 部屋別 リファラ元 (alpha_room_referrer_daily_ja) ----
         try {
             foreach ($client->fetchRoomReferrers($date, $date) as $id => $referrers) {
                 foreach ($referrers as $r) {
-                    DB::execute(
-                        "INSERT INTO alpha_room_referrer_daily
+                    UserLogDB::execute(
+                        "INSERT INTO alpha_room_referrer_daily_ja
                             (open_chat_id, referrer, `date`, pageviews)
                          VALUES (:id, :ref, :date, :pv)
                          ON DUPLICATE KEY UPDATE
@@ -212,7 +213,7 @@ try {
             $errors[] = "GA4 room-referrer {$date}: " . $e->getMessage();
         }
 
-        // ---- 2) 非部屋ページ (alpha_page_access_daily): トップ / おすすめ ----
+        // ---- 2) 非部屋ページ (alpha_page_access_daily_ja): トップ / おすすめ ----
         $pages = [];
 
         try {
@@ -236,8 +237,8 @@ try {
         }
 
         foreach ($pages as $path => $row) {
-            DB::execute(
-                "INSERT INTO alpha_page_access_daily
+            UserLogDB::execute(
+                "INSERT INTO alpha_page_access_daily_ja
                     (path, `date`, label, pageviews, active_users, search_clicks, search_impressions, search_position)
                  VALUES (:path, :date, :label, :pv, :uu, :clicks, :impr, :pos)
                  ON DUPLICATE KEY UPDATE
@@ -261,11 +262,11 @@ try {
             $totalUpserts++;
         }
 
-        // ---- 3) 上位検索クエリ (alpha_search_query_daily) ----
+        // ---- 3) 上位検索クエリ (alpha_search_query_daily_ja) ----
         try {
             foreach ($client->fetchTopSearchQueries($date, $date) as $q) {
-                DB::execute(
-                    "INSERT INTO alpha_search_query_daily
+                UserLogDB::execute(
+                    "INSERT INTO alpha_search_query_daily_ja
                         (query, `date`, clicks, impressions, position)
                      VALUES (:q, :date, :clicks, :impr, :pos)
                      ON DUPLICATE KEY UPDATE
@@ -286,8 +287,8 @@ try {
             $errors[] = "GSC query {$date}: " . $e->getMessage();
         }
 
-        // ---- 4) 非部屋ページ入室数の事前集計 (alpha_page_jump_daily) ----
-        // alpha_room_referrer_daily / alpha_room_access_daily 書込後に再計算して upsert。
+        // ---- 4) 非部屋ページ入室数の事前集計 (alpha_page_jump_daily_ja) ----
+        // alpha_room_referrer_daily_ja / alpha_room_access_daily_ja 書込後に再計算して upsert。
         // GA不要・DBのみで完結（当日分のみなので高速）。
         try {
             (new AlphaAccessRankingRepository())->rebuildPageJumpDaily($date);

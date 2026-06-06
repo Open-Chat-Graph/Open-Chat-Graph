@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories\Alpha;
 
-use App\Models\Repositories\DB;
+use App\Models\UserLogRepositories\UserLogDB;
 
 /**
  * Alpha 検索ETA（プログレスバー用）リポジトリ。
@@ -13,7 +13,8 @@ use App\Models\Repositories\DB;
  * /alpha-api/search-eta が「次に同条件で検索したら何ms くらいかかるか」を返すために読む。
  *
  * query_key は keyword|category|sort|order を正規化した文字列（呼び出し側で組み立て）。
- * すべて ocgraph_ocreview DB（DB）に対して行う。追加のみ・既存破壊なし。ja 専用。
+ * 接続規約: αテーブル（alpha_xxx_ja）は userlog DB（UserLogDB）。多言語化時は _tw 等を増設。
+ * 追加のみ・既存破壊なし。ja 専用。
  */
 class AlphaSearchTimingRepository
 {
@@ -29,8 +30,8 @@ class AlphaSearchTimingRepository
             return;
         }
         $elapsedMs = max(0, $elapsedMs);
-        DB::execute(
-            "INSERT INTO alpha_search_timing (query_key, elapsed_ms)
+        UserLogDB::execute(
+            "INSERT INTO alpha_search_timing_ja (query_key, elapsed_ms)
              VALUES (:k, :ms)
              ON DUPLICATE KEY UPDATE elapsed_ms = VALUES(elapsed_ms),
                                      updated_at = current_timestamp()",
@@ -46,8 +47,8 @@ class AlphaSearchTimingRepository
         if ($queryKey === '') {
             return null;
         }
-        $v = DB::fetchColumn(
-            "SELECT elapsed_ms FROM alpha_search_timing WHERE query_key = :k",
+        $v = UserLogDB::fetchColumn(
+            "SELECT elapsed_ms FROM alpha_search_timing_ja WHERE query_key = :k",
             ['k' => $queryKey]
         );
         return ($v === false || $v === null) ? null : (int)$v;
@@ -71,12 +72,12 @@ class AlphaSearchTimingRepository
         }
 
         if ($fallbackLikePrefix !== null && $fallbackLikePrefix !== '') {
-            $rows = DB::fetchAll(
-                "SELECT elapsed_ms FROM alpha_search_timing WHERE query_key LIKE :p",
+            $rows = UserLogDB::fetchAll(
+                "SELECT elapsed_ms FROM alpha_search_timing_ja WHERE query_key LIKE :p",
                 ['p' => str_replace(['%', '_'], ['\%', '\_'], $fallbackLikePrefix) . '%']
             );
         } else {
-            $rows = DB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing");
+            $rows = UserLogDB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing_ja");
         }
         if (empty($rows)) {
             return self::DEFAULT_ETA_MS;

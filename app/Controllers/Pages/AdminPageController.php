@@ -157,7 +157,7 @@ class AdminPageController
     /**
      * Alpha(α)の通知/アラート毎時処理だけを手動実行する（テスト用）。
      * 毎時クロール後に走るのと同じ alpha_hourly を同期実行し、ウォッチ条件に合致する
-     * 新着部屋(LINE公式検索)・部屋/マイリストの増減を検出して alpha_notification に保存する。
+     * 新着部屋(LINE公式検索)・部屋/マイリストの増減を検出して alpha_notification_ja に保存する。
      * 結果は cronログ（/admin/log/cron、タグ「【Alpha通知】」）に残る。実行後 αの通知タブで確認できる。
      * 事前に α側でアラート条件（検索の「このキーワードをアラート」/詳細の「この部屋の増減をアラート」/見張り…アラート設定）を登録しておくこと。
      */
@@ -182,7 +182,7 @@ class AdminPageController
      * Alpha(α) Labs のGA/GSC日次同期だけを手動実行する（テスト用）。
      * 本家の Google Analytics 4 と Search Console から /oc/{id} 詳細ページ・トップ・おすすめページの
      * アクセス/UU/参加リンク押下/平均エンゲージ秒・検索流入・上位検索クエリを取得し、
-     * alpha_room_access_daily / alpha_page_access_daily / alpha_search_query_daily に日次集計して保存する。
+     * alpha_room_access_daily_ja / alpha_page_access_daily_ja / alpha_search_query_daily_ja に日次集計して保存する。
      * GA4/GSCのcreds(local-secrets)が未設定なら何もせず正常終了する。結果は cronログ（/admin/log/cron、タグ「【Alpha GA同期】」）に残る。
      * 既定では直近数日を再取得して上書きする（GAの確定遅延に追従）。
      */
