@@ -76,7 +76,7 @@ function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPr
 }
 
 // 非オプチャページ: アクセス数 / SEO流入(直接のみ・GSC) / 入室数(近似) / ユニークユーザー。
-// 入室数はこのページを参照元として到達した部屋の参加リンク押下合計（近似）。
+// 入室数は到達した部屋の参加リンク押下を流入PV比で按分した近似値。
 function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: LabsPrimary }) {
   return (
     <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
@@ -90,7 +90,7 @@ function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: Labs
       <Stat
         label="入室数"
         value={page.jumpClicks}
-        sub={`うちSEO経由（間接含む）${page.jumpClicksOrganic.toLocaleString()}`}
+        sub={`うちSEO経由（間接含む）${page.jumpClicksOrganic.toLocaleString()}・流入PV比で按分した近似値`}
         emphasize={primary === 'jump'}
       />
       <Stat label="ユニークユーザー" value={page.activeUsers} unit="人" />

@@ -41,11 +41,8 @@
 ### 契約
 - rooms ランキングは**1つの母集合（`HAVING SUM(pageviews)>0`）**。指標プルダウン＝**並び替え軸の切替のみ**：`pv`=pageviews / `seo`=seo_total(直接searchClicks+間接seoIndirect) / `jump`=jump_clicks。母集合は変えない（同じ部屋が並び順だけ変わる）。
 - 間接SEO＝本家内SEOページ経由PV（自己参照除外）。日付fan-outに対し `MAX(COALESCE(ref.indirect_seo,0))` で1:1値を保持（SUMで水増ししない）＝**これは正しい実装**。
-- ページ入室数（その他ページ）＝「そのページを参照元として到達した部屋の jump 合計」の近似。**日次事前集計 `alpha_page_jump_daily`** に持つ（リクエスト毎LIKE禁止）。
+- ページ入室数（その他ページ）＝部屋の当日 jump を**内部ページ流入PV比で按分**した近似。分母は全referrer PV（外部・direct含む）のため外部由来分は内部ページに帰属させない（ページ合計≦部屋合計）。**日次事前集計 `alpha_page_jump_daily`** に持つ（リクエスト毎LIKE禁止）。UIにも「按分した近似値」と明示。
 - 期間は `resolveWindow`：days(既定30)/range(start,end)/all(最古〜最新)。`days` は実日数（+1）。
-
-### 現状の負債
-- **D-4**: ページ入室数が、部屋が複数ページから流入していると各ページに同じ部屋の当日jumpを**全量二重計上**（`rebuildPageJumpDaily`）。構造的水増し。→ 流入元ページ数で按分 or 「ページ別入室」を別計測。最低でも近似である旨をUI明示（現状「うちSEO経由（間接含む）」は付けたが二重計上の注記は無し）。
 
 ---
 

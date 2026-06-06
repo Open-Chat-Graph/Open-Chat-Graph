@@ -637,10 +637,12 @@ class AlphaAccessRankingRepository
      * から再計算して upsert する。
      *
      * 処理:
-     *   1. $date の alpha_room_referrer_daily を全件取得。
+     *   1. $date の alpha_room_referrer_daily を全件取得（pageviews 込み）。
      *   2. referrer を page_path に正規化（'/' or '/recommend/{tag}' のみ対象・外部や自己参照は除外）。
-     *   3. (room, page_path) をグループに、当日の alpha_room_access_daily の
-     *      jump_clicks / jump_clicks_organic を page_path 別に SUM して upsert。
+     *   3. 部屋の当日 jump_clicks / jump_clicks_organic を「内部ページ流入PV比」で按分（近似）し、
+     *      page_path 別に SUM して upsert。referrer 別の jump は存在しないため厳密な帰属は不可能で、
+     *      PV 比按分が最善の近似。按分の分母は全 referrer PV（外部 Google 等・(direct)・部屋ページ
+     *      referrer 含む）なので、外部由来分は内部ページに帰属させない（ページ合計 ≦ 部屋合計）。
      *
      * PHP 側で正規化する（LIKE のない完全一致 JOIN では正規化できないため）。
      * 当日分のみなので referrer 行数は限定的（実質数千〜数万行）。
@@ -649,9 +651,9 @@ class AlphaAccessRankingRepository
     {
         DB::connect();
 
-        // 当日の referrer 一覧を取得（open_chat_id, referrer）
+        // 当日の referrer 一覧を取得（open_chat_id, referrer, pageviews）
         $refRows = DB::fetchAll(
-            "SELECT open_chat_id, referrer FROM alpha_room_referrer_daily WHERE `date` = :date",
+            "SELECT open_chat_id, referrer, pageviews FROM alpha_room_referrer_daily WHERE `date` = :date",
             ['date' => $date]
         );
 
@@ -659,26 +661,37 @@ class AlphaAccessRankingRepository
             return;
         }
 
-        // referrer → page_path 正規化し、(open_chat_id, page_path) のセットを収集
-        // page_path => [open_chat_id, ...] のマップ
-        /** @var array<string, list<int>> $pathToIds */
-        $pathToIds = [];
+        // referrer → page_path 正規化し、按分用の PV を集計する。
+        // 分子: 内部ページ（正規化が非 null）の page_path × 部屋別 PV
+        /** @var array<string, array<int, int>> $pathRoomPv page_path => [open_chat_id => pv] */
+        $pathRoomPv = [];
+        // 分母: 全 referrer 行（外部・(direct)・部屋ページ referrer 含む）の部屋別 PV 合計
+        /** @var array<int, int> $roomPvTotal open_chat_id => pv */
+        $roomPvTotal = [];
         foreach ($refRows as $r) {
             $ocId = (int)$r['open_chat_id'];
+            $pv = (int)$r['pageviews'];
+            $roomPvTotal[$ocId] = ($roomPvTotal[$ocId] ?? 0) + $pv;
+
             $norm = self::normalizeReferrerToPagePath((string)($r['referrer'] ?? ''));
             if ($norm === null) {
                 continue;
             }
-            $pathToIds[$norm][] = $ocId;
+            $pathRoomPv[$norm][$ocId] = ($pathRoomPv[$norm][$ocId] ?? 0) + $pv;
         }
 
-        if ($pathToIds === []) {
+        if ($pathRoomPv === []) {
             return;
         }
 
         // 当日の alpha_room_access_daily を in 句で一括取得して集計
-        $allIds = array_unique(array_merge(...array_values($pathToIds)));
-        $in = implode(',', array_map('intval', $allIds));
+        $allIds = [];
+        foreach ($pathRoomPv as $roomPv) {
+            foreach (array_keys($roomPv) as $ocId) {
+                $allIds[$ocId] = true;
+            }
+        }
+        $in = implode(',', array_map('intval', array_keys($allIds)));
 
         $accessRows = DB::fetchAll(
             "SELECT open_chat_id, jump_clicks, jump_clicks_organic
@@ -697,17 +710,20 @@ class AlphaAccessRankingRepository
             ];
         }
 
-        // page_path 別に SUM
+        // page_path 別に、部屋の当日 jump を「このページ経由の PV ÷ 全 referrer PV」で按分して SUM
         /** @var array<string, array{jump_clicks:int, jump_clicks_organic:int}> $pageAgg */
         $pageAgg = [];
-        foreach ($pathToIds as $path => $ids) {
+        foreach ($pathRoomPv as $path => $roomPv) {
             $jc = 0;
             $jco = 0;
-            foreach (array_unique($ids) as $ocId) {
-                if (isset($accessMap[$ocId])) {
-                    $jc += $accessMap[$ocId]['jump_clicks'];
-                    $jco += $accessMap[$ocId]['jump_clicks_organic'];
+            foreach ($roomPv as $ocId => $pv) {
+                $total = $roomPvTotal[$ocId] ?? 0;
+                if ($total <= 0 || !isset($accessMap[$ocId])) {
+                    continue; // ゼロ除算ガード（分母0の部屋の寄与は0）
                 }
+                $ratio = $pv / $total;
+                $jc += (int)round($accessMap[$ocId]['jump_clicks'] * $ratio);
+                $jco += (int)round($accessMap[$ocId]['jump_clicks_organic'] * $ratio);
             }
             $pageAgg[$path] = ['jump_clicks' => $jc, 'jump_clicks_organic' => $jco];
         }
