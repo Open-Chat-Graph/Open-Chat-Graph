@@ -9,7 +9,7 @@
   all: unset;
   font-weight: bold;
   font-size: 14px;
-  color: #111;
+  color: var(--c-text-1);
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -43,10 +43,9 @@
   word-break: break-all;
   margin: 0;
   margin-top: 6px;
-  /* text-align: center; */
   line-height: 125%;
   overflow-wrap: anywhere;
-  color: #111;
+  color: var(--c-text-1);
   font-weight: 500;
 }
 
@@ -61,12 +60,12 @@
   margin-top: 2px;
   line-height: 125%;
   overflow-wrap: anywhere;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .recommend-member {
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
   line-height: 125%;
   margin-top: 2px;
   white-space: nowrap;
@@ -83,14 +82,13 @@
 .recommend-list a {
   cursor: pointer;
   text-decoration: none;
-  color: #111;
+  color: var(--c-text-1);
   user-select: none;
   display: flex;
   flex-direction: column;
-  /* align-items: center; */
   height: 174px;
   justify-content: space-evenly;
-  border: 1px solid #efefef;
+  border: 1px solid var(--c-border);
   border-radius: 4px;
   padding: 6px;
   text-align: center;
@@ -117,7 +115,7 @@
   display: inline-block;
   fill: currentcolor;
   flex-shrink: 0;
-  color: rgb(7, 181, 59);
+  color: var(--c-up);
   font-size: 11px;
   margin: -1px -4px;
 }
@@ -132,7 +130,7 @@
 
 .btn-wrapper .inner {
   display: flex;
-  flex-direction: row; /* align-items: center; */
+  flex-direction: row;
   margin: 0 1rem;
   width: 100%;
 }
@@ -143,7 +141,7 @@
 
 @media screen and (max-width: 511px) {
   .recommend-list li.selected > a {
-    background-color: #f5f5f5;
+    background-color: var(--c-surface);
     border: none;
   }
 }
@@ -189,7 +187,7 @@
     padding: 4px 6px;
     border-radius: 4px;
     margin: 2px -6px;
-    background-color: #f5f5f5;
+    background-color: var(--c-surface);
   }
 
   .recommend-list h4 {
@@ -218,9 +216,9 @@
     display: inline-block;
     margin: 0;
     height: 32px;
-    border: 1px solid #efefef;
+    border: 1px solid var(--c-border);
     border-radius: 9rem;
-    background-color: #fff;
+    background-color: var(--c-bg);
     font-size: 11px;
     cursor: pointer;
     padding: 0 12px;
