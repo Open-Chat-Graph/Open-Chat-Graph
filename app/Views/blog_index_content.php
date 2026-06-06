@@ -4,7 +4,7 @@
 
 <body>
     <?php viewComponent('site_header') ?>
-    <main class="blog-main" style="overflow: hidden;">
+    <main class="no-pad blog-main">
         <!-- $articles は BlogSummaryDto[]。プロパティ文字列は View 層で自動エスケープ済み -->
         <div class="blog">
             <nav class="blog-crumb">
