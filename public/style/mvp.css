@@ -55,9 +55,12 @@ body {
   padding: 0;
 }
 
-footer,
-header,
-main {
+/* ページ骨格。
+   【サイト方針】素の <header> への直当ては廃止。コンポーネント内の <header> にまで漏れて、
+   各所で all: unset やインライン style による打ち消し（whack-a-mole）が必要になっていたため。
+   <footer> は body 直下（admin・エラーページが依存）に限定し、リスト項目内の <footer> 等には当てない。 */
+main,
+body > footer {
   margin: 0 auto;
   max-width: var(--width-content);
   padding: 3rem 1rem;
@@ -102,33 +105,9 @@ section aside:hover {
   display: none;
 }
 
-/* Headers */
-article header,
-div header,
-main header {
-  padding-top: 0;
-}
-
-header {
-  text-align: var(--justify-important);
-}
-
-header a b,
-header a em,
-header a i,
-header a strong {
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
-}
-
-header nav img {
-  margin: 1rem 0;
-}
-
-section header {
-  padding-top: 0;
-  width: 100%;
-}
+/* Headers
+   素の <header> 向けの装飾（padding / text-align: center 等）は撤去済み。
+   中央寄せが必要なページ（エラーページ等）は各自で指定する。 */
 
 /* Nav */
 nav {
@@ -486,6 +465,15 @@ blockquote footer {
 
 .unset {
   all: unset;
+}
+
+/* all: unset は UA スタイルの cursor: pointer まで消してしまうため、
+   インタラクティブ要素に限り操作感（カーソル）だけは標準に戻す */
+a.unset,
+button.unset,
+summary.unset,
+[role='button'].unset {
+  cursor: pointer;
 }
 
 .unset:active {
