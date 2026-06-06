@@ -4,6 +4,7 @@ import getTooltipLabelCallback from '../Plugin/getTooltipLabelCallback'
 import { ChartType, Tooltip, TooltipPositionerFunction } from 'chart.js'
 import { getTooltipAndLineCallback } from '../Plugin/getTooltipAndLineCallback'
 import { t } from '../../../util/translation'
+import { getColors } from '../../../util/theme'
 
 declare module 'chart.js' {
   interface TooltipPositionerMap {
@@ -45,19 +46,19 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
             "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         },
         padding: 6,
-        color: '#111',
+        color: getColors().text.primary,
         usePointStyle: ocChart.getMode() === 'candlestick',
         pointStyle: ocChart.getMode() === 'candlestick' ? 'rectRounded' : undefined,
         generateLabels:
           ocChart.getMode() === 'candlestick'
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (chart: any) => {
-                const colors = ['#00c853', 'rgba(41, 121, 255, 0.35)']
+                const colors = getColors().legendCandle
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return chart.data.datasets.map((ds: any, i: number) => ({
                   text: ds.label,
-                  fillStyle: colors[i] ?? '#999',
-                  strokeStyle: colors[i] ?? '#999',
+                  fillStyle: colors[i] ?? getColors().text.tertiary,
+                  strokeStyle: colors[i] ?? getColors().text.tertiary,
                   lineWidth: 0,
                   hidden: false,
                   datasetIndex: i,
@@ -102,7 +103,7 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
     },
     datalabels: {
       borderRadius: 4,
-      color: '#111',
+      color: getColors().text.primary,
       backgroundColor: 'rgba(0,0,0,0)',
       font: {
         size: datalabelFontSize,

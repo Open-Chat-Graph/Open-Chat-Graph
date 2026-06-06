@@ -23,6 +23,7 @@ import {
 } from '../state/chartState'
 import SettingButton from './SettingButton'
 import { t } from '../util/translation'
+import { useIsDark } from '../../themeMui'
 
 const chips1: [string, ToggleChart][] = [
   [t('急上昇'), 'rising'],
@@ -38,6 +39,8 @@ function CategoryToggle() {
     rankingRising !== 'none' && handleChangeCategory(alignment)
   }
 
+  const isDark = useIsDark()
+
   return (
     <Stack
       direction="row"
@@ -50,6 +53,28 @@ function CategoryToggle() {
         exclusive
         onChange={handleChangeToggle}
         size="small"
+        sx={
+          /* 旧試験実装の isDark 調整値（slate-100文字 / slate-400枠 / 選択時 白 on slate-500） */
+          isDark
+            ? {
+                '& .MuiToggleButton-root': {
+                  color: '#f1f5f9',
+                  borderColor: '#94a3b8',
+                  '&.Mui-selected': {
+                    color: '#ffffff',
+                    backgroundColor: '#64748b',
+                    borderColor: '#cbd5e1',
+                    '&:hover': {
+                      backgroundColor: '#94a3b8',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(148, 163, 184, 0.15)',
+                  },
+                },
+              }
+            : undefined
+        }
       >
         <ToggleButton value="all">
           <Typography variant="caption">{t('すべて')}</Typography>
