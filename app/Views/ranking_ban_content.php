@@ -21,14 +21,35 @@ viewComponent('head', compact('_css', '_meta')) ?>
             </div>
         </header>
 
-        <!-- 絞り込みの主役: プリセット＋キーワード。細かい条件は下の「詳細設定」(普段は閉じる) -->
+        <!-- 絞り込みの主役: プリセット＋消えていた期間＋キーワード。細かい条件は下の「詳細設定」(普段は閉じる) -->
         <section class="rb-presets-outer">
             <h3 class="rb-presets-title">よく使う絞り込み</h3>
+            <?php // プリセットは publish/change/percent の選択。「消えていた期間」は直交する軸なので active 判定に含めない（同時選択できる）
+            $rbPresetActive = fn (int $p, int $c) => R::input('publish') === $p && R::input('change') === $c && R::input('percent') === 50 && $since === '' && $until === ''; ?>
             <div class="rb-presets" role="group" aria-label="よく使う絞り込み">
-                <button type="button" class="rb-preset<?php if (R::input('publish') === 1 && R::input('change') === 0 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="1" data-change="0" data-percent="50">内容変更の直後に消えた部屋</button>
-                <button type="button" class="rb-preset<?php if (R::input('publish') === 1 && R::input('change') === 1 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="1" data-change="1" data-percent="50">変更していないのに消えた部屋</button>
-                <button type="button" class="rb-preset<?php if (R::input('publish') === 0 && R::input('change') === 2 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="0" data-change="2" data-percent="50">消えたあと復活した部屋</button>
-                <button type="button" class="rb-preset<?php if (R::input('publish') === 2 && R::input('change') === 2 && R::input('percent') === 100) echo ' is-active' ?>" data-publish="2" data-change="2" data-percent="100">すべての記録を見る</button>
+                <button type="button" class="rb-preset<?php if ($rbPresetActive(1, 0)) echo ' is-active' ?>" aria-pressed="<?php echo $rbPresetActive(1, 0) ? 'true' : 'false' ?>" data-publish="1" data-change="0" data-percent="50"><span class="rb-dot rb-dot--gone" aria-hidden="true"></span>変更の直後に消えた・今も未掲載</button>
+                <button type="button" class="rb-preset<?php if ($rbPresetActive(1, 1)) echo ' is-active' ?>" aria-pressed="<?php echo $rbPresetActive(1, 1) ? 'true' : 'false' ?>" data-publish="1" data-change="1" data-percent="50"><span class="rb-dot rb-dot--gone" aria-hidden="true"></span>何も変えてないのに消えた・今も未掲載</button>
+                <button type="button" class="rb-preset<?php if ($rbPresetActive(0, 0)) echo ' is-active' ?>" aria-pressed="<?php echo $rbPresetActive(0, 0) ? 'true' : 'false' ?>" data-publish="0" data-change="0" data-percent="50"><span class="rb-dot rb-dot--back" aria-hidden="true"></span>変更の直後に消えた→復活した</button>
+                <button type="button" class="rb-preset<?php if ($rbPresetActive(0, 1)) echo ' is-active' ?>" aria-pressed="<?php echo $rbPresetActive(0, 1) ? 'true' : 'false' ?>" data-publish="0" data-change="1" data-percent="50"><span class="rb-dot rb-dot--back" aria-hidden="true"></span>何も変えてないのに消えた→復活した</button>
+            </div>
+            <div class="rb-durations-outer">
+                <h3 class="rb-presets-title" id="rb-durations-title">消えていた期間</h3>
+                <div class="rb-presets rb-durations" role="group" aria-labelledby="rb-durations-title">
+                    <?php foreach ([[0, 0, 'すべて'], [0, 24, '24時間以内'], [72, 0, '3日以上'], [168, 0, '1週間以上']] as [$rbDi, $rbDa, $rbDurLabel]) : ?>
+                        <button type="button" class="rb-preset rb-duration<?php if ($dmin === $rbDi && $dmax === $rbDa) echo ' is-active' ?>" aria-pressed="<?php echo ($dmin === $rbDi && $dmax === $rbDa) ? 'true' : 'false' ?>" data-dmin="<?php echo $rbDi ?>" data-dmax="<?php echo $rbDa ?>"><?php echo $rbDurLabel ?></button>
+                    <?php endforeach ?>
+                </div>
+                <p class="rb-field-hint">復活した部屋は「復活までにかかった時間」、消えたままの部屋は「消えてから今までの時間」で数えます</p>
+            </div>
+            <?php // 「ふつうの順位落ちの除外」だけ常時表示（読者が0件で詰まる原因のフィルタなので隠さない）。他の軸は詳細設定へ ?>
+            <div class="rb-filter-row">
+                <span class="rb-filter-label" id="rb-filter-percent">ふつうの順位落ちの除外</span>
+                <div class="rb-presets rb-filters" role="group" aria-labelledby="rb-filter-percent">
+                    <?php foreach ([[50, 'しっかり除外（おすすめ）'], [80, 'ゆるく除外'], [100, '除外しない']] as [$rbV, $rbL]) : ?>
+                        <button type="button" class="rb-preset rb-filter<?php if (R::input('percent') === $rbV) echo ' is-active' ?>" aria-pressed="<?php echo R::input('percent') === $rbV ? 'true' : 'false' ?>" data-key="percent" data-value="<?php echo $rbV ?>"><?php echo $rbL ?></button>
+                    <?php endforeach ?>
+                </div>
+                <p class="rb-field-hint rb-filter-hint">下位の部屋（ふつうの順位落ちが多い）を隠します。探している部屋が出ない時は「除外しない」へ</p>
             </div>
             <div class="rb-search" role="search">
                 <input type="search" id="rb-keyword" name="keyword" placeholder="ルーム名・説明文で検索（Enterで反映）" aria-label="キーワードで絞り込み（ルーム名・説明文）" autocomplete="off" value="<?php echo R::has('keyword') ? h(R::input('keyword')) : '' ?>">
@@ -36,12 +57,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
             </div>
         </section>
 
-        <?php // 現在の条件がプリセットに無い組み合わせなら、詳細設定を開いた状態で出す（効いている条件を隠さない） ?>
-        <?php $rbIsPreset = $since === '' && $until === ''
-            && in_array([R::input('publish'), R::input('change'), R::input('percent')], [[1, 0, 50], [1, 1, 50], [0, 2, 50], [2, 2, 100]], true); ?>
+        <?php // 詳細設定の中の条件（掲載状況・変更・消えた時期）がプリセットの組み合わせ外なら、開いた状態で出す（効いている条件を隠さない） ?>
+        <?php $rbAdvancedOpen = $since !== '' || $until !== ''
+            || !in_array([R::input('publish'), R::input('change')], [[1, 0], [1, 1], [0, 0], [0, 1]], true); ?>
         <!-- 詳細設定（プロ向け・普段は閉じる） -->
-        <details class="rb-advanced" id="rb-advanced"<?php if (!$rbIsPreset) echo ' open' ?>>
-            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位を個別に指定</span></summary>
+        <details class="rb-advanced" id="rb-advanced"<?php if ($rbAdvancedOpen) echo ' open' ?>>
+            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位%・消えた時期を個別に指定</span></summary>
             <div class="rb-panel" aria-label="詳細の絞り込み条件">
             <div class="rb-field">
                 <div class="rb-field-label" id="rb-label-publish">掲載状況</div>
@@ -83,7 +104,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 </div>
             </div>
             <div class="rb-field">
-                <div class="rb-field-label" id="rb-label-percent">最後に載っていた順位</div>
+                <div class="rb-field-label" id="rb-label-percent">最後に載っていた順位（%指定）</div>
                 <div class="rb-field-control">
                     <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-percent">
                         <label class="rb-seg-item<?php if (R::input('percent') === 50) echo ' is-selected' ?>">
@@ -99,7 +120,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                             <span class="rb-seg-text">すべて</span>
                         </label>
                     </div>
-                    <p class="rb-field-hint">下位の部屋は単純な圏外落ちが多いので除外できます</p>
+                    <p class="rb-field-hint">「ふつうの順位落ちの除外」の%指定（しっかり除外＝上位50%だけ・ゆるく除外＝上位80%まで）</p>
                 </div>
             </div>
             <div class="rb-field">
@@ -115,12 +136,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
             </div>
             </div>
         </details>
-
-        <!-- ライブサマリーバー: 選択中の条件を1本の日本語文＋件数で表示 -->
-        <div class="rb-summary" aria-label="現在の絞り込み条件">
-            <span id="rb-summary-text"><?php echo $titleValue ?></span>
-            <span id="rb-summary-count" class="rb-summary-count">— 集計中…</span>
-        </div>
 
         <!-- 詳しい使い方（上級者向け・SEOテキスト） -->
         <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
@@ -149,9 +164,15 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「最後に載っていた順位」はランキング順位の上位何％までを表示するかが選べます。<br>
-                            この分析機能では、単純なランク圏外ではなく、ルーム内容変更による未掲載や、それ以外の理由で未掲載となったルームに焦点を当てることができます。<br>
-                            表示対象を上位に絞ることで、例外的な未掲載にはどのような特徴があるのかが分かりやすくなります。
+                            「ふつうの順位落ちの除外」は、最後に載っていた順位（同一カテゴリー内）の上位何％までを表示するかの設定です。<br>
+                            ランキングの掲載が途切れる原因の半数は、単純に活動量が低くランク圏外になるためです。下位の部屋を隠すことで、ルーム内容変更による未掲載や、それ以外の理由で未掲載となったルームに焦点を当てることができます。<br>
+                            表示対象を上位に絞ることで、例外的な未掲載にはどのような特徴があるのかが分かりやすくなります。探している部屋が表示されない場合は「除外しない」を選んでください。
+                        </p>
+                    </li>
+                    <li>
+                        <p class="recommend-desc">
+                            「消えていた期間」は、復活した部屋では「未掲載だった時間」、消えたままの部屋では「消えてから現在までの経過時間」で絞り込みます。<br>
+                            ルーム内容の変更後の再確認は通常24時間〜3日で終わるため、「3日以上」に絞ると、例外的に長く消えている部屋に焦点を当てられます。
                         </p>
                     </li>
                     <li>
@@ -166,7 +187,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「掲載状況:消えたまま」・「ルーム内容の変更:なし」・「最後に載っていた順位:上位50%だけ」を選択している場合、ルームの内容変更・活動量以外の理由で未掲載となった可能性が高いルームの一覧になります。<br>
+                            「掲載状況:消えたまま」・「ルーム内容の変更:なし」・「ふつうの順位落ちの除外:しっかり除外」を選択している場合、ルームの内容変更・活動量以外の理由で未掲載となった可能性が高いルームの一覧になります。<br>
                         </p>
                     </li>
                     <li>
@@ -242,25 +263,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const loading = document.getElementById('rb-loading');
             const loadingFirst = document.getElementById('rb-loading-first');
             const live = document.getElementById('rb-live');
-            const summaryText = document.getElementById('rb-summary-text');
-            const summaryCount = document.getElementById('rb-summary-count');
             const keywordInput = document.getElementById('rb-keyword');
             const clearBtn = document.getElementById('rb-keyword-clear');
             const sinceInput = document.getElementById('rb-since');
             const untilInput = document.getElementById('rb-until');
-
-            // publish-change の9通りの組み合わせを1本の日本語文に合成するテンプレート
-            const SUMMARY = {
-                '1-0': '内容を変更した直後にランキングから消えて、今も未掲載の部屋',
-                '1-1': '内容を変更していないのにランキングから消えて、今も未掲載の部屋',
-                '1-2': 'ランキングから消えて、今も未掲載の部屋（変更の有無は問わない）',
-                '0-0': '内容変更でいったん消えて、そのあと復活した部屋',
-                '0-1': '変更していないのに消えて、そのあと復活した部屋',
-                '0-2': 'いったん消えて、そのあと復活した部屋（変更の有無は問わない）',
-                '2-0': '内容変更の直後に消えた記録すべて（未掲載・復活どちらも）',
-                '2-1': '変更なしで消えた記録すべて（未掲載・復活どちらも）',
-                '2-2': '掲載が途切れた記録すべて'
-            };
 
             const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -274,20 +280,27 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     const v = q.get(k) || '';
                     return DATE_RE.test(v) ? v : '';
                 };
-                return {
+                const s = {
                     publish: num('publish', 1),
                     change: num('change', 1),
                     percent: num('percent', 50),
+                    dmin: num('dmin', 0),
+                    dmax: num('dmax', 0),
                     page: num('page', 1),
                     keyword: q.get('keyword') || '',
                     since: date('since'),
                     until: date('until')
                 };
+                // 矛盾した範囲は下限を優先して上限を捨てる（PHP normalizeDuration() と同一）
+                if (s.dmin < 0) s.dmin = 0;
+                if (s.dmax < 0) s.dmax = 0;
+                if (s.dmin > 0 && s.dmax > 0 && s.dmin >= s.dmax) s.dmax = 0;
+                return s;
             };
 
             let state = parseState(location.search);
 
-            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword → since → until (→ page>1)
+            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword → since → until → dmin → dmax (→ page>1)
             // CDNキャッシュキーの分裂を防ぐため固定
             const buildQuery = (s) => {
                 const q = new URLSearchParams();
@@ -297,6 +310,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 q.set('keyword', s.keyword);
                 q.set('since', s.since);
                 q.set('until', s.until);
+                q.set('dmin', s.dmin);
+                q.set('dmax', s.dmax);
                 if (s.page > 1) q.set('page', s.page);
                 return q.toString();
             };
@@ -304,19 +319,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const pageUrl = (s) => PAGE_URL + '?' + buildQuery(s);
             const fragmentUrl = (s) => FRAGMENT_URL + '?' + buildQuery(s);
 
-            const updateSummary = () => {
-                let text = SUMMARY[state.publish + '-' + state.change] || '';
-                if (state.percent < 100) text += '・最終順位 上位' + state.percent + '%以内';
-                if (state.since !== '' || state.until !== '') {
-                    text += '・' + state.since.replaceAll('-', '/') + '〜' + state.until.replaceAll('-', '/') + 'に消えた';
-                }
-                if (state.keyword !== '') text += '・「' + state.keyword + '」を含む';
-                summaryText.textContent = text;
-            };
-
             const toggleClear = () => {
                 clearBtn.classList.toggle('is-hidden', keywordInput.value === '');
             };
+
+            // 詳細設定の中の条件がこの publish-change の組み合わせ外なら詳細設定を開く（プリセットで表現できる組）
+            const PRESET_PAIRS = [[1, 0], [1, 1], [0, 0], [0, 1]];
 
             const syncControls = () => {
                 document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
@@ -328,23 +336,36 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (sinceInput.value !== state.since) sinceInput.value = state.since;
                 if (untilInput.value !== state.until) untilInput.value = state.until;
                 toggleClear();
-                let anyPreset = false;
-                document.querySelectorAll('.rb-preset').forEach((b) => {
+                // プリセットは publish/change/percent の選択。「消えていた期間」は直交する軸なので判定に含めない（同時選択できる）
+                document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
                     const active =
                         state.since === '' && state.until === '' &&
                         Number(b.dataset.publish) === state.publish &&
                         Number(b.dataset.change) === state.change &&
                         Number(b.dataset.percent) === state.percent;
                     b.classList.toggle('is-active', active);
-                    anyPreset = anyPreset || active;
+                    b.setAttribute('aria-pressed', String(active));
                 });
-                // プリセットに無い組み合わせが効いているときは詳細設定を開いて隠さない（自動では閉じない）
-                if (!anyPreset) document.getElementById('rb-advanced').open = true;
+                document.querySelectorAll('.rb-duration').forEach((b) => {
+                    const active = Number(b.dataset.dmin) === state.dmin && Number(b.dataset.dmax) === state.dmax;
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-pressed', String(active));
+                });
+                // 絞り込みチップ（ふつうの順位落ちの除外）
+                document.querySelectorAll('.rb-filter').forEach((b) => {
+                    const active = Number(b.dataset.value) === state[b.dataset.key];
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-pressed', String(active));
+                });
+                // 詳細設定の中の条件（掲載状況・変更・消えた時期）が隠れて効いているときは開いて隠さない（自動では閉じない）
+                const hiddenPlain = state.since === '' && state.until === '' &&
+                    PRESET_PAIRS.some((c) => c[0] === state.publish && c[1] === state.change);
+                if (!hiddenPlain) document.getElementById('rb-advanced').open = true;
             };
 
             let aborter = null;
             let initial = true;
-            let gen = 0; // ロード世代。中断が間に合わず解決した古いfetchの遅延描画/二重pushStateを無効化する
+            let gen = 0; // ロード世代。中断が間に合わず解決した古いfetchの遅延描画を無効化する
             const FB_KEY = 'rb-page1-404-fallback'; // page=1 で404が続くときの全体遷移ループ防止フラグ
 
             const setBusy = (busy) => {
@@ -363,8 +384,9 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (aborter) aborter.abort();
                 aborter = new AbortController();
                 const myGen = ++gen;
-                updateSummary();
-                summaryCount.textContent = '— 集計中…';
+                // フォームの状態は操作した瞬間にURLへ反映する（fetch完了を待つと
+                // 重いクエリの間アドレスバーが古いままになり、共有・ブックマークとずれる）
+                if (opts.push) history.pushState(state, '', pageUrl(state));
                 setBusy(true);
                 const s = Object.assign({}, state);
                 fetch(fragmentUrl(s), { signal: aborter.signal })
@@ -403,23 +425,21 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         const total = inner ? Number(inner.dataset.totalRecords) || 0 : 0;
                         const page = inner ? Number(inner.dataset.page) || 1 : 1;
                         const dataTitle = inner ? inner.dataset.title : '';
-                        summaryCount.textContent = '— ' + total.toLocaleString('ja-JP') + '件';
                         document.title = 'オプチャ公式ランキング掲載の分析 ' + (page > 1 ? '(' + page + 'ページ目) ' : '') + dataTitle;
                         live.textContent = total.toLocaleString('ja-JP') + '件の結果を表示しました';
-                        if (opts.push) history.pushState(state, '', pageUrl(state));
-                        if (opts.scroll) results.scrollIntoView({ block: 'start' });
+                        // ページ移動は、新しい一覧が描画されてからページの一番上へ戻す
+                        if (opts.scroll) window.scrollTo(0, 0);
                     })
                     .catch((err) => {
                         if (err && err.name === 'AbortError') return;
                         if (myGen !== gen) return; // 古いロードのエラーは無視（最新のロードが状態を持つ）
                         initial = false;
                         setBusy(false);
-                        summaryCount.textContent = '';
                         results.innerHTML = '<div class="rb-error"><p>読み込みに失敗しました</p><button type="button" class="rb-retry">再試行</button></div>';
                     });
             };
 
-            // セグメント（radio）
+            // セグメント（radio・詳細設定内の掲載状況/ルーム内容の変更）
             document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
                 r.addEventListener('change', () => {
                     if (!r.checked) return;
@@ -430,14 +450,38 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 });
             });
 
-            // プリセットチップ（プリセット＝完成された見え方なので、期間指定もリセットする）
-            document.querySelectorAll('.rb-preset').forEach((b) => {
+            // 絞り込みチップ（ふつうの順位落ちの除外）
+            document.querySelectorAll('.rb-filter').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const key = b.dataset.key;
+                    const v = Number(b.dataset.value);
+                    if (state[key] === v) return;
+                    state[key] = v;
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // プリセットチップ。「消えていた期間」は直交する軸なのでリセットしない（プリセット×期間を同時選択できる）
+            document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
                 b.addEventListener('click', () => {
                     state.publish = Number(b.dataset.publish);
                     state.change = Number(b.dataset.change);
                     state.percent = Number(b.dataset.percent);
                     state.since = '';
                     state.until = '';
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // 消えていた期間チップ（他の条件はそのまま、期間だけ切り替える）
+            document.querySelectorAll('.rb-duration').forEach((b) => {
+                b.addEventListener('click', () => {
+                    state.dmin = Number(b.dataset.dmin);
+                    state.dmax = Number(b.dataset.dmax);
                     state.page = 1;
                     syncControls();
                     load({ push: true });
@@ -509,6 +553,23 @@ viewComponent('head', compact('_css', '_meta')) ?>
             results.addEventListener('click', (e) => {
                 if (e.target.closest('.rb-retry')) {
                     load({ push: false });
+                    return;
+                }
+                // 0件時の逃げ道:「除外せずにすべて表示する」→ ふつうの順位落ちの除外を解除して再検索
+                if (e.target.closest('.rb-widen')) {
+                    state.percent = 100;
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                    return;
+                }
+                // 0件時の逃げ道:「消えていた期間」の絞り込みを解除して再検索
+                if (e.target.closest('.rb-clear-duration')) {
+                    state.dmin = 0;
+                    state.dmax = 0;
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
                     return;
                 }
                 const a = e.target.closest('.search-pager a');
