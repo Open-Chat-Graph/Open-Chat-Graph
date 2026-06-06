@@ -60,7 +60,7 @@
 
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
 
-- userlog: `alpha_keyword_watch` / `alpha_room_watch` / `alpha_mylist_threshold` / `alpha_keyword_seen` / `alpha_notification`
+- ocreview(ja): `alpha_keyword_watch` / `alpha_room_watch` / `alpha_mylist_threshold` / `alpha_keyword_seen` / `alpha_search_seen_room` / `alpha_search_timing` / `alpha_notification`（2026-06-06 に userlog から移設。userlog は言語共有DBのため ja 専用のαテーブルは ocreview に集約。マイリスト本体 `oc_list_user` のみ userlog 残留＝`AlphaAlertRepository` の該当1箇所だけ `UserLogDB`）
 - ocreview: `alpha_room_access_daily`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily`（非部屋ページ）／ `alpha_search_query_daily`（上位検索クエリ）／ `alpha_room_search_query_daily`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily`（部屋別 リファラ元）／ `alpha_page_jump_daily`（非部屋ページの入室数近似・日次事前集計。算出: 部屋の当日 jump_clicks を「その部屋の当日リファラ PV 中、該当ページ由来の割合」で按分した近似値。分母は外部・direct を含む全リファラ PV でページ合計≦部屋合計が保証される。`alpha_ga_sync.php` が各日書込み後に自動更新。初回投入・再集計は `batch/exec/alpha_rebuild_page_jump.php` でバックフィル。**デプロイ後に同スクリプトを本番で手動実行しないと過去分が旧ロジック値のまま残り時系列に段差が出る**）
 
 ### バッチ / cron

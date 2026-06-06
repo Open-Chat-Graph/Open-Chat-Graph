@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories\Alpha;
 
-use App\Models\UserLogRepositories\UserLogDB;
+use App\Models\Repositories\DB;
 
 /**
  * Alpha 検索ETA（プログレスバー用）リポジトリ。
@@ -13,7 +13,7 @@ use App\Models\UserLogRepositories\UserLogDB;
  * /alpha-api/search-eta が「次に同条件で検索したら何ms くらいかかるか」を返すために読む。
  *
  * query_key は keyword|category|sort|order を正規化した文字列（呼び出し側で組み立て）。
- * すべて ocgraph_userlog DB（UserLogDB）に対して行う。追加のみ・既存破壊なし。ja 専用。
+ * すべて ocgraph_ocreview DB（DB）に対して行う。追加のみ・既存破壊なし。ja 専用。
  */
 class AlphaSearchTimingRepository
 {
@@ -29,7 +29,7 @@ class AlphaSearchTimingRepository
             return;
         }
         $elapsedMs = max(0, $elapsedMs);
-        UserLogDB::execute(
+        DB::execute(
             "INSERT INTO alpha_search_timing (query_key, elapsed_ms)
              VALUES (:k, :ms)
              ON DUPLICATE KEY UPDATE elapsed_ms = VALUES(elapsed_ms),
@@ -46,7 +46,7 @@ class AlphaSearchTimingRepository
         if ($queryKey === '') {
             return null;
         }
-        $v = UserLogDB::fetchColumn(
+        $v = DB::fetchColumn(
             "SELECT elapsed_ms FROM alpha_search_timing WHERE query_key = :k",
             ['k' => $queryKey]
         );
@@ -71,12 +71,12 @@ class AlphaSearchTimingRepository
         }
 
         if ($fallbackLikePrefix !== null && $fallbackLikePrefix !== '') {
-            $rows = UserLogDB::fetchAll(
+            $rows = DB::fetchAll(
                 "SELECT elapsed_ms FROM alpha_search_timing WHERE query_key LIKE :p",
                 ['p' => str_replace(['%', '_'], ['\%', '\_'], $fallbackLikePrefix) . '%']
             );
         } else {
-            $rows = UserLogDB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing");
+            $rows = DB::fetchAll("SELECT elapsed_ms FROM alpha_search_timing");
         }
         if (empty($rows)) {
             return self::DEFAULT_ETA_MS;
