@@ -5,6 +5,7 @@ import getRankingBarLabelRange from '../Util/getRankingBarLabelRange'
 import getHorizontalLabelFontColor from '../Callback/getHorizontalLabelFontColor'
 import { getHourTicksFormatterCallback } from '../Callback/getHourTicksFormatterCallback'
 import { sprintfT } from '../../../util/translation'
+import { getColors } from '../../../util/theme'
 
 const aspectRatio = (ocChart: OpenChatChart) => {
   ocChart.setSize()
@@ -20,7 +21,7 @@ export default function buildOptions(
   const limit = ocChart.limit
   const isWeekly = limit === 8
 
-  ChartJS.defaults.borderColor = isWeekly ? 'rgba(0,0,0,0)' : '#efefef'
+  ChartJS.defaults.borderColor = isWeekly ? getColors().borderWeekly : getColors().border
 
   const ticksFontSizeMobile = ocChart.isMiniMobile ? 10.5 : 11
 
@@ -68,7 +69,7 @@ export default function buildOptions(
         type: 'category' as const,
         grid: {
           display: hasPosition ? displayY : true,
-          color: '#efefef',
+          color: getColors().grid,
         },
         ticks: {
           color: getHorizontalLabelFontColor,
@@ -97,7 +98,7 @@ export default function buildOptions(
           font: {
             size: ticksFontSize,
           },
-          color: '#aaa',
+          color: getColors().text.tertiary,
         },
       },
     },
@@ -149,7 +150,7 @@ export default function buildOptions(
         font: {
           size: ticksFontSize,
         },
-        color: '#aaa',
+        color: getColors().text.tertiary,
       },
     }
   } else if (ocChart.data.graph2.length) {
@@ -187,7 +188,7 @@ export default function buildOptions(
         font: {
           size: ticksFontSize,
         },
-        color: '#aaa',
+        color: getColors().text.tertiary,
       },
     }
   }
@@ -215,7 +216,7 @@ export default function buildOptions(
       options.scales!.x!.grid = {
         ...options.scales!.x!.grid,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        color: (ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent'),
+        color: (ctx: any) => (ctx.index % gridStep === 0 ? getColors().grid : 'transparent'),
       }
     }
   }

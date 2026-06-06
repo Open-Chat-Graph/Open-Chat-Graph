@@ -51,7 +51,7 @@
           <?php // 24時間の人数増加は独立行に（メンバー行に入れると溢れるため）。伸び部屋のみ表示。 ?>
           <?php $diff24h = (int)($oc['diff_member_24h'] ?? 0); ?>
           <?php if ($diff24h > 0 && !$hideIncrease) : ?>
-            <div class="positive" style="font-size: 13px; margin-top: 1px;"><span aria-hidden="true" style="font-size: 11px; user-select: none;">🚀</span> <span class="openchat-item-stats"><?php echo sprintfT('%s人増加', formatMember($diff24h)) ?></span><span style="font-size: 11px; color: #9aa3af; font-weight: normal; margin-left: 4px;">（<?php echo t('24時間') ?>）</span></div>
+            <div class="positive" style="font-size: 13px; margin-top: 1px;"><span aria-hidden="true" style="font-size: 11px; user-select: none;">🚀</span> <span class="openchat-item-stats"><?php echo sprintfT('%s人増加', formatMember($diff24h)) ?></span><span style="font-size: 11px; color: var(--c-cool-text-weak); font-weight: normal; margin-left: 4px;">（<?php echo t('24時間') ?>）</span></div>
           <?php endif ?>
         </footer>
       </div>

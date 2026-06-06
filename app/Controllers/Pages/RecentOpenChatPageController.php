@@ -33,7 +33,7 @@ class RecentOpenChatPageController
 
         $path = 'recently-registered';
         $pageTitle = 'オプチャグラフに最近登録されたオープンチャット';
-        $_css = ['room_list', 'site_header', 'site_footer'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer'];
 
         // ページネーションのselect要素
         [$title, $_select, $_label] = $this->pagination->geneSelectElementPagerAsc(

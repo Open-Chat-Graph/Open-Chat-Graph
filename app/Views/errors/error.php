@@ -266,7 +266,7 @@ $_meta = meta()->setTitle($titleText)
     ->setDescription($descText)
     ->setOgpDescription($descText);
 
-$_css = ['room_list', 'site_header', 'site_footer'];
+$_css = ['components/room_list', 'components/site_header', 'components/site_footer'];
 
 try {
     $langCode = t('ja');

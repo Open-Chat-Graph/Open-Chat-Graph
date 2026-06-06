@@ -23,6 +23,7 @@ import {
 } from '../state/chartState'
 import SettingButton from './SettingButton'
 import { t } from '../util/translation'
+import { useIsDark } from '../../themeMui'
 
 const chips1: [string, ToggleChart][] = [
   [t('急上昇'), 'rising'],
@@ -38,6 +39,8 @@ function CategoryToggle() {
     rankingRising !== 'none' && handleChangeCategory(alignment)
   }
 
+  const isDark = useIsDark()
+
   return (
     <Stack
       direction="row"
@@ -50,6 +53,28 @@ function CategoryToggle() {
         exclusive
         onChange={handleChangeToggle}
         size="small"
+        sx={
+          /* 旧試験実装の isDark 調整値（slate-100文字 / slate-400枠 / 選択時 白 on slate-500） */
+          isDark
+            ? {
+                '& .MuiToggleButton-root': {
+                  color: '#eff1f2',
+                  borderColor: '#71767b',
+                  '&.Mui-selected': {
+                    color: '#ffffff',
+                    backgroundColor: '#565b60',
+                    borderColor: '#d3d6d8',
+                    '&:hover': {
+                      backgroundColor: '#71767b',
+                    },
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(231, 233, 234, 0.15)',
+                  },
+                },
+              }
+            : undefined
+        }
       >
         <ToggleButton value="all">
           <Typography variant="caption">{t('すべて')}</Typography>
@@ -97,7 +122,7 @@ export default function ToggleButtons() {
         alignItems="center"
         justifyContent={isPc ? 'space-around' : 'space-between'}
       >
-        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="#111">
+        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="var(--c-text-1)">
           {t('ランキングの順位を表示')}
         </Typography>
         {limit === 0 && !isPc && <SwitchLabels />}

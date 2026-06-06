@@ -8,6 +8,7 @@ import {
   Title,
 } from 'chart.js'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
+import { labelColor, onThemeChange } from './theme'
 
 Chart.register(
   BarController,
@@ -46,8 +47,17 @@ if (el) {
     'distribution-member-chart'
   ) as HTMLCanvasElement | null
   if (data.length > 0) {
-    if (roomCanvas) renderRoomCountChart(roomCanvas, data)
-    if (memberCanvas) renderMemberChart(memberCanvas, data)
+    const render = () => {
+      if (roomCanvas) renderRoomCountChart(roomCanvas, data)
+      if (memberCanvas) renderMemberChart(memberCanvas, data)
+    }
+    render()
+    // ダークモード切替時は色を引き直して再描画（Chart は canvas 毎に破棄して作り直す）
+    onThemeChange(() => {
+      Chart.getChart(roomCanvas ?? '')?.destroy()
+      Chart.getChart(memberCanvas ?? '')?.destroy()
+      render()
+    })
   }
 }
 
@@ -82,7 +92,7 @@ function renderRoomCountChart(canvas: HTMLCanvasElement, data: BandData[]): void
           text: '人数帯別ルーム数',
           align: 'start',
           font: { size: 13, weight: 'bold' },
-          color: '#374151',
+          color: labelColor(),
           padding: { bottom: 12 },
         },
         legend: { display: false },
@@ -97,7 +107,7 @@ function renderRoomCountChart(canvas: HTMLCanvasElement, data: BandData[]): void
           align: 'top',
           formatter: (value: number) => value.toLocaleString(),
           font: { size: dataLabelFontSize, weight: 'bold' },
-          color: '#374151',
+          color: labelColor(),
         },
       },
       scales: {
@@ -152,7 +162,7 @@ function renderMemberChart(canvas: HTMLCanvasElement, data: BandData[]): void {
           text: '人数帯別 合計参加者数',
           align: 'start',
           font: { size: 13, weight: 'bold' },
-          color: '#374151',
+          color: labelColor(),
           padding: { bottom: 12 },
         },
         legend: { display: false },
@@ -175,7 +185,7 @@ function renderMemberChart(canvas: HTMLCanvasElement, data: BandData[]): void {
             return value >= 10000 ? (value / 10000).toFixed(1) + '万' : value.toLocaleString()
           },
           font: { size: dataLabelFontSize, weight: 'bold' },
-          color: '#374151',
+          color: labelColor(),
         },
       },
       scales: {

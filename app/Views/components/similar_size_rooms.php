@@ -42,7 +42,7 @@ $isRanked = $mode === 'tag_top';
 ?>
 <article class="top-ranking<?php echo $isRanked ? '' : ' not-rank' ?>" style="margin-top: 24px;" aria-labelledby="similar-size-rooms-title">
     <header style="display: block; margin: 0 0 12px 0;">
-        <h2 id="similar-size-rooms-title" style="display: block; margin: 0; padding: 0; font-size: 15px; font-weight: bold; color: #111; line-height: 1.4;">
+        <h2 id="similar-size-rooms-title" style="display: block; margin: 0; padding: 0; font-size: 15px; font-weight: bold; color: var(--c-text-1); line-height: 1.4;">
             <?php if ($mode === 'tag_top' && $scope !== ''): ?>
                 <?php echo sprintfT('「%s」でいま人数が伸びているルーム', htmlspecialchars($scope, ENT_QUOTES, 'UTF-8')) ?>
             <?php elseif ($scope !== ''): ?>

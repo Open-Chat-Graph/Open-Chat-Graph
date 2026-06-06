@@ -25,7 +25,7 @@ $htmlLang   = $htmlLang   ?? t('ja');
 $rules      = $rules      ?? [];
 $rulesImage = $rulesImage ?? null;
 
-$_css[] = 'oc-jump';
+$_css[] = 'pages/oc-jump';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $htmlLang ?>">

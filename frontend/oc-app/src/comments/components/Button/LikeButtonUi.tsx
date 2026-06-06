@@ -34,7 +34,7 @@ function Btn(props: BtnProps) {
       color="error"
       onClick={() => handler(type)}
       disabled={disabled}
-      sx={{ border: '1px solid #efefef', minHeight: '28px' }}
+      sx={{ border: '1px solid var(--c-border)', minHeight: '28px' }}
     >
       <Stack gap="2px" direction="row" alignItems="center">
         <Stack direction="row" alignItems="center" gap={'4px'}>

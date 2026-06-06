@@ -67,7 +67,7 @@ if ($useRank) {
   elseif ($b <= 50)  $tierWord = t('全体でも上位クラスの大規模な');
   elseif ($b <= 300) $tierWord = t('全体ランキング上位の活発な');
   else               $tierWord = t('全体ランキングに入る活発な');
-  $color = '#06c755';
+  $color = 'var(--c-brand)';
 
   // 多言語対応: 語順が言語で異なるため位置指定子(%1$s..)のテンプレートにして翻訳側で並べ替え可能にする。
   $trend = $improve > 0
@@ -83,7 +83,7 @@ if ($useRank) {
   // フォールバック: 合計メンバー数。色は安心できる緑/灰(赤は使わない)。
   $label = t('メンバー数（掲載部屋の合計）');
   $improve = $memberInc;
-  $color = $improve >= 0 ? '#06c755' : '#8a9097';
+  $color = $improve >= 0 ? 'var(--c-brand)' : 'var(--c-text-steel)';
   $chartPoints = ($member !== null && !empty($member['points'])) ? $member['points'] : [];
   $chart = ThemeGrowthChartSvg::build($chartPoints);
 
@@ -148,12 +148,12 @@ $ocIcon   = fileUrl('assets/openchat_icon.png', urlRoot: '');
         <svg class="recommend-growth__svg" viewBox="0 0 <?php echo $chart['width'] ?> <?php echo $chart['height'] ?>" width="100%" height="<?php echo $chart['height'] ?>" preserveAspectRatio="none" role="img" aria-hidden="true" focusable="false">
           <defs>
             <linearGradient id="<?php echo $gid ?>" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="<?php echo $color ?>" stop-opacity="0.28" />
-              <stop offset="100%" stop-color="<?php echo $color ?>" stop-opacity="0.02" />
+              <stop offset="0%" style="stop-color: <?php echo $color ?>;" stop-opacity="0.28" />
+              <stop offset="100%" style="stop-color: <?php echo $color ?>;" stop-opacity="0.02" />
             </linearGradient>
           </defs>
           <path d="<?php echo $chart['areaPath'] ?>" fill="url(#<?php echo $gid ?>)" />
-          <path d="<?php echo $chart['linePath'] ?>" fill="none" stroke="<?php echo $color ?>" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+          <path d="<?php echo $chart['linePath'] ?>" fill="none" style="stroke: <?php echo $color ?>;" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
         </svg>
         <span class="recommend-growth__dot" aria-hidden="true" style="left: <?php echo round($chart['lastX'] / $chart['width'] * 100, 2) ?>%; top: <?php echo round($chart['lastY'] / $chart['height'] * 100, 2) ?>%;"></span>
       </div>

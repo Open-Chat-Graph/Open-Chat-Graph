@@ -3,16 +3,26 @@
   z-index: 1160;
   left: 0;
   right: 0;
-  background-color: rgba(255, 255, 255, 1);
-  box-shadow: '0 4px 2px -2px rgba(0,0,0,.2)';
+  /* iOS セーフエリア（site_header.css と同方針） */
+  padding-top: env(safe-area-inset-top, 0px);
+  /* Safari 26 サンプリング回避（site_header.css と同方針）: fixed 親は透明 */
+  background-color: transparent;
+}
+
+.site_header_box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--c-bg);
 }
 
 .site_header_outer {
   all: unset;
   display: block;
-  --search: url("data:image/svg+xml, %3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 27' class='search-icon'%3E%3Cpath d='M11.56,3.43a8.26,8.26,0,0,0,0,16.52,8.18,8.18,0,0,0,5-1.72l4.7,4.7a1.1,1.1,0,0,0,1.56,0,1.09,1.09,0,0,0,0-1.55l0,0-4.7-4.7a8.18,8.18,0,0,0,1.72-5A8.28,8.28,0,0,0,11.56,3.43Zm0,2.2A6.06,6.06,0,1,1,5.5,11.69,6,6,0,0,1,11.56,5.63Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E");
+  /* 色・アイコンは tokens.css（--icon-search / --c-bg-sub）を参照。
+     /ranking は mvp.css を読まないため、レイアウト変数のみローカル定義 */
   --width: 802px;
-  --hover: rgb(250, 250, 250);
   --border-radius: 5px;
 }
 
@@ -70,7 +80,7 @@
     'Helvetica Neue',
     Arial,
     sans-serif;
-  color: #111;
+  color: var(--c-text-1);
   line-height: 1.75;
   letter-spacing: normal;
 }
@@ -78,7 +88,7 @@
 .header_site_title.thi h1,
 .header_site_title.thi p {
   white-space: pre;
-  color: #111;
+  color: var(--c-text-1);
   line-height: 1.3;
   font-size: 13px;
 }
@@ -114,7 +124,7 @@
   margin: auto;
   width: 24px;
   height: 24px;
-  background-image: var(--search);
+  background-image: var(--icon-search);
 }
 
 .search-form {
@@ -135,7 +145,7 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  background-image: var(--search);
+  background-image: var(--icon-search);
 }
 
 .backdrop {
@@ -157,14 +167,14 @@
 .refresh-icon {
   height: 11px;
   aspect-ratio: 1/1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23b7b7b7' d='M256 0C179.9 0 111.7 33.4 64.9 86.2L0 21.3V192h170.7l-60.2-60.2C145.6 90.5 197.5 64 256 64c106 0 192 85.9 192 192s-86 192-192 192c-53 0-101-21.5-135.8-56.2L75 437c46.4 46.3 110.4 75 181 75 141.4 0 256-114.6 256-256S397.4 0 256 0zm-21.3 106.7v170.7h128v-42.7h-85.3v-128h-42.7z' /%3E%3C/svg%3E");
+  background-image: var(--icon-refresh);
   margin: auto 0;
 }
 
 .refresh-time time {
   margin: auto 0;
   margin-left: 2px;
-  color: #b7b7b7;
+  color: var(--c-text-5);
   font-size: 12px;
   font-family:
     'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
@@ -172,7 +182,7 @@
 }
 
 .MuiInputBase-colorPrimary.search-input:after {
-  border-bottom: 2px solid #4d73ff;
+  border-bottom: 2px solid var(--c-accent-blue);
 }
 
 @media screen and (min-width: 512px) {
@@ -191,7 +201,7 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
 }
 
 ins.adsbygoogle[data-ad-status='unfilled'] {
-  background: rgb(250, 250, 250);
+  background: var(--c-bg-sub);
   position: relative;
   display: block;
 }
@@ -200,7 +210,7 @@ ins.adsbygoogle[data-ad-status='unfilled']::before {
   display: block;
   content: '広告配信なし';
   font-size: 13px;
-  color: #aaa;
+  color: var(--c-text-4);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -209,34 +219,76 @@ ins.adsbygoogle[data-ad-status='unfilled']::before {
 
 .rectangle-ads {
   aspect-ratio: 21 / 9;
-  background: rgb(250, 250, 250);
+  background: var(--c-bg-sub);
 }
 
 .rectangle2-ads {
   aspect-ratio: 16 / 9;
-  background: rgb(250, 250, 250);
+  background: var(--c-bg-sub);
 }
 
 @media screen and (min-width: 376px) {
   .rectangle-ads {
     aspect-ratio: 1.35;
-    background: rgb(250, 250, 250);
+    background: var(--c-bg-sub);
   }
 
   .rectangle2-ads {
     aspect-ratio: 1.2;
-    background: rgb(250, 250, 250);
+    background: var(--c-bg-sub);
   }
 }
 
 @media screen and (min-width: 512px) {
   .rectangle-ads {
     aspect-ratio: 16 / 9;
-    background: rgb(250, 250, 250);
+    background: var(--c-bg-sub);
   }
 
   .rectangle2-ads {
     aspect-ratio: 16 / 9;
-    background: rgb(250, 250, 250);
+    background: var(--c-bg-sub);
+  }
+}
+
+/* ---------- ダークモード切替ボタン（PHP ヘッダ側と同一ルール） ---------- */
+
+.theme-toggle-btn {
+  all: unset;
+  display: flex;
+  height: 38px;
+  width: 40px;
+  cursor: pointer;
+  color: var(--c-text-1);
+  border-radius: 99rem;
+}
+
+.theme-toggle-btn svg {
+  margin: auto;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--c-bg-sub);
+}
+
+.theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    display: block;
+  }
+
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
   }
 }
