@@ -98,6 +98,12 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
+
+        <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。急上昇テーマ直後（≈20%深度）に置き到達率を最大化。ja のみ。 ?>
+            <hr class="hr-top" style="margin-bottom: 8px;">
+            <?php viewComponent('home_blog_shelf') ?>
+        <?php endif ?>
+
         <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <hr class="hr-top" style="margin-bottom: 8px;">
