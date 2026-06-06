@@ -5,7 +5,7 @@
 <body>
     <?php viewComponent('site_header') ?>
     <main class="blog-main" style="overflow: hidden;">
-        <!-- $articles は View 層で自動エスケープ済み -->
+        <!-- $articles は BlogSummaryDto[]。プロパティ文字列は View 層で自動エスケープ済み -->
         <div class="blog">
             <nav class="blog-crumb">
                 <a href="<?php echo url('') ?>">トップ</a><span class="sep">›</span><span>ブログ</span>
@@ -19,13 +19,13 @@
                 <ul class="blog-cards">
                     <?php foreach ($articles as $a): ?>
                         <li>
-                            <a class="blog-card" href="<?php echo url('blog/' . $a['slug']) ?>">
-                                <div class="t"><?php echo $a['title'] ?></div>
+                            <a class="blog-card" href="<?php echo url('blog/' . $a->slug) ?>">
+                                <div class="t"><?php echo $a->title ?></div>
                                 <div class="m">
-                                    <?php if ($a['category']): ?><span class="cat"><?php echo $a['category'] ?></span><?php endif ?>
-                                    <span class="date"><?php echo $a['date'] ?></span>
+                                    <?php if ($a->category): ?><span class="cat"><?php echo $a->category ?></span><?php endif ?>
+                                    <span class="date"><?php echo $a->date ?></span>
                                 </div>
-                                <?php if ($a['description']): ?><p class="d"><?php echo $a['description'] ?></p><?php endif ?>
+                                <?php if ($a->description): ?><p class="d"><?php echo $a->description ?></p><?php endif ?>
                                 <div class="go">続きを読む</div>
                             </a>
                         </li>

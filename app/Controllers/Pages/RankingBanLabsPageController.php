@@ -7,6 +7,7 @@ namespace App\Controllers\Pages;
 use App\Services\RankingBan\RakingBanPageService;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\RankingBanSelectElementPagination;
+use Shadow\Kernel\ViewInterface;
 
 class RankingBanLabsPageController
 {
@@ -22,7 +23,7 @@ class RankingBanLabsPageController
         string $keyword,
         string $since,
         string $until
-    ) {
+    ): ViewInterface {
         $since = $this->validDate($since);
         $until = $this->validDate($until);
 
@@ -70,7 +71,7 @@ class RankingBanLabsPageController
         string $keyword,
         string $since,
         string $until
-    ) {
+    ): ViewInterface|false {
         header('X-Robots-Tag: noindex');
 
         $since = $this->validDate($since);
@@ -93,8 +94,8 @@ class RankingBanLabsPageController
             $until
         );
 
-        if (!$rankingBanData && $page > 1) return false;
-        if (!$rankingBanData && $page === 1) {
+        if ($rankingBanData === null && $page > 1) return false;
+        if ($rankingBanData === null) {
             $totalRecords = 0;
             $maxPageNumber = 0;
             return view(
@@ -109,8 +110,8 @@ class RankingBanLabsPageController
             );
         }
 
-        $totalRecords = $rankingBanData['totalRecords'];
-        $maxPageNumber = $rankingBanData['maxPageNumber'];
+        $totalRecords = $rankingBanData->totalRecords;
+        $maxPageNumber = $rankingBanData->maxPageNumber;
         $path = 'labs/publication-analytics';
         // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
         $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until');
@@ -121,11 +122,11 @@ class RankingBanLabsPageController
             $page,
             $totalRecords,
             $limit,
-            $rankingBanData['maxPageNumber'],
-            array_reverse($rankingBanData['labelArray'])
+            $maxPageNumber,
+            array_reverse($rankingBanData->labelArray)
         );
 
-        $openChatList =  $rankingBanData['openChatList'];
+        $openChatList = $rankingBanData->openChatList;
         $_pagerNavArg = [
             'path' => $path,
             'params' => $params,

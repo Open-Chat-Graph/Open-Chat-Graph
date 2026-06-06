@@ -11,14 +11,14 @@
                 <a href="<?php echo url('') ?>">トップ</a><span class="sep">›</span><a href="<?php echo url('blog') ?>">ブログ</a>
             </nav>
 
-            <h1 class="blog-title"><?php echo $article['title'] ?></h1>
+            <h1 class="blog-title"><?php echo $article->title ?></h1>
 
             <div class="blog-meta">
                 <span class="author">オプチャグラフ編集部</span>
-                <span>公開 <?php echo $article['date'] ?></span>
-                <?php if (($article['updated'] ?? '') && $article['updated'] !== $article['date']): ?><span>更新 <?php echo $article['updated'] ?></span><?php endif ?>
-                <span>約<?php echo (int)($article['readingMinutes'] ?? 1) ?>分</span>
-                <?php if ($article['category']): ?><span class="cat"><?php echo $article['category'] ?></span><?php endif ?>
+                <span>公開 <?php echo $article->date ?></span>
+                <?php if ($article->updated && $article->updated !== $article->date): ?><span>更新 <?php echo $article->updated ?></span><?php endif ?>
+                <span>約<?php echo $article->readingMinutes ?>分</span>
+                <?php if ($article->category): ?><span class="cat"><?php echo $article->category ?></span><?php endif ?>
             </div>
 
             <div class="blog-body">
@@ -42,9 +42,9 @@
                 <nav class="blog-related">
                     <div class="blog-related-h">関連記事</div>
                     <?php foreach ($related as $r): ?>
-                        <a href="<?php echo url('blog/' . $r['slug']) ?>">
-                            <div class="t"><?php echo $r['title'] ?></div>
-                            <?php if ($r['category']): ?><div class="c"><?php echo $r['category'] ?></div><?php endif ?>
+                        <a href="<?php echo url('blog/' . $r->slug) ?>">
+                            <div class="t"><?php echo $r->title ?></div>
+                            <?php if ($r->category): ?><div class="c"><?php echo $r->category ?></div><?php endif ?>
                         </a>
                     <?php endforeach ?>
                 </nav>
