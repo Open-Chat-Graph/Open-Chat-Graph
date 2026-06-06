@@ -377,23 +377,6 @@ body > .google-auto-placed {
 
 /* ライブサマリーバー */
 
-.rb-summary {
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-left: 3px solid #06c755;
-  background-color: #f7faf8;
-  border-radius: 0 8px 8px 0;
-  font-size: 14px;
-  color: #3d4043;
-  line-height: 1.7;
-}
-
-.rb-summary-count {
-  font-weight: bold;
-  color: #111;
-  white-space: nowrap;
-}
-
 /* ---------- ローディング（初回・2回目以降で共通。常に結果の先頭） ---------- */
 
 #rb-loading {
@@ -408,10 +391,13 @@ body > .google-auto-placed {
 
 /* 細いプログレスバー */
 .rb-progress {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
   height: 3px;
   overflow: hidden;
-  border-radius: 2px;
   background-color: #ededf0;
 }
 
@@ -529,10 +515,11 @@ body > .google-auto-placed {
 
 .rb-count {
   display: inline-block;
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: bold;
   white-space: pre-wrap;
   color: #111;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .rb-empty {

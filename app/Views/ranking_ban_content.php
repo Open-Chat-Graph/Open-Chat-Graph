@@ -137,12 +137,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
             </div>
         </details>
 
-        <!-- ライブサマリーバー: 選択中の条件を1本の日本語文＋件数で表示 -->
-        <div class="rb-summary" aria-label="現在の絞り込み条件">
-            <span id="rb-summary-text"><?php echo $titleValue ?></span>
-            <span id="rb-summary-count" class="rb-summary-count">— 集計中…</span>
-        </div>
-
         <!-- 詳しい使い方（上級者向け・SEOテキスト） -->
         <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
             <details class="icon-desc">
@@ -269,25 +263,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const loading = document.getElementById('rb-loading');
             const loadingFirst = document.getElementById('rb-loading-first');
             const live = document.getElementById('rb-live');
-            const summaryText = document.getElementById('rb-summary-text');
-            const summaryCount = document.getElementById('rb-summary-count');
             const keywordInput = document.getElementById('rb-keyword');
             const clearBtn = document.getElementById('rb-keyword-clear');
             const sinceInput = document.getElementById('rb-since');
             const untilInput = document.getElementById('rb-until');
-
-            // publish-change の9通りの組み合わせを1本の日本語文に合成するテンプレート
-            const SUMMARY = {
-                '1-0': '内容を変更した直後にランキングから消えて、今も未掲載の部屋',
-                '1-1': '内容を変更していないのにランキングから消えて、今も未掲載の部屋',
-                '1-2': 'ランキングから消えて、今も未掲載の部屋（変更の有無は問わない）',
-                '0-0': '内容変更でいったん消えて、そのあと復活した部屋',
-                '0-1': '変更していないのに消えて、そのあと復活した部屋',
-                '0-2': 'いったん消えて、そのあと復活した部屋（変更の有無は問わない）',
-                '2-0': '内容変更の直後に消えた記録すべて（未掲載・復活どちらも）',
-                '2-1': '変更なしで消えた記録すべて（未掲載・復活どちらも）',
-                '2-2': '掲載が途切れた記録すべて'
-            };
 
             const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -337,30 +316,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 return q.toString();
             };
 
-            // 消えていた期間のラベル（PHP durationLabel() と同一仕様）
-            const DUR_LABELS = { '0-24': '24時間以内', '24-72': '1〜3日', '72-168': '3〜7日', '168-0': '1週間以上', '72-0': '3日以上' };
-            const durLabel = (dmin, dmax) => {
-                const known = DUR_LABELS[dmin + '-' + dmax];
-                if (known) return known;
-                const fmt = (h) => h % 24 === 0 ? (h / 24) + '日' : h + '時間';
-                if (dmin > 0 && dmax > 0) return fmt(dmin) + '〜' + fmt(dmax);
-                if (dmin > 0) return fmt(dmin) + '以上';
-                return fmt(dmax) + '以内';
-            };
-
             const pageUrl = (s) => PAGE_URL + '?' + buildQuery(s);
             const fragmentUrl = (s) => FRAGMENT_URL + '?' + buildQuery(s);
-
-            const updateSummary = () => {
-                let text = SUMMARY[state.publish + '-' + state.change] || '';
-                if (state.dmin > 0 || state.dmax > 0) text += '・消えていた期間：' + durLabel(state.dmin, state.dmax);
-                if (state.percent < 100) text += '・ふつうの順位落ちを除外（上位' + state.percent + '%のみ）';
-                if (state.since !== '' || state.until !== '') {
-                    text += '・' + state.since.replaceAll('-', '/') + '〜' + state.until.replaceAll('-', '/') + 'に消えた';
-                }
-                if (state.keyword !== '') text += '・「' + state.keyword + '」を含む';
-                summaryText.textContent = text;
-            };
 
             const toggleClear = () => {
                 clearBtn.classList.toggle('is-hidden', keywordInput.value === '');
@@ -430,8 +387,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 // フォームの状態は操作した瞬間にURLへ反映する（fetch完了を待つと
                 // 重いクエリの間アドレスバーが古いままになり、共有・ブックマークとずれる）
                 if (opts.push) history.pushState(state, '', pageUrl(state));
-                updateSummary();
-                summaryCount.textContent = '— 集計中…';
+                // ページ移動はすぐ先頭へ戻す（下までスクロールしたまま読み込みを待たせない）
+                if (opts.scroll) results.scrollIntoView({ block: 'start' });
                 setBusy(true);
                 const s = Object.assign({}, state);
                 fetch(fragmentUrl(s), { signal: aborter.signal })
@@ -470,17 +427,14 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         const total = inner ? Number(inner.dataset.totalRecords) || 0 : 0;
                         const page = inner ? Number(inner.dataset.page) || 1 : 1;
                         const dataTitle = inner ? inner.dataset.title : '';
-                        summaryCount.textContent = '— ' + total.toLocaleString('ja-JP') + '件';
                         document.title = 'オプチャ公式ランキング掲載の分析 ' + (page > 1 ? '(' + page + 'ページ目) ' : '') + dataTitle;
                         live.textContent = total.toLocaleString('ja-JP') + '件の結果を表示しました';
-                        if (opts.scroll) results.scrollIntoView({ block: 'start' });
                     })
                     .catch((err) => {
                         if (err && err.name === 'AbortError') return;
                         if (myGen !== gen) return; // 古いロードのエラーは無視（最新のロードが状態を持つ）
                         initial = false;
                         setBusy(false);
-                        summaryCount.textContent = '';
                         results.innerHTML = '<div class="rb-error"><p>読み込みに失敗しました</p><button type="button" class="rb-retry">再試行</button></div>';
                     });
             };
