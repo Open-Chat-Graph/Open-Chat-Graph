@@ -3,6 +3,8 @@
   z-index: 1160;
   left: 0;
   right: 0;
+  /* iOS セーフエリア（site_header.css と同方針） */
+  padding-top: env(safe-area-inset-top, 0px);
   background-color: var(--c-bg);
 }
 

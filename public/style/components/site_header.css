@@ -32,7 +32,8 @@ body {
 body::before {
   width: 100%;
   max-width: var(--width);
-  height: 48px;
+  /* 固定ヘッダー高 + iOS セーフエリア（ダイナミックアイランド/ステータスバー） */
+  height: calc(48px + env(safe-area-inset-top, 0px));
   display: block;
   content: '';
 }
@@ -79,6 +80,9 @@ body::before {
   max-width: var(--max-width);
   transition: transform 0.3s;
   transform: translate(0px, 0px);
+  /* viewport-fit=cover でステータスバー裏まで伸ばし、
+     半透明+blur がダイナミックアイランド周囲に透ける（ネイティブ風） */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .site_header {
