@@ -34,9 +34,15 @@ MIGRATED=(
   public/style/base/mvp.css
   public/style/base/mvpmin.css
   public/style/base/unset.css
+  public/style/components/site_header.css
+  public/style/components/site_footer.css
+  public/style/components/search_form.css
+  public/style/components/ads_element.css
+  public/style/components/theme_discovery.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php
+  app/Views/components/theme_discovery.php
 )
 
 fail=0

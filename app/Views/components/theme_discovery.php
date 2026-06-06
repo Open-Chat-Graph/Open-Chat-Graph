@@ -38,7 +38,8 @@ $shelves = array_values(array_filter([
     <h2 class="theme-disco__title" id="theme-disco-title"><?php echo t('テーマを探す') ?></h2>
 
     <div class="theme-disco__search">
-        <svg class="theme-disco__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:#9aa3af;pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
+        <?php // スタイルは components/theme_discovery.css（.theme-disco__icon）に集約 ?>
+        <svg class="theme-disco__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
         <input id="theme-disco-input" class="theme-disco__input" type="search" inputmode="search" enterkeyhint="search"
             autocomplete="off" autocapitalize="off" spellcheck="false"
             placeholder="<?php echo t('テーマ名で検索') ?>" aria-label="<?php echo t('テーマ名で検索') ?>">
@@ -72,51 +73,9 @@ $shelves = array_values(array_filter([
         JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE
     ) ?></script>
 
-    <style>
-        /* サイトのグローバル section{display:flex;justify-content:center} を打ち消す（既存 .recommend-ranking-section と同様） */
-        .theme-disco{display:block;text-align:left;margin-top:10px;padding:18px 1rem 6px;border-top:1px solid #eef0f3}
-        .theme-disco--search-only{border-top:0;margin-top:6px;padding-top:2px}
-        .theme-disco__title{margin:0 0 12px;padding:0;display:flex;align-items:center;font-size:15px;font-weight:700;color:#0f1620;letter-spacing:.02em}
-        .theme-disco__title::before{content:"";flex:0 0 auto;width:3px;height:15px;background:#06c755;border-radius:2px;margin-right:8px}
-        .theme-disco__search{position:relative;display:block;width:100%}
-        .theme-disco__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:#9aa3af;pointer-events:none}
-        /* font-size は必ず16px以上: iOS Safari のフォーカス時オートズーム回避 */
-        .theme-disco__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px 0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
-        .theme-disco__input::placeholder{color:#9aa3af}
-        /* type=search のネイティブ取消ボタンを抑止（自作✕と二重表示になるため）。iOS は元々非表示 */
-        .theme-disco__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
-        .theme-disco__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
-        .theme-disco__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
-        .theme-disco__clear:hover{color:#5b6573}
-        .theme-disco__clear[hidden]{display:none}
-        .theme-disco__spinner{width:20px;height:20px;border:2.5px solid #d7dde6;border-top-color:#06c755;border-radius:50%;animation:theme-disco-spin .7s linear infinite;margin:8px 2px}
-        @keyframes theme-disco-spin{to{transform:rotate(360deg)}}
-        .theme-disco__results{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:8px;margin-top:14px}
-        .theme-disco__shelves{display:flex;flex-direction:column;gap:16px;margin-top:16px}
-        /* [hidden] を確実に優先（display:flex に勝たせる） */
-        .theme-disco__results[hidden],.theme-disco__shelves[hidden]{display:none}
-        .theme-disco__shelf{animation:theme-disco-fade .4s ease both;animation-delay:calc(var(--i,0)*60ms)}
-        @keyframes theme-disco-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-        @media (prefers-reduced-motion:reduce){.theme-disco__shelf{animation:none}}
-        .theme-disco__shelf-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#5b6573;margin-bottom:9px}
-        .theme-disco__shelf-ico{font-size:13px;line-height:1}
-        .theme-disco__chips{display:flex;flex-wrap:wrap;gap:8px}
-        .theme-disco-chip{display:inline-flex;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;font-size:14px;font-weight:500;color:#28303c;background:#f6f8fa;border:1px solid #e4e8ee;border-radius:999px;padding:8px 14px;line-height:1.15;transition:transform .08s ease,background .12s,border-color .12s}
-        .theme-disco-chip:hover{background:#eef1f5;border-color:#d7dde6}
-        .theme-disco-chip:active{transform:scale(.96)}
-        .theme-disco-chip--hot{color:#067a37;background:#eefcf3;border-color:#bfead0;font-weight:700}
-        .theme-disco-chip--hot:hover{background:#e2f9ea;border-color:#a6e0bd}
-        .theme-disco__empty{font-size:13px;color:#9aa3af;padding:6px 2px}
-        /* テーマ0件時のフォールバック（一致するオープンチャット＝部屋。チップでなくリスト行で“部屋”と分かる見せ方） */
-        .theme-disco__rooms{display:block;width:100%}
-        .theme-disco__note{font-size:13px;color:#9aa3af;padding:2px 2px 0}
-        .theme-disco__rooms-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#5b6573;margin:10px 0 8px}
-        .theme-disco__rooms-h::before{content:"💬";font-size:12px}
-        .theme-disco__room{display:flex;flex-direction:column;gap:2px;padding:9px 11px;margin-bottom:8px;background:#fff;border:1px solid #eef0f3;border-radius:10px;text-decoration:none}
-        .theme-disco__room:active{background:#f6f8fa}
-        .theme-disco__room-name{font-size:14px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .theme-disco__room-meta{font-size:12px;color:#5b6573}
-    </style>
+    <?php /* スタイルは style/components/theme_discovery.css に外部化済み。
+             本コンポーネントを使うページはコントローラの $_css に
+             'components/theme_discovery' を追加すること。 */ ?>
     <script>
         (() => {
             const input = document.getElementById('theme-disco-input');

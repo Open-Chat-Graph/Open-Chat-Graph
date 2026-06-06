@@ -3,7 +3,7 @@
 }
 
 .ht-top-header {
-  background-color: var(--border-color);
+  background-color: var(--c-border);
   margin: 0rem -1rem 0rem -1rem;
 }
 
@@ -27,7 +27,7 @@
 
 .ranking-page-main {
   padding-top: 0rem;
-  border-bottom: solid 1px var(--border-color);
+  border-bottom: solid 1px var(--c-border);
 }
 
 .article-news {
@@ -139,9 +139,9 @@
 }
 
 .ellipse-btn:focus-visible {
-  outline: 3px solid var(--headline);
-  background-color: var(--background);
-  color: var(--headline);
+  outline: 3px solid var(--c-text-1);
+  background-color: var(--c-bg-bright);
+  color: var(--c-text-1);
 }
 
 .ellipse-btn.add-openchat {
@@ -165,8 +165,8 @@
 .add-openchat-message.success {
   display: block;
   margin-top: 1rem;
-  color: var(--background);
-  background-color: var(--headline);
+  color: var(--c-bg-bright);
+  background-color: var(--c-text-1);
 }
 
 .openchat-list-title-area {
@@ -250,7 +250,7 @@
 .refresh-icon {
   height: 12px;
   aspect-ratio: 1/1;
-  background-image: var(--refresh);
+  background-image: var(--icon-refresh);
   margin: auto 0;
 }
 
@@ -836,7 +836,7 @@
   display: flex;
   background-color: #fff;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--c-border);
   border-color: #efefef;
   box-sizing: border-box;
   margin: 0 auto;
@@ -902,9 +902,9 @@
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  color: var(--headline);
-  background-color: var(--background);
-  border: solid 1px var(--border-color);
+  color: var(--c-text-1);
+  background-color: var(--c-bg-bright);
+  border: solid 1px var(--c-border);
   border-radius: var(--border-radius);
   padding: 0 1em;
   height: 48px;
@@ -928,8 +928,8 @@
   margin-left: 4px;
   width: 5px;
   height: 5px;
-  border-top: 2px solid var(--headline);
-  border-right: 2px solid var(--headline);
+  border-top: 2px solid var(--c-text-1);
+  border-right: 2px solid var(--c-text-1);
   transform: rotate(45deg);
   margin-bottom: 2px;
 }
@@ -947,7 +947,7 @@
 
 .button01 a:focus-visible {
   transition: 0s;
-  outline: 2px solid var(--tertiary);
+  outline: 2px solid var(--c-outline-highlight);
   background-color: rgba(227, 246, 245, 0.7);
 }
 
@@ -971,7 +971,7 @@
   margin-top: 12px;
   justify-content: space-evenly;
   flex-wrap: nowrap;
-  border-bottom: solid 1px var(--border-color);
+  border-bottom: solid 1px var(--c-border);
 }
 
 .list-btn {
@@ -1207,7 +1207,7 @@
   }
 
   .recent-comment-list .openchat-item:hover > .link-overlay.hover {
-    background: var(--hover);
+    background: var(--c-bg-sub);
   }
 
   main summary:hover {
@@ -1216,7 +1216,7 @@
   }
 
   .top-ranking-readMore:hover {
-    background-color: var(--hover);
+    background-color: var(--c-bg-sub);
   }
 
   .openchat-list-title-result-area {
@@ -1247,16 +1247,16 @@
   }
 
   .page-select form:hover {
-    background-color: var(--hover);
+    background-color: var(--c-bg-sub);
   }
 
   .button01 a:hover {
     filter: none;
-    background-color: var(--hover);
+    background-color: var(--c-bg-sub);
   }
 
   .list-btn:hover:not(:disabled) {
-    background-color: var(--hover);
+    background-color: var(--c-bg-sub);
   }
 
   .super-icon {
@@ -1517,7 +1517,7 @@
 
 @media screen and (min-width: 512px) {
   .news-summary:hover {
-    background-color: var(--hover);
+    background-color: var(--c-bg-sub);
   }
 }
 
