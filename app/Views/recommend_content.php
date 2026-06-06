@@ -63,7 +63,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <?php if ($enableAdsense): ?>
-          <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
+          <?php // Offerwall switchback 実験(oc-pdca): 奇数ISO週のみ Offerwall を抑制。広告自体は常に通常表示 ?>
+          <?php GAd::gTag(suppressOfferwall: GAd::isOfferwallSuppressionWeek()) ?>
         <?php endif ?>
         <ol class="openchat-item-list parent unset">
           <?php
