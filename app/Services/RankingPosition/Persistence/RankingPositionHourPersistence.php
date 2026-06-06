@@ -20,15 +20,25 @@ use Shared\MimimalCmsConfig;
  * ストレージファイルを監視し、ファイルが準備でき次第、順次DB反映を行う。
  *
  * 処理フロー:
- * 1. メインプロセス: startBackgroundPersistence() でバックグラウンドプロセスを起動
+ * 1. メインプロセス: startBackgroundPersistence() で残骸stateを一掃し起動マーカーを書いてから起動
  * 2. メインプロセス: ランキングダウンロード処理を実行（並列）
- * 3. バックグラウンド: persistAllCategoriesBackground() でストレージ監視＆DB反映
+ * 3. バックグラウンド: 自身のPIDをstateに登録後、persistAllCategoriesBackground() でストレージ監視＆DB反映
  * 4. メインプロセス: waitForBackgroundCompletion() でバックグラウンド完了を待機
+ *
+ * state (rankingPersistenceBackground) のライフサイクル:
+ * - ['launching' => 時刻, 'parentPid' => PID] … 親が起動直前に記録（残骸PIDの一掃を兼ねる）
+ * - ['pid' => PID, 'parentPid' => PID, 'startTime' => 時刻] … バックグラウンドが起動直後に登録
+ * - ['failed' => 時刻, 'message' => エラー内容] … バックグラウンドが異常終了時に記録
+ * - [] … 正常終了
  */
 class RankingPositionHourPersistence
 {
     /** バックグラウンドプロセスの最大待機時間（秒） */
     private const MAX_WAIT_SECONDS = 2400; // 最大40分待機
+
+    /** 起動マーカーからPID登録までの猶予時間（秒）
+     * プロセス起動 + オートロード + DB接続分。超過したら起動失敗とみなす */
+    private const LAUNCH_GRACE_SECONDS = 120;
 
     /** ストレージファイル待機中のログ出力間隔（ループ回数）
      * whileループは約1秒ごとに実行されるため、60回 ≒ 60秒 */
@@ -51,10 +61,28 @@ class RankingPositionHourPersistence
      * persist_ranking_position_background.php を別プロセスとして起動し、
      * DB反映処理をバックグラウンドで実行する。これにより、メインプロセスは
      * ランキングダウンロード処理を並行して実行できる。
+     *
+     * 起動前に前回の残骸state（異常終了で残った死んだPID等）を一掃して
+     * 起動マーカーを書き込む。これにより waitForBackgroundCompletion() が
+     * 過去の残骸PIDを今回のバックグラウンドと誤認することを防ぐ。
      */
     function startBackgroundPersistence(): void
     {
+        // 前回の生き残りプロセスがいれば強制終了（二重実行防止）
+        $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
+        $existingPid = $bgState['pid'] ?? null;
+        if ($existingPid && posix_getpgid((int)$existingPid) !== false) {
+            CronUtility::addCronLog("前回のバックグラウンドDB反映プロセス (PID: {$existingPid}) が残っているため強制終了します");
+            CronUtility::killProcess((int)$existingPid);
+        }
+
+        // 残骸stateを一掃して起動マーカーを書き込む（バックグラウンドがPID登録すると上書きされる）
         $parentPid = getmypid();
+        $this->state->setArray(SyncOpenChatStateType::rankingPersistenceBackground, [
+            'launching' => time(),
+            'parentPid' => $parentPid,
+        ]);
+
         $arg = escapeshellarg(\Shared\MimimalCmsConfig::$urlRoot);
         $parentPidArg = escapeshellarg((string)$parentPid);
         $path = AppConfig::ROOT_PATH . 'batch/exec/persist_ranking_position_background.php';
@@ -65,12 +93,14 @@ class RankingPositionHourPersistence
     /**
      * バックグラウンドプロセスの完了を待つ
      *
-     * PID監視により、バックグラウンドプロセスの状態を確認する。
-     * - PIDがクリアされた: 正常終了
-     * - プロセスが死んでいる: 異常終了
-     * - タイムアウト: 処理時間超過
+     * stateの内容により、バックグラウンドプロセスの状態を3状態で判定する。
+     * - 空: 正常終了（バックグラウンドがクリア済み）
+     * - launching: PID登録前（起動マーカーのみ）。猶予時間内なら待機、超過したら起動失敗
+     * - pidあり: 生存監視。プロセスが死んでいれば異常終了、処理時間超過ならタイムアウト
      *
-     * @throws \RuntimeException バックグラウンドプロセスが異常終了またはタイムアウトした場合
+     * 加えて failed マーカー（バックグラウンドが異常終了時に記録）があれば即座に異常終了と判定する。
+     *
+     * @throws \RuntimeException バックグラウンドプロセスが起動失敗・異常終了・タイムアウトした場合
      */
     function waitForBackgroundCompletion(): void
     {
@@ -81,9 +111,30 @@ class RankingPositionHourPersistence
             $bgState = $this->state->getArray(SyncOpenChatStateType::rankingPersistenceBackground);
             $pid = $bgState['pid'] ?? null;
             $startTime = $bgState['startTime'] ?? null;
+            $launching = $bgState['launching'] ?? null;
+            $failed = $bgState['failed'] ?? null;
 
-            // PIDがクリアされていたら正常終了
+            // バックグラウンドが異常終了を記録していたら即座にエラー
+            if ($failed) {
+                $message = $bgState['message'] ?? '詳細不明';
+                throw new \RuntimeException("バックグラウンドDB反映プロセスがエラーで終了: {$message}");
+            }
+
             if (!$pid) {
+                // 起動マーカーのみ = バックグラウンドがまだPID登録前。猶予時間内なら待機
+                if ($launching) {
+                    if (time() - (int)$launching > self::LAUNCH_GRACE_SECONDS) {
+                        throw new \RuntimeException(
+                            'バックグラウンドDB反映プロセスが起動しませんでした（起動待機タイムアウト '
+                                . self::LAUNCH_GRACE_SECONDS . '秒）'
+                        );
+                    }
+
+                    sleep(2);
+                    continue;
+                }
+
+                // stateが空 = バックグラウンドが正常終了してクリア済み
                 CronUtility::addVerboseCronLog('バックグラウンドDB反映完了を確認');
                 return;
             }
