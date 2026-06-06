@@ -217,16 +217,21 @@ class AlphaAccessRankingRepository
         $perRoom = max(1, $perRoom);
         $in = implode(',', $ids); // 整数確定済みなので直接埋め込む
 
-        // 各部屋・各クエリの期間合計 clicks を出し、部屋内 clicks 降順に並べる。
-        // 上位N語の絞り込みは PHP 側で行う（MariaDB の window 関数依存を避ける）。
+        // 各部屋・各クエリの期間合計 clicks を派生テーブルで集計し、
+        // ROW_NUMBER() OVER (PARTITION BY open_chat_id ...) で部屋ごと上位N語に絞る（MariaDB 10.2+ の window 関数使用）。
         $sql = "
-            SELECT open_chat_id, query, SUM(clicks) AS clicks
-            FROM alpha_room_search_query_daily
-            WHERE open_chat_id IN ({$in})
-              AND `date` BETWEEN :fromDate AND :toDate
-            GROUP BY open_chat_id, query
-            HAVING SUM(clicks) > 0
-            ORDER BY open_chat_id ASC, clicks DESC
+            SELECT open_chat_id, query
+            FROM (
+                SELECT open_chat_id, query, SUM(clicks) AS clicks,
+                       ROW_NUMBER() OVER (PARTITION BY open_chat_id ORDER BY SUM(clicks) DESC, query ASC) AS rn
+                FROM alpha_room_search_query_daily
+                WHERE open_chat_id IN ({$in})
+                  AND `date` BETWEEN :fromDate AND :toDate
+                GROUP BY open_chat_id, query
+                HAVING SUM(clicks) > 0
+            ) t
+            WHERE t.rn <= {$perRoom}
+            ORDER BY t.open_chat_id, t.rn
         ";
 
         $rows = DB::fetchAll($sql, ['fromDate' => $fromDate, 'toDate' => $toDate]);
@@ -236,9 +241,6 @@ class AlphaAccessRankingRepository
             $ocId = (int)$r['open_chat_id'];
             if (!isset($map[$ocId])) {
                 $map[$ocId] = [];
-            }
-            if (count($map[$ocId]) >= $perRoom) {
-                continue;
             }
             $map[$ocId][] = (string)$r['query'];
         }

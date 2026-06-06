@@ -33,7 +33,6 @@
 ### 現状の負債
 - **D-1（再掲）**: useListProgress が Activity 再mountで誤起動。
 - **D-2**: period-growth の候補が `CANDIDATE_LIMIT=3000` で頭打ち＋`fetchCandidates` が offset 非対応。頻出/全件で3000件超に無限スクロールで到達不能、`hasMore`/`totalMatched` も3000基準で誤る。→ 仕様として上限を明示しUIで止めるか、ソート確定後のページングの限界を是正。
-- **D-3**: `getRoomsTopKeywords`（流入KW列挙）が対象部屋×全クエリ語を LIMIT 無しで fetchAll し PHP で上位8件に切る。期間all・大規模で重い。→ SQLで部屋ごと上位N。
 
 ---
 
