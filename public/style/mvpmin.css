@@ -20,6 +20,15 @@ hr {
   all: unset;
 }
 
+/* all: unset は UA スタイルの cursor: pointer まで消してしまうため、
+   インタラクティブ要素に限り操作感（カーソル）だけは標準に戻す */
+a.unset,
+button.unset,
+summary.unset,
+[role='button'].unset {
+  cursor: pointer;
+}
+
 .unset:active {
   filter: none;
   text-decoration: none;
