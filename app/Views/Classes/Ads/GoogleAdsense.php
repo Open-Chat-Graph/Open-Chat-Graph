@@ -100,9 +100,37 @@ class GoogleAdsense
         EOT;
     }
 
-    public static function gTag(?string $dataOverlays = null)
+    /**
+     * Offerwall switchback 実験（oc-pdca 2026-06開始）: ISO週番号の偶奇で自動 ON/OFF を交代する。
+     * 奇数週 = 抑制ON（壁を出さない）/ 偶数週 = OFF（通常表示）。週の境界は月曜 0時 JST。
+     * 人手での切り替えは不要。分析時は GA4/AdSense の日次データを ISO 週の偶奇で分けて集計する。
+     * 実験終了時は呼び出し箇所（recommend_content.php）を固定値 true/false に置き換えること。
+     */
+    public static function isOfferwallSuppressionWeek(): bool
+    {
+        return ((int)date('W')) % 2 === 1;
+    }
+
+    /**
+     * @param bool $suppressOfferwall true でこのページの Offerwall（プライバシーとメッセージ）のみ抑制する。
+     *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
+     */
+    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+
+        if ($suppressOfferwall) {
+            // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
+            // https://developers.google.com/funding-choices/fc-api-docs
+            echo <<<EOT
+            <script>
+                window.googlefc = window.googlefc || {};
+                googlefc.controlledMessagingFunction = function (message) {
+                    message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
+                };
+            </script>
+            EOT;
+        }
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
