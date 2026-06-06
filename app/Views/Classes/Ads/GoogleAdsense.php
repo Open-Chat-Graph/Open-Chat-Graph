@@ -100,9 +100,26 @@ class GoogleAdsense
         EOT;
     }
 
-    public static function gTag(?string $dataOverlays = null)
+    /**
+     * @param bool $suppressOfferwall true でこのページの Offerwall（プライバシーとメッセージ）のみ抑制する。
+     *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
+     */
+    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+
+        if ($suppressOfferwall) {
+            // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
+            // https://developers.google.com/funding-choices/fc-api-docs
+            echo <<<EOT
+            <script>
+                window.googlefc = window.googlefc || {};
+                googlefc.controlledMessagingFunction = function (message) {
+                    message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
+                };
+            </script>
+            EOT;
+        }
 
         $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
