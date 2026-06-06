@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl("style/mvp.css", urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl('style/unset.css', urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl("style/site_header.css", urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl("style/site_footer.css", urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl("style/room_list.css", urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl("style/base/mvp.css", urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/base/unset.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl("style/components/site_header.css", urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl("style/components/site_footer.css", urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl("style/components/room_list.css", urlRoot: '') ?>">
     <title><?php echo $title ?? 'admin' ?></title>
 </head>
 

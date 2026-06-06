@@ -23,8 +23,8 @@ use App\Config\AppConfig;
     <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/png" href="<?php echo fileUrl('assets/icon-192x192.png', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl('style/mvp.css', urlRoot: '') ?>">
-    <link rel="stylesheet" href="<?php echo fileUrl('style/unset.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/base/mvp.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/base/unset.css', urlRoot: '') ?>">
 </head>
 
 <body>

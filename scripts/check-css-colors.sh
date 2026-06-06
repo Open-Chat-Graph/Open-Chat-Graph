@@ -31,9 +31,9 @@ PATTERN="($HEX|$FUNC|$DATAURI)"
 # --- 移行済みファイル: ここに生色が現れたら違反 ---
 # トークン化が完了した PR で随時追加していく
 MIGRATED=(
-  public/style/mvp.css
-  public/style/mvpmin.css
-  public/style/unset.css
+  public/style/base/mvp.css
+  public/style/base/mvpmin.css
+  public/style/base/unset.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php
@@ -68,7 +68,7 @@ while IFS= read -r f; do
     miss=1
     fail=1
   fi
-done < <(grep -rl "style/mvp" app/Views --include='*.php')
+done < <(grep -rl "style/base/mvp" app/Views --include='*.php')
 [ "$miss" -eq 0 ] && echo "✓ mvp系を読む全Viewが tokens.css を読み込み済み"
 
 echo

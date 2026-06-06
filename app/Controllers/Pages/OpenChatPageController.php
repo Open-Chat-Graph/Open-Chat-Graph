@@ -104,14 +104,14 @@ class OpenChatPageController
         $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto, $oc['member']);
 
         $_css = [
-            'room_list',
-            'site_header',
-            'site_footer',
-            'recommend_page',
-            'room_page',
+            'components/room_list',
+            'components/site_header',
+            'components/site_footer',
+            'pages/recommend_page',
+            'pages/room_page',
             'react/OpenChat',
-            'graph_page',
-            'ads_element'
+            'pages/graph_page',
+            'components/ads_element'
         ];
 
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
@@ -229,7 +229,7 @@ class OpenChatPageController
         $_meta = meta()->setTitle("{$titlePrefix} （オプチャグラフから削除済み）")
             ->setDescription("{$titlePrefix} （オプチャグラフから削除済み）")
             ->setOgpDescription(($tag ? "「{$tag}」タグのオープンチャット" : 'オープンチャット') . " ID:{$open_chat_id} （オプチャグラフから削除済み）");
-        $_css = ['room_list', 'site_header', 'site_footer', 'recommend_list'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer', 'components/recommend_list'];
 
         $recommend = [];
         if ($tag) {

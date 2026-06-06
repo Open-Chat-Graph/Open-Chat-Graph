@@ -22,14 +22,14 @@ class JumpOpenChatPageController
             ->setImageUrl(imgUrl($oc['img_url']));
 
         $_css = [
-            'room_list',
-            'site_header',
-            'site_footer',
-            'recommend_page',
-            'room_page',
+            'components/room_list',
+            'components/site_header',
+            'components/site_footer',
+            'pages/recommend_page',
+            'pages/room_page',
             'react/OpenChat',
-            'graph_page',
-            'ads_element'
+            'pages/graph_page',
+            'components/ads_element'
         ];
 
         switch (MimimalCmsConfig::$urlRoot) {

@@ -4,7 +4,7 @@
 <?php
 $_meta = meta();
 $_meta->title = 'コメント画像管理';
-$_css = ['site_header', 'site_footer'];
+$_css = ['components/site_header', 'components/site_footer'];
 viewComponent('policy_head', compact('_css', '_meta'));
 ?>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>

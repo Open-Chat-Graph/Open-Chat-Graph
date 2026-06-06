@@ -37,7 +37,7 @@ class RankingBanLabsPageController
 
         $_meta->image_url = '';
 
-        $_css = ['room_list', 'site_header', 'site_footer', 'ranking_ban'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer', 'pages/ranking_ban'];
 
         $_updatedAt = new \DateTime($fileStorage->getContents('@hourlyRealUpdatedAtDatetime'));
         $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');

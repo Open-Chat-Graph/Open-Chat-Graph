@@ -21,7 +21,7 @@ class TagLabsPageController
         AdminAuthService $adminAuthService,
         ?string $isAdminPage,
     ) {
-        $_css = ['room_list', 'site_header', 'site_footer'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer'];
         $_meta = meta()->setTitle('タグで見るトレンド動向')->setDescription('タグによる分類を用いたトレンド分析では、単純ながらも重要な増減数や合計人数の集計を行います。これにより、各トピックの人気度やその変動を捉えることができます。');
         $_meta->image_url = '';
         $_schema = $pageBreadcrumbsListSchema->generateSchema('タグ');
