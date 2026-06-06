@@ -128,7 +128,7 @@ class RankingBanPageRepository
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      */
-    private function buildWhereClause(int $change, int $publish, int $percent)
+    private function buildWhereClause(int $change, int $publish, int $percent): string
     {
         $updatedAtValue = $change === 0
             ? "AND (rb.updated_at >= 1 OR (rb.update_items IS NOT NULL AND rb.update_items != ''))"

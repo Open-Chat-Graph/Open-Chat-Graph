@@ -1,7 +1,7 @@
 <!-- @param string $path -->
 <!-- @param array $params -->
 <!-- @param int $pageNumber -->
-<!-- @param ing $maxPageNumber -->
+<!-- @param int $maxPageNumber -->
 <nav class="search-pager rb-pager">
     <?php
 

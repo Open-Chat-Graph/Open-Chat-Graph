@@ -28,6 +28,7 @@ class SitemapGenerator
         private OpenChatListRepositoryInterface $ocRepo,
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
+        private BlogService $blogService,
     ) {}
 
     function generate()
@@ -93,8 +94,8 @@ class SitemapGenerator
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
             $sitemap->addItem($this->currentUrl . 'blog');
-            foreach (app(BlogService::class)->list() as $a) {
-                $sitemap->addItem($this->currentUrl . 'blog/' . $a['slug'], lastmod: $a['date'] ?: $datetime);
+            foreach ($this->blogService->list() as $a) {
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $a->date ?: $datetime);
             }
         }
 
