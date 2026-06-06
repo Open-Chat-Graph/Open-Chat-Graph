@@ -67,6 +67,7 @@ $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 ```
 
 ## 開発パターン
+- **レイヤリング原則（必守）**: SQLは**必ずRepository**（`app/Models/`配下）に実装する。ロジックは**Service**、コントローラは薄く（受け取り→Service呼び出し→整形返却のみ、無駄に大きくしない）。**`batch/exec/` はServiceを呼ぶ最小限のエントリポイントだけ**（引数パース＋Service呼び出し＋出力程度。SQL・ビジネスロジック直書き禁止）。
 - **DI**: インターフェースベース、`/shared/MimimalCmsConfig.php`。動的バインドは `/app/ServiceProvider/`（例 `OpenChatCrawlerConfigServiceProvider` が `AppConfig::$isMockEnvironment` で本番/mock切替）。
 - **Autoload(PSR-4)**: `Shadow\\`→`shadow/`, `App\\`→`app/`, `Shared\\`→`shared/`。
 - **設定**: `local-secrets.php`(gitignore) / `/shared/MimimalCMS_*.php` / `/app/Services/Crawler/Config/`。

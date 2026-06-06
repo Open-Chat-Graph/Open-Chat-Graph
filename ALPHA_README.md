@@ -36,7 +36,8 @@
 - ルーティング: `app/Config/routing.php`（alpha-apiエンドポイント＋`alpha/*` SPAルート、ページ殻 `AlphaPageController`→`alpha_content.php`）。
 - コントローラ: `app/Controllers/Api/AlphaApiController.php`。
 - リポジトリ `app/Models/ApiRepositories/Alpha/`: OpenChat / Stats / PeriodGrowth / Insights / Alert / AccessRanking / QueryBuilder。
-- サービス `app/Services/Alpha/`: InsightsService / AlertService / KeywordSearchClient(LINE公式検索) / GaClient(GA4/GSC) / AlphaPagePathNormalizer（referrer/pagePath→内部ページ正規化の唯一の定義元。AlphaGaClient・AlphaAccessRankingRepository が共用。テスト: `app/Services/Alpha/test/AlphaPagePathNormalizerTest.php`）。
+- サービス `app/Services/Alpha/`: InsightsService / AlertService / KeywordSearchClient(LINE公式検索) / GaClient(GA4/GSC HTTPクライアント・トークン管理) / GaDataAggregator(GAレスポンス→集計配列の純粋変換) / GaSyncService(GA日次同期・page_jump再構築の本体ロジック) / LineUrlFormatter(LINE URL変換) / ReferrerFormatter(リファラ解析) / AlphaPagePathNormalizer（referrer/pagePath→内部ページ正規化の唯一の定義元。テスト: `app/Services/Alpha/test/AlphaPagePathNormalizerTest.php`）。
+- **レイヤリング原則（CLAUDE.md「開発パターン」・必守）**: SQLは必ずRepository、ロジックはService、`batch/exec/` はServiceを呼ぶ最小エントリのみ、コントローラは薄く。alpha_hourly.php / alpha_ga_sync.php / alpha_rebuild_page_jump.php がこの形の手本。
 - データ源: MySQL `ocgraph_ocreview`(open_chat等) ＋ SQLite(statistics, statistics_ohlc, ranking_position_ohlc) ＋ `growth_ranking_*`。画像は obs CDN `https://obs.line-scdn.net/<hash>`。
 
 ### API エンドポイント
