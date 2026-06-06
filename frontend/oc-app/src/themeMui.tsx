@@ -30,7 +30,7 @@ export function buildMuiTheme(isDark: boolean) {
         },
         text: {
           primary: '#f5f7f8', // shadcn foreground
-          secondary: '#71767b', // shadcn muted-foreground
+          secondary: '#8b9196', // shadcn muted-foreground
         },
         divider: '#16181c', // slate-800
       }),
@@ -50,7 +50,7 @@ export function buildMuiTheme(isDark: boolean) {
                 },
                 '&:disabled': {
                   backgroundColor: '#2f3336',
-                  color: '#71767b',
+                  color: '#8b9196',
                 },
               },
               '&.MuiButton-outlined': {
@@ -63,7 +63,7 @@ export function buildMuiTheme(isDark: boolean) {
                 },
                 '&:disabled': {
                   borderColor: '#2f3336',
-                  color: '#565b60',
+                  color: '#6e7378',
                 },
               },
               '&.MuiButton-text': {
