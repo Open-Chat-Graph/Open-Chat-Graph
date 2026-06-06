@@ -6,6 +6,7 @@ use App\Exceptions\ApplicationException;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Cron\Utility\ClassPreloader;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
@@ -18,6 +19,9 @@ try {
     if (isset($argv[1]) && $argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
     }
+
+    // 実行中にデプロイが重なっても新旧クラスが混在しないよう、開始時に全クラスを先読み
+    ClassPreloader::preload();
 
     $parentPid = isset($argv[2]) && $argv[2] ? (int)$argv[2] : null;
 
