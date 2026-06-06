@@ -179,9 +179,9 @@ export default function SettingButton() {
           /* 旧試験実装の isDark 調整値（さらに明るい slate-100 / hover slate-600） */
           isDark
             ? {
-                color: '#f1f5f9',
+                color: '#eff1f2',
                 '&:hover': {
-                  backgroundColor: '#475569',
+                  backgroundColor: '#3f4347',
                 },
               }
             : undefined
@@ -202,13 +202,13 @@ export default function SettingButton() {
             sx: isDark
               ? {
                   /* 旧試験実装の isDark 調整値（明るい slate-700 紙面 + slate-100 文字） */
-                  backgroundColor: '#334155',
-                  color: '#f1f5f9',
+                  backgroundColor: '#2f3336',
+                  color: '#eff1f2',
                   '& .MuiMenuItem-root:hover': {
-                    backgroundColor: '#475569',
+                    backgroundColor: '#3f4347',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: '#f1f5f9',
+                    color: '#eff1f2',
                   },
                 }
               : undefined,

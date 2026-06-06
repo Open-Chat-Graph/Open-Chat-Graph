@@ -36,19 +36,19 @@
   --grad-green-5: #16c2c1;
 
   /* Slate スケール（ダークモード用・shadcn/ui 準拠 + 中間2段） */
-  --slate-50: #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-500: #64748b;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-750: #293548;
-  --slate-800: #1e293b;
-  --slate-850: #172033;
-  --slate-900: #0f172a;
-  --slate-950: #020617;
+  --slate-50: #f5f7f8;
+  --slate-100: #eff1f2;
+  --slate-200: #e7e9ea;
+  --slate-300: #d3d6d8;
+  --slate-400: #71767b;
+  --slate-500: #565b60;
+  --slate-600: #3f4347;
+  --slate-700: #2f3336;
+  --slate-750: #1e2126;
+  --slate-800: #16181c;
+  --slate-850: #0d0f10;
+  --slate-900: #000000;
+  --slate-950: #0a0a0a;
 
   /* 合成グラデーション（チェックボックス等の 332deg 帯） */
   --c-brand-gradient: linear-gradient(
@@ -201,7 +201,7 @@
   --c-green-tab: rgb(3, 199, 85);    /* labs タブ下線（統合候補: --c-brand） */
   --c-text-black: #000;              /* 統合候補: --c-text-1 */
   --c-labs-blue: #118bee;            /* labs 見出し・タブ下線の青 */
-  --c-surface-slate: #f1f5f9;        /* labs ボタン hover 面 */
+  --c-surface-slate: #eff1f2;        /* labs ボタン hover 面 */
 
   /* /oc ナビチップ（カテゴリ=中立） */
   --c-chip-cat-bg: #f1f3f5;
@@ -314,7 +314,9 @@
    （/ranking は mvp.css を読まないため body 任せだと地色が抜け、
    UA の color-scheme 既定色が露出してページ毎に背景が揺れていた）
    ------------------------------------------------------------ */
-html {
+html,
+body {
+  /* Safari 26 はルートの明示色を要求（透明だと白フォールバック） */
   background-color: var(--c-bg);
 }
 
@@ -323,7 +325,7 @@ html {
    ------------------------------------------------------------ */
 :root[data-theme="dark"] {
 /* ============================================================
-   ダークモード（Slate系・shadcn/ui 準拠）
+   ダークモード（X風ニュートラル黒。当初のSlate系から基調変更: 青みグレー不評のため）
    - 値の正: 旧試験実装 Open-Chat-Graph-Frontend-Stats-Graph の
      theme.ts / app.tsx（グラフ・MUI まで調整済みの完成形）。
      対応が無いトークンのみ slate スケールから補完（「要調整」コメント付き
@@ -338,35 +340,35 @@ html {
   color-scheme: dark;
 
   /* テキスト */
-  --c-text-1: #e2e8f0 /* slate-200 */;      /* theme.ts text.primary #e2e8f0 */
-  --c-text-2: #cbd5e1 /* slate-300 */;
-  --c-text-3: #94a3b8 /* slate-400 */;      /* theme.ts text.secondary #94a3b8 */
-  --c-text-4: #64748b /* slate-500 */;
-  --c-text-5: #64748b /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
-  --c-text-steel: #94a3b8 /* slate-400 */;
-  --c-text-link: #5b9cf6;            /* app.tsx primary.main */
+  --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
+  --c-text-2: #d3d6d8 /* slate-300 */;
+  --c-text-3: #71767b /* slate-400 */;      /* theme.ts text.secondary #71767b */
+  --c-text-4: #565b60 /* slate-500 */;
+  --c-text-5: #565b60 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-steel: #71767b /* slate-400 */;
+  --c-text-link: #1d9bf0;            /* app.tsx primary.main */
   /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
 
   /* 背景・サーフェス */
-  --c-bg: #0f172a /* slate-900 */;          /* app.tsx background.default #0f172a */
-  --c-bg-sub: #172033 /* slate-850 */;
-  --c-surface: #1e293b /* slate-800 */;     /* app.tsx background.paper #1e293b */
-  --c-surface-2: #334155 /* slate-700 */;
-  --c-surface-3: #293548 /* slate-750 */;
-  --c-surface-gray: #1e293b /* slate-800 */;
-  --c-surface-slate: #293548 /* slate-750 */;
-  --c-bg-bright: #020617 /* slate-950 */;   /* 要調整: 反転バッジ面 */
+  --c-bg: #000000 /* slate-900 */;          /* app.tsx background.default #000000 */
+  --c-bg-sub: #0d0f10 /* slate-850 */;
+  --c-surface: #16181c /* slate-800 */;     /* app.tsx background.paper #16181c */
+  --c-surface-2: #2f3336 /* slate-700 */;
+  --c-surface-3: #1e2126 /* slate-750 */;
+  --c-surface-gray: #16181c /* slate-800 */;
+  --c-surface-slate: #1e2126 /* slate-750 */;
+  --c-bg-bright: #0a0a0a /* slate-950 */;   /* 要調整: 反転バッジ面 */
 
   /* ボーダー */
-  --c-border: #334155 /* slate-700 */;      /* theme.ts grid #334155 */
-  --c-border-2: #475569 /* slate-600 */;    /* theme.ts border #475569 */
-  --c-border-3: #475569 /* slate-600 */;
-  --c-border-plain: #334155 /* slate-700 */;
-  --c-border-plain-2: #334155 /* slate-700 */;
-  --c-border-muted: #334155 /* slate-700 */;
-  --c-border-strong: #64748b /* slate-500 */;
-  --c-border-gray: #475569 /* slate-600 */;
-  --c-border-mid: #64748b /* slate-500 */;
+  --c-border: #2f3336 /* slate-700 */;      /* theme.ts grid #2f3336 */
+  --c-border-2: #3f4347 /* slate-600 */;    /* theme.ts border #3f4347 */
+  --c-border-3: #3f4347 /* slate-600 */;
+  --c-border-plain: #2f3336 /* slate-700 */;
+  --c-border-plain-2: #2f3336 /* slate-700 */;
+  --c-border-muted: #2f3336 /* slate-700 */;
+  --c-border-strong: #565b60 /* slate-500 */;
+  --c-border-gray: #3f4347 /* slate-600 */;
+  --c-border-mid: #565b60 /* slate-500 */;
 
   /* ブランド・アクセント（緑は維持、赤系のみ明度を上げる） */
   --c-accent-blue: #7a9aff;          /* 要調整 */
@@ -386,8 +388,8 @@ html {
   /* ヘッダー・フッター */
   --c-header-backdrop: rgba(15, 23, 42, 0.85);
   --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
-  --c-text-dim: #cbd5e1 /* slate-300 */;
-  --c-overlay: rgba(2, 6, 23, 0.85);
+  --c-text-dim: #d3d6d8 /* slate-300 */;
+  --c-overlay: rgba(0, 0, 0, 0.85);
 
   /* ブログボタン（緑系・暗面用に反転） */
   --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
@@ -395,26 +397,26 @@ html {
   --c-btn-blog-border: rgba(6, 199, 85, 0.35);
 
   /* クールグレー系 → slate へ寄せる */
-  --c-cool-surface: #1e293b /* slate-800 */;
-  --c-cool-surface-hover: #293548 /* slate-750 */;
-  --c-cool-border-soft: #334155 /* slate-700 */;
-  --c-cool-border: #475569 /* slate-600 */;
-  --c-cool-text-weak: #64748b /* slate-500 */;
-  --c-cool-text: #94a3b8 /* slate-400 */;
-  --c-cool-text-strong: #e2e8f0 /* slate-200 */;
-  --c-cool-text-heading: #f1f5f9 /* slate-100 */;
-  --c-cool-text-deep: #f1f5f9 /* slate-100 */;
+  --c-cool-surface: #16181c /* slate-800 */;
+  --c-cool-surface-hover: #1e2126 /* slate-750 */;
+  --c-cool-border-soft: #2f3336 /* slate-700 */;
+  --c-cool-border: #3f4347 /* slate-600 */;
+  --c-cool-text-weak: #565b60 /* slate-500 */;
+  --c-cool-text: #71767b /* slate-400 */;
+  --c-cool-text-strong: #e7e9ea /* slate-200 */;
+  --c-cool-text-heading: #eff1f2 /* slate-100 */;
+  --c-cool-text-deep: #eff1f2 /* slate-100 */;
 
   /* 一覧ページ系 */
-  --c-text-mid: #94a3b8 /* slate-400 */;
-  --c-text-mid-2: #cbd5e1 /* slate-300 */;
-  --c-text-mid-3: #94a3b8 /* slate-400 */;
-  --c-text-taupe: #94a3b8 /* slate-400 */;
-  --c-text-gray-mid: #94a3b8 /* slate-400 */;
-  --c-text-silver: #64748b /* slate-500 */;
-  --c-text-charcoal: #cbd5e1 /* slate-300 */;
-  --c-text-neutral: #94a3b8 /* slate-400 */;
-  --c-text-black: #e2e8f0 /* slate-200 */;
+  --c-text-mid: #71767b /* slate-400 */;
+  --c-text-mid-2: #d3d6d8 /* slate-300 */;
+  --c-text-mid-3: #71767b /* slate-400 */;
+  --c-text-taupe: #71767b /* slate-400 */;
+  --c-text-gray-mid: #71767b /* slate-400 */;
+  --c-text-silver: #565b60 /* slate-500 */;
+  --c-text-charcoal: #d3d6d8 /* slate-300 */;
+  --c-text-neutral: #71767b /* slate-400 */;
+  --c-text-black: #e7e9ea /* slate-200 */;
   --c-green-soft: rgb(77, 199, 100);  /* ボタン緑は維持 */
   --c-green-soft-50: rgba(77, 199, 100, 0.5);
   --c-green-ring: rgba(77, 199, 100, 0.9);
@@ -438,15 +440,15 @@ html {
   --c-bg-93: rgba(15, 23, 42, 0.93);
 
   /* ルーム詳細・labs 系 */
-  --c-labs-blue: #5b9cf6;
-  --c-chip-cat-bg: #293548 /* slate-750 */;
-  --c-chip-cat-bg-hover: #334155 /* slate-700 */;
+  --c-labs-blue: #1d9bf0;
+  --c-chip-cat-bg: #1e2126 /* slate-750 */;
+  --c-chip-cat-bg-hover: #2f3336 /* slate-700 */;
 
   /* React UI 系 */
   --c-text-soft-black: rgba(226, 232, 240, 0.55);
-  --c-chip-dark: #475569; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
+  --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
-  --c-mui-blue: #5b9cf6;
+  --c-mui-blue: #1d9bf0;
   --c-green-shelf: #4ade80;          /* 要調整 */
   --c-overlay-60: rgba(0, 0, 0, 0.7);
 
@@ -471,22 +473,22 @@ html {
   --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
-  --c-rg-text-strong: #e2e8f0 /* slate-200 */;
-  --c-rg-text-heading: #f1f5f9 /* slate-100 */;
-  --c-rg-text: #94a3b8 /* slate-400 */;
-  --c-rg-text-soft: #64748b /* slate-500 */;
-  --c-rg-text-mid: #94a3b8 /* slate-400 */;
-  --c-rg-muted: #64748b /* slate-500 */;
-  --c-rg-border: #334155 /* slate-700 */;
-  --c-rg-line: #334155 /* slate-700 */;
-  --c-rg-surface: #1e293b /* slate-800 */;
+  --c-rg-text-strong: #e7e9ea /* slate-200 */;
+  --c-rg-text-heading: #eff1f2 /* slate-100 */;
+  --c-rg-text: #71767b /* slate-400 */;
+  --c-rg-text-soft: #565b60 /* slate-500 */;
+  --c-rg-text-mid: #71767b /* slate-400 */;
+  --c-rg-muted: #565b60 /* slate-500 */;
+  --c-rg-border: #2f3336 /* slate-700 */;
+  --c-rg-line: #2f3336 /* slate-700 */;
+  --c-rg-surface: #16181c /* slate-800 */;
   --c-rg-green-bg: rgba(6, 199, 85, 0.1);
   --c-rg-green-border: rgba(6, 199, 85, 0.3);
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */
   --c-legacy-accent: rgba(91, 156, 246, 0.12);
-  --c-legacy-table: #5b9cf6;
+  --c-legacy-table: #1d9bf0;
   --c-legacy-secondary: #a78bfa;     /* 要調整 violet-400 */
   --c-legacy-secondary-accent: rgba(167, 139, 250, 0.08);
 
@@ -496,18 +498,18 @@ html {
   --icon-external-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%2394a3b8' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
 
   /* 入室確認ページ（紙色 → 夜の紙色） */
-  --ocj-bg: #0f172a /* slate-900 */;
-  --ocj-bg-dim: #172033 /* slate-850 */;
-  --ocj-bg-dim-2: #172033 /* slate-850 */;
-  --ocj-card: #1e293b /* slate-800 */;
-  --ocj-card-soft: #293548 /* slate-750 */;
-  --ocj-border: #334155 /* slate-700 */;
-  --ocj-border-soft: #334155 /* slate-700 */;
-  --ocj-border-faint: #293548 /* slate-750 */;
-  --ocj-ink: #e2e8f0 /* slate-200 */;
-  --ocj-ink-strong: #f1f5f9 /* slate-100 */;
-  --ocj-ink-soft: #94a3b8 /* slate-400 */;
-  --ocj-ink-mute: #64748b /* slate-500 */;
+  --ocj-bg: #000000 /* slate-900 */;
+  --ocj-bg-dim: #0d0f10 /* slate-850 */;
+  --ocj-bg-dim-2: #0d0f10 /* slate-850 */;
+  --ocj-card: #16181c /* slate-800 */;
+  --ocj-card-soft: #1e2126 /* slate-750 */;
+  --ocj-border: #2f3336 /* slate-700 */;
+  --ocj-border-soft: #2f3336 /* slate-700 */;
+  --ocj-border-faint: #1e2126 /* slate-750 */;
+  --ocj-ink: #e7e9ea /* slate-200 */;
+  --ocj-ink-strong: #eff1f2 /* slate-100 */;
+  --ocj-ink-soft: #71767b /* slate-400 */;
+  --ocj-ink-mute: #565b60 /* slate-500 */;
   --ocj-amber: #fbbf24;              /* amber-400 */
   --ocj-amber-deep: #fcd34d;
   --ocj-amber-soft-text: #eab308;
@@ -517,7 +519,7 @@ html {
   --ocj-green-text: #4ade80;
 
   /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
-  --c-chip-bg: #1e293b;              /* チップを地から持ち上げる */
+  --c-chip-bg: #16181c;              /* チップを地から持ち上げる */
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
@@ -543,7 +545,7 @@ html {
   );
   /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
   --c-brand-line: rgba(6, 199, 85, 0.55);
-  --c-card-bg: #1e293b;              /* 記事内カード面 = slate-800 */
+  --c-card-bg: #16181c;              /* 記事内カード面 = slate-800 */
   --c-green-wash: rgba(6, 199, 85, 0.07);
   --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
   --c-btn-brand-bg-hover: #047857;
@@ -564,7 +566,7 @@ html {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
 /* ============================================================
-   ダークモード（Slate系・shadcn/ui 準拠）
+   ダークモード（X風ニュートラル黒。当初のSlate系から基調変更: 青みグレー不評のため）
    - 値の正: 旧試験実装 Open-Chat-Graph-Frontend-Stats-Graph の
      theme.ts / app.tsx（グラフ・MUI まで調整済みの完成形）。
      対応が無いトークンのみ slate スケールから補完（「要調整」コメント付き
@@ -579,35 +581,35 @@ html {
   color-scheme: dark;
 
   /* テキスト */
-  --c-text-1: #e2e8f0 /* slate-200 */;      /* theme.ts text.primary #e2e8f0 */
-  --c-text-2: #cbd5e1 /* slate-300 */;
-  --c-text-3: #94a3b8 /* slate-400 */;      /* theme.ts text.secondary #94a3b8 */
-  --c-text-4: #64748b /* slate-500 */;
-  --c-text-5: #64748b /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
-  --c-text-steel: #94a3b8 /* slate-400 */;
-  --c-text-link: #5b9cf6;            /* app.tsx primary.main */
+  --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
+  --c-text-2: #d3d6d8 /* slate-300 */;
+  --c-text-3: #71767b /* slate-400 */;      /* theme.ts text.secondary #71767b */
+  --c-text-4: #565b60 /* slate-500 */;
+  --c-text-5: #565b60 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-steel: #71767b /* slate-400 */;
+  --c-text-link: #1d9bf0;            /* app.tsx primary.main */
   /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
 
   /* 背景・サーフェス */
-  --c-bg: #0f172a /* slate-900 */;          /* app.tsx background.default #0f172a */
-  --c-bg-sub: #172033 /* slate-850 */;
-  --c-surface: #1e293b /* slate-800 */;     /* app.tsx background.paper #1e293b */
-  --c-surface-2: #334155 /* slate-700 */;
-  --c-surface-3: #293548 /* slate-750 */;
-  --c-surface-gray: #1e293b /* slate-800 */;
-  --c-surface-slate: #293548 /* slate-750 */;
-  --c-bg-bright: #020617 /* slate-950 */;   /* 要調整: 反転バッジ面 */
+  --c-bg: #000000 /* slate-900 */;          /* app.tsx background.default #000000 */
+  --c-bg-sub: #0d0f10 /* slate-850 */;
+  --c-surface: #16181c /* slate-800 */;     /* app.tsx background.paper #16181c */
+  --c-surface-2: #2f3336 /* slate-700 */;
+  --c-surface-3: #1e2126 /* slate-750 */;
+  --c-surface-gray: #16181c /* slate-800 */;
+  --c-surface-slate: #1e2126 /* slate-750 */;
+  --c-bg-bright: #0a0a0a /* slate-950 */;   /* 要調整: 反転バッジ面 */
 
   /* ボーダー */
-  --c-border: #334155 /* slate-700 */;      /* theme.ts grid #334155 */
-  --c-border-2: #475569 /* slate-600 */;    /* theme.ts border #475569 */
-  --c-border-3: #475569 /* slate-600 */;
-  --c-border-plain: #334155 /* slate-700 */;
-  --c-border-plain-2: #334155 /* slate-700 */;
-  --c-border-muted: #334155 /* slate-700 */;
-  --c-border-strong: #64748b /* slate-500 */;
-  --c-border-gray: #475569 /* slate-600 */;
-  --c-border-mid: #64748b /* slate-500 */;
+  --c-border: #2f3336 /* slate-700 */;      /* theme.ts grid #2f3336 */
+  --c-border-2: #3f4347 /* slate-600 */;    /* theme.ts border #3f4347 */
+  --c-border-3: #3f4347 /* slate-600 */;
+  --c-border-plain: #2f3336 /* slate-700 */;
+  --c-border-plain-2: #2f3336 /* slate-700 */;
+  --c-border-muted: #2f3336 /* slate-700 */;
+  --c-border-strong: #565b60 /* slate-500 */;
+  --c-border-gray: #3f4347 /* slate-600 */;
+  --c-border-mid: #565b60 /* slate-500 */;
 
   /* ブランド・アクセント（緑は維持、赤系のみ明度を上げる） */
   --c-accent-blue: #7a9aff;          /* 要調整 */
@@ -627,8 +629,8 @@ html {
   /* ヘッダー・フッター */
   --c-header-backdrop: rgba(15, 23, 42, 0.85);
   --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
-  --c-text-dim: #cbd5e1 /* slate-300 */;
-  --c-overlay: rgba(2, 6, 23, 0.85);
+  --c-text-dim: #d3d6d8 /* slate-300 */;
+  --c-overlay: rgba(0, 0, 0, 0.85);
 
   /* ブログボタン（緑系・暗面用に反転） */
   --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
@@ -636,26 +638,26 @@ html {
   --c-btn-blog-border: rgba(6, 199, 85, 0.35);
 
   /* クールグレー系 → slate へ寄せる */
-  --c-cool-surface: #1e293b /* slate-800 */;
-  --c-cool-surface-hover: #293548 /* slate-750 */;
-  --c-cool-border-soft: #334155 /* slate-700 */;
-  --c-cool-border: #475569 /* slate-600 */;
-  --c-cool-text-weak: #64748b /* slate-500 */;
-  --c-cool-text: #94a3b8 /* slate-400 */;
-  --c-cool-text-strong: #e2e8f0 /* slate-200 */;
-  --c-cool-text-heading: #f1f5f9 /* slate-100 */;
-  --c-cool-text-deep: #f1f5f9 /* slate-100 */;
+  --c-cool-surface: #16181c /* slate-800 */;
+  --c-cool-surface-hover: #1e2126 /* slate-750 */;
+  --c-cool-border-soft: #2f3336 /* slate-700 */;
+  --c-cool-border: #3f4347 /* slate-600 */;
+  --c-cool-text-weak: #565b60 /* slate-500 */;
+  --c-cool-text: #71767b /* slate-400 */;
+  --c-cool-text-strong: #e7e9ea /* slate-200 */;
+  --c-cool-text-heading: #eff1f2 /* slate-100 */;
+  --c-cool-text-deep: #eff1f2 /* slate-100 */;
 
   /* 一覧ページ系 */
-  --c-text-mid: #94a3b8 /* slate-400 */;
-  --c-text-mid-2: #cbd5e1 /* slate-300 */;
-  --c-text-mid-3: #94a3b8 /* slate-400 */;
-  --c-text-taupe: #94a3b8 /* slate-400 */;
-  --c-text-gray-mid: #94a3b8 /* slate-400 */;
-  --c-text-silver: #64748b /* slate-500 */;
-  --c-text-charcoal: #cbd5e1 /* slate-300 */;
-  --c-text-neutral: #94a3b8 /* slate-400 */;
-  --c-text-black: #e2e8f0 /* slate-200 */;
+  --c-text-mid: #71767b /* slate-400 */;
+  --c-text-mid-2: #d3d6d8 /* slate-300 */;
+  --c-text-mid-3: #71767b /* slate-400 */;
+  --c-text-taupe: #71767b /* slate-400 */;
+  --c-text-gray-mid: #71767b /* slate-400 */;
+  --c-text-silver: #565b60 /* slate-500 */;
+  --c-text-charcoal: #d3d6d8 /* slate-300 */;
+  --c-text-neutral: #71767b /* slate-400 */;
+  --c-text-black: #e7e9ea /* slate-200 */;
   --c-green-soft: rgb(77, 199, 100);  /* ボタン緑は維持 */
   --c-green-soft-50: rgba(77, 199, 100, 0.5);
   --c-green-ring: rgba(77, 199, 100, 0.9);
@@ -679,15 +681,15 @@ html {
   --c-bg-93: rgba(15, 23, 42, 0.93);
 
   /* ルーム詳細・labs 系 */
-  --c-labs-blue: #5b9cf6;
-  --c-chip-cat-bg: #293548 /* slate-750 */;
-  --c-chip-cat-bg-hover: #334155 /* slate-700 */;
+  --c-labs-blue: #1d9bf0;
+  --c-chip-cat-bg: #1e2126 /* slate-750 */;
+  --c-chip-cat-bg-hover: #2f3336 /* slate-700 */;
 
   /* React UI 系 */
   --c-text-soft-black: rgba(226, 232, 240, 0.55);
-  --c-chip-dark: #475569; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
+  --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
-  --c-mui-blue: #5b9cf6;
+  --c-mui-blue: #1d9bf0;
   --c-green-shelf: #4ade80;          /* 要調整 */
   --c-overlay-60: rgba(0, 0, 0, 0.7);
 
@@ -712,22 +714,22 @@ html {
   --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
-  --c-rg-text-strong: #e2e8f0 /* slate-200 */;
-  --c-rg-text-heading: #f1f5f9 /* slate-100 */;
-  --c-rg-text: #94a3b8 /* slate-400 */;
-  --c-rg-text-soft: #64748b /* slate-500 */;
-  --c-rg-text-mid: #94a3b8 /* slate-400 */;
-  --c-rg-muted: #64748b /* slate-500 */;
-  --c-rg-border: #334155 /* slate-700 */;
-  --c-rg-line: #334155 /* slate-700 */;
-  --c-rg-surface: #1e293b /* slate-800 */;
+  --c-rg-text-strong: #e7e9ea /* slate-200 */;
+  --c-rg-text-heading: #eff1f2 /* slate-100 */;
+  --c-rg-text: #71767b /* slate-400 */;
+  --c-rg-text-soft: #565b60 /* slate-500 */;
+  --c-rg-text-mid: #71767b /* slate-400 */;
+  --c-rg-muted: #565b60 /* slate-500 */;
+  --c-rg-border: #2f3336 /* slate-700 */;
+  --c-rg-line: #2f3336 /* slate-700 */;
+  --c-rg-surface: #16181c /* slate-800 */;
   --c-rg-green-bg: rgba(6, 199, 85, 0.1);
   --c-rg-green-border: rgba(6, 199, 85, 0.3);
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */
   --c-legacy-accent: rgba(91, 156, 246, 0.12);
-  --c-legacy-table: #5b9cf6;
+  --c-legacy-table: #1d9bf0;
   --c-legacy-secondary: #a78bfa;     /* 要調整 violet-400 */
   --c-legacy-secondary-accent: rgba(167, 139, 250, 0.08);
 
@@ -737,18 +739,18 @@ html {
   --icon-external-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%2394a3b8' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
 
   /* 入室確認ページ（紙色 → 夜の紙色） */
-  --ocj-bg: #0f172a /* slate-900 */;
-  --ocj-bg-dim: #172033 /* slate-850 */;
-  --ocj-bg-dim-2: #172033 /* slate-850 */;
-  --ocj-card: #1e293b /* slate-800 */;
-  --ocj-card-soft: #293548 /* slate-750 */;
-  --ocj-border: #334155 /* slate-700 */;
-  --ocj-border-soft: #334155 /* slate-700 */;
-  --ocj-border-faint: #293548 /* slate-750 */;
-  --ocj-ink: #e2e8f0 /* slate-200 */;
-  --ocj-ink-strong: #f1f5f9 /* slate-100 */;
-  --ocj-ink-soft: #94a3b8 /* slate-400 */;
-  --ocj-ink-mute: #64748b /* slate-500 */;
+  --ocj-bg: #000000 /* slate-900 */;
+  --ocj-bg-dim: #0d0f10 /* slate-850 */;
+  --ocj-bg-dim-2: #0d0f10 /* slate-850 */;
+  --ocj-card: #16181c /* slate-800 */;
+  --ocj-card-soft: #1e2126 /* slate-750 */;
+  --ocj-border: #2f3336 /* slate-700 */;
+  --ocj-border-soft: #2f3336 /* slate-700 */;
+  --ocj-border-faint: #1e2126 /* slate-750 */;
+  --ocj-ink: #e7e9ea /* slate-200 */;
+  --ocj-ink-strong: #eff1f2 /* slate-100 */;
+  --ocj-ink-soft: #71767b /* slate-400 */;
+  --ocj-ink-mute: #565b60 /* slate-500 */;
   --ocj-amber: #fbbf24;              /* amber-400 */
   --ocj-amber-deep: #fcd34d;
   --ocj-amber-soft-text: #eab308;
@@ -758,7 +760,7 @@ html {
   --ocj-green-text: #4ade80;
 
   /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
-  --c-chip-bg: #1e293b;              /* チップを地から持ち上げる */
+  --c-chip-bg: #16181c;              /* チップを地から持ち上げる */
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
@@ -784,7 +786,7 @@ html {
   );
   /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
   --c-brand-line: rgba(6, 199, 85, 0.55);
-  --c-card-bg: #1e293b;              /* 記事内カード面 = slate-800 */
+  --c-card-bg: #16181c;              /* 記事内カード面 = slate-800 */
   --c-green-wash: rgba(6, 199, 85, 0.07);
   --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
   --c-btn-brand-bg-hover: #047857;

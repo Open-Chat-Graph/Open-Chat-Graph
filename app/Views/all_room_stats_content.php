@@ -33,79 +33,79 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
             <article class="terms">
                 <h1 style="letter-spacing: 0px; line-height: 2;">オープンチャット全体統計</h1>
                 <p>オプチャグラフに登録されている全オープンチャットの統計データです。</p>
-                <p class="text-gray-500 dark:text-slate-400 text-sm">※
+                <p class="text-gray-500 dark:text-zinc-400 text-sm">※
                     オプチャグラフには、LINE公式サイトのランキングに掲載されたことのあるルームのみが登録されています。すべてのオープンチャットが対象ではありません。</p>
-                <p class="text-gray-400 dark:text-slate-500 text-xs"><?php echo date('Y年n月j日 G:i', strtotime($updatedAt)) ?> 時点</p>
+                <p class="text-gray-400 dark:text-zinc-500 text-xs"><?php echo date('Y年n月j日 G:i', strtotime($updatedAt)) ?> 時点</p>
 
                 <!-- 概要カード -->
                 <div class="grid grid-cols-3 gap-2 sm:gap-3 mt-6 mb-10">
                     <div class="rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/40 dark:border-blue-900/60 p-3 sm:p-5">
                         <div class="text-xs sm:text-sm font-semibold text-blue-400 dark:text-blue-300 mb-1">総ルーム数</div>
-                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-200">
+                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-zinc-200">
                             <?php echo number_format($totalRooms) ?></div>
-                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 mt-1">
+                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-zinc-500 mt-1">
                             <?php echo $trackingStartDate ? date('Y/n/j', strtotime($trackingStartDate)) . '〜' : '' ?>累計
                         </div>
                     </div>
                     <div class="rounded-xl bg-violet-50 border border-violet-100 dark:bg-violet-950/40 dark:border-violet-900/60 p-3 sm:p-5">
                         <div class="text-xs sm:text-sm font-semibold text-violet-400 dark:text-violet-300 mb-1">総参加者数</div>
-                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-200">
+                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-zinc-200">
                             <?php echo number_format($totalMembers) ?></div>
-                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 mt-1">全ルーム合計</div>
+                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-zinc-500 mt-1">全ルーム合計</div>
                     </div>
                     <div class="rounded-xl bg-teal-50 border border-teal-100 dark:bg-teal-950/40 dark:border-teal-900/60 p-3 sm:p-5">
                         <div class="text-xs sm:text-sm font-semibold text-teal-400 dark:text-teal-300 mb-1">中央値</div>
-                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-200">
+                        <div class="text-lg sm:text-2xl font-bold text-gray-800 dark:text-zinc-200">
                             <?php echo number_format($overallMedian) ?></div>
-                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 mt-1">1部屋あたり参加者数</div>
+                        <div class="text-[10px] sm:text-xs text-gray-400 dark:text-zinc-500 mt-1">1部屋あたり参加者数</div>
                     </div>
                 </div>
 
                 <!-- 直近1ヶ月の変動 -->
                 <h2>直近1ヶ月の変動</h2>
-                <p class="text-gray-500 dark:text-slate-400 text-xs mb-3">直近1ヶ月間のルーム・参加者数の増減</p>
+                <p class="text-gray-500 dark:text-zinc-400 text-xs mb-3">直近1ヶ月間のルーム・参加者数の増減</p>
                 <?php
                 $b = $memberTrendBreakdown;
                 $d = $disappearedBreakdown;
                 $netMemberChange = $b['increased'] + $b['decreased'] + $b['lost'] + $b['gained'];
                 $deletedTotal = $d['closed_rooms'] + $d['delisted_rooms'];
                 ?>
-                <div class="rounded-xl bg-white dark:bg-slate-800/60 shadow-sm border border-gray-200 dark:border-slate-700 p-4 sm:p-5 mb-10">
+                <div class="rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-gray-200 dark:border-zinc-800 p-4 sm:p-5 mb-10">
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs sm:text-sm text-gray-600 dark:text-slate-400">新規登録ルーム数</span>
+                            <span class="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">新規登録ルーム数</span>
                             <span
-                                class="text-sm sm:text-base font-bold text-gray-800 dark:text-slate-200"><?php echo number_format($newRoomsMonthly) ?>部屋</span>
+                                class="text-sm sm:text-base font-bold text-gray-800 dark:text-zinc-200"><?php echo number_format($newRoomsMonthly) ?>部屋</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs sm:text-sm text-gray-600 dark:text-slate-400">参加者数の純増数</span>
+                            <span class="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">参加者数の純増数</span>
                             <span
                                 class="text-sm sm:text-base font-bold <?php echo trendColorClass($netMemberChange) ?>"><?php echo ($netMemberChange >= 0 ? '+' : '') . number_format($netMemberChange) ?>人</span>
                         </div>
                         <div class="pl-4 space-y-1">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">既存ルームの増加</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">既存ルームの増加</span>
                                 <span
                                     class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">+<?php echo number_format($b['increased']) ?>人</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">既存ルームの減少</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">既存ルームの減少</span>
                                 <span
                                     class="text-xs font-semibold text-rose-600 dark:text-rose-400"><?php echo number_format($b['decreased']) ?>人</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">新規ルーム分</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">新規ルーム分</span>
                                 <span
                                     class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">+<?php echo number_format($b['gained']) ?>人</span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">削除されたルーム分</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">削除されたルーム分</span>
                                 <span
                                     class="text-xs font-semibold text-rose-600 dark:text-rose-400"><?php echo number_format($b['lost']) ?>人</span>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-slate-700/60 pt-3">
-                            <span class="text-xs sm:text-sm text-gray-600 dark:text-slate-400">削除されたルーム数</span>
+                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-zinc-800/70 pt-3">
+                            <span class="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">削除されたルーム数</span>
                             <span
                                 class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400"><?php echo number_format($deletedTotal) ?>部屋
                                 <span
@@ -113,18 +113,18 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
                         </div>
                         <div class="pl-4 space-y-1">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">LINE公式サイト掲載終了</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">LINE公式サイト掲載終了</span>
                                 <span
-                                    class="text-xs font-semibold text-gray-500 dark:text-slate-400"><?php echo number_format($d['delisted_rooms']) ?>部屋
+                                    class="text-xs font-semibold text-gray-500 dark:text-zinc-400"><?php echo number_format($d['delisted_rooms']) ?>部屋
                                     <span
-                                        class="font-normal text-gray-400 dark:text-slate-500">(-<?php echo number_format($d['delisted_members']) ?>人)</span></span>
+                                        class="font-normal text-gray-400 dark:text-zinc-500">(-<?php echo number_format($d['delisted_members']) ?>人)</span></span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400 dark:text-slate-500">閉鎖ルーム数</span>
+                                <span class="text-xs text-gray-400 dark:text-zinc-500">閉鎖ルーム数</span>
                                 <span
-                                    class="text-xs font-semibold text-gray-500 dark:text-slate-400"><?php echo number_format($d['closed_rooms']) ?>部屋
+                                    class="text-xs font-semibold text-gray-500 dark:text-zinc-400"><?php echo number_format($d['closed_rooms']) ?>部屋
                                     <span
-                                        class="font-normal text-gray-400 dark:text-slate-500">(-<?php echo number_format($d['closed_members']) ?>人)</span></span>
+                                        class="font-normal text-gray-400 dark:text-zinc-500">(-<?php echo number_format($d['closed_members']) ?>人)</span></span>
                             </div>
                         </div>
                     </div>
@@ -132,11 +132,11 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
 
                 <!-- 参加者分布グラフ -->
                 <h2>参加者数の分布</h2>
-                <p class="text-gray-500 dark:text-slate-400 text-xs mb-3">人数帯別のルーム数と合計参加者数</p>
-                <div class="rounded-xl bg-white dark:bg-slate-800/60 shadow-sm border border-gray-200 dark:border-slate-700 p-3 sm:p-5 mb-4">
+                <p class="text-gray-500 dark:text-zinc-400 text-xs mb-3">人数帯別のルーム数と合計参加者数</p>
+                <div class="rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-gray-200 dark:border-zinc-800 p-3 sm:p-5 mb-4">
                     <canvas id="distribution-room-chart" height="300"></canvas>
                 </div>
-                <div class="rounded-xl bg-white dark:bg-slate-800/60 shadow-sm border border-gray-200 dark:border-slate-700 p-3 sm:p-5 mb-10">
+                <div class="rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-gray-200 dark:border-zinc-800 p-3 sm:p-5 mb-10">
                     <canvas id="distribution-member-chart" height="300"></canvas>
                 </div>
                 <script type="application/json" id="distribution-data">
@@ -145,8 +145,8 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
 
                 <!-- カテゴリー別統計 -->
                 <h2>カテゴリー別統計</h2>
-                <p class="text-gray-500 dark:text-slate-400 text-xs mb-3">現時点で登録中のルームのカテゴリー別内訳（毎時更新）</p>
-                <div class="rounded-xl bg-white dark:bg-slate-800/60 shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden mb-8">
+                <p class="text-gray-500 dark:text-zinc-400 text-xs mb-3">現時点で登録中のルームのカテゴリー別内訳（毎時更新）</p>
+                <div class="rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden mb-8">
                     <div class="overflow-x-auto">
                         <table class="w-full border-collapse">
                             <thead>
@@ -171,22 +171,22 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
                             <tbody>
                                 <?php foreach ($categoryStats as $i => $cat): ?>
                                     <tr
-                                        class="<?php echo $i % 2 === 0 ? 'bg-white dark:bg-slate-800/60' : 'bg-slate-50 dark:bg-slate-800/30' ?> hover:bg-blue-50 dark:hover:bg-slate-700/40 transition-colors">
+                                        class="<?php echo $i % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-slate-50 dark:bg-zinc-900/50' ?> hover:bg-blue-50 dark:hover:bg-zinc-800/60 transition-colors">
                                         <td
-                                            class="py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700/60">
+                                            class="py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium text-gray-800 dark:text-zinc-200 border-b border-gray-100 dark:border-zinc-800/70">
                                             <?php echo htmlspecialchars(getCategoryName((int)$cat['category']) ?: '未分類') ?>
                                         </td>
                                         <td
-                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 text-right tabular-nums border-b border-gray-100 dark:border-slate-700/60">
+                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-zinc-300 text-right tabular-nums border-b border-gray-100 dark:border-zinc-800/70">
                                             <?php echo number_format($cat['room_count']) ?></td>
                                         <td
-                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 text-right tabular-nums border-b border-gray-100 dark:border-slate-700/60">
+                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-zinc-300 text-right tabular-nums border-b border-gray-100 dark:border-zinc-800/70">
                                             <?php echo number_format($cat['total_members']) ?></td>
                                         <td
-                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-300 text-center tabular-nums border-b border-gray-100 dark:border-slate-700/60 whitespace-nowrap">
+                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 dark:text-zinc-300 text-center tabular-nums border-b border-gray-100 dark:border-zinc-800/70 whitespace-nowrap">
                                             <?php echo number_format($cat['median']) ?></td>
                                         <td
-                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold <?php echo trendColorClass($cat['monthly_trend']) ?> text-right tabular-nums border-b border-gray-100 dark:border-slate-700/60">
+                                            class="py-2.5 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold <?php echo trendColorClass($cat['monthly_trend']) ?> text-right tabular-nums border-b border-gray-100 dark:border-zinc-800/70">
                                             <?php echo ($cat['monthly_trend'] >= 0 ? '+' : '') . number_format($cat['monthly_trend']) ?>
                                         </td>
                                     </tr>

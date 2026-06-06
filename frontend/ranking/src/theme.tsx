@@ -36,19 +36,19 @@ export function buildMuiTheme(isDark: boolean) {
       mode: isDark ? 'dark' : 'light',
       ...(isDark && {
         background: {
-          default: '#0f172a',
-          paper: '#1e293b',
+          default: '#000000',
+          paper: '#16181c',
         },
         primary: {
-          main: '#5b9cf6',
+          main: '#1d9bf0',
           light: '#7dd3fc',
           dark: '#3b82f6',
         },
         text: {
-          primary: '#f8fafc',
-          secondary: '#94a3b8',
+          primary: '#f5f7f8',
+          secondary: '#71767b',
         },
-        divider: '#1e293b',
+        divider: '#16181c',
       }),
     },
     components: {
@@ -59,9 +59,9 @@ export function buildMuiTheme(isDark: boolean) {
             fontWeight: 500,
             ...(isDark && {
               '&.MuiButton-text': {
-                color: '#f8fafc',
+                color: '#f5f7f8',
                 '&:hover': {
-                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                  backgroundColor: 'rgba(231, 233, 234, 0.1)',
                 },
               },
             }),

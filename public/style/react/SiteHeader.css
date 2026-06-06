@@ -5,6 +5,15 @@
   right: 0;
   /* iOS セーフエリア（site_header.css と同方針） */
   padding-top: env(safe-area-inset-top, 0px);
+  /* Safari 26 サンプリング回避（site_header.css と同方針）: fixed 親は透明 */
+  background-color: transparent;
+}
+
+.site_header_box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background-color: var(--c-bg);
 }
 
