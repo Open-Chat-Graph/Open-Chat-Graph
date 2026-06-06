@@ -417,7 +417,7 @@ html {
 .refresh-icon {
   height: 12px;
   aspect-ratio: 1/1;
-  background-image: var(--refresh);
+  background-image: var(--icon-refresh);
 }
 
 .openchat-list-date time {

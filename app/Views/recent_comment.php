@@ -77,7 +77,7 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
         }
 
         .button01.prev a {
-            border: solid 1px var(--border-color);
+            border: solid 1px var(--c-border);
             border-radius: var(--border-radius);
         }
 
