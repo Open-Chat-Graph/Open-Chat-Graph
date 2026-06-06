@@ -58,7 +58,7 @@
 .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
 .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
   color: var(--c-text-5);
-  background-color: var(--c-text-inverse);
+  background-color: var(--c-bg);
 }
 
 .fade-in {

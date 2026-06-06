@@ -49,14 +49,13 @@
   }
 
   function apply(fire) {
-    var t = stored();
     var root = document.documentElement;
-    if (t) {
-      root.setAttribute('data-theme', t);
-    } else {
-      root.removeAttribute('data-theme'); /* OS連動（CSSの media query に委ねる） */
-    }
     var r = resolved();
+    /* 明示選択が無い場合も「解決済みテーマ」を常に属性へ反映する。
+       これにより Tailwind の darkMode: selector 等、属性ベースの仕組みと
+       完全に同期する（tokens.css の prefers-color-scheme ブロックは
+       JS が動かない初回描画のためのフォールバックとして残している）。 */
+    root.setAttribute('data-theme', r);
     applyMeta(r);
     if (fire) {
       try {

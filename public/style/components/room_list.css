@@ -820,7 +820,7 @@
 .page-select form {
   position: relative;
   display: flex;
-  background-color: var(--c-text-inverse);
+  background-color: var(--c-bg);
   border-radius: 8px;
   border: 1px solid var(--c-border);
   box-sizing: border-box;
@@ -962,7 +962,7 @@
 .list-btn {
   height: 48px;
   width: 100%;
-  background-color: var(--c-text-inverse);
+  background-color: var(--c-bg);
   color: var(--c-text-3);
   font-size: 14px;
   cursor: pointer;
@@ -990,7 +990,7 @@
 }
 
 .list-btn:disabled {
-  background-color: var(--c-text-inverse);
+  background-color: var(--c-bg);
   color: var(--c-text-1);
 }
 
@@ -1356,7 +1356,7 @@
   text-decoration: none;
   cursor: pointer;
   align-items: center;
-  background-color: var(--c-text-inverse);
+  background-color: var(--c-chip-bg);
   border: 1px solid var(--c-border-plain);
   border-radius: 36px;
   box-sizing: border-box;

@@ -107,6 +107,7 @@
   /* ブランド・アクセント */
   --c-brand: var(--green-line);
   --c-brand-2: #11d871;        /* 明るいブランド緑（ロゴ・強調） */
+  --c-chip-bg: #fff;           /* タグチップ等の面（ダークでは地より一段持ち上げる） */
   --c-accent-blue: #4d73ff;    /* React 系 UI アクセント青 */
   --c-accent-teal: #16c2c1;    /* ティール（アイコン・グラデ終端） */
   --c-accent-red: #d9333f;     /* 強調赤（ランキング帯等） */
@@ -507,6 +508,22 @@ html {
   --ocj-amber-line: rgba(251, 191, 36, 0.35);
   --ocj-green-bg: rgba(6, 199, 85, 0.12);
   --ocj-green-text: #4ade80;
+
+  /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
+  --c-chip-bg: #1e293b;              /* チップを地から持ち上げる */
+  --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
+  --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
+  --c-chip-hot-text: #34d399;
+  --c-green-shelf: #34d399;
+  --c-green-text-deep: #34d399;
+  --ocj-green-text: #34d399;
+  /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    #d65ce0 20%,
+    #9d8af2,
+    #7c97f5 90%
+  );
   --ocj-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
@@ -707,6 +724,22 @@ html {
   --ocj-amber-line: rgba(251, 191, 36, 0.35);
   --ocj-green-bg: rgba(6, 199, 85, 0.12);
   --ocj-green-text: #4ade80;
+
+  /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
+  --c-chip-bg: #1e293b;              /* チップを地から持ち上げる */
+  --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
+  --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
+  --c-chip-hot-text: #34d399;
+  --c-green-shelf: #34d399;
+  --c-green-text-deep: #34d399;
+  --ocj-green-text: #34d399;
+  /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    #d65ce0 20%,
+    #9d8af2,
+    #7c97f5 90%
+  );
   --ocj-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 }
