@@ -57,9 +57,9 @@ export default function SiteHeaderVerticalSearch() {
             method="GET"
             action={`${rankingArgDto.baseUrl}/search`}
             style={{
-              background: '#fff',
+              background: 'var(--c-bg)',
               padding: '0.5rem',
-              boxShadow: 'rgba(0, 0, 0, 0.3) 0px 3px 8px',
+              boxShadow: 'var(--c-shadow-strong) 0px 3px 8px',
               borderRadius: '4px',
               position: 'absolute',
               width: '300px',
@@ -95,7 +95,7 @@ export default function SiteHeaderVerticalSearch() {
                   sx={{ position: 'absolute', right: '5px', top: '0px', zIndex: 2004 }}
                   onClick={deleteInput}
                 >
-                  <HighlightOffIcon sx={{ fontSize: '22px', color: '#777' }} />
+                  <HighlightOffIcon sx={{ fontSize: '22px', color: 'var(--c-text-3)' }} />
                 </IconButton>
               )}
             </Box>

@@ -15,13 +15,13 @@ export default memo(function ImageReportButton({ imageId, commentNo }: { imageId
       variant="text"
       onClick={onClick}
       sx={{
-        color: 'rgba(255,255,255,0.7)',
+        color: 'var(--c-overlay-text)',
         fontSize: '14px',
         fontWeight: 500,
         padding: '6px 12px',
         borderRadius: '4px',
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)', color: '#fff' },
+        backgroundColor: 'var(--c-overlay-btn)',
+        '&:hover': { backgroundColor: 'var(--c-overlay-btn-hover)', color: 'var(--c-text-inverse)' },
         minWidth: 0,
       }}
     >

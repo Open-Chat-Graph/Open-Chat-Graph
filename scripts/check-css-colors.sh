@@ -49,6 +49,9 @@ MIGRATED=(
   public/style/pages/blog.css
   public/style/pages/oc-jump.css
   public/style/pages/terms.css
+  public/style/react/SiteHeader.css
+  public/style/react/OpenChatList.css
+  public/style/react/OpenChat.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php
