@@ -16,8 +16,11 @@
   'use strict';
 
   var KEY = 'theme';
+  var IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  /* iPhone 限定のヘッダー演出（吹っ飛ばし+フェード）等の CSS 分岐用フック */
+  if (IS_IOS) document.documentElement.classList.add('is-ios');
   var META_LIGHT = '#ffffff';
-  var META_DARK = '#0f172a'; /* tokens.css の --c-bg (slate-900) と同期 */
+  var META_DARK = '#0f172a'; /* tokens.css の --c-bg と同期 */
 
   function stored() {
     try {
@@ -39,7 +42,16 @@
   }
 
   function applyMeta(theme) {
-    var meta = document.querySelector('meta[name="theme-color"]');
+    var metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (IS_IOS) {
+      /* iOS Safari: theme-color を指定するとバーが「ベタ塗り」になり
+         ネイティブの半透明マテリアル（コンテンツがバーに透ける挙動）が失われる。
+         メタを外せば Safari がページ背景から自動着色し、半透明が効く。
+         ダーク/ライトの色追従はページ背景（html の --c-bg）経由で維持される */
+      metas.forEach(function (m) { m.remove(); });
+      return;
+    }
+    var meta = metas[0];
     if (!meta) {
       meta = document.createElement('meta');
       meta.setAttribute('name', 'theme-color');
