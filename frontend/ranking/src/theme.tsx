@@ -46,7 +46,7 @@ export function buildMuiTheme(isDark: boolean) {
         },
         text: {
           primary: '#f5f7f8',
-          secondary: '#8b9196',
+          secondary: '#7d8287',
         },
         divider: '#16181c',
       }),
