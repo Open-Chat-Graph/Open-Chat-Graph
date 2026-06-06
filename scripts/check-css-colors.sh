@@ -45,6 +45,10 @@ MIGRATED=(
   public/style/pages/room_page.css
   public/style/pages/graph_page.css
   public/style/pages/live_ana.css
+  public/style/pages/recommend_page.css
+  public/style/pages/blog.css
+  public/style/pages/oc-jump.css
+  public/style/pages/terms.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php
@@ -59,7 +63,7 @@ for f in "${MIGRATED[@]}"; do
     fail=1
     continue
   fi
-  hits=$(grep -nE "$PATTERN" "$f")
+  hits=$(grep -nE "$PATTERN" "$f" | grep -vE '&#[0-9]+;' || true)
   if [ -n "$hits" ]; then
     echo "✗ $f に生色リテラル:"
     echo "$hits" | head -20 | sed 's/^/    /'
@@ -85,9 +89,9 @@ done < <(grep -rl "style/base/mvp" app/Views --include='*.php')
 
 echo
 echo "== 未移行領域の残数（参考） =="
-css_count=$(grep -roE "$PATTERN" public/style --include='*.css' 2>/dev/null | grep -cv '^public/style/tokens\.css:' || true)
-views_count=$(grep -roE "$PATTERN" app/Views --include='*.php' 2>/dev/null | grep -cv '^app/Views/admin/' || true)
-frontend_count=$(grep -roE "$PATTERN" frontend/*/src --include='*.ts' --include='*.tsx' --include='*.css' 2>/dev/null | grep -cvE '/(theme|themeColors)[^/]*\.ts:' || true)
+css_count=$(grep -rnE "$PATTERN" public/style --include='*.css' 2>/dev/null | grep -v '^public/style/tokens\.css:' | grep -vE '&#[0-9]+;' | wc -l)
+views_count=$(grep -rnE "$PATTERN" app/Views --include='*.php' 2>/dev/null | grep -v '^app/Views/admin/' | grep -vE '&#[0-9]+;' | wc -l)
+frontend_count=$(grep -rnE "$PATTERN" frontend/*/src --include='*.ts' --include='*.tsx' --include='*.css' 2>/dev/null | grep -vE '/(theme|themeColors)[^/]*\.ts:' | wc -l)
 printf '  %-32s %s件\n' "public/style (tokens.css除く):" "$css_count"
 printf '  %-32s %s件\n' "app/Views (admin除く):" "$views_count"
 printf '  %-32s %s件\n' "frontend src (theme系除く):" "$frontend_count"

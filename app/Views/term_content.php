@@ -30,7 +30,7 @@ use App\Config\AppConfig;
 <body>
     <style>
         hr {
-            border-bottom: 1px #efefef solid;
+            border-bottom: 1px var(--c-border) solid;
             margin: 2rem 0;
         }
 

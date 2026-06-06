@@ -31,7 +31,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <div class="openchat-header-right">
           <div>
             <h1 class="talkroom_link_h1 unset"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
-            <a class="link-mark" style="text-decoration: none; width: fit-content;" title="<?php echo $oc['name'] ?>" rel="external" target="_blank" href="<?php echo AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX ?>"><span class="link-title" style="background: unset; color: #b7b7b7; -webkit-text-fill-color: unset; font-weight: normal; line-height: 125%; margin-bottom: -1px;"><!-- <span aria-hidden="true" style="font-size: 10px; margin-right:2px;">🔗</span> --><?php echo t('LINEオープンチャット') ?></span></a>
+            <a class="link-mark" style="text-decoration: none; width: fit-content;" title="<?php echo $oc['name'] ?>" rel="external" target="_blank" href="<?php echo AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX ?>"><span class="link-title" style="background: unset; color: var(--c-text-5); -webkit-text-fill-color: unset; font-weight: normal; line-height: 125%; margin-bottom: -1px;"><!-- <span aria-hidden="true" style="font-size: 10px; margin-right:2px;">🔗</span> --><?php echo t('LINEオープンチャット') ?></span></a>
           </div>
 
           <div class="talkroom_description_box close" id="talkroom_description_box">
@@ -41,7 +41,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             <button id="talkroom-description-close-btn" class="close-btn" title="<?php echo t('一部を表示') ?>"><?php echo t('一部を表示') ?></button>
             <div class="more" id="read_more_btn">
               <div class="more-separater">&nbsp;</div>
-              <button class="unset more-text" style="font-weight: bold; color: #111;" title="<?php echo t('すべて見る') ?>">…<?php echo t('すべて見る') ?></button>
+              <button class="unset more-text" style="font-weight: bold; color: var(--c-text-1);" title="<?php echo t('すべて見る') ?>">…<?php echo t('すべて見る') ?></button>
             </div>
           </div>
 

@@ -22,10 +22,10 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <div style="padding: 0 1rem; margin-bottom: 1rem;">
             <div style="margin: 1rem 0;">
-                <small style="display: block; color: #000; font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
+                <small style="display: block; color: var(--c-text-black); font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
                 <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
             </div>
-            <small style="display: block; color: #000; font-size: 10px; margin: .5rem 0 1rem 0;">
+            <small style="display: block; color: var(--c-text-black); font-size: 10px; margin: .5rem 0 1rem 0;">
                 <?php
                 $languages = array_keys(AppConfig::LINE_OPEN_URL);
                 ?>
@@ -45,7 +45,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
               // CSSは自己完結（theme_discovery 非依存）。 ?>
         <div style="padding: 0 1rem; margin-bottom: 1rem;">
             <form method="GET" action="<?php echo url('ranking') ?>" role="search" class="oc-hero-search">
-                <svg class="oc-hero-search__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:#9aa3af;pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
+                <svg class="oc-hero-search__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:var(--c-cool-text-weak);pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
                 <input id="oc-hero-input" class="oc-hero-search__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
                     autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required
                     placeholder="<?php echo t('オープンチャットを検索') ?>" aria-label="<?php echo t('オープンチャットを検索') ?>">
@@ -58,14 +58,14 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <style>
             /* トップ最上部「オープンチャットを検索」。自己完結CSS（グローバルな汎用 form 枠は打ち消す）。 */
             .oc-hero-search{position:relative;display:block;width:100%;margin:0;padding:0;border:0;background:none;box-shadow:none}
-            .oc-hero-search__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:#9aa3af;pointer-events:none}
+            .oc-hero-search__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:var(--c-cool-text-weak);pointer-events:none}
             /* iOS Safari のフォーカス時オートズーム回避のため font-size は16px以上 */
-            .oc-hero-search__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px;font-size:16px;color:#0f1620;background:#f6f8fa;border:1.5px solid #e4e8ee;border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
-            .oc-hero-search__input::placeholder{color:#9aa3af}
+            .oc-hero-search__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px;font-size:16px;color:var(--c-cool-text-deep);background:var(--c-cool-surface);border:1.5px solid var(--c-border-2);border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
+            .oc-hero-search__input::placeholder{color:var(--c-cool-text-weak)}
             .oc-hero-search__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
-            .oc-hero-search__input:focus{background:#fff;border-color:#06c755;box-shadow:0 0 0 3px rgba(6,199,85,.14)}
-            .oc-hero-search__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:#9aa3af;font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
-            .oc-hero-search__clear:hover{color:#5b6573}
+            .oc-hero-search__input:focus{background:var(--c-bg);border-color:var(--c-brand);box-shadow:0 0 0 3px var(--c-brand-ring)}
+            .oc-hero-search__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:var(--c-cool-text-weak);font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
+            .oc-hero-search__clear:hover{color:var(--c-cool-text)}
             .oc-hero-search__clear[hidden]{display:none}
         </style>
         <script>
@@ -126,7 +126,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
-            <div class="refresh-icon"></div><time style="font-size: 11px; color: #b7b7b7; margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
+            <div class="refresh-icon"></div><time style="font-size: 11px; color: var(--c-text-5); margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
         </div>
     </div>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>

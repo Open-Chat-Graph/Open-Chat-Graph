@@ -4,7 +4,7 @@
             <h2 class="unset">
                 <span class="openchat-list-title"><?php echo t('24時間の人数増加ランキング') ?></span>
             </h2>
-            <span style="font-weight: normal; color:#aaa; font-size:13px; margin: 0"><?php echo t('1時間ごとに更新') ?></span>
+            <span style="font-weight: normal; color:var(--c-text-4); font-size:13px; margin: 0"><?php echo t('1時間ごとに更新') ?></span>
         </div>
     </header>
     <?php viewComponent('open_chat_list_ranking', ['openChatList' => array_slice($dto->dailyList, 0, \App\Config\AppConfig::$listLimitTopRanking), 'isHourly' => true, 'noReverse' => true, 'showReverseListMedal' => true]) ?>

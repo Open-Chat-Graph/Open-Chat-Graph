@@ -16,7 +16,7 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
     <?php endif ?>
     <style>
         .list-title {
-            color: #111;
+            color: var(--c-text-1);
             all: unset;
             font-size: 20px;
             font-weight: bold;
@@ -40,11 +40,11 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
 
         .p-small {
             font-size: 13px;
-            color: #777;
+            color: var(--c-text-3);
         }
 
         .search-pager {
-            background: rgb(250, 250, 250);
+            background: var(--c-bg-sub);
             width: 100%;
             justify-content: space-evenly;
             padding: 4px 2rem;
@@ -53,8 +53,8 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
         article .search-pager {
             margin: 0 -1rem;
             width: calc(100% + 2rem);
-            border-bottom: 1px solid #efefef;
-            border-top: 1px solid #efefef;
+            border-bottom: 1px solid var(--c-border);
+            border-top: 1px solid var(--c-border);
         }
 
         .head-pager .search-pager {
