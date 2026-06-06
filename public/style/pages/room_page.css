@@ -284,7 +284,7 @@ html {
 
 .number_of_members {
   display: block;
-  color: var(--c-text-3);
+  color: var(--c-text-stat);
   font-weight: bold;
   font-size: 13px;
 }
@@ -933,4 +933,10 @@ html {
   white-space: nowrap;
   flex-shrink: 0;
   letter-spacing: 0.02em;
+}
+
+/* ---------- 統計数値（X流: 数値は白く立て、ラベルは灰のまま）。
+     増減の青/緑/赤（.positive/.negative 等）はより高い詳細度のため維持される ---------- */
+.openchat .openchat-item-stats {
+  color: var(--c-text-stat);
 }
