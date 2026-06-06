@@ -108,6 +108,7 @@
   --c-brand: var(--green-line);
   --c-brand-2: #11d871;        /* 明るいブランド緑（ロゴ・強調） */
   --c-chip-bg: #fff;           /* タグチップ等の面（ダークでは地より一段持ち上げる） */
+  --c-brand-line: var(--green-line); /* 緑の枠線（ダークでは減光する） */
   --c-accent-blue: #4d73ff;    /* React 系 UI アクセント青 */
   --c-accent-teal: #16c2c1;    /* ティール（アイコン・グラデ終端） */
   --c-accent-red: #d9333f;     /* 強調赤（ランキング帯等） */
@@ -437,7 +438,7 @@ html {
 
   /* React UI 系 */
   --c-text-soft-black: rgba(226, 232, 240, 0.55);
-  --c-chip-dark: #e2e8f0 /* slate-200 */;   /* 選択中チップ: 黒面→明面に反転 */
+  --c-chip-dark: #475569; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
   --c-mui-blue: #5b9cf6;
   --c-green-shelf: #4ade80;          /* 要調整 */
@@ -517,6 +518,24 @@ html {
   --c-green-shelf: #34d399;
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
+
+  /* ブランド緑グラデはダークでは α0.82 に減光（「LINEで開く」等が眩しすぎないように） */
+  --grad-green-1: rgba(13, 201, 90, 0.82);
+  --grad-green-2: rgba(17, 216, 113, 0.82);
+  --grad-green-3: rgba(17, 213, 147, 0.82);
+  --grad-green-4: rgba(18, 207, 205, 0.82);
+  --grad-green-5: rgba(22, 194, 193, 0.82);
+  /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
+  --c-brand-gradient: linear-gradient(
+    332deg,
+    rgba(13, 201, 90, 0.82),
+    rgba(17, 216, 113, 0.82) 23.96%,
+    rgba(17, 213, 147, 0.82) 55.46%,
+    rgba(18, 207, 205, 0.82) 83.85%,
+    rgba(22, 194, 193, 0.82)
+  );
+  /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
+  --c-brand-line: rgba(6, 199, 85, 0.55);
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,
@@ -653,7 +672,7 @@ html {
 
   /* React UI 系 */
   --c-text-soft-black: rgba(226, 232, 240, 0.55);
-  --c-chip-dark: #e2e8f0 /* slate-200 */;   /* 選択中チップ: 黒面→明面に反転 */
+  --c-chip-dark: #475569; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
   --c-mui-blue: #5b9cf6;
   --c-green-shelf: #4ade80;          /* 要調整 */
@@ -733,6 +752,24 @@ html {
   --c-green-shelf: #34d399;
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
+
+  /* ブランド緑グラデはダークでは α0.82 に減光（「LINEで開く」等が眩しすぎないように） */
+  --grad-green-1: rgba(13, 201, 90, 0.82);
+  --grad-green-2: rgba(17, 216, 113, 0.82);
+  --grad-green-3: rgba(17, 213, 147, 0.82);
+  --grad-green-4: rgba(18, 207, 205, 0.82);
+  --grad-green-5: rgba(22, 194, 193, 0.82);
+  /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
+  --c-brand-gradient: linear-gradient(
+    332deg,
+    rgba(13, 201, 90, 0.82),
+    rgba(17, 216, 113, 0.82) 23.96%,
+    rgba(17, 213, 147, 0.82) 55.46%,
+    rgba(18, 207, 205, 0.82) 83.85%,
+    rgba(22, 194, 193, 0.82)
+  );
+  /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
+  --c-brand-line: rgba(6, 199, 85, 0.55);
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,

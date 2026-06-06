@@ -76,21 +76,6 @@ export function buildMuiTheme(isDark: boolean) {
           },
         },
       },
-      MuiButtonBase: {
-        styleOverrides: {
-          root: isDark
-            ? {
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(91, 156, 246, 0.2)',
-                  color: '#7dd3fc',
-                  '&:hover': {
-                    backgroundColor: 'rgba(91, 156, 246, 0.3)',
-                  },
-                },
-              }
-            : {},
-        },
-      },
     },
   })
 }

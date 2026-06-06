@@ -1400,7 +1400,7 @@
   box-shadow:
     var(--c-shadow) 0px 1px 3px 0px,
     var(--c-shadow-soft) 0px 1px 2px 0px;
-  border: 1px solid var(--c-brand);
+  border: 1px solid var(--c-brand-line);
 }
 
 .tag-btn.open-btn::after {
@@ -1454,7 +1454,7 @@
 }
 
 .hour.tag-btn {
-  border: 1px solid var(--c-brand);
+  border: 1px solid var(--c-brand-line);
 }
 
 .tag-list .css-162gv95 {

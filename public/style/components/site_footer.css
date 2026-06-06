@@ -379,3 +379,50 @@
     font-size: 12px;
   }
 }
+
+/* ---------- テーマ切替（フッター共通・3状態） ---------- */
+
+.footer-theme-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.footer-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--c-text-3);
+  font-size: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 99rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.footer-theme-toggle:hover {
+  background-color: var(--c-bg-sub);
+  color: var(--c-text-1);
+}
+
+.footer-theme-toggle-label {
+  line-height: 1;
+}
+
+/* 現在の選択ラベル（light/dark/auto）を出し分け */
+.theme-label-dark,
+.theme-label-auto {
+  display: none;
+}
+
+:root[data-theme-pref="dark"] .theme-label-dark,
+:root[data-theme-pref="auto"] .theme-label-auto {
+  display: inline;
+}
+
+:root[data-theme-pref="dark"] .theme-label-light,
+:root[data-theme-pref="auto"] .theme-label-light {
+  display: none;
+}
