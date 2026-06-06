@@ -676,9 +676,9 @@ body > .google-auto-placed {
 }
 
 .rb-durations .rb-preset {
-  height: 30px;
-  padding: 0 12px;
-  font-size: 12px;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
 }
 
 .rb-durations-outer .rb-field-hint {
@@ -713,21 +713,6 @@ body > .google-auto-placed {
 
 .rb-widen:hover {
   background-color: #06c75514;
-}
-
-/* 「3日以上」＝区分チップの合算ショートカット。区切り線で同列の6個目に見えないようにする */
-.rb-duration--shortcut {
-  margin-left: 8px;
-  position: relative;
-}
-
-.rb-duration--shortcut::before {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 6px;
-  bottom: 6px;
-  border-left: 1px solid #ededf0;
 }
 
 /* チップ内の状態ドット（プリセットの未掲載/復活の対をスキャナブルに） */
@@ -769,7 +754,7 @@ body > .google-auto-placed {
 
 .rb-filter-label {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   color: #5b6066;
   min-width: 8.5em;
@@ -780,9 +765,9 @@ body > .google-auto-placed {
 }
 
 .rb-filters .rb-preset {
-  height: 30px;
-  padding: 0 12px;
-  font-size: 12px;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
 }
 
 /* 詳細設定内の説明リスト */

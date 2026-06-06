@@ -35,8 +35,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <div class="rb-durations-outer">
                 <h3 class="rb-presets-title" id="rb-durations-title">消えていた期間</h3>
                 <div class="rb-presets rb-durations" role="group" aria-labelledby="rb-durations-title">
-                    <?php foreach ([[0, 0, 'すべて', ''], [0, 24, '24時間以内', ''], [24, 72, '1〜3日', ''], [72, 168, '3〜7日', ''], [168, 0, '1週間以上', ''], [72, 0, '3日以上', ' rb-duration--shortcut']] as [$rbDi, $rbDa, $rbDurLabel, $rbDurClass]) : ?>
-                        <button type="button" class="rb-preset rb-duration<?php echo $rbDurClass ?><?php if ($dmin === $rbDi && $dmax === $rbDa) echo ' is-active' ?>" aria-pressed="<?php echo ($dmin === $rbDi && $dmax === $rbDa) ? 'true' : 'false' ?>" data-dmin="<?php echo $rbDi ?>" data-dmax="<?php echo $rbDa ?>"><?php echo $rbDurLabel ?></button>
+                    <?php foreach ([[0, 0, 'すべて'], [0, 24, '24時間以内'], [24, 72, '1〜3日'], [72, 168, '3〜7日'], [168, 0, '1週間以上']] as [$rbDi, $rbDa, $rbDurLabel]) : ?>
+                        <button type="button" class="rb-preset rb-duration<?php if ($dmin === $rbDi && $dmax === $rbDa) echo ' is-active' ?>" aria-pressed="<?php echo ($dmin === $rbDi && $dmax === $rbDa) ? 'true' : 'false' ?>" data-dmin="<?php echo $rbDi ?>" data-dmax="<?php echo $rbDa ?>"><?php echo $rbDurLabel ?></button>
                     <?php endforeach ?>
                 </div>
                 <p class="rb-field-hint">復活した部屋は「復活までにかかった時間」、消えたままの部屋は「消えてから今までの時間」で数えます</p>
@@ -62,7 +62,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             || !in_array([R::input('publish'), R::input('change')], [[1, 0], [1, 1], [0, 0], [0, 1]], true); ?>
         <!-- 詳細設定（プロ向け・普段は閉じる） -->
         <details class="rb-advanced" id="rb-advanced"<?php if ($rbAdvancedOpen) echo ' open' ?>>
-            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・消えた時期を個別に指定</span></summary>
+            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位%・消えた時期を個別に指定</span></summary>
             <div class="rb-panel" aria-label="詳細の絞り込み条件">
             <div class="rb-field">
                 <div class="rb-field-label" id="rb-label-publish">掲載状況</div>
@@ -101,6 +101,26 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         </label>
                     </div>
                     <p class="rb-field-hint">消える直前に名前・説明文・画像などを変えていたか（変更なし判定は2025年8月11日以降の記録が対象）</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-percent">最後に載っていた順位（%指定）</div>
+                <div class="rb-field-control">
+                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-percent">
+                        <label class="rb-seg-item<?php if (R::input('percent') === 50) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="50" <?php if (R::input('percent') === 50) echo 'checked' ?>>
+                            <span class="rb-seg-text">上位50%だけ</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('percent') === 80) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="80" <?php if (R::input('percent') === 80) echo 'checked' ?>>
+                            <span class="rb-seg-text">上位80%まで</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('percent') === 100) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="100" <?php if (R::input('percent') === 100) echo 'checked' ?>>
+                            <span class="rb-seg-text">すべて</span>
+                        </label>
+                    </div>
+                    <p class="rb-field-hint">「ふつうの順位落ちの除外」の%指定（しっかり除外＝上位50%だけ・ゆるく除外＝上位80%まで）</p>
                 </div>
             </div>
             <div class="rb-field">
