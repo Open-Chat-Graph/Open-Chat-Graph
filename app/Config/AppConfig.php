@@ -200,6 +200,9 @@ class AppConfig
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
     const TRANSLATION_FILE = __DIR__ . '/../../storage/translation.json';
 
+    /** Markdown ブログ記事の格納ディレクトリ（content/blog/{slug}.md） */
+    const BLOG_CONTENT_DIR = __DIR__ . '/../../content/blog/';
+
     const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
 
     /** SQLite ocgraph_sqlapi database path (Japanese only, not multi-language) */
