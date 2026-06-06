@@ -26,6 +26,7 @@ use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
+use App\Controllers\Pages\BlogController;
 use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
@@ -81,6 +82,10 @@ Route::path('policy', [PolicyPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
+
+Route::path('blog', [BlogController::class, 'index']);
+
+Route::path('blog/{slug}', [BlogController::class, 'article']);
 
 Route::path('robots.txt', [RobotsController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
@@ -375,6 +380,26 @@ Route::path(
     ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
+    ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+// 一覧データのHTMLフラグメント（非同期取得用）。バリデーション・キャッシュ制御は上のページルートと完全に同一
+Route::path(
+    'labs/publication-analytics/list',
+    [RankingBanLabsPageController::class, 'fragment']
+)
+    ->matchNum('publish', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('change', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
     ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;

@@ -9,6 +9,7 @@ use Asika\Sitemap\Sitemap;
 use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
+use App\Services\Blog\BlogService;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
@@ -91,6 +92,10 @@ class SitemapGenerator
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
+            $sitemap->addItem($this->currentUrl . 'blog');
+            foreach (app(BlogService::class)->list() as $a) {
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a['slug'], lastmod: $a['date'] ?: $datetime);
+            }
         }
 
         $sitemap->addItem($this->currentUrl . 'policy');

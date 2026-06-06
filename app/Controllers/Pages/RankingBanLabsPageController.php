@@ -10,22 +10,23 @@ use App\Views\RankingBanSelectElementPagination;
 
 class RankingBanLabsPageController
 {
+    /**
+     * シェル（外枠）を即時返却する。重い一覧データは fragment() が後追いで返す。
+     */
     function index(
-        RakingBanPageService $rakingBanPageService,
-        RankingBanSelectElementPagination $rankingBanSelectElementPagination,
         FileStorageInterface $fileStorage,
         int $change,
         int $publish,
         int $percent,
         int $page,
-        string $keyword
+        string $keyword,
+        string $since,
+        string $until
     ) {
-        $titleValue = implode(' ', array_filter([
-            'p' => $publish === 1 ? '💡現在未掲載' : ($publish === 0 ? '💡再掲載済み' : '💡全て'),
-            'c' => $change === 1 ? '📝ルーム内容変更なし' : ($change === 0 ? '📝ルーム内容変更あり' : '📝全て'),
-            'per' => $percent < 100 ? "📊ランク上位{$percent}%" : '📊全て',
-            'keyword' => $keyword !== '' ? "\n🔎「{$keyword}」" : false,
-        ]));
+        $since = $this->validDate($since);
+        $until = $this->validDate($until);
+
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
 
         $_meta = meta()
             ->setTitle('オプチャ公式ランキング掲載の分析 ' . ($page > 1 ? "({$page}ページ目) " : '') . $titleValue)
@@ -35,9 +36,48 @@ class RankingBanLabsPageController
 
         $_meta->image_url = '';
 
-        $_css = ['room_list', 'site_header', 'site_footer'];
+        $_css = ['room_list', 'site_header', 'site_footer', 'ranking_ban'];
 
         $_updatedAt = new \DateTime($fileStorage->getContents('@hourlyRealUpdatedAtDatetime'));
+        $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+
+        return view(
+            'ranking_ban_content',
+            compact(
+                '_meta',
+                '_css',
+                '_updatedAt',
+                '_now',
+                'titleValue',
+                'since',
+                'until',
+            )
+        );
+    }
+
+    /**
+     * 一覧データのHTMLフラグメントを返す（JSがfetchして差し込む）。
+     * クエリ・絞り込みロジックは旧 index() からの移設で、意味は不変。
+     */
+    function fragment(
+        RakingBanPageService $rakingBanPageService,
+        RankingBanSelectElementPagination $rankingBanSelectElementPagination,
+        FileStorageInterface $fileStorage,
+        int $change,
+        int $publish,
+        int $percent,
+        int $page,
+        string $keyword,
+        string $since,
+        string $until
+    ) {
+        header('X-Robots-Tag: noindex');
+
+        $since = $this->validDate($since);
+        $until = $this->validDate($until);
+
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
+
         $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
         $limit = 50;
@@ -48,7 +88,9 @@ class RankingBanLabsPageController
             $percent,
             $keyword,
             $page,
-            $limit
+            $limit,
+            $since,
+            $until
         );
 
         if (!$rankingBanData && $page > 1) return false;
@@ -56,15 +98,13 @@ class RankingBanLabsPageController
             $totalRecords = 0;
             $maxPageNumber = 0;
             return view(
-                'ranking_ban_content',
+                'components/ranking_ban_results',
                 compact(
-                    '_meta',
-                    '_css',
-                    '_updatedAt',
                     '_now',
-                    'titleValue',
                     'totalRecords',
                     'maxPageNumber',
+                    'page',
+                    'titleValue',
                 )
             );
         }
@@ -72,7 +112,8 @@ class RankingBanLabsPageController
         $totalRecords = $rankingBanData['totalRecords'];
         $maxPageNumber = $rankingBanData['maxPageNumber'];
         $path = 'labs/publication-analytics';
-        $params = compact('change', 'publish', 'percent', 'keyword');
+        // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
+        $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until');
 
         [$title, $_select, $_label] = $rankingBanSelectElementPagination->geneSelectElementPagerAsc(
             $path,
@@ -93,20 +134,42 @@ class RankingBanLabsPageController
         ];
 
         return view(
-            'ranking_ban_content',
+            'components/ranking_ban_results',
             compact(
-                '_meta',
-                '_css',
                 'openChatList',
-                '_updatedAt',
                 '_now',
                 '_select',
                 '_label',
                 '_pagerNavArg',
                 'totalRecords',
-                'titleValue',
                 'maxPageNumber',
+                'page',
+                'titleValue',
             )
         );
+    }
+
+    /**
+     * meta title・フラグメントの data-title 用ラベル（既存仕様のままパリティ維持）
+     */
+    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = ''): string
+    {
+        return implode(' ', array_filter([
+            'p' => $publish === 1 ? '💡現在未掲載' : ($publish === 0 ? '💡再掲載済み' : '💡全て'),
+            'c' => $change === 1 ? '📝ルーム内容変更なし' : ($change === 0 ? '📝ルーム内容変更あり' : '📝全て'),
+            'per' => $percent < 100 ? "📊ランク上位{$percent}%" : '📊全て',
+            'd' => ($since !== '' || $until !== '') ? "📅{$since}〜{$until}" : false,
+            'keyword' => $keyword !== '' ? "\n🔎「{$keyword}」" : false,
+        ]));
+    }
+
+    /**
+     * 期間入力の検証。YYYY-MM-DD の実在日付のみ通し、それ以外は空文字（条件なし）に落とす。
+     */
+    private function validDate(string $value): string
+    {
+        if ($value === '') return '';
+        $d = \DateTime::createFromFormat('Y-m-d', $value);
+        return ($d && $d->format('Y-m-d') === $value) ? $value : '';
     }
 }
