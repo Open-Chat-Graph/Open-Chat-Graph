@@ -69,7 +69,7 @@ html {
   padding: 0 2px;
   font-size: 13px;
   line-height: 1.75;
-  color: var(--c-text-2);
+  color: var(--c-text-soft);
   word-break: break-word;
 }
 
@@ -933,10 +933,4 @@ html {
   white-space: nowrap;
   flex-shrink: 0;
   letter-spacing: 0.02em;
-}
-
-/* ---------- 統計数値（X流: 数値は白く立て、ラベルは灰のまま）。
-     増減の青/緑/赤（.positive/.negative 等）はより高い詳細度のため維持される ---------- */
-.openchat .openchat-item-stats {
-  color: var(--c-text-stat);
 }
