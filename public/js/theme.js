@@ -6,8 +6,8 @@
    - 公開API: window.ocTheme
        .resolved()      … 'dark' | 'light'（現在の見た目）
        .stored()        … 'dark' | 'light' | null（明示選択。null=OS連動）
-       .set(t)          … 'dark' | 'light' | null を保存して即適用
-       .toggle()        … 見た目を反転して保存
+       .set(t)          … 'dark' | 'light' | null(=自動) を保存して即適用
+       .cycle()         … ライト → ダーク → 自動 → … の3状態切替
      変更時は document に CustomEvent('octhemechange', {detail:{theme}}) を発火
      （React/Chart.js 側はこれを購読して再描画する）。
    - meta[name=theme-color] も解決テーマに合わせて更新する。
@@ -56,6 +56,8 @@
        完全に同期する（tokens.css の prefers-color-scheme ブロックは
        JS が動かない初回描画のためのフォールバックとして残している）。 */
     root.setAttribute('data-theme', r);
+    /* UI用: ユーザーの選択そのもの（auto を区別する。アイコン出し分けに使用） */
+    root.setAttribute('data-theme-pref', stored() || 'auto');
     applyMeta(r);
     if (fire) {
       try {
@@ -107,8 +109,11 @@
     resolved: resolved,
     stored: stored,
     set: set,
-    toggle: function () {
-      return set(resolved() === 'dark' ? 'light' : 'dark');
+    /* ライト → ダーク → 自動(OS連動) の3状態を巡回 */
+    cycle: function () {
+      var cur = stored() || 'auto';
+      var next = cur === 'light' ? 'dark' : cur === 'dark' ? null : 'light';
+      return set(next);
     },
   };
 
@@ -116,7 +121,7 @@
      PHPヘッダ/Reactヘッダのどちらでも、ボタンを置くだけで動く */
   document.addEventListener('click', function (e) {
     var btn = e.target && e.target.closest && e.target.closest('.theme-toggle-btn');
-    if (btn) window.ocTheme.toggle();
+    if (btn) window.ocTheme.cycle();
   });
 
   /* 初期適用（head 内同期実行 = 最初の描画前） */

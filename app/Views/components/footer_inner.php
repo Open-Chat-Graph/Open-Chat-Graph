@@ -30,6 +30,15 @@
                 <span class="text"><?php echo t('LINEアプリをダウンロード（LINE公式）') ?><span class="line-link-icon777"></span></span>
             </a>
         </aside>
-        <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/Open-Chat-Graph" target="_blank">Project on GitHub @Open-Chat-Graph</a><span class="line-link-icon777"></span></span></div>
+        <?php // テーマ切替（3状態）。アイコン出し分けは site_header.css の [data-theme-pref] 規則を共用 ?>
+            <div class="footer-theme-toggle-row">
+                <button class="footer-theme-toggle theme-toggle-btn unset" type="button" aria-label="<?php echo t('ダークモード切替') ?>">
+                    <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="theme-icon-auto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+                    <span class="footer-theme-toggle-label"><?php echo t('テーマ') ?>: <span class="theme-label-light"><?php echo t('ライト') ?></span><span class="theme-label-dark"><?php echo t('ダーク') ?></span><span class="theme-label-auto"><?php echo t('自動') ?></span></span>
+                </button>
+            </div>
+            <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/Open-Chat-Graph" target="_blank">Project on GitHub @Open-Chat-Graph</a><span class="line-link-icon777"></span></span></div>
     </nav>
 </footer>

@@ -204,6 +204,9 @@ body::before {
   font-size: 12.5px;
   display: block;
   width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin: auto;
   line-height: 24px;
   color: var(--c-text-1);
@@ -213,25 +216,29 @@ body::before {
   text-wrap: nowrap;
 }
 
-/* ブログボタン（緑文字・日本語のみ） */
-.blog-button {
-  height: 36px;
-  border: 1px solid var(--c-btn-blog-border);
-  border-radius: 7px;
-  background: var(--c-btn-blog-bg);
-  display: flex;
-  text-decoration: unset;
+/* 狭幅でもヘッダー右端（検索）に潜り込まない */
+.header-actions {
+  min-width: 0;
 }
 
-.blog-button span {
+.category-button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ブログリンク（小さな文字のみ・日本語のみ） */
+.blog-text-link {
   font-size: 12.5px;
-  margin: auto;
-  line-height: 24px;
-  color: var(--c-btn-blog-text);
-  font-weight: bold;
-  padding: 0 0.7rem;
+  color: var(--c-text-3);
+  text-decoration: none;
+  padding: 8px 2px;
+  white-space: nowrap;
   font-family: var(--font-family);
-  text-wrap: nowrap;
+}
+
+.blog-text-link:hover {
+  text-decoration: underline;
+  color: var(--c-text-1);
 }
 
 /* ---------- ダークモード切替ボタン ---------- */
@@ -244,29 +251,25 @@ body::before {
   margin: auto;
 }
 
-/* ライト時: 月（=ダークへ切替）を表示。ダーク時: 太陽を表示。
-   OS連動（data-theme なし）のときは prefers-color-scheme 側のブロックが効く。
-   ★ tokens.css のダーク2系統と同じ同期ルール */
-.theme-icon-sun {
+/* アイコンの出し分けは「ユーザーの選択」（html[data-theme-pref]）で行う。
+   light=月(次はダーク) / dark=太陽(次は自動) / auto=半月(次はライト)。
+   theme.js が常に data-theme-pref を設定する（no-JS時はボタン自体が機能しないため考慮不要） */
+.theme-icon-sun,
+.theme-icon-auto {
   display: none;
 }
 
-:root[data-theme="dark"] .theme-icon-sun {
+:root[data-theme-pref="dark"] .theme-icon-sun {
   display: block;
 }
 
-:root[data-theme="dark"] .theme-icon-moon {
+:root[data-theme-pref="dark"] .theme-icon-moon,
+:root[data-theme-pref="auto"] .theme-icon-moon {
   display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-icon-sun {
-    display: block;
-  }
-
-  :root:not([data-theme="light"]) .theme-icon-moon {
-    display: none;
-  }
+:root[data-theme-pref="auto"] .theme-icon-auto {
+  display: block;
 }
 
 /* ---------- 検索フォーム ---------- */
