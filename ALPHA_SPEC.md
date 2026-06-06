@@ -47,7 +47,6 @@
 
 ### 現状の負債
 - **D-4**: ページ入室数が、部屋が複数ページから流入していると各ページに同じ部屋の当日jumpを**全量二重計上**（`rebuildPageJumpDaily`）。構造的水増し。→ 流入元ページ数で按分 or 「ページ別入室」を別計測。最低でも近似である旨をUI明示（現状「うちSEO経由（間接含む）」は付けたが二重計上の注記は無し）。
-- **D-5**: period-growth の range 時 `days` が `+1` されず（`findPeriodGrowthByDateRange`）、`resolveWindow`(実日数) と±1ずれ。表示の一貫性。
 
 ---
 

@@ -124,6 +124,7 @@ class AlphaPeriodGrowthRepository
      * 明示した startDate / endDate で比較する（フロントの日付ピッカー用）。
      * 各idについて「endDate 以下で最も近い日」と「startDate 以下で最も近い日」の
      * メンバー数を取り、両方そろうものだけを残す。
+     * daysは両端を含む実日数（resolveWindowと同規約）。
      *
      * @param string $startDate 期間開始日 (Y-m-d)
      * @param string $endDate   期間終了日 (Y-m-d)
@@ -143,7 +144,7 @@ class AlphaPeriodGrowthRepository
         if ($startDate > $endDate) {
             [$startDate, $endDate] = [$endDate, $startDate];
         }
-        $days = (int)((new \DateTime($startDate))->diff(new \DateTime($endDate))->days);
+        $days = (int)((new \DateTime($startDate))->diff(new \DateTime($endDate))->days) + 1;
 
         $candidates = $this->fetchCandidates($keyword, $category);
         if (empty($candidates)) {
