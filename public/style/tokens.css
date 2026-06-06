@@ -195,6 +195,8 @@
   --c-green-tint: #e9faf0;           /* 復帰バッジの淡緑面 */
   --c-red-tint: #fdf1f2;             /* 消滅バッジの淡赤面 */
   --c-surface-gray: #f4f5f6;         /* グレー系の小さな面・スケルトン */
+  --c-surface-gray-2: #f3f4f6;       /* ページャ無効面（stg改修で追加） */
+  --c-border-soft-gray: #d0d3d6;     /* ページャ枠（stg改修で追加） */
 
   /* ルーム詳細・labs 系 */
   --c-fade-right-2: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)); /* 説明文の続きを隠す */
@@ -551,6 +553,8 @@ body {
   --c-btn-brand-bg-hover: #047857;
   --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
   --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
+  --c-surface-gray-2: #16181c;
+  --c-border-soft-gray: #3f4347;
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,
@@ -792,6 +796,8 @@ body {
   --c-btn-brand-bg-hover: #047857;
   --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
   --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
+  --c-surface-gray-2: #16181c;
+  --c-border-soft-gray: #3f4347;
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,
