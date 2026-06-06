@@ -15,5 +15,5 @@ export function onThemeChange(cb: () => void): void {
 
 /** 軸・タイトル・データラベルの文字色 */
 export function labelColor(): string {
-  return isDarkMode() ? '#8b9196' /* X風ニュートラル */ : '#374151'
+  return isDarkMode() ? '#7d8287' /* X風ニュートラル */ : '#374151'
 }
