@@ -16,32 +16,8 @@ hr {
   width: 100%;
 }
 
-.unset {
-  all: unset;
-}
-
-/* all: unset は UA スタイルの cursor: pointer まで消してしまうため、
-   インタラクティブ要素に限り操作感（カーソル）だけは標準に戻す */
-a.unset,
-button.unset,
-summary.unset,
-[role='button'].unset {
-  cursor: pointer;
-}
-
-.unset:active {
-  filter: none;
-  text-decoration: none;
-}
-
-.unset:hover {
-  filter: none;
-  text-decoration: none;
-}
-
-.unset:focus-visible {
-  outline: -webkit-focus-ring-color auto 1px;
-}
+/* .unset ユーティリティは unset.css に一元化（mvp.css との二重管理をやめた）。
+   本ファイルを <link> するページは直後に style/unset.css も読み込むこと。 */
 
 details {
   margin: 1.3rem 0;

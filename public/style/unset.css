@@ -1,0 +1,35 @@
+/* ============================================================
+   .unset ユーティリティ（all: unset の打ち消し一式）。
+   mvp.css / mvpmin.css のどちらを使うページでも必要なため、
+   両ファイルへのコピーをやめて本ファイルに一元化している。
+   読み込み順は mvp.css / mvpmin.css の直後・ページ別 CSS の前
+   （同特異度の打ち消しが順序に依存するため）。
+   ============================================================ */
+
+.unset {
+  all: unset;
+}
+
+/* all: unset は UA スタイルの cursor: pointer まで消してしまうため、
+   インタラクティブ要素に限り操作感（カーソル）だけは標準に戻す。
+   disabled なボタンは除外し、押せない物に pointer を出さない。 */
+a.unset,
+button.unset:not(:disabled),
+summary.unset,
+[role='button'].unset {
+  cursor: pointer;
+}
+
+.unset:active {
+  filter: none;
+  text-decoration: none;
+}
+
+.unset:hover {
+  filter: none;
+  text-decoration: none;
+}
+
+.unset:focus-visible {
+  outline: -webkit-focus-ring-color auto 1px;
+}

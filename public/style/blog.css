@@ -5,9 +5,11 @@
 
 /* mvp.css の main{padding:3rem 1rem} はブログでは過大
    （固定ヘッダーのスペーサー48px と合わせて上に約110pxの空白ができ、
-   横も .blog の 1.15rem と二重になる）。余白は .blog 側で一元管理する。 */
-.blog-main {
+   横も .blog の 1.15rem と二重になる）。mvp.css の main.no-pad と併用し、
+   余白はここで一元管理する（main.no-pad と同特異度のため後勝ちで上書き）。 */
+main.blog-main {
   padding: 14px 0 1.5rem;
+  overflow: hidden;
 }
 
 .blog {
@@ -87,11 +89,20 @@
 
 /* ---- 本文 ---- */
 .blog-body { font-size: 16px; line-height: 1.95; color: var(--text); }
-.blog-body > h2 {
-  font-size: 1.27rem; font-weight: 800; color: var(--ink);
-  line-height: 1.5; margin: 2.4rem 0 1rem; padding: 2px 0 2px 13px;
-  border-left: 4px solid var(--g); letter-spacing: -0.01em;
+
+/* H2級見出しの共通視覚言語（緑ボーダー左）。本文・FAQ・関連記事で一箇所だけ直せば揃う。
+   サイズ・余白だけ文脈ごとに個別指定する。 */
+.blog-body > h2,
+.blog-faq > h2,
+.blog-related-h {
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 2px 0 2px 13px;
+  border-left: 4px solid var(--g);
+  letter-spacing: -0.01em;
 }
+.blog-body > h2 { font-size: 1.27rem; margin: 2.4rem 0 1rem; }
 .blog-body > h2:first-child { margin-top: .6rem; }
 .blog-body h3 {
   font-size: 1.08rem; font-weight: 700; color: var(--ink);
@@ -189,10 +200,8 @@
 
 /* ---- FAQ ---- */
 .blog-faq { margin: 2.6rem 0 1rem; }
-.blog-faq > h2 {
-  font-size: 1.27rem; font-weight: 800; color: var(--ink);
-  margin: 0 0 1rem; padding-left: 13px; border-left: 4px solid var(--g);
-}
+/* 見出しのベースは上の共通グループ（緑ボーダー左）で定義 */
+.blog-faq > h2 { font-size: 1.27rem; margin: 0 0 1rem; }
 .blog-faq h3 {
   position: relative; font-size: 1.02rem; font-weight: 700; color: var(--ink);
   margin: 0; padding: 1rem 0 .55rem 1.9rem; line-height: 1.6;
@@ -215,8 +224,8 @@
 /* mvp.css のグローバル nav{display:flex} を打ち消す（カードは縦積み） */
 .blog-related { display: block; margin: 2.4rem 0 1rem; }
 .blog-related a { display: block; }
-/* 見出しの視覚言語を本文 h2・FAQ と統一（緑のボーダー左） */
-.blog-related-h { font-size: 1.1rem; font-weight: 800; color: var(--ink); margin: 0 0 .9rem; padding-left: 13px; border-left: 4px solid var(--g); }
+/* 見出しのベースは本文側の共通グループ（緑ボーダー左）で定義 */
+.blog-related-h { font-size: 1.1rem; margin: 0 0 .9rem; }
 .blog-related a {
   display: block; padding: .85rem 1rem; margin-bottom: .6rem;
   border: 1px solid var(--line); border-radius: 12px; text-decoration: none;
@@ -263,7 +272,7 @@
 .blog-card:hover .go::after { transform: translateX(3px); }
 
 @media (min-width: 600px) {
-  .blog-main { padding-top: 22px; }
+  main.blog-main { padding-top: 22px; }
   .blog-title { font-size: 1.95rem; }
   .blog-body { font-size: 16.5px; }
   .blog-cards { grid-template-columns: 1fr 1fr; }
