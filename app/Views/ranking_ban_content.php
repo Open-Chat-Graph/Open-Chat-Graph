@@ -387,8 +387,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 // フォームの状態は操作した瞬間にURLへ反映する（fetch完了を待つと
                 // 重いクエリの間アドレスバーが古いままになり、共有・ブックマークとずれる）
                 if (opts.push) history.pushState(state, '', pageUrl(state));
-                // ページ移動はすぐ先頭へ戻す（下までスクロールしたまま読み込みを待たせない）
-                if (opts.scroll) results.scrollIntoView({ block: 'start' });
+                // ページ移動は押した瞬間にページの一番上へ戻す（下までスクロールしたまま待たせない・中腹で止めない）
+                if (opts.scroll) window.scrollTo(0, 0);
                 setBusy(true);
                 const s = Object.assign({}, state);
                 fetch(fragmentUrl(s), { signal: aborter.signal })
