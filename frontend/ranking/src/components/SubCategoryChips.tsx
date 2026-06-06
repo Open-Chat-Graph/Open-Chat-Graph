@@ -42,7 +42,7 @@ const Chips = memo(function Chips({
           fontFamily: 'var(--font-family, sans-serif)',
           fontSize: '12px',
           fontWeight: 700,
-          color: '#5b6573',
+          color: 'var(--c-cool-text)',
           whiteSpace: 'nowrap',
           paddingRight: '2px',
         }}
@@ -76,7 +76,7 @@ const chevronBradientBoxSx = (gradientDeg: number) => ({
   position: 'absolute',
   zIndex: 1155,
   top: 0,
-  background: `linear-gradient(${gradientDeg}deg, rgba(255,255,255,1) 55%, rgba(0,0,0,0) 100%)`,
+  background: `linear-gradient(${gradientDeg}deg, var(--c-bg) 55%, transparent 100%)`,
 })
 
 const buttonSx = { minWidth: 40, minHeight: 48 }
@@ -140,7 +140,7 @@ const gradientBoxSx = {
   minWidth: 52,
   minHeight: 43,
   right: 0,
-  background: 'linear-gradient(270deg, rgba(255,255,255,0.93) 50%, rgba(0,0,0,0) 100%)',
+  background: 'linear-gradient(270deg, var(--c-bg-93) 50%, transparent 100%)',
 }
 
 function SubCategoryChipsSP2(props: SubCategoryChipsProps) {

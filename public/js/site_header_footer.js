@@ -33,21 +33,20 @@ function validateStringNotEmpty(str) {
   })
 })()
 
-const setHeaderShow = (header, hidden, show) => {
+const setHeaderShow = (header) => {
   // 現在の位置を保持
   let currentPosition = 0
 
   window.addEventListener('scroll', () => {
-    // スクロール位置を保持
     let scrollPosition = document.documentElement.scrollTop
 
-    // スクロールに合わせて要素をヘッダーの高さ分だけ移動（表示域から隠したり表示したり）
-    if (scrollPosition <= 48) {
-      header.style.transform = `translate(0, ${show})`
+    // 表示/非表示は CSS クラスで制御（site_header.css）。
+    // 下スクロール: セーフエリアごと上へ飛ばしつつフェードアウト（ステータスバーを突き抜ける見え方）
+    // 上スクロール: すっと落ちてきて戻る
+    if (scrollPosition <= 48 || currentPosition > scrollPosition) {
+      header.classList.remove('header-hidden')
     } else if (currentPosition <= scrollPosition) {
-      header.style.transform = 'translate(0,' + hidden + 'px)'
-    } else if (currentPosition > scrollPosition) {
-      header.style.transform = `translate(0, ${show})`
+      header.classList.add('header-hidden')
     }
 
     currentPosition = document.documentElement.scrollTop
@@ -76,15 +75,15 @@ const setHeaderShow2 = (header, hidden, show) => {
 
     // スクロールに合わせて要素をヘッダーの高さ分だけ移動（表示域から隠したり表示したり）
     if (scrollPosition <= 48) {
-      header.style.transform = `translate(0, ${show})`
+      header.classList.remove('header-hidden')
       if (pcAdBarGlobal && pcAdBarGlobal.style.top === '0px')
         pcAdBarGlobal.style.top = `${hidden * -1}px`
     } else if (currentPosition <= scrollPosition) {
-      header.style.transform = `translate(0, ${hidden}px)`
+      header.classList.add('header-hidden')
       if (pcAdBarGlobal && pcAdBarGlobal.style.top === `${hidden * -1}px`)
         pcAdBarGlobal.style.top = `0px`
     } else if (currentPosition > scrollPosition) {
-      header.style.transform = `translate(0, ${show})`
+      header.classList.remove('header-hidden')
       if (pcAdBarGlobal && pcAdBarGlobal.style.top === '0px')
         pcAdBarGlobal.style.top = `${hidden * -1}px`
     }
@@ -95,5 +94,5 @@ const setHeaderShow2 = (header, hidden, show) => {
 
 ;(() => {
   const header = document.querySelector('.site_header_outer')
-  setHeaderShow(header, -48, 0)
+  setHeaderShow(header)
 })()

@@ -5,7 +5,7 @@
 <body class="body">
     <style>
         .list-title {
-            color: #111;
+            color: var(--c-text-1);
             all: unset;
             font-size: 20px;
             font-weight: bold;

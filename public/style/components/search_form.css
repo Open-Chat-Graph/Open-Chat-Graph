@@ -1,11 +1,16 @@
+/* ============================================================
+   検索フォーム（トップページ等の大きな検索ボックス）
+   色は style/tokens.css のトークン（--c-* / --icon-*）を参照する。
+   ============================================================ */
+
 .search-form2 {
   all: unset;
   width: 100%;
   font-size: 1.1rem;
   -webkit-box-align: center;
   align-items: center;
-  border: 1px solid var(--color-bg-secondary);
-  background-color: rgb(255, 255, 255);
+  border: 1px solid var(--c-border-3);
+  background-color: var(--c-bg);
   border-radius: 99rem;
   display: flex;
   position: relative;
@@ -20,7 +25,7 @@
   align-items: center;
   width: 24px;
   height: 24px;
-  background-image: var(--search);
+  background-image: var(--icon-search);
 }
 
 .search-form2 input {
@@ -28,14 +33,14 @@
   padding: 0.9rem 1rem 0.9rem 2.9rem;
   width: 100%;
   font-size: inherit;
-  background: #0000;
+  background: transparent;
   outline: 0;
   border: none;
   resize: none;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .search-form2:has(input:focus) {
   outline: 0;
-  box-shadow: 0px 0px 0px 1px #06c755;
+  box-shadow: 0px 0px 0px 1px var(--c-brand);
 }

@@ -1,6 +1,10 @@
 import { langCode } from './config'
 
 const translation = {
+  ダークモード切替: {
+    tw: '切換深色模式',
+    th: 'สลับโหมดมืด',
+  },
   オプチャグラフ: {
     tw: 'LINE社群成長統計',
     th: 'LINE OPENCHAT\nสถิติการเติบโต',

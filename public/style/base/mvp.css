@@ -1,56 +1,45 @@
-/* MVP.css v1.15 - https://github.com/andybrewer/mvp */
-
+/* MVP.css v1.12 - https://github.com/andybrewer/mvp */
+/* 色は style/tokens.css のデザイントークンを参照する（本ファイルより前に読み込まれる前提）。
+   --color-* は MVP フレームワーク由来のレガシーエイリアス。
+   参照箇所（room_list / terms / search_form / live_ana 等）の移行完了後に削除予定。
+   新規コードはエイリアスではなく --c-* を直接使うこと。 */
 :root {
   --active-brightness: 0.85;
   --border-radius: 5px;
   --box-shadow: 2px 2px 10px;
-  --color-accent: #118bee15;
-  --color-bg: #fff;
-  --color-bg-secondary: #e9e9e9;
-  --color-link: #118bee;
-  --color-secondary: #920de9;
-  --color-secondary-accent: #920de90b;
-  --color-shadow: #f4f4f4;
-  --color-table: #118bee;
-  --color-text: #000;
-  --color-text-secondary: #999;
-  --color-scrollbar: #cacae8;
-  --font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
-    'Helvetica Neue', sans-serif;
+  --color-accent: var(--c-legacy-accent);
+  --color-bg: var(--c-bg);
+  --color-bg-secondary: var(--c-border-3);
+  --color-link: var(--c-text-1);
+  --color-secondary: var(--c-legacy-secondary);
+  --color-secondary-accent: var(--c-legacy-secondary-accent);
+  --color-shadow: var(--c-shadow-2);
+  --color-table: var(--c-legacy-table);
+  --color-text: var(--c-text-1);
+  --color-text-secondary: var(--c-text-3);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+
   --hover-brightness: 1.2;
   --justify-important: center;
   --justify-normal: left;
   --line-height: 1.5;
   --width-card: 285px;
   --width-card-medium: 460px;
-  --width-card-wide: 800px;
+  --width-card-wide: 812px;
   --width-content: 1080px;
+  --hover: var(--c-bg-sub);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[color-mode='user'] {
-    --color-accent: #0097fc4f;
-    --color-bg: #333;
-    --color-bg-secondary: #555;
-    --color-link: #0097fc;
-    --color-secondary: #e20de9;
-    --color-secondary-accent: #e20de94f;
-    --color-shadow: #bbbbbb20;
-    --color-table: #0097fc;
-    --color-text: #f7f7f7;
-    --color-text-secondary: #aaa;
-  }
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+* {
+  -webkit-tap-highlight-color: var(--c-tap-highlight);
 }
 
 /* Layout */
@@ -70,16 +59,26 @@ body {
   padding: 0;
 }
 
-footer,
-header,
-main {
+/* ページ骨格。
+   【サイト方針】素の <header> への直当ては廃止。コンポーネント内の <header> にまで漏れて、
+   各所で all: unset やインライン style による打ち消し（whack-a-mole）が必要になっていたため。
+   <footer> は body 直下（admin・エラーページが依存）に限定し、リスト項目内の <footer> 等には当てない。 */
+main,
+body > footer {
   margin: 0 auto;
   max-width: var(--width-content);
   padding: 3rem 1rem;
 }
 
+/* main の骨格余白(3rem 1rem)が不要なページ用の共有オプトアウト。
+   ページごとの inline style での打ち消しをこれ以上増やさないため、
+   新規ページは <main class="no-pad"> を使い、余白はページ側 CSS で管理する
+   （例: blog.css の main.blog-main）。 */
+main.no-pad {
+  padding: 0;
+}
+
 hr {
-  background-color: var(--color-bg-secondary);
   border: none;
   height: 1px;
   margin: 4rem 0;
@@ -118,33 +117,9 @@ section aside:hover {
   display: none;
 }
 
-/* Headers */
-article header,
-div header,
-main header {
-  padding-top: 0;
-}
-
-header {
-  text-align: var(--justify-important);
-}
-
-header a b,
-header a em,
-header a i,
-header a strong {
-  margin-left: 0.5rem;
-  margin-right: 0.5rem;
-}
-
-header nav img {
-  margin: 1rem 0;
-}
-
-section header {
-  padding-top: 0;
-  width: 100%;
-}
+/* Headers
+   素の <header> 向けの装飾（padding / text-align: center 等）は撤去済み。
+   中央寄せが必要なページ（エラーページ等）は各自で指定する。 */
 
 /* Nav */
 nav {
@@ -230,7 +205,6 @@ h4,
 h5,
 h6 {
   line-height: var(--line-height);
-  text-wrap: balance;
 }
 
 mark {
@@ -246,6 +220,10 @@ p {
   margin: 0.75rem 0;
   padding: 0;
   width: 100%;
+}
+
+b {
+  color: var(--c-text-2);
 }
 
 pre {
@@ -281,17 +259,7 @@ sup {
 /* Links */
 a {
   color: var(--color-link);
-  display: inline-block;
-  font-weight: bold;
   text-decoration: underline;
-}
-
-a:hover {
-  filter: brightness(var(--hover-brightness));
-}
-
-a:active {
-  filter: brightness(var(--active-brightness));
 }
 
 a b,
@@ -300,13 +268,13 @@ a i,
 a strong,
 button,
 input[type='submit'] {
-  border-radius: var(--border-radius);
+  border-radius: 5px;
   display: inline-block;
   font-size: medium;
   font-weight: bold;
   line-height: var(--line-height);
   margin: 0.5rem 0;
-  padding: 1rem 2rem;
+  padding: 10px 18px;
 }
 
 button,
@@ -317,12 +285,6 @@ input[type='submit'] {
 button:hover,
 input[type='submit']:hover {
   cursor: pointer;
-  filter: brightness(var(--hover-brightness));
-}
-
-button:active,
-input[type='submit']:active {
-  filter: brightness(var(--active-brightness));
 }
 
 a b,
@@ -341,10 +303,7 @@ a i {
   color: var(--color-link);
   display: inline-block;
   padding: 1rem 2rem;
-}
-
-article aside a {
-  color: var(--color-secondary);
+  font-style: normal;
 }
 
 /* Images */
@@ -367,7 +326,7 @@ input:disabled {
   background: var(--color-bg-secondary);
   border-color: var(--color-bg-secondary);
   color: var(--color-text-secondary);
-  cursor: not-allowed;
+  cursor: default;
 }
 
 button[disabled]:hover,
@@ -380,8 +339,6 @@ form {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow) var(--color-shadow);
   display: block;
-  max-width: var(--width-card-wide);
-  min-width: var(--width-card);
   padding: 1.5rem;
   text-align: var(--justify-normal);
 }
@@ -427,7 +384,7 @@ textarea {
 }
 
 input[type='text'],
-input[type='password'] textarea {
+textarea {
   width: calc(100% - 1.6rem);
 }
 
@@ -482,11 +439,11 @@ table thead {
   padding: 0;
 }
 
-table thead tr:first-child th:first-child {
+table thead th:first-child {
   border-top-left-radius: var(--border-radius);
 }
 
-table thead tr:first-child th:last-child {
+table thead th:last-child {
   border-top-right-radius: var(--border-radius);
 }
 
@@ -518,22 +475,17 @@ blockquote footer {
   padding: 1.5rem 0;
 }
 
-/* Scrollbars */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-scrollbar) transparent;
-}
+/* .unset ユーティリティは unset.css に一元化（mvpmin.css との二重管理をやめた）。
+   本ファイルを <link> するページは直後に style/unset.css も読み込むこと。 */
 
-*::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: var(--color-scrollbar);
-  border-radius: 10px;
+.list-aside-desc .css-162gv95 {
+  user-select: none;
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  fill: currentcolor;
+  flex-shrink: 0;
+  color: var(--c-up);
+  font-size: 11px;
+  margin: -1px -4px;
 }

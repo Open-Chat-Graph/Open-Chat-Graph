@@ -43,7 +43,7 @@ class AllRoomStatsPageController
 
         $memberDistribution = $repository->getMemberDistribution();
 
-        $_css = ['site_header', 'site_footer', 'terms'];
+        $_css = ['components/site_header', 'components/site_footer', 'pages/terms'];
         $_meta = meta()->setTitle(self::Title);
         $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
         $_breadcrumbsSchema = $breadcrumbsSchema->generateSchema('Labs', 'labs', self::Title);

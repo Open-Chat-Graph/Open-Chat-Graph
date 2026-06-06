@@ -1,23 +1,24 @@
 import { ChartArea } from 'chart.js'
+import { getColors, isDarkMode } from '../../../util/theme'
 
 let width = 0,
   height = 0,
+  dark: boolean | null = null,
   gradient: CanvasGradient | null = null
 
 export default function getLineGradient(ctx: CanvasRenderingContext2D, chartArea: ChartArea) {
   const chartWidth = chartArea.right - chartArea.left
   const chartHeight = chartArea.bottom - chartArea.top
-  if (!gradient || width !== chartWidth || height !== chartHeight) {
-    // Create the gradient because this is either the first render
-    // or the size of the chart has changed
+  const isDark = isDarkMode()
+  if (!gradient || width !== chartWidth || height !== chartHeight || dark !== isDark) {
+    // 初回・リサイズ・テーマ切替時のみグラデーションを作り直す
     width = chartWidth
     height = chartHeight
+    dark = isDark
     gradient = ctx.createLinearGradient(0, chartArea.height / 2, chartArea.width, 0)
-    gradient.addColorStop(1, 'rgba(0, 183, 96, 1.0)')
-    gradient.addColorStop(0.8, 'rgba(17, 216, 113, 1.0)')
-    gradient.addColorStop(0.5, 'rgba(17, 213, 147, 1.0)')
-    gradient.addColorStop(0.3, 'rgba(18, 207, 205, 1.0)')
-    gradient.addColorStop(0, 'rgba(22, 194, 193, 1.0)')
+    for (const stop of getColors().lineGradient.stops) {
+      gradient.addColorStop(stop.offset, stop.color)
+    }
   }
 
   return gradient

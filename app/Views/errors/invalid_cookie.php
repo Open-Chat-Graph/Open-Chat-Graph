@@ -3,7 +3,7 @@ $_meta = meta()->setTitle("400 Bad Request")
     ->setDescription('Cookie を有効にしてください。')
     ->setOgpDescription('Cookie を有効にしてください。');
 
-$_css = ['room_list', 'site_header', 'site_footer'];
+$_css = ['components/room_list', 'components/site_header', 'components/site_footer'];
 ?>
 
 <!DOCTYPE html>
