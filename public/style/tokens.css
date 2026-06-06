@@ -416,7 +416,7 @@ body {
   /* 一覧ページ系 */
   --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
   --c-text-desc: #c9cdd1;            /* 説明文: タイトル白より一段沈めた本文格（明るすぎ回避） */
-  --c-text-stat: #e7e9ea;
+  --c-text-stat: #c9cdd1;            /* メンバー数も本文格に統一 */
   --c-text-soft: #7d8287;
   --c-text-body: #c9cdd1;
   --c-text-mid-2: #d3d6d8 /* slate-300 */;
@@ -663,7 +663,7 @@ body {
   /* 一覧ページ系 */
   --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
   --c-text-desc: #c9cdd1;            /* 説明文: タイトル白より一段沈めた本文格（明るすぎ回避） */
-  --c-text-stat: #e7e9ea;
+  --c-text-stat: #c9cdd1;            /* メンバー数も本文格に統一 */
   --c-text-soft: #7d8287;
   --c-text-body: #c9cdd1;
   --c-text-mid-2: #d3d6d8 /* slate-300 */;

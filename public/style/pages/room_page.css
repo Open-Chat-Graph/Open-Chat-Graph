@@ -56,7 +56,7 @@ html {
   padding: 8px 10px;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--c-text-1);
+  color: var(--c-text-body);
   background-color: var(--c-bg-sub);
   border-left: 3px solid var(--c-brand-2);
   border-radius: 0 6px 6px 0;
