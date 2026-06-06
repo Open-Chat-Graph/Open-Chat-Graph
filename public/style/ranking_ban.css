@@ -756,3 +756,51 @@ body > .google-auto-placed {
 .rb-clear-duration:hover {
   background-color: #f3f4f6;
 }
+
+/* ---------- 常時表示の絞り込みチップ行（掲載状況・変更・順位落ちの除外） ---------- */
+
+.rb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 10px;
+}
+
+.rb-filter-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: bold;
+  color: #5b6066;
+  min-width: 8.5em;
+}
+
+.rb-filters {
+  gap: 6px;
+}
+
+.rb-filters .rb-preset {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+/* 詳細設定内の説明リスト */
+.rb-legend {
+  all: unset;
+  display: block;
+  list-style: none;
+  font-size: 12px;
+  color: #5b6066;
+  line-height: 1.7;
+}
+
+.rb-legend li {
+  margin-top: 6px;
+}
+
+@media (max-width: 480px) {
+  .rb-filter-label {
+    min-width: 100%;
+  }
+}
