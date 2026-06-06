@@ -305,7 +305,7 @@ class AlphaGaClient
         $acc = [];
         foreach (($res['rows'] ?? []) as $row) {
             $path = (string)($row['dimensionValues'][0]['value'] ?? '');
-            $norm = $this->normalizePageScopePath($path);
+            $norm = AlphaPagePathNormalizer::normalize($path);
             if ($norm === null) {
                 continue;
             }
@@ -354,7 +354,7 @@ class AlphaGaClient
 
             foreach ($rows as $row) {
                 $page = (string)($row['keys'][0] ?? '');
-                $norm = $this->normalizePageScopePath($page);
+                $norm = AlphaPagePathNormalizer::normalize($page);
                 if ($norm === null) {
                     continue;
                 }
@@ -720,44 +720,6 @@ class AlphaGaClient
             $id = (int)$m[1];
             return $id > 0 ? $id : null;
         }
-        return null;
-    }
-
-    /**
-     * 非部屋ページ path をトップ '/' / おすすめ '/recommend/{tag}' に正規化する。
-     * クエリ文字列やトレイリングスラッシュ・ドメインを除去し、対象外は null。
-     *
-     * @return array{path:string, label:string}|null
-     */
-    private function normalizePageScopePath(string $raw): ?array
-    {
-        // 完全URLなら path 部だけ取り出す
-        $path = $raw;
-        if (preg_match('#^https?://[^/]+(/.*)$#', $raw, $m)) {
-            $path = $m[1];
-        } elseif (preg_match('#^https?://[^/]+$#', $raw)) {
-            $path = '/';
-        }
-        // クエリ/フラグメント除去
-        $path = preg_replace('/[?#].*$/', '', $path) ?? $path;
-
-        // tw/th ロケール配下は ja 専用αの対象外
-        if (preg_match('#^/(?:tw|th)(?:/|$)#', $path)) {
-            return null;
-        }
-
-        // トップ
-        if ($path === '' || $path === '/' || $path === '/index.html') {
-            return ['path' => '/', 'label' => 'トップ'];
-        }
-
-        // おすすめ /recommend/{tag}（末尾スラッシュ許容）
-        if (preg_match('#^/recommend/([^/]+)/?$#', $path, $mm)) {
-            $tag = rawurldecode($mm[1]);
-            $tag = mb_strlen($tag) > 150 ? mb_substr($tag, 0, 150) : $tag;
-            return ['path' => '/recommend/' . $tag, 'label' => $tag];
-        }
-
         return null;
     }
 

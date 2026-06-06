@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ApiRepositories\Alpha;
 
 use App\Models\Repositories\DB;
+use App\Services\Alpha\AlphaPagePathNormalizer;
 
 /**
  * Alpha Labs「アクセス数ランキング」「検索流入(SEO)ランキング」専用リポジトリ。
@@ -673,11 +674,11 @@ class AlphaAccessRankingRepository
             $pv = (int)$r['pageviews'];
             $roomPvTotal[$ocId] = ($roomPvTotal[$ocId] ?? 0) + $pv;
 
-            $norm = self::normalizeReferrerToPagePath((string)($r['referrer'] ?? ''));
-            if ($norm === null) {
+            $path = AlphaPagePathNormalizer::normalize((string)($r['referrer'] ?? ''))['path'] ?? null;
+            if ($path === null) {
                 continue;
             }
-            $pathRoomPv[$norm][$ocId] = ($pathRoomPv[$norm][$ocId] ?? 0) + $pv;
+            $pathRoomPv[$path][$ocId] = ($pathRoomPv[$path][$ocId] ?? 0) + $pv;
         }
 
         if ($pathRoomPv === []) {
@@ -744,53 +745,6 @@ class AlphaAccessRankingRepository
                 ]
             );
         }
-    }
-
-    /**
-     * referrer URL / path を非部屋ページの page_path に正規化する。
-     * '/' または '/recommend/{tag}' のみを返し、それ以外（部屋ページ・外部・直接など）は null。
-     * AlphaGaClient::normalizePageScopePath と同じ正規化ロジック。
-     */
-    private static function normalizeReferrerToPagePath(string $raw): ?string
-    {
-        if ($raw === '' || $raw === '(direct)') {
-            return null;
-        }
-
-        // 完全URLならpath部だけ取り出す
-        $path = $raw;
-        if (preg_match('#^https?://[^/]+(/.*)$#', $raw, $m)) {
-            $path = $m[1];
-        } elseif (preg_match('#^https?://[^/]+$#', $raw)) {
-            $path = '/';
-        }
-
-        // クエリ/フラグメント除去
-        $path = preg_replace('/[?#].*$/', '', $path) ?? $path;
-
-        // tw/th ロケール配下は対象外
-        if (preg_match('#^/(?:tw|th)(?:/|$)#', $path)) {
-            return null;
-        }
-
-        // /oc/{id} や /openchat/{id} の部屋ページは対象外
-        if (preg_match('#/(?:oc|openchat)/\d+#', $path)) {
-            return null;
-        }
-
-        // トップ
-        if ($path === '' || $path === '/' || $path === '/index.html') {
-            return '/';
-        }
-
-        // おすすめ /recommend/{tag}
-        if (preg_match('#^/recommend/([^/]+)/?$#', $path, $mm)) {
-            $tag = rawurldecode($mm[1]);
-            $tag = mb_strlen($tag) > 150 ? mb_substr($tag, 0, 150) : $tag;
-            return '/recommend/' . $tag;
-        }
-
-        return null;
     }
 
     /**
