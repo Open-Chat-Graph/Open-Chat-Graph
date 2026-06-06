@@ -6,6 +6,7 @@ import getLineGradientBar from '../Callback/getLineGradientBar'
 import getPointRadiusCallback from '../Callback/getPointRadiusCallback'
 import getDataLabelLineCallback from '../Callback/getDataLabelLineCallback'
 import { t } from '../../../util/translation'
+import { getColors } from '../../../util/theme'
 
 export const lineEasing = 'easeOutQuart'
 export const barEasing = 'easeOutCirc'
@@ -19,17 +20,13 @@ export default function buildData(ocChart: OpenChatChart) {
         type: 'candlestick' as any,
         label: t('メンバー数'),
         data: ocChart.ohlcData,
-        color: { up: '#00c853', down: '#ff1744', unchanged: '#757575' },
-        backgroundColors: {
-          up: 'rgba(0, 200, 83, 0.5)',
-          down: 'rgba(255, 23, 68, 0.5)',
-          unchanged: 'rgba(117, 117, 117, 0.5)',
+        color: {
+          up: getColors().candle.up,
+          down: getColors().candle.down,
+          unchanged: getColors().candle.unchanged,
         },
-        borderColors: {
-          up: 'rgba(0, 200, 83, 0.7)',
-          down: 'rgba(255, 23, 68, 0.7)',
-          unchanged: 'rgba(117, 117, 117, 0.7)',
-        },
+        backgroundColors: getColors().candle.bg,
+        borderColors: getColors().candle.borders,
         datalabels: { display: false },
         animation: false as const,
         yAxisID: 'rainChart',
@@ -42,21 +39,9 @@ export default function buildData(ocChart: OpenChatChart) {
         type: 'candlestick' as any,
         label: `${ocChart.option.label2} | ${ocChart.option.category}`,
         data: ocChart.ohlcRankingData,
-        color: {
-          up: 'rgba(41, 121, 255, 0.3)',
-          down: 'rgba(255, 109, 0, 0.3)',
-          unchanged: 'rgba(158, 158, 158, 0.3)',
-        },
-        backgroundColors: {
-          up: 'rgba(41, 121, 255, 0.08)',
-          down: 'rgba(255, 109, 0, 0.08)',
-          unchanged: 'rgba(158, 158, 158, 0.08)',
-        },
-        borderColors: {
-          up: 'rgba(41, 121, 255, 0.3)',
-          down: 'rgba(255, 109, 0, 0.3)',
-          unchanged: 'rgba(158, 158, 158, 0.3)',
-        },
+        color: getColors().candleRank.color,
+        backgroundColors: getColors().candleRank.bg,
+        borderColors: getColors().candleRank.borders,
         borderWidth: 1,
         datalabels: { display: false },
         animation: false as const,
@@ -98,7 +83,7 @@ export default function buildData(ocChart: OpenChatChart) {
         },
         borderWidth: 3,
         spanGaps: true,
-        pointBackgroundColor: '#fff',
+        pointBackgroundColor: getColors().pointBackground,
         /* @ts-expect-error lineTension not in type definition */
         lineTension: 0.4,
         datalabels: {

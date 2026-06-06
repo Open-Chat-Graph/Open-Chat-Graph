@@ -16,6 +16,8 @@ import {
 } from './state/chartState'
 import { fetchChart, renderChartWithoutRanking } from './util/fetchRenderer'
 import { Box, CircularProgress } from '@mui/material'
+import { OcThemeProvider } from '../themeMui'
+import { onThemeChange } from './util/theme'
 import { t } from './util/translation'
 
 const init = async () => {
@@ -58,6 +60,8 @@ function AppInner() {
     chart.init(canvas.current!)
     init()
     document.getElementById('graph-box')!.style.opacity = '1'
+    // ダークモード切替時: 現在のデータのままチャートを再構築（canvas は CSS 変数が効かないため）
+    return onThemeChange(() => chart.applyTheme())
   }, [])
 
   return (
@@ -84,7 +88,9 @@ function AppInner() {
 export function App() {
   return (
     <Provider store={graphStore}>
-      <AppInner />
+      <OcThemeProvider>
+        <AppInner />
+      </OcThemeProvider>
     </Provider>
   )
 }

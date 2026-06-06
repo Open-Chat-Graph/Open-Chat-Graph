@@ -19,6 +19,7 @@ import {
   setStoregeFixedLimitSetting,
 } from '../util/urlParam'
 import { t } from '../util/translation'
+import { useIsDark } from '../../themeMui'
 
 const menuListToggleChart: [string, ToggleChart][] = [
   [t('順位表示なし'), 'none'],
@@ -163,6 +164,8 @@ export default function SettingButton() {
     handleClose()
   }
 
+  const isDark = useIsDark()
+
   return (
     <div>
       <IconButton
@@ -172,6 +175,17 @@ export default function SettingButton() {
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
         aria-label={t('設定')}
+        sx={
+          /* 旧試験実装の isDark 調整値（さらに明るい slate-100 / hover slate-600） */
+          isDark
+            ? {
+                color: '#f1f5f9',
+                '&:hover': {
+                  backgroundColor: '#475569',
+                },
+              }
+            : undefined
+        }
       >
         <SettingsIcon />
       </IconButton>
@@ -182,6 +196,23 @@ export default function SettingButton() {
         onClose={handleClose}
         MenuListProps={{
           'aria-labelledby': 'basic-button',
+        }}
+        slotProps={{
+          paper: {
+            sx: isDark
+              ? {
+                  /* 旧試験実装の isDark 調整値（明るい slate-700 紙面 + slate-100 文字） */
+                  backgroundColor: '#334155',
+                  color: '#f1f5f9',
+                  '& .MuiMenuItem-root:hover': {
+                    backgroundColor: '#475569',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: '#f1f5f9',
+                  },
+                }
+              : undefined,
+          },
         }}
       >
         <DenseMenu
