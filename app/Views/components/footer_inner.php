@@ -14,6 +14,7 @@
                 <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></il>
                 <? if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></il>
+                    <li><a class="unset" href="<?php echo url('blog') ?>">ブログ</a></il>
                 <? endif ?>
             </ul>
         </section>
