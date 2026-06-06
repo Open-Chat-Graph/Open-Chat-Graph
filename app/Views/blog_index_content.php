@@ -14,7 +14,7 @@
             <p class="blog-lead">LINEオープンチャットの<b>運営のコツ</b>・<b>検索やランキングの仕組み</b>・<b>トレンド</b>を、オプチャグラフ独自のデータをもとに解説します。</p>
 
             <?php if (empty($articles)): ?>
-                <p style="color:#8a9097;">記事は準備中です。</p>
+                <p style="color:var(--c-text-steel);">記事は準備中です。</p>
             <?php else: ?>
                 <ul class="blog-cards">
                     <?php foreach ($articles as $a): ?>

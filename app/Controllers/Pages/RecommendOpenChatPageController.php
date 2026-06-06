@@ -109,7 +109,7 @@ class RecommendOpenChatPageController
             ->setDescription($pageDesc)
             ->setOgpDescription($pageDesc);
 
-        $_css = ['room_list', 'site_header', 'site_footer', 'recommend_page'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer', 'components/theme_discovery', 'pages/recommend_page'];
 
         $_breadcrumbsShema = $this->breadcrumbsShema->generateSchema(
             $extractTag,

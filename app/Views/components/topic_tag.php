@@ -40,7 +40,7 @@ function greenTag($word)
                     <span class="openchat-list-title"><?php echo t('いま人数急増中のテーマ') ?></span>
                     <span aria-hidden="true" style="font-size: 9px; user-select: none; margin-bottom: px;margin-left: -3px;">🚀</span>
                 </h2>
-                <span style="font-weight: normal; color:#aaa; font-size:13px; margin: 0"><?php echo $topPageDto->hourlyUpdatedAt->format('G:i') ?></span>
+                <span style="font-weight: normal; color:var(--c-text-4); font-size:13px; margin: 0"><?php echo $topPageDto->hourlyUpdatedAt->format('G:i') ?></span>
             </div>
         </header>
 

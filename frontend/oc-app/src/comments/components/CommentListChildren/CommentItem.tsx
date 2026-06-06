@@ -51,7 +51,7 @@ export default memo(function CommentItem(props: CommentItemApi & LikeBtnApi & { 
               wordBreak: 'break-all',
               whiteSpace: 'pre-line',
               fontSize: '15px',
-              color: text.length ? undefined : '#aaa',
+              color: text.length ? undefined : 'var(--c-text-4)',
             }}
           >
             {text.length ? linkify(text.replace(/(\r?\n|\r){3,}/g, '\n\n')) : '削除されたコメント😇'}

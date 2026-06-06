@@ -41,14 +41,14 @@
 }
 
 .MuiToggleButton-root.MuiToggleButton-standard {
-  color: #b7b7b7;
-  border: 1px solid #efefef;
+  color: var(--c-text-5);
+  border: 1px solid var(--c-border);
 }
 
 .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
 .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
-  background-color: #f5f5f5;
-  border: 1px solid #efefef;
+  background-color: var(--c-surface);
+  border: 1px solid var(--c-border);
 }
 
 .MuiStack-root .css-14edfjq {
@@ -57,8 +57,8 @@
 
 .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard,
 .MuiStack-root .css-14edfjq .MuiToggleButton-root.Mui-selected.MuiToggleButton-standard:hover {
-  color: #b7b7b7;
-  background-color: #fff;
+  color: var(--c-text-5);
+  background-color: var(--c-bg);
 }
 
 .fade-in {
@@ -85,13 +85,13 @@
   }
 
   .MuiChip-root.openchat-item-header-chip.graph:hover {
-    color: #111;
-    background-color: #f5f5f5;
+    color: var(--c-text-1);
+    background-color: var(--c-surface);
   }
 
   .MuiChip-root.openchat-item-header-chip.graph.selected:hover {
-    color: #fff;
-    background-color: #111;
+    color: var(--c-text-inverse);
+    background-color: var(--c-text-1);
   }
 }
 

@@ -25,7 +25,7 @@ if ($recommend->type === RecommendListType::Category) {
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
             <h2 class="unset">
-                <span style="line-height: 1.5; font-size: 16px; color: #111; font-weight: bold;"><?php echo $title ?></span>
+                <span style="line-height: 1.5; font-size: 16px; color: var(--c-text-1); font-weight: bold;"><?php echo $title ?></span>
             </h2>
         </div>
     </header>

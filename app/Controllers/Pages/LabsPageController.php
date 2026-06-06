@@ -16,7 +16,7 @@ class LabsPageController
         PageBreadcrumbsListSchema $breadcrumbsShema,
         StaticDataFile $staticDataGeneration
     ) {
-        $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
+        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms'];
         $_meta = meta()->setTitle(self::Title);
         $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(self::Title);
@@ -38,7 +38,7 @@ class LabsPageController
         $ogpDesc = "トーク履歴から、ライブトークの利用時間をグラフで表示することができます。";
         $_meta = meta()->setTitle($name)->setDescription($desc)->setOgpDescription($ogpDesc);
 
-        $_css = ['room_page', 'site_header', 'site_footer', 'live_ana'];
+        $_css = ['pages/room_page', 'components/site_header', 'components/site_footer', 'pages/live_ana'];
 
         return view('live_content', compact('_meta', '_css'));
     }

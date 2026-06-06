@@ -3,7 +3,7 @@
 function memberCount(int $count)
 {
 ?>
-    <span style="color:<?php echo $count === 0 ? '#aaa' : ($count > 0 ? '#4d73ff' : '#ff5d6d') ?>">
+    <span style="color:<?php echo $count === 0 ? 'var(--c-text-4)' : ($count > 0 ? 'var(--c-accent-blue)' : 'var(--c-down)') ?>">
         <?php if ($count === 0) : ?>
             ±0
         <?php else : ?>
@@ -33,8 +33,8 @@ function memberCount(int $count)
                 設定済: <?php echo count($adsTagMap) ?>件
             </p>
         <?php else : ?>
-            <p style="font-size: 13px; color: #777">各タグを、近そうなカテゴリに分類して表示しています。タグ内のルームは様々なカテゴリに属しています。</p>
-            <p style="font-size: 13px; color: #777">タグを探すときは、ブラウザの機能でページ内のテキストを検索してください。</p>
+            <p style="font-size: 13px; color: var(--c-text-3)">各タグを、近そうなカテゴリに分類して表示しています。タグ内のルームは様々なカテゴリに属しています。</p>
+            <p style="font-size: 13px; color: var(--c-text-3)">タグを探すときは、ブラウザの機能でページ内のテキストを検索してください。</p>
             <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
                 <details class="icon-desc">
                     <summary style="font-size: 14px;">タグ内の人数集計について</summary>
@@ -59,14 +59,14 @@ function memberCount(int $count)
                         <h2 class="unset">
                             <span class="openchat-list-title">カテゴリー</span>
                         </h2>
-                        <span style="font-weight: normal; color:#aaa; font-size:13px; margin: 0">各カテゴリまで移動</span>
+                        <span style="font-weight: normal; color:var(--c-text-4); font-size:13px; margin: 0">各カテゴリまで移動</span>
                     </div>
                 </header>
                 <div style="margin: 1rem; margin-bottom: 0; margin-top: .5rem;">
                     <?php foreach ($categories as $key => $category) : ?>
                         <a style="font-size:15px; text-wrap:nowrap; margin-bottom:20px; margin-right: 1px; display:inline-flex; gap:2px; text-decoration:none;" href="#<?php echo $key ?>">
-                            <span style="color:#111; text-decoration:underline; font-weight: bold;"><?php echo $key ? $category : 'その他' ?></span>
-                            <span style="color:#777; font-size:10px; margin: 0; line-height: 1.5; font-weight: bold;"><?php echo count($tagsGroup[$key]) ?>タグ</span>
+                            <span style="color:var(--c-text-1); text-decoration:underline; font-weight: bold;"><?php echo $key ? $category : 'その他' ?></span>
+                            <span style="color:var(--c-text-3); font-size:10px; margin: 0; line-height: 1.5; font-weight: bold;"><?php echo count($tagsGroup[$key]) ?>タグ</span>
                         </a>
                     <?php endforeach ?>
                 </div>
@@ -84,7 +84,7 @@ function memberCount(int $count)
                             <h2 class="unset">
                                 <span class="openchat-list-title"><?php echo $key ? $category : 'その他' ?></span>
                             </h2>
-                            <span style="font-weight: normal; color:#aaa; font-size:13px; margin: 0"><?php echo count($tagsGroup[$key]) ?>個のタグ</span>
+                            <span style="font-weight: normal; color:var(--c-text-4); font-size:13px; margin: 0"><?php echo count($tagsGroup[$key]) ?>個のタグ</span>
                         </div>
                     </header>
                     <ul class="tag-list open">
@@ -97,9 +97,9 @@ function memberCount(int $count)
                                         <small style="font-weight: normal; display:block; line-height: 1.5;"><?php echo number_format($tag['record_count']) ?>件・平均 <?php echo number_format(round($tag['total_member'] / $tag['record_count'])) ?>人</small>
                                     </div>
                                     <div>
-                                        <small style="color:#aaa; display:block; margin-left:4px;line-height: 1.3;">1H</small>
-                                        <small style="color:#aaa; display:block; margin-left:4px;line-height: 1.3;">24H</small>
-                                        <small style="color:#aaa; display:block; margin-left:4px;line-height: 1.3;">1W</small>
+                                        <small style="color:var(--c-text-4); display:block; margin-left:4px;line-height: 1.3;">1H</small>
+                                        <small style="color:var(--c-text-4); display:block; margin-left:4px;line-height: 1.3;">24H</small>
+                                        <small style="color:var(--c-text-4); display:block; margin-left:4px;line-height: 1.3;">1W</small>
                                     </div>
                                     <div>
                                         <small style="display:block; margin-left:4px;line-height: 1.3;"><?php memberCount($tag['hour'] ?? 0) ?></small>
@@ -130,7 +130,7 @@ function memberCount(int $count)
                         <?php endforeach ?>
                     </ul>
                 </div>
-                <a style="font-size:15px; text-wrap:nowrap; margin-left:auto; display:inline-flex; color: #111" href="#top">ページの先頭に戻る</a>
+                <a style="font-size:15px; text-wrap:nowrap; margin-left:auto; display:inline-flex; color: var(--c-text-1)" href="#top">ページの先頭に戻る</a>
             </article>
         <?php endforeach ?>
     </main>

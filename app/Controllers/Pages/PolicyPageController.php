@@ -11,7 +11,7 @@ class PolicyPageController
 {
     function index(PageBreadcrumbsListSchema $breadcrumbsShema, ?bool $isAdmin = null)
     {
-        $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
+        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms'];
         $_meta = meta()->setTitle(t('オプチャグラフとは？'));
         $_meta->image_url = '';
         $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
@@ -25,7 +25,7 @@ class PolicyPageController
 
     function privacy(PageBreadcrumbsListSchema $breadcrumbsShema)
     {
-        $_css = ['site_header', 'site_footer', 'room_list', 'terms'];
+        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms'];
         $_meta = meta()->setTitle(t('プライバシーポリシー'));
         $_meta->image_url = '';
         $desc = t('オプチャグラフはユーザーがオープンチャットを見つけて、成長傾向をグラフやランキングで比較できるWEBサイトです。');
@@ -42,7 +42,7 @@ class PolicyPageController
 
     function ads()
     {
-        $_css = ['site_header', 'site_footer', 'room_list', 'terms', 'ads_element'];
+        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms', 'components/ads_element'];
         $_meta = meta()->setTitle('広告について');
         $_meta->image_url = '';
         $desc = 'この広告は行動ターゲティング広告ではないため、クッキーの取得を行いません。サイト内のコンテンツに関連するアフィリエイトプログラム広告を自動的に表示しています。';

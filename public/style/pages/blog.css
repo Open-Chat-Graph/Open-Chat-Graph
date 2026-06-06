@@ -13,13 +13,14 @@ main.blog-main {
 }
 
 .blog {
-  --g: #06c755;
-  --g-deep: #05a648;
-  --g-soft: #f1faf4;
-  --ink: #111;
-  --text: #3d4043;
-  --muted: #8a9097;
-  --line: #ededf0;
+  /* ローカルエイリアス（.blog スコープ）。実値は tokens.css の共通トークンと同一 */
+  --g: var(--c-brand);
+  --g-deep: var(--c-btn-blog-text);
+  --g-soft: var(--c-btn-blog-bg);
+  --ink: var(--c-text-1);
+  --text: var(--c-text-charcoal);
+  --muted: var(--c-text-steel);
+  --line: var(--c-border-muted);
   max-width: 720px;
   margin: 0 auto;
   padding: 4px 1.15rem 2.5rem;
@@ -51,8 +52,8 @@ main.blog-main {
   -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
 }
-.blog-crumb a:hover { background: #e2f6ea; }
-.blog-crumb .sep { color: #c5c9ce; font-weight: 400; }
+.blog-crumb a:hover { background: var(--c-green-pale); }
+.blog-crumb .sep { color: var(--c-text-silver); font-weight: 400; }
 
 /* ---- タイトル・メタ ---- */
 .blog-title {
@@ -80,7 +81,7 @@ main.blog-main {
 }
 .blog-meta .author::before {
   content: ""; width: 15px; height: 15px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--g), #11d871); flex: none;
+  background: linear-gradient(135deg, var(--g), var(--c-brand-2)); flex: none;
 }
 .blog-meta .cat {
   border: 1px solid var(--g); color: var(--g-deep);
@@ -113,7 +114,7 @@ main.blog-main {
 .blog-body a {
   color: var(--g-deep); font-weight: 700;
   text-decoration: underline; text-underline-offset: 0.16em;
-  text-decoration-thickness: 1.5px; text-decoration-color: #a8e6c2;
+  text-decoration-thickness: 1.5px; text-decoration-color: var(--c-green-underline);
   transition: text-decoration-color .15s;
 }
 .blog-body a:hover { text-decoration-color: var(--g); }
@@ -129,7 +130,7 @@ main.blog-main {
   box-sizing: border-box;
   width: 20px; min-width: 20px; height: 20px; padding: 0; /* mvp.css の input{padding:.4rem .8rem} を打ち消し楕円化を防ぐ */
   margin: 0 .55em -.28em 0;
-  border-radius: 50%; background: var(--g-soft); border: 1.5px solid #bfe7cd;
+  border-radius: 50%; background: var(--g-soft); border: 1.5px solid var(--c-blog-icon-border);
   position: relative; flex: none;
 }
 .blog-body input[type="checkbox"]::after {
@@ -141,8 +142,8 @@ main.blog-main {
 /* 引用＝データのヒント等のコールアウト */
 .blog-body blockquote {
   margin: 1.4rem 0; padding: .95rem 1.15rem;
-  background: var(--g-soft); border-left: 4px solid var(--g);
-  border-radius: 0 10px 10px 0; color: #235f3e;
+  background: var(--g-soft); border-left: 4px solid var(--c-brand-line);
+  border-radius: 0 10px 10px 0; color: var(--c-green-text-deep);
   font-size: 14.5px; line-height: 1.85;
 }
 .blog-body blockquote p { margin: 0; }
@@ -151,16 +152,16 @@ main.blog-main {
 /* ---- 結論ボックス（Smart Brevity の要点先出し / :::point） ---- */
 .blog-body .blog-point {
   margin: .4rem 0 2rem; padding: 1.05rem 1.25rem 1.1rem;
-  border: 1.5px solid var(--g); border-radius: 14px;
+  border: 1.5px solid var(--c-brand-line); border-radius: 14px;
   background:
-    radial-gradient(130% 120% at 0% 0%, #eafaf1 0%, var(--g-soft) 60%);
-  box-shadow: 0 2px 12px rgba(6, 199, 85, .09);
+    radial-gradient(130% 120% at 0% 0%, var(--c-green-wash) 0%, var(--g-soft) 60%);
+  box-shadow: 0 2px 12px var(--c-brand-shadow-soft);
 }
 .blog-body .blog-point__label {
   display: inline-flex; align-items: center; gap: 5px;
   margin: 0 0 .7rem; padding: 3px 12px 3px 10px;
   font-size: 12px; font-weight: 800; letter-spacing: .03em;
-  color: #fff; background: var(--g); border-radius: 999px;
+  color: var(--c-pill-brand-text); background: var(--c-pill-brand-bg); border-radius: 999px;
 }
 .blog-body .blog-point__label::before { content: "🎯"; font-size: 11.5px; }
 .blog-body .blog-point ul { margin: 0; padding-left: 1.3em; }
@@ -177,9 +178,9 @@ main.blog-main {
   margin: 2.6rem 0 1.4rem; padding: 1.25rem 1.3rem 1.35rem;
   border: 1px solid var(--line); border-radius: 16px;
   background:
-    radial-gradient(120% 100% at 0% 0%, var(--g-soft) 0%, rgba(255,255,255,0) 55%),
-    #fff;
-  box-shadow: 0 1px 2px rgba(17,17,17,.03);
+    radial-gradient(120% 100% at 0% 0%, var(--g-soft) 0%, var(--c-bg-fade-end) 55%),
+    var(--c-card-bg);
+  box-shadow: 0 1px 2px var(--c-ink-shadow);
 }
 .blog-cta-h { font-weight: 800; color: var(--ink); margin-bottom: .85rem; font-size: 15px; }
 .blog-cta-h .em { color: var(--g-deep); }
@@ -187,16 +188,16 @@ main.blog-main {
 .blog-btn {
   display: inline-flex; align-items: center; height: 38px; padding: 0 16px;
   border-radius: 999px; font-weight: 700; font-size: 13.5px; text-decoration: none;
-  border: 1px solid var(--line); color: var(--ink); background: #fff;
+  border: 1px solid var(--line); color: var(--ink); background: var(--c-bg);
   transition: background .15s, border-color .15s, transform .05s;
 }
-.blog-btn:hover { background: #fafafa; }
+.blog-btn:hover { background: var(--c-bg-sub); }
 .blog-btn:active { transform: translateY(1px); }
 .blog-btn--primary {
-  background: var(--g); border-color: var(--g); color: #fff;
-  box-shadow: 0 2px 8px rgba(6,199,85,.28);
+  background: var(--c-btn-brand-bg); border-color: var(--c-btn-brand-bg); color: var(--c-text-inverse);
+  box-shadow: 0 2px 8px var(--c-brand-shadow);
 }
-.blog-btn--primary:hover { background: var(--g-deep); border-color: var(--g-deep); }
+.blog-btn--primary:hover { background: var(--c-btn-brand-bg-hover); border-color: var(--c-btn-brand-bg-hover); }
 
 /* ---- FAQ ---- */
 .blog-faq { margin: 2.6rem 0 1rem; }
@@ -209,7 +210,7 @@ main.blog-main {
 .blog-faq h3::before {
   content: "Q"; position: absolute; left: 0; top: .92rem;
   width: 1.4rem; height: 1.4rem; border-radius: 8px;
-  background: var(--g); color: #fff; font-weight: 800; font-size: 13px;
+  background: var(--c-pill-brand-bg); color: var(--c-pill-brand-text); font-weight: 800; font-size: 13px;
   display: flex; align-items: center; justify-content: center;
 }
 .blog-faq h3 + p {
@@ -243,11 +244,11 @@ main.blog-main {
 .blog-cards { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
 .blog-card {
   display: block; padding: 1.1rem 1.2rem; text-decoration: none;
-  border: 1px solid var(--line); border-radius: 16px; background: #fff;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--c-bg);
   transition: border-color .15s, box-shadow .15s, transform .06s;
 }
 .blog-card:hover {
-  border-color: var(--g); box-shadow: 0 4px 16px rgba(6,199,85,.10);
+  border-color: var(--g); box-shadow: 0 4px 16px var(--c-brand-shadow-soft-2);
 }
 .blog-card:active { transform: translateY(1px); }
 .blog-card .t {
@@ -261,7 +262,7 @@ main.blog-main {
 .blog-card .date { font-size: 11.5px; color: var(--muted); }
 /* 説明文は3行で省略し、2カラム時のカード高さの凸凹を防ぐ */
 .blog-card .d {
-  font-size: 13.5px; color: #5b6066; line-height: 1.7; margin: 0;
+  font-size: 13.5px; color: var(--c-text-neutral); line-height: 1.7; margin: 0;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .blog-card .go { margin-top: .7rem; font-size: 12.5px; font-weight: 700; color: var(--g-deep); }

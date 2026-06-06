@@ -3,7 +3,7 @@
 /* ---------- 旧インラインstyleからの移設 ---------- */
 
 .list-title {
-  color: #111;
+  color: var(--c-text-1);
   all: unset;
   font-size: 20px;
   font-weight: bold;
@@ -27,7 +27,7 @@ body > .google-auto-placed {
 .rb-lead {
   font-size: 15px;
   line-height: 1.8;
-  color: #3d4043;
+  color: var(--c-text-charcoal);
   margin: 0.5rem 0 0 0;
 }
 
@@ -41,11 +41,11 @@ body > .google-auto-placed {
 }
 
 .rb-dot--gone {
-  background-color: #d9333f;
+  background-color: var(--c-accent-red);
 }
 
 .rb-dot--back {
-  background-color: #06c755;
+  background-color: var(--c-brand);
 }
 
 /* ---------- プリセットチップ ---------- */
@@ -66,7 +66,7 @@ body > .google-auto-placed {
   display: block;
   font-size: 13px;
   font-weight: bold;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   margin-bottom: 8px;
 }
 
@@ -90,11 +90,11 @@ body > .google-auto-placed {
   align-items: center;
   height: 36px;
   padding: 0 14px;
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 999px;
   font-size: 13px;
-  color: #3d4043;
-  background-color: #fff;
+  color: var(--c-text-charcoal);
+  background-color: var(--c-bg);
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.15s, border-color 0.15s;
@@ -102,18 +102,18 @@ body > .google-auto-placed {
 }
 
 .rb-preset:hover {
-  background-color: #f7faf8;
+  background-color: var(--c-green-mist);
 }
 
 .rb-preset:focus-visible {
-  outline: 2px solid #06c755;
+  outline: 2px solid var(--c-brand);
   outline-offset: 1px;
 }
 
 .rb-preset.is-active {
-  background-color: #06c75514;
-  border-color: #06c755;
-  color: #111;
+  background-color: var(--c-brand-tint);
+  border-color: var(--c-brand);
+  color: var(--c-text-1);
   font-weight: bold;
 }
 
@@ -121,9 +121,9 @@ body > .google-auto-placed {
 
 .rb-advanced {
   margin: 12px 0 0; /* mvp.css の details{margin:1.3rem 0} を上書き */
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 12px;
-  background-color: #fff;
+  background-color: var(--c-bg);
 }
 
 .rb-advanced > summary {
@@ -134,7 +134,7 @@ body > .google-auto-placed {
   padding: 12px 16px;
   font-size: 13.5px;
   font-weight: bold;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
@@ -151,8 +151,8 @@ body > .google-auto-placed {
   width: 7px;
   height: 7px;
   margin-top: -3px;
-  border-right: 2px solid #8a9097;
-  border-bottom: 2px solid #8a9097;
+  border-right: 2px solid var(--c-text-steel);
+  border-bottom: 2px solid var(--c-text-steel);
   transform: rotate(45deg);
   transition: transform 0.15s;
 }
@@ -165,17 +165,17 @@ body > .google-auto-placed {
 .rb-advanced-sub {
   font-weight: normal;
   font-size: 12px;
-  color: #8a9097;
+  color: var(--c-text-steel);
 }
 
 /* ---------- フィルタパネル ---------- */
 
 .rb-panel {
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 12px;
   padding: 16px;
   margin-top: 12px;
-  background-color: #fff;
+  background-color: var(--c-bg);
 }
 
 /* 詳細設定の中ではパネルの枠を外す（二重枠回避） */
@@ -197,13 +197,13 @@ body > .google-auto-placed {
 .rb-field-label {
   font-size: 13px;
   font-weight: bold;
-  color: #111;
+  color: var(--c-text-1);
   margin-bottom: 6px;
 }
 
 .rb-field-hint {
   font-size: 12px;
-  color: #8a9097;
+  color: var(--c-text-steel);
   margin: 6px 0 0 0;
   line-height: 1.6;
 }
@@ -236,10 +236,10 @@ body > .google-auto-placed {
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 8px;
   cursor: pointer;
-  background-color: #fff;
+  background-color: var(--c-bg);
   transition: background-color 0.15s, border-color 0.15s;
   padding: 2px 4px;
   box-sizing: border-box;
@@ -256,28 +256,28 @@ body > .google-auto-placed {
 
 .rb-seg-text {
   font-size: 13px;
-  color: #3d4043;
+  color: var(--c-text-charcoal);
   text-align: center;
   line-height: 1.3;
 }
 
 .rb-seg-item:hover {
-  background-color: #f7faf8;
+  background-color: var(--c-green-mist);
 }
 
 .rb-seg-item.is-selected {
-  background-color: #06c75514;
-  border: 1.5px solid #06c755;
+  background-color: var(--c-brand-tint);
+  border: 1.5px solid var(--c-brand);
   padding: 1.5px 3.5px;
 }
 
 .rb-seg-item.is-selected .rb-seg-text {
   font-weight: bold;
-  color: #111;
+  color: var(--c-text-1);
 }
 
 .rb-seg-item:has(input:focus-visible) {
-  outline: 2px solid #06c755;
+  outline: 2px solid var(--c-brand);
   outline-offset: 1px;
 }
 
@@ -296,24 +296,24 @@ body > .google-auto-placed {
   height: 44px;
   margin: 0;
   padding: 0 10px;
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 8px;
   font-size: 15px;
-  color: #111;
-  background-color: #fff;
+  color: var(--c-text-1);
+  background-color: var(--c-bg);
   font-family: var(--font-family);
   -webkit-appearance: none;
   appearance: none;
 }
 
 .rb-date-input:focus {
-  border-color: #06c755;
+  border-color: var(--c-brand);
   outline: none;
 }
 
 .rb-dates-sep {
   flex: none;
-  color: #8a9097;
+  color: var(--c-text-steel);
 }
 
 /* キーワード検索 */
@@ -329,11 +329,11 @@ body > .google-auto-placed {
   width: 100%;
   height: 44px;
   padding: 0 38px 0 12px;
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 8px;
   font-size: 16px; /* iOSズーム回避 */
-  color: #111;
-  background-color: #fff;
+  color: var(--c-text-1);
+  background-color: var(--c-bg);
   font-family: var(--font-family);
 }
 
@@ -342,11 +342,11 @@ body > .google-auto-placed {
 }
 
 .rb-search input[type='search']:focus {
-  border-color: #06c755;
+  border-color: var(--c-brand);
 }
 
 .rb-search input[type='search']::placeholder {
-  color: #8a9097;
+  color: var(--c-text-steel);
   font-size: 13px;
 }
 
@@ -363,12 +363,12 @@ body > .google-auto-placed {
   justify-content: center;
   border-radius: 50%;
   font-size: 14px;
-  color: #8a9097;
+  color: var(--c-text-steel);
   cursor: pointer;
 }
 
 .rb-search-clear:hover {
-  background-color: #f4f5f6;
+  background-color: var(--c-surface-gray);
 }
 
 .rb-search-clear.is-hidden {
@@ -385,7 +385,7 @@ body > .google-auto-placed {
 
 .rb-loading-text {
   font-size: 13px;
-  color: #8a9097;
+  color: var(--c-text-steel);
   margin: 8px 0 0;
 }
 
@@ -398,7 +398,7 @@ body > .google-auto-placed {
   z-index: 2000;
   height: 3px;
   overflow: hidden;
-  background-color: #ededf0;
+  background-color: var(--c-border-muted);
 }
 
 .rb-progress-bar {
@@ -407,7 +407,7 @@ body > .google-auto-placed {
   left: 0;
   height: 100%;
   width: 40%;
-  background-color: #06c755;
+  background-color: var(--c-brand);
   border-radius: 2px;
   animation: rb-progress-slide 1.1s ease-in-out infinite;
 }
@@ -437,7 +437,7 @@ body > .google-auto-placed {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid #ededf0;
+  border-bottom: 1px solid var(--c-border-muted);
 }
 
 .rb-skel-img {
@@ -466,7 +466,7 @@ body > .google-auto-placed {
 
 .rb-skel-img,
 .rb-skel-line {
-  background: linear-gradient(90deg, #f4f5f6 25%, #ededf0 37%, #f4f5f6 63%);
+  background: linear-gradient(90deg, var(--c-surface-gray) 25%, var(--c-border-muted) 37%, var(--c-surface-gray) 63%);
   background-size: 400% 100%;
   animation: rb-shimmer 1.4s ease infinite;
 }
@@ -486,7 +486,7 @@ body > .google-auto-placed {
   text-align: center;
   padding: 2rem 0;
   font-size: 14px;
-  color: #5b6066;
+  color: var(--c-text-neutral);
 }
 
 .rb-retry {
@@ -498,9 +498,9 @@ body > .google-auto-placed {
   height: 40px;
   padding: 0 20px;
   margin-top: 8px;
-  border: 1px solid #06c755;
+  border: 1px solid var(--c-brand);
   border-radius: 999px;
-  color: #06c755;
+  color: var(--c-brand);
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
@@ -508,7 +508,7 @@ body > .google-auto-placed {
 }
 
 .rb-retry:hover {
-  background-color: #06c75514;
+  background-color: var(--c-brand-tint);
 }
 
 /* ---------- 結果フラグメント ---------- */
@@ -518,13 +518,13 @@ body > .google-auto-placed {
   font-size: 15px;
   font-weight: bold;
   white-space: pre-wrap;
-  color: #111;
+  color: var(--c-text-1);
   margin-top: 6px;
 }
 
 .rb-empty {
   text-align: center;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   padding: 1.5rem 0;
 }
 
@@ -556,13 +556,13 @@ body > .google-auto-placed {
 }
 
 .rb-badge--gone {
-  color: #d9333f;
-  background-color: #fdf1f2;
+  color: var(--c-accent-red);
+  background-color: var(--c-red-tint);
 }
 
 .rb-badge--back {
-  color: #06c755;
-  background-color: #e9faf0;
+  color: var(--c-brand);
+  background-color: var(--c-green-tint);
 }
 
 .rb-meta {
@@ -571,16 +571,16 @@ body > .google-auto-placed {
   flex-wrap: wrap;
   gap: 2px 4px;
   font-size: 13px;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   margin-top: 4px;
 }
 
 .rb-meta-diff {
-  color: #8a9097;
+  color: var(--c-text-steel);
 }
 
 .rb-meta-sep {
-  color: #8a9097;
+  color: var(--c-text-steel);
 }
 
 .rb-meta .openchat-item-mui-chip-inner {
@@ -598,12 +598,12 @@ body > .google-auto-placed {
 
 .rb-change-label {
   font-weight: bold;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   white-space: nowrap;
 }
 
 .rb-change-label--caused {
-  color: #d9333f;
+  color: var(--c-accent-red);
 }
 
 .rb-chips {
@@ -618,38 +618,38 @@ body > .google-auto-placed {
   padding: 1px 7px;
   border-radius: 4px;
   font-size: 12px;
-  color: #5b6066;
-  background-color: #f4f5f6;
+  color: var(--c-text-neutral);
+  background-color: var(--c-surface-gray);
   white-space: nowrap;
 }
 
 .rb-change-none {
   font-size: 13px;
-  color: #8a9097;
+  color: var(--c-text-steel);
 }
 
 .rb-timeline {
   font-size: 12px;
-  color: #8a9097;
+  color: var(--c-text-steel);
   margin-top: 4px;
 }
 
 /* ---------- ページャ（ピル型に整える） ---------- */
 
 .rb-pager .rb-pager-btn a {
-  border: 1px solid #ededf0;
+  border: 1px solid var(--c-border-muted);
   border-radius: 999px;
   height: 44px;
   transition: background-color 0.15s;
 }
 
 .rb-pager .rb-pager-btn a:hover {
-  background-color: #f7faf8;
+  background-color: var(--c-green-mist);
 }
 
 .rb-pager .rb-pager-btn.prev a {
-  border: 1px solid #ededf0;
-  background-color: #fff;
+  border: 1px solid var(--c-border-muted);
+  background-color: var(--c-bg);
 }
 
 /* ---------- 消えていた期間チップ（プリセットの下の第2列） ---------- */
@@ -676,7 +676,7 @@ body > .google-auto-placed {
 
 .rb-empty-hint {
   font-size: 13px;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   margin: 8px 0 0;
 }
 
@@ -689,9 +689,9 @@ body > .google-auto-placed {
   height: 40px;
   padding: 0 20px;
   margin-top: 12px;
-  border: 1px solid #06c755;
+  border: 1px solid var(--c-brand);
   border-radius: 999px;
-  color: #06c755;
+  color: var(--c-brand);
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
@@ -699,7 +699,7 @@ body > .google-auto-placed {
 }
 
 .rb-widen:hover {
-  background-color: #06c75514;
+  background-color: var(--c-brand-tint);
 }
 
 /* チップ内の状態ドット（プリセットの未掲載/復活の対をスキャナブルに） */
@@ -716,9 +716,9 @@ body > .google-auto-placed {
   height: 40px;
   padding: 0 20px;
   margin: 12px 0 0 8px;
-  border: 1px solid #d0d3d6;
+  border: 1px solid var(--c-border-soft-gray);
   border-radius: 999px;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
@@ -726,7 +726,7 @@ body > .google-auto-placed {
 }
 
 .rb-clear-duration:hover {
-  background-color: #f3f4f6;
+  background-color: var(--c-surface-gray-2);
 }
 
 /* ---------- 常時表示の絞り込みチップ行（掲載状況・変更・順位落ちの除外） ---------- */
@@ -743,7 +743,7 @@ body > .google-auto-placed {
   flex-shrink: 0;
   font-size: 13px;
   font-weight: bold;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   min-width: 8.5em;
 }
 
@@ -763,7 +763,7 @@ body > .google-auto-placed {
   display: block;
   list-style: none;
   font-size: 12px;
-  color: #5b6066;
+  color: var(--c-text-neutral);
   line-height: 1.7;
 }
 

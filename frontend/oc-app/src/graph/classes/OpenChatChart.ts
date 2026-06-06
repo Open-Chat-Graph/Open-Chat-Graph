@@ -17,6 +17,7 @@ import getEventCatcherPlugin from './ChartJS/Plugin/getEventCatcherPlugin.ts'
 import paddingArray from './ChartJS/Util/paddingArray.ts'
 import { statsDto } from '../util/fetchRenderer'
 import { t } from '../util/translation'
+import { getColors } from '../util/theme'
 
 export default class OpenChatChart implements ChartFactory {
   chart: ChartJS = null!
@@ -123,6 +124,14 @@ export default class OpenChatChart implements ChartFactory {
     if (!this.chart) return
 
     this.enableZoom = value
+    this.chart.destroy()
+    this.createChart(false)
+  }
+
+  /** テーマ（ライト/ダーク）切替時にチャートを現在のデータのまま作り直す */
+  applyTheme() {
+    if (!this.chart) return
+
     this.chart.destroy()
     this.createChart(false)
   }
@@ -336,7 +345,7 @@ export default class OpenChatChart implements ChartFactory {
     const h = this.canvas.height
     ctx.clearRect(0, 0, w, h)
     ctx.save()
-    ctx.fillStyle = '#888'
+    ctx.fillStyle = getColors().watermark
     ctx.font =
       '14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     ctx.textAlign = 'center'

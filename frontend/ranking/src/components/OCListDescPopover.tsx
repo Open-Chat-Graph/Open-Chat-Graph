@@ -6,7 +6,7 @@ import { Box, IconButton, useMediaQuery } from '@mui/material'
 export function HelpIcon() {
   const matches = useMediaQuery('(min-width:600px)') // 599px以下で false
   return (
-    <HelpOutlineIcon sx={{ color: 'rgba(0, 0, 0, 0.12)', fontSize: matches ? '24px' : '22px' }} />
+    <HelpOutlineIcon sx={{ color: 'var(--c-icon-ghost)', fontSize: matches ? '24px' : '22px' }} />
   )
 }
 
