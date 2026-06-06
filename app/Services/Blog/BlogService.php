@@ -46,10 +46,13 @@ class BlogService
                 title: $fm['title'] ?? $slug,
                 description: $fm['description'] ?? '',
                 date: $fm['date'] ?? '',
+                // ?: で空文字の updated:（値なし行）も公開日へフォールバックさせる（?? だと '' が素通りする）
+                updated: ($fm['updated'] ?? '') ?: ($fm['date'] ?? ''),
                 category: $fm['category'] ?? '',
             );
         }
-        usort($out, static fn(BlogSummaryDto $a, BlogSummaryDto $b) => strcmp($b->date, $a->date));
+        // 一覧・トップ棚は更新日を表示するため、表示と並び順がズレないよう更新日降順（同日は公開日降順）
+        usort($out, static fn(BlogSummaryDto $a, BlogSummaryDto $b) => strcmp($b->updated, $a->updated) ?: strcmp($b->date, $a->date));
         return $this->listCache = $out;
     }
 
@@ -77,7 +80,8 @@ class BlogService
             title: $fm['title'] ?? $slug,
             description: $fm['description'] ?? '',
             date: $fm['date'] ?? '',
-            updated: $fm['updated'] ?? ($fm['date'] ?? ''),
+            // ?: で空文字の updated:（値なし行）も公開日へフォールバックさせる（list() と同じ規則）
+            updated: ($fm['updated'] ?? '') ?: ($fm['date'] ?? ''),
             category: $fm['category'] ?? '',
             wordCount: mb_strlen($plain),
             readingMinutes: max(1, (int)ceil(mb_strlen($plain) / 500)),
@@ -88,7 +92,7 @@ class BlogService
     }
 
     /**
-     * 関連記事（同カテゴリ優先・日付降順・自身を除く）。
+     * 関連記事（同カテゴリ優先・更新日降順・自身を除く）。
      * @return BlogSummaryDto[]
      */
     public function related(string $slug, string $category, int $limit = 4): array
@@ -97,7 +101,7 @@ class BlogService
         usort($all, static function (BlogSummaryDto $a, BlogSummaryDto $b) use ($category) {
             $sa = ($a->category === $category) ? 0 : 1;
             $sb = ($b->category === $category) ? 0 : 1;
-            return ($sa <=> $sb) ?: strcmp($b->date, $a->date);
+            return ($sa <=> $sb) ?: strcmp($b->updated, $a->updated);
         });
         return array_slice($all, 0, $limit);
     }

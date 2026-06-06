@@ -15,6 +15,7 @@ class BlogSummaryDto
         public string $title,
         public string $description,
         public string $date,
+        public string $updated,
         public string $category,
     ) {}
 }

@@ -314,7 +314,8 @@ try {
         <div style="margin: 0 -1rem; ">
             <?php viewComponent('site_header') ?>
         </div>
-        <header style="padding: 0;">
+        <?php // mvp.css は素の header を装飾しなくなったため、中央寄せはここで指定 ?>
+        <header style="padding: 0; text-align: center;">
             <?php if ($httpCode != 410 || !strpos(path(), 'oc/')) : ?>
                 <h1><?php echo $httpCode ?? '' ?></h1>
                 <h2><?php echo $httpStatusMessage ?? '' ?></h2>

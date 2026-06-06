@@ -38,7 +38,8 @@ $_css = ['room_list', 'site_header', 'site_footer'];
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
     <main>
-        <header>
+        <?php // mvp.css は素の header を装飾しなくなったため、中央寄せと余白（旧 header{padding:3rem 1rem} 相当）はここで指定 ?>
+        <header style="text-align: center; padding: 0 1rem 3rem;">
             <h1>400</h1>
             <h2>Bad Request</h2>
             <br>

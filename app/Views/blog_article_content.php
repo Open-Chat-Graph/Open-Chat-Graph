@@ -4,7 +4,7 @@
 
 <body>
     <?php viewComponent('site_header') ?>
-    <main style="overflow: hidden;">
+    <main class="no-pad blog-main">
         <!-- $article のテキストは View 層で自動エスケープ済み。$_html/$_faqHtml は commonmark 済みの信頼ソースで生出力 -->
         <article class="blog blog-article">
             <nav class="blog-crumb">
@@ -16,7 +16,8 @@
             <div class="blog-meta">
                 <span class="author">オプチャグラフ編集部</span>
                 <span>公開 <?php echo $article->date ?></span>
-                <?php if ($article->updated && $article->updated !== $article->date): ?><span>更新 <?php echo $article->updated ?></span><?php endif ?>
+                <?php // YYYY-MM-DD の文字列比較。> で「公開日より古い更新日」（入力ミス）を表示しない ?>
+                <?php if ($article->updated > $article->date): ?><span>更新 <?php echo $article->updated ?></span><?php endif ?>
                 <span>約<?php echo $article->readingMinutes ?>分</span>
                 <?php if ($article->category): ?><span class="cat"><?php echo $article->category ?></span><?php endif ?>
             </div>
