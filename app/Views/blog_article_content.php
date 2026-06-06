@@ -4,7 +4,7 @@
 
 <body>
     <?php viewComponent('site_header') ?>
-    <main style="overflow: hidden;">
+    <main class="blog-main" style="overflow: hidden;">
         <!-- $article のテキストは View 層で自動エスケープ済み。$_html/$_faqHtml は commonmark 済みの信頼ソースで生出力 -->
         <article class="blog blog-article">
             <nav class="blog-crumb">

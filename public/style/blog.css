@@ -3,6 +3,13 @@
    「見出しが一目で分かる・押せる所が分かる・読みやすい」明快な情報設計。
    ============================================================ */
 
+/* mvp.css の main{padding:3rem 1rem} はブログでは過大
+   （固定ヘッダーのスペーサー48px と合わせて上に約110pxの空白ができ、
+   横も .blog の 1.15rem と二重になる）。余白は .blog 側で一元管理する。 */
+.blog-main {
+  padding: 14px 0 1.5rem;
+}
+
 .blog {
   --g: #06c755;
   --g-deep: #05a648;
@@ -208,7 +215,8 @@
 /* mvp.css のグローバル nav{display:flex} を打ち消す（カードは縦積み） */
 .blog-related { display: block; margin: 2.4rem 0 1rem; }
 .blog-related a { display: block; }
-.blog-related-h { font-size: 1.1rem; font-weight: 800; color: var(--ink); margin: 0 0 .9rem; }
+/* 見出しの視覚言語を本文 h2・FAQ と統一（緑のボーダー左） */
+.blog-related-h { font-size: 1.1rem; font-weight: 800; color: var(--ink); margin: 0 0 .9rem; padding-left: 13px; border-left: 4px solid var(--g); }
 .blog-related a {
   display: block; padding: .85rem 1rem; margin-bottom: .6rem;
   border: 1px solid var(--line); border-radius: 12px; text-decoration: none;
@@ -242,11 +250,20 @@
   border-radius: 999px; padding: 1px 9px; font-weight: 700; font-size: 11px;
 }
 .blog-card .date { font-size: 11.5px; color: var(--muted); }
-.blog-card .d { font-size: 13.5px; color: #5b6066; line-height: 1.7; margin: 0; }
+/* 説明文は3行で省略し、2カラム時のカード高さの凸凹を防ぐ */
+.blog-card .d {
+  font-size: 13.5px; color: #5b6066; line-height: 1.7; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
 .blog-card .go { margin-top: .7rem; font-size: 12.5px; font-weight: 700; color: var(--g-deep); }
-.blog-card .go::after { content: " →"; }
+.blog-card .go::after {
+  content: "→"; display: inline-block; margin-left: 4px;
+  transition: transform .15s;
+}
+.blog-card:hover .go::after { transform: translateX(3px); }
 
 @media (min-width: 600px) {
+  .blog-main { padding-top: 22px; }
   .blog-title { font-size: 1.95rem; }
   .blog-body { font-size: 16.5px; }
   .blog-cards { grid-template-columns: 1fr 1fr; }

@@ -4,7 +4,7 @@
 
 <body>
     <?php viewComponent('site_header') ?>
-    <main style="overflow: hidden;">
+    <main class="blog-main" style="overflow: hidden;">
         <!-- $articles は View 層で自動エスケープ済み -->
         <div class="blog">
             <nav class="blog-crumb">
