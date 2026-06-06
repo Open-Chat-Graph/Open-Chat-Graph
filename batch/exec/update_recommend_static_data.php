@@ -8,6 +8,7 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
@@ -47,11 +48,16 @@ try {
      */
     $recommendUpdater = app(RecommendUpdater::class);
 
-    // ja のタグ定義(ja.json)に変更があれば全レコードを無停止で再適用、無ければ通常の差分更新。
+    // タグ定義JSON(ja.json/th.json/tw.json)に変更があれば全レコードを再適用、無ければ通常の差分更新。
+    //  - ja: 無停止シャドウスワップ (rebuildAllViaShadowSwap)
+    //  - th/tw: data/{lang}.json を JSON 駆動マッチングで運用するため、定義変更を検知したら
+    //        フル再構築 (updateRecommendTables(false))。shadow-swap は ja 専用のため使わない。
+    //        これによりデプロイ後やGUI編集後に、CRON が自動で th/tw タグを反映する。
     $didRebuild = false;
-    if (MimimalCmsConfig::$urlRoot === '') {
-        $jsonPath = \App\Services\Recommend\TagDefinition\JaTagMetadata::jsonPath();
-        $currentHash = is_file($jsonPath) ? hash('sha256', (string)file_get_contents($jsonPath)) : '';
+    // ja/th/tw とも TagMetadata::jsonPath() でロケール別パスを解決（パス組み立てを一本化）。
+    $tagJsonPath = TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot);
+    {
+        $currentHash = is_file($tagJsonPath) ? hash('sha256', (string)file_get_contents($tagJsonPath)) : '';
         $storedHash = $state->getString(StateType::recommendTagsJsonHash);
         if ($currentHash !== '' && $currentHash !== $storedHash) {
             if ($state->getBool(StateType::isRecommendTagRebuildActive)) {
@@ -59,8 +65,13 @@ try {
             } else {
                 $state->setTrue(StateType::isRecommendTagRebuildActive);
                 try {
-                    CronUtility::addCronLog('タグ定義(ja.json)の変更を検知 → 全レコード再適用（無停止）開始');
-                    $recommendUpdater->rebuildAllViaShadowSwap();
+                    CronUtility::addCronLog('タグ定義の変更を検知 → 全レコード再適用開始 (urlRoot=' . MimimalCmsConfig::$urlRoot . ')');
+                    if (MimimalCmsConfig::$urlRoot === '') {
+                        $recommendUpdater->rebuildAllViaShadowSwap();
+                    } else {
+                        // th/tw: PRIMARY KEY(id) 付きテーブルへフル再構築（差分でなく全件）
+                        $recommendUpdater->updateRecommendTables(false);
+                    }
                     $state->setString(StateType::recommendTagsJsonHash, $currentHash);
                     $didRebuild = true;
                     CronUtility::addCronLog('全レコード再適用 完了');

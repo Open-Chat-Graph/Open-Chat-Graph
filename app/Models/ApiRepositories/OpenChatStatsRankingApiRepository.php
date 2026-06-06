@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ApiRepositories;
 
 use App\Models\Repositories\DB;
+use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 
 class OpenChatStatsRankingApiRepository
 {
@@ -30,6 +31,53 @@ class OpenChatStatsRankingApiRepository
             fn($oc) => new OpenChatListDto($oc),
             $this->getStatsRanking('statistics_ranking_week', $args)
         );
+    }
+
+    /**
+     * 与えられたルームID群の recommend タグを集約し、頻度の高いテーマ上位を返す。
+     * /ranking の回遊シェルフ用（表示中の上位ルームのタグ → /recommend へ送客）。
+     * 表示名・スラッグの変換は ThemeDiscoveryService と同一（extractTag + urlencode）。
+     *
+     * @param int[] $ids 上位ルームの open_chat_id
+     * @return array{name:string,slug:string}[]
+     */
+    function aggregateRecommendTags(array $ids, int $limit): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        if (!$ids) {
+            return [];
+        }
+
+        $named = [];
+        $params = [];
+        foreach ($ids as $i => $id) {
+            $named[] = ":id{$i}";
+            $params["id{$i}"] = $id;
+        }
+        $in = implode(',', $named);
+
+        $rows = DB::fetchAll(
+            "SELECT r.tag, COUNT(*) AS cnt
+             FROM recommend AS r
+             WHERE r.id IN ({$in}) AND TRIM(r.tag) <> ''
+             GROUP BY r.tag
+             ORDER BY cnt DESC, r.tag ASC
+             LIMIT " . (int)$limit,
+            $params
+        );
+
+        // 空タグ・表示名が空になるタグは出さない（空チップ防止）。
+        $items = [];
+        foreach ($rows as $row) {
+            $tag = (string)$row['tag'];
+            $name = RecommendUtility::extractTag($tag);
+            if ($tag === '' || trim($name) === '') {
+                continue;
+            }
+            $items[] = ['name' => $name, 'slug' => urlencode($tag)];
+        }
+
+        return $items;
     }
 
     private function getStatsRanking(string $tableName, OpenChatApiArgs $args): array

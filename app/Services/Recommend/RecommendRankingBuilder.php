@@ -29,47 +29,29 @@ class RecommendRankingBuilder
     ): RecommendListDto {
         $limit = AppConfig::LIST_LIMIT_RECOMMEND;
 
-        $ranking = $repository->getRanking(
-            $entity,
-            AppConfig::RANKING_HOUR_TABLE_NAME,
-            AppConfig::RECOMMEND_MIN_MEMBER_DIFF_HOUR,
-            $limit
-        );
-
-        $idArray = array_column($ranking, 'id');
-        $ranking2 = $repository->getRankingByExceptId(
+        // 24時間の人数増加が大きい順（＝「いま伸びている」部屋）。
+        $growing = $repository->getRanking(
             $entity,
             AppConfig::RANKING_DAY_TABLE_NAME,
             AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24,
-            $idArray,
             $limit
         );
 
-        $count = count($ranking) + count($ranking2);
-        $idArray = array_column(array_merge($ranking, $ranking2), 'id');
-        $ranking3 = $repository->getRankingByExceptId(
+        // 伸びていない部屋は member 降順で裾を埋める（痩せタグ対策・既存の大型部屋）。
+        $member = $repository->getListOrderByMemberDesc(
             $entity,
-            AppConfig::RANKING_WEEK_TABLE_NAME,
-            AppConfig::RECOMMEND_MIN_MEMBER_DIFF_WEEK,
-            $idArray,
+            array_column($growing, 'id'),
             $limit
         );
 
-        $count = count($ranking) + count($ranking2) + count($ranking3);
-        $idArray = array_column(array_merge($ranking, $ranking2, $ranking3), 'id');
-        $ranking4 = $repository->getListOrderByMemberDesc(
-            $entity,
-            $idArray,
-            $count < AppConfig::LIST_LIMIT_RECOMMEND ? ($count < floor(AppConfig::LIST_LIMIT_RECOMMEND) ? (int)floor(AppConfig::LIST_LIMIT_RECOMMEND) - $count : 5) : 3
-        );
-
+        // DTO は先頭(=表示順)に伸び部屋、末尾に裾を渡す（旧 hour/day/week の4段は廃止）。
         $dto = new RecommendListDto(
             $type,
             $listName,
-            $ranking,
-            $ranking2,
-            $ranking3,
-            $ranking4,
+            $growing,
+            [],
+            [],
+            $member,
             $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
         );
 

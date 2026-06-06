@@ -9,6 +9,7 @@ use Asika\Sitemap\Sitemap;
 use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
+use App\Services\Blog\BlogService;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
@@ -27,6 +28,7 @@ class SitemapGenerator
         private OpenChatListRepositoryInterface $ocRepo,
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
+        private BlogService $blogService,
     ) {}
 
     function generate()
@@ -41,10 +43,12 @@ class SitemapGenerator
         $tmpDir = self::SITEMAP_DIR . ".tmp-{$langCode}/";
         $finalDir = self::SITEMAP_DIR . "{$langCode}/";
 
-        // 一時ディレクトリ作成
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0755, true);
+        // 一時ディレクトリ作成（前回クラッシュ時の中途ファイルが残っていると
+        // 本数が減った際に古いチャンクが最終ディレクトリへ混入するため、必ず作り直す）
+        if (is_dir($tmpDir)) {
+            $this->removeDirectory($tmpDir);
         }
+        mkdir($tmpDir, 0755, true);
 
         // 現在の言語用のインデックス
         $languageIndex = new SitemapIndex();
@@ -91,6 +95,18 @@ class SitemapGenerator
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
+            $sitemap->addItem($this->currentUrl . 'blog');
+            foreach ($this->blogService->list() as $a) {
+                // lastmod は鮮度を反映する更新日（BlogService が公開日へのフォールバック済み）。
+                // frontmatter の日付 typo 1件で毎時のサイトマップ生成全体が中断しないよう
+                // ここでパースを検証し、不正値は毎時更新時刻に倒す（BlogController::toDate と同趣旨）。
+                try {
+                    $lastmod = new \DateTimeImmutable($a->updated !== '' ? $a->updated : $datetime);
+                } catch (\Throwable) {
+                    $lastmod = new \DateTimeImmutable($datetime);
+                }
+                $sitemap->addItem($this->currentUrl . 'blog/' . $a->slug, lastmod: $lastmod);
+            }
         }
 
         $sitemap->addItem($this->currentUrl . 'policy');

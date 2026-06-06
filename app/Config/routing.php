@@ -28,6 +28,7 @@ use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
+use App\Controllers\Pages\BlogController;
 use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
@@ -84,6 +85,10 @@ Route::path('policy', [PolicyPageController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+Route::path('blog', [BlogController::class, 'index']);
+
+Route::path('blog/{slug}', [BlogController::class, 'article']);
+
 Route::path('robots.txt', [RobotsController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
@@ -126,9 +131,6 @@ Route::path('oc/{open_chat_id}', [OpenChatPageController::class, 'index'])
 Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
     ->match(function (FileStorageInterface $fileStorage) {
-        if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
-
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
@@ -143,6 +145,11 @@ Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'inde
     });
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
@@ -375,6 +382,26 @@ Route::path(
     ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
+    ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+// 一覧データのHTMLフラグメント（非同期取得用）。バリデーション・キャッシュ制御は上のページルートと完全に同一
+Route::path(
+    'labs/publication-analytics/list',
+    [RankingBanLabsPageController::class, 'fragment']
+)
+    ->matchNum('publish', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('change', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
     ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
@@ -541,31 +568,24 @@ Route::path('admin/ban-users', [AdminBanUserController::class, 'index'])
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
-// おすすめタグ定義(data/ja.json)編集GUI（管理者専用・日本語のみ・ローカル編集用途）
+// おすすめタグ定義(data/{lang}.json)編集GUI（管理者専用・ja/th/tw対応・ローカル編集用途）
+// 編集対象は urlRoot に対応する {lang}.json（'' => ja, /tw => tw, /th => th）。
 // GETでもVerifyCsrfTokenを通し、CSRF-Tokenクッキーを発行する（保存POSTのX-CSRF-Token用）
 Route::path('admin/recommend-tags', [AdminRecommendTagController::class, 'index'])
     ->middleware([VerifyCsrfToken::class])
     ->match(function (AdminAuthService $adminAuthService) {
-        if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
         if (!$adminAuthService->auth())
             return false;
         noStore();
     });
 
-// おすすめタグ定義の保存（CSRF必須・管理者専用）
+// おすすめタグ定義の保存（CSRF必須・管理者専用・urlRootの{lang}.jsonへ）
 Route::path('admin/recommend-tags/save@post', [AdminRecommendTagController::class, 'save'])
-    ->middleware([VerifyCsrfToken::class])
-    ->match(function () {
-        return MimimalCmsConfig::$urlRoot === '';
-    });
+    ->middleware([VerifyCsrfToken::class]);
 
-// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用）
+// 全レコードへの即時再適用をバックグラウンドで開始（CSRF必須・管理者専用・urlRoot別）
 Route::path('admin/recommend-tags/rebuild@post', [AdminRecommendTagController::class, 'rebuild'])
-    ->middleware([VerifyCsrfToken::class])
-    ->match(function () {
-        return MimimalCmsConfig::$urlRoot === '';
-    });
+    ->middleware([VerifyCsrfToken::class]);
 
 // Adminer Database Tool
 Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])

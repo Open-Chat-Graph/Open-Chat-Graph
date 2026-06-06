@@ -19,6 +19,7 @@ import { useAtom } from 'jotai'
 import SiteHeader from './SiteHeader'
 import { useInView } from 'react-intersection-observer'
 import { t } from '../config/translation'
+import RecommendThemeShelf from './RecommendThemeShelf'
 
 function LinkTab(props: { label?: string; href?: string }) {
   return (
@@ -130,6 +131,7 @@ function OcListSwiper({
                 : {}),
             }}
           >
+            {i === cateIndex && <RecommendThemeShelf />}
             {(() => {
               if (i === cateIndex) {
                 return <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />

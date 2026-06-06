@@ -1,0 +1,279 @@
+/* ============================================================
+   ブログ — オプチャグラフのトンマナ（LINEグリーン #06c755）で
+   「見出しが一目で分かる・押せる所が分かる・読みやすい」明快な情報設計。
+   ============================================================ */
+
+/* mvp.css の main{padding:3rem 1rem} はブログでは過大
+   （固定ヘッダーのスペーサー48px と合わせて上に約110pxの空白ができ、
+   横も .blog の 1.15rem と二重になる）。mvp.css の main.no-pad と併用し、
+   余白はここで一元管理する（main.no-pad と同特異度のため後勝ちで上書き）。 */
+main.blog-main {
+  padding: 14px 0 1.5rem;
+  overflow: hidden;
+}
+
+.blog {
+  --g: #06c755;
+  --g-deep: #05a648;
+  --g-soft: #f1faf4;
+  --ink: #111;
+  --text: #3d4043;
+  --muted: #8a9097;
+  --line: #ededf0;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 1.15rem 2.5rem;
+  font-family: var(--font-family);
+  color: var(--text);
+}
+
+/* ---- パンくず（押せると一目で分かるチップ。mvp.css の nav{justify:space-between} を打ち消す） ---- */
+.blog-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 10px 0 20px;
+}
+.blog-crumb a {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--g-deep); text-decoration: none;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--g-soft); line-height: 1.4;
+  transition: background .15s;
+}
+.blog-crumb a:first-child::before {
+  content: ""; width: 13px; height: 13px; flex: none;
+  background: var(--g-deep);
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3 4 9.5V21h5v-6h6v6h5V9.5z"/></svg>') center/contain no-repeat;
+}
+.blog-crumb a:hover { background: #e2f6ea; }
+.blog-crumb .sep { color: #c5c9ce; font-weight: 400; }
+
+/* ---- タイトル・メタ ---- */
+.blog-title {
+  font-size: 1.62rem;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 2px 0 14px;
+}
+.blog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding-bottom: 18px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--line);
+}
+.blog-meta .author {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--g-deep); font-weight: 700;
+}
+.blog-meta .author::before {
+  content: ""; width: 15px; height: 15px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--g), #11d871); flex: none;
+}
+.blog-meta .cat {
+  border: 1px solid var(--g); color: var(--g-deep);
+  border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: 11.5px;
+}
+
+/* ---- 本文 ---- */
+.blog-body { font-size: 16px; line-height: 1.95; color: var(--text); }
+
+/* H2級見出しの共通視覚言語（緑ボーダー左）。本文・FAQ・関連記事で一箇所だけ直せば揃う。
+   サイズ・余白だけ文脈ごとに個別指定する。 */
+.blog-body > h2,
+.blog-faq > h2,
+.blog-related-h {
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 2px 0 2px 13px;
+  border-left: 4px solid var(--g);
+  letter-spacing: -0.01em;
+}
+.blog-body > h2 { font-size: 1.27rem; margin: 2.4rem 0 1rem; }
+.blog-body > h2:first-child { margin-top: .6rem; }
+.blog-body h3 {
+  font-size: 1.08rem; font-weight: 700; color: var(--ink);
+  margin: 1.7rem 0 .6rem;
+}
+.blog-body p { margin: 0 0 1.15rem; }
+.blog-body strong { color: var(--ink); font-weight: 700; }
+.blog-body a {
+  color: var(--g-deep); font-weight: 700;
+  text-decoration: underline; text-underline-offset: 0.16em;
+  text-decoration-thickness: 1.5px; text-decoration-color: #a8e6c2;
+  transition: text-decoration-color .15s;
+}
+.blog-body a:hover { text-decoration-color: var(--g); }
+
+.blog-body ul, .blog-body ol { margin: 0 0 1.2rem; padding-left: 1.35em; }
+.blog-body li { margin: .35rem 0; }
+.blog-body li::marker { color: var(--g); }
+
+/* 確認リスト（- [ ]）＝記事内の静的チェックポイント。フォーム入力ではなく緑✓の一覧として見せる。 */
+.blog-body li:has(input[type="checkbox"]) { list-style: none; margin-left: -1.4em; }
+.blog-body input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; pointer-events: none;
+  box-sizing: border-box;
+  width: 20px; min-width: 20px; height: 20px; padding: 0; /* mvp.css の input{padding:.4rem .8rem} を打ち消し楕円化を防ぐ */
+  margin: 0 .55em -.28em 0;
+  border-radius: 50%; background: var(--g-soft); border: 1.5px solid #bfe7cd;
+  position: relative; flex: none;
+}
+.blog-body input[type="checkbox"]::after {
+  content: ""; position: absolute; left: 6px; top: 3px;
+  width: 5px; height: 9px; border: solid var(--g-deep); border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* 引用＝データのヒント等のコールアウト */
+.blog-body blockquote {
+  margin: 1.4rem 0; padding: .95rem 1.15rem;
+  background: var(--g-soft); border-left: 4px solid var(--g);
+  border-radius: 0 10px 10px 0; color: #235f3e;
+  font-size: 14.5px; line-height: 1.85;
+}
+.blog-body blockquote p { margin: 0; }
+.blog-body blockquote a { color: var(--g-deep); }
+
+/* ---- 結論ボックス（Smart Brevity の要点先出し / :::point） ---- */
+.blog-body .blog-point {
+  margin: .4rem 0 2rem; padding: 1.05rem 1.25rem 1.1rem;
+  border: 1.5px solid var(--g); border-radius: 14px;
+  background:
+    radial-gradient(130% 120% at 0% 0%, #eafaf1 0%, var(--g-soft) 60%);
+  box-shadow: 0 2px 12px rgba(6, 199, 85, .09);
+}
+.blog-body .blog-point__label {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin: 0 0 .7rem; padding: 3px 12px 3px 10px;
+  font-size: 12px; font-weight: 800; letter-spacing: .03em;
+  color: #fff; background: var(--g); border-radius: 999px;
+}
+.blog-body .blog-point__label::before { content: "🎯"; font-size: 11.5px; }
+.blog-body .blog-point ul { margin: 0; padding-left: 1.3em; }
+.blog-body .blog-point li { margin: .5rem 0; color: var(--text); line-height: 1.8; }
+.blog-body .blog-point li::marker { color: var(--g); }
+.blog-body .blog-point strong { color: var(--ink); }
+
+/* ---- 見出しシグナル：段落頭の太字（「なぜ重要か：」等）を緑で立て、Smart Brevity の流れを作る ---- */
+.blog-body > p > strong:first-child { color: var(--g-deep); }
+.blog-body blockquote p > strong:first-child { color: inherit; }
+
+/* ---- 本体への誘導 CTA カード ---- */
+.blog-cta {
+  margin: 2.6rem 0 1.4rem; padding: 1.25rem 1.3rem 1.35rem;
+  border: 1px solid var(--line); border-radius: 16px;
+  background:
+    radial-gradient(120% 100% at 0% 0%, var(--g-soft) 0%, rgba(255,255,255,0) 55%),
+    #fff;
+  box-shadow: 0 1px 2px rgba(17,17,17,.03);
+}
+.blog-cta-h { font-weight: 800; color: var(--ink); margin-bottom: .85rem; font-size: 15px; }
+.blog-cta-h .em { color: var(--g-deep); }
+.blog-cta-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.blog-btn {
+  display: inline-flex; align-items: center; height: 38px; padding: 0 16px;
+  border-radius: 999px; font-weight: 700; font-size: 13.5px; text-decoration: none;
+  border: 1px solid var(--line); color: var(--ink); background: #fff;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+.blog-btn:hover { background: #fafafa; }
+.blog-btn:active { transform: translateY(1px); }
+.blog-btn--primary {
+  background: var(--g); border-color: var(--g); color: #fff;
+  box-shadow: 0 2px 8px rgba(6,199,85,.28);
+}
+.blog-btn--primary:hover { background: var(--g-deep); border-color: var(--g-deep); }
+
+/* ---- FAQ ---- */
+.blog-faq { margin: 2.6rem 0 1rem; }
+/* 見出しのベースは上の共通グループ（緑ボーダー左）で定義 */
+.blog-faq > h2 { font-size: 1.27rem; margin: 0 0 1rem; }
+.blog-faq h3 {
+  position: relative; font-size: 1.02rem; font-weight: 700; color: var(--ink);
+  margin: 0; padding: 1rem 0 .55rem 1.9rem; line-height: 1.6;
+}
+.blog-faq h3::before {
+  content: "Q"; position: absolute; left: 0; top: .92rem;
+  width: 1.4rem; height: 1.4rem; border-radius: 8px;
+  background: var(--g); color: #fff; font-weight: 800; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+}
+.blog-faq h3 + p {
+  margin: 0 0 .2rem; padding: 0 0 1rem 1.9rem;
+  border-bottom: 1px solid var(--line); color: var(--text);
+  font-size: 14.5px; line-height: 1.85;
+}
+.blog-faq h3:first-of-type { padding-top: 0; }
+.blog-faq h3:first-of-type::before { top: -.05rem; }
+
+/* ---- 関連記事 ---- */
+/* mvp.css のグローバル nav{display:flex} を打ち消す（カードは縦積み） */
+.blog-related { display: block; margin: 2.4rem 0 1rem; }
+.blog-related a { display: block; }
+/* 見出しのベースは本文側の共通グループ（緑ボーダー左）で定義 */
+.blog-related-h { font-size: 1.1rem; margin: 0 0 .9rem; }
+.blog-related a {
+  display: block; padding: .85rem 1rem; margin-bottom: .6rem;
+  border: 1px solid var(--line); border-radius: 12px; text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+.blog-related a:hover { border-color: var(--g); background: var(--g-soft); }
+.blog-related .t { font-weight: 700; color: var(--ink); line-height: 1.5; }
+.blog-related .c { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+/* ============================================================
+   一覧ページ（記事カード）
+   ============================================================ */
+.blog-lead { color: var(--text); font-size: 15px; line-height: 1.8; margin: 0 0 1.6rem; }
+.blog-lead b { color: var(--ink); }
+.blog-cards { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.blog-card {
+  display: block; padding: 1.1rem 1.2rem; text-decoration: none;
+  border: 1px solid var(--line); border-radius: 16px; background: #fff;
+  transition: border-color .15s, box-shadow .15s, transform .06s;
+}
+.blog-card:hover {
+  border-color: var(--g); box-shadow: 0 4px 16px rgba(6,199,85,.10);
+}
+.blog-card:active { transform: translateY(1px); }
+.blog-card .t {
+  font-size: 1.06rem; font-weight: 800; color: var(--ink); line-height: 1.5;
+}
+.blog-card .m { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.blog-card .cat {
+  border: 1px solid var(--g); color: var(--g-deep);
+  border-radius: 999px; padding: 1px 9px; font-weight: 700; font-size: 11px;
+}
+.blog-card .date { font-size: 11.5px; color: var(--muted); }
+/* 説明文は3行で省略し、2カラム時のカード高さの凸凹を防ぐ */
+.blog-card .d {
+  font-size: 13.5px; color: #5b6066; line-height: 1.7; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.blog-card .go { margin-top: .7rem; font-size: 12.5px; font-weight: 700; color: var(--g-deep); }
+.blog-card .go::after {
+  content: "→"; display: inline-block; margin-left: 4px;
+  transition: transform .15s;
+}
+.blog-card:hover .go::after { transform: translateX(3px); }
+
+@media (min-width: 600px) {
+  main.blog-main { padding-top: 22px; }
+  .blog-title { font-size: 1.95rem; }
+  .blog-body { font-size: 16.5px; }
+  .blog-cards { grid-template-columns: 1fr 1fr; }
+}

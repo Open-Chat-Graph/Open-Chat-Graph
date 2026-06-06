@@ -77,7 +77,11 @@ $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 - User Agent: `... Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)`。
 
 ## フロントエンド
-- 別リポジトリ: ランキング(Open-Chat-Graph-Frontend) / グラフ(Frontend-Stats-Graph) / コメント(Comments)。
+- React ソースは**このリポ内 `frontend/`**（別リポではない）。各サブdirが Vite+TS: `ranking`(ランキング) / `oc-app`(個別ルーム) / `all-room-stats` / `stats-graph` / `comments`。
+  - **ビルド**: `cd frontend/<name> && npm run build` → `public/js/...` にハッシュ付きバンドル出力（成果物は **gitignore**、コミット不要。αだけ例外＝成果物コミット）。手ビルドはローカル確認用。
+  - **PHP参照**: `getFilePath('js/react','main-*.js')`（内部 glob、`app/Helpers/functions.php`）でハッシュ名を解決 → HTML側の手修正は不要。
+  - **翻訳**: 各 `frontend/<name>/src/config/translation.ts` は PHP の `storage/translation.json` と**別物**。両方直す。
+  - **デプロイ**: `deploy.yml` が `frontend/<name>/**` の変更を検知し自動で `npm ci && npm run build` → 配信。
 - **オプチャグラフα**: このリポジトリに統合済み `frontend/alpha`（React19+Vite+TS+Tailwind+shadcn/ui+SWR）。`make build-frontend:alpha` で `public/js/alpha` へビルド（成果物コミット＝git ベースデプロイ）。`/alpha` で配信（ja のみ）。α-APIは `app/Controllers/Api/AlphaApiController.php`＋`routing.php`（`MimimalCmsConfig::$urlRoot===''` ガード）。
   - **αの実装済み機能・UI/バックエンド構成・API/ルート/テーブル/バッチは [`ALPHA_README.md`](ALPHA_README.md) に集約。α に機能を追加/変更したら必ず ALPHA_README.md を更新する。**
   - αの通知/アラート毎時処理は `/admin/alphahourly`（admin認証）で手動実行できる（テスト用。結果は cronログ＝/admin/log/cron に残る）。

@@ -2,11 +2,13 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+use App\Config\AppConfig;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\Recommend\RecommendUpdater;
+use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600 * 10);
@@ -42,14 +44,16 @@ try {
         if (MimimalCmsConfig::$urlRoot === '') {
             // base/ja: ロック競合を避ける安全なシャドウスワップ方式
             $recommendUpdater->rebuildAllViaShadowSwap();
-            // 適用済みハッシュを更新（毎時CRONの自動検知が直後に再度フル再適用しないように）
-            $jsonPath = \App\Services\Recommend\TagDefinition\JaTagMetadata::jsonPath();
-            if (is_file($jsonPath)) {
-                $state->setString(StateType::recommendTagsJsonHash, hash('sha256', (string)file_get_contents($jsonPath)));
-            }
         } else {
-            // tw/th: recommend系テーブルにユニークキーが無くシャドウ方式が使えないため従来のフル再構築
+            // tw/th: シャドウスワップは ja 専用（rebuildAllViaShadowSwap が非ja で例外）のため
+            // フル再構築（bulkInsertViaTemp）で全件再適用する。
             $recommendUpdater->updateRecommendTables(false);
+        }
+        // 適用済みハッシュ(data/{lang}.json)を更新し、毎時CRONの自動検知
+        // (update_recommend_static_data.php) が直後に再度フル再適用しないようにする。
+        $jsonPath = TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot);
+        if (is_file($jsonPath)) {
+            $state->setString(StateType::recommendTagsJsonHash, hash('sha256', (string)file_get_contents($jsonPath)));
         }
         AdminTool::sendDiscordNotify('rebuildAllViaShadowSwap done at ' . $now);
     } finally {
@@ -68,7 +72,7 @@ try {
     // 差分の updateRecommendTables → 静的データ生成 → CDN purge のみが動く。
     // tw/th の場合も同様に静的データ生成 → CDN purge が走る。
     // ──────────────────────────────────────────────
-    $phpBinary = \App\Config\AppConfig::$phpBinary;
+    $phpBinary = AppConfig::$phpBinary;
     $staticScript = realpath(__DIR__ . '/update_recommend_static_data.php');
     $urlRootArg = escapeshellarg((string)MimimalCmsConfig::$urlRoot);
     AdminTool::sendDiscordNotify('chain to update_recommend_static_data.php at ' . date('Y-m-d H:i:s'));

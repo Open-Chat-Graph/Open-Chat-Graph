@@ -1,145 +1,410 @@
-/* OpenChat Jump Page Styles */
+/* =========================================================================
+   OpenChat 入室確認ページ (/oc/{id}/jump)  -- 2026-05 redesign
+   コンセプト: 「公式の安全確認ゲート」。落ち着いた紙色の背景に、警告=琥珀 /
+   行動=LINEグリーン の2アクセント。カード基調・余白広め・階層を明快に。
+   多言語(ja/th/tw)共通。Thai/繁体字のグリフを壊さないため本文フォントは
+   var(--font-family) を踏襲し、デザインは余白・色・罫線・影で作る。
+   ========================================================================= */
 
-/* Main sections */
-.oc-jump-section {
+:root {
+  --ocj-bg: #f6f5f3;
+  --ocj-card: #ffffff;
+  --ocj-border: #e9e7e3;
+  --ocj-ink: #1c1b19;
+  --ocj-ink-soft: #5c5953;
+  --ocj-ink-mute: #8a857d;
+  --ocj-amber: #d98a00;
+  --ocj-amber-bg: #fdf6e8;
+  --ocj-amber-line: #f0d9a8;
+  --ocj-line-green: #06c755;
+  --ocj-line-green-press: #05a647;
+  --ocj-radius: 14px;
+  --ocj-radius-sm: 10px;
+  --ocj-shadow: 0 1px 2px rgba(28, 27, 25, .04), 0 6px 18px rgba(28, 27, 25, .05);
+  --ocj-shadow-btn: 0 6px 16px rgba(6, 199, 85, .32);
+}
+
+/* ページ全体の地色（カードを浮かせる） */
+body:has(.oc-jump-wrap) {
+  background: var(--ocj-bg);
+}
+
+/* グローバルと最大幅を揃える(.openchat.body=812px)。inの過去の 600px 上書きは撤去済 */
+.oc-jump-wrap {
   display: block;
-  margin: 1rem 0;
-  width: 100%;
+  padding: 14px 14px 28px;
 }
 
-.oc-info-section {
-  display: block;
-}
-
-.oc-rules-section {
-  margin: 1rem 0;
-  width: 100%;
-}
-
-/* Titles and headings */
-.oc-jump-main-title {
-  margin: 1rem;
-  text-align: center;
-}
-
-.oc-jump-section-title {
-  margin: 1rem;
-  text-align: center;
-}
-
-/* Instructions */
-.oc-jump-instruction {
-  text-align: center;
-  display: block;
-  margin: 1rem;
-  font-size: 16px;
-}
-
-/* Image wrappers */
-.oc-jump-image-wrapper {
-  margin: 1rem 2rem;
-}
-
-/* Rule items container */
-.oc-rule-item {
-  margin-bottom: 0;
-}
-
-/* Rule images */
-.oc-jump-rule-image {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Info content area */
-.oc-jump-info-content {
-  margin: 1rem 2rem;
-  padding: 0;
+.oc-jump-stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 14px;
 }
 
-/* Checkbox styles */
-.oc-jump-checkbox-wrapper {
-  margin: 1rem 2rem;
+/* ---- 読み込み時のさりげない段階表示 ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .oc-jump-rise {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: ocjRise .55s cubic-bezier(.22, .61, .36, 1) forwards;
+  }
+  .oc-jump-rise:nth-child(1) { animation-delay: .02s; }
+  .oc-jump-rise:nth-child(2) { animation-delay: .09s; }
+  .oc-jump-rise:nth-child(3) { animation-delay: .16s; }
+  .oc-jump-rise:nth-child(4) { animation-delay: .23s; }
+  .oc-jump-rise:nth-child(5) { animation-delay: .30s; }
+}
+@keyframes ocjRise {
+  to { opacity: 1; transform: none; }
+}
+
+/* =========================================================================
+   1. 警告バナー（参加前の確認）
+   ========================================================================= */
+.oc-jump-notice {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--ocj-amber-bg);
+  border: 1px solid var(--ocj-amber-line);
+  border-left: 4px solid var(--ocj-amber);
+  border-radius: var(--ocj-radius-sm);
+  padding: 14px 16px;
 }
 
-.oc-jump-checkbox {
-  width: 20px;
-  height: 20px;
-  margin-right: 10px;
-}
-
-.oc-jump-checkbox-label {
-  font-size: 15px;
-  cursor: pointer;
-}
-
-/* Warning text */
-.oc-jump-warning-text {
+.oc-jump-notice__icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ocj-amber);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 26px;
   text-align: center;
-  display: block;
-  margin: 1rem;
-  font-size: 13px;
 }
 
-/* Checkbox warning */
-.oc-jump-checkbox-warning {
-  color: red;
-  font-size: 14px;
-  text-align: center;
-  margin: 0 1rem;
-  font-weight: bold;
-}
-
-/* Footer info section */
-.oc-jump-footer-info {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  margin: 1rem;
-}
-
-.oc-jump-footer-img {
-  /* Uses existing openchat-item-title-img styles */
-  border-radius: 99rem;
-  width: 64px;
-}
-
-.oc-jump-footer-text {
+.oc-jump-notice__body {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.oc-jump-footer-name-wrapper {
-  padding-right: 1.5rem;
-}
-
-.oc-jump-footer-name {
-  color: #111;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-.oc-jump-footer-member {
-  color: #111;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-/* LINE open button */
-.oc-jump-line-button {
+.oc-jump-notice__title {
+  margin: 0;
   font-size: 16px;
-  padding: 20px 20px;
-  border-radius: 8px;
-  width: calc(100% - 2rem) !important;
-  margin: 1rem;
+  font-weight: 700;
+  color: #8a5800;
+  letter-spacing: .01em;
+}
+
+.oc-jump-notice__lead {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #9a7320;
+}
+
+/* =========================================================================
+   共通カード
+   ========================================================================= */
+.oc-jump-card {
+  background: var(--ocj-card);
+  border: 1px solid var(--ocj-border);
+  border-radius: var(--ocj-radius);
+  box-shadow: var(--ocj-shadow);
+  overflow: hidden;
+}
+
+/* =========================================================================
+   2-4. 部屋情報カード（バナー / 名前 / メンバー数 / 説明文）
+   ========================================================================= */
+.oc-jump-banner {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.8;
+  object-fit: cover;
+  background: #efeded;
+}
+
+.oc-jump-room {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oc-jump-room__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ocj-ink);
+  text-align: left;
+  white-space: normal;
+}
+
+.oc-jump-room__title .super-icon {
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+/* メンバー数チップ */
+.oc-jump-room__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 11px;
+  background: #f3f2ef;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ocj-ink-soft);
+}
+
+.oc-jump-room__meta::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ocj-line-green);
+}
+
+/* 「このオープンチャットについて」見出し */
+.oc-jump-about__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--ocj-ink-mute);
+}
+
+.oc-jump-about__label::before {
+  content: "";
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--ocj-line-green);
+}
+
+/* 説明文本体: jump では全文を読ませるのが目的。左寄せ・行間広め・少し小さめ */
+.oc-jump-about__body {
+  margin: 0;
+  border-radius: var(--ocj-radius-sm);
+  background: #faf9f7;
+  border: 1px solid #efedea;
+  padding: 13px 15px;
+  max-height: none;
+}
+
+.oc-jump-about__body .talkroom_description {
+  margin: 0;
+  text-align: left;
+  line-height: 1.85;
+  font-size: 13.5px;
+  color: #2c2a27;
+}
+
+.oc-jump-about__body #talkroom-description-btn {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* =========================================================================
+   5. 禁止事項カード
+   ========================================================================= */
+.oc-jump-rules {
+  padding: 16px 18px 14px;
+}
+
+.oc-jump-rules__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.oc-jump-rules__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ocj-ink);
+  text-align: left;
+}
+
+.oc-jump-rules__lead {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ocj-ink-soft);
+}
+
+/* 公式ガイドライン画像（任意・JAのみ） */
+.oc-jump-rules__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 4px 0 12px;
+  border-radius: var(--ocj-radius-sm);
+  border: 1px solid var(--ocj-border);
+}
+
+/* 禁止項目リスト: 番号バッジ + 罫線区切り */
+.oc-jump-rule-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: ocjrule;
+}
+
+.oc-jump-rule-list > li {
+  /* recommend_page.css の `li { all: unset }` を打ち消してから組み直す
+     （all:unset は display 等も消すため revert で標準フローへ戻す） */
+  all: revert;
+  display: block;
+  counter-increment: ocjrule;
+  position: relative;
+  margin: 0;
+  padding: 13px 0 13px 34px;
+  border-top: 1px solid #f0eeea;
+  list-style: none;
+}
+
+.oc-jump-rule-list > li:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+.oc-jump-rule-list > li::before {
+  content: counter(ocjrule);
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef7f0;
+  color: #1f9d54;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.oc-jump-rule-list > li:first-child::before {
+  top: 3px;
+}
+
+.oc-jump-rule-list > li > b {
+  all: revert;
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ocj-ink);
+  line-height: 1.5;
+  margin: 0 0 3px;
+}
+
+.oc-jump-rule-list > li > span {
+  all: revert;
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ocj-ink-soft);
+}
+
+/* 出典クレジット */
+.oc-jump-source {
+  display: block;
+  margin: 14px 0 2px;
+  font-size: 11.5px;
+  color: var(--ocj-ink-mute);
+  text-align: left;
+}
+
+.oc-jump-source a {
+  color: var(--ocj-ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* =========================================================================
+   6. 入室ボタン（LINEで開く）
+   ========================================================================= */
+.oc-jump-action {
+  padding-top: 2px;
+}
+
+.oc-jump-room-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px 12px;
+}
+
+.oc-jump-room-mini img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  object-fit: cover;
+}
+
+.oc-jump-room-mini__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ocj-ink);
+  line-height: 1.3;
+}
+
+.oc-jump-room-mini__member {
+  font-size: 12px;
+  color: var(--ocj-ink-mute);
+}
+
+.oc-jump-line-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px 20px;
+  /* /oc の主CTA(.openchat_link)と同じ緑グラデ＋pillで「LINEで開く」の見た目を統一。
+     /jump 側のポリッシュ(影/ホバー)は維持。 */
+  background: linear-gradient(
+    -156deg,
+    #0dc95a,
+    #11d871 23.96%,
+    #11d593 55.46%,
+    #12cfcd 83.85%,
+    #16c2c1
+  );
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  border-radius: 99px;            /* /oc の pill CTA と角丸を統一 */
+  box-shadow: var(--ocj-shadow-btn);
+  text-decoration: none;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+
+.oc-jump-line-button:hover {
+  /* グラデを保ったまま明度＋影で押下感を出す(flat緑に戻すとグラデが消えるため) */
+  filter: brightness(1.04);
+  box-shadow: 0 8px 20px rgba(6, 199, 85, .38);
+}
+
+.oc-jump-line-button:active {
+  transform: translateY(1px) scale(.995);
+  filter: brightness(.98);
+  box-shadow: 0 3px 10px rgba(6, 199, 85, .3);
 }
 
 .oc-jump-line-button-content {
@@ -148,46 +413,40 @@
   justify-content: center;
 }
 
-/* Horizontal rule styles */
-.hr-bottom {
-  margin: 1rem 0;
-  width: 100%;
+.oc-jump-line-button svg {
+  height: 15px;
+  fill: #fff;
+  margin-right: 5px;
 }
 
-/* Thai specific styles */
-.oc-jump-rule-title {
+/* =========================================================================
+   広告: カード地になじませる
+   ========================================================================= */
+.oc-jump-ad {
   display: block;
-  margin: 1rem;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-.oc-jump-rule-description {
-  display: block;
-  margin: 1rem;
-  font-size: 13px;
-}
-
-.oc-jump-checkbox-label-th {
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* Additional styles for new classes */
-.oc-jump-member-count {
+  margin: 0;
   text-align: center;
 }
 
-.oc-jump-member-text {
-  color: #111;
-  font-weight: normal;
+.oc-jump-ad .responsive-google-parent,
+.oc-jump-ad .rectangle2-ads-parent,
+.oc-jump-ad .rectangle3-ads-parent {
+  padding: 0;
+  margin: 0 auto;
 }
 
-.oc-jump-chat-title {
-  text-align: center;
+.responsive-google-parent {
+  padding: 0;
 }
 
-.oc-jump-banner-img {
-  aspect-ratio: 1.8;
-  border-radius: 0;
+/* =========================================================================
+   レスポンシブ微調整
+   ========================================================================= */
+@media screen and (min-width: 600px) {
+  .oc-jump-wrap {
+    padding: 20px 18px 36px;
+  }
+  .oc-jump-room__title {
+    font-size: 21px;
+  }
 }

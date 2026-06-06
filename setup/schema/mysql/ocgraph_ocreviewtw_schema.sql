@@ -43,15 +43,15 @@ DROP TABLE IF EXISTS `oc_tag`;
 CREATE TABLE `oc_tag` (
   `id` int(11) NOT NULL,
   `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  KEY `tag` (`tag`(768)),
-  KEY `id` (`id`) USING BTREE
+  PRIMARY KEY (`id`),
+  KEY `tag` (`tag`(768))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `oc_tag2`;
 CREATE TABLE `oc_tag2` (
   `id` int(11) NOT NULL,
   `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  KEY `tag` (`tag`(768)),
-  KEY `id` (`id`) USING BTREE
+  PRIMARY KEY (`id`),
+  KEY `tag` (`tag`(768))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `open_chat`;
 CREATE TABLE `open_chat` (
@@ -110,8 +110,8 @@ DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
   `id` int(11) NOT NULL,
   `tag` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  KEY `tag` (`tag`(768)),
-  KEY `id` (`id`) USING BTREE
+  PRIMARY KEY (`id`),
+  KEY `tag` (`tag`(768))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `recovery`;
 CREATE TABLE `recovery` (

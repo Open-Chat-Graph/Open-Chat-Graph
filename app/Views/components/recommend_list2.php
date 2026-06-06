@@ -30,7 +30,8 @@ if ($recommend->type === RecommendListType::Category) {
         </div>
     </header>
 
-    <?php viewComponent('open_chat_list_recommend', compact('recommend', 'id') + ['limit' => true, 'shuffle' => true]) ?>
+    <?php // 「○○のおすすめ」は常設キュレーション枠のため 24h増加は常に非表示（表示は /recommend タグページのみ） ?>
+    <?php viewComponent('open_chat_list_recommend', compact('recommend', 'id') + ['limit' => true, 'shuffle' => true, 'hideIncrease' => true]) ?>
 
     <?php if ($recommend->type === RecommendListType::Category) : ?>
         <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking/' . AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot][htmlspecialchars_decode($recommend->listName)] . '?list=daily') ?>">

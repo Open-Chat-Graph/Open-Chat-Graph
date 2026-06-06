@@ -44,6 +44,9 @@ class AppConfig
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;
+    // おすすめランキング Tier4（増減実績が無い部屋を拾う際の最小メンバー数）。
+    // ランキングrepo群(SQL)と BulkRecommendRankingBuilder(PHP)で共有する単一の真実の源。
+    const RECOMMEND_MIN_MEMBER_TIER4 = 15;
 
     const COMMENT_FLAG_LABELS = [
         0 => '復元',
@@ -196,6 +199,9 @@ class AppConfig
     const ROOT_PATH =   __DIR__ . '/../../';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
     const TRANSLATION_FILE = __DIR__ . '/../../storage/translation.json';
+
+    /** Markdown ブログ記事の格納ディレクトリ（content/blog/{slug}.md） */
+    const BLOG_CONTENT_DIR = __DIR__ . '/../../content/blog/';
 
     const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
 

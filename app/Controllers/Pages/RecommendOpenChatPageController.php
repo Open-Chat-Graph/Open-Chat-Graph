@@ -10,6 +10,7 @@ use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
+use App\Services\Recommend\TagDefinition\JsonRecommendUpdaterTags;
 use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shared\MimimalCmsConfig;
@@ -21,6 +22,31 @@ class RecommendOpenChatPageController
         private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
+    /**
+     * リダイレクト表を大文字小文字を無視して引く。
+     *
+     * ルータ(shadow/Kernel/Dispatcher/RequestParser)が URI を strtolower 済みのため、
+     * URL の $tag は常に小文字で渡る。一方 redirects のキーは元の表記を保つので、
+     * 大文字を含むキー(例: BNK / Pokemon / Signal / GMM / ChatGPT / NBA)が
+     * case-sensitive な isset() でヒットせず、301 ではなく 410 を返していた。
+     * getValidTag() と同じく case-insensitive で照合し、旧URLのSEO資産を取りこぼさない。
+     *
+     * @param array<string,string> $redirects
+     * @return string|null 転送先タグ。該当なしは null。
+     */
+    private static function lookupRedirect(array $redirects, string $tag): ?string
+    {
+        if (isset($redirects[$tag]))
+            return $redirects[$tag];
+
+        $lowerTag = strtolower($tag);
+        foreach ($redirects as $key => $value) {
+            if (strtolower($key) === $lowerTag)
+                return $value;
+        }
+        return null;
+    }
+
     function index(
         RecommendPageList $recommendPageList,
         StaticDataFile $staticDataGeneration,
@@ -29,22 +55,40 @@ class RecommendOpenChatPageController
         AppConfig::$listLimitTopRanking = 5;
         if (MimimalCmsConfig::$urlRoot === '') {
             $redirectTags = RecommendTagFilters::redirectTags();
-            if (isset($redirectTags[$tag]))
-                return redirect('recommend/' . urlencode($redirectTags[$tag]), 301);
+            $redirectTo = self::lookupRedirect($redirectTags, $tag);
+            if ($redirectTo !== null)
+                return redirect('recommend/' . urlencode($redirectTo), 301);
 
             $extractTag = RecommendUtility::getValidTag($tag);
         } else {
+            // th/tw: タグ定義刷新で改称した旧サブカテゴリ由来タグ({lang}.jsonのredirects)を
+            // 301で新タグへ引き継ぎ、既存のGoogleランキング/被リンク資産を保全する。
+            $redirects = JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot)->getMetadata('redirects');
+            $redirectTo = self::lookupRedirect($redirects, $tag);
+            if ($redirectTo !== null)
+                return redirect(url('recommend/' . urlencode($redirectTo)), 301);
             $extractTag = $tag;
         }
-        
+
         $tag = $recommendPageList->getValidTag($tag);
-        if (!$tag)
+        if (!$tag) {
+            // th/tw: 刷新で廃止した旧タグページは 404 でなく 410 Gone を返す。
+            // 「恒久的に削除された」ことを Google に明示し、再クロールキューから速やかに外す。
+            // （移行で消える旧タグのうち受け皿があるものは上の 301 で引き継ぎ済み）
+            if (MimimalCmsConfig::$urlRoot !== '') {
+                http_response_code(410);
+                return view('errors/error', ['httpCode' => 410]);
+            }
             return false;
+        }
 
         $extractTag = $extractTag ?: $tag;
 
-        // 高需要タグ向けのテーマ固有紹介文(ja専用)。無ければ null でベースライン文のみ。
-        $tagDescription = MimimalCmsConfig::$urlRoot === '' ? RecommendTagDescription::get($tag) : null;
+        // 高需要タグ向けのテーマ固有紹介文。ja は ja.json、th/tw は {lang}.json の
+        // descriptions セクションから引く（日本版と同等にテーマ紹介文を表示）。無ければ null。
+        $tagDescription = MimimalCmsConfig::$urlRoot === ''
+            ? RecommendTagDescription::get($tag)
+            : (JsonRecommendUpdaterTags::forLocale(MimimalCmsConfig::$urlRoot)->getMetadata('descriptions')[$tag] ?? null);
 
         $_dto = $staticDataGeneration->getRecommendPageDto();
 
@@ -75,6 +119,11 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
+        // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
+        // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
+        $_discovery = app(\App\Services\Recommend\ThemeDiscoveryService::class)
+            ->build($staticDataGeneration->getTagList(), $tag, $topPageDto);
+
         $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
@@ -90,6 +139,7 @@ class RecommendOpenChatPageController
                 '_schema',
                 '_dto',
                 'topPageDto',
+                '_discovery',
                 'canonical',
                 'tagDescription',
             ));
@@ -131,6 +181,7 @@ class RecommendOpenChatPageController
             '_schema',
             '_dto',
             'topPageDto',
+            '_discovery',
             'canonical',
             'hourlyUpdatedAt',
             'tagDescription',

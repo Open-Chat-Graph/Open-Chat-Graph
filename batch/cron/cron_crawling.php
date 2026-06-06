@@ -6,6 +6,7 @@ use App\Exceptions\ApplicationException;
 use App\ServiceProvider\ApiOpenChatDeleterServiceProvider;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\SyncOpenChat;
+use App\Services\Cron\Utility\ClassPreloader;
 use App\Services\Cron\Utility\CronUtility;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
@@ -14,6 +15,9 @@ try {
     if (isset($argv[1]) && $argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
     }
+
+    // 実行中にデプロイが重なっても新旧クラスが混在しないよう、開始時に全クラスを先読み
+    ClassPreloader::preload();
 
     if (!MimimalCmsConfig::$urlRoot) {
         app(ApiOpenChatDeleterServiceProvider::class)->register();

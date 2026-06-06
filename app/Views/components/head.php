@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php echo $_meta ?>
     <link rel="stylesheet" href="<?php echo fileUrl('style/mvp.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/unset.css', urlRoot: '') ?>">
     <?php foreach ($_css as $css) : ?>
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css", urlRoot: '') ?>">
     <?php endforeach ?>
@@ -22,6 +23,9 @@
     <?php endif ?>
     <?php if (isset($noindex)) : ?>
         <meta name="robots" content="noindex, nofollow">
+    <?php else : ?>
+        <?php // Google Discover / リッチリザルトで大きな画像プレビューを許可（要件）。 ?>
+        <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <?php endif ?>
     <?php if (!isset($disableGAd) || !$disableGAd) : ?>
         <?php //\App\Views\Ads\GoogleAdsense::gTag($dataOverlays ?? null) ?>

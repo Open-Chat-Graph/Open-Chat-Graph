@@ -114,37 +114,49 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       <hr class="hr-top" style="margin-bottom: 8px;">
 
+      <style>
+        /* /oc のカテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 */
+        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
+        .oc-nav-chip:active{transform:scale(.97)}
+        .oc-nav-chip--category{background:#f1f3f5;color:#28303c;border-color:#e4e8ee}
+        .oc-nav-chip--category:hover{background:#e7eaee}
+        .oc-nav-chip--tag{background:#eefcf3;color:#067a37;border-color:#bfead0}
+        .oc-nav-chip--tag:hover{background:#e2f9ea;border-color:#a6e0bd}
+        /* チップ前置きラベル(カテゴリー/タグ)。チップを主役にし、ラベルは小さく控えめなグレーで補助。
+           「ラベル+チップ」を1ユニット(.oc-nav-pair)としてグルーピングし、左揃え・横並び→入らなければ
+           ユニット単位で改行(各チップが自分のラベルを連れて折り返すので列ズレが出ない)。 */
+        .oc-nav-chips{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:10px;width:100%}
+        .oc-nav-pair{display:inline-flex;align-items:center;gap:8px;min-width:0}
+        .oc-nav-pair__label{font-size:11.5px;font-weight:600;color:#9aa3af;white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
+      </style>
+
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
-          <span class="openchat-list-date" style="flex-direction: row; height: fit-content; flex-wrap: nowrap; color: #111; margin: 0 auto;">
-            <div style="display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; line-height: 1.5; height: 100%; word-break: keep-all; font-weight: bold; align-items: center;">
-              <?php if (is_int($oc['api_created_at'])) : ?>
-                <div><?php echo t('カテゴリー') ?>&nbsp;</div>
-              <?php endif ?>
-              <?php if (isset($recommend[2]) && $recommend[2] && MimimalCmsConfig::$urlRoot === '') : ?>
-                <div>タグ&nbsp;</div>
-              <?php endif ?>
-            </div>
-            <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 8px; line-height: 1.5; height: 100%">
-              <?php if (is_int($oc['api_created_at'])) : ?>
-                <a href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $category ?></a>
-              <?php endif ?>
-              <?php if (isset($recommend[2]) && $recommend[2] && MimimalCmsConfig::$urlRoot === '') : ?>
-                <a href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>" style="width:fit-content; color:inherit; text-wrap: wrap;"><?php echo $recommend[2] ?></a>
-              <?php endif ?>
-            </div>
+          <span class="oc-nav-chips">
+            <?php if (is_int($oc['api_created_at'])) : ?>
+              <span class="oc-nav-pair">
+                <span class="oc-nav-pair__label"><?php echo t('カテゴリー') ?></span>
+                <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
+              </span>
+            <?php endif ?>
+            <?php if (isset($recommend[2]) && $recommend[2]) : ?>
+              <span class="oc-nav-pair">
+                <span class="oc-nav-pair__label"><?php echo t('タグ') ?></span>
+                <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
+              </span>
+            <?php endif ?>
           </span>
         </aside>
 
-        <div style="display: flex; gap: 8px; width: 100%; margin: auto 0;">
+        <div class="oc-desc-nav-actions">
           <?php if (isset($_adminDto)) : ?>
-            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">✕</a>
+            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">✕</a>
           <?php else : ?>
-            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 8px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
           <?php endif ?>
           <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
-              <a href="<?php echo MimimalCmsConfig::$urlRoot === '' ? url('oc', $oc['id'], 'jump') : lineAppUrl($oc) ?>" class="openchat_link" style="font-size: 16px;">
+              <a href="<?php echo url('oc', $oc['id'], 'jump') ?>" class="openchat_link" style="font-size: 16px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
                   <?php if ($oc['join_method_type'] !== 0) : ?>
                     <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
