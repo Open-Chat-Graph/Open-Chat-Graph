@@ -234,6 +234,10 @@ body::before {
   padding: 8px 2px;
   white-space: nowrap;
   font-family: var(--font-family);
+  /* サイト名の続きに見えないよう、タイトル側に最低限の間合いを取りつつ
+     カテゴリボタンとは寄せすぎない距離感（gap 7px + 6px） */
+  margin-left: 12px;
+  margin-right: 6px;
 }
 
 .blog-text-link:hover {

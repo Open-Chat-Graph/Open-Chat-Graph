@@ -13,12 +13,12 @@
         </a>
         <?php // 右側アクション群（ブログ=日本語のみ／カテゴリ）。検索ボタン(右端absolute)の50px分を確保、トップでは詰める ?>
         <div class="header-actions"<?php if ($hideSearchButton ?? false) echo ' style="margin-right: 0;"' ?>>
-            <a class="category-button" href="<?php echo url('ranking') ?>">
-                <span><?php echo t('カテゴリーから探す') ?></span>
-            </a>
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === '') : ?>
                 <a class="blog-text-link unset" href="<?php echo url('blog') ?>">ブログ</a>
             <?php endif ?>
+            <a class="category-button" href="<?php echo url('ranking') ?>">
+                <span><?php echo t('カテゴリーから探す') ?></span>
+            </a>
         </div>
         <nav class="header-nav unset" style="height: 48px;<?php if ($hideSearchButton ?? false) echo ' display: none;' ?>">
             <button class="header-button unset" id="search_button" aria-label="><?php echo t('検索') ?>">
