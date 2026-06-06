@@ -43,10 +43,12 @@ class SitemapGenerator
         $tmpDir = self::SITEMAP_DIR . ".tmp-{$langCode}/";
         $finalDir = self::SITEMAP_DIR . "{$langCode}/";
 
-        // 一時ディレクトリ作成
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0755, true);
+        // 一時ディレクトリ作成（前回クラッシュ時の中途ファイルが残っていると
+        // 本数が減った際に古いチャンクが最終ディレクトリへ混入するため、必ず作り直す）
+        if (is_dir($tmpDir)) {
+            $this->removeDirectory($tmpDir);
         }
+        mkdir($tmpDir, 0755, true);
 
         // 現在の言語用のインデックス
         $languageIndex = new SitemapIndex();
