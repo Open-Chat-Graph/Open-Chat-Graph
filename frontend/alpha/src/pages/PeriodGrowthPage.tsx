@@ -272,6 +272,11 @@ const PeriodGrowthPage = memo(() => {
             <span>
               <span className="text-xs text-muted-foreground/80">該当</span>{' '}
               <span className="tabular-nums text-foreground">{firstPage.totalMatched.toLocaleString()}</span>件
+              {firstPage.poolLimited && (
+                <span className="text-xs text-muted-foreground/70">
+                  （メンバー数上位{firstPage.candidateLimit.toLocaleString()}件を対象に集計）
+                </span>
+              )}
             </span>
           </div>
 
@@ -302,6 +307,13 @@ const PeriodGrowthPage = memo(() => {
 
               {/* 追加読み込み（無限スクロール）。初回・再取得と同じ ListProgressBar に統一。 */}
               <ListProgressFooter isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+
+              {/* プールリミット注記：スクロール末尾・hasMore=false のときだけ表示 */}
+              {!hasMore && firstPage?.poolLimited && (
+                <p className="py-3 text-center text-xs text-muted-foreground/60">
+                  メンバー数上位{firstPage.candidateLimit.toLocaleString()}件までを集計対象としています
+                </p>
+              )}
             </>
           )}
         </div>

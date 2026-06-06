@@ -534,6 +534,10 @@ class AlphaApiController
             // リスト全体の基準日/狙ったN日前日付（フロント表示用）
             'baseDate' => $result['baseDate'],
             'targetPastDate' => $result['pastDate'],
+            // 候補プールが CANDIDATE_LIMIT 件に達した（規模上位 N 件打ち切り）かどうか。
+            // フロント表示での注記・件数補足に使う。
+            'poolLimited' => $result['poolLimited'],
+            'candidateLimit' => $result['candidateLimit'],
         ]);
     }
 

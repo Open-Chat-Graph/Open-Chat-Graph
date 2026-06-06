@@ -146,6 +146,8 @@ export interface PeriodGrowthResponse {
   hasMore: boolean  // 次ページがあるか（無限スクロール）
   baseDate: string
   targetPastDate: string
+  poolLimited: boolean  // 候補プールが candidateLimit 件に達した（規模上位 N 件打ち切り）
+  candidateLimit: number  // 集計対象の上限件数（規模上位 N 件）
 }
 
 export interface PeriodGrowthParams {

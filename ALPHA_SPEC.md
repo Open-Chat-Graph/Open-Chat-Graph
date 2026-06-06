@@ -25,6 +25,7 @@
 
 ### 契約
 - 取得は useSWRInfinite。**ネットワークは1ページ300件、画面reveelは30件ずつ**（`useInfiniteReveal`：バッファから30件reveal、使い切って hasMore のときだけ次の300件をfetch）。
+- period-growth の集計対象は**メンバー数上位3000件のプール**（`CANDIDATE_LIMIT`）。仕様としての上限であり、頭打ち時は API が `poolLimited`/`candidateLimit` を返し、UI は件数補足とリスト末尾注記で「上位3,000件を対象に集計」と明示する。`hasMore`/`totalMatched` はプール内基準。
 - 検索条件（filterKey）が変わったら先頭ページへ（setSize(1)＋visibleCount=30）。
 - 読み込み表示は1種類のバー（`ListProgressBar`）に統一：①初回（結果0）＝上部バー＋キャプション ②再取得（結果あり・条件変更）＝淡いdim＋同じ上部バー ③追加読み込み＝末尾に同じバー。スピナーは使わない。
 - ETA：`alpha_search_timing` にクエリ別 wall time を記録し次回見込みに。応答到着で100へ、到着前は90頭打ち。**最小表示時間は“実フェッチがある時のみ”**。
@@ -32,7 +33,6 @@
 
 ### 現状の負債
 - **D-1（再掲）**: useListProgress が Activity 再mountで誤起動。
-- **D-2**: period-growth の候補が `CANDIDATE_LIMIT=3000` で頭打ち＋`fetchCandidates` が offset 非対応。頻出/全件で3000件超に無限スクロールで到達不能、`hasMore`/`totalMatched` も3000基準で誤る。→ 仕様として上限を明示しUIで止めるか、ソート確定後のページングの限界を是正。
 
 ---
 

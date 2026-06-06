@@ -49,7 +49,7 @@ class AlphaPeriodGrowthRepository
      * @param string   $order    'desc'（増加多い順）/ 'asc'（少ない順）
      * @param int      $limit    返却件数の上限（1ページ分）
      * @param int      $offset   先頭から読み飛ばす件数（ページング用）
-     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool}
+     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool, poolLimited: bool, candidateLimit: int}
      */
     public function findPeriodGrowth(
         string $keyword,
@@ -61,9 +61,10 @@ class AlphaPeriodGrowthRepository
     ): array {
         // 1. MySQL: キーワード(＋カテゴリ)一致のルームを候補として取得（member降順上限付き）
         $candidates = $this->fetchCandidates($keyword, $category);
+        $poolLimited = count($candidates) >= self::CANDIDATE_LIMIT;
 
         if (empty($candidates)) {
-            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false];
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false, 'poolLimited' => false, 'candidateLimit' => self::CANDIDATE_LIMIT];
         }
 
         $ids = array_map(static fn($c) => (int)$c['id'], $candidates);
@@ -92,12 +93,14 @@ class AlphaPeriodGrowthRepository
         [$paged, $hasMore] = $this->paginate($rows, $offset, $limit);
 
         return [
-            'data'         => $paged,
-            'days'         => $days,
-            'totalMatched' => $totalMatched,
-            'baseDate'     => $baseDate,
-            'pastDate'     => $targetPastDate,
-            'hasMore'      => $hasMore,
+            'data'           => $paged,
+            'days'           => $days,
+            'totalMatched'   => $totalMatched,
+            'baseDate'       => $baseDate,
+            'pastDate'       => $targetPastDate,
+            'hasMore'        => $hasMore,
+            'poolLimited'    => $poolLimited,
+            'candidateLimit' => self::CANDIDATE_LIMIT,
         ];
     }
 
@@ -129,7 +132,7 @@ class AlphaPeriodGrowthRepository
      * @param string $startDate 期間開始日 (Y-m-d)
      * @param string $endDate   期間終了日 (Y-m-d)
      * @param int    $offset    先頭から読み飛ばす件数（ページング用）
-     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool}
+     * @return array{data: array<int, array<string, mixed>>, days: int, totalMatched: int, baseDate: ?string, pastDate: ?string, hasMore: bool, poolLimited: bool, candidateLimit: int}
      */
     public function findPeriodGrowthByDateRange(
         string $keyword,
@@ -147,8 +150,10 @@ class AlphaPeriodGrowthRepository
         $days = (int)((new \DateTime($startDate))->diff(new \DateTime($endDate))->days) + 1;
 
         $candidates = $this->fetchCandidates($keyword, $category);
+        $poolLimited = count($candidates) >= self::CANDIDATE_LIMIT;
+
         if (empty($candidates)) {
-            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false];
+            return ['data' => [], 'days' => $days, 'totalMatched' => 0, 'baseDate' => null, 'pastDate' => null, 'hasMore' => false, 'poolLimited' => false, 'candidateLimit' => self::CANDIDATE_LIMIT];
         }
 
         $ids = array_map(static fn($c) => (int)$c['id'], $candidates);
@@ -164,12 +169,14 @@ class AlphaPeriodGrowthRepository
         [$paged, $hasMore] = $this->paginate($rows, $offset, $limit);
 
         return [
-            'data'         => $paged,
-            'days'         => $days,
-            'totalMatched' => $totalMatched,
-            'baseDate'     => $endDate,
-            'pastDate'     => $startDate,
-            'hasMore'      => $hasMore,
+            'data'           => $paged,
+            'days'           => $days,
+            'totalMatched'   => $totalMatched,
+            'baseDate'       => $endDate,
+            'pastDate'       => $startDate,
+            'hasMore'        => $hasMore,
+            'poolLimited'    => $poolLimited,
+            'candidateLimit' => self::CANDIDATE_LIMIT,
         ];
     }
 
