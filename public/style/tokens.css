@@ -410,7 +410,7 @@ body {
   --c-cool-text-deep: #eff1f2 /* slate-100 */;
 
   /* 一覧ページ系 */
-  --c-text-mid: #7d8287 /* slate-400 */;
+  --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
   --c-text-mid-2: #d3d6d8 /* slate-300 */;
   --c-text-mid-3: #7d8287 /* slate-400 */;
   --c-text-taupe: #7d8287 /* slate-400 */;
@@ -653,7 +653,7 @@ body {
   --c-cool-text-deep: #eff1f2 /* slate-100 */;
 
   /* 一覧ページ系 */
-  --c-text-mid: #7d8287 /* slate-400 */;
+  --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
   --c-text-mid-2: #d3d6d8 /* slate-300 */;
   --c-text-mid-3: #7d8287 /* slate-400 */;
   --c-text-taupe: #7d8287 /* slate-400 */;
