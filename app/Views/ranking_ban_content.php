@@ -408,7 +408,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
             let aborter = null;
             let initial = true;
-            let gen = 0; // ロード世代。中断が間に合わず解決した古いfetchの遅延描画/二重pushStateを無効化する
+            let gen = 0; // ロード世代。中断が間に合わず解決した古いfetchの遅延描画を無効化する
             const FB_KEY = 'rb-page1-404-fallback'; // page=1 で404が続くときの全体遷移ループ防止フラグ
 
             const setBusy = (busy) => {
@@ -427,6 +427,9 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (aborter) aborter.abort();
                 aborter = new AbortController();
                 const myGen = ++gen;
+                // フォームの状態は操作した瞬間にURLへ反映する（fetch完了を待つと
+                // 重いクエリの間アドレスバーが古いままになり、共有・ブックマークとずれる）
+                if (opts.push) history.pushState(state, '', pageUrl(state));
                 updateSummary();
                 summaryCount.textContent = '— 集計中…';
                 setBusy(true);
@@ -470,7 +473,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         summaryCount.textContent = '— ' + total.toLocaleString('ja-JP') + '件';
                         document.title = 'オプチャ公式ランキング掲載の分析 ' + (page > 1 ? '(' + page + 'ページ目) ' : '') + dataTitle;
                         live.textContent = total.toLocaleString('ja-JP') + '件の結果を表示しました';
-                        if (opts.push) history.pushState(state, '', pageUrl(state));
                         if (opts.scroll) results.scrollIntoView({ block: 'start' });
                     })
                     .catch((err) => {
