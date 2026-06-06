@@ -64,7 +64,7 @@
 - refresh は `.lock` ファイルへの flock(LOCK_EX) で排他（本体JSONはrename差し替えのため不可）。ロック取得後に double-checked 再読込し、他プロセスが refresh 済みなら HTTP を叩かない。fopen/flock 失敗時はロックなしで劣化続行。
 - ストア由来の refresh_token（SecretsConfig 値と異なる）が invalid_grant → ストアを破棄し SecretsConfig 値で1回だけ再試行（local-secrets 差し替え後の自動回復）。それでも invalid_grant＝OAuth再同意のみ（Google仕様）。
 - ja限定：GSC/GA4 はドメイン全体なので `/tw`,`/th` を全フェッチで除外（`isOtherLocalePath`/page正規化）。
-- referrer/pagePath→内部ページ正規化は `AlphaPagePathNormalizer::normalize()` が**唯一の定義元**（GaClient と AccessRankingRepository が共用。再重複定義禁止）。空文字入力は null（GA行の欠損をトップに混入させない）。
+- referrer/pagePath→内部ページ正規化は `AlphaPagePathNormalizer::normalize()` が**唯一の定義元**（GaClient と AccessRankingRepository が共用。再重複定義禁止）。空文字入力は null（GA行の欠損をトップに混入させない）。完全URLは自サイトホスト（`AppConfig::$siteDomain`、www許容）のみ受理し、外部ホストは null（Google/Yahoo等のルートURL referrer を「トップページ経由」に誤計上しない）。
 
 ---
 

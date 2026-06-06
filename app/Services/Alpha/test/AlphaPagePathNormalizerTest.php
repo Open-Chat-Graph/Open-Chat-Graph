@@ -64,4 +64,20 @@ class AlphaPagePathNormalizerTest extends TestCase
         $this->assertNull(AlphaPagePathNormalizer::normalize('/recommend')); // tag なしは対象外
         $this->assertNull(AlphaPagePathNormalizer::normalize('https://www.google.com/search?q=x'));
     }
+
+    public function test_external_root_urls_are_excluded(): void
+    {
+        // 外部検索エンジン等のルートURL referrer をトップ '/' に誤計上しない
+        $this->assertNull(AlphaPagePathNormalizer::normalize('https://www.google.com/'));
+        $this->assertNull(AlphaPagePathNormalizer::normalize('https://www.google.com'));
+        $this->assertNull(AlphaPagePathNormalizer::normalize('https://search.yahoo.co.jp/'));
+        $this->assertNull(AlphaPagePathNormalizer::normalize('https://t.co/'));
+        // 外部ホストの /recommend 風パスも対象外
+        $this->assertNull(AlphaPagePathNormalizer::normalize('https://example.com/recommend/雑談'));
+        // 自サイトは www 付きも許容
+        $this->assertSame(
+            ['path' => '/', 'label' => 'トップ'],
+            AlphaPagePathNormalizer::normalize('https://www.openchat-review.me/')
+        );
+    }
 }
