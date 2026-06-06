@@ -7,80 +7,6 @@ use Shadow\Kernel\Reception as R;
 viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
-    <style>
-        hr {
-            border-bottom: solid 1px var(--border-color);
-            margin: 12px 0;
-        }
-
-        .list-title {
-            color: #111;
-            all: unset;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .page-select {
-            margin-top: 1.75rem;
-            padding-bottom: 0.85rem;
-        }
-
-        .p-small {
-            font-size: 13px;
-            color: #777;
-
-        }
-
-        .recommend-desc {
-            font-size: 14px;
-        }
-
-        .openchat-item-lower {
-            line-height: 1.2rem;
-        }
-
-        .member-count::before {
-            content: '';
-            position: absolute;
-            top: 7.5px;
-            right: -7px;
-            width: 2px;
-            height: 2px;
-            background-color: #aaa;
-        }
-
-        .member-count {
-            margin-right: 10px;
-            position: relative;
-        }
-
-        .eazy-btn {
-            padding: 6px 3px;
-            margin: 0;
-            font-size: 13px;
-        }
-
-        @media screen and (min-width: 512px) {
-            .eazy-btn {
-                font-size: 13px;
-            }
-        }
-
-        @media screen and (max-width: 359px) {
-            form {
-                font-size: 13px;
-            }
-
-            input {
-                font-size: 16px;
-            }
-        }
-
-        body>.google-auto-placed {
-            margin: 0 1rem;
-            width: auto !important;
-        }
-    </style>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <main style="max-width: 812px; padding: 0 1rem; overflow: hidden;">
@@ -89,56 +15,146 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 <h2 class="list-title">
                     オプチャ公式ランキング掲載の分析
                 </h2>
-                <p>
-                    公式ランキングから<b>消えた部屋（未掲載）</b>と、<b>消えてから復活した部屋（再掲載済み）</b>を一覧にする分析ツールです。<br>
-                    「<b>内容を変更した直後に消えたのか／それ以外の理由か</b>」で絞り込めるので、検索落ち・圏外の原因の切り分けに使えます（やや上級者向け）。
+                <p class="rb-lead">
+                    公式ランキングから<b>消えた部屋（未掲載）</b>と、<b>消えたあと復活した部屋（再掲載済み）</b>を毎時記録しています。「<b>内容を変更した直後に消えたのか</b>」で絞り込めて、検索落ち・圏外の原因切り分けに使えます。
                 </p>
             </div>
         </header>
+
+        <!-- 絞り込みの主役: プリセット＋キーワード。細かい条件は下の「詳細設定」(普段は閉じる) -->
+        <section class="rb-presets-outer">
+            <h3 class="rb-presets-title">よく使う絞り込み</h3>
+            <div class="rb-presets" role="group" aria-label="よく使う絞り込み">
+                <button type="button" class="rb-preset<?php if (R::input('publish') === 1 && R::input('change') === 0 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="1" data-change="0" data-percent="50">内容変更の直後に消えた部屋</button>
+                <button type="button" class="rb-preset<?php if (R::input('publish') === 1 && R::input('change') === 1 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="1" data-change="1" data-percent="50">変更していないのに消えた部屋</button>
+                <button type="button" class="rb-preset<?php if (R::input('publish') === 0 && R::input('change') === 2 && R::input('percent') === 50) echo ' is-active' ?>" data-publish="0" data-change="2" data-percent="50">消えたあと復活した部屋</button>
+                <button type="button" class="rb-preset<?php if (R::input('publish') === 2 && R::input('change') === 2 && R::input('percent') === 100) echo ' is-active' ?>" data-publish="2" data-change="2" data-percent="100">すべての記録を見る</button>
+            </div>
+            <div class="rb-search" role="search">
+                <input type="search" id="rb-keyword" name="keyword" placeholder="ルーム名・説明文で検索（Enterで反映）" aria-label="キーワードで絞り込み（ルーム名・説明文）" autocomplete="off" value="<?php echo R::has('keyword') ? h(R::input('keyword')) : '' ?>">
+                <button type="button" id="rb-keyword-clear" class="rb-search-clear<?php if (!R::has('keyword') || R::input('keyword') === '') echo ' is-hidden' ?>" aria-label="キーワードを消去">&#10005;</button>
+            </div>
+        </section>
+
+        <?php // 現在の条件がプリセットに無い組み合わせなら、詳細設定を開いた状態で出す（効いている条件を隠さない） ?>
+        <?php $rbIsPreset = in_array([R::input('publish'), R::input('change'), R::input('percent')], [[1, 0, 50], [1, 1, 50], [0, 2, 50], [2, 2, 100]], true); ?>
+        <!-- 詳細設定（プロ向け・普段は閉じる） -->
+        <details class="rb-advanced" id="rb-advanced"<?php if (!$rbIsPreset) echo ' open' ?>>
+            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位を個別に指定</span></summary>
+            <div class="rb-panel" aria-label="詳細の絞り込み条件">
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-publish">掲載状況</div>
+                <div class="rb-field-control">
+                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-publish">
+                        <label class="rb-seg-item<?php if (R::input('publish') === 1) echo ' is-selected' ?>">
+                            <input type="radio" name="publish" value="1" <?php if (R::input('publish') === 1) echo 'checked' ?>>
+                            <span class="rb-seg-text"><span class="rb-dot rb-dot--gone" aria-hidden="true"></span>消えたまま</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('publish') === 0) echo ' is-selected' ?>">
+                            <input type="radio" name="publish" value="0" <?php if (R::input('publish') === 0) echo 'checked' ?>>
+                            <span class="rb-seg-text"><span class="rb-dot rb-dot--back" aria-hidden="true"></span>復活した</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('publish') === 2) echo ' is-selected' ?>">
+                            <input type="radio" name="publish" value="2" <?php if (R::input('publish') === 2) echo 'checked' ?>>
+                            <span class="rb-seg-text">すべて</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-change">ルーム内容の変更</div>
+                <div class="rb-field-control">
+                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-change">
+                        <label class="rb-seg-item<?php if (R::input('change') === 0) echo ' is-selected' ?>">
+                            <input type="radio" name="change" value="0" <?php if (R::input('change') === 0) echo 'checked' ?>>
+                            <span class="rb-seg-text">変更あり</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('change') === 1) echo ' is-selected' ?>">
+                            <input type="radio" name="change" value="1" <?php if (R::input('change') === 1) echo 'checked' ?>>
+                            <span class="rb-seg-text">変更なし</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('change') === 2) echo ' is-selected' ?>">
+                            <input type="radio" name="change" value="2" <?php if (R::input('change') === 2) echo 'checked' ?>>
+                            <span class="rb-seg-text">すべて</span>
+                        </label>
+                    </div>
+                    <p class="rb-field-hint">消える直前に名前・説明文・画像などを変えていたか（変更なし判定は2025年8月11日以降の記録が対象）</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-percent">最後に載っていた順位</div>
+                <div class="rb-field-control">
+                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-percent">
+                        <label class="rb-seg-item<?php if (R::input('percent') === 50) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="50" <?php if (R::input('percent') === 50) echo 'checked' ?>>
+                            <span class="rb-seg-text">上位50%だけ</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('percent') === 80) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="80" <?php if (R::input('percent') === 80) echo 'checked' ?>>
+                            <span class="rb-seg-text">上位80%まで</span>
+                        </label>
+                        <label class="rb-seg-item<?php if (R::input('percent') === 100) echo ' is-selected' ?>">
+                            <input type="radio" name="percent" value="100" <?php if (R::input('percent') === 100) echo 'checked' ?>>
+                            <span class="rb-seg-text">すべて</span>
+                        </label>
+                    </div>
+                    <p class="rb-field-hint">下位の部屋は単純な圏外落ちが多いので除外できます</p>
+                </div>
+            </div>
+            </div>
+        </details>
+
+        <!-- ライブサマリーバー: 選択中の条件を1本の日本語文＋件数で表示 -->
+        <div class="rb-summary" aria-label="現在の絞り込み条件">
+            <span id="rb-summary-text"><?php echo $titleValue ?></span>
+            <span id="rb-summary-count" class="rb-summary-count">— 集計中…</span>
+        </div>
+
+        <!-- 詳しい使い方（上級者向け・SEOテキスト） -->
         <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
             <details class="icon-desc">
-                <summary style="font-size: 14px;">分析機能の説明と使い方</summary>
+                <summary style="font-size: 14px;">詳しい使い方と分析の考え方</summary>
                 <ul style="padding-left: 1.25rem;">
                     <li>
                         <p class="recommend-desc">
-                            「📝ルーム内容の変更:あり・なし」は、ランキング未掲載になった理由が、ルーム管理者によるルーム内容の変更によるものか、それ以外の理由かを選択し、別けて表示します。
+                            「ルーム内容の変更:あり・なし」は、ランキング未掲載になった理由が、ルーム管理者によるルーム内容の変更によるものか、それ以外の理由かを選択し、別けて表示します。
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「💡掲載状況:再掲載済み」を選択している場合、ランキング掲載中のルームが未掲載に変わり、再び掲載中になったルームの一覧を表示します。<br>
+                            「掲載状況:復活した（再掲載済み）」を選択している場合、ランキング掲載中のルームが未掲載に変わり、再び掲載中になったルームの一覧を表示します。<br>
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            再掲載済み一覧の場合、「再掲載 〇〇時間」には、未掲載の状態から、どのぐらいで再び掲載されたが表示されています。
+                            再掲載済み一覧の場合、「〇〇時間で復活」には、未掲載の状態から、どのぐらいで再び掲載されたかが表示されています。
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「💡掲載状況:再掲載済み」と「📝ルーム内容の変更:あり」を選択している場合、ルーム管理者がルームの設定を変更して、一旦ランキング・検索に載らなくなり、その後また載るようになったルームの一覧が表示されます。<br>
+                            「掲載状況:復活した」と「ルーム内容の変更:あり」を選択している場合、ルーム管理者がルームの設定を変更して、一旦ランキング・検索に載らなくなり、その後また載るようになったルームの一覧が表示されます。<br>
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「📊最終ランキング順位」はランキング順位の上位何％までを表示するかが選べます。<br>
+                            「最後に載っていた順位」はランキング順位の上位何％までを表示するかが選べます。<br>
                             この分析機能では、単純なランク圏外ではなく、ルーム内容変更による未掲載や、それ以外の理由で未掲載となったルームに焦点を当てることができます。<br>
                             表示対象を上位に絞ることで、例外的な未掲載にはどのような特徴があるのかが分かりやすくなります。
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「💡掲載状況:未掲載」を選択している場合、ランキング掲載中のルームが未掲載に変わり、現在も未掲載の状態が続いているルームの一覧を表示します。<br>
+                            「掲載状況:消えたまま（現在未掲載）」を選択している場合、ランキング掲載中のルームが未掲載に変わり、現在も未掲載の状態が続いているルームの一覧を表示します。<br>
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            未掲載一覧の場合、「未掲載 〇〇時間前」には、載らなくなってから、今までどのぐらい経過したかが表示されています。
+                            未掲載一覧の場合、「未掲載 〇〇前」には、載らなくなってから、今までどのぐらい経過したかが表示されています。
                         </p>
                     </li>
                     <li>
                         <p class="recommend-desc">
-                            「💡掲載状況:未掲載」・「📝ルーム内容の変更:なし」・「📊最終ランキング順位:下位50%以下を除く」を選択している場合、ルームの内容変更・活動量以外の理由で未掲載となった可能性が高いルームの一覧になります。<br>
+                            「掲載状況:消えたまま」・「ルーム内容の変更:なし」・「最後に載っていた順位:上位50%だけ」を選択している場合、ルームの内容変更・活動量以外の理由で未掲載となった可能性が高いルームの一覧になります。<br>
                         </p>
                     </li>
                     <li>
@@ -147,11 +163,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         </p>
                     </li>
                 </ul>
-            </details>
-        </aside>
-        <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
-            <details class="icon-desc">
-                <summary style="font-size: 14px;">オプチャ公式ランキングの掲載を分析する考え方</summary>
+                <p class="recommend-desc" style="font-weight: bold;">オプチャ公式ランキングの掲載を分析する考え方</p>
                 <p class="recommend-desc">
                     通常、公式の検索機能で検索できないルーム(検索落ち)は、ランキングにも未掲載と考えられます。
                 </p>
@@ -173,112 +185,290 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 </p>
             </details>
         </aside>
-        <form id="value-form" style="position: relative; margin-bottom: 12px; margin-top: 1rem;">
-            <label for="pet-select0">💡掲載状況:</label>
-            <select id="pet-select0" name="publish">
-                <option value="1" <?php if (R::input('publish') === 1) echo 'selected' ?>>現在未掲載（消えたまま）</option>
-                <option value="0" <?php if (R::input('publish') === 0) echo 'selected' ?>>再掲載済み（消えて復活）</option>
-                <option value="2" <?php if (R::input('publish') === 2) echo 'selected' ?>>すべて表示</option>
-            </select>
-            <label for="pet-select1">📝ルーム内容の変更:</label>
-            <select id="pet-select1" name="change">
-                <option value="0" <?php if (R::input('change') === 0) echo 'selected' ?>>あり</option>
-                <option value="1" <?php if (R::input('change') === 1) echo 'selected' ?>>なし</option>
-                <option value="2" <?php if (R::input('change') === 2) echo 'selected' ?>>すべて表示</option>
-            </select>
-            <label for="pet-select2">📊最終ランキング順位:</label>
-            <select id="pet-select2" name="percent">
-                <option value="50" <?php if (R::input('percent') === 50) echo 'selected' ?>>下位50%を除く</option>
-                <option value="80" <?php if (R::input('percent') === 80) echo 'selected' ?>>下位20%を除く</option>
-                <option value="100" <?php if (R::input('percent') === 100) echo 'selected' ?>>すべて表示</option>
-            </select>
-            <label for="keyword">🔍検索:</label>
-            <div style="display: flex; margin-bottom: 1rem;">
-                <input style="margin: 0; margin-right: 8px;" name="keyword" id="keyword" type="text" placeholder="キーワード" value="<?php echo R::has('keyword') ? h(R::input('keyword')) : '' ?>">
-                <button type="button" style="margin: 0; padding: 0; width: 2rem;" id="reset-btn">✕</button>
-            </div>
-            <div style="position: absolute; top: 0; right: 0; margin: .5rem; display: flex; gap: 1.35rem; flex-direction: column; border: 1px solid #efefef; padding: .5rem; border-radius: 4px;">
-                <span style="font-size: 13px; text-align: center; font-weight: bold; margin-bottom: -1rem;">簡単設定</span>
-                <button type="button" class="eazy-btn" onclick="location.href = '<?php echo url('labs/publication-analytics?publish=' . (R::input('publish') !== 1 ? 1 : 0) . '&change=' . (R::input('change')) . '&percent=' . (R::input('percent') !== 100 ? R::input('percent') : 50) . '&keyword=' . (R::has('keyword') ? urlencode(R::input('keyword')) : '')) ?>'"><?php echo R::input('publish') !== 1 ? '💡現在未掲載' : '💡再掲載済み' ?><br>に切り替え</button>
-                <button type="button" class="eazy-btn" onclick="location.href = '<?php echo url('labs/publication-analytics?publish=' . (R::input('publish')) . '&change=' . (R::input('change') !== 1 ? 1 : 0) . '&percent=' . (R::input('percent') !== 100 ? R::input('percent') : 50) . '&keyword=' . (R::has('keyword') ? urlencode(R::input('keyword')) : '')) ?>'"><?php echo R::input('change') !== 1 ? '📝内容変更なし' : '📝内容変更あり' ?><br>に切り替え</button>
-                <button type="button" class="eazy-btn" style="padding: 8px 6px;" onclick="location.href = '<?php echo url('labs/publication-analytics?publish=2&change=2&percent=100&keyword=' . (R::has('keyword') ? urlencode(R::input('keyword')) : '')) ?>'">全表示</button>
-            </div>
-        </form>
-        <!-- select要素ページネーション -->
-        <?php if (isset($_select)) : ?>
-            <nav class="page-select unset" style="flex-direction: column; padding: 1rem 0 0 0; margin: 0 0 12px 0;">
-                <div style="font-weight: bold; font-size: 13px;">
-                    1ページあたり50件の表示
-                </div>
-                <form class="unset" style="width: 100%;">
-                    <select id="page-selector" class="unset">
-                        <?php echo $_select ?>
-                    </select>
-                    <label for="page-selector" class="unset"><span><?php echo $_label ?></span></label>
-                </form>
-            </nav>
-        <?php endif ?>
-        <small style="font-size: 13px; white-space: pre-wrap; font-weight: bold; color:#111;"><?php echo $titleValue ?></small>
-        <br>
-        <small style="font-size: 13px; white-space: pre-wrap; color:#111;"><?php echo number_format($totalRecords) ?>件の結果 (<?php echo $maxPageNumber ?>ページ中/<?php echo R::input('page') ?>ページ目)</small>
-        <?php if (isset($openChatList)) : ?>
-            <?php viewComponent('open_chat_list_ranking_ban', compact('openChatList', '_now')) ?>
-        <?php else : ?>
-            <p style="text-align: center;">0件の結果</p>
-        <?php endif ?>
-        <!-- 次のページ・前のページボタン -->
-        <?php if (isset($_pagerNavArg)) : ?>
-            <?php viewComponent('pager_nav_ranking_ban', $_pagerNavArg) ?>
-        <?php endif ?>
 
-        <div id="analytics-loading" aria-hidden="true">
-            <div class="al-spinner"></div>
-            <div class="al-text">データを集計中…</div>
+        <!-- 完了通知（スクリーンリーダー向け） -->
+        <div id="rb-live" class="visually-hidden" aria-live="polite"></div>
+
+        <!-- 2回目以降のロード中に出る細いプログレスバー -->
+        <div id="rb-progress" class="rb-progress" hidden aria-hidden="true">
+            <div class="rb-progress-bar"></div>
         </div>
-        <style>
-            #analytics-loading{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(255,255,255,.8);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-            #analytics-loading.is-loading{display:flex}
-            #analytics-loading .al-spinner{width:44px;height:44px;border:4px solid #e8e8e8;border-top-color:#06c755;border-radius:50%;animation:al-spin .8s linear infinite}
-            #analytics-loading .al-text{font-size:13px;font-weight:bold;color:#06c755}
-            @keyframes al-spin{to{transform:rotate(360deg)}}
-        </style>
+
+        <!-- 結果コンテナ（JSがフラグメントを差し込む） -->
+        <div id="analytics-results" aria-busy="true">
+            <div class="rb-skeleton" aria-hidden="true">
+                <?php for ($i = 0; $i < 6; $i++) : ?>
+                    <div class="rb-skel-card">
+                        <div class="rb-skel-img"></div>
+                        <div class="rb-skel-lines">
+                            <div class="rb-skel-line"></div>
+                            <div class="rb-skel-line short"></div>
+                            <div class="rb-skel-line"></div>
+                        </div>
+                    </div>
+                <?php endfor ?>
+            </div>
+            <p class="rb-skel-text">データを集計中…（初回は10秒ほどかかることがあります）</p>
+            <noscript>
+                <p style="text-align: center;">一覧の表示にはJavaScriptが必要です。</p>
+            </noscript>
+        </div>
     </main>
     <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <script>
-        ((form) => {
-            if (!form) return
-
-            form.querySelectorAll('select').forEach(
-                (el) => el.addEventListener('change', () => form.submit())
-            )
-
-            const keyword = document.getElementById('keyword')
-            document.getElementById('reset-btn').addEventListener('click', () => {
-                if (!keyword.value) return
-                keyword.value = ''
-                form.submit()
-            })
-        })(document.getElementById('value-form'));
-
-        ((el) => {
-            if (!el) return
-
-            el.addEventListener('change', () => el.value && (location.href = el.value))
-        })(document.getElementById('page-selector'));
-
-        // 重いクエリのリロード中、ローディングを表示して「待機中」と分かるようにする（非インタラクティブ感の解消）
         (() => {
-            const loading = document.getElementById('analytics-loading');
-            if (!loading) return;
-            const show = () => loading.classList.add('is-loading');
-            const form = document.getElementById('value-form');
-            form && form.addEventListener('submit', show);
-            document.querySelectorAll('.eazy-btn').forEach((b) => b.addEventListener('click', show));
-            const ps = document.getElementById('page-selector');
-            ps && ps.addEventListener('change', show);
-            document.querySelectorAll('main a[href*="publication-analytics"]').forEach((a) => a.addEventListener('click', show));
+            'use strict';
+
+            const PAGE_URL = '<?php echo url('labs/publication-analytics') ?>';
+            const FRAGMENT_URL = '<?php echo url('labs/publication-analytics/list') ?>';
+
+            const results = document.getElementById('analytics-results');
+            const progress = document.getElementById('rb-progress');
+            const live = document.getElementById('rb-live');
+            const summaryText = document.getElementById('rb-summary-text');
+            const summaryCount = document.getElementById('rb-summary-count');
+            const keywordInput = document.getElementById('rb-keyword');
+            const clearBtn = document.getElementById('rb-keyword-clear');
+
+            // publish-change の9通りの組み合わせを1本の日本語文に合成するテンプレート
+            const SUMMARY = {
+                '1-0': '内容を変更した直後にランキングから消えて、今も未掲載の部屋',
+                '1-1': '内容を変更していないのにランキングから消えて、今も未掲載の部屋',
+                '1-2': 'ランキングから消えて、今も未掲載の部屋（変更の有無は問わない）',
+                '0-0': '内容変更でいったん消えて、そのあと復活した部屋',
+                '0-1': '変更していないのに消えて、そのあと復活した部屋',
+                '0-2': 'いったん消えて、そのあと復活した部屋（変更の有無は問わない）',
+                '2-0': '内容変更の直後に消えた記録すべて（未掲載・復活どちらも）',
+                '2-1': '変更なしで消えた記録すべて（未掲載・復活どちらも）',
+                '2-2': '掲載が途切れた記録すべて'
+            };
+
+            const parseState = (search) => {
+                const q = new URLSearchParams(search);
+                const num = (k, def) => {
+                    const v = parseInt(q.get(k), 10);
+                    return isNaN(v) ? def : v;
+                };
+                return {
+                    publish: num('publish', 1),
+                    change: num('change', 1),
+                    percent: num('percent', 50),
+                    page: num('page', 1),
+                    keyword: q.get('keyword') || ''
+                };
+            };
+
+            let state = parseState(location.search);
+
+            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword (→ page>1)
+            // CDNキャッシュキーの分裂を防ぐため固定
+            const buildQuery = (s) => {
+                const q = new URLSearchParams();
+                q.set('change', s.change);
+                q.set('publish', s.publish);
+                q.set('percent', s.percent);
+                q.set('keyword', s.keyword);
+                if (s.page > 1) q.set('page', s.page);
+                return q.toString();
+            };
+
+            const pageUrl = (s) => PAGE_URL + '?' + buildQuery(s);
+            const fragmentUrl = (s) => FRAGMENT_URL + '?' + buildQuery(s);
+
+            const updateSummary = () => {
+                let text = SUMMARY[state.publish + '-' + state.change] || '';
+                if (state.percent < 100) text += '・最終順位 上位' + state.percent + '%以内';
+                if (state.keyword !== '') text += '・「' + state.keyword + '」を含む';
+                summaryText.textContent = text;
+            };
+
+            const toggleClear = () => {
+                clearBtn.classList.toggle('is-hidden', keywordInput.value === '');
+            };
+
+            const syncControls = () => {
+                document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
+                    const checked = String(state[r.name]) === r.value;
+                    r.checked = checked;
+                    r.closest('.rb-seg-item').classList.toggle('is-selected', checked);
+                });
+                if (keywordInput.value !== state.keyword) keywordInput.value = state.keyword;
+                toggleClear();
+                let anyPreset = false;
+                document.querySelectorAll('.rb-preset').forEach((b) => {
+                    const active =
+                        Number(b.dataset.publish) === state.publish &&
+                        Number(b.dataset.change) === state.change &&
+                        Number(b.dataset.percent) === state.percent;
+                    b.classList.toggle('is-active', active);
+                    anyPreset = anyPreset || active;
+                });
+                // プリセットに無い組み合わせが効いているときは詳細設定を開いて隠さない（自動では閉じない）
+                if (!anyPreset) document.getElementById('rb-advanced').open = true;
+            };
+
+            let aborter = null;
+            let initial = true;
+
+            const setBusy = (busy) => {
+                results.setAttribute('aria-busy', busy ? 'true' : 'false');
+                if (busy && !initial) {
+                    results.classList.add('is-stale');
+                    progress.hidden = false;
+                } else if (!busy) {
+                    results.classList.remove('is-stale');
+                    progress.hidden = true;
+                }
+            };
+
+            const load = (opts) => {
+                opts = opts || {};
+                if (aborter) aborter.abort();
+                aborter = new AbortController();
+                updateSummary();
+                summaryCount.textContent = '— 集計中…';
+                setBusy(true);
+                const s = Object.assign({}, state);
+                fetch(fragmentUrl(s), { signal: aborter.signal })
+                    .then((res) => {
+                        if (res.ok) return res.text();
+                        if (res.status === 404) {
+                            if (s.page > 1) {
+                                // ページ範囲外: 1ページ目に戻して再取得
+                                state.page = 1;
+                                load({ push: opts.push });
+                                return null;
+                            }
+                            // page=1での404は通常起きない。通常遷移にフォールバック
+                            location.href = pageUrl(s);
+                            return null;
+                        }
+                        // その他のエラーはエラー表示＋再試行（遷移ループ防止）
+                        throw new Error('HTTP ' + res.status);
+                    })
+                    .then((html) => {
+                        if (html === null || html === undefined) return;
+                        results.innerHTML = html;
+                        initial = false;
+                        setBusy(false);
+                        const inner = results.querySelector('.rb-results-inner');
+                        const total = inner ? Number(inner.dataset.totalRecords) || 0 : 0;
+                        const page = inner ? Number(inner.dataset.page) || 1 : 1;
+                        const dataTitle = inner ? inner.dataset.title : '';
+                        summaryCount.textContent = '— ' + total.toLocaleString('ja-JP') + '件';
+                        document.title = 'オプチャ公式ランキング掲載の分析 ' + (page > 1 ? '(' + page + 'ページ目) ' : '') + dataTitle;
+                        live.textContent = total.toLocaleString('ja-JP') + '件の結果を表示しました';
+                        if (opts.push) history.pushState(state, '', pageUrl(state));
+                        if (opts.scroll) results.scrollIntoView({ block: 'start' });
+                    })
+                    .catch((err) => {
+                        if (err && err.name === 'AbortError') return;
+                        initial = false;
+                        setBusy(false);
+                        summaryCount.textContent = '';
+                        results.innerHTML = '<div class="rb-error"><p>読み込みに失敗しました</p><button type="button" class="rb-retry">再試行</button></div>';
+                    });
+            };
+
+            // セグメント（radio）
+            document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
+                r.addEventListener('change', () => {
+                    if (!r.checked) return;
+                    state[r.name] = Number(r.value);
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // プリセットチップ
+            document.querySelectorAll('.rb-preset').forEach((b) => {
+                b.addEventListener('click', () => {
+                    state.publish = Number(b.dataset.publish);
+                    state.change = Number(b.dataset.change);
+                    state.percent = Number(b.dataset.percent);
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // キーワード（Enter確定のみ・IME変換確定は無視。iOS IMEゾンビ対策で変換中は×を隠す）
+            let composing = false;
+            keywordInput.addEventListener('compositionstart', () => {
+                composing = true;
+                clearBtn.classList.add('is-hidden');
+            });
+            keywordInput.addEventListener('compositionend', () => {
+                composing = false;
+                toggleClear();
+            });
+            keywordInput.addEventListener('input', () => {
+                if (!composing) toggleClear();
+            });
+            keywordInput.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                if (e.isComposing || composing) return;
+                e.preventDefault();
+                if (keywordInput.value === state.keyword) return;
+                state.keyword = keywordInput.value;
+                state.page = 1;
+                load({ push: true });
+            });
+            clearBtn.addEventListener('click', () => {
+                keywordInput.value = '';
+                toggleClear();
+                if (state.keyword === '') return;
+                state.keyword = '';
+                state.page = 1;
+                load({ push: true });
+            });
+
+            // 結果コンテナへのイベント委譲（innerHTML差し替えでリスナーが消えるため）
+            const parsePageFromUrl = (u) => {
+                try {
+                    const url = new URL(u, location.origin);
+                    const v = parseInt(url.searchParams.get('page') || '1', 10);
+                    return isNaN(v) ? 1 : v;
+                } catch (_) {
+                    return null;
+                }
+            };
+            results.addEventListener('change', (e) => {
+                const sel = e.target.closest('#page-selector');
+                if (!sel || !sel.value) return;
+                const p = parsePageFromUrl(sel.value);
+                if (p === null) return;
+                state.page = p;
+                load({ push: true, scroll: true });
+            });
+            results.addEventListener('click', (e) => {
+                if (e.target.closest('.rb-retry')) {
+                    load({ push: false });
+                    return;
+                }
+                const a = e.target.closest('.search-pager a');
+                if (!a) return;
+                e.preventDefault();
+                const p = parsePageFromUrl(a.href);
+                if (p === null) return;
+                state.page = p;
+                load({ push: true, scroll: true });
+            });
+
+            // ブラウザバック/フォワード
+            window.addEventListener('popstate', () => {
+                state = parseState(location.search);
+                syncControls();
+                load({ push: false });
+            });
+
+
+            // 初回ロード
+            syncControls();
+            load({ push: false });
         })();
     </script>
 </body>
