@@ -2,7 +2,7 @@
 
 /**
  * ホームの「読み物（ブログ）」棚。最新記事を最大4本、最大の入口（トップ）から回遊させる。
- * BlogService->list() は frontmatter のみの軽量読み（本文レンダリングなし）。ja 用。
+ * BlogService->list() は frontmatter のみの軽量読み（BlogSummaryDto[] を返す・本文なし）。ja 用。
  * viewComponent 経由なので自動エスケープは無く、表示値は h() でエスケープする。
  */
 
@@ -17,11 +17,11 @@ if (!$_posts) return;
     <ul class="hbs-list">
         <?php foreach ($_posts as $p) : ?>
             <li>
-                <a class="hbs-card unset" href="<?php echo url('blog/' . $p['slug']) ?>">
-                    <div class="hbs-card-t"><?php echo h($p['title']) ?></div>
+                <a class="hbs-card unset" href="<?php echo url('blog/' . $p->slug) ?>">
+                    <div class="hbs-card-t"><?php echo h($p->title) ?></div>
                     <div class="hbs-card-m">
-                        <?php if ($p['category']) : ?><span class="hbs-cat"><?php echo h($p['category']) ?></span><?php endif ?>
-                        <span class="hbs-date"><?php echo h($p['date']) ?></span>
+                        <?php if ($p->category) : ?><span class="hbs-cat"><?php echo h($p->category) ?></span><?php endif ?>
+                        <span class="hbs-date"><?php echo h($p->date) ?></span>
                     </div>
                 </a>
             </li>
