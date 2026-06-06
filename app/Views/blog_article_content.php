@@ -35,6 +35,11 @@
                 </div>
             </div>
 
+            <?php // 広告: ブログ専用ユニットは未作成のため既存レスポンシブスロットを流用（レポートは他ページと合算される）。
+                  // SEO 流入の初見読者に Offerwall を出さないよう、blog では Offerwall のみタグ側で抑制する ?>
+            <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
+
             <?php if (!empty($_faqHtml)): ?>
                 <div class="blog-faq"><?php echo $_faqHtml ?></div>
             <?php endif ?>
