@@ -38,7 +38,8 @@ class BlogController
                 fn(BlogSummaryDto $a) => Schema::blogPosting()
                     ->headline($a->title)
                     ->url(url('blog/' . $a->slug))
-                    ->datePublished($this->toDate($a->date)),
+                    ->datePublished($this->toDate($a->date))
+                    ->dateModified($this->toDate($a->updated ?: $a->date)),
                 $articles
             ))
             ->toScript();

@@ -46,6 +46,7 @@ class BlogService
                 title: $fm['title'] ?? $slug,
                 description: $fm['description'] ?? '',
                 date: $fm['date'] ?? '',
+                updated: $fm['updated'] ?? ($fm['date'] ?? ''),
                 category: $fm['category'] ?? '',
             );
         }

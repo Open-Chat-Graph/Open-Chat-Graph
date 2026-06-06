@@ -22,7 +22,8 @@ if (!$_posts) return;
                     <div class="hbs-card-t"><?php echo h($p->title) ?></div>
                     <div class="hbs-card-m">
                         <?php if ($p->category) : ?><span class="hbs-cat"><?php echo h($p->category) ?></span><?php endif ?>
-                        <span class="hbs-date"><?php echo h($p->date) ?></span>
+                        <?php // 鮮度が伝わる更新日を表示（公開日は記事ページで表示） ?>
+                        <span class="hbs-date"><?php echo h($p->updated) ?></span>
                     </div>
                 </a>
             </li>
