@@ -8,6 +8,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php echo $_meta ?>
+    <?php /* テーマ確定はCSSより先（FOUC防止のため同期読み込み） */ ?>
+    <script src="<?php echo fileUrl('/js/theme.js', urlRoot: '') ?>"></script>
     <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/base/mvpmin.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/base/unset.css', urlRoot: '') ?>">

@@ -239,3 +239,45 @@ ins.adsbygoogle[data-ad-status='unfilled']::before {
     background: var(--c-bg-sub);
   }
 }
+
+/* ---------- ダークモード切替ボタン（PHP ヘッダ側と同一ルール） ---------- */
+
+.theme-toggle-btn {
+  all: unset;
+  display: flex;
+  height: 38px;
+  width: 40px;
+  cursor: pointer;
+  color: var(--c-text-1);
+  border-radius: 99rem;
+}
+
+.theme-toggle-btn svg {
+  margin: auto;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--c-bg-sub);
+}
+
+.theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    display: block;
+  }
+
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
+  }
+}

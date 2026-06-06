@@ -234,6 +234,41 @@ body::before {
   text-wrap: nowrap;
 }
 
+/* ---------- ダークモード切替ボタン ---------- */
+
+.theme-toggle-btn {
+  color: var(--c-text-1);
+}
+
+.theme-toggle-btn svg {
+  margin: auto;
+}
+
+/* ライト時: 月（=ダークへ切替）を表示。ダーク時: 太陽を表示。
+   OS連動（data-theme なし）のときは prefers-color-scheme 側のブロックが効く。
+   ★ tokens.css のダーク2系統と同じ同期ルール */
+.theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    display: block;
+  }
+
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
+  }
+}
+
 /* ---------- 検索フォーム ---------- */
 
 .header-button {
