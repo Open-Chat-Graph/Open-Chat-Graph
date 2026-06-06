@@ -38,7 +38,8 @@ class BlogController
                 fn(BlogSummaryDto $a) => Schema::blogPosting()
                     ->headline($a->title)
                     ->url(url('blog/' . $a->slug))
-                    ->datePublished($this->toDate($a->date)),
+                    ->datePublished($this->toDate($a->date))
+                    ->dateModified($this->modifiedDate($a->date, $a->updated)),
                 $articles
             ))
             ->toScript();
@@ -63,7 +64,7 @@ class BlogController
             ->description($article->description)
             ->image($_meta->image_url)
             ->datePublished($this->toDate($article->date))
-            ->dateModified($this->toDate($article->updated ?: $article->date))
+            ->dateModified($this->modifiedDate($article->date, $article->updated))
             ->inLanguage('ja')
             ->articleSection($article->category)
             ->wordCount($article->wordCount)
@@ -103,6 +104,15 @@ class BlogController
         } catch (\Throwable) {
             return new \DateTimeImmutable('now');
         }
+    }
+
+    /**
+     * dateModified 用：更新日をパースし、公開日より過去にならないようクランプする
+     * （frontmatter の入力ミスで dateModified < datePublished の不正な構造化データを出さない）。
+     */
+    private function modifiedDate(string $date, string $updated): \DateTimeImmutable
+    {
+        return max($this->toDate($date), $this->toDate($updated));
     }
 
     private function publisher(): Organization
