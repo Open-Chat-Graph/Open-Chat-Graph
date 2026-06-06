@@ -189,9 +189,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
         <!-- 完了通知（スクリーンリーダー向け） -->
         <div id="rb-live" class="visually-hidden" aria-live="polite"></div>
 
-        <!-- 2回目以降のロード中に出る細いプログレスバー -->
-        <div id="rb-progress" class="rb-progress" hidden aria-hidden="true">
-            <div class="rb-progress-bar"></div>
+        <!-- ロード中表示（初回・2回目以降で共通。常に結果の先頭に出す） -->
+        <div id="rb-loading" hidden>
+            <div class="rb-progress" aria-hidden="true">
+                <div class="rb-progress-bar"></div>
+            </div>
+            <p class="rb-loading-text">データを取得中…<span id="rb-loading-first">（初回は10秒ほどかかることがあります）</span></p>
         </div>
 
         <!-- 結果コンテナ（JSがフラグメントを差し込む） -->
@@ -208,7 +211,6 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     </div>
                 <?php endfor ?>
             </div>
-            <p class="rb-skel-text">データを集計中…（初回は10秒ほどかかることがあります）</p>
             <noscript>
                 <p style="text-align: center;">一覧の表示にはJavaScriptが必要です。</p>
             </noscript>
@@ -225,7 +227,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const FRAGMENT_URL = '<?php echo url('labs/publication-analytics/list') ?>';
 
             const results = document.getElementById('analytics-results');
-            const progress = document.getElementById('rb-progress');
+            const loading = document.getElementById('rb-loading');
+            const loadingFirst = document.getElementById('rb-loading-first');
             const live = document.getElementById('rb-live');
             const summaryText = document.getElementById('rb-summary-text');
             const summaryCount = document.getElementById('rb-summary-count');
@@ -314,12 +317,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
             const setBusy = (busy) => {
                 results.setAttribute('aria-busy', busy ? 'true' : 'false');
-                if (busy && !initial) {
-                    results.classList.add('is-stale');
-                    progress.hidden = false;
-                } else if (!busy) {
+                loading.hidden = !busy; // 初回・2回目以降とも、常に結果の先頭にプログレスバー＋取得中テキスト
+                if (busy) {
+                    loadingFirst.hidden = !initial; // 「（初回は10秒ほど…）」は初回だけ
+                    if (!initial) results.classList.add('is-stale');
+                } else {
                     results.classList.remove('is-stale');
-                    progress.hidden = true;
                 }
             };
 
