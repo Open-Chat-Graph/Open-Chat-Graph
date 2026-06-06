@@ -127,7 +127,7 @@ export default function CommentImageGallery({ images, posterName, commentNo, isO
               objectFit: 'cover',
               borderRadius: 1,
               cursor: 'pointer',
-              border: '1px solid #e0e0e0',
+              border: '1px solid var(--c-border-gray)',
               '&:hover': { opacity: 0.85 },
             }}
           />

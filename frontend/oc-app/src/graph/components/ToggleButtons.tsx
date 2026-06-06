@@ -97,7 +97,7 @@ export default function ToggleButtons() {
         alignItems="center"
         justifyContent={isPc ? 'space-around' : 'space-between'}
       >
-        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="#111">
+        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="var(--c-text-1)">
           {t('ランキングの順位を表示')}
         </Typography>
         {limit === 0 && !isPc && <SwitchLabels />}
