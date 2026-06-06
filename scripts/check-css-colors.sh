@@ -39,6 +39,9 @@ MIGRATED=(
   public/style/components/search_form.css
   public/style/components/ads_element.css
   public/style/components/theme_discovery.css
+  public/style/components/room_list.css
+  public/style/components/recommend_list.css
+  public/style/pages/ranking_ban.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php

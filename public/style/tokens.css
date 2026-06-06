@@ -132,6 +132,47 @@
   --c-cool-text-heading: #1f2937;    /* 行タイトル */
   --c-cool-text-deep: #0f1620;       /* 見出し・入力文字 */
 
+  /* 一覧ページ系 */
+  --c-border-plain: #e8e8e8;          /* フォーム・タグボタンの控えめな枠 */
+  --c-text-mid: #616161;              /* 統合候補: --c-text-3 */
+  --c-text-mid-2: #555;               /* 統合候補: --c-text-2 */
+  --c-text-taupe: #978170;            /* グラデ文字の非対応ブラウザ用フォールバック */
+  --c-text-gray-mid: rgb(124, 124, 124); /* MUIチップ文字 */
+  --c-red-soft: #ff6868;              /* 入力エラー */
+  --c-green-soft: rgb(77, 199, 100);  /* 登録ボタン緑 */
+  --c-green-soft-50: rgba(77, 199, 100, 0.5);
+  --c-green-ring: rgba(77, 199, 100, 0.9); /* 入力フォーカスリング */
+  --c-green-deep: rgb(52, 134, 67);   /* 登録ボタン hover */
+  --c-highlight-teal: rgba(227, 246, 245, 0.7); /* focus-visible 背景 */
+  --c-shadow-soft: rgba(0, 0, 0, 0.06);
+
+  /* 装飾グラデーション（一覧の見出し文字・もっと見るボタン） */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    rgb(253, 18, 226) 20%,
+    rgb(164, 67, 221),
+    rgb(84, 126, 255) 90%
+  );
+
+  /* 白へのフェード（リスト端の装飾。ダーク時は背景色側に追従させる） */
+  --c-fade-right: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.95) 37%,
+    rgba(255, 255, 255, 1) 99%
+  );
+  --c-fade-bottom: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+
+  /* 公開分析（labs/publication-analytics）系 */
+  --c-text-charcoal: #3d4043;        /* リード文・チップ文字 */
+  --c-text-neutral: #5b6066;         /* ラベル・補足（統合候補: --c-cool-text） */
+  --c-border-muted: #ededf0;         /* 控えめな枠（値は --c-surface-2 と同一、役割で分離） */
+  --c-brand-tint: #06c75514;         /* ブランド緑の薄い面（選択状態） */
+  --c-green-mist: #f7faf8;           /* 緑がかったホバー面・サマリー背景 */
+  --c-green-tint: #e9faf0;           /* 復帰バッジの淡緑面 */
+  --c-red-tint: #fdf1f2;             /* 消滅バッジの淡赤面 */
+  --c-surface-gray: #f4f5f6;         /* グレー系の小さな面・スケルトン */
+
   /* テーマチップ（hot・緑系） */
   --c-chip-hot-text: #067a37;
   --c-chip-hot-bg: #eefcf3;
