@@ -78,11 +78,28 @@ body::before {
   -webkit-backdrop-filter: blur(12px);
   width: 100%;
   max-width: var(--max-width);
-  transition: transform 0.3s;
+  transition:
+    transform 0.3s ease,
+    opacity 0.22s ease;
   transform: translate(0px, 0px);
   /* viewport-fit=cover でステータスバー裏まで伸ばし、
      半透明+blur がダイナミックアイランド周囲に透ける（ネイティブ風） */
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* 下スクロール時の非表示。既定はこれまで通りの上スライドのみ */
+.site_header_outer.header-hidden {
+  transform: translateY(-100%);
+}
+
+/* iPhone 限定（html.is-ios は theme.js が付与）:
+   自身の高さ（セーフエリア込み）+ 余裕分まで突き抜けつつフェードアウトし、
+   ステータスバー/ダイナミックアイランドを「上へ吹っ飛ばす」ように見せる。
+   消えた後は Safari の半透明バーにコンテンツが透け、
+   上スクロールではすっと落ちて戻る */
+html.is-ios .site_header_outer.header-hidden {
+  transform: translateY(calc(-100% - 32px));
+  opacity: 0;
 }
 
 .site_header {
@@ -192,7 +209,7 @@ body::before {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: auto 50px auto auto;
+  margin: auto 42px auto auto;
 }
 
 /* カテゴリーボタン（文字小さめ・左右パディング詰め・幅縮小） */
@@ -205,7 +222,7 @@ body::before {
 }
 
 .category-button span {
-  font-size: 12.5px;
+  font-size: 12px;
   display: block;
   width: fit-content;
   max-width: 100%;
@@ -286,7 +303,7 @@ body::before {
   all: unset;
   display: flex;
   height: 48px;
-  width: 48px;
+  width: 44px; /* 視覚の左余白を詰める（タップ領域は高さ48で確保） */
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
