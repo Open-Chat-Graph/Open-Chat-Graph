@@ -16,7 +16,7 @@ use App\Config\SecretsConfig;
  *
  * 取得対象は本家 openchat-review.me の /oc/{id} 詳細ページのアクセス・検索流入。
  * pagePath / page から /oc/{数字}（念のため /openchat/{数字} も）の id を抽出し、
- * open_chat_id 別に集計して返す。
+ * open_chat_id 別に集計して返す（レスポンス後の集計・正規化は AlphaGaDataAggregator に分離）。
  *
  * ※ creds 未設定時はこのクラスを生成しないこと（呼び出し側でガードする）。
  *
@@ -45,9 +45,6 @@ use App\Config\SecretsConfig;
 class AlphaGaClient
 {
     private const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-
-    /** 本家詳細ページ /oc/{id}（念のため /openchat/{id} も）から数字idを拾う */
-    private const PATH_ID_PATTERN = '#/(?:oc|openchat)/(\d+)#';
 
     /**
      * プロセス跨ぎトークンストアのパス。
@@ -118,23 +115,7 @@ class AlphaGaClient
                 break;
             }
 
-            foreach ($rows as $row) {
-                $page = $row['keys'][0] ?? '';
-                $id = $this->extractOpenChatId((string)$page);
-                if ($id === null) {
-                    continue;
-                }
-                $clicks = (int)round((float)($row['clicks'] ?? 0));
-                $impr = (int)round((float)($row['impressions'] ?? 0));
-                $pos = (float)($row['position'] ?? 0);
-
-                if (!isset($acc[$id])) {
-                    $acc[$id] = ['clicks' => 0, 'impressions' => 0, 'posWeighted' => 0.0];
-                }
-                $acc[$id]['clicks'] += $clicks;
-                $acc[$id]['impressions'] += $impr;
-                $acc[$id]['posWeighted'] += $pos * $impr;
-            }
+            $acc = AlphaGaDataAggregator::accumulateSearchAnalytics($rows, $acc);
 
             if (count($rows) < $rowLimit) {
                 break;
@@ -142,19 +123,7 @@ class AlphaGaClient
             $startRow += $rowLimit;
         }
 
-        $result = [];
-        foreach ($acc as $id => $v) {
-            $position = $v['impressions'] > 0
-                ? round($v['posWeighted'] / $v['impressions'], 2)
-                : null;
-            $result[$id] = [
-                'clicks' => $v['clicks'],
-                'impressions' => $v['impressions'],
-                'position' => $position,
-            ];
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::finalizeSearchAnalytics($acc);
     }
 
     /**
@@ -191,38 +160,7 @@ class AlphaGaClient
 
         $res = $this->httpPostJson($url, $body, $token);
 
-        // id => [pv, uu, engagementSum]
-        $acc = [];
-        foreach (($res['rows'] ?? []) as $row) {
-            $path = $row['dimensionValues'][0]['value'] ?? '';
-            $id = $this->extractOpenChatId((string)$path);
-            if ($id === null) {
-                continue;
-            }
-            $pv = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
-            $uu = (int)round((float)($row['metricValues'][1]['value'] ?? 0));
-            $engSum = (float)($row['metricValues'][2]['value'] ?? 0);
-
-            if (!isset($acc[$id])) {
-                $acc[$id] = ['pageviews' => 0, 'activeUsers' => 0, 'engagementSum' => 0.0];
-            }
-            $acc[$id]['pageviews'] += $pv;
-            $acc[$id]['activeUsers'] += $uu;
-            $acc[$id]['engagementSum'] += $engSum;
-        }
-
-        $result = [];
-        foreach ($acc as $id => $v) {
-            $result[$id] = [
-                'pageviews' => $v['pageviews'],
-                'activeUsers' => $v['activeUsers'],
-                'engagementSeconds' => $v['activeUsers'] > 0
-                    ? round($v['engagementSum'] / $v['activeUsers'], 1)
-                    : null,
-            ];
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::aggregateRoomMetrics($res['rows'] ?? []);
     }
 
     /**
@@ -256,23 +194,7 @@ class AlphaGaClient
 
         $res = $this->httpPostJson($url, $body, $token);
 
-        $result = [];
-        foreach (($res['rows'] ?? []) as $row) {
-            $path = $row['dimensionValues'][0]['value'] ?? '';
-            $linkDomain = (string)($row['dimensionValues'][1]['value'] ?? '');
-            // 参加リンク（line.me）以外のクリックは除外
-            if (stripos($linkDomain, 'line.me') === false) {
-                continue;
-            }
-            $id = $this->extractJumpOpenChatId((string)$path);
-            if ($id === null) {
-                continue;
-            }
-            $clicks = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
-            $result[$id] = ($result[$id] ?? 0) + $clicks;
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::aggregateJumpClicks($res['rows'] ?? []);
     }
 
     /**
@@ -302,23 +224,7 @@ class AlphaGaClient
 
         $res = $this->httpPostJson($url, $body, $token);
 
-        $acc = [];
-        foreach (($res['rows'] ?? []) as $row) {
-            $path = (string)($row['dimensionValues'][0]['value'] ?? '');
-            $norm = AlphaPagePathNormalizer::normalize($path);
-            if ($norm === null) {
-                continue;
-            }
-            $pv = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
-            $uu = (int)round((float)($row['metricValues'][1]['value'] ?? 0));
-            if (!isset($acc[$norm['path']])) {
-                $acc[$norm['path']] = ['label' => $norm['label'], 'pageviews' => 0, 'activeUsers' => 0];
-            }
-            $acc[$norm['path']]['pageviews'] += $pv;
-            $acc[$norm['path']]['activeUsers'] += $uu;
-        }
-
-        return $acc;
+        return AlphaGaDataAggregator::aggregatePageMetrics($res['rows'] ?? []);
     }
 
     /**
@@ -352,22 +258,7 @@ class AlphaGaClient
                 break;
             }
 
-            foreach ($rows as $row) {
-                $page = (string)($row['keys'][0] ?? '');
-                $norm = AlphaPagePathNormalizer::normalize($page);
-                if ($norm === null) {
-                    continue;
-                }
-                $clicks = (int)round((float)($row['clicks'] ?? 0));
-                $impr = (int)round((float)($row['impressions'] ?? 0));
-                $pos = (float)($row['position'] ?? 0);
-                if (!isset($acc[$norm['path']])) {
-                    $acc[$norm['path']] = ['clicks' => 0, 'impressions' => 0, 'posWeighted' => 0.0];
-                }
-                $acc[$norm['path']]['clicks'] += $clicks;
-                $acc[$norm['path']]['impressions'] += $impr;
-                $acc[$norm['path']]['posWeighted'] += $pos * $impr;
-            }
+            $acc = AlphaGaDataAggregator::accumulatePageSearchAnalytics($rows, $acc);
 
             if (count($rows) < $rowLimit) {
                 break;
@@ -375,16 +266,7 @@ class AlphaGaClient
             $startRow += $rowLimit;
         }
 
-        $result = [];
-        foreach ($acc as $path => $v) {
-            $result[$path] = [
-                'clicks' => $v['clicks'],
-                'impressions' => $v['impressions'],
-                'position' => $v['impressions'] > 0 ? round($v['posWeighted'] / $v['impressions'], 2) : null,
-            ];
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::finalizePageSearchAnalytics($acc);
     }
 
     /**
@@ -417,26 +299,8 @@ class AlphaGaClient
         ];
 
         $res = $this->httpPostJson($url, $body, $token);
-        $rows = $res['rows'] ?? [];
 
-        $result = [];
-        foreach ($rows as $row) {
-            $query = (string)($row['keys'][0] ?? '');
-            if ($query === '') {
-                continue;
-            }
-            $clicks = (int)round((float)($row['clicks'] ?? 0));
-            $impr = (int)round((float)($row['impressions'] ?? 0));
-            $pos = isset($row['position']) ? round((float)$row['position'], 2) : null;
-            $result[] = [
-                'query' => mb_strlen($query) > 190 ? mb_substr($query, 0, 190) : $query,
-                'clicks' => $clicks,
-                'impressions' => $impr,
-                'position' => $pos,
-            ];
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::aggregateTopSearchQueries($res['rows'] ?? []);
     }
 
     /**
@@ -479,28 +343,7 @@ class AlphaGaClient
                 break;
             }
 
-            foreach ($rows as $row) {
-                $page = (string)($row['keys'][0] ?? '');
-                $query = (string)($row['keys'][1] ?? '');
-                if ($query === '') {
-                    continue;
-                }
-                $id = $this->extractOpenChatId($page);
-                if ($id === null) {
-                    continue;
-                }
-                $query = mb_strlen($query) > 190 ? mb_substr($query, 0, 190) : $query;
-                $clicks = (int)round((float)($row['clicks'] ?? 0));
-                $impr = (int)round((float)($row['impressions'] ?? 0));
-                $pos = (float)($row['position'] ?? 0);
-
-                if (!isset($acc[$id][$query])) {
-                    $acc[$id][$query] = ['clicks' => 0, 'impressions' => 0, 'posWeighted' => 0.0];
-                }
-                $acc[$id][$query]['clicks'] += $clicks;
-                $acc[$id][$query]['impressions'] += $impr;
-                $acc[$id][$query]['posWeighted'] += $pos * $impr;
-            }
+            $acc = AlphaGaDataAggregator::accumulateRoomSearchQueries($rows, $acc);
 
             if (count($rows) < $rowLimit) {
                 break;
@@ -508,25 +351,7 @@ class AlphaGaClient
             $startRow += $rowLimit;
         }
 
-        $result = [];
-        foreach ($acc as $id => $queries) {
-            $list = [];
-            foreach ($queries as $query => $v) {
-                $list[] = [
-                    'query' => (string)$query,
-                    'clicks' => $v['clicks'],
-                    'impressions' => $v['impressions'],
-                    'position' => $v['impressions'] > 0
-                        ? round($v['posWeighted'] / $v['impressions'], 2)
-                        : null,
-                ];
-            }
-            // clicks 降順 上位20件
-            usort($list, static fn($a, $b) => $b['clicks'] <=> $a['clicks']);
-            $result[$id] = array_slice($list, 0, 20);
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::finalizeRoomSearchQueries($acc);
     }
 
     /**
@@ -572,17 +397,7 @@ class AlphaGaClient
                 break;
             }
 
-            foreach ($rows as $row) {
-                $path = (string)($row['dimensionValues'][0]['value'] ?? '');
-                $id = $this->extractOpenChatId($path);
-                if ($id === null) {
-                    continue;
-                }
-                $referrer = $this->normalizeReferrer((string)($row['dimensionValues'][1]['value'] ?? ''));
-                $pv = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
-
-                $acc[$id][$referrer] = ($acc[$id][$referrer] ?? 0) + $pv;
-            }
+            $acc = AlphaGaDataAggregator::accumulateRoomReferrers($rows, $acc);
 
             if (count($rows) < $pageLimit) {
                 break;
@@ -590,18 +405,7 @@ class AlphaGaClient
             $offset += $pageLimit;
         }
 
-        $result = [];
-        foreach ($acc as $id => $referrers) {
-            $list = [];
-            foreach ($referrers as $referrer => $pv) {
-                $list[] = ['referrer' => (string)$referrer, 'pageviews' => $pv];
-            }
-            // pv 降順 上位20件
-            usort($list, static fn($a, $b) => $b['pageviews'] <=> $a['pageviews']);
-            $result[$id] = array_slice($list, 0, 20);
-        }
-
-        return $result;
+        return AlphaGaDataAggregator::finalizeRoomReferrers($acc);
     }
 
     /**
@@ -640,87 +444,7 @@ class AlphaGaClient
 
         $res = $this->httpPostJson($url, $body, $token);
 
-        $result = [];
-        foreach (($res['rows'] ?? []) as $row) {
-            $path = (string)($row['dimensionValues'][0]['value'] ?? '');
-            $linkDomain = (string)($row['dimensionValues'][1]['value'] ?? '');
-            $channel = (string)($row['dimensionValues'][2]['value'] ?? '');
-            // 参加リンク（line.me）以外のクリックは除外
-            if (stripos($linkDomain, 'line.me') === false) {
-                continue;
-            }
-            // Organic Search セッション由来のみ
-            if ($channel !== 'Organic Search') {
-                continue;
-            }
-            $id = $this->extractJumpOpenChatId($path);
-            if ($id === null) {
-                continue;
-            }
-            $clicks = (int)round((float)($row['metricValues'][0]['value'] ?? 0));
-            $result[$id] = ($result[$id] ?? 0) + $clicks;
-        }
-
-        return $result;
-    }
-
-    /**
-     * GA4 pageReferrer を保存・表示しやすい形に正規化する。
-     * 空 / '(not set)' は '(direct)'。190字を超える場合は丸める。
-     */
-    private function normalizeReferrer(string $referrer): string
-    {
-        $referrer = trim($referrer);
-        if ($referrer === '' || $referrer === '(not set)') {
-            return '(direct)';
-        }
-        return mb_strlen($referrer) > 190 ? mb_substr($referrer, 0, 190) : $referrer;
-    }
-
-    /**
-     * 本家 ja セクション以外（/tw, /th ロケール配下）の URL/パスか。
-     *
-     * GSC/GA4 のプロパティはドメイン全体（/tw・/th も同一ドメインのサブパス）なので、
-     * ja 専用のαに tw/th の流入が混ざる。さらに /th/oc/{id} は PATH_ID_PATTERN が
-     * /oc/{id} に一致して**別ロケールの部屋idをja部屋idへ誤って畳む**。これを弾く。
-     */
-    private function isOtherLocalePath(string $urlOrPath): bool
-    {
-        $path = $urlOrPath;
-        if (preg_match('#^https?://[^/]+(/.*)$#', $urlOrPath, $m)) {
-            $path = $m[1];
-        }
-        return (bool)preg_match('#^/(?:tw|th)(?:/|$)#', $path);
-    }
-
-    /**
-     * pagePath / page URL から /openchat/{id} の数値idを抽出。tw/th ロケール配下は除外（ja専用）。
-     */
-    private function extractOpenChatId(string $path): ?int
-    {
-        if ($this->isOtherLocalePath($path)) {
-            return null;
-        }
-        if (preg_match(self::PATH_ID_PATTERN, $path, $m)) {
-            $id = (int)$m[1];
-            return $id > 0 ? $id : null;
-        }
-        return null;
-    }
-
-    /**
-     * /oc/{id}/jump の id を抽出（参加リンク計測ページ専用）。tw/th 配下は除外。
-     */
-    private function extractJumpOpenChatId(string $path): ?int
-    {
-        if ($this->isOtherLocalePath($path)) {
-            return null;
-        }
-        if (preg_match('#/oc/(\d+)/jump#', $path, $m)) {
-            $id = (int)$m[1];
-            return $id > 0 ? $id : null;
-        }
-        return null;
+        return AlphaGaDataAggregator::aggregateJumpClicksByChannel($res['rows'] ?? []);
     }
 
     /**
