@@ -19,6 +19,8 @@ class RankingBanLabsPageController
         int $change,
         int $publish,
         int $percent,
+        int $dmin,
+        int $dmax,
         int $page,
         string $keyword,
         string $since,
@@ -26,8 +28,9 @@ class RankingBanLabsPageController
     ): ViewInterface {
         $since = $this->validDate($since);
         $until = $this->validDate($until);
+        [$dmin, $dmax] = $this->normalizeDuration($dmin, $dmax);
 
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax);
 
         $_meta = meta()
             ->setTitle('オプチャ公式ランキング掲載の分析 ' . ($page > 1 ? "({$page}ページ目) " : '') . $titleValue)
@@ -52,6 +55,8 @@ class RankingBanLabsPageController
                 'titleValue',
                 'since',
                 'until',
+                'dmin',
+                'dmax',
             )
         );
     }
@@ -67,6 +72,8 @@ class RankingBanLabsPageController
         int $change,
         int $publish,
         int $percent,
+        int $dmin,
+        int $dmax,
         int $page,
         string $keyword,
         string $since,
@@ -76,8 +83,9 @@ class RankingBanLabsPageController
 
         $since = $this->validDate($since);
         $until = $this->validDate($until);
+        [$dmin, $dmax] = $this->normalizeDuration($dmin, $dmax);
 
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax);
 
         $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
@@ -91,7 +99,10 @@ class RankingBanLabsPageController
             $page,
             $limit,
             $since,
-            $until
+            $until,
+            $dmin,
+            $dmax,
+            $_now
         );
 
         if ($rankingBanData === null && $page > 1) return false;
@@ -106,6 +117,9 @@ class RankingBanLabsPageController
                     'maxPageNumber',
                     'page',
                     'titleValue',
+                    'percent',
+                    'dmin',
+                    'dmax',
                 )
             );
         }
@@ -114,7 +128,7 @@ class RankingBanLabsPageController
         $maxPageNumber = $rankingBanData->maxPageNumber;
         $path = 'labs/publication-analytics';
         // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
-        $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until');
+        $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until', 'dmin', 'dmax');
 
         [$title, $_select, $_label] = $rankingBanSelectElementPagination->geneSelectElementPagerAsc(
             $path,
@@ -153,15 +167,41 @@ class RankingBanLabsPageController
     /**
      * meta title・フラグメントの data-title 用ラベル（既存仕様のままパリティ維持）
      */
-    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = ''): string
+    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0): string
     {
         return implode(' ', array_filter([
             'p' => $publish === 1 ? '💡現在未掲載' : ($publish === 0 ? '💡再掲載済み' : '💡全て'),
             'c' => $change === 1 ? '📝ルーム内容変更なし' : ($change === 0 ? '📝ルーム内容変更あり' : '📝全て'),
             'per' => $percent < 100 ? "📊ランク上位{$percent}%" : '📊全て',
+            'dur' => ($dmin > 0 || $dmax > 0) ? '⏳消えていた期間：' . $this->durationLabel($dmin, $dmax) : false,
             'd' => ($since !== '' || $until !== '') ? "📅{$since}〜{$until}" : false,
             'keyword' => $keyword !== '' ? "\n🔎「{$keyword}」" : false,
         ]));
+    }
+
+    /**
+     * 消えていた期間（時間単位の下限・上限）の正規化。矛盾した範囲は下限を優先して上限を捨てる。
+     */
+    private function normalizeDuration(int $dmin, int $dmax): array
+    {
+        if ($dmin > 0 && $dmax > 0 && $dmin >= $dmax) return [$dmin, 0];
+        return [$dmin, $dmax];
+    }
+
+    /**
+     * 消えていた期間の表示ラベル。チップと同じ区分は同じ言葉、それ以外は時間/日で組み立てる。
+     * JS側 durLabel() と同一仕様（パリティ維持）。
+     */
+    private function durationLabel(int $dmin, int $dmax): string
+    {
+        $known = ['0-24' => '24時間以内', '24-72' => '1〜3日', '72-168' => '3〜7日', '168-0' => '1週間以上', '72-0' => '3日以上'];
+        $key = "{$dmin}-{$dmax}";
+        if (isset($known[$key])) return $known[$key];
+
+        $fmt = fn (int $h): string => $h % 24 === 0 ? ($h / 24) . '日' : $h . '時間';
+        if ($dmin > 0 && $dmax > 0) return $fmt($dmin) . '〜' . $fmt($dmax);
+        if ($dmin > 0) return $fmt($dmin) . '以上';
+        return $fmt($dmax) . '以内';
     }
 
     /**
