@@ -388,7 +388,7 @@
 }
 
 .openchat-item-desc {
-  color: var(--c-text-3);
+  color: var(--c-text-desc);
   font-size: 13px;
   line-height: 135%;
   display: -webkit-box;
