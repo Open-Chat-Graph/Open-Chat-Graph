@@ -1,12 +1,14 @@
 /* MVP.css v1.12 - https://github.com/andybrewer/mvp */
+/* 色は style/tokens.css のデザイントークンを参照する（本ファイルより前に読み込まれる前提）。
+   --color-* はレガシーエイリアス（mvp.css 側の注記参照）。 */
 :root {
-  --color-text-secondary: #777;
+  --color-text-secondary: var(--c-text-3);
   --border-radius: 5px;
-  --color-bg-secondary: rgb(207, 217, 222);
+  --color-bg-secondary: var(--c-border-3);
 }
 
 * {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: var(--c-tap-highlight);
 }
 
 hr {

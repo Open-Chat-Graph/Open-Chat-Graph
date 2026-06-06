@@ -9,6 +9,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php echo $_meta ?>
+    <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/mvpmin.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/unset.css', urlRoot: '') ?>">
     <?php foreach ($_css as $css) : ?>
