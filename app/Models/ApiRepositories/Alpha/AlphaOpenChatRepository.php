@@ -167,6 +167,18 @@ class AlphaOpenChatRepository
     }
 
     /**
+     * 現在のメンバー数を取得（部屋が存在しなければ 0）
+     */
+    public function getCurrentMember(int $openChatId): int
+    {
+        DB::connect();
+        return (int)DB::fetchColumn(
+            "SELECT member FROM open_chat WHERE id = :id",
+            ['id' => $openChatId]
+        );
+    }
+
+    /**
      * キーワードをパース（全角スペース→半角、空要素除去）
      */
     private function parseKeywords(string $keyword): array

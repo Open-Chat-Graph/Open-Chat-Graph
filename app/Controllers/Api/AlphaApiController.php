@@ -14,8 +14,9 @@ use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaInsightsService;
+use App\Services\Alpha\AlphaLineUrlFormatter;
+use App\Services\Alpha\AlphaReferrerFormatter;
 use App\Services\Auth\AuthInterface;
-use App\Models\Repositories\DB;
 use Shadow\Kernel\Reception;
 use Shadow\Kernel\Validator;
 use Shared\Exceptions\BadRequestException;
@@ -144,19 +145,7 @@ class AlphaApiController
             }
 
             // URLをLINE形式に変換
-            $lineUrl = '';
-            if (!empty($item['url'])) {
-                // すでに完全なURLの場合はそのまま使用
-                if (strpos($item['url'], 'http') === 0) {
-                    $lineUrl = $item['url'];
-                } else {
-                    // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
-                    $hash = trim($item['url'], '/');
-                    if (!empty($hash)) {
-                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
-                    }
-                }
-            }
+            $lineUrl = AlphaLineUrlFormatter::toLineUrl($item['url'] ?? '');
 
             $result[] = [
                 'id' => (int)$item['id'],
@@ -212,19 +201,7 @@ class AlphaApiController
         }
 
         // URLをLINE形式に変換
-        $lineUrl = '';
-        if (!empty($ocData['url'])) {
-            // すでに完全なURLの場合はそのまま使用
-            if (strpos($ocData['url'], 'http') === 0) {
-                $lineUrl = $ocData['url'];
-            } else {
-                // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
-                $hash = trim($ocData['url'], '/');
-                if (!empty($hash)) {
-                    $lineUrl = AppConfig::LINE_APP_URL . $hash;
-                }
-            }
-        }
+        $lineUrl = AlphaLineUrlFormatter::toLineUrl($ocData['url'] ?? '');
 
         return response([
             'id' => $open_chat_id,
@@ -307,64 +284,11 @@ class AlphaApiController
             return response(['data' => []]);
         }
 
-        // リポジトリから一括取得
+        // リポジトリから一括取得し、search と同じ形に整形
         $data = $statsRepo->findByIds($ids);
 
-        // レスポンスを整形
-        $result = [];
-        foreach ($data as $item) {
-            // URLをLINE形式に変換
-            $lineUrl = '';
-            if (!empty($item['url'])) {
-                // すでに完全なURLの場合はそのまま使用
-                if (strpos($item['url'], 'http') === 0) {
-                    $lineUrl = $item['url'];
-                } else {
-                    // ハッシュのみの場合は https://line.me/ti/g2/{hash} 形式に変換
-                    $hash = trim($item['url'], '/');
-                    if (!empty($hash)) {
-                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
-                    }
-                }
-            }
-
-            $result[] = [
-                'id' => (int)$item['id'],
-                'name' => $item['name'],
-                'desc' => $item['description'] ?? '',
-                'member' => (int)$item['member'],
-                'img' => $item['img_url'] ?? '',
-                'emblem' => (int)$item['emblem'],
-                'category' => (int)$item['category'],
-                'categoryName' => $this->getCategoryName((int)$item['category']),
-                'join_method_type' => (int)$item['join_method_type'],
-
-                // 1時間の差分（nullの場合はN/A表示）
-                'increasedMember' => $item['hourly_diff'] !== null ? (int)$item['hourly_diff'] : null,
-                'percentageIncrease' => $item['hourly_percent'] !== null ? (float)$item['hourly_percent'] : null,
-
-                // 24時間の差分（nullの場合はN/A表示）
-                'diff24h' => $item['daily_diff'] !== null ? (int)$item['daily_diff'] : null,
-                'percent24h' => $item['daily_percent'] !== null ? (float)$item['daily_percent'] : null,
-
-                // 1週間の差分（nullの場合はN/A表示）
-                'diff1w' => $item['weekly_diff'] !== null ? (int)$item['weekly_diff'] : null,
-                'percent1w' => $item['weekly_percent'] !== null ? (float)$item['weekly_percent'] : null,
-
-                // ランキング掲載判定
-                'isInRanking' => isset($item['is_in_ranking']) ? (bool)$item['is_in_ranking'] : false,
-
-                // 作成日と登録日
-                'createdAt' => !empty($item['created_at']) ? strtotime($item['created_at']) : null,
-                'registeredAt' => $item['api_created_at'] ?? '',
-
-                // LINE URL
-                'url' => $lineUrl,
-            ];
-        }
-
         return response([
-            'data' => $result,
+            'data' => $this->formatResponse($data),
         ]);
     }
 
@@ -372,13 +296,15 @@ class AlphaApiController
      * ランキング掲載履歴取得API
      * GET /alpha-api/ranking-history/{open_chat_id}
      */
-    function rankingHistory(RankingBanPageRepository $rankingBanRepo, int $open_chat_id)
-    {
+    function rankingHistory(
+        RankingBanPageRepository $rankingBanRepo,
+        AlphaOpenChatRepository $ocRepo,
+        int $open_chat_id
+    ) {
         Reception::$isJson = true;
 
         // 現在のメンバー数を取得
-        $currentMemberSql = "SELECT member FROM open_chat WHERE id = :id";
-        $currentMember = DB::fetchColumn($currentMemberSql, ['id' => $open_chat_id]);
+        $currentMember = $ocRepo->getCurrentMember($open_chat_id);
 
         // 履歴データ取得
         $history = $rankingBanRepo->findHistoryByOpenChatId($open_chat_id);
@@ -483,17 +409,7 @@ class AlphaApiController
             $item = $row['candidate'];
 
             // URLをLINE形式に変換（search/batchStats と同じロジック）
-            $lineUrl = '';
-            if (!empty($item['url'])) {
-                if (strpos($item['url'], 'http') === 0) {
-                    $lineUrl = $item['url'];
-                } else {
-                    $hash = trim($item['url'], '/');
-                    if (!empty($hash)) {
-                        $lineUrl = AppConfig::LINE_APP_URL . $hash;
-                    }
-                }
-            }
+            $lineUrl = AlphaLineUrlFormatter::toLineUrl($item['url'] ?? '');
 
             $data[] = [
                 'id' => (int)$item['id'],
@@ -753,18 +669,13 @@ class AlphaApiController
         $referrerRows = $repo->getRoomReferrers($open_chat_id, $win['fromDate'], $win['toDate'], 20);
 
         // 「他の部屋（◯◯）」用に、参照元 URL から他部屋IDを拾って名前を解決する。
-        $otherRoomIds = [];
-        foreach ($referrerRows as $rr) {
-            if (preg_match('#/(?:oc|openchat)/(\d+)#', (string)$rr['referrer'], $mm)) {
-                $rid = (int)$mm[1];
-                if ($rid !== $open_chat_id) {
-                    $otherRoomIds[] = $rid;
-                }
-            }
-        }
+        $otherRoomIds = AlphaReferrerFormatter::extractOtherRoomIds($referrerRows, $open_chat_id);
         $roomNames = $repo->getRoomNames($otherRoomIds);
 
-        $referrers = array_map(fn($r) => $this->formatReferrer($r, $open_chat_id, $roomNames), $referrerRows);
+        $referrers = array_map(
+            static fn($r) => AlphaReferrerFormatter::format($r, $open_chat_id, $roomNames),
+            $referrerRows
+        );
 
         return response([
             'days' => $win['days'],
@@ -783,213 +694,6 @@ class AlphaApiController
             'searchQueries' => $searchQueries,
             'referrers' => $referrers,
         ]);
-    }
-
-    /**
-     * リファラ行を表示用に整形する（label / isInternal を付ける）。
-     *
-     * isInternal は host が本家ドメイン（SecretsConfig::$gscSiteUrl 由来）かどうか。
-     * label は (direct)→「直接・不明」/ 検索エンジン→「検索」/ 本家内部→パスからページ種別 /
-     * 外部→ホスト名。
-     *
-     * @param array{referrer:string, pageviews:int} $r
-     * @param int $currentRoomId この詳細ページの部屋ID（自分自身からの参照を判別する）
-     * @param array<int, string> $roomNames 他部屋 id => name（「他の部屋（◯◯）」用）
-     * @return array{referrer:string, label:string, detail:string, pageviews:int, isInternal:bool}
-     *   label  … 一覧の1行に出す短い文言（はみ出す分は省略表示）
-     *   detail … タップ/ホバーのチップに出す全文（どこから来たかを明示）
-     */
-    private function formatReferrer(array $r, int $currentRoomId = 0, array $roomNames = []): array
-    {
-        $referrer = (string)$r['referrer'];
-        $pageviews = (int)$r['pageviews'];
-
-        if ($referrer === '(direct)') {
-            return [
-                'referrer' => $referrer,
-                'label' => '直接・不明',
-                'detail' => '直接アクセス（ブックマーク／アプリ内／URL直打ち など、参照元なし）',
-                'pageviews' => $pageviews,
-                'isInternal' => false,
-            ];
-        }
-
-        $host = (string)(parse_url($referrer, PHP_URL_HOST) ?? '');
-        $host = strtolower($host);
-        // 先頭の www. は無視して比較する
-        $bareHost = preg_replace('/^www\./', '', $host) ?? $host;
-
-        $ownDomain = $this->ownDomainHost();
-        $isInternal = $ownDomain !== '' && ($bareHost === $ownDomain || str_ends_with($bareHost, '.' . $ownDomain));
-
-        if ($isInternal) {
-            $path = (string)(parse_url($referrer, PHP_URL_PATH) ?? '');
-            $query = (string)(parse_url($referrer, PHP_URL_QUERY) ?? '');
-            [$label, $detail, $isSeoOrigin] = $this->internalReferrerLabel($path, $query, $currentRoomId, $roomNames);
-            return [
-                'referrer' => $referrer,
-                'label' => $label,
-                'detail' => $detail,
-                'pageviews' => $pageviews,
-                // SEO経由＝本家内SEOページ経由の間接流入。自己参照(このページ内)は除く。
-                'isInternal' => $isSeoOrigin,
-            ];
-        }
-
-        // 検索エンジン判定（host ベース）
-        $engine = $this->searchEngineName($bareHost);
-        if ($engine !== '') {
-            return [
-                'referrer' => $referrer,
-                'label' => $engine . '検索',
-                'detail' => $engine . '検索からの流入（外部）',
-                'pageviews' => $pageviews,
-                'isInternal' => false,
-            ];
-        }
-
-        // それ以外の外部はホスト名（取れなければ生 referrer）。チップには元URLを出す。
-        return [
-            'referrer' => $referrer,
-            'label' => $bareHost !== '' ? $bareHost : $referrer,
-            'detail' => '外部サイトからの流入: ' . $referrer,
-            'pageviews' => $pageviews,
-            'isInternal' => false,
-        ];
-    }
-
-    /**
-     * 本家ドメインのホスト名を SecretsConfig::$gscSiteUrl から取り出す（ハードコードしない）。
-     * 例 'sc-domain:openchat-review.me' / 'https://openchat-review.me/' → 'openchat-review.me'。
-     * 設定が空なら ''（その場合 isInternal は常に false）。
-     */
-    private function ownDomainHost(): string
-    {
-        $site = trim(\App\Config\SecretsConfig::$gscSiteUrl);
-        if ($site === '') {
-            return '';
-        }
-        // sc-domain:example.com 形式
-        if (str_starts_with($site, 'sc-domain:')) {
-            $host = substr($site, strlen('sc-domain:'));
-        } else {
-            // URLプレフィックス形式 https://example.com/
-            $parsed = parse_url($site, PHP_URL_HOST);
-            $host = $parsed !== null && $parsed !== false ? $parsed : $site;
-        }
-        $host = strtolower(trim($host));
-        return preg_replace('/^www\./', '', $host) ?? $host;
-    }
-
-    /**
-     * 検索エンジン名を返す（該当しなければ ''）。Google / Yahoo / Bing 等。
-     */
-    private function searchEngineName(string $host): string
-    {
-        if ($host === '') {
-            return '';
-        }
-        $map = [
-            'google.' => 'Google',
-            'bing.' => 'Bing',
-            'yahoo.' => 'Yahoo!',
-            'duckduckgo.' => 'DuckDuckGo',
-            'baidu.' => 'Baidu',
-            'yandex.' => 'Yandex',
-            'ecosia.' => 'Ecosia',
-            'naver.' => 'Naver',
-        ];
-        foreach ($map as $needle => $name) {
-            if (str_contains($host, $needle)) {
-                return $name;
-            }
-        }
-        return '';
-    }
-
-    /**
-     * 本家(openchat-review.me)内リファラの path/query から「どのページから来たか」を
-     * 人間可読に整形する。本家のページ種別は限られるので各パターンを文言化する。
-     *
-     * @param array<int, string> $roomNames 他部屋 id => name
-     * @return array{0:string, 1:string, 2:bool} [一覧用の短ラベル, チップ用の全文, SEO経由(間接流入)とみなすか]
-     *   第3要素 false ＝ 自己参照「このページ内」（再読込/グラフ操作。SEO経由バッジを出さない）。
-     */
-    private function internalReferrerLabel(string $path, string $query, int $currentRoomId = 0, array $roomNames = []): array
-    {
-        // 末尾スラッシュを正規化（'/ranking/' と '/ranking' を同一視）
-        $p = $path === '' ? '/' : rtrim($path, '/');
-        if ($p === '') {
-            $p = '/';
-        }
-        $params = [];
-        if ($query !== '') {
-            parse_str($query, $params);
-        }
-        $keyword = isset($params['keyword']) ? trim((string)$params['keyword']) : '';
-
-        // トップ
-        if ($p === '/') {
-            return ['トップページ', 'オプチャグラフのトップページ', true];
-        }
-        // ランキング（検索結果＝キーワード付き、カテゴリ別、急上昇）
-        if ($p === '/ranking' || str_starts_with($p, '/ranking/')) {
-            // keyword=tag:◯◯ はおすすめタグからの遷移（検索ではなくタグ）。1行にタグ名も出す。
-            if (str_starts_with($keyword, 'tag:')) {
-                $tag = trim(substr($keyword, 4));
-                if ($tag !== '') {
-                    return ['おすすめ（' . $tag . '）', 'おすすめタグ「' . $tag . '」', true];
-                }
-            }
-            if ($keyword !== '') {
-                return ['検索結果「' . $keyword . '」', '検索結果「' . $keyword . '」', true];
-            }
-            if (preg_match('#^/ranking/(.+)$#u', $p, $m)) {
-                $cat = urldecode($m[1]);
-                return ['ランキング（' . $cat . '）', 'ランキング（カテゴリ: ' . $cat . '）', true];
-            }
-            return ['ランキング', '急上昇ランキング', true];
-        }
-        if ($p === '/official-ranking' || str_starts_with($p, '/official-ranking/')) {
-            return ['公式ランキング', '公式ランキング', true];
-        }
-        // おすすめ（タグ別＝1行にタグ名も／一覧）
-        if (preg_match('#^/recommend/(.+)$#u', $p, $m)) {
-            $tag = urldecode($m[1]);
-            return ['おすすめ（' . $tag . '）', 'おすすめタグ「' . $tag . '」', true];
-        }
-        if ($p === '/recommend') {
-            return ['おすすめ', 'おすすめタグ一覧', true];
-        }
-        // 部屋詳細（自分自身＝再訪/グラフ操作 と 他の部屋 を区別する。自己参照は SEO経由ではない）
-        if (preg_match('#^/(?:oc|openchat)/(\d+)#', $p, $m)) {
-            $rid = (int)$m[1];
-            if ($currentRoomId > 0 && $rid === $currentRoomId) {
-                return ['このページ内', 'この部屋のページ内（再読み込み・グラフ操作など）', false];
-            }
-            $name = $roomNames[$rid] ?? '';
-            if ($name !== '') {
-                return ['他の部屋（' . $name . '）', '他の部屋「' . $name . '」（ID: ' . $rid . '）から', true];
-            }
-            return ['他の部屋', '他の部屋（ID: ' . $rid . '）から', true];
-        }
-        if ($p === '/oclist') {
-            return ['部屋一覧', '部屋一覧ページ', true];
-        }
-        if (str_starts_with($p, '/recently-registered')) {
-            return ['新着の部屋', '新着登録の部屋一覧', true];
-        }
-        if (str_starts_with($p, '/comments-timeline')) {
-            return ['コメント新着', '新着コメント一覧', true];
-        }
-        if (str_starts_with($p, '/comment/')) {
-            return ['コメント欄', 'コメント欄', true];
-        }
-        if ($p === '/labs' || str_starts_with($p, '/labs/')) {
-            return ['ラボ', 'オプチャグラフ Labs', true];
-        }
-        // 既知パターン外の本家内ページ
-        return ['サイト内ページ', 'オプチャグラフ内のページ: ' . $path, true];
     }
 
     /**
@@ -1187,23 +891,8 @@ class AlphaApiController
             'join_method_type' => (int)$item['join_method_type'],
             'createdAt' => !empty($item['created_at']) ? strtotime($item['created_at']) : null,
             'registeredAt' => $item['api_created_at'] ?? '',
-            'url' => $this->buildLineUrl($item['url'] ?? ''),
+            'url' => AlphaLineUrlFormatter::toLineUrl($item['url'] ?? ''),
         ];
-    }
-
-    /**
-     * URL/ハッシュを LINE 形式の完全URLに変換（search/batchStats/periodGrowth と同一ロジック）。
-     */
-    private function buildLineUrl(?string $url): string
-    {
-        if (empty($url)) {
-            return '';
-        }
-        if (strpos($url, 'http') === 0) {
-            return $url;
-        }
-        $hash = trim($url, '/');
-        return $hash !== '' ? AppConfig::LINE_APP_URL . $hash : '';
     }
 
     // ============================================================
