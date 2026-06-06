@@ -97,6 +97,12 @@ class ApiOpenChatPageRepository implements OpenChatPageRepositoryInterface
         );
     }
 
+    public function isWithinIdRange(int $id): bool
+    {
+        $max = (int) SQLiteOcgraphSqlapi::fetchColumn("SELECT MAX(openchat_id) FROM openchat_master");
+        return $id <= $max;
+    }
+
     public function getOpenChatNamesByIds(array $ids): array
     {
         if (empty($ids)) {
