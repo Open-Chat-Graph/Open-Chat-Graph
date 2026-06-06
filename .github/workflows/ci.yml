@@ -190,6 +190,16 @@ jobs:
           echo "Initializing database and storage..."
           ./setup/local-setup.default.sh -y -n
 
+      # 本番デプロイは composer install --optimize-autoloader で全自前クラス入りの classmap を生成する。
+      # CI も同じ classmap にしないと ClassPreloader の全クラス検証が空振りし、
+      # インターフェース実装漏れ等のリンク不能クラスを検出できない（実例: #325 の修正対象は
+      # 5/24 混入だが、本番の毎時 cron でしか発火せず CI を素通りしていた）。
+      # 検証された fatal は storage/exception.log に記録され check-error-log.sh が CI を落とす。
+      - name: Optimize autoloader (本番と同じclassmapでクラス検証を有効化)
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u www-data app composer dump-autoload --optimize
+
       - name: Check if any frontend changed
         if: steps.skip.outputs.skip != 'true'
         id: any_frontend
