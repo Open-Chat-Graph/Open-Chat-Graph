@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="jp">
+<html lang="jp" data-theme="light">
 
 <head>
     <meta charset="UTF-8">

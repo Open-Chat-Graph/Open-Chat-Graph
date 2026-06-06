@@ -10,6 +10,8 @@ $enableAdsense = true;
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <?php echo $_meta ?>
     <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
+    <?php /* テーマ確定はCSSより先（FOUC防止のため同期読み込み） */ ?>
+    <script src="<?php echo fileUrl('/js/theme.js', urlRoot: '') ?>"></script>
     <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
     <?php foreach ($_css as $css) : ?>
         <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
