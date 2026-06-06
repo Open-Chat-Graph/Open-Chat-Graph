@@ -281,6 +281,41 @@ body > .google-auto-placed {
   outline-offset: 1px;
 }
 
+/* 期間（消えた時期）。mvp.css の input{padding:.4rem .8rem} 等は自前指定で打ち消す */
+
+.rb-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rb-date-input {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid #ededf0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #111;
+  background-color: #fff;
+  font-family: var(--font-family);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rb-date-input:focus {
+  border-color: #06c755;
+  outline: none;
+}
+
+.rb-dates-sep {
+  flex: none;
+  color: #8a9097;
+}
+
 /* キーワード検索 */
 
 .rb-search {

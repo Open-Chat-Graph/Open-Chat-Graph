@@ -19,8 +19,11 @@ class RankingBanPageRepository
         string $keyword,
         int $offset,
         int $limit,
+        string $since = '',
+        string $until = '',
     ): array {
-        $whereClause = $this->buildWhereClause($change, $publish, $percent);
+        $whereClause = $this->buildWhereClause($change, $publish, $percent)
+            . $this->buildDateClause($since, $until, $dateParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -55,11 +58,11 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                compact('offset', 'limit'),
+                compact('offset', 'limit') + $dateParams,
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), compact('offset', 'limit'));
+            return DB::fetchAll($query(''), compact('offset', 'limit') + $dateParams);
         }
     }
 
@@ -67,9 +70,10 @@ class RankingBanPageRepository
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
      */
-    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword): array
+    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = ''): array
     {
-        $whereClause = $this->buildWhereClause($change, $publish, $percent);
+        $whereClause = $this->buildWhereClause($change, $publish, $percent)
+            . $this->buildDateClause($since, $until, $dateParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -89,12 +93,35 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
+                $dateParams ?: null,
                 fetchAllArgs: [\PDO::FETCH_COLUMN, 0],
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), args: [\PDO::FETCH_COLUMN, 0]);
+            return DB::fetchAll($query(''), $dateParams ?: null, args: [\PDO::FETCH_COLUMN, 0]);
         }
+    }
+
+    /**
+     * 「消えた日時(rb.datetime)」の期間絞り込み。値はバインドパラメータで渡す（連結しない）。
+     *
+     * @param string $since YYYY-MM-DD（検証済み・空文字なら条件なし）
+     * @param string $until YYYY-MM-DD（同上）
+     * @param array|null $dateParams バインド用パラメータの出力先
+     */
+    private function buildDateClause(string $since, string $until, ?array &$dateParams): string
+    {
+        $clause = '';
+        $dateParams = [];
+        if ($since !== '') {
+            $clause .= ' AND rb.datetime >= :since';
+            $dateParams['since'] = $since . ' 00:00:00';
+        }
+        if ($until !== '') {
+            $clause .= ' AND rb.datetime <= :until';
+            $dateParams['until'] = $until . ' 23:59:59';
+        }
+        return $clause;
     }
 
     /**

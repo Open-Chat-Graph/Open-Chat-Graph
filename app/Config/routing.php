@@ -380,6 +380,8 @@ Route::path(
     ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
     ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
@@ -396,6 +398,8 @@ Route::path(
     ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->matchStr('since', maxLen: 10, emptyAble: true)
+    ->matchStr('until', maxLen: 10, emptyAble: true)
     ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;

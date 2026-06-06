@@ -19,9 +19,14 @@ class RankingBanLabsPageController
         int $publish,
         int $percent,
         int $page,
-        string $keyword
+        string $keyword,
+        string $since,
+        string $until
     ) {
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword);
+        $since = $this->validDate($since);
+        $until = $this->validDate($until);
+
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
 
         $_meta = meta()
             ->setTitle('オプチャ公式ランキング掲載の分析 ' . ($page > 1 ? "({$page}ページ目) " : '') . $titleValue)
@@ -44,6 +49,8 @@ class RankingBanLabsPageController
                 '_updatedAt',
                 '_now',
                 'titleValue',
+                'since',
+                'until',
             )
         );
     }
@@ -60,11 +67,16 @@ class RankingBanLabsPageController
         int $publish,
         int $percent,
         int $page,
-        string $keyword
+        string $keyword,
+        string $since,
+        string $until
     ) {
         header('X-Robots-Tag: noindex');
 
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword);
+        $since = $this->validDate($since);
+        $until = $this->validDate($until);
+
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until);
 
         $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
@@ -76,7 +88,9 @@ class RankingBanLabsPageController
             $percent,
             $keyword,
             $page,
-            $limit
+            $limit,
+            $since,
+            $until
         );
 
         if (!$rankingBanData && $page > 1) return false;
@@ -98,7 +112,8 @@ class RankingBanLabsPageController
         $totalRecords = $rankingBanData['totalRecords'];
         $maxPageNumber = $rankingBanData['maxPageNumber'];
         $path = 'labs/publication-analytics';
-        $params = compact('change', 'publish', 'percent', 'keyword');
+        // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
+        $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until');
 
         [$title, $_select, $_label] = $rankingBanSelectElementPagination->geneSelectElementPagerAsc(
             $path,
@@ -137,13 +152,24 @@ class RankingBanLabsPageController
     /**
      * meta title・フラグメントの data-title 用ラベル（既存仕様のままパリティ維持）
      */
-    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword): string
+    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = ''): string
     {
         return implode(' ', array_filter([
             'p' => $publish === 1 ? '💡現在未掲載' : ($publish === 0 ? '💡再掲載済み' : '💡全て'),
             'c' => $change === 1 ? '📝ルーム内容変更なし' : ($change === 0 ? '📝ルーム内容変更あり' : '📝全て'),
             'per' => $percent < 100 ? "📊ランク上位{$percent}%" : '📊全て',
+            'd' => ($since !== '' || $until !== '') ? "📅{$since}〜{$until}" : false,
             'keyword' => $keyword !== '' ? "\n🔎「{$keyword}」" : false,
         ]));
+    }
+
+    /**
+     * 期間入力の検証。YYYY-MM-DD の実在日付のみ通し、それ以外は空文字（条件なし）に落とす。
+     */
+    private function validDate(string $value): string
+    {
+        if ($value === '') return '';
+        $d = \DateTime::createFromFormat('Y-m-d', $value);
+        return ($d && $d->format('Y-m-d') === $value) ? $value : '';
     }
 }
