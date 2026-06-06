@@ -142,7 +142,7 @@ main.blog-main {
 /* 引用＝データのヒント等のコールアウト */
 .blog-body blockquote {
   margin: 1.4rem 0; padding: .95rem 1.15rem;
-  background: var(--g-soft); border-left: 4px solid var(--g);
+  background: var(--g-soft); border-left: 4px solid var(--c-brand-line);
   border-radius: 0 10px 10px 0; color: var(--c-green-text-deep);
   font-size: 14.5px; line-height: 1.85;
 }
@@ -152,16 +152,16 @@ main.blog-main {
 /* ---- 結論ボックス（Smart Brevity の要点先出し / :::point） ---- */
 .blog-body .blog-point {
   margin: .4rem 0 2rem; padding: 1.05rem 1.25rem 1.1rem;
-  border: 1.5px solid var(--g); border-radius: 14px;
+  border: 1.5px solid var(--c-brand-line); border-radius: 14px;
   background:
-    radial-gradient(130% 120% at 0% 0%, #eafaf1 0%, var(--g-soft) 60%);
+    radial-gradient(130% 120% at 0% 0%, var(--c-green-wash) 0%, var(--g-soft) 60%);
   box-shadow: 0 2px 12px var(--c-brand-shadow-soft);
 }
 .blog-body .blog-point__label {
   display: inline-flex; align-items: center; gap: 5px;
   margin: 0 0 .7rem; padding: 3px 12px 3px 10px;
   font-size: 12px; font-weight: 800; letter-spacing: .03em;
-  color: var(--c-text-inverse); background: var(--g); border-radius: 999px;
+  color: var(--c-pill-brand-text); background: var(--c-pill-brand-bg); border-radius: 999px;
 }
 .blog-body .blog-point__label::before { content: "🎯"; font-size: 11.5px; }
 .blog-body .blog-point ul { margin: 0; padding-left: 1.3em; }
@@ -178,8 +178,8 @@ main.blog-main {
   margin: 2.6rem 0 1.4rem; padding: 1.25rem 1.3rem 1.35rem;
   border: 1px solid var(--line); border-radius: 16px;
   background:
-    radial-gradient(120% 100% at 0% 0%, var(--g-soft) 0%, rgba(255,255,255,0) 55%),
-    #fff;
+    radial-gradient(120% 100% at 0% 0%, var(--g-soft) 0%, var(--c-bg-fade-end) 55%),
+    var(--c-card-bg);
   box-shadow: 0 1px 2px var(--c-ink-shadow);
 }
 .blog-cta-h { font-weight: 800; color: var(--ink); margin-bottom: .85rem; font-size: 15px; }
@@ -194,10 +194,10 @@ main.blog-main {
 .blog-btn:hover { background: var(--c-bg-sub); }
 .blog-btn:active { transform: translateY(1px); }
 .blog-btn--primary {
-  background: var(--g); border-color: var(--g); color: var(--c-text-inverse);
+  background: var(--c-btn-brand-bg); border-color: var(--c-btn-brand-bg); color: var(--c-text-inverse);
   box-shadow: 0 2px 8px var(--c-brand-shadow);
 }
-.blog-btn--primary:hover { background: var(--g-deep); border-color: var(--g-deep); }
+.blog-btn--primary:hover { background: var(--c-btn-brand-bg-hover); border-color: var(--c-btn-brand-bg-hover); }
 
 /* ---- FAQ ---- */
 .blog-faq { margin: 2.6rem 0 1rem; }
@@ -210,7 +210,7 @@ main.blog-main {
 .blog-faq h3::before {
   content: "Q"; position: absolute; left: 0; top: .92rem;
   width: 1.4rem; height: 1.4rem; border-radius: 8px;
-  background: var(--g); color: var(--c-text-inverse); font-weight: 800; font-size: 13px;
+  background: var(--c-pill-brand-bg); color: var(--c-pill-brand-text); font-weight: 800; font-size: 13px;
   display: flex; align-items: center; justify-content: center;
 }
 .blog-faq h3 + p {

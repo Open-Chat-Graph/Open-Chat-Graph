@@ -27,6 +27,12 @@ HEX=':[^;{}]*#[0-9a-fA-F]{3,8}\b'
 FUNC=':[^;{}]*\b(rgb|rgba|hsl|hsla)\('
 DATAURI='%23[0-9a-fA-F]{3,8}'
 PATTERN="($HEX|$FUNC|$DATAURI)"
+# CSS用: 値が複数行に渡るケース（gradient等）も拾うため、コメント除去後に
+# コロン位置へ依存しないパターンで判定する
+CSS_PATTERN='(#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|%23[0-9a-fA-F]{3,8})'
+strip_comments() {
+  awk 'BEGIN{c=0}{line=$0;out="";while(1){if(c==0){i=index(line,"/*");if(i==0){out=out line;break};out=out substr(line,1,i-1);line=substr(line,i+2);c=1}else{j=index(line,"*/");if(j==0){line="";break};line=substr(line,j+2);c=0}}print out}'
+}
 
 # --- 移行済みファイル: ここに生色が現れたら違反 ---
 # トークン化が完了した PR で随時追加していく
@@ -66,7 +72,10 @@ for f in "${MIGRATED[@]}"; do
     fail=1
     continue
   fi
-  hits=$(grep -nE "$PATTERN" "$f" | grep -vE '&#[0-9]+;' || true)
+  case "$f" in
+    *.css) hits=$(strip_comments < "$f" | grep -nE "$CSS_PATTERN" | grep -vE '&#[0-9]+;' || true) ;;
+    *)     hits=$(grep -nE "$PATTERN" "$f" | grep -vE '&#[0-9]+;' || true) ;;
+  esac
   if [ -n "$hits" ]; then
     echo "✗ $f に生色リテラル:"
     echo "$hits" | head -20 | sed 's/^/    /'
@@ -92,7 +101,7 @@ done < <(grep -rl "style/base/mvp" app/Views --include='*.php')
 
 echo
 echo "== 未移行領域の残数（参考） =="
-css_count=$(grep -rnE "$PATTERN" public/style --include='*.css' 2>/dev/null | grep -v '^public/style/tokens\.css:' | grep -vE '&#[0-9]+;' | wc -l)
+css_count=$(for c in $(find public/style -name '*.css' ! -path '*/tokens.css'); do strip_comments < "$c" | grep -nE "$CSS_PATTERN" | sed "s|^|$c:|"; done 2>/dev/null | grep -vE '&#[0-9]+;' | wc -l)
 views_count=$(grep -rnE "$PATTERN" app/Views --include='*.php' 2>/dev/null | grep -v '^app/Views/admin/' | grep -vE '&#[0-9]+;' | wc -l)
 frontend_count=$(grep -rnE "$PATTERN" frontend/*/src --include='*.ts' --include='*.tsx' --include='*.css' 2>/dev/null | grep -vE '/(theme|themeColors)[^/]*\.ts:' | wc -l)
 printf '  %-32s %s件\n' "public/style (tokens.css除く):" "$css_count"

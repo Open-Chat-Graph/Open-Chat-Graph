@@ -109,6 +109,12 @@
   --c-brand-2: #11d871;        /* 明るいブランド緑（ロゴ・強調） */
   --c-chip-bg: #fff;           /* タグチップ等の面（ダークでは地より一段持ち上げる） */
   --c-brand-line: var(--green-line); /* 緑の枠線（ダークでは減光する） */
+  --c-card-bg: #fff;                 /* 記事内カードの面 */
+  --c-green-wash: #eafaf1;           /* 結論ボックスの淡い緑ウォッシュ */
+  --c-btn-brand-bg: var(--green-line);      /* ブランドCTAボタン面 */
+  --c-btn-brand-bg-hover: #05a648;
+  --c-pill-brand-bg: var(--green-line);     /* 「結論」等の小ピル面 */
+  --c-pill-brand-text: #fff;
   --c-accent-blue: #4d73ff;    /* React 系 UI アクセント青 */
   --c-accent-teal: #16c2c1;    /* ティール（アイコン・グラデ終端） */
   --c-accent-red: #d9333f;     /* 強調赤（ランキング帯等） */
@@ -519,23 +525,30 @@ html {
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 
-  /* ブランド緑グラデはダークでは α0.82 に減光（「LINEで開く」等が眩しすぎないように） */
-  --grad-green-1: rgba(13, 201, 90, 0.82);
-  --grad-green-2: rgba(17, 216, 113, 0.82);
-  --grad-green-3: rgba(17, 213, 147, 0.82);
-  --grad-green-4: rgba(18, 207, 205, 0.82);
-  --grad-green-5: rgba(22, 194, 193, 0.82);
+  /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、
+     輝度そのものを落とした深い緑→ティールの実色（emerald/teal 600番台相当）にする */
+  --grad-green-1: #0a9d4c;
+  --grad-green-2: #0ca85b;
+  --grad-green-3: #0ca476;
+  --grad-green-4: #0d9e9b;
+  --grad-green-5: #109493;
   /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
   --c-brand-gradient: linear-gradient(
     332deg,
-    rgba(13, 201, 90, 0.82),
-    rgba(17, 216, 113, 0.82) 23.96%,
-    rgba(17, 213, 147, 0.82) 55.46%,
-    rgba(18, 207, 205, 0.82) 83.85%,
-    rgba(22, 194, 193, 0.82)
+    #0a9d4c,
+    #0ca85b 23.96%,
+    #0ca476 55.46%,
+    #0d9e9b 83.85%,
+    #109493
   );
   /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
   --c-brand-line: rgba(6, 199, 85, 0.55);
+  --c-card-bg: #1e293b;              /* 記事内カード面 = slate-800 */
+  --c-green-wash: rgba(6, 199, 85, 0.07);
+  --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
+  --c-btn-brand-bg-hover: #047857;
+  --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
+  --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,
@@ -753,23 +766,30 @@ html {
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 
-  /* ブランド緑グラデはダークでは α0.82 に減光（「LINEで開く」等が眩しすぎないように） */
-  --grad-green-1: rgba(13, 201, 90, 0.82);
-  --grad-green-2: rgba(17, 216, 113, 0.82);
-  --grad-green-3: rgba(17, 213, 147, 0.82);
-  --grad-green-4: rgba(18, 207, 205, 0.82);
-  --grad-green-5: rgba(22, 194, 193, 0.82);
+  /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、
+     輝度そのものを落とした深い緑→ティールの実色（emerald/teal 600番台相当）にする */
+  --grad-green-1: #0a9d4c;
+  --grad-green-2: #0ca85b;
+  --grad-green-3: #0ca476;
+  --grad-green-4: #0d9e9b;
+  --grad-green-5: #109493;
   /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
   --c-brand-gradient: linear-gradient(
     332deg,
-    rgba(13, 201, 90, 0.82),
-    rgba(17, 216, 113, 0.82) 23.96%,
-    rgba(17, 213, 147, 0.82) 55.46%,
-    rgba(18, 207, 205, 0.82) 83.85%,
-    rgba(22, 194, 193, 0.82)
+    #0a9d4c,
+    #0ca85b 23.96%,
+    #0ca476 55.46%,
+    #0d9e9b 83.85%,
+    #109493
   );
   /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
   --c-brand-line: rgba(6, 199, 85, 0.55);
+  --c-card-bg: #1e293b;              /* 記事内カード面 = slate-800 */
+  --c-green-wash: rgba(6, 199, 85, 0.07);
+  --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
+  --c-btn-brand-bg-hover: #047857;
+  --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
+  --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
   /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
   --c-vivid-gradient: -webkit-linear-gradient(
     45deg,

@@ -364,11 +364,11 @@ body:has(.oc-jump-wrap) {
      /jump 側のポリッシュ(影/ホバー)は維持。 */
   background: linear-gradient(
     -156deg,
-    #0dc95a,
-    #11d871 23.96%,
-    #11d593 55.46%,
-    #12cfcd 83.85%,
-    #16c2c1
+    var(--grad-green-1),
+    var(--grad-green-2) 23.96%,
+    var(--grad-green-3) 55.46%,
+    var(--grad-green-4) 83.85%,
+    var(--grad-green-5)
   );
   color: var(--c-text-inverse);
   font-size: 16px;
