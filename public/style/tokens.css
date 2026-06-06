@@ -173,6 +173,21 @@
   --c-red-tint: #fdf1f2;             /* 消滅バッジの淡赤面 */
   --c-surface-gray: #f4f5f6;         /* グレー系の小さな面・スケルトン */
 
+  /* ルーム詳細・labs 系 */
+  --c-fade-right-2: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)); /* 説明文の続きを隠す */
+  --c-green-tab: rgb(3, 199, 85);    /* labs タブ下線（統合候補: --c-brand） */
+  --c-text-black: #000;              /* 統合候補: --c-text-1 */
+  --c-labs-blue: #118bee;            /* labs 見出し・タブ下線の青 */
+  --c-surface-slate: #f1f5f9;        /* labs ボタン hover 面 */
+
+  /* /oc ナビチップ（カテゴリ=中立） */
+  --c-chip-cat-bg: #f1f3f5;
+  --c-chip-cat-bg-hover: #e7eaee;
+
+  /* 管理者用ミニボタンのグラデーション（/oc 内・一般には非表示） */
+  --c-grad-blue-btn: linear-gradient(135deg, #7eb8ff, #3a7bd5);
+  --c-grad-orange-btn: linear-gradient(135deg, #ffa751, #e85d04);
+
   /* テーマチップ（hot・緑系） */
   --c-chip-hot-text: #067a37;
   --c-chip-hot-bg: #eefcf3;
