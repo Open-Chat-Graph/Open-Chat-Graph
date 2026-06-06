@@ -58,6 +58,20 @@ for f in "${MIGRATED[@]}"; do
 done
 
 echo
+echo "== tokens.css 読み込み完全性チェック =="
+# mvp.css / mvpmin.css はトークン参照のため、直接 <link> する View は
+# 必ず tokens.css も読み込むこと（未読込だと var() が未定義になり配色が崩れる）
+miss=0
+while IFS= read -r f; do
+  if ! grep -q "style/tokens\.css" "$f"; then
+    echo "✗ $f は mvp(min).css を読むのに tokens.css を読み込んでいません"
+    miss=1
+    fail=1
+  fi
+done < <(grep -rl "style/mvp" app/Views --include='*.php')
+[ "$miss" -eq 0 ] && echo "✓ mvp系を読む全Viewが tokens.css を読み込み済み"
+
+echo
 echo "== 未移行領域の残数（参考） =="
 css_count=$(grep -roE "$PATTERN" public/style --include='*.css' 2>/dev/null | grep -cv '^public/style/tokens\.css:' || true)
 views_count=$(grep -roE "$PATTERN" app/Views --include='*.php' 2>/dev/null | grep -cv '^app/Views/admin/' || true)
@@ -68,7 +82,7 @@ printf '  %-32s %s件\n' "frontend src (theme系除く):" "$frontend_count"
 
 echo
 if [ "$fail" -ne 0 ]; then
-  echo "NG: 移行済みファイルに生の色指定が残っています。tokens.css の --c-* を参照してください。"
+  echo "NG: 違反があります（生色リテラル または tokens.css 読み込み漏れ）。"
   exit 1
 fi
 echo "OK: 移行済みファイルはすべてトークン参照になっています。"

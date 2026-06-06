@@ -22,6 +22,7 @@ use App\Config\AppConfig;
     <meta property="og:site_name" content="openchat-review.me">
     <meta name="twitter:card" content="summary">
     <link rel="icon" type="image/png" href="<?php echo fileUrl('assets/icon-192x192.png', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/mvp.css', urlRoot: '') ?>">
     <link rel="stylesheet" href="<?php echo fileUrl('style/unset.css', urlRoot: '') ?>">
 </head>
