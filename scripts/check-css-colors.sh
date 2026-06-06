@@ -42,6 +42,9 @@ MIGRATED=(
   public/style/components/room_list.css
   public/style/components/recommend_list.css
   public/style/pages/ranking_ban.css
+  public/style/pages/room_page.css
+  public/style/pages/graph_page.css
+  public/style/pages/live_ana.css
   app/Views/components/head.php
   app/Views/components/oc_head.php
   app/Views/components/policy_head.php

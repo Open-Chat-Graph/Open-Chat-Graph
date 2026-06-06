@@ -1,7 +1,3 @@
-:root {
-  --border-color: #efefef;
-}
-
 html {
   overflow-y: scroll;
   /* 常に垂直スクロールバーを表示 */
@@ -35,13 +31,13 @@ html {
 .oc-narrative {
   padding: 12px 1rem 14px 1rem;
   font-family: var(--font-family);
-  color: #111;
+  color: var(--c-text-1);
 }
 
 .oc-narrative__title {
   font-size: 15px;
   font-weight: 700;
-  color: #111;
+  color: var(--c-text-1);
   margin: 0 0 8px 0;
   line-height: 1.4;
   display: flex;
@@ -60,9 +56,9 @@ html {
   padding: 8px 10px;
   font-size: 13px;
   line-height: 1.6;
-  color: #111;
-  background-color: #fafafa;
-  border-left: 3px solid #11d871;
+  color: var(--c-text-1);
+  background-color: var(--c-bg-sub);
+  border-left: 3px solid var(--c-brand-2);
   border-radius: 0 6px 6px 0;
   font-weight: 500;
   word-break: break-word;
@@ -73,7 +69,7 @@ html {
   padding: 0 2px;
   font-size: 13px;
   line-height: 1.75;
-  color: #333;
+  color: var(--c-text-2);
   word-break: break-word;
 }
 
@@ -137,7 +133,7 @@ html {
 .openchat .graph-title {
   font-weight: bold;
   font-size: 16px;
-  color: #111;
+  color: var(--c-text-1);
   margin: 0;
 }
 
@@ -151,7 +147,7 @@ html {
   justify-content: space-between;
   gap: 0;
   padding: 1rem 0;
-  border-top: 1px solid #efefef;
+  border-top: 1px solid var(--c-border);
 }
 
 /* スマホ幅: カテゴリ/タグ ブロックとボタンの間に細い区切り線を入れ、
@@ -162,7 +158,7 @@ html {
   width: 100%;
   margin-top: 14px;
   padding-top: 16px;
-  border-top: 1px solid #efefef;
+  border-top: 1px solid var(--c-border);
 }
 
 @media screen and (min-width: 512px) {
@@ -173,7 +169,7 @@ html {
     justify-content: space-evenly;
     gap: 1rem;
     padding: 1rem 0;
-    border-top: 1px solid #efefef;
+    border-top: 1px solid var(--c-border);
   }
 
   /* PC: 区切り線/上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
@@ -198,14 +194,6 @@ html {
     max-width: 220px;
   }
 }
-
-/* .oc-desc-nav.no-ranking {
-  margin-top: -5rem;
-  position: absolute;
-  z-index: 100;
-  width: calc(100% - 2rem);
-  max-width: calc(var(--width) - 2rem);
-} */
 
 .openchat-header a {
   cursor: pointer;
@@ -250,7 +238,7 @@ html {
   line-height: 125%;
   font-size: 17.5px;
   font-weight: 700;
-  color: #111;
+  color: var(--c-text-1);
   display: block;
   white-space: break-spaces;
   word-break: break-all;
@@ -273,16 +261,16 @@ html {
   width: fit-content;
   background: -webkit-linear-gradient(
     98deg,
-    #0dc95a,
-    #11d871 23.96%,
-    #11d593 55.46%,
-    #12cfcd 83.85%,
-    #16c2c1
+    var(--grad-green-1),
+    var(--grad-green-2) 23.96%,
+    var(--grad-green-3) 55.46%,
+    var(--grad-green-4) 83.85%,
+    var(--grad-green-5)
   );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #978170;
+  color: var(--c-text-taupe);
 }
 
 #read_more_btn {
@@ -291,12 +279,12 @@ html {
 
 /* メンバー数 */
 .talkroom_number_of_members {
-  color: #aaa;
+  color: var(--c-text-4);
 }
 
 .number_of_members {
   display: block;
-  color: #777;
+  color: var(--c-text-3);
   font-weight: bold;
   font-size: 13px;
 }
@@ -315,7 +303,7 @@ html {
   margin-top: 3px;
   margin-bottom: 1px;
   position: relative;
-  background-color: white;
+  background-color: var(--c-bg);
 }
 
 .talkroom_description_box .more {
@@ -329,23 +317,23 @@ html {
   right: 0;
   display: flex;
   visibility: hidden;
-  color: #aaa;
+  color: var(--c-text-4);
 }
 
 .more-text {
-  background-color: white;
+  background-color: var(--c-bg);
 }
 
 .talkroom_description_box .more-separater {
   width: 4rem;
-  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  background-image: var(--c-fade-right-2);
 }
 
 /* オープンチャットの説明 */
 .talkroom_description {
   margin: 0;
   line-height: 130%;
-  color: #111;
+  color: var(--c-text-1);
   text-align: center;
 }
 
@@ -371,7 +359,7 @@ html {
   font-weight: bold;
   cursor: pointer;
   background: inherit;
-  color: #111;
+  color: var(--c-text-1);
   border: 0;
 }
 
@@ -402,7 +390,7 @@ html {
 .openchat-list-date {
   display: flex;
   flex-direction: row;
-  color: #777;
+  color: var(--c-text-3);
   font-size: 13px;
   align-items: flex-start;
   gap: 4px;
@@ -439,14 +427,14 @@ html {
   flex-direction: row;
   flex-wrap: wrap;
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .number-box .openchat-itme-stats-title {
   font-size: 13px;
   word-break: keep-all;
   text-wrap: nowrap;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .number-box.created-at {
@@ -457,14 +445,14 @@ html {
 }
 
 .number-box.created-at .openchat-itme-stats-title {
-  color: #777;
+  color: var(--c-text-3);
   font-size: 12px;
   margin: 0;
 }
 
 .number-box.created-at.registed .openchat-itme-stats-title {
   font-size: 12px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .number-box.bold {
@@ -490,12 +478,9 @@ html {
   height: fit-content;
   border-radius: 7px;
   word-break: keep-all;
-  color: #111;
+  color: var(--c-text-1);
   line-height: normal;
   font-weight: bold;
-}
-
-.open-btn {
 }
 
 .open-btn.pc-btn {
@@ -505,15 +490,15 @@ html {
 .openchat_link {
   background: linear-gradient(
     -156deg,
-    #0dc95a,
-    #11d871 23.96%,
-    #11d593 55.46%,
-    #12cfcd 83.85%,
-    #16c2c1
+    var(--grad-green-1),
+    var(--grad-green-2) 23.96%,
+    var(--grad-green-3) 55.46%,
+    var(--grad-green-4) 83.85%,
+    var(--grad-green-5)
   );
   border-radius: 99px;           /* 角の丸さをタグチップ(pill)と揃える */
   box-sizing: border-box;
-  color: #fff;
+  color: var(--c-text-inverse);
   font-weight: 700;
   /* height: 24px; */
   display: flex;
@@ -545,7 +530,7 @@ html {
   display: inline-block;
   fill: currentcolor;
   flex-shrink: 0;
-  color: rgb(7, 181, 59);
+  color: var(--c-up);
   font-size: 11px;
   margin: 0px 0px 1px 0px;
 }
@@ -566,7 +551,7 @@ html {
 
 .title-bar-oc-name {
   font-size: 11px;
-  color: #777;
+  color: var(--c-text-3);
   font-weight: normal;
   line-height: 1.3;
   display: -webkit-box;
@@ -579,7 +564,7 @@ html {
 
 .title-bar-oc-member {
   font-size: 11px;
-  color: #777;
+  color: var(--c-text-3);
   font-weight: normal;
   line-height: 1.3;
   text-wrap: nowrap;
@@ -648,17 +633,17 @@ html {
 
   .number-box.created-at {
     margin-left: auto;
-    color: #777;
+    color: var(--c-text-3);
   }
 
   .number-box.created-at .openchat-itme-stats-title {
     font-size: 13px;
-    color: #777;
+    color: var(--c-text-3);
   }
 
   .number-box.created-at.registed .openchat-itme-stats-title {
     font-size: 13px;
-    color: #777;
+    color: var(--c-text-3);
   }
 
   .number-box .openchat-itme-stats-title {
@@ -692,7 +677,7 @@ html {
   }
 
   .talkroom_description_box.close:not(.hidden):hover {
-    background-color: rgb(250, 250, 250);
+    background-color: var(--c-bg-sub);
   }
 
   .link-mark .line-link-icon777 {
@@ -702,7 +687,7 @@ html {
 
   .number-box.bold {
     font-weight: normal;
-    color: #777;
+    color: var(--c-text-3);
   }
 
   .openchat-header,
@@ -785,11 +770,11 @@ html {
 }
 
 #comment-root .MuiPaper-outlined.MuiPaper-rounded {
-  border: 1px solid #efefef;
+  border: 1px solid var(--c-border);
 }
 
 #comment-root .comment-term-text-color {
-  color: #b7b7b7;
+  color: var(--c-text-5);
 }
 
 .list-aside {
@@ -802,7 +787,7 @@ html {
   margin: 0;
   font-weight: normal;
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
   font-family: var(--font-family);
 }
 
@@ -821,7 +806,7 @@ html {
   margin-top: 6px;
   padding-left: 0.5rem;
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
   line-height: 1.8;
 }
 
@@ -840,7 +825,7 @@ html {
 
 .MuiTypography-root.MuiTypography-h3 {
   font-size: 16px;
-  color: #111;
+  color: var(--c-text-1);
   font-family: var(--font-family);
 }
 
@@ -871,4 +856,81 @@ html {
     text-align: left;
     line-height: 1.5;
   }
+}
+
+/* ---------- /oc ナビチップ（oc_content.php の埋め込み<style>から移設）
+     カテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 ---------- */
+
+.oc-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    transform 0.08s;
+}
+
+.oc-nav-chip:active {
+  transform: scale(0.97);
+}
+
+.oc-nav-chip--category {
+  background: var(--c-chip-cat-bg);
+  color: var(--c-cool-text-strong);
+  border-color: var(--c-border-2);
+}
+
+.oc-nav-chip--category:hover {
+  background: var(--c-chip-cat-bg-hover);
+}
+
+.oc-nav-chip--tag {
+  background: var(--c-chip-hot-bg);
+  color: var(--c-chip-hot-text);
+  border-color: var(--c-chip-hot-border);
+}
+
+.oc-nav-chip--tag:hover {
+  background: var(--c-chip-hot-bg-hover);
+  border-color: var(--c-chip-hot-border-hover);
+}
+
+/* チップ前置きラベル(カテゴリー/タグ)。チップを主役にし、ラベルは小さく控えめなグレーで補助。
+   「ラベル+チップ」を1ユニット(.oc-nav-pair)としてグルーピングし、左揃え・横並び→入らなければ
+   ユニット単位で改行(各チップが自分のラベルを連れて折り返すので列ズレが出ない)。 */
+.oc-nav-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 10px;
+  width: 100%;
+}
+
+.oc-nav-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.oc-nav-pair__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-cool-text-weak);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
 }

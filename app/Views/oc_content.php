@@ -114,21 +114,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       <hr class="hr-top" style="margin-bottom: 8px;">
 
-      <style>
-        /* /oc のカテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 */
-        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
-        .oc-nav-chip:active{transform:scale(.97)}
-        .oc-nav-chip--category{background:#f1f3f5;color:#28303c;border-color:#e4e8ee}
-        .oc-nav-chip--category:hover{background:#e7eaee}
-        .oc-nav-chip--tag{background:#eefcf3;color:#067a37;border-color:#bfead0}
-        .oc-nav-chip--tag:hover{background:#e2f9ea;border-color:#a6e0bd}
-        /* チップ前置きラベル(カテゴリー/タグ)。チップを主役にし、ラベルは小さく控えめなグレーで補助。
-           「ラベル+チップ」を1ユニット(.oc-nav-pair)としてグルーピングし、左揃え・横並び→入らなければ
-           ユニット単位で改行(各チップが自分のラベルを連れて折り返すので列ズレが出ない)。 */
-        .oc-nav-chips{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:10px;width:100%}
-        .oc-nav-pair{display:inline-flex;align-items:center;gap:8px;min-width:0}
-        .oc-nav-pair__label{font-size:11.5px;font-weight:600;color:#9aa3af;white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
-      </style>
+      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み */ ?>
 
       <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
@@ -150,16 +136,16 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
         <div class="oc-desc-nav-actions">
           <?php if (isset($_adminDto)) : ?>
-            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">✕</a>
+            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-blue-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">✕</a>
           <?php else : ?>
-            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-orange-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
           <?php endif ?>
           <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
               <a href="<?php echo url('oc', $oc['id'], 'jump') ?>" class="openchat_link" style="font-size: 16px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
                   <?php if ($oc['join_method_type'] !== 0) : ?>
-                    <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
+                    <svg style="height: 12px; fill: var(--c-text-inverse); margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
                       <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
                     </svg>
                   <?php endif ?>
