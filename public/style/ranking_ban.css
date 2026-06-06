@@ -359,13 +359,22 @@ body > .google-auto-placed {
   white-space: nowrap;
 }
 
-/* ---------- ローディング ---------- */
+/* ---------- ローディング（初回・2回目以降で共通。常に結果の先頭） ---------- */
 
-/* 2回目以降: 細いプログレスバー */
+#rb-loading {
+  margin-top: 12px;
+}
+
+.rb-loading-text {
+  font-size: 13px;
+  color: #8a9097;
+  margin: 8px 0 0;
+}
+
+/* 細いプログレスバー */
 .rb-progress {
   position: relative;
   height: 3px;
-  margin-top: 12px;
   overflow: hidden;
   border-radius: 2px;
   background-color: #ededf0;
@@ -449,13 +458,6 @@ body > .google-auto-placed {
   100% {
     background-position: 0 50%;
   }
-}
-
-.rb-skel-text {
-  text-align: center;
-  font-size: 13px;
-  color: #8a9097;
-  margin: 1rem 0;
 }
 
 /* エラー表示 */
