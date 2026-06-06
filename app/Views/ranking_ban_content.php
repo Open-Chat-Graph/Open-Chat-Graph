@@ -41,78 +41,42 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 </div>
                 <p class="rb-field-hint">復活した部屋は「復活までにかかった時間」、消えたままの部屋は「消えてから今までの時間」で数えます</p>
             </div>
+            <?php // 主要な絞り込み3軸はチップで常時表示（詳細設定に隠さない）。数字の意味は詳細設定の説明へ ?>
+            <div class="rb-filter-row">
+                <span class="rb-filter-label" id="rb-filter-publish">掲載状況</span>
+                <div class="rb-presets rb-filters" role="group" aria-labelledby="rb-filter-publish">
+                    <?php foreach ([[1, '消えたまま', '<span class="rb-dot rb-dot--gone" aria-hidden="true"></span>'], [0, '復活した', '<span class="rb-dot rb-dot--back" aria-hidden="true"></span>'], [2, 'すべて', '']] as [$rbV, $rbL, $rbDot]) : ?>
+                        <button type="button" class="rb-preset rb-filter<?php if (R::input('publish') === $rbV) echo ' is-active' ?>" aria-pressed="<?php echo R::input('publish') === $rbV ? 'true' : 'false' ?>" data-key="publish" data-value="<?php echo $rbV ?>"><?php echo $rbDot . $rbL ?></button>
+                    <?php endforeach ?>
+                </div>
+            </div>
+            <div class="rb-filter-row">
+                <span class="rb-filter-label" id="rb-filter-change">ルーム内容の変更</span>
+                <div class="rb-presets rb-filters" role="group" aria-labelledby="rb-filter-change">
+                    <?php foreach ([[0, '変更あり'], [1, '変更なし'], [2, 'すべて']] as [$rbV, $rbL]) : ?>
+                        <button type="button" class="rb-preset rb-filter<?php if (R::input('change') === $rbV) echo ' is-active' ?>" aria-pressed="<?php echo R::input('change') === $rbV ? 'true' : 'false' ?>" data-key="change" data-value="<?php echo $rbV ?>"><?php echo $rbL ?></button>
+                    <?php endforeach ?>
+                </div>
+            </div>
+            <div class="rb-filter-row">
+                <span class="rb-filter-label" id="rb-filter-percent">ふつうの順位落ちの除外</span>
+                <div class="rb-presets rb-filters" role="group" aria-labelledby="rb-filter-percent">
+                    <?php foreach ([[50, 'しっかり除外（おすすめ）'], [80, 'ゆるく除外'], [100, '除外しない']] as [$rbV, $rbL]) : ?>
+                        <button type="button" class="rb-preset rb-filter<?php if (R::input('percent') === $rbV) echo ' is-active' ?>" aria-pressed="<?php echo R::input('percent') === $rbV ? 'true' : 'false' ?>" data-key="percent" data-value="<?php echo $rbV ?>"><?php echo $rbL ?></button>
+                    <?php endforeach ?>
+                </div>
+            </div>
             <div class="rb-search" role="search">
                 <input type="search" id="rb-keyword" name="keyword" placeholder="ルーム名・説明文で検索（Enterで反映）" aria-label="キーワードで絞り込み（ルーム名・説明文）" autocomplete="off" value="<?php echo R::has('keyword') ? h(R::input('keyword')) : '' ?>">
                 <button type="button" id="rb-keyword-clear" class="rb-search-clear<?php if (!R::has('keyword') || R::input('keyword') === '') echo ' is-hidden' ?>" aria-label="キーワードを消去">&#10005;</button>
             </div>
         </section>
 
-        <?php // 詳細設定の中の条件（掲載状況・変更・順位・消えた時期）がプリセットの組み合わせ外なら、開いた状態で出す（効いている条件を隠さない） ?>
-        <?php $rbIsPreset = $since === '' && $until === ''
-            && in_array([R::input('publish'), R::input('change'), R::input('percent')], [[1, 0, 50], [1, 1, 50], [0, 0, 50], [0, 1, 50]], true); ?>
-        <!-- 詳細設定（プロ向け・普段は閉じる） -->
-        <details class="rb-advanced" id="rb-advanced"<?php if (!$rbIsPreset) echo ' open' ?>>
-            <summary>詳細設定<span class="rb-advanced-sub">掲載状況・変更の有無・順位落ちの除外・消えた時期を個別に指定</span></summary>
+        <?php // 隠れた条件は「消えた時期」だけなので、指定があるときだけ開いた状態で出す（効いている条件を隠さない） ?>
+        <!-- 詳細設定（消えた時期の指定＋各絞り込みの数字と意味） -->
+        <details class="rb-advanced" id="rb-advanced"<?php if ($since !== '' || $until !== '') echo ' open' ?>>
+            <summary>詳細設定<span class="rb-advanced-sub">消えた時期の指定・各絞り込みの数字と意味</span></summary>
             <div class="rb-panel" aria-label="詳細の絞り込み条件">
-            <div class="rb-field">
-                <div class="rb-field-label" id="rb-label-publish">掲載状況</div>
-                <div class="rb-field-control">
-                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-publish">
-                        <label class="rb-seg-item<?php if (R::input('publish') === 1) echo ' is-selected' ?>">
-                            <input type="radio" name="publish" value="1" <?php if (R::input('publish') === 1) echo 'checked' ?>>
-                            <span class="rb-seg-text"><span class="rb-dot rb-dot--gone" aria-hidden="true"></span>消えたまま</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('publish') === 0) echo ' is-selected' ?>">
-                            <input type="radio" name="publish" value="0" <?php if (R::input('publish') === 0) echo 'checked' ?>>
-                            <span class="rb-seg-text"><span class="rb-dot rb-dot--back" aria-hidden="true"></span>復活した</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('publish') === 2) echo ' is-selected' ?>">
-                            <input type="radio" name="publish" value="2" <?php if (R::input('publish') === 2) echo 'checked' ?>>
-                            <span class="rb-seg-text">すべて</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="rb-field">
-                <div class="rb-field-label" id="rb-label-change">ルーム内容の変更</div>
-                <div class="rb-field-control">
-                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-change">
-                        <label class="rb-seg-item<?php if (R::input('change') === 0) echo ' is-selected' ?>">
-                            <input type="radio" name="change" value="0" <?php if (R::input('change') === 0) echo 'checked' ?>>
-                            <span class="rb-seg-text">変更あり</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('change') === 1) echo ' is-selected' ?>">
-                            <input type="radio" name="change" value="1" <?php if (R::input('change') === 1) echo 'checked' ?>>
-                            <span class="rb-seg-text">変更なし</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('change') === 2) echo ' is-selected' ?>">
-                            <input type="radio" name="change" value="2" <?php if (R::input('change') === 2) echo 'checked' ?>>
-                            <span class="rb-seg-text">すべて</span>
-                        </label>
-                    </div>
-                    <p class="rb-field-hint">消える直前に名前・説明文・画像などを変えていたか（変更なし判定は2025年8月11日以降の記録が対象）</p>
-                </div>
-            </div>
-            <div class="rb-field">
-                <div class="rb-field-label" id="rb-label-percent">ふつうの順位落ちの除外</div>
-                <div class="rb-field-control">
-                    <div class="rb-seg" role="radiogroup" aria-labelledby="rb-label-percent">
-                        <label class="rb-seg-item<?php if (R::input('percent') === 50) echo ' is-selected' ?>">
-                            <input type="radio" name="percent" value="50" <?php if (R::input('percent') === 50) echo 'checked' ?>>
-                            <span class="rb-seg-text">しっかり除外（おすすめ）</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('percent') === 80) echo ' is-selected' ?>">
-                            <input type="radio" name="percent" value="80" <?php if (R::input('percent') === 80) echo 'checked' ?>>
-                            <span class="rb-seg-text">ゆるく除外</span>
-                        </label>
-                        <label class="rb-seg-item<?php if (R::input('percent') === 100) echo ' is-selected' ?>">
-                            <input type="radio" name="percent" value="100" <?php if (R::input('percent') === 100) echo 'checked' ?>>
-                            <span class="rb-seg-text">除外しない（すべて）</span>
-                        </label>
-                    </div>
-                    <p class="rb-field-hint">ランキングから消える原因の半数は、活動が減って順位が下がっただけ（ふつうの順位落ち）。最後に載っていた順位が下位の部屋を隠すと、それ以外の理由で消えた部屋に焦点が当たります。「しっかり」は上位50%だけ、「ゆるく」は上位80%までを表示します。<b>探している部屋が出てこない時は「除外しない」へ。</b></p>
-                </div>
-            </div>
             <div class="rb-field">
                 <div class="rb-field-label" id="rb-label-period">消えた時期</div>
                 <div class="rb-field-control">
@@ -122,6 +86,16 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         <input type="date" id="rb-until" class="rb-date-input" aria-label="消えた日の終了" value="<?php echo $until ?>">
                     </div>
                     <p class="rb-field-hint">ランキングから消えた日で絞り込み（空欄＝全期間）</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label">各絞り込みの意味</div>
+                <div class="rb-field-control">
+                    <ul class="rb-legend">
+                        <li><b>掲載状況：</b>「消えたまま」＝今も未掲載。「復活した」＝いったん消えて再掲載済み。</li>
+                        <li><b>ルーム内容の変更：</b>消える直前に名前・説明文・画像などを変えていたか（「変更なし」の判定は2025年8月11日以降の記録が対象）。</li>
+                        <li><b>ふつうの順位落ちの除外：</b>ランキングから消える原因の半数は、活動が減って順位が下がっただけ。「しっかり除外」＝最後に載っていた順位が上位50%の部屋だけ表示、「ゆるく除外」＝上位80%まで、「除外しない」＝すべて表示。<b>探している部屋が出てこない時は「除外しない」へ。</b></li>
+                    </ul>
                 </div>
             </div>
             </div>
@@ -356,21 +330,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 clearBtn.classList.toggle('is-hidden', keywordInput.value === '');
             };
 
-            // 詳細設定の中の条件がこの組み合わせ外なら詳細設定を開く（publish-change-percent）
-            const PRESET_COMBOS = [[1, 0, 50], [1, 1, 50], [0, 0, 50], [0, 1, 50]];
-
             const syncControls = () => {
-                document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
-                    const checked = String(state[r.name]) === r.value;
-                    r.checked = checked;
-                    r.closest('.rb-seg-item').classList.toggle('is-selected', checked);
-                });
                 if (keywordInput.value !== state.keyword) keywordInput.value = state.keyword;
                 if (sinceInput.value !== state.since) sinceInput.value = state.since;
                 if (untilInput.value !== state.until) untilInput.value = state.until;
                 toggleClear();
                 // プリセットは publish/change/percent の選択。「消えていた期間」は直交する軸なので判定に含めない（同時選択できる）
-                document.querySelectorAll('.rb-preset:not(.rb-duration)').forEach((b) => {
+                document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
                     const active =
                         state.since === '' && state.until === '' &&
                         Number(b.dataset.publish) === state.publish &&
@@ -384,10 +350,14 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     b.classList.toggle('is-active', active);
                     b.setAttribute('aria-pressed', String(active));
                 });
-                // 詳細設定の中の条件（掲載状況・変更・順位・消えた時期）がプリセットの組み合わせ外なら開いて隠さない（自動では閉じない）
-                const inCombos = state.since === '' && state.until === '' &&
-                    PRESET_COMBOS.some((c) => c[0] === state.publish && c[1] === state.change && c[2] === state.percent);
-                if (!inCombos) document.getElementById('rb-advanced').open = true;
+                // 絞り込みチップ（掲載状況・変更・順位落ちの除外）
+                document.querySelectorAll('.rb-filter').forEach((b) => {
+                    const active = Number(b.dataset.value) === state[b.dataset.key];
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-pressed', String(active));
+                });
+                // 隠れた条件は「消えた時期」だけ。指定が効いているときは詳細設定を開いて隠さない（自動では閉じない）
+                if (state.since !== '' || state.until !== '') document.getElementById('rb-advanced').open = true;
             };
 
             let aborter = null;
@@ -467,11 +437,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     });
             };
 
-            // セグメント（radio）
-            document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
-                r.addEventListener('change', () => {
-                    if (!r.checked) return;
-                    state[r.name] = Number(r.value);
+            // 絞り込みチップ（掲載状況・変更・順位落ちの除外）
+            document.querySelectorAll('.rb-filter').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const key = b.dataset.key;
+                    const v = Number(b.dataset.value);
+                    if (state[key] === v) return;
+                    state[key] = v;
                     state.page = 1;
                     syncControls();
                     load({ push: true });
@@ -479,7 +451,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             });
 
             // プリセットチップ。「消えていた期間」は直交する軸なのでリセットしない（プリセット×期間を同時選択できる）
-            document.querySelectorAll('.rb-preset:not(.rb-duration)').forEach((b) => {
+            document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
                 b.addEventListener('click', () => {
                     state.publish = Number(b.dataset.publish);
                     state.change = Number(b.dataset.change);
