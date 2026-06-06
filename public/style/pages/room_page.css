@@ -333,7 +333,7 @@ html {
 .talkroom_description {
   margin: 0;
   line-height: 130%;
-  color: var(--c-text-1);
+  color: var(--c-text-body);
   text-align: center;
 }
 

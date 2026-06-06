@@ -90,6 +90,7 @@
   --c-text-desc: #777;         /* リストの説明文（ダークでは本文と同色に引き上げ） */
   --c-text-stat: #777;         /* メンバー数などの主要数値（ダークでは白＝X流） */
   --c-text-soft: #333;         /* 本文だがダークでは控えめに沈める長文（分析詳細など） */
+  --c-text-body: #111;         /* ルーム説明などの本文（ダークは本文格 #c9cdd1） */
   --c-text-4: #aaa;            /* 弱い補足 */
   --c-text-5: #b7b7b7;         /* 最弱・アイコン */
   --c-text-steel: #8a9097;     /* 青みグレー（リスト補足） */
@@ -414,9 +415,10 @@ body {
 
   /* 一覧ページ系 */
   --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
-  --c-text-desc: #e7e9ea;            /* 説明文は読ませる文なのでタイトルと同色 */
+  --c-text-desc: #c9cdd1;            /* 説明文: タイトル白より一段沈めた本文格（明るすぎ回避） */
   --c-text-stat: #e7e9ea;
   --c-text-soft: #7d8287;
+  --c-text-body: #c9cdd1;
   --c-text-mid-2: #d3d6d8 /* slate-300 */;
   --c-text-mid-3: #7d8287 /* slate-400 */;
   --c-text-taupe: #7d8287 /* slate-400 */;
@@ -660,9 +662,10 @@ body {
 
   /* 一覧ページ系 */
   --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
-  --c-text-desc: #e7e9ea;            /* 説明文は読ませる文なのでタイトルと同色 */
+  --c-text-desc: #c9cdd1;            /* 説明文: タイトル白より一段沈めた本文格（明るすぎ回避） */
   --c-text-stat: #e7e9ea;
   --c-text-soft: #7d8287;
+  --c-text-body: #c9cdd1;
   --c-text-mid-2: #d3d6d8 /* slate-300 */;
   --c-text-mid-3: #7d8287 /* slate-400 */;
   --c-text-taupe: #7d8287 /* slate-400 */;
