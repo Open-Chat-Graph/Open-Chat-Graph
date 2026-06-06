@@ -80,4 +80,38 @@ class ApiCommentPostRepository implements CommentPostRepositoryInterface
             compact('open_chat_id')
         );
     }
+
+    function getBanUsers(int $limit, int $offset): array
+    {
+        $query =
+            "SELECT
+                b.id,
+                b.user_id,
+                b.ip,
+                b.created_at,
+                IFNULL(
+                    (SELECT name FROM comment WHERE user_id = b.user_id ORDER BY comment_id DESC LIMIT 1),
+                    ''
+                ) AS name
+            FROM
+                ban_user AS b
+            ORDER BY
+                b.id DESC
+            LIMIT
+                :limit
+            OFFSET
+                :offset";
+
+        return SQLiteOcgraphSqlapi::fetchAll($query, compact('limit', 'offset'));
+    }
+
+    function getBanUserCount(): int
+    {
+        return (int) SQLiteOcgraphSqlapi::fetchColumn("SELECT COUNT(*) FROM ban_user", []);
+    }
+
+    function removeBanUser(int $banId): array|false
+    {
+        throw new \RuntimeException('Write operation not supported in API repository');
+    }
 }
