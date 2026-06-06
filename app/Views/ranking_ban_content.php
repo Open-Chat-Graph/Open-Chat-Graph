@@ -344,6 +344,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
             let aborter = null;
             let initial = true;
+            let gen = 0; // ロード世代。中断が間に合わず解決した古いfetchの遅延描画/二重pushStateを無効化する
+            const FB_KEY = 'rb-page1-404-fallback'; // page=1 で404が続くときの全体遷移ループ防止フラグ
 
             const setBusy = (busy) => {
                 results.setAttribute('aria-busy', busy ? 'true' : 'false');
@@ -360,6 +362,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 opts = opts || {};
                 if (aborter) aborter.abort();
                 aborter = new AbortController();
+                const myGen = ++gen;
                 updateSummary();
                 summaryCount.textContent = '— 集計中…';
                 setBusy(true);
@@ -369,12 +372,20 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         if (res.ok) return res.text();
                         if (res.status === 404) {
                             if (s.page > 1) {
-                                // ページ範囲外: 1ページ目に戻して再取得
+                                // ページ範囲外: 1ページ目に戻して再取得。push の有無に関わらず
+                                // URL を1ページ目へ補正する（初回・popstate でアドレスバーが range 外のまま残るのを防ぐ）
                                 state.page = 1;
-                                load({ push: opts.push });
+                                history.replaceState(state, '', pageUrl(state));
+                                load({ push: false });
                                 return null;
                             }
-                            // page=1での404は通常起きない。通常遷移にフォールバック
+                            // page=1での404は通常起きない。1度だけ通常遷移にフォールバックし、
+                            // 連続404のときはエラー表示に切り替えて全体リロードのループを防ぐ
+                            if (sessionStorage.getItem(FB_KEY)) {
+                                sessionStorage.removeItem(FB_KEY);
+                                throw new Error('HTTP 404');
+                            }
+                            sessionStorage.setItem(FB_KEY, '1');
                             location.href = pageUrl(s);
                             return null;
                         }
@@ -383,6 +394,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     })
                     .then((html) => {
                         if (html === null || html === undefined) return;
+                        if (myGen !== gen) return; // より新しいロードに追い越されていれば、この古い応答は破棄
+                        sessionStorage.removeItem(FB_KEY);
                         results.innerHTML = html;
                         initial = false;
                         setBusy(false);
@@ -398,6 +411,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     })
                     .catch((err) => {
                         if (err && err.name === 'AbortError') return;
+                        if (myGen !== gen) return; // 古いロードのエラーは無視（最新のロードが状態を持つ）
                         initial = false;
                         setBusy(false);
                         summaryCount.textContent = '';
