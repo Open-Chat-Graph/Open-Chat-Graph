@@ -15,6 +15,12 @@ use App\Config\AppConfig;
     <?php /* OSステータスバー/ツールバーの色。初期HTMLに必須（JS生成だけだとiOSが拾わないことがある）。
              実際の値は theme.js が解決テーマに合わせて即時更新する */ ?>
     <meta name="theme-color" content="#ffffff">
+    <?php /* 「ホーム画面に追加」(PWA)時のみ有効: ページがステータスバー/ダイナミックアイランドの
+             下まで広がり、blur付きヘッダーとコンテンツが周囲に透ける（通常のSafari縦持ちでは
+             この帯はSafari描画のため不可）。black-translucent はステータス文字が常に白の
+             ためライトのPWA起動では視認性が落ちるトレードオフあり */ ?>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>利用規約</title>
     <meta name="description" content="利用規約">
     <meta property="og:locale" content="ja_JP">
