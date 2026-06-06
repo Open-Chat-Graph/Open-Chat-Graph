@@ -386,6 +386,22 @@ Route::path(
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+// 一覧データのHTMLフラグメント（非同期取得用）。バリデーション・キャッシュ制御は上のページルートと完全に同一
+Route::path(
+    'labs/publication-analytics/list',
+    [RankingBanLabsPageController::class, 'fragment']
+)
+    ->matchNum('publish', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('change', min: 0, max: 2, default: 1, emptyAble: true)
+    ->matchNum('percent', min: 1, max: 100, default: 50, emptyAble: true)
+    ->matchNum('page', min: 1, default: 1, emptyAble: true)
+    ->matchStr('keyword', maxLen: 100, emptyAble: true)
+    ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
 // コメントAPI
 Route::path(
     'comment/{open_chat_id}@get@post',
