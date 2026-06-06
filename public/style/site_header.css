@@ -182,10 +182,17 @@ body::before {
   width: fit-content;
 }
 
-/* カテゴリーボタン */
-.category-button {
+/* 右側アクション群（ブログ／カテゴリ）。検索ボタン(右端absolute)分の50pxを確保 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: auto 50px auto auto;
-  height: 38px;
+}
+
+/* カテゴリーボタン（文字小さめ・左右パディング詰め・幅縮小） */
+.category-button {
+  height: 36px;
   border: 1px solid #efefef;
   border-radius: 7px;
   display: flex;
@@ -193,14 +200,35 @@ body::before {
 }
 
 .category-button span {
-  font-size: 14px;
+  font-size: 12.5px;
   display: block;
   width: fit-content;
   margin: auto;
   line-height: 24px;
   color: #111;
   font-weight: bold;
-  padding: 0 1rem;
+  padding: 0 0.65rem;
+  font-family: var(--font-family);
+  text-wrap: nowrap;
+}
+
+/* ブログボタン（緑文字・日本語のみ） */
+.blog-button {
+  height: 36px;
+  border: 1px solid #bfe9cf;
+  border-radius: 7px;
+  background: #f1faf4;
+  display: flex;
+  text-decoration: unset;
+}
+
+.blog-button span {
+  font-size: 12.5px;
+  margin: auto;
+  line-height: 24px;
+  color: #05a648;
+  font-weight: bold;
+  padding: 0 0.7rem;
   font-family: var(--font-family);
   text-wrap: nowrap;
 }

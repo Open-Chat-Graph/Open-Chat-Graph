@@ -13,7 +13,8 @@
     "symfony/dom-crawler": "^7.2",
     "symfony/css-selector": "^7.2",
     "spatie/schema-org": "^3.23",
-    "asika/sitemap": "^2.2"
+    "asika/sitemap": "^2.2",
+    "league/commonmark": "^2.8"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.5",
