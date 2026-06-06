@@ -20,19 +20,19 @@ export function buildMuiTheme(isDark: boolean) {
       mode: isDark ? 'dark' : 'light',
       ...(isDark && {
         background: {
-          default: '#0f172a', // slate-900
-          paper: '#1e293b', // slate-800
+          default: '#000000', // slate-900
+          paper: '#16181c', // slate-800
         },
         primary: {
-          main: '#5b9cf6', // shadcn primary
+          main: '#1d9bf0', // shadcn primary
           light: '#7dd3fc', // sky-300
           dark: '#3b82f6', // blue-500
         },
         text: {
-          primary: '#f8fafc', // shadcn foreground
-          secondary: '#94a3b8', // shadcn muted-foreground
+          primary: '#f5f7f8', // shadcn foreground
+          secondary: '#71767b', // shadcn muted-foreground
         },
-        divider: '#1e293b', // slate-800
+        divider: '#16181c', // slate-800
       }),
     },
     components: {
@@ -43,33 +43,33 @@ export function buildMuiTheme(isDark: boolean) {
             fontWeight: 500,
             ...(isDark && {
               '&.MuiButton-contained': {
-                backgroundColor: '#5b9cf6',
-                color: '#0f172a',
+                backgroundColor: '#1d9bf0',
+                color: '#000000',
                 '&:hover': {
                   backgroundColor: '#7dd3fc',
                 },
                 '&:disabled': {
-                  backgroundColor: '#334155',
-                  color: '#94a3b8',
+                  backgroundColor: '#2f3336',
+                  color: '#71767b',
                 },
               },
               '&.MuiButton-outlined': {
-                borderColor: '#475569',
+                borderColor: '#3f4347',
                 borderWidth: '1.5px',
-                color: '#f8fafc',
+                color: '#f5f7f8',
                 '&:hover': {
-                  borderColor: '#5b9cf6',
-                  backgroundColor: 'rgba(91, 156, 246, 0.15)',
+                  borderColor: '#1d9bf0',
+                  backgroundColor: 'rgba(29, 155, 240, 0.15)',
                 },
                 '&:disabled': {
-                  borderColor: '#334155',
-                  color: '#64748b',
+                  borderColor: '#2f3336',
+                  color: '#565b60',
                 },
               },
               '&.MuiButton-text': {
-                color: '#f8fafc',
+                color: '#f5f7f8',
                 '&:hover': {
-                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                  backgroundColor: 'rgba(231, 233, 234, 0.1)',
                 },
               },
             }),

@@ -15,5 +15,5 @@ export function onThemeChange(cb: () => void): void {
 
 /** 軸・タイトル・データラベルの文字色 */
 export function labelColor(): string {
-  return isDarkMode() ? '#94a3b8' /* slate-400 */ : '#374151'
+  return isDarkMode() ? '#71767b' /* X風ニュートラル */ : '#374151'
 }

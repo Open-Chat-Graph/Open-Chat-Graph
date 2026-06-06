@@ -20,7 +20,7 @@
   /* iPhone 限定のヘッダー演出（吹っ飛ばし+フェード）等の CSS 分岐用フック */
   if (IS_IOS) document.documentElement.classList.add('is-ios');
   var META_LIGHT = '#ffffff';
-  var META_DARK = '#0f172a'; /* tokens.css の --c-bg と同期 */
+  var META_DARK = '#000000'; /* tokens.css の --c-bg と同期 */
 
   function stored() {
     try {

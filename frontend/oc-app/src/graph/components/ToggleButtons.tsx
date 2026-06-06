@@ -58,18 +58,18 @@ function CategoryToggle() {
           isDark
             ? {
                 '& .MuiToggleButton-root': {
-                  color: '#f1f5f9',
-                  borderColor: '#94a3b8',
+                  color: '#eff1f2',
+                  borderColor: '#71767b',
                   '&.Mui-selected': {
                     color: '#ffffff',
-                    backgroundColor: '#64748b',
-                    borderColor: '#cbd5e1',
+                    backgroundColor: '#565b60',
+                    borderColor: '#d3d6d8',
                     '&:hover': {
-                      backgroundColor: '#94a3b8',
+                      backgroundColor: '#71767b',
                     },
                   },
                   '&:hover': {
-                    backgroundColor: 'rgba(148, 163, 184, 0.15)',
+                    backgroundColor: 'rgba(231, 233, 234, 0.15)',
                   },
                 },
               }

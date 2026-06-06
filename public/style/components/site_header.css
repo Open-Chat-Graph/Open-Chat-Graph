@@ -73,9 +73,11 @@ body::before {
   left: 0;
   right: 0;
   margin: 0 auto;
-  background-color: var(--c-header-backdrop);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Safari 26 (Liquid Glass) は固定要素自身の background / backdrop-filter を
+     サンプリングしてステータスバーをベタ塗りにする（opacity:0でも読まれる）。
+     fixed 親は透明にし、描画は絶対配置の ::before（サンプリング対象外）へ移譲
+     → スクロール時にダイナミックアイランド周囲へ実ピクセルが合成され透ける */
+  background-color: transparent;
   width: 100%;
   max-width: var(--max-width);
   transition:
@@ -85,6 +87,16 @@ body::before {
   /* viewport-fit=cover でステータスバー裏まで伸ばし、
      半透明+blur がダイナミックアイランド周囲に透ける（ネイティブ風） */
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+.site_header_outer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--c-header-backdrop);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* 下スクロール時の非表示。既定はこれまで通りの上スライドのみ */
