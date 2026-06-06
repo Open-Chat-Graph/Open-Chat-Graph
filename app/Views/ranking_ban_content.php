@@ -35,7 +35,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
             <div class="rb-durations-outer">
                 <h3 class="rb-presets-title" id="rb-durations-title">消えていた期間</h3>
                 <div class="rb-presets rb-durations" role="group" aria-labelledby="rb-durations-title">
-                    <?php foreach ([[0, 0, 'すべて'], [0, 24, '24時間以内'], [24, 72, '1〜3日'], [72, 168, '3〜7日'], [168, 0, '1週間以上']] as [$rbDi, $rbDa, $rbDurLabel]) : ?>
+                    <?php foreach ([[0, 0, 'すべて'], [0, 24, '24時間以内'], [72, 0, '3日以上'], [168, 0, '1週間以上']] as [$rbDi, $rbDa, $rbDurLabel]) : ?>
                         <button type="button" class="rb-preset rb-duration<?php if ($dmin === $rbDi && $dmax === $rbDa) echo ' is-active' ?>" aria-pressed="<?php echo ($dmin === $rbDi && $dmax === $rbDa) ? 'true' : 'false' ?>" data-dmin="<?php echo $rbDi ?>" data-dmax="<?php echo $rbDa ?>"><?php echo $rbDurLabel ?></button>
                     <?php endforeach ?>
                 </div>
