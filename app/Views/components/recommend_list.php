@@ -27,7 +27,7 @@ use App\Services\Recommend\Enum\RecommendListType;
                             <div style="text-wrap: wrap;">「<?php echo $recommend->listName ?>」の</div>
                             <div>おすすめ</div>
                         </h3>
-                        <small style="font-size: 14px; font-weight:bold; color:#4d73ff; margin: auto 0; margin-left: 4px; text-wrap: nowrap; word-break: keep-all;" aria-hidden="true">すべて見る</small>
+                        <small style="font-size: 14px; font-weight:bold; color:var(--c-accent-blue); margin: auto 0; margin-left: 4px; text-wrap: nowrap; word-break: keep-all;" aria-hidden="true">すべて見る</small>
                     </a>
                 <?php endif ?>
             </div>

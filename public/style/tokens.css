@@ -188,6 +188,35 @@
   --c-grad-blue-btn: linear-gradient(135deg, #7eb8ff, #3a7bd5);
   --c-grad-orange-btn: linear-gradient(135deg, #ffa751, #e85d04);
 
+  /* ブログ系 */
+  --c-green-pale: #e2f6ea;           /* パンくず hover */
+  --c-green-underline: #a8e6c2;      /* リンク下線 */
+  --c-green-text-deep: #235f3e;      /* 引用ブロック文字 */
+  --c-text-silver: #c5c9ce;          /* パンくず区切り */
+  --c-blog-icon-border: #bfe7cd;     /* 記事アイコンの淡緑枠（統合候補: --c-chip-hot-border） */
+  --c-brand-shadow: rgba(6, 199, 85, 0.28);
+  --c-brand-shadow-soft: rgba(6, 199, 85, 0.09);
+  --c-brand-shadow-soft-2: rgba(6, 199, 85, 0.1);
+  --c-ink-shadow: rgba(17, 17, 17, 0.03);
+  --c-shadow-3: #777;                /* terms カードのぼかし影 */
+  --c-border-plain-2: #e6e6e6;       /* labs フォーム枠（統合候補: --c-border-plain） */
+  --c-border-mid: #ccc;              /* 管理プレビュー枠 */
+  --c-text-mid-3: #888;              /* 統合候補: --c-text-3 */
+
+  /* recommend グループUI（--c-rg-*） */
+  --c-rg-text-strong: #2b2f36;
+  --c-rg-text-heading: #1f2328;
+  --c-rg-text: #6b7178;
+  --c-rg-text-soft: #7b828b;
+  --c-rg-text-mid: #777e87;
+  --c-rg-muted: #9aa0a6;
+  --c-rg-border: #eceff3;
+  --c-rg-line: #e7eaee;              /* 枠と淡面の兼用 */
+  --c-rg-surface: #f7f8fa;
+  --c-rg-green-bg: #eef6f0;
+  --c-rg-green-border: #cfe9d9;
+  --c-rg-shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 4px 16px rgba(20, 22, 26, 0.05);
+
   /* テーマチップ（hot・緑系） */
   --c-chip-hot-text: #067a37;
   --c-chip-hot-bg: #eefcf3;
@@ -201,4 +230,39 @@
   --c-legacy-table: #118bee;             /* テーブルヘッダ青 */
   --c-legacy-secondary: #920de9;         /* aside 縁・sup 背景の紫 */
   --c-legacy-secondary-accent: #920de90b;
+}
+
+/* ------------------------------------------------------------
+   入室確認ページ（/oc/{id}/jump）の名前空間トークン --ocj-*
+   「公式の安全確認ゲート」: 紙色背景 + 警告=琥珀 / 行動=LINEグリーン。
+   定義は oc-jump.css から移設（半径・影トークンも色と同様にここで管理）。
+   ------------------------------------------------------------ */
+:root {
+  --ocj-bg: #f6f5f3;
+  --ocj-bg-dim: #efeded;
+  --ocj-bg-dim-2: #f3f2ef;
+  --ocj-card: #ffffff;
+  --ocj-card-soft: #faf9f7;
+  --ocj-border: #e9e7e3;
+  --ocj-border-soft: #efedea;
+  --ocj-border-faint: #f0eeea;
+  --ocj-ink: #1c1b19;
+  --ocj-ink-strong: #2c2a27;
+  --ocj-ink-soft: #5c5953;
+  --ocj-ink-mute: #8a857d;
+  --ocj-amber: #d98a00;
+  --ocj-amber-deep: #8a5800;
+  --ocj-amber-soft-text: #9a7320;
+  --ocj-amber-bg: #fdf6e8;
+  --ocj-amber-line: #f0d9a8;
+  --ocj-line-green: var(--green-line);
+  --ocj-line-green-press: #05a647;
+  --ocj-green-bg: #eef7f0;
+  --ocj-green-text: #1f9d54;
+  --ocj-radius: 14px;
+  --ocj-radius-sm: 10px;
+  --ocj-shadow: 0 1px 2px rgba(28, 27, 25, 0.04), 0 6px 18px rgba(28, 27, 25, 0.05);
+  --ocj-shadow-btn: 0 6px 16px rgba(6, 199, 85, 0.32);
+  --ocj-shadow-btn-hover: 0 8px 20px rgba(6, 199, 85, 0.38);
+  --ocj-shadow-btn-press: 0 3px 10px rgba(6, 199, 85, 0.3);
 }

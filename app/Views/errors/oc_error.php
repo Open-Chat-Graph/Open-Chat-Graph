@@ -74,9 +74,9 @@
             <?php viewComponent('site_header') ?>
         </div>
         <header style="padding: 1rem 1rem 0 1rem; text-align: center">
-            <p style="color: #111; font-size: 11px; text-align: left;">「<?php echo $recommend[2] ?? '' ?>」 ID:<?php echo $open_chat_id ?></p>
-            <p style="font-weight: bold; color: #777">このオープンチャットはオプチャグラフから削除されました😇</p>
-            <p style="color: #aaa; font-size: 13px">LINE内でルームが削除された可能性があります</p>
+            <p style="color: var(--c-text-1); font-size: 11px; text-align: left;">「<?php echo $recommend[2] ?? '' ?>」 ID:<?php echo $open_chat_id ?></p>
+            <p style="font-weight: bold; color: var(--c-text-3)">このオープンチャットはオプチャグラフから削除されました😇</p>
+            <p style="color: var(--c-text-4); font-size: 13px">LINE内でルームが削除された可能性があります</p>
         </header>
         <?php if (isset($recommend[0]) && $recommend[0]) : ?>
             <aside class="recommend-list-aside">

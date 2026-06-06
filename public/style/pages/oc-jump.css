@@ -6,23 +6,8 @@
    var(--font-family) を踏襲し、デザインは余白・色・罫線・影で作る。
    ========================================================================= */
 
-:root {
-  --ocj-bg: #f6f5f3;
-  --ocj-card: #ffffff;
-  --ocj-border: #e9e7e3;
-  --ocj-ink: #1c1b19;
-  --ocj-ink-soft: #5c5953;
-  --ocj-ink-mute: #8a857d;
-  --ocj-amber: #d98a00;
-  --ocj-amber-bg: #fdf6e8;
-  --ocj-amber-line: #f0d9a8;
-  --ocj-line-green: #06c755;
-  --ocj-line-green-press: #05a647;
-  --ocj-radius: 14px;
-  --ocj-radius-sm: 10px;
-  --ocj-shadow: 0 1px 2px rgba(28, 27, 25, .04), 0 6px 18px rgba(28, 27, 25, .05);
-  --ocj-shadow-btn: 0 6px 16px rgba(6, 199, 85, .32);
-}
+/* --ocj-* トークンの定義は style/tokens.css に移設済み
+   （色・半径・影をまとめて名前空間 --ocj-* で管理） */
 
 /* ページ全体の地色（カードを浮かせる） */
 body:has(.oc-jump-wrap) {
@@ -78,7 +63,7 @@ body:has(.oc-jump-wrap) {
   height: 26px;
   border-radius: 50%;
   background: var(--ocj-amber);
-  color: #fff;
+  color: var(--c-text-inverse);
   font-size: 16px;
   font-weight: 700;
   line-height: 26px;
@@ -95,14 +80,14 @@ body:has(.oc-jump-wrap) {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #8a5800;
+  color: var(--ocj-amber-deep);
   letter-spacing: .01em;
 }
 
 .oc-jump-notice__lead {
   font-size: 12.5px;
   line-height: 1.6;
-  color: #9a7320;
+  color: var(--ocj-amber-soft-text);
 }
 
 /* =========================================================================
@@ -124,7 +109,7 @@ body:has(.oc-jump-wrap) {
   width: 100%;
   aspect-ratio: 1.8;
   object-fit: cover;
-  background: #efeded;
+  background: var(--ocj-bg-dim);
 }
 
 .oc-jump-room {
@@ -156,7 +141,7 @@ body:has(.oc-jump-wrap) {
   gap: 6px;
   align-self: flex-start;
   padding: 4px 11px;
-  background: #f3f2ef;
+  background: var(--ocj-bg-dim-2);
   border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
@@ -195,8 +180,8 @@ body:has(.oc-jump-wrap) {
 .oc-jump-about__body {
   margin: 0;
   border-radius: var(--ocj-radius-sm);
-  background: #faf9f7;
-  border: 1px solid #efedea;
+  background: var(--ocj-card-soft);
+  border: 1px solid var(--ocj-border-soft);
   padding: 13px 15px;
   max-height: none;
 }
@@ -206,7 +191,7 @@ body:has(.oc-jump-wrap) {
   text-align: left;
   line-height: 1.85;
   font-size: 13.5px;
-  color: #2c2a27;
+  color: var(--ocj-ink-strong);
 }
 
 .oc-jump-about__body #talkroom-description-btn {
@@ -270,7 +255,7 @@ body:has(.oc-jump-wrap) {
   position: relative;
   margin: 0;
   padding: 13px 0 13px 34px;
-  border-top: 1px solid #f0eeea;
+  border-top: 1px solid var(--ocj-border-faint);
   list-style: none;
 }
 
@@ -287,8 +272,8 @@ body:has(.oc-jump-wrap) {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #eef7f0;
-  color: #1f9d54;
+  background: var(--ocj-green-bg);
+  color: var(--ocj-green-text);
   font-size: 11.5px;
   font-weight: 700;
   line-height: 22px;
@@ -385,7 +370,7 @@ body:has(.oc-jump-wrap) {
     #12cfcd 83.85%,
     #16c2c1
   );
-  color: #fff;
+  color: var(--c-text-inverse);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: .02em;
@@ -398,13 +383,13 @@ body:has(.oc-jump-wrap) {
 .oc-jump-line-button:hover {
   /* グラデを保ったまま明度＋影で押下感を出す(flat緑に戻すとグラデが消えるため) */
   filter: brightness(1.04);
-  box-shadow: 0 8px 20px rgba(6, 199, 85, .38);
+  box-shadow: var(--ocj-shadow-btn-hover);
 }
 
 .oc-jump-line-button:active {
   transform: translateY(1px) scale(.995);
   filter: brightness(.98);
-  box-shadow: 0 3px 10px rgba(6, 199, 85, .3);
+  box-shadow: var(--ocj-shadow-btn-press);
 }
 
 .oc-jump-line-button-content {
@@ -415,7 +400,7 @@ body:has(.oc-jump-wrap) {
 
 .oc-jump-line-button svg {
   height: 15px;
-  fill: #fff;
+  fill: var(--c-text-inverse);
   margin-right: 5px;
 }
 

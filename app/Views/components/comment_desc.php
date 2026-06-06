@@ -25,7 +25,7 @@
                 </p>
             </li>
         </ol>
-        <p class="summary-p" style="font-size: 11px; color: #b7b7b7">
+        <p class="summary-p" style="font-size: 11px; color: var(--c-text-5)">
             コメントは検索エンジン（Googleなど）に随時読み込まれています。ユーザーの体験に基づくコメントの掲載は、検索エンジンによって高く評価されます。このオプチャ自体が高く評価されることにより、様々なキーワードの検索結果に上位掲載される機会が増えます。これにより、外部から新しい訪問者を呼び込むことができます。
         </p>
     </details>
