@@ -377,23 +377,6 @@ body > .google-auto-placed {
 
 /* ライブサマリーバー */
 
-.rb-summary {
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-left: 3px solid #06c755;
-  background-color: #f7faf8;
-  border-radius: 0 8px 8px 0;
-  font-size: 14px;
-  color: #3d4043;
-  line-height: 1.7;
-}
-
-.rb-summary-count {
-  font-weight: bold;
-  color: #111;
-  white-space: nowrap;
-}
-
 /* ---------- ローディング（初回・2回目以降で共通。常に結果の先頭） ---------- */
 
 #rb-loading {
@@ -408,10 +391,13 @@ body > .google-auto-placed {
 
 /* 細いプログレスバー */
 .rb-progress {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
   height: 3px;
   overflow: hidden;
-  border-radius: 2px;
   background-color: #ededf0;
 }
 
@@ -529,10 +515,11 @@ body > .google-auto-placed {
 
 .rb-count {
   display: inline-block;
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: bold;
   white-space: pre-wrap;
   color: #111;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .rb-empty {
@@ -663,4 +650,135 @@ body > .google-auto-placed {
 .rb-pager .rb-pager-btn.prev a {
   border: 1px solid #ededf0;
   background-color: #fff;
+}
+
+/* ---------- 消えていた期間チップ（プリセットの下の第2列） ---------- */
+
+.rb-durations-outer {
+  margin-top: 14px;
+}
+
+.rb-durations-outer .rb-presets-title {
+  margin-bottom: 6px;
+}
+
+.rb-durations .rb-preset {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+}
+
+.rb-durations-outer .rb-field-hint {
+  margin-top: 6px;
+}
+
+/* ---------- 0件時の逃げ道（ふつうの順位落ちの除外を解除） ---------- */
+
+.rb-empty-hint {
+  font-size: 13px;
+  color: #5b6066;
+  margin: 8px 0 0;
+}
+
+.rb-widen {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  margin-top: 12px;
+  border: 1px solid #06c755;
+  border-radius: 999px;
+  color: #06c755;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.rb-widen:hover {
+  background-color: #06c75514;
+}
+
+/* チップ内の状態ドット（プリセットの未掲載/復活の対をスキャナブルに） */
+.rb-preset .rb-dot {
+  margin-right: 6px;
+}
+
+.rb-clear-duration {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  margin: 12px 0 0 8px;
+  border: 1px solid #d0d3d6;
+  border-radius: 999px;
+  color: #5b6066;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.rb-clear-duration:hover {
+  background-color: #f3f4f6;
+}
+
+/* ---------- 常時表示の絞り込みチップ行（掲載状況・変更・順位落ちの除外） ---------- */
+
+.rb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 10px;
+}
+
+.rb-filter-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: bold;
+  color: #5b6066;
+  min-width: 8.5em;
+}
+
+.rb-filters {
+  gap: 6px;
+}
+
+.rb-filters .rb-preset {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+}
+
+/* 詳細設定内の説明リスト */
+.rb-legend {
+  all: unset;
+  display: block;
+  list-style: none;
+  font-size: 12px;
+  color: #5b6066;
+  line-height: 1.7;
+}
+
+.rb-legend li {
+  margin-top: 6px;
+}
+
+@media (max-width: 480px) {
+  .rb-filter-label {
+    min-width: 100%;
+  }
+}
+
+/* 順位落ち除外チップ行のヒントは行内で折り返して全幅に */
+.rb-filter-hint {
+  flex-basis: 100%;
+  margin: 0;
 }
