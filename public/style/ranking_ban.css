@@ -804,3 +804,9 @@ body > .google-auto-placed {
     min-width: 100%;
   }
 }
+
+/* 順位落ち除外チップ行のヒントは行内で折り返して全幅に */
+.rb-filter-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
