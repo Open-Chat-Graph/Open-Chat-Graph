@@ -91,7 +91,7 @@ export default function OpenChatListItem({
           {name}
         </a>
         {showNorth && (
-          <NorthIcon className="show-north" sx={{ fontSize: '14px', color: '#07B53B' }} />
+          <NorthIcon className="show-north" sx={{ fontSize: '14px', color: 'var(--c-up)' }} />
         )}
       </h3>
       <p className="item-desc">{desc}</p>

@@ -2,6 +2,7 @@ import { Chart as ChartJS } from 'chart.js/auto'
 import OpenChatChart from '../../OpenChatChart'
 import getVerticalLabelRange from '../Util/getVerticalLabelRange'
 import getRankingBarLabelRange from '../Util/getRankingBarLabelRange'
+import { getColors } from '../../../util/theme'
 
 const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
   const min = chart.scales.x.min
@@ -47,7 +48,7 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
     chart.options!.scales!.x!.grid = {
       ...chart.options!.scales!.x!.grid,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      color: ((ctx: any) => (ctx.index % gridStep === 0 ? '#efefef' : 'transparent')) as any,
+      color: ((ctx: any) => (ctx.index % gridStep === 0 ? getColors().grid : 'transparent')) as any,
     }
 
     return [min, max]

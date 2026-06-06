@@ -60,7 +60,7 @@ export default function ChartLimitBtns() {
   return (
     <>
       <Box
-        sx={{ borderBottom: 1, borderColor: '#efefef', width: '100%' }}
+        sx={{ borderBottom: 1, borderColor: 'var(--c-border)', width: '100%' }}
         className="limit-btns category-tab"
       >
         <Tabs onChange={handleChange} variant="fullWidth" value={limit}>

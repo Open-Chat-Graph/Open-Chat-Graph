@@ -54,7 +54,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
             </div>
           <?php endif ?>
         <?php else : ?>
-          <div class="comment-user" style="font-size: 12px; margin-top: 4px; color: #777;">
+          <div class="comment-user" style="font-size: 12px; margin-top: 4px; color: var(--c-text-3);">
             <span>削除されたコメント</span>
           </div>
         <?php endif ?>
@@ -95,7 +95,7 @@ use App\Views\Ads\GoogleAdsense as GAd;
               <div style="font-size: 12px;" class="comment-name">
                 <span aria-hidden="true"></span><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><span><?php echo $oc['name'] ?></span>
               </div>
-              <div class="comment-member-count" style="font-size: 12px; margin-right: 4px; color: #777;">
+              <div class="comment-member-count" style="font-size: 12px; margin-right: 4px; color: var(--c-text-3);">
                 <span>削除されたコメント</span>
               </div>
               <div class="comment-time" style="font-size: 12px; margin-left: 4px;">

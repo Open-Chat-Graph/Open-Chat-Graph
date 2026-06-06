@@ -65,14 +65,14 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf() {
           gap: 6,
           fontSize: 13,
           fontWeight: 800,
-          color: '#06a34a',
+          color: 'var(--c-green-shelf)',
           marginBottom: 8,
           letterSpacing: '0.02em',
         }}
       >
         <span
           aria-hidden="true"
-          style={{ flex: '0 0 auto', width: 3, height: 14, background: '#06c755', borderRadius: 2 }}
+          style={{ flex: '0 0 auto', width: 3, height: 14, background: 'var(--c-brand)', borderRadius: 2 }}
         />
         {t('関連テーマ')}
         <span aria-hidden="true" style={{ fontSize: 12 }}>✨</span>
@@ -114,7 +114,7 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf() {
               height: '100%',
               width: 36,
               pointerEvents: 'none',
-              background: 'linear-gradient(270deg, #fff 35%, rgba(255,255,255,0) 100%)',
+              background: 'linear-gradient(270deg, var(--c-bg) 35%, var(--c-bg-fade-end) 100%)',
             }}
           />
         )}

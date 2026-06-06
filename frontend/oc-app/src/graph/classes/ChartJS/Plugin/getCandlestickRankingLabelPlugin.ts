@@ -1,4 +1,5 @@
 import OpenChatChart from '../../OpenChatChart'
+import { getColors } from '../../../util/theme'
 
 export default function getCandlestickRankingLabelPlugin(ocChart: OpenChatChart) {
   return {
@@ -47,7 +48,7 @@ export default function getCandlestickRankingLabelPlugin(ocChart: OpenChatChart)
       ctx.save()
       const fontWeight = isLimit8 ? 'normal' : 'bold'
       ctx.font = `${fontWeight} ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`
-      ctx.fillStyle = '#111'
+      ctx.fillStyle = getColors().text.primary
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
 

@@ -60,10 +60,10 @@ export const OCListSortMenu = memo(function OCListSortMenu({
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClickListItem}
-        sx={{ fontSize: under359 ? '12.5px' : '14px', color: '#000', minWidth: 36, minHeight: 36 }}
+        sx={{ fontSize: under359 ? '12.5px' : '14px', color: 'var(--c-text-black)', minWidth: 36, minHeight: 36 }}
         color="success"
       >
-        {!under359 && <SortIcon sx={{ marginRight: '4px', fontSize: '20px', color: '#000' }} />}
+        {!under359 && <SortIcon sx={{ marginRight: '4px', fontSize: '20px', color: 'var(--c-text-black)' }} />}
         {isSP() || under359 ? `${options[selectedIndex][0][1]}` : options[selectedIndex][0][0]}
       </Button>
       <Menu

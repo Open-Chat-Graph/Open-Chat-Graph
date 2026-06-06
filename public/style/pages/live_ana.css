@@ -12,7 +12,7 @@
   height: 48px;
   width: 78px;
   background-color: inherit;
-  color: var(--color-text-secondary);
+  color: var(--c-text-3);
   font-size: 14px;
   display: inline-block;
   text-align: center;
@@ -22,8 +22,8 @@
 }
 
 .chart-btn:disabled {
-  box-shadow: inset 0px -6px 0px -3px rgb(3, 199, 85);
-  color: black;
+  box-shadow: inset 0px -6px 0px -3px var(--c-green-tab);
+  color: var(--c-text-black);
   background-color: inherit;
 }
 
@@ -75,7 +75,7 @@ main {
 
 .openchat-header h1 {
   text-align: center;
-  color: #118bee;
+  color: var(--c-labs-blue);
 }
 
 #file-input {
@@ -118,9 +118,6 @@ table th {
   white-space: break-spaces;
 }
 
-.live-table tr td:nth-child(4) span {
-}
-
 .live-table tr td:nth-child(4) span span {
   margin-left: 0.125rem;
   font-weight: bold;
@@ -156,7 +153,7 @@ table th {
 }
 
 .chart-btn:disabled {
-  box-shadow: inset 0px -6px 0px -3px #118bee;
+  box-shadow: inset 0px -6px 0px -3px var(--c-labs-blue);
 }
 
 .page-desc {
@@ -173,7 +170,7 @@ form {
 }
 
 .form-errorMessage {
-  color: #ff6868;
+  color: var(--c-red-soft);
   font-weight: bold;
 }
 
@@ -200,7 +197,7 @@ form {
   }
 
   .chart-btn:hover:not(:disabled) {
-    background-color: #f1f5f9;
+    background-color: var(--c-surface-slate);
   }
 }
 

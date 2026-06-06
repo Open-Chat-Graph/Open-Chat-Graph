@@ -7,12 +7,12 @@
         font-size: 13px;
         width: 100%;
         box-shadow: none;
-        border: 1px solid #e6e6e6;
+        border: 1px solid var(--c-border-plain-2);
     }
 
     #file-input {
         width: 100%;
-        border: 1px solid #e6e6e6;
+        border: 1px solid var(--c-border-plain-2);
     }
 
     .form-section form p {
@@ -25,7 +25,7 @@
     }
 
     .form-section .form-errorMessage {
-        color: #ff6868;
+        color: var(--c-red-soft);
         font-weight: bold;
     }
 </style>

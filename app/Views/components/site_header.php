@@ -6,15 +6,15 @@
         <a class="<?php echo t('header_site_title') ?> unset" href="<?php echo url() ?>">
             <img src="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>" alt="">
             <?php if (strpos(path(), '/oc') === false || isset($titleP)) : ?>
-                <h1><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: #888;">' . t(' (開発環境)') . '</span>'; ?></h1>
+                <h1><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: var(--c-text-mid-3);">' . t(' (開発環境)') . '</span>'; ?></h1>
             <?php else : ?>
-                <p><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: #888;">' . t(' (開発環境)') . '</span>'; ?></p>
+                <p><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: var(--c-text-mid-3);">' . t(' (開発環境)') . '</span>'; ?></p>
             <?php endif ?>
         </a>
         <?php // 右側アクション群（ブログ=日本語のみ／カテゴリ）。検索ボタン(右端absolute)の50px分を確保、トップでは詰める ?>
         <div class="header-actions"<?php if ($hideSearchButton ?? false) echo ' style="margin-right: 0;"' ?>>
             <?php if (\Shared\MimimalCmsConfig::$urlRoot === '') : ?>
-                <a class="blog-button unset" href="<?php echo url('blog') ?>"><span>ブログ</span></a>
+                <a class="blog-text-link unset" href="<?php echo url('blog') ?>">ブログ</a>
             <?php endif ?>
             <a class="category-button" href="<?php echo url('ranking') ?>">
                 <span><?php echo t('カテゴリーから探す') ?></span>

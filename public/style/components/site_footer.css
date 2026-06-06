@@ -1,7 +1,7 @@
-:root {
-  --border-color: #efefef;
-  --hover: rgb(250, 250, 250);
-}
+/* ============================================================
+   サイト共通フッター（リンク・コピーライト・シェアボタン）
+   色は style/tokens.css のトークン（--c-*）を参照する。
+   ============================================================ */
 
 .footer-elem-outer {
   all: unset;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .footer-link-inner {
@@ -52,7 +52,7 @@
   display: flex;
   gap: 4px;
   font-size: 11px;
-  color: #aaa;
+  color: var(--c-text-4);
   margin: 0 auto;
   margin-top: 8px;
   flex-direction: column;
@@ -63,7 +63,7 @@
 }
 
 .copyright a {
-  color: #b7b7b7;
+  color: var(--c-text-5);
   font-weight: normal;
 }
 
@@ -71,7 +71,7 @@
   margin: 3px 0;
   text-decoration: none;
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .app_link a {
@@ -82,7 +82,7 @@
   font-size: 11px;
   margin-bottom: 4px;
   letter-spacing: 0.06px;
-  color: #b7b7b7;
+  color: var(--c-text-5);
 }
 
 .open-btn2 {
@@ -92,7 +92,8 @@
   align-items: center;
 }
 
-/* シェアボタン */
+/* ---------- シェアボタン ---------- */
+
 .share-nav {
   display: flex;
   width: 100%;
@@ -105,7 +106,7 @@
 .share-nav h3 {
   all: unset;
   font-size: 13px;
-  color: #111;
+  color: var(--c-text-1);
   display: block;
   margin: 0 auto;
   line-height: 1.5;
@@ -152,7 +153,7 @@
 
 .share-menu-icon-twitter {
   background-image: url('/assets/twitter_x.svg');
-  background-color: #000000;
+  background-color: var(--c-sns-x);
   border-radius: 6px;
 }
 
@@ -161,10 +162,12 @@
 }
 
 .share-menu-icon-hatena {
-  background-color: #00a4de;
+  background-color: var(--c-sns-hatena);
   background-image: url('/assets/hatena.svg');
   border-radius: 6px;
 }
+
+/* ---------- URLコピー ---------- */
 
 .copy-btn {
   display: flex;
@@ -175,7 +178,7 @@
   min-height: 48px;
   width: 100%;
   border-radius: 99rem;
-  border: 1px solid rgb(189, 189, 189);
+  border: 1px solid var(--c-border-strong);
   font-weight: normal;
   box-sizing: border-box;
 }
@@ -208,16 +211,17 @@
   height: 16px;
 }
 
+/* コピー完了ツールチップ */
 .description1 {
   z-index: 100;
   display: none;
   position: fixed;
   padding: 10px;
   font-size: 13px;
-  color: #fff;
+  color: var(--c-text-inverse);
   font-weight: bold;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--c-overlay);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   width: 87.5%;
@@ -278,6 +282,8 @@
   animation-fill-mode: both;
 }
 
+/* ---------- レスポンシブ ---------- */
+
 @media screen and (min-width: 512px) {
   .footer-link-inner a {
     font-size: 14px;
@@ -293,6 +299,7 @@
     gap: 1.5rem;
   }
 
+  .open-btn2 a:hover,
   .footer-link-box a:hover {
     -webkit-text-decoration: underline 1px currentColor;
     text-decoration: underline 1px currentColor;
@@ -319,10 +326,7 @@
   }
 
   .copy-btn:hover:not(.copy-btn-copied) {
-    background-color: var(--hover);
-  }
-
-  .footer-link-box {
+    background-color: var(--c-bg-sub);
   }
 
   .app-dl {
@@ -340,7 +344,7 @@
     top: 100%;
     left: 50%;
     border: 15px solid transparent;
-    border-top: 15px solid rgba(0, 0, 0, 0.8);
+    border-top: 15px solid var(--c-overlay);
     margin-left: -15px;
     cursor: auto;
   }
@@ -376,21 +380,49 @@
   }
 }
 
-@media screen and (min-width: 512px) {
-  .footer-link-inner a {
-    font-size: 14px;
-    line-height: 1.9;
-  }
+/* ---------- テーマ切替（フッター共通・3状態） ---------- */
 
-  .open-btn2 a:hover,
-  .footer-link-box a:hover {
-    -webkit-text-decoration: underline 1px currentColor;
-    text-decoration: underline 1px currentColor;
-  }
+.footer-theme-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
 }
 
-@media screen and (max-width: 360px) {
-  .footer-link-inner a {
-    font-size: 11.5px;
-  }
+.footer-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--c-text-3);
+  font-size: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 99rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.footer-theme-toggle:hover {
+  background-color: var(--c-bg-sub);
+  color: var(--c-text-1);
+}
+
+.footer-theme-toggle-label {
+  line-height: 1;
+}
+
+/* 現在の選択ラベル（light/dark/auto）を出し分け */
+.theme-label-dark,
+.theme-label-auto {
+  display: none;
+}
+
+:root[data-theme-pref="dark"] .theme-label-dark,
+:root[data-theme-pref="auto"] .theme-label-auto {
+  display: inline;
+}
+
+:root[data-theme-pref="dark"] .theme-label-light,
+:root[data-theme-pref="auto"] .theme-label-light {
+  display: none;
 }

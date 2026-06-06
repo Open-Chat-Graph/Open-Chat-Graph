@@ -204,8 +204,8 @@ export default function ImageAttachmentInput() {
 
   const badgeSx = {
     '& .MuiBadge-badge': {
-      bgcolor: 'rgba(0,0,0,0.6)',
-      color: '#fff',
+      bgcolor: 'var(--c-overlay-60)',
+      color: 'var(--c-text-inverse)',
       width: 20,
       height: 20,
       minWidth: 20,
@@ -226,7 +226,7 @@ export default function ImageAttachmentInput() {
           gap: 1,
           flexWrap: 'wrap',
           p: totalCount > 0 ? 1 : 0,
-          border: dragOver ? '2px dashed #1976d2' : totalCount > 0 ? '1px solid #e0e0e0' : 'none',
+          border: dragOver ? '2px dashed var(--c-mui-blue)' : totalCount > 0 ? '1px solid var(--c-border-gray)' : 'none',
           borderRadius: 1,
           transition: 'border 0.2s',
         }}
