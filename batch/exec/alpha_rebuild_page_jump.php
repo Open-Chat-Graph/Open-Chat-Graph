@@ -16,8 +16,7 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
-use App\Models\UserLogRepositories\UserLogDB;
+use App\Services\Alpha\AlphaGaSyncService;
 use Shared\MimimalCmsConfig;
 
 // Alpha は ja のみ稼働
@@ -28,60 +27,33 @@ $to = null;
 foreach ($argv as $arg) {
     if (preg_match('/^--from=(\d{4}-\d{2}-\d{2})$/', $arg, $m)) {
         $from = $m[1];
-    }
-    if (preg_match('/^--to=(\d{4}-\d{2}-\d{2})$/', $arg, $m)) {
+    } elseif (preg_match('/^--to=(\d{4}-\d{2}-\d{2})$/', $arg, $m)) {
         $to = $m[1];
     }
 }
 
-// αテーブル（alpha_xxx_ja）はすべて userlog DB（UserLogDB）。
-UserLogDB::connect();
+/** @var AlphaGaSyncService $service */
+$service = app(AlphaGaSyncService::class);
 
-// alpha_room_referrer_daily_ja に存在する日付一覧を取得
-$whereSql = '';
-$params = [];
-if ($from !== null) {
-    $whereSql .= ' AND `date` >= :from';
-    $params['from'] = $from;
-}
-if ($to !== null) {
-    $whereSql .= ' AND `date` <= :to';
-    $params['to'] = $to;
-}
+$result = $service->rebuildPageJumpRange($from, $to, function (int $done, int $total, string $date, ?string $error) {
+    if ($error !== null) {
+        echo "  ERROR {$date}: {$error}\n";
+    } elseif ($done % 10 === 0) {
+        echo "  {$done}/{$total} 完了 (直近: {$date})\n";
+    }
+});
 
-$dates = UserLogDB::fetchAll(
-    "SELECT DISTINCT `date` FROM alpha_room_referrer_daily_ja WHERE 1=1{$whereSql} ORDER BY `date` ASC",
-    $params
-);
-
-if ($dates === []) {
+if ($result['days'] === 0 && $result['errors'] === []) {
     echo "alpha_room_referrer_daily_ja にデータが見つかりませんでした。\n";
     exit(0);
 }
 
-$repo = new AlphaAccessRankingRepository();
-$total = count($dates);
-$done = 0;
-$errors = [];
+$total = $result['days'] + count($result['errors']);
+echo "\n完了: {$result['days']}/{$total} 日分を alpha_page_jump_daily_ja に集計しました。\n";
 
-foreach ($dates as $row) {
-    $date = (string)$row['date'];
-    try {
-        $repo->rebuildPageJumpDaily($date);
-        $done++;
-        if ($done % 10 === 0) {
-            echo "  {$done}/{$total} 完了 (直近: {$date})\n";
-        }
-    } catch (\Throwable $e) {
-        $errors[] = "{$date}: " . $e->getMessage();
-        echo "  ERROR {$date}: " . $e->getMessage() . "\n";
-    }
-}
-
-echo "\n完了: {$done}/{$total} 日分を alpha_page_jump_daily_ja に集計しました。\n";
-if (!empty($errors)) {
-    echo "エラー " . count($errors) . " 件:\n";
-    foreach ($errors as $err) {
+if (!empty($result['errors'])) {
+    echo "エラー " . count($result['errors']) . " 件:\n";
+    foreach ($result['errors'] as $err) {
         echo "  {$err}\n";
     }
     exit(1);

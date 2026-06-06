@@ -205,4 +205,43 @@ class AlphaGaSyncService
             'errors' => $errors,
         ];
     }
+
+    /**
+     * alpha_room_referrer_daily_ja 上の全日付（または --from/--to 範囲）について
+     * rebuildPageJumpDaily を一括実行する（batch/exec/alpha_rebuild_page_jump.php の本体ロジック）。
+     *
+     * GA 再取得は不要・DB のみで完結。
+     * 進捗は $progress コールバック（任意）で通知する。
+     * コールバックシグネチャ: function(int $done, int $total, string $date, ?string $error): void
+     *
+     * @param callable|null $progress function(int $done, int $total, string $date, ?string $error): void
+     * @return array{days: int, errors: array<int, string>}
+     */
+    public function rebuildPageJumpRange(?string $from, ?string $to, ?callable $progress = null): array
+    {
+        $dates = $this->accessRankingRepo->listReferrerDates($from, $to);
+
+        $total = count($dates);
+        $done = 0;
+        $errors = [];
+
+        foreach ($dates as $row) {
+            $date = (string)$row['date'];
+            try {
+                $this->accessRankingRepo->rebuildPageJumpDaily($date);
+                $done++;
+                if ($progress !== null) {
+                    $progress($done, $total, $date, null);
+                }
+            } catch (\Throwable $e) {
+                $err = "{$date}: " . $e->getMessage();
+                $errors[] = $err;
+                if ($progress !== null) {
+                    $progress($done, $total, $date, $err);
+                }
+            }
+        }
+
+        return ['days' => $done, 'errors' => $errors];
+    }
 }

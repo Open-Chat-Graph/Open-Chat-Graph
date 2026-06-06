@@ -757,6 +757,33 @@ class AlphaAccessRankingRepository
     }
 
     /**
+     * alpha_room_referrer_daily_ja に存在する日付を昇順で返す。
+     * --from/--to 範囲フィルタは SQL の WHERE で処理する。
+     *
+     * @return array<int, array{date: string}>
+     */
+    public function listReferrerDates(?string $from, ?string $to): array
+    {
+        UserLogDB::connect();
+
+        $where = 'WHERE 1=1';
+        $params = [];
+        if ($from !== null) {
+            $where .= ' AND `date` >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null) {
+            $where .= ' AND `date` <= :to';
+            $params['to'] = $to;
+        }
+
+        return UserLogDB::fetchAll(
+            "SELECT DISTINCT `date` FROM alpha_room_referrer_daily_ja {$where} ORDER BY `date` ASC",
+            $params
+        );
+    }
+
+    /**
      * 指定 id 群の部屋名を取得（参照元「他の部屋（◯◯）」の名前解決用）。
      *
      * @param array<int, int> $ids
