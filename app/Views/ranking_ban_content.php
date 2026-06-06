@@ -325,7 +325,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 const fmt = (h) => h % 24 === 0 ? (h / 24) + '日' : h + '時間';
                 if (dmin > 0 && dmax > 0) return fmt(dmin) + '〜' + fmt(dmax);
                 if (dmin > 0) return fmt(dmin) + '以上';
-                return fmt(dmax) + '未満';
+                return fmt(dmax) + '以内';
             };
 
             const pageUrl = (s) => PAGE_URL + '?' + buildQuery(s);

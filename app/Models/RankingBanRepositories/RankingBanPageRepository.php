@@ -132,10 +132,13 @@ class RankingBanPageRepository
     /**
      * 「消えていた期間」の絞り込み。復活済み（end_datetime あり）は復活までにかかった時間、
      * 未掲載中（end_datetime なし）は基準時刻 $now（毎時クロールの最新時刻）までの経過時間。
-     * いずれも時間単位（dmin は以上・dmax は未満）。値はバインドパラメータで渡す（連結しない）。
+     * いずれも時間単位で、dmin は「超」(>)・dmax は「以下」(<=)。
+     * 変更後の復活は「ちょうど24時間」(TIMESTAMPDIFF=24) に集中するため、dmax=24（24時間以内）が
+     * 典型の24時間戻りを含み、dmin=24（1〜3日）はそれを除く——この境界で直感と一致させる。
+     * 値はバインドパラメータで渡す（連結しない）。
      *
-     * @param int $dmin 下限（時間）。0なら条件なし
-     * @param int $dmax 上限（時間）。0なら条件なし
+     * @param int $dmin 下限（時間・この値を超える）。0なら条件なし
+     * @param int $dmax 上限（時間・この値以下）。0なら条件なし
      * @param string $now 基準時刻 'Y-m-d H:i:s'
      * @param array|null $durationParams バインド用パラメータの出力先
      */
@@ -146,11 +149,11 @@ class RankingBanPageRepository
 
         $clause = '';
         if ($dmin > 0) {
-            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dminNow)) >= :dmin';
+            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dminNow)) > :dmin';
             $durationParams += ['dminNow' => $now, 'dmin' => $dmin];
         }
         if ($dmax > 0) {
-            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dmaxNow)) < :dmax';
+            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dmaxNow)) <= :dmax';
             $durationParams += ['dmaxNow' => $now, 'dmax' => $dmax];
         }
         return $clause;
