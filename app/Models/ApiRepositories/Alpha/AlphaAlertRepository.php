@@ -618,7 +618,7 @@ class AlphaAlertRepository
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         DB::connect();
         $rows = DB::fetchAll(
-            "SELECT id, name, member, category, description, img_url, emblem, url, join_method_type
+            "SELECT id, name, member, category, description, img_url, emblem, url, join_method_type, created_at
              FROM open_chat WHERE id IN ({$placeholders})",
             $ids
         );

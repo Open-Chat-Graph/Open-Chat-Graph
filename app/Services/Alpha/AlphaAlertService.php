@@ -11,10 +11,13 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *
  * 全ユーザーのウォッチを走査し、以下を算出して alpha_notification に保存する:
  *   ① ウォッチキーワード … LINE公式検索APIで一致する「新着部屋」を検出
- *        - 登録済み(open_chat にある)部屋  … 従来どおり即時検出（カテゴリ照合あり）
+ *        - 登録済み(open_chat にある)部屋  … open_chat.created_at（こちらのDBへの登録日時）が
+ *          ウォッチ created_at 以降のものだけを「新着」として一度だけ通知（カテゴリ照合あり）。
+ *          古い部屋（DB登録 < ウォッチ作成）は seen 記録だけ残してスキップする。
+ *          open_chat.created_at が NULL の行は古い部屋とみなしスキップ（安全側）。
  *        - 未登録(オプチャグラフ未登録)部屋 … 共有プール alpha_search_seen_room に貯め、
- *          「ウォッチ登録時刻(created_at)以降に初出 ＆ 未配信」のものだけ配信
- *          （ウォッチ登録より前から在った部屋を初回に大量配信しないため）
+ *          「ウォッチ登録時刻(created_at)以降に初出（first_seen_at >= ウォッチ作成） ＆ 未配信」のものだけ配信。
+ *          両経路とも「ウォッチ登録より前から在った部屋を初回に大量配信しない」点で対称。
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
  *   ③ マイリスト          … %しきい値での上昇・下降を検出
  *
@@ -108,7 +111,8 @@ class AlphaAlertService
         foreach ($watches as $w) {
             $squares = $searchCache[$w['keyword']] ?? [];
 
-            // 登録済み一致は従来どおり即時検出（squareにcategory無いのでopen_chat側で照合）
+            // 登録済み一致: open_chat.created_at >= ウォッチ作成 の部屋のみ通知（新着性フィルタ）。
+            // 古い部屋（DB登録 < ウォッチ作成 または created_at NULL）は seen 記録してスキップ。
             $count += $this->deliverRegisteredHits($w, $squares);
 
             // 未登録一致は共有プールから「登録時刻以降に初出 ＆ 未配信」のみ配信
@@ -145,7 +149,13 @@ class AlphaAlertService
     }
 
     /**
-     * 登録済み部屋がキーワード一致したら即時通知（従来挙動を維持）。
+     * 登録済み部屋がキーワード一致したとき、新着性フィルタを通過したものだけ通知する。
+     *
+     * 新着性フィルタ: open_chat.created_at（こちらのDBへの登録日時）>= ウォッチ created_at
+     * を満たす部屋だけを通知対象とする。
+     *   - 条件を満たさない（古い）部屋は通知せずに seen 記録だけ行い、以後の再走査を防ぐ。
+     *   - open_chat.created_at が NULL の行は古い部屋とみなし skip（安全側の設計）。
+     * これにより未登録経路（first_seen_at >= ウォッチ作成）と対称な挙動になる。
      *
      * @param array{id:int,user_id:string,keyword:string,category:?int,created_at:string} $w
      * @param array<int, array{emid:string,name:string,desc:string,profileImageObsHash:string,joinMethodType:int}> $squares
@@ -172,7 +182,16 @@ class AlphaAlertService
                 continue; // 未登録は別経路（プール）で扱う
             }
             if (isset($seen[$emid])) {
-                continue; // 既に通知済み
+                continue; // 既に通知済み（seen記録あり）
+            }
+
+            // 新着性フィルタ: open_chat.created_at（DB登録日時）がウォッチ作成より前ならスキップ。
+            // created_at が NULL の行も古い部屋とみなしスキップ（安全側）。
+            // スキップ時も markEmidSeen して以後の再走査を防ぐ。
+            $ocCreatedAt = $ocMap[$ocId]['created_at'] ?? null;
+            if ($ocCreatedAt === null || $ocCreatedAt < $w['created_at']) {
+                $this->repo->markEmidSeen($w['id'], $emid);
+                continue;
             }
 
             // カテゴリ指定があり、登録部屋のカテゴリが一致しなければスキップ
