@@ -107,10 +107,7 @@ $_css[] = 'pages/oc-jump';
       <?php endif ?>
 
     </article>
-    <!-- 最下部広告 -->
-    <div class="oc-jump-ad" style="margin-top: 14px;">
-      <?php GAd::output('siteSeparatorResponsive', true) ?>
-    </div>
+    <?php // 最下部広告(siteSeparatorResponsive)は撤去済み: impRPM¥45/CTR0.32%/¥5日(2026-06実測)。siteSeparatorWide(高単価)は維持 ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php GAd::loadAdsTag() ?>
