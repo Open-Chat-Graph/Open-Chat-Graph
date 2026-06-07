@@ -8,6 +8,7 @@ const ALERTS_KEY = 'alpha-alerts'
 const EMPTY_ALERTS: AlertsResponse = {
   keywordHits: [],
   movements: [],
+  signals: [],
   unreadCount: 0,
   computedAt: null,
 }
@@ -57,6 +58,7 @@ export function useAlerts(): UseAlerts {
                 unreadCount: 0,
                 keywordHits: current.keywordHits.map((h) => ({ ...h, isRead: true })),
                 movements: current.movements.map((m) => ({ ...m, isRead: true })),
+                signals: (current.signals ?? []).map((s) => ({ ...s, isRead: true })),
               }
             : EMPTY_ALERTS,
         revalidate: false,
@@ -83,12 +85,14 @@ export function useAlerts(): UseAlerts {
               idSet.has(a.id) && !a.isRead ? { ...a, isRead: true } : a
             const newlyRead =
               current.keywordHits.filter((h) => idSet.has(h.id) && !h.isRead).length +
-              current.movements.filter((m) => idSet.has(m.id) && !m.isRead).length
+              current.movements.filter((m) => idSet.has(m.id) && !m.isRead).length +
+              (current.signals ?? []).filter((s) => idSet.has(s.id) && !s.isRead).length
             return {
               ...current,
               unreadCount: Math.max(0, current.unreadCount - newlyRead),
               keywordHits: current.keywordHits.map(markIfTarget),
               movements: current.movements.map(markIfTarget),
+              signals: (current.signals ?? []).map(markIfTarget),
             }
           },
           revalidate: false,

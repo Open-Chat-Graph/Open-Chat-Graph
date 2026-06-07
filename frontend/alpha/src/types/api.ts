@@ -285,10 +285,59 @@ export interface AlertsConfigRequest {
 // --- 通知一覧（GET /alpha-api/alerts?markRead=all|<csv ids>） ---
 export interface AlertBase {
   id: number
-  type: 'keyword' | 'room' | 'mylist'
+  type: 'keyword' | 'room' | 'mylist' | 'room_change' | 'rank_jump' | 'pace'
   isRead: boolean
   createdAt: number // unix秒
 }
+
+// 機微シグナル: 部屋情報変更
+export interface RoomChangeField {
+  field: 'name' | 'description' | 'category'
+  old: string
+  new: string
+}
+
+export interface RoomChangePayload {
+  openChatId: number
+  name: string
+  changes: RoomChangeField[]
+}
+
+export interface RoomChangeSignal extends AlertBase {
+  type: 'room_change'
+  payload: RoomChangePayload
+}
+
+// 機微シグナル: ランキング急上昇
+export interface RankJumpPayload {
+  openChatId: number
+  name: string
+  category: number
+  position: number
+  prevPosition: number | null
+  kind: 'enter' | 'jump'
+}
+
+export interface RankJumpSignal extends AlertBase {
+  type: 'rank_jump'
+  payload: RankJumpPayload
+}
+
+// 機微シグナル: 増加ペース
+export interface PacePayload {
+  openChatId: number
+  name: string
+  diff7: number
+  recentPace: number
+  basePace: number
+}
+
+export interface PaceSignal extends AlertBase {
+  type: 'pace'
+  payload: PacePayload
+}
+
+export type Signal = RoomChangeSignal | RankJumpSignal | PaceSignal
 
 // 新しい部屋（キーワードアラートヒット）
 export interface KeywordHit extends AlertBase {
@@ -323,6 +372,7 @@ export interface Movement extends AlertBase {
 export interface AlertsResponse {
   keywordHits: KeywordHit[]
   movements: Movement[]
+  signals: Signal[]
   unreadCount: number
   computedAt: string | null
 }

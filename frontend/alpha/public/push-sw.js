@@ -27,7 +27,7 @@ async function buildNotificationOptions() {
     })
     if (!res.ok) throw new Error('fetch failed: ' + res.status)
 
-    /** @type {{ keywordHits: Array<{name:string,isRead:boolean}>, movements: Array<{name:string,diff:number,isRead:boolean}>, unreadCount: number }} */
+    /** @type {{ keywordHits: Array<{name:string,isRead:boolean}>, movements: Array<{name:string,diff:number,isRead:boolean}>, signals: Array<{type:string,payload:{name:string,openChatId:number},isRead:boolean}>, unreadCount: number }} */
     const data = await res.json()
     const unreadCount = data.unreadCount ?? 0
 
@@ -44,16 +44,30 @@ async function buildNotificationOptions() {
     // 最初の未読アラートから代表文言を組み立てる
     const unreadMovements = (data.movements ?? []).filter((m) => !m.isRead)
     const unreadKeywords = (data.keywordHits ?? []).filter((h) => !h.isRead)
-    const firstAlert = unreadMovements[0] ?? unreadKeywords[0] ?? null
+    const unreadSignals = (data.signals ?? []).filter((s) => !s.isRead)
 
+    // movements → signals → keywords の優先順で代表文言を選ぶ
     let firstText = ''
-    if (firstAlert) {
-      if ('diff' in firstAlert) {
-        const sign = firstAlert.diff > 0 ? '+' : ''
-        firstText = `【${firstAlert.name}】${sign}${firstAlert.diff}人`
+    const firstMovement = unreadMovements[0] ?? null
+    const firstSignal = unreadSignals[0] ?? null
+    const firstKeyword = unreadKeywords[0] ?? null
+
+    if (firstMovement) {
+      const sign = firstMovement.diff > 0 ? '+' : ''
+      firstText = `【${firstMovement.name}】${sign}${firstMovement.diff}人`
+    } else if (firstSignal) {
+      const name = firstSignal.payload && firstSignal.payload.name ? firstSignal.payload.name : ''
+      if (firstSignal.type === 'room_change') {
+        firstText = `【${name}】の部屋情報が変更`
+      } else if (firstSignal.type === 'rank_jump') {
+        firstText = `【${name}】がランキングに動き`
+      } else if (firstSignal.type === 'pace') {
+        firstText = `【${name}】の増加ペースが急上昇`
       } else {
-        firstText = `【${firstAlert.name}】`
+        firstText = `【${name}】`
       }
+    } else if (firstKeyword) {
+      firstText = `【${firstKeyword.name}】`
     }
 
     const body =

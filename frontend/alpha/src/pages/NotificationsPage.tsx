@@ -1,19 +1,21 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Settings2, Sparkles, Activity, CheckCheck } from 'lucide-react'
+import { Bell, Settings2, Sparkles, Activity, CheckCheck, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAlerts } from '@/hooks/useAlerts'
 import {
   KeywordHitCard,
   MovementCard,
+  SignalCard,
   formatComputedAt,
 } from '@/components/Notifications'
-import type { KeywordHit, Movement } from '@/types/api'
+import type { KeywordHit, Movement, Signal } from '@/types/api'
 
-// 統合タイムラインの1アイテム。新着部屋（KeywordHit）と増減アラート（Movement）を混在させる。
+// 統合タイムラインの1アイテム。新着部屋・増減アラート・機微シグナルを混在させる。
 type FeedItem =
   | { kind: 'keyword'; createdAt: number; data: KeywordHit }
   | { kind: 'movement'; createdAt: number; data: Movement }
+  | { kind: 'signal'; createdAt: number; data: Signal }
 
 /**
  * 通知ページ。新着部屋（キーワードアラートヒット）と増減アラート（部屋／マイリストの増減）を
@@ -25,7 +27,7 @@ export default function NotificationsPage() {
   const { data, isLoading, markRead, markAllRead } = useAlerts()
   const openWatchSettings = () => navigate('/watch')
 
-  // keywordHits と movements を1配列に統合し createdAt 降順で並べる。
+  // keywordHits / movements / signals を1配列に統合し createdAt 降順で並べる。
   const feed = useMemo<FeedItem[]>(() => {
     const items: FeedItem[] = [
       ...(data?.keywordHits ?? []).map(
@@ -33,6 +35,9 @@ export default function NotificationsPage() {
       ),
       ...(data?.movements ?? []).map(
         (data): FeedItem => ({ kind: 'movement', createdAt: data.createdAt, data }),
+      ),
+      ...(data?.signals ?? []).map(
+        (data): FeedItem => ({ kind: 'signal', createdAt: data.createdAt, data }),
       ),
     ]
     items.sort((a, b) => b.createdAt - a.createdAt)
@@ -46,6 +51,9 @@ export default function NotificationsPage() {
   }
   const handleOpenMovement = (m: Movement) => {
     if (!m.isRead) markRead([m.id])
+  }
+  const handleOpenSignal = (s: Signal) => {
+    if (!s.isRead) markRead([s.id])
   }
 
   const computedLabel = data?.computedAt ? formatComputedAt(data.computedAt) : null
@@ -100,9 +108,13 @@ export default function NotificationsPage() {
               <FeedRow key={`k-${item.data.id}`} type="keyword">
                 <KeywordHitCard hit={item.data} onOpen={handleOpenKeyword} />
               </FeedRow>
-            ) : (
+            ) : item.kind === 'movement' ? (
               <FeedRow key={`m-${item.data.id}`} type="movement">
                 <MovementCard movement={item.data} onOpen={handleOpenMovement} />
+              </FeedRow>
+            ) : (
+              <FeedRow key={`s-${item.data.id}`} type="signal">
+                <SignalCard signal={item.data} onOpen={handleOpenSignal} />
               </FeedRow>
             ),
           )}
@@ -115,26 +127,31 @@ export default function NotificationsPage() {
 }
 
 /**
- * タイムライン上の1行。控えめな種別バッジ（新着部屋＝Sparkles／動き＝Activity）を添え、
+ * タイムライン上の1行。控えめな種別ラベル（新着部屋＝Sparkles／増減＝Activity／シグナル＝Radio）を添え、
  * カード本体はそのまま描画する。
  */
 function FeedRow({
   type,
   children,
 }: {
-  type: 'keyword' | 'movement'
+  type: 'keyword' | 'movement' | 'signal'
   children: React.ReactNode
 }) {
-  const isKeyword = type === 'keyword'
+  const icon =
+    type === 'keyword' ? (
+      <Sparkles className="h-3 w-3 text-primary" />
+    ) : type === 'movement' ? (
+      <Activity className="h-3 w-3 text-primary" />
+    ) : (
+      <Radio className="h-3 w-3 text-primary" />
+    )
+  const label =
+    type === 'keyword' ? '新着部屋' : type === 'movement' ? '増減アラート' : '機微シグナル'
   return (
     <div>
       <div className="mb-1 flex items-center gap-1 px-0.5 text-[11px] font-medium text-muted-foreground">
-        {isKeyword ? (
-          <Sparkles className="h-3 w-3 text-primary" />
-        ) : (
-          <Activity className="h-3 w-3 text-primary" />
-        )}
-        <span>{isKeyword ? '新着部屋' : '増減アラート'}</span>
+        {icon}
+        <span>{label}</span>
       </div>
       {children}
     </div>
