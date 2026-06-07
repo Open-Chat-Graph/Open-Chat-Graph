@@ -22,7 +22,7 @@ class IndexPageController
         AppConfig::$listLimitTopRanking = 10;
         $dto = $staticDataGeneration->getTopPageData();
 
-        $_css = ['components/room_list', 'components/site_header', 'components/site_footer', 'components/search_form', 'components/recommend_list', 'pages/recommend_page'];
+        $_css = ['components/room_list', 'components/site_header', 'components/site_footer', 'components/search_form', 'components/recommend_list', 'pages/recommend_page', 'pages/top_page'];
         $_meta = meta();
         $_meta->title = "{$_meta->title}｜" . t('オープンチャットの統計情報');
 

@@ -592,7 +592,7 @@ section aside:hover {
   /* 方向色(ヒーロー方向クラスで上書き)。淡い色味も同時に持たせて装飾に使う。 */
   display: block;
   position: relative;
-  margin: 12px 1rem 4px;
+  margin: 12px 1rem 12px;
   padding: 11px 14px 11px;
   border: 1px solid var(--c-rg-border);
   border-radius: 14px;
