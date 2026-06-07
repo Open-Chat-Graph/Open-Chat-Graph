@@ -284,4 +284,27 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
 
         return DB::fetchAll($query);
     }
+
+    /**
+     * 関連タグ集計用: recommend(1番手タグ) と oc_tag / oc_tag2(2・3番手にマッチしたタグ) の共起ペア。
+     * タグ付けは1部屋1タグを優先順位で確定させるため、「優先順位次第でどちらにも転び得た部屋」の
+     * 本数がそのままタグ間の意味的な近さになる（同一カテゴリより強いシグナル）。
+     *
+     * @return array{tag:string, related:string, cnt:int|string}[]
+     */
+    function getRelatedTagPairs(): array
+    {
+        $query =
+            'SELECT a.tag, b.tag AS related, COUNT(*) AS cnt
+            FROM recommend AS a
+                JOIN oc_tag AS b ON b.id = a.id AND b.tag <> a.tag
+            GROUP BY a.tag, b.tag
+            UNION ALL
+            SELECT a.tag, b.tag AS related, COUNT(*) AS cnt
+            FROM recommend AS a
+                JOIN oc_tag2 AS b ON b.id = a.id AND b.tag <> a.tag
+            GROUP BY a.tag, b.tag';
+
+        return DB::fetchAll($query);
+    }
 }
