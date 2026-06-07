@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Sparkles, ListChecks, Plus, Bell } from 'lucide-react'
+import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -347,7 +347,21 @@ export default function WatchSettingsPage() {
             )}
           </Section>
 
-          {/* (3) マイリスト変動アラート */}
+          {/* (3) フォルダ別アラート（導線のみ） */}
+          <Section
+            icon={<FolderOpen className="h-4 w-4 text-primary" />}
+            title="フォルダ別アラート"
+            description="フォルダごとに自動追加ルールや増減アラートを設定できます。"
+          >
+            <p className="text-sm text-muted-foreground">
+              フォルダ別のアラートはマイリストのフォルダ設定から設定できます。
+              <Link to="/mylist" className="ml-1 font-medium text-primary underline-offset-4 hover:underline">
+                マイリストを開く
+              </Link>
+            </p>
+          </Section>
+
+          {/* (4) マイリスト変動アラート */}
           <Section
             icon={<ListChecks className="h-4 w-4 text-primary" />}
             title="マイリスト変動アラート"

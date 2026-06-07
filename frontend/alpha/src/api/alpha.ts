@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, GraphEmbedResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse, EtaParams, EtaResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, GraphEmbedResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse, EtaParams, EtaResponse, FolderSettingsResponse, FolderSettingsRequest, FolderSettingsSaveResponse } from '../types/api'
 import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
@@ -167,6 +167,29 @@ export const alphaApi = {
     const res = await fetch(`${API_BASE}/alerts${query}`)
     if (!res.ok) throw new Error('Alerts API failed')
 
+    return res.json()
+  },
+
+  // ===== フォルダ設定（スマートフォルダ＋フォルダ単位アラート） =====
+
+  // フォルダ設定を取得（rule: 自動追加ルール、threshold: 増減アラートしきい値）
+  async getFolderSettings(folderId: string): Promise<FolderSettingsResponse> {
+    const res = await fetch(`${API_BASE}/folder-settings/${encodeURIComponent(folderId)}`, {
+      credentials: 'include',
+    })
+    if (!res.ok) throw new Error('Folder settings GET failed: ' + res.status)
+    return res.json()
+  },
+
+  // フォルダ設定を保存。ruleを設定/変更すると即時に一致部屋上位50件を追加し autoAdded を返す。
+  async putFolderSettings(folderId: string, body: FolderSettingsRequest): Promise<FolderSettingsSaveResponse> {
+    const res = await fetch(`${API_BASE}/folder-settings/${encodeURIComponent(folderId)}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new Error('Folder settings PUT failed: ' + res.status)
     return res.json()
   },
 

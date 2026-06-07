@@ -19,9 +19,11 @@ import {
   type SortOrder,
 } from '@/services/storage'
 import { alphaApi } from '@/api/alpha'
+import { resyncMylist } from '@/services/mylistSync'
 import {
   FolderList,
   FolderDialog,
+  FolderSettingsDialog,
   BulkActionBar,
   EmptyState,
   ErrorState,
@@ -59,6 +61,29 @@ const MyListPage = memo(() => {
     const newSettings = { sortType: newSortType, order: newOrder }
     setSortSettings(newSettings)
     saveSortSettings(newSettings)
+  }, [])
+
+  // フォルダ設定ダイアログ
+  const [folderSettingsOpen, setFolderSettingsOpen] = useState(false)
+  const [folderSettingsTarget, setFolderSettingsTarget] = useState<import('@/types/storage').Folder | null>(null)
+
+  const handleFolderSettings = useCallback((folder: import('@/types/storage').Folder) => {
+    setFolderSettingsTarget(folder)
+    setFolderSettingsOpen(true)
+  }, [])
+
+  const handleFolderSettingsSaved = useCallback((folderId: string, hasRule: boolean) => {
+    // hasRule を localStorage のフォルダに書き戻す（スマートフォルダアイコン表示用）
+    setMyListData((prev) => {
+      const updated = {
+        ...prev,
+        folders: prev.folders.map(f =>
+          f.id === folderId ? { ...f, hasRule } : f
+        ),
+      }
+      saveMyList(updated)
+      return updated
+    })
   }, [])
 
   // Custom hooks
@@ -388,6 +413,7 @@ const MyListPage = memo(() => {
             onItemClick={handleCardClick}
             onItemRemove={handleRemoveItem}
             onFolderEdit={folderMgmt.handleEditFolder}
+            onFolderSettings={handleFolderSettings}
             onUpdateData={handleUpdateData}
             selectionMode={selection.selectionMode}
             selectedIds={selection.selectedIds}
@@ -412,6 +438,20 @@ const MyListPage = memo(() => {
         onDelete={folderMgmt.dialogMode === 'edit' ? folderMgmt.handleDeleteFolder : undefined}
         mode={folderMgmt.dialogMode}
       />
+
+      {folderSettingsTarget && (
+        <FolderSettingsDialog
+          open={folderSettingsOpen}
+          onOpenChange={setFolderSettingsOpen}
+          folder={folderSettingsTarget}
+          onSaved={handleFolderSettingsSaved}
+          onResync={async () => {
+            await resyncMylist()
+            setMyListData(loadMyList())
+            mutate()
+          }}
+        />
+      )}
 
       <FolderSelectDialog
         open={bulkOps.bulkFolderSelectOpen}

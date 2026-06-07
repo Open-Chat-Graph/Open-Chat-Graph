@@ -84,6 +84,23 @@ function withSource(items: ChatItem[]): Array<ChatItem & { source: 'manual' | 'a
 }
 
 /**
+ * サーバ状態でローカルを強制上書きする再同期。
+ * フォルダ設定の保存後など、サーバが auto 追加した結果をローカルに反映したいときに使う。
+ * 失敗時は console.warn のみで UI をブロックしない。
+ */
+export async function resyncMylist(): Promise<void> {
+  try {
+    const res = await mylistApi.get()
+    if (res.exists) {
+      saveMyList(serverToLocal(res))
+      setLoadedAt(res.serverTime)
+    }
+  } catch (error) {
+    console.warn('[mylistSync] 再同期に失敗しました。', error)
+  }
+}
+
+/**
  * 起動時に1回呼ぶ初期同期。失敗（オフライン/5xx）時は何もしない＝ローカルのみで動き続ける。
  * 複数回呼ばれても実行は1回だけ。
  */

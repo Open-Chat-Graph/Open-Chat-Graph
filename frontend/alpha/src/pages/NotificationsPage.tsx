@@ -1,21 +1,25 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Settings2, Sparkles, Activity, CheckCheck, Radio } from 'lucide-react'
+import { Bell, Settings2, Sparkles, Activity, CheckCheck, Radio, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAlerts } from '@/hooks/useAlerts'
 import {
   KeywordHitCard,
   MovementCard,
   SignalCard,
+  FolderAddCard,
+  FolderMovementCard,
   formatComputedAt,
 } from '@/components/Notifications'
-import type { KeywordHit, Movement, Signal } from '@/types/api'
+import type { KeywordHit, Movement, Signal, FolderAdd, FolderMovement } from '@/types/api'
 
-// 統合タイムラインの1アイテム。新着部屋・増減アラート・機微シグナルを混在させる。
+// 統合タイムラインの1アイテム。新着部屋・増減アラート・機微シグナル・フォルダ系を混在させる。
 type FeedItem =
   | { kind: 'keyword'; createdAt: number; data: KeywordHit }
   | { kind: 'movement'; createdAt: number; data: Movement }
   | { kind: 'signal'; createdAt: number; data: Signal }
+  | { kind: 'folder_add'; createdAt: number; data: FolderAdd }
+  | { kind: 'folder_movement'; createdAt: number; data: FolderMovement }
 
 /**
  * 通知ページ。新着部屋（キーワードアラートヒット）と増減アラート（部屋／マイリストの増減）を
@@ -27,7 +31,7 @@ export default function NotificationsPage() {
   const { data, isLoading, markRead, markAllRead } = useAlerts()
   const openWatchSettings = () => navigate('/watch')
 
-  // keywordHits / movements / signals を1配列に統合し createdAt 降順で並べる。
+  // keywordHits / movements / signals / folderAdds / folderMovements を1配列に統合し createdAt 降順で並べる。
   const feed = useMemo<FeedItem[]>(() => {
     const items: FeedItem[] = [
       ...(data?.keywordHits ?? []).map(
@@ -38,6 +42,12 @@ export default function NotificationsPage() {
       ),
       ...(data?.signals ?? []).map(
         (data): FeedItem => ({ kind: 'signal', createdAt: data.createdAt, data }),
+      ),
+      ...(data?.folderAdds ?? []).map(
+        (data): FeedItem => ({ kind: 'folder_add', createdAt: data.createdAt, data }),
+      ),
+      ...(data?.folderMovements ?? []).map(
+        (data): FeedItem => ({ kind: 'folder_movement', createdAt: data.createdAt, data }),
       ),
     ]
     items.sort((a, b) => b.createdAt - a.createdAt)
@@ -54,6 +64,12 @@ export default function NotificationsPage() {
   }
   const handleOpenSignal = (s: Signal) => {
     if (!s.isRead) markRead([s.id])
+  }
+  const handleOpenFolderAdd = (item: FolderAdd) => {
+    if (!item.isRead) markRead([item.id])
+  }
+  const handleOpenFolderMovement = (item: FolderMovement) => {
+    if (!item.isRead) markRead([item.id])
   }
 
   const computedLabel = data?.computedAt ? formatComputedAt(data.computedAt) : null
@@ -112,6 +128,14 @@ export default function NotificationsPage() {
               <FeedRow key={`m-${item.data.id}`} type="movement">
                 <MovementCard movement={item.data} onOpen={handleOpenMovement} />
               </FeedRow>
+            ) : item.kind === 'folder_add' ? (
+              <FeedRow key={`fa-${item.data.id}`} type="folder_add">
+                <FolderAddCard item={item.data} onOpen={handleOpenFolderAdd} />
+              </FeedRow>
+            ) : item.kind === 'folder_movement' ? (
+              <FeedRow key={`fm-${item.data.id}`} type="folder_movement">
+                <FolderMovementCard movement={item.data} onOpen={handleOpenFolderMovement} />
+              </FeedRow>
             ) : (
               <FeedRow key={`s-${item.data.id}`} type="signal">
                 <SignalCard signal={item.data} onOpen={handleOpenSignal} />
@@ -127,14 +151,13 @@ export default function NotificationsPage() {
 }
 
 /**
- * タイムライン上の1行。控えめな種別ラベル（新着部屋＝Sparkles／増減＝Activity／シグナル＝Radio）を添え、
- * カード本体はそのまま描画する。
+ * タイムライン上の1行。控えめな種別ラベルを添えカード本体をそのまま描画する。
  */
 function FeedRow({
   type,
   children,
 }: {
-  type: 'keyword' | 'movement' | 'signal'
+  type: 'keyword' | 'movement' | 'signal' | 'folder_add' | 'folder_movement'
   children: React.ReactNode
 }) {
   const icon =
@@ -142,11 +165,23 @@ function FeedRow({
       <Sparkles className="h-3 w-3 text-primary" />
     ) : type === 'movement' ? (
       <Activity className="h-3 w-3 text-primary" />
+    ) : type === 'folder_add' ? (
+      <FolderOpen className="h-3 w-3 text-primary" />
+    ) : type === 'folder_movement' ? (
+      <FolderOpen className="h-3 w-3 text-primary" />
     ) : (
       <Radio className="h-3 w-3 text-primary" />
     )
   const label =
-    type === 'keyword' ? '新着部屋' : type === 'movement' ? '増減アラート' : '機微シグナル'
+    type === 'keyword'
+      ? '新着部屋'
+      : type === 'movement'
+        ? '増減アラート'
+        : type === 'folder_add'
+          ? 'フォルダ自動追加'
+          : type === 'folder_movement'
+            ? 'フォルダ増減アラート'
+            : '機微シグナル'
   return (
     <div>
       <div className="mb-1 flex items-center gap-1 px-0.5 text-[11px] font-medium text-muted-foreground">

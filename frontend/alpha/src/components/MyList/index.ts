@@ -1,5 +1,6 @@
 export { FolderDialog } from './FolderDialog'
 export { FolderList } from './FolderList'
+export { FolderSettingsDialog } from './FolderSettingsDialog'
 export { MyListHeader } from './MyListHeader'
 export { MyListToolbar } from './MyListToolbar'
 export { BulkActionBar } from './BulkActionBar'

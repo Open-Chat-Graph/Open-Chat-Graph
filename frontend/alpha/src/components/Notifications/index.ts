@@ -1,6 +1,8 @@
 export { KeywordHitCard } from './KeywordHitCard'
 export { MovementCard } from './MovementCard'
 export { SignalCard } from './SignalCard'
+export { FolderAddCard } from './FolderAddCard'
+export { FolderMovementCard } from './FolderMovementCard'
 export { useAlertsConfig } from './useAlertsConfig'
 export { WatchKeywordButton } from './WatchKeywordButton'
 export { WatchRoomControl } from './WatchRoomControl'

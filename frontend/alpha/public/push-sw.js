@@ -27,7 +27,7 @@ async function buildNotificationOptions() {
     })
     if (!res.ok) throw new Error('fetch failed: ' + res.status)
 
-    /** @type {{ keywordHits: Array<{name:string,isRead:boolean}>, movements: Array<{name:string,diff:number,isRead:boolean}>, signals: Array<{type:string,payload:{name:string,openChatId:number},isRead:boolean}>, unreadCount: number }} */
+    /** @type {{ keywordHits: Array<{name:string,isRead:boolean}>, movements: Array<{name:string,diff:number,isRead:boolean}>, signals: Array<{type:string,payload:{name:string,openChatId:number},isRead:boolean}>, folderAdds: Array<{payload:{folderName:string,name:string},isRead:boolean}>, folderMovements: Array<{name:string,diff:number,folderName:string,isRead:boolean}>, unreadCount: number }} */
     const data = await res.json()
     const unreadCount = data.unreadCount ?? 0
 
@@ -45,16 +45,23 @@ async function buildNotificationOptions() {
     const unreadMovements = (data.movements ?? []).filter((m) => !m.isRead)
     const unreadKeywords = (data.keywordHits ?? []).filter((h) => !h.isRead)
     const unreadSignals = (data.signals ?? []).filter((s) => !s.isRead)
+    const unreadFolderAdds = (data.folderAdds ?? []).filter((f) => !f.isRead)
+    const unreadFolderMovements = (data.folderMovements ?? []).filter((f) => !f.isRead)
 
-    // movements → signals → keywords の優先順で代表文言を選ぶ
+    // movements → folderMovements → signals → folderAdds → keywords の優先順で代表文言を選ぶ
     let firstText = ''
     const firstMovement = unreadMovements[0] ?? null
+    const firstFolderMovement = unreadFolderMovements[0] ?? null
     const firstSignal = unreadSignals[0] ?? null
+    const firstFolderAdd = unreadFolderAdds[0] ?? null
     const firstKeyword = unreadKeywords[0] ?? null
 
     if (firstMovement) {
       const sign = firstMovement.diff > 0 ? '+' : ''
       firstText = `【${firstMovement.name}】${sign}${firstMovement.diff}人`
+    } else if (firstFolderMovement) {
+      const sign = firstFolderMovement.diff > 0 ? '+' : ''
+      firstText = `【${firstFolderMovement.folderName}】${firstFolderMovement.name} ${sign}${firstFolderMovement.diff}人`
     } else if (firstSignal) {
       const name = firstSignal.payload && firstSignal.payload.name ? firstSignal.payload.name : ''
       if (firstSignal.type === 'room_change') {
@@ -66,6 +73,10 @@ async function buildNotificationOptions() {
       } else {
         firstText = `【${name}】`
       }
+    } else if (firstFolderAdd) {
+      const folderName = firstFolderAdd.payload ? firstFolderAdd.payload.folderName : ''
+      const roomName = firstFolderAdd.payload ? firstFolderAdd.payload.name : ''
+      firstText = `「${folderName}」に【${roomName}】が自動追加`
     } else if (firstKeyword) {
       firstText = `【${firstKeyword.name}】`
     }

@@ -373,8 +373,70 @@ export interface AlertsResponse {
   keywordHits: KeywordHit[]
   movements: Movement[]
   signals: Signal[]
+  folderAdds: FolderAdd[]
+  folderMovements: FolderMovement[]
   unreadCount: number
   computedAt: string | null
+}
+
+// フォルダへの自動追加通知（type: 'folder_add'）
+export interface FolderAddPayload {
+  folderId: string
+  folderName: string
+  openChatId: number
+  name: string
+  member: number
+}
+
+export interface FolderAdd extends AlertBase {
+  type: 'folder_add'
+  payload: FolderAddPayload
+}
+
+// フォルダ単位の増減アラート（type: 'folder'）
+export interface FolderMovement extends AlertBase {
+  type: 'folder'
+  kind: 'folder'
+  folderId: string
+  folderName: string
+  openChatId: number
+  name: string
+  img: string
+  category: number | null
+  currentMember: number | null
+  diff: number
+  percent: number
+  direction: 'up' | 'down'
+}
+
+// フォルダ設定（GET/PUT /alpha-api/folder-settings/{folderId}）
+export interface FolderRule {
+  keyword: string
+  category: number | null
+  enabled: boolean
+}
+
+export interface FolderThreshold {
+  upPercent: number | null
+  downPercent: number | null
+  upMember: number | null
+  downMember: number | null
+  enabled: boolean
+}
+
+export interface FolderSettingsResponse {
+  rule: FolderRule | null
+  threshold: FolderThreshold | null
+}
+
+export interface FolderSettingsRequest {
+  rule: FolderRule | null
+  threshold: FolderThreshold | null
+}
+
+export interface FolderSettingsSaveResponse {
+  ok: boolean
+  autoAdded: number
 }
 
 // ===== Labs: アクセス数 / 検索流入ランキング（/alpha-api/access-ranking, /search-ranking） =====

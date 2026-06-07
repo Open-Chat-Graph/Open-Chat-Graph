@@ -4,6 +4,8 @@ export interface Folder {
   parentId: string | null
   order: number
   expanded: boolean
+  /** スマートフォルダ：rule が有効かどうか（ダイアログ保存後に localStorage へ書き戻す軽量キャッシュ） */
+  hasRule?: boolean
 }
 
 export interface ChatItem {
