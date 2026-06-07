@@ -1028,5 +1028,14 @@ Route::path('alpha-api/mylist/items/{open_chat_id}@delete', [AlphaApiController:
     ->matchNum('open_chat_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - スマートフォルダ: フォルダ設定（ルール＋フォルダ単位アラート）取得(GET)/保存(PUT)
+Route::path(
+    'alpha-api/folder-settings/{folderId}@get@put',
+    [AlphaApiController::class, 'folderSettingsGet', 'get'],
+    [AlphaApiController::class, 'folderSettingsPut', 'put']
+)
+    ->matchStr('folderId', maxLen: 36)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 cache();
 Route::run();

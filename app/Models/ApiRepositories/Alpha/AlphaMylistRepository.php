@@ -16,6 +16,11 @@ use App\Models\UserLogRepositories\UserLogDB;
  *
  * PUT セマンティクス（全置換）:
  *   - folders: payload の folder_id を upsert し、無いものを DELETE。
+ *              upsert の更新対象に rule_*（スマートフォルダのルール列）は含めない
+ *              （PUT 全置換でルール設定が消えないように。ルールは folder-settings API が管理）。
+ *              DELETE したフォルダは、付随するスマートフォルダのデータ
+ *              （alpha_folder_threshold_ja / alpha_folder_seen_ja / フォルダ内の auto アイテム）も掃除する
+ *              （rule_* はフォルダ行と一緒に消える）。
  *   - items:   payload の open_chat_id を upsert（既存行の source は維持）し、
  *              無いものを DELETE。ただし source='auto' かつ added_at > loadedAt の
  *              行は loadedAt=null 時・または added_at が loadedAt より新しい場合は
@@ -111,6 +116,13 @@ class AlphaMylistRepository
     /** @param list<array{id:string, name:string, parentId:string|null, order:int, expanded:bool}> $folders */
     private function replaceFolders(string $userId, array $folders): void
     {
+        // 削除対象（payload に無い既存フォルダ）の特定用に、現状の folder_id を先に取得
+        $existingRows = UserLogDB::fetchAll(
+            "SELECT folder_id FROM alpha_mylist_folder_ja WHERE user_id = :uid",
+            ['uid' => $userId]
+        );
+        $existingIds = array_map(static fn($r) => (string)$r['folder_id'], $existingRows);
+
         // upsert
         $keepIds = [];
         foreach ($folders as $f) {
@@ -160,6 +172,47 @@ class AlphaMylistRepository
                 array_merge([$userId], $keepIds)
             );
         }
+
+        // 削除したフォルダのスマートフォルダ関連データを掃除
+        // （rule_* はフォルダ行と一緒に消えるので、しきい値・seen・auto アイテムを明示削除）
+        $deletedIds = array_values(array_diff($existingIds, $keepIds));
+        $this->cleanupDeletedFolders($userId, $deletedIds);
+    }
+
+    /**
+     * フォルダ削除に伴うスマートフォルダ関連データの掃除。
+     *   - alpha_folder_threshold_ja … フォルダ単位アラートのしきい値
+     *   - alpha_folder_seen_ja      … 再追加防止の seen 記録
+     *   - alpha_mylist_item_ja      … フォルダ内の source='auto' アイテム
+     *     （manual はフロントが items payload で管理するため触らない。
+     *      auto はフォルダ削除と同時に意味を失う＝放置すると消えたフォルダIDを指したまま
+     *      auto 保護ガードで削除不能になるため、ここで消す）
+     *
+     * @param string[] $deletedFolderIds
+     */
+    private function cleanupDeletedFolders(string $userId, array $deletedFolderIds): void
+    {
+        if (empty($deletedFolderIds)) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($deletedFolderIds), '?'));
+        $params = array_merge([$userId], $deletedFolderIds);
+
+        UserLogDB::execute(
+            "DELETE FROM alpha_folder_threshold_ja
+             WHERE user_id = ? AND folder_id IN ({$placeholders})",
+            $params
+        );
+        UserLogDB::execute(
+            "DELETE FROM alpha_folder_seen_ja
+             WHERE user_id = ? AND folder_id IN ({$placeholders})",
+            $params
+        );
+        UserLogDB::execute(
+            "DELETE FROM alpha_mylist_item_ja
+             WHERE user_id = ? AND source = 'auto' AND folder_id IN ({$placeholders})",
+            $params
+        );
     }
 
     /**

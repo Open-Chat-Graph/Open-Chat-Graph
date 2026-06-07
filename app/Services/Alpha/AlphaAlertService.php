@@ -21,6 +21,12 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
  *   ③ マイリスト          … %しきい値での上昇・下降を検出
  *   ④ 機微シグナル        … ウォッチ部屋の room_change / rank_jump / pace（AlphaSignalDetectionService に委譲）
+ *   ⑤ スマートフォルダ    … ルール一致の新着部屋を自動追加(folder_add)＋フォルダ単位の変動(folder)
+ *                            （AlphaSmartFolderService に委譲。② room の後・③ mylist の前に実行する）
+ *
+ * 通知の優先順位は room > folder > mylist。同毎時に同(user, 部屋)で上位 type が
+ * 通知済みなら下位はスキップする（folder は room を、mylist は room と folder を見る。
+ * folder 同士＝同部屋が複数フォルダで動いた場合は両方通知してよい）。
  *
  * 負荷対策:
  *   - LINE公式APIは「登録キーワード(＋カテゴリ)のユニーク集合」に対してのみ叩く（ユーザー数に依存しない）。
@@ -33,7 +39,7 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *
  * 毎時処理を止めないため、各ステップは try/catch で握りつぶしログのみ（呼び出し側で集約）。
  *
- * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, notifiedUserIds:string[], errors:array<int,string>}
+ * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, folderAdds:int, notifiedUserIds:string[], errors:array<int,string>}
  */
 class AlphaAlertService
 {
@@ -52,13 +58,14 @@ class AlphaAlertService
         private AlphaAlertRepository $repo,
         private AlphaKeywordSearchClient $searchClient,
         private AlphaSignalDetectionService $signalDetection,
+        private AlphaSmartFolderService $smartFolder,
     ) {
     }
 
     /**
      * 毎時 cron 本体。
      *
-     * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, notifiedUserIds:string[], errors:array<int,string>}
+     * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, folderAdds:int, notifiedUserIds:string[], errors:array<int,string>}
      */
     public function run(): array
     {
@@ -68,6 +75,7 @@ class AlphaAlertService
         $keywordHits = 0;
         $movements = 0;
         $signals = 0;
+        $folderAdds = 0;
         $this->notifiedUserIds = [];
 
         try {
@@ -80,6 +88,21 @@ class AlphaAlertService
             $movements += $this->computeRoomMovements($hourBucket);
         } catch (\Throwable $e) {
             $errors[] = 'room: ' . $e->getMessage();
+        }
+
+        // ⑤ スマートフォルダ（自動追加 folder_add ＋ フォルダ変動 folder）。
+        //    優先順位 room > folder > mylist のため、② room の後・③ mylist の前に実行する
+        //    （folder は room 通知済みをスキップし、mylist は room と folder の通知済みをスキップ）。
+        try {
+            $sf = $this->smartFolder->run($hourBucket);
+            $folderAdds = $sf['folderAdds'];
+            $movements += $sf['folderMovements'];
+            foreach ($sf['notifiedUserIds'] as $uid) {
+                $this->notifiedUserIds[$uid] = true;
+            }
+            $errors = array_merge($errors, $sf['errors']);
+        } catch (\Throwable $e) {
+            $errors[] = 'smart_folder: ' . $e->getMessage();
         }
 
         try {
@@ -106,6 +129,7 @@ class AlphaAlertService
             'keywordHits' => $keywordHits,
             'movements' => $movements,
             'signals' => $signals,
+            'folderAdds' => $folderAdds,
             'notifiedUserIds' => array_keys($this->notifiedUserIds),
             'errors' => $errors,
         ];
@@ -329,12 +353,12 @@ class AlphaAlertService
             $diff = $diffMap[$ocId]['diff_member'];
             $percent = $diffMap[$ocId]['percent_increase'];
 
-            $direction = $this->evaluateRoomThreshold($w, $diff, $percent);
+            $direction = self::evaluateThreshold($w, $diff, $percent);
             if ($direction === null) {
                 continue;
             }
 
-            $payload = $this->buildMovementPayload('room', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
+            $payload = self::buildMovementPayload('room', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
             $dedup = 'room:' . $ocId . ':' . $direction . ':' . $hourBucket;
             if ($this->repo->insertNotification($w['user_id'], 'room', $payload, $dedup)) {
                 $this->notifiedUserIds[$w['user_id']] = true;
@@ -346,14 +370,15 @@ class AlphaAlertService
     }
 
     /**
-     * 部屋ウォッチのしきい値判定。
+     * しきい値判定（部屋ウォッチ / マイリスト / スマートフォルダで共用）。
      * 上昇: (up_member 指定なら diff>=up_member) かつ/または (up_percent 指定なら percent>=up_percent)
      *   → 指定された条件「すべて」を満たしたら上昇扱い（両方指定なら AND）。
      * 下降も同様（符号反転、絶対値比較）。
      *
+     * @param array{up_member:?int, up_percent:?float, down_member:?int, down_percent:?float} $w
      * @return 'up'|'down'|null
      */
-    private function evaluateRoomThreshold(array $w, int $diff, float $percent): ?string
+    public static function evaluateThreshold(array $w, int $diff, float $percent): ?string
     {
         // 上昇判定
         if ($w['up_member'] !== null || $w['up_percent'] !== null) {
@@ -425,9 +450,10 @@ class AlphaAlertService
             $thresholdByUser[$t['user_id']] = $t;
         }
 
-        // 二重通知の回避: 部屋単体でその毎時に room 通知を出した (user_id, open_chat_id) は
-        // マイリスト側ではスキップする（どちらか一方のみ通知。部屋単体を優先）。
-        $roomNotified = $this->collectRoomNotifiedKeys($hourBucket);
+        // 二重通知の回避（優先順位 room > folder > mylist）: この毎時に部屋単体(room) または
+        // スマートフォルダ変動(folder)で通知済みの (user_id, open_chat_id) はマイリスト側ではスキップする
+        // （同一部屋が複数フォルダで動いた場合も mylist 全体はスキップ）。
+        $roomNotified = $this->collectPriorityNotifiedKeys($hourBucket);
 
         $count = 0;
         foreach ($userIdsToOcIds as $userId => $ocIds) {
@@ -444,7 +470,7 @@ class AlphaAlertService
                 $percent = $diffMap[$ocId]['percent_increase'];
 
                 // 部屋ウォッチと同じ判定器を共用。%／人数のどちらの指定でも発火する。
-                $direction = $this->evaluateRoomThreshold([
+                $direction = self::evaluateThreshold([
                     'up_member' => $t['up_member'] ?? null,
                     'up_percent' => $t['up_percent'] ?? null,
                     'down_member' => $t['down_member'] ?? null,
@@ -454,7 +480,7 @@ class AlphaAlertService
                     continue;
                 }
 
-                $payload = $this->buildMovementPayload('mylist', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
+                $payload = self::buildMovementPayload('mylist', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
                 $dedup = 'mylist:' . $ocId . ':' . $direction . ':' . $hourBucket;
                 if ($this->repo->insertNotification($userId, 'mylist', $payload, $dedup)) {
                     $this->notifiedUserIds[(string)$userId] = true;
@@ -467,17 +493,19 @@ class AlphaAlertService
     }
 
     /**
-     * この毎時に部屋単体アラート(type='room')で通知を出した (user_id, open_chat_id) の集合を返す。
-     * computeRoomMovements が computeMylistMovements より先に走るので、ここで拾える。
-     * 重複排除（どちらか一方のみ通知）のため。
+     * この毎時に部屋単体アラート(type='room')またはフォルダ変動(type='folder')で通知を出した
+     * (user_id, open_chat_id) の集合を返す。実行順が room → folder → mylist なので、ここで拾える。
+     * 優先順位 room > folder > mylist の重複排除（mylist は上位2種の通知済みをスキップ）のため。
      *
      * @return array<string, true> "user_id:open_chat_id" => true
      */
-    private function collectRoomNotifiedKeys(string $hourBucket): array
+    private function collectPriorityNotifiedKeys(string $hourBucket): array
     {
-        $rows = $this->repo->getRoomNotificationKeys($hourBucket);
         $set = [];
-        foreach ($rows as $r) {
+        foreach ($this->repo->getRoomNotificationKeys($hourBucket) as $r) {
+            $set[$r['user_id'] . ':' . $r['open_chat_id']] = true;
+        }
+        foreach ($this->repo->getFolderNotificationKeys($hourBucket) as $r) {
             $set[$r['user_id'] . ':' . $r['open_chat_id']] = true;
         }
         return $set;
@@ -485,7 +513,11 @@ class AlphaAlertService
 
     // ====================== 共通: movement payload ======================
 
-    private function buildMovementPayload(
+    /**
+     * 変動通知の payload（room / mylist / folder で同形。folder は呼び出し側で
+     * folderId/folderName を追加する）。
+     */
+    public static function buildMovementPayload(
         string $kind,
         int $ocId,
         ?array $oc,
@@ -494,7 +526,7 @@ class AlphaAlertService
         string $direction
     ): array {
         return [
-            'kind' => $kind, // 'room' | 'mylist'
+            'kind' => $kind, // 'room' | 'mylist' | 'folder'
             'openChatId' => $ocId,
             'name' => $oc['name'] ?? '',
             'img' => $oc['img_url'] ?? '',

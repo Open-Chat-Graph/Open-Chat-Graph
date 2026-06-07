@@ -117,7 +117,7 @@ CREATE TABLE `alpha_room_referrer_daily_ja` (
 -- 意味: 日 D において、部屋の当日 jump_clicks / jump_clicks_organic を「page_path 経由の流入PV ÷ 全 referrer PV」で
 -- 按分（PV比按分の近似）した合計。分母は外部・(direct) を含む全 referrer PV のため、外部由来分は内部ページに帰属させない
 -- （ページ合計 ≦ 部屋合計）。
-CREATE TABLE IF NOT EXISTS `alpha_page_jump_daily_ja` (
+CREATE TABLE `alpha_page_jump_daily_ja` (
   `page_path` varchar(190) NOT NULL,
   `date` date NOT NULL,
   `jump_clicks` int(11) NOT NULL DEFAULT 0,
@@ -242,7 +242,7 @@ CREATE TABLE `alpha_notification_ja` (
 -- name/description/category を毎時ここに退避し、現在値との差分で「部屋情報の変更」を検知する。
 -- 1部屋1行（ユーザー横断）。ウォッチが消えた部屋の行は毎時処理が掃除（DELETE）する。
 -- カラム型は open_chat の該当列（name/description: text, category: int NULL）に合わせる。
-CREATE TABLE IF NOT EXISTS `alpha_room_snapshot_ja` (
+CREATE TABLE `alpha_room_snapshot_ja` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `open_chat_id` int(11) NOT NULL,
   `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
@@ -279,6 +279,11 @@ CREATE TABLE `alpha_push_subscription_ja` (
 -- ============================================================
 
 -- マイリスト フォルダ定義
+-- rule_*: スマートフォルダのルール（キーワード必須＋カテゴリ任意）。
+--   rule_enabled=1 のフォルダは毎時 cron(alpha_hourly) が「rule_created_at 以降に
+--   DB収録(open_chat.created_at)された一致部屋」を source='auto' で自動追加する。
+--   rule_created_at はルールの新規有効化・keyword/category 変更時に張り直す（新着判定の基準時刻）。
+--   PUT 全置換(replaceFolders)の upsert は rule_* を更新対象に含めない（設定が消えないように）。
 CREATE TABLE `alpha_mylist_folder_ja` (
   `user_id` varchar(64) NOT NULL,
   `folder_id` varchar(36) NOT NULL,
@@ -286,6 +291,10 @@ CREATE TABLE `alpha_mylist_folder_ja` (
   `parent_id` varchar(36) DEFAULT NULL,
   `sort_order` int(11) NOT NULL DEFAULT 0,
   `expanded` tinyint(1) NOT NULL DEFAULT 1,
+  `rule_keyword` varchar(100) DEFAULT NULL,
+  `rule_category` int(11) DEFAULT NULL,
+  `rule_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `rule_created_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`user_id`, `folder_id`)
@@ -301,4 +310,31 @@ CREATE TABLE `alpha_mylist_item_ja` (
   `added_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`user_id`, `open_chat_id`),
   KEY `user_folder` (`user_id`, `folder_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- スマートフォルダの再追加防止: 一度自動追加（または自動追加対象と判定）した
+-- (ユーザー × フォルダ × 部屋) を恒久記録する。seen にある部屋は二度と自動追加しない
+-- （ユーザーがフォルダから消した部屋を cron が戻さないための記録）。フォルダ削除時に掃除する。
+CREATE TABLE `alpha_folder_seen_ja` (
+  `user_id` varchar(64) NOT NULL,
+  `folder_id` varchar(36) NOT NULL,
+  `open_chat_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`user_id`, `folder_id`, `open_chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- フォルダ単位の変動アラートしきい値（フォルダにつき1組）。
+-- カラムのNULL許容・判定セマンティクスは alpha_mylist_threshold_ja / evaluateThreshold と同じ
+-- （%と人数の併用可・指定された条件すべてを満たしたら発火）。
+-- 対象は フォルダ＋子孫フォルダ配下の alpha_mylist_item_ja（毎時 cron がサーバ側でフォルダ木を再帰解決）。
+CREATE TABLE `alpha_folder_threshold_ja` (
+  `user_id` varchar(64) NOT NULL,
+  `folder_id` varchar(36) NOT NULL,
+  `up_percent` float DEFAULT NULL,
+  `down_percent` float DEFAULT NULL,
+  `up_member` int(11) DEFAULT NULL,
+  `down_member` int(11) DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`user_id`, `folder_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

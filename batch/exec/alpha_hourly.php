@@ -50,6 +50,8 @@ try {
     CronUtility::addCronLog(
         '【Alpha通知】完了 keywordHits=' . $result['keywordHits']
             . ' movements=' . $result['movements']
+            . ' signals=' . ($result['signals'] ?? 0)
+            . ' folderAdds=' . ($result['folderAdds'] ?? 0)
             . $pushLog
             . (empty($result['errors']) ? '' : ' errors=' . implode(' | ', $result['errors']))
     );

@@ -584,6 +584,40 @@ class AlphaAlertRepository
         return $out;
     }
 
+    /**
+     * この毎時(hourBucket)にスマートフォルダ変動(type='folder')で通知を出した
+     * (user_id, open_chat_id) を返す。マイリスト変動との二重通知回避
+     * （優先順位 room > folder > mylist）に使う。
+     *
+     * dedup_key は 'fm:{folder_id}:{open_chat_id}:{direction}:{hourBucket}' 形式。
+     * folder_id はフロント生成の文字列で ':' を含み得るため、末尾側から取り出す。
+     *
+     * @return array<int, array{user_id:string, open_chat_id:int}>
+     */
+    public function getFolderNotificationKeys(string $hourBucket): array
+    {
+        $rows = UserLogDB::fetchAll(
+            "SELECT user_id, dedup_key FROM alpha_notification_ja
+             WHERE type = 'folder' AND dedup_key LIKE :pat",
+            ['pat' => 'fm:%:' . $hourBucket]
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            // 'fm:{folderId}:{ocId}:{direction}:{hourBucket}'（folderId に ':' があり得るので末尾から数える）
+            $parts = explode(':', (string)$r['dedup_key']);
+            $n = count($parts);
+            if ($n < 5 || $parts[0] !== 'fm') {
+                continue;
+            }
+            $ocId = (int)$parts[$n - 3];
+            if ($ocId < 1) {
+                continue;
+            }
+            $out[] = ['user_id' => (string)$r['user_id'], 'open_chat_id' => $ocId];
+        }
+        return $out;
+    }
+
     public function markAllRead(string $userId): void
     {
         UserLogDB::execute(

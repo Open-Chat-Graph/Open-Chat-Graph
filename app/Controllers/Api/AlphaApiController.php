@@ -14,10 +14,12 @@ use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
 use App\Models\ApiRepositories\Alpha\AlphaMylistRepository;
+use App\Models\ApiRepositories\Alpha\AlphaSmartFolderRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaGraphEmbedService;
 use App\Services\Alpha\AlphaInsightsService;
+use App\Services\Alpha\AlphaSmartFolderService;
 use App\Services\Alpha\AlphaLineUrlFormatter;
 use App\Services\Alpha\AlphaReferrerFormatter;
 use App\Services\Auth\AuthInterface;
@@ -1085,9 +1087,35 @@ class AlphaApiController
         $keywordHits = [];
         $movements = [];
         $signals = [];
+        $folderAdds = [];
+        $folderMovements = [];
         $unreadCount = 0;
         foreach ($notifications as $n) {
             if (!$n['is_read']) $unreadCount++;
+
+            // フォルダ自動追加は payload ネスト（フロント契約: FolderAdd）
+            if ($n['type'] === 'folder_add') {
+                $folderAdds[] = [
+                    'id' => $n['id'],
+                    'type' => $n['type'],
+                    'isRead' => $n['is_read'],
+                    'createdAt' => strtotime($n['created_at']),
+                    'payload' => $n['payload'],
+                ];
+                continue;
+            }
+
+            // フォルダ変動は movement 同形の展開＋kind='folder'（フロント契約: FolderMovement）
+            if ($n['type'] === 'folder') {
+                $folderMovements[] = [
+                    'id' => $n['id'],
+                    'type' => $n['type'],
+                    'isRead' => $n['is_read'],
+                    'createdAt' => strtotime($n['created_at']),
+                    'kind' => 'folder',
+                ] + $n['payload'];
+                continue;
+            }
 
             if (isset($signalTypes[$n['type']])) {
                 $signals[] = [
@@ -1126,6 +1154,8 @@ class AlphaApiController
             'keywordHits' => $keywordHits,
             'movements' => $movements,
             'signals' => $signals,
+            'folderAdds' => $folderAdds,
+            'folderMovements' => $folderMovements,
             'unreadCount' => $unreadCount,
             'computedAt' => $notifications[0]['created_at'] ?? null,
         ]);
@@ -1356,5 +1386,149 @@ class AlphaApiController
         $repo->removeItem($userId, $open_chat_id);
 
         return response(['ok' => true]);
+    }
+
+    // ============================================================
+    // スマートフォルダ設定（ルール＋フォルダ単位アラートしきい値）
+    // ============================================================
+
+    /**
+     * フォルダ設定の取得
+     * GET /alpha-api/folder-settings/{folderId}
+     *
+     * 応答: { rule: {keyword,category,enabled}|null, threshold: {upPercent,downPercent,upMember,downMember,enabled}|null }
+     */
+    function folderSettingsGet(AuthInterface $auth, AlphaSmartFolderRepository $repo, string $folderId)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+
+        $folder = $repo->getFolderRow($userId, $folderId);
+        if ($folder === null) {
+            return response(['error' => 'Folder not found'], 404);
+        }
+
+        return response([
+            'rule' => $this->formatFolderRule($folder),
+            'threshold' => $this->formatFolderThreshold($repo->getThreshold($userId, $folderId)),
+        ]);
+    }
+
+    /**
+     * フォルダ設定の保存
+     * PUT /alpha-api/folder-settings/{folderId}
+     * Body: { rule: {keyword:string, category:number|null, enabled:boolean}|null,
+     *         threshold: {upPercent,downPercent,upMember,downMember,enabled}|null }
+     *
+     * rule が「新規 enable」または「enabled のまま keyword/category 変更」のとき初回フィルを実行し、
+     * 現在の一致部屋・人数上位50件を source='auto' で即時追加する（autoAdded=実追加件数。
+     * 既にフォルダ/seen/マイリストにある部屋は除く）。rule:null で解除（auto アイテムは残す）。
+     * threshold:null で解除。応答: {ok:true, autoAdded:number}
+     */
+    function folderSettingsPut(
+        AuthInterface $auth,
+        AlphaSmartFolderRepository $repo,
+        AlphaSmartFolderService $service,
+        Reception $reception,
+        string $folderId
+    ) {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+        $body = $reception->input();
+
+        $folder = $repo->getFolderRow($userId, $folderId);
+        if ($folder === null) {
+            return response(['error' => 'Folder not found'], 404);
+        }
+
+        $autoAdded = 0;
+
+        // ---- rule ----
+        $rule = $body['rule'] ?? null;
+        if (is_array($rule)) {
+            $keyword = trim((string)($rule['keyword'] ?? ''));
+            if ($keyword === '' || mb_strlen($keyword) > 100) {
+                throw new BadRequestException('Invalid rule keyword');
+            }
+            $category = $this->numOrNull($rule['category'] ?? null);
+            if ($category !== null && $category < 1) {
+                $category = null; // 0以下は「カテゴリ指定なし」に丸める
+            }
+            $enabled = !empty($rule['enabled']);
+
+            // 初回フィル条件: 新規 enable（無効→有効）または有効のまま keyword/category 変更
+            $changed = $folder['rule_keyword'] !== $keyword || $folder['rule_category'] !== $category;
+            $needFill = $enabled && (!$folder['rule_enabled'] || $changed);
+
+            // rule_created_at（新着判定の基準時刻）はフィル実行時に張り直す。それ以外は既存値を維持
+            // （未設定のまま enable された場合の保険として enabled なら now を入れる）。
+            $ruleCreatedAt = $needFill
+                ? date('Y-m-d H:i:s')
+                : ($folder['rule_created_at'] ?? ($enabled ? date('Y-m-d H:i:s') : null));
+
+            $repo->saveRule($userId, $folderId, $keyword, $category, $enabled, $ruleCreatedAt);
+
+            if ($needFill) {
+                $autoAdded = $service->initialFill($userId, $folderId, $folder['name'], $keyword, $category);
+            }
+        } else {
+            // rule:null = ルール解除（既存の auto アイテムは残す）
+            $repo->clearRule($userId, $folderId);
+        }
+
+        // ---- threshold ----
+        $threshold = $body['threshold'] ?? null;
+        if (is_array($threshold)) {
+            $repo->saveThreshold(
+                $userId,
+                $folderId,
+                $this->floatOrNull($threshold['upPercent'] ?? null),
+                $this->floatOrNull($threshold['downPercent'] ?? null),
+                $this->numOrNull($threshold['upMember'] ?? null),
+                $this->numOrNull($threshold['downMember'] ?? null),
+                !empty($threshold['enabled']),
+            );
+        } else {
+            // threshold:null = 解除
+            $repo->deleteThreshold($userId, $folderId);
+        }
+
+        return response(['ok' => true, 'autoAdded' => $autoAdded]);
+    }
+
+    /**
+     * フォルダ行のルール列を API 応答形に整形（ルール未設定は null）。
+     *
+     * @param array{rule_keyword:?string, rule_category:?int, rule_enabled:bool} $folder
+     */
+    private function formatFolderRule(array $folder): ?array
+    {
+        if ($folder['rule_keyword'] === null || $folder['rule_keyword'] === '') {
+            return null;
+        }
+        return [
+            'keyword' => $folder['rule_keyword'],
+            'category' => $folder['rule_category'],
+            'enabled' => $folder['rule_enabled'],
+        ];
+    }
+
+    /**
+     * フォルダしきい値行を API 応答形に整形（未設定は null）。
+     *
+     * @param ?array{up_percent:?float, down_percent:?float, up_member:?int, down_member:?int, enabled:bool} $t
+     */
+    private function formatFolderThreshold(?array $t): ?array
+    {
+        if ($t === null) {
+            return null;
+        }
+        return [
+            'upPercent' => $t['up_percent'],
+            'downPercent' => $t['down_percent'],
+            'upMember' => $t['up_member'],
+            'downMember' => $t['down_member'],
+            'enabled' => $t['enabled'],
+        ];
     }
 }
