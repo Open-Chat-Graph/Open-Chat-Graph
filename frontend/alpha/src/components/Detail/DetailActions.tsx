@@ -12,12 +12,14 @@ interface DetailActionsProps {
 export const DetailActions = memo(({ url, isInList, onAddToMyList, onRemoveFromMyList }: DetailActionsProps) => {
   return (
     <div className="max-w-[var(--content-w)] mx-auto flex justify-center gap-3 flex-wrap pb-4">
+      {/* 外部リンク（離脱導線）は塗りつぶしにせず outline＋primaryテキストに降格。
+          並びの主従は「LINE=outline ＞ マイリスト=ghost」。 */}
       {url && (
         <Button
-          variant="default"
+          variant="outline"
           size="default"
           onClick={() => window.open(url, '_blank')}
-          className="gap-2"
+          className="gap-2 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
           data-testid="line-open-button"
         >
           <ExternalLink className="h-4 w-4" />
@@ -26,7 +28,7 @@ export const DetailActions = memo(({ url, isInList, onAddToMyList, onRemoveFromM
       )}
       {isInList ? (
         <Button
-          variant="outline"
+          variant="ghost"
           size="default"
           onClick={onRemoveFromMyList}
           className="gap-2"
@@ -37,7 +39,7 @@ export const DetailActions = memo(({ url, isInList, onAddToMyList, onRemoveFromM
         </Button>
       ) : (
         <Button
-          variant="outline"
+          variant="ghost"
           size="default"
           onClick={onAddToMyList}
           className="gap-2"

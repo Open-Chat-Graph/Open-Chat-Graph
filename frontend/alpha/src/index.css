@@ -279,10 +279,6 @@
   scrollbar-color: hsl(var(--muted)) transparent;
 }
 
-.dark * {
-  scrollbar-color: hsl(217.2 32.6% 25%) transparent;
-}
-
 /* Chrome, Edge, Safari - 4pxの極細スクロールバー */
 ::-webkit-scrollbar {
   width: 4px;
@@ -302,11 +298,36 @@
   background: hsl(var(--muted-foreground) / 0.6);
 }
 
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: hsl(217.2 32.6% 25%);
+/*
+ * ダークモードのスクロールバー。
+ * `.dark` は documentElement に付くため、ルート(ビューポート)のスクロールバーも
+ * `.dark` 自身（`.dark::-webkit-scrollbar` / `.dark` の scrollbar-color）で明示的に
+ * スコープして、OS既定の明るいバーがダークUIで浮かないようにする。
+ * thumb=muted / track=透明 / 幅10px。ライトモードは上の既定(4px)のまま触らない。
+ */
+.dark,
+.dark * {
+  scrollbar-color: hsl(var(--muted)) transparent;
 }
 
+.dark::-webkit-scrollbar,
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark::-webkit-scrollbar-track,
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 5px;
+}
+
+.dark::-webkit-scrollbar-thumb:hover,
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(217.2 32.6% 35%);
+  background: hsl(var(--muted-foreground) / 0.4);
 }

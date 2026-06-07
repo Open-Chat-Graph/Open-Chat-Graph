@@ -279,7 +279,7 @@ export const OpenChatCard = memo(({
       onTouchMove={handleTouchMove}
       onContextMenu={handleContextMenu}
     >
-      <CardContent className="flex items-start gap-3 p-3 md:p-4">
+      <CardContent className="flex items-start gap-2.5 p-3 md:gap-3 md:p-4">
         {selectionMode && (
           <Checkbox
             checked={isSelected}
@@ -351,13 +351,14 @@ export const OpenChatCard = memo(({
           </div>
         </div>
 
-        {/* スパークライン＋増減チップ（w-16 確保・未着時は幅だけ保持） */}
+        {/* スパークライン＋増減チップ（モバイルは w-14 に縮め部屋名の幅を確保。md以上 w-16。
+            未着時は幅だけ保持） */}
         {(sparklinePoints !== undefined || (metricKey && metric && metric.has)) && (
-          <div className="flex-shrink-0 flex flex-col items-end gap-1 w-16">
+          <div className="flex-shrink-0 flex flex-col items-end gap-0.5 w-14 md:gap-1 md:w-16">
             {sparklinePoints !== undefined && sparklinePoints.length >= 2 ? (
-              <Sparkline points={sparklinePoints} width={64} height={22} />
+              <Sparkline points={sparklinePoints} width={56} height={22} />
             ) : (
-              <div style={{ width: 64, height: 22 }} />
+              <div style={{ width: 56, height: 22 }} />
             )}
             {metricKey && metric && metric.has && metric.diff !== 0 && (
               <span

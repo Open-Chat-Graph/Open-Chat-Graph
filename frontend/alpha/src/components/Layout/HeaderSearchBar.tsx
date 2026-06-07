@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SORT_METRICS, sortMetricLabel } from '@/lib/sort-options'
-import { CATEGORIES } from '@/lib/categories'
+import { CATEGORIES, categoryName } from '@/lib/categories'
 import { useLayout } from '@/contexts/layout-context'
 import { SavedSearchControls } from './SavedSearchControls'
 
@@ -149,13 +149,18 @@ export function HeaderSearchBar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* カテゴリ絞り込み（残り幅を埋める。デスクトップは控えめに） */}
+        {/* カテゴリ絞り込み。残り幅を埋めず内容幅（max-w-fit）にして「すべてのカ…」の
+            切り詰めを防ぐ。トリガー表示は短い「全カテゴリ」（WatchSettings 等と同じ語）で、
+            390px でも他コントロールと同一行に収まる。リスト項目は説明的な
+            「すべてのカテゴリ」のまま。min-w は行が詰まった際の潰れ防止の下限。 */}
         <Select
           value={currentCategory}
           onValueChange={(v) => updateParam((p) => (v === '0' ? p.delete('category') : p.set('category', v)))}
         >
-          <SelectTrigger className="h-10 flex-1 min-w-0 md:max-w-[220px]" data-testid="toolbar-category-select">
-            <SelectValue placeholder="カテゴリ" />
+          <SelectTrigger className="h-10 max-w-fit min-w-[6rem]" data-testid="toolbar-category-select">
+            <SelectValue placeholder="カテゴリ">
+              {currentCategory === '0' ? '全カテゴリ' : categoryName(Number(currentCategory))}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {CATEGORIES.map((c) => (

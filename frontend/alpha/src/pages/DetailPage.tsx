@@ -126,92 +126,108 @@ const DetailPage = memo(() => {
   }
 
 
+  // ランキング掲載履歴: 件数を先読み表示。0件はグレーアウトして開けない。
+  // 1件以上なら「N件」を出し、押すと上に重ねる個別画面（キャッシュ即ヒット）を開く。
+  // モバイルは従来通り最下部（右カラム側の末尾）、lg では左カラム（グラフの下）に出すため
+  // 要素を1つ定義して2箇所（hidden lg:block / lg:hidden）に置く。
+  const rankingHistoryNode =
+    historyCount === 0 ? (
+      // 0件は「壊れている」ではなく「まだ無い」と読めるよう、全体を薄くする opacity ではなく
+      // 破線ボーダー＋muted背景で“意図的に空”と示す。文字は muted-foreground を維持しコントラストを確保。
+      <div
+        className="flex w-full items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-left"
+        aria-disabled="true"
+        title="ランキングに掲載されると履歴がたまります"
+        data-testid="ranking-history-empty"
+      >
+        <History className="h-5 w-5 flex-shrink-0 text-muted-foreground/70" />
+        <span className="flex-1 text-sm font-medium text-muted-foreground">ランキング掲載履歴</span>
+        <span className="text-xs tabular-nums text-muted-foreground">0件</span>
+      </div>
+    ) : (
+      <button
+        type="button"
+        onClick={() => navigate(`/openchat/${basicInfo.id}/ranking-history`)}
+        className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
+      >
+        <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
+        {historyCount !== undefined && (
+          <span className="text-xs tabular-nums text-muted-foreground">{historyCount}件</span>
+        )}
+        <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+      </button>
+    )
+
   return (
     <div className="space-y-4">
-      {/* 画像はマージンなし */}
-      <DetailHeader
-        thumbnail={basicInfo.thumbnail}
-        name={basicInfo.name}
-        imageModalOpen={isImageRoute}
-        onImageModalOpenChange={(open) => {
-          // 開く＝URLを進める / 閉じる＝ブラウザバック相当
-          if (open) navigate(`/openchat/${basicInfo.id}/image`)
-          else navigate(-1)
-        }}
-      />
+      {/* コンテンツ。lg+ は「左=ヒーロー＋グラフ＋掲載履歴 / 右=アクション＋アラート＋指標＋考察」
+          の2カラム。モバイル(〜lg未満)は従来の縦積み順を維持（DOM順そのまま、掲載履歴のみ
+          2箇所マウントの表示切替で末尾に残す）。右カラムは固定320pxで、コンテナが広がっても
+          補助ブロックが間延びしないようにする。 */}
+      <div className="space-y-4 pb-20 md:pb-0 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:gap-6 lg:items-start lg:space-y-0">
+        {/* 左カラム: ヒーロー（画像・名前・説明・統計）＋グラフ＋掲載履歴(lgのみ) */}
+        <div className="space-y-4 min-w-0">
+          {/* 画像はマージンなし */}
+          <DetailHeader
+            thumbnail={basicInfo.thumbnail}
+            name={basicInfo.name}
+            imageModalOpen={isImageRoute}
+            onImageModalOpenChange={(open) => {
+              // 開く＝URLを進める / 閉じる＝ブラウザバック相当
+              if (open) navigate(`/openchat/${basicInfo.id}/image`)
+              else navigate(-1)
+            }}
+          />
 
-      {/* コンテンツ */}
-      <div className="space-y-4 pb-20 md:pb-0">
-        <DetailInfo
-          name={basicInfo.name}
-          emblem={basicInfo.emblem}
-          description={basicInfo.description}
-        />
+          <DetailInfo
+            name={basicInfo.name}
+            emblem={basicInfo.emblem}
+            description={basicInfo.description}
+          />
 
-        <DetailStats
-          currentMember={basicInfo.currentMember}
-          joinMethodType={basicInfo.joinMethodType}
-          hourlyDiff={basicInfo.hourlyDiff}
-          hourlyPercentage={basicInfo.hourlyPercentage}
-          diff24h={basicInfo.diff24h}
-          percent24h={basicInfo.percent24h}
-          diff1w={basicInfo.diff1w}
-          percent1w={basicInfo.percent1w}
-          registeredAt={basicInfo.registeredAt}
-          categoryName={basicInfo.categoryName}
-          isInRanking={basicInfo.isInRanking}
-        />
+          <DetailStats
+            currentMember={basicInfo.currentMember}
+            joinMethodType={basicInfo.joinMethodType}
+            hourlyDiff={basicInfo.hourlyDiff}
+            hourlyPercentage={basicInfo.hourlyPercentage}
+            diff24h={basicInfo.diff24h}
+            percent24h={basicInfo.percent24h}
+            diff1w={basicInfo.diff1w}
+            percent1w={basicInfo.percent1w}
+            registeredAt={basicInfo.registeredAt}
+            categoryName={basicInfo.categoryName}
+            isInRanking={basicInfo.isInRanking}
+          />
 
-        {/* Graph（本家と同じoc-appグラフバンドルを埋め込み。idが変わったらkeyで再マウント。
-            テーマはdata-theme＋octhemechangeでグラフ側が追従するためpropsに含めない） */}
-        <OcGraph key={basicInfo.id} chatId={basicInfo.id} />
+          {/* Graph（本家と同じoc-appグラフバンドルを埋め込み。idが変わったらkeyで再マウント。
+              テーマはdata-theme＋octhemechangeでグラフ側が追従するためpropsに含めない） */}
+          <OcGraph key={basicInfo.id} chatId={basicInfo.id} />
 
-        <DetailActions
-          url={basicInfo.url}
-          isInList={isInList}
-          onAddToMyList={handleAddToMyList}
-          onRemoveFromMyList={handleRemoveFromMyList}
-        />
+          <div className="hidden lg:block">{rankingHistoryNode}</div>
+        </div>
 
-        {/* 部屋のアラート: 未設定なら開始ボタン、設定中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
-        <WatchRoomControl openChatId={basicInfo.id} />
+        {/* 右カラム: アクション＋増減アラート＋アクセス指標＋考察（＋モバイルのみ掲載履歴） */}
+        <div className="space-y-4 min-w-0">
+          <DetailActions
+            url={basicInfo.url}
+            isInList={isInList}
+            onAddToMyList={handleAddToMyList}
+            onRemoveFromMyList={handleRemoveFromMyList}
+          />
 
-        {/* アクセス・検索の指標(GA/GSC): 純PV/UU/SEO流入/参加リンク押下/平均滞在。
-            遅延取得・creds前は無表示。考察ブロックの近くに置き“見られ方”の文脈を補う */}
-        <RoomMetricsBlock openChatId={basicInfo.id} />
+          {/* 部屋のアラート: 未設定なら開始ボタン、設定中ならしきい値（±%）設定カード。部屋ごとに詳細画面で完結 */}
+          <WatchRoomControl openChatId={basicInfo.id} />
 
-        {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
-        <InsightsBlock openChatId={basicInfo.id} />
+          {/* アクセス・検索の指標(GA/GSC): 純PV/UU/SEO流入/参加リンク押下/平均滞在。
+              遅延取得・creds前は無表示。考察ブロックの近くに置き“見られ方”の文脈を補う */}
+          <RoomMetricsBlock openChatId={basicInfo.id} />
 
-        {/* ランキング掲載履歴: 件数を先読み表示。0件はグレーアウトして開けない。
-            1件以上なら「N件」を出し、押すと上に重ねる個別画面（キャッシュ即ヒット）を開く。 */}
-        {historyCount === 0 ? (
-          // 0件は「壊れている」ではなく「まだ無い」と読めるよう、全体を薄くする opacity ではなく
-          // 破線ボーダー＋muted背景で“意図的に空”と示す。文字は muted-foreground を維持しコントラストを確保。
-          <div
-            className="flex w-full items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-left"
-            aria-disabled="true"
-            title="ランキングに掲載されると履歴がたまります"
-            data-testid="ranking-history-empty"
-          >
-            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground/70" />
-            <span className="flex-1 text-sm font-medium text-muted-foreground">ランキング掲載履歴</span>
-            <span className="text-xs tabular-nums text-muted-foreground">0件</span>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => navigate(`/openchat/${basicInfo.id}/ranking-history`)}
-            className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
-          >
-            <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-            <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
-            {historyCount !== undefined && (
-              <span className="text-xs tabular-nums text-muted-foreground">{historyCount}件</span>
-            )}
-            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          </button>
-        )}
+          {/* 高次の考察: グラフだけでは見えない傾向。洞察が在るときだけ静かに現れる補助ブロック */}
+          <InsightsBlock openChatId={basicInfo.id} />
+
+          <div className="lg:hidden">{rankingHistoryNode}</div>
+        </div>
       </div>
 
       <FolderSelectDialog

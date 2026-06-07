@@ -217,7 +217,8 @@ const LabsPage = memo(() => {
         />
       }
     >
-      <div className="space-y-4">
+      {/* PCではカードが横に伸びきって右側が空洞化しないよう、リスト全体の幅を制限して中央寄せ */}
+      <div className="space-y-4 lg:max-w-3xl lg:mx-auto">
         {error && (
           <Card className="border-destructive">
             <CardContent className="pt-6 space-y-3">
