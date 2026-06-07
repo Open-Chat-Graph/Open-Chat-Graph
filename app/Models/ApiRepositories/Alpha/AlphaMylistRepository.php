@@ -232,7 +232,7 @@ class AlphaMylistRepository
             $order    = (int)($item['order'] ?? 0);
             $source   = in_array($item['source'] ?? '', ['manual', 'auto'], true)
                 ? (string)$item['source'] : 'manual';
-            $addedAt  = !empty($item['addedAt']) ? (string)$item['addedAt'] : date('Y-m-d H:i:s');
+            $addedAt  = self::normalizeDatetime($item['addedAt'] ?? null);
 
             // 既存行が存在する場合は source を維持する（INSERT IGNORE 後に UPDATE で他列を更新）。
             // 新規行のみ source を payload の値（既定 manual）で挿入する。
@@ -344,5 +344,24 @@ class AlphaMylistRepository
             "DELETE FROM alpha_mylist_item_ja WHERE user_id = :uid AND open_chat_id = :oc",
             ['uid' => $userId, 'oc' => $openChatId]
         );
+    }
+
+    /**
+     * クライアントから来る日時文字列を MySQL DATETIME 形式へ正規化する。
+     * localStorage 由来の addedAt は ISO 8601（例 2026-06-08T00:00:00.000Z）で届くため
+     * そのまま INSERT すると SQLSTATE[22007] になる。不正値・欠落は現在時刻。
+     */
+    private static function normalizeDatetime(mixed $value): string
+    {
+        if (is_string($value) && $value !== '') {
+            try {
+                return (new \DateTime($value))
+                    ->setTimezone(new \DateTimeZone(date_default_timezone_get()))
+                    ->format('Y-m-d H:i:s');
+            } catch (\Exception) {
+                // 不正な日時文字列は現在時刻にフォールバック
+            }
+        }
+        return date('Y-m-d H:i:s');
     }
 }
