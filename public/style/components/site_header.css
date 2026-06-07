@@ -261,29 +261,9 @@ html.is-ios .site_header_outer.header-hidden {
 
 /* 幅に余裕がある端末（iPhone Air 級以上）では一段大きく */
 @media screen and (min-width: 415px) {
-  .blog-text-link,
   .category-button span {
     font-size: 12.5px;
   }
-}
-
-/* ブログリンク（小さな文字のみ・日本語のみ） */
-.blog-text-link {
-  font-size: 11px;
-  color: var(--c-text-3);
-  text-decoration: none;
-  padding: 8px 2px;
-  white-space: nowrap;
-  font-family: var(--font-family);
-  /* サイト名の続きに見えないよう、タイトル側に最低限の間合いを取りつつ
-     カテゴリボタンとは寄せすぎない距離感（gap 7px + 6px） */
-  margin-left: 12px;
-  margin-right: 6px;
-}
-
-.blog-text-link:hover {
-  text-decoration: underline;
-  color: var(--c-text-1);
 }
 
 /* ---------- ダークモード切替ボタン ---------- */

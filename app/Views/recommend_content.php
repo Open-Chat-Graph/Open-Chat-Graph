@@ -64,52 +64,28 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           <?php // Offerwall switchback 実験(oc-pdca): 奇数ISO週のみ Offerwall を抑制。広告自体は常に通常表示 ?>
           <?php GAd::gTag(suppressOfferwall: GAd::isOfferwallSuppressionWeek()) ?>
         <?php endif ?>
+        <?php // 手動広告(recommendSeparatorResponsive)は撤去済み: impRPM¥20=自動広告(¥220)の1/11なのに
+              // リストを分断していた(2026-06実測)。広告挿入のためだけだったチャンク分割も廃止し30件を一本のリストで表示 ?>
         <ol class="openchat-item-list parent unset">
-          <?php
-          $chunkLen = 5;
-          $recommendList = $recommend->getList(false, AppConfig::LIST_LIMIT_RECOMMEND);
-          $firstLists = array_slice($recommendList, 0, $chunkLen);
-          $secondLists = array_chunk(array_slice($recommendList, $chunkLen), $chunkLen * 2);
-          $lists = [$firstLists, ...$secondLists];
-          $listsLastKey = count($lists) - 1;
-          $currentCount = 0;
-          ?>
-          <?php foreach ($lists as $key => $listArray) : ?>
-            <li class="top-ranking" style="padding-top: 8px; <?php echo $key ? 'gap: 8px;' : 'gap: 8px;' ?>">
-              <header class="recommend-ranking-section-header">
-                <?php if ($key > 0) : ?>
-                  <?php // 同一H2の反復(量産シグナル)を避け、継続チャンクは見出しではなく軽い順位区切りにする ?>
-                  <div class="recommend-ranking-continue"><?php echo sprintfT('%s位', $currentCount + 1) ?>〜</div>
-                <?php else : ?>
-                  <h2 style="all: unset; font-size: 15px; font-weight: bold; color: var(--c-text-1); display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
-                    <div><?php echo sprintfT("「%s」でいま人数が伸びているルーム", $extractTag) ?>&nbsp;</div>
-                    <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
-                  </h2>
-                <?php endif ?>
-              </header>
-              <?php $currentListCount = count($listArray) ?>
-              <?php $currentCount += $currentListCount ?>
+          <li class="top-ranking" style="padding-top: 8px; gap: 8px;">
+            <header class="recommend-ranking-section-header">
+              <h2 style="all: unset; font-size: 15px; font-weight: bold; color: var(--c-text-1); display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
+                <div><?php echo sprintfT("「%s」でいま人数が伸びているルーム", $extractTag) ?>&nbsp;</div>
+                <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
+              </h2>
+            </header>
+            <?php $listArray = $recommend->getList(false, AppConfig::LIST_LIMIT_RECOMMEND) ?>
 
-              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => $currentCount - $currentListCount === 0, 'currentCount' => $currentCount - $currentListCount, 'showApiCreatedAt' => true]) ?>
+            <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
 
-              <?php if ($listsLastKey === $key && isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
-                <hr class="hr-top" style="margin: 1rem auto;">
-                <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
-                  <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
-                </a>
-              <?php endif ?>
-
-            </li>
-            <?php if ($key === 0) : ?>
-              <li>
-                <?php GAd::output('recommendSeparatorResponsive', true) ?>
-              </li>
-            <?php elseif ($listsLastKey !== $key) : ?>
-              <li>
-                <?php GAd::output('recommendSeparatorResponsive', true) ?>
-              </li>
+            <?php if (isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
+              <hr class="hr-top" style="margin: 1rem auto;">
+              <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
+                <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
+              </a>
             <?php endif ?>
-          <?php endforeach ?>
+
+          </li>
         </ol>
       <?php else : ?>
         <section class="top-ranking recommend-ranking-section">
