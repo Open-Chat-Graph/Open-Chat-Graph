@@ -285,7 +285,7 @@ export interface AlertsConfigRequest {
 // --- 通知一覧（GET /alpha-api/alerts?markRead=all|<csv ids>） ---
 export interface AlertBase {
   id: number
-  type: 'keyword' | 'room' | 'mylist' | 'room_change' | 'rank_jump' | 'pace'
+  type: 'keyword' | 'room' | 'mylist' | 'room_change' | 'rank_jump' | 'pace' | 'folder_add' | 'folder'
   isRead: boolean
   createdAt: number // unix秒
 }
