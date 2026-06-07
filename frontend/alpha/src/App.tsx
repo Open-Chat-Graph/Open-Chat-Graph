@@ -16,6 +16,7 @@ import WatchSettingsPage from './pages/WatchSettingsPage'
 import LabsPage from './pages/LabsPage'
 import AnalysisPage from './pages/AnalysisPage'
 import FolderChartPage from './pages/FolderChartPage'
+import { ensureSubscription } from './services/pushSubscription'
 
 /**
  * 常駐（keep-alive）するベースページの定義。
@@ -179,6 +180,11 @@ function AppContent() {
 function App() {
   // 開発環境では '/', 本番環境では '/alpha'
   const basename = import.meta.env.DEV ? '/' : '/alpha'
+
+  // アプリ起動時に購読の自己修復を試みる（権限 granted + localStorage フラグ + SW 購読 null → 再購読）
+  useEffect(() => {
+    void ensureSubscription()
+  }, [])
 
   return (
     <BrowserRouter basename={basename}>

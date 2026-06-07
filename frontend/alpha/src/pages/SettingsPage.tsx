@@ -3,6 +3,7 @@ import { ChevronRight, Eye } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/Settings/ThemeToggle'
+import { PushNotificationToggle } from '@/components/Settings/PushNotificationToggle'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -20,7 +21,7 @@ export default function SettingsPage() {
             アラートする部屋・キーワードや通知のしきい値を設定します。
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Button
             variant="outline"
             className="w-full justify-start gap-3 h-auto py-3"
@@ -36,6 +37,8 @@ export default function SettingsPage() {
             </span>
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           </Button>
+
+          <PushNotificationToggle />
         </CardContent>
       </Card>
 

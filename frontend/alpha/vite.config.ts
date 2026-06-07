@@ -80,6 +80,9 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
+        // push-sw.js: push イベントと notificationclick を処理する追加スクリプト。
+        // public/ に置いてあるためビルドで成果物ディレクトリにコピーされる。
+        importScripts: ['push-sw.js'],
         // registerSW.js と index.html はαでは使われない（登録はalpha_content.php インライン、
         // HTMLはPHPが返す）。プリキャッシュから除外して不要なキャッシュを作らない。
         globPatterns: ['**/*.{js,css,ico,png,svg,webmanifest}'],
