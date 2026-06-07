@@ -206,8 +206,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     </article>
 
     <?php if ($enableAdsense): ?>
+      <?php // ocTopWide2(手動横長)は撤去済み: impRPM¥14/CTR0.21%で「関連ルーム」棚への回遊を遮るだけだった(2026-06実測)。gTag は自動広告に必要なので維持 ?>
       <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-      <?php GAd::output('ocTopWide2', true) ?>
     <?php endif ?>
 
     <?php if (isset($similarSize) && $similarSize) : ?>
