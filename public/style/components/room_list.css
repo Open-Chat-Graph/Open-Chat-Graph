@@ -432,7 +432,7 @@
 
 .openchat-item-lower {
   display: flex;
-  color: var(--c-text-4);
+  color: var(--c-text-meta);
   font-size: 13px;
   line-height: 1.1rem;
   gap: 4px;
