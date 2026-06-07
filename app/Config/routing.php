@@ -927,6 +927,11 @@ Route::path('alpha-api/oc/{open_chat_id}/graph-embed', [AlphaApiController::clas
     ->matchNum('open_chat_id', min: 1)
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - 複数部屋の直近7日メンバー数系列（スパークライン用）
+Route::path('alpha-api/sparkline', [AlphaApiController::class, 'sparkline'])
+    ->matchStr('ids', maxLen: 500)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 // Alpha API - 一括統計取得（マイリスト用）
 Route::path('alpha-api/batch-stats@post', [AlphaApiController::class, 'batchStats'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');

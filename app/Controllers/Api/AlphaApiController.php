@@ -280,6 +280,46 @@ class AlphaApiController
     }
 
     /**
+     * 複数部屋の直近7日メンバー数系列取得API（スパークライン用）
+     * GET /alpha-api/sparkline?ids=1,2,3
+     */
+    function sparkline(AlphaStatsRepository $statsRepo)
+    {
+        Reception::$isJson = true;
+
+        $raw = trim((string)Reception::input('ids', ''));
+        if ($raw === '') {
+            throw new BadRequestException('ids parameter is required');
+        }
+
+        $parts = explode(',', $raw);
+        if (count($parts) > 50) {
+            throw new BadRequestException('Maximum 50 IDs allowed');
+        }
+
+        $ids = [];
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '' || !ctype_digit($part)) {
+                throw new BadRequestException('Invalid ids parameter');
+            }
+            $id = (int)$part;
+            if ($id < 1) {
+                throw new BadRequestException('Invalid ids parameter');
+            }
+            $ids[] = $id;
+        }
+
+        if (empty($ids)) {
+            throw new BadRequestException('ids parameter is required');
+        }
+
+        $items = $statsRepo->getSparklineByIds($ids);
+
+        return response(['items' => $items]);
+    }
+
+    /**
      * マイリスト用一括統計取得API
      * POST /alpha-api/batch-stats
      * Body: {"ids": [123, 456, 789]}

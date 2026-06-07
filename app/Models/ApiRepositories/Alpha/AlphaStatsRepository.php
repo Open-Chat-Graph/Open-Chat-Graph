@@ -150,6 +150,66 @@ class AlphaStatsRepository
     }
 
     /**
+     * 複数部屋の直近メンバー数系列を一括取得（スパークライン用・各部屋直近7点）
+     *
+     * N+1を避けるため IN (...) で一括取得し、PHP側で open_chat_id ごとにグループ化する。
+     * 固定の日付窓ではなく各部屋の「直近7点」を返す（クロール停止部屋やデータ遅延で空になるのを防ぐ）。
+     *
+     * @param int[] $ids open_chat_id の配列（最大50件）
+     * @return array<int, list<array{date: string, member: int}>> id => [{date, member}, ...]
+     */
+    public function getSparklineByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $pdo = SQLiteStatistics::connect();
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $sql = "
+            SELECT
+                open_chat_id,
+                date,
+                member
+            FROM (
+                SELECT
+                    open_chat_id,
+                    date,
+                    member,
+                    ROW_NUMBER() OVER (PARTITION BY open_chat_id ORDER BY date DESC) AS rn
+                FROM
+                    statistics
+                WHERE
+                    open_chat_id IN ({$placeholders})
+            )
+            WHERE
+                rn <= 7
+            ORDER BY
+                open_chat_id ASC,
+                date ASC
+        ";
+
+        $params = array_values($ids);
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // open_chat_id でグループ化
+        $result = [];
+        foreach ($rows as $row) {
+            $id = (int)$row['open_chat_id'];
+            $result[$id][] = [
+                'date' => $row['date'],
+                'member' => (int)$row['member'],
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * ランキングデータ取得
      *
      * @param string $type 'ranking' or 'rising'
