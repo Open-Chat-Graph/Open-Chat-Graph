@@ -5,7 +5,12 @@
 @layer components {
   /* 主役面: primary色の淡い背景＋リング。ダーク/ライト両対応。border無し。 */
   .surface-highlight {
-    @apply bg-primary/[0.06] ring-1 ring-primary/20 rounded-lg;
+    @apply bg-primary/[0.08] ring-1 ring-primary/25 rounded-lg;
+  }
+
+  /* ダークは背景が暗く8%では面として視認できないため濃くする（見た目QA指摘） */
+  .dark .surface-highlight {
+    @apply bg-primary/[0.14] ring-primary/35;
   }
 
   /* 副次面: muted の薄い背景。border無し。 */
