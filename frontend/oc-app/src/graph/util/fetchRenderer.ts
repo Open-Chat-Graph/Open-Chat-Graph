@@ -6,7 +6,6 @@ import {
   limitAtom,
   loadingAtom,
   rankingRisingAtom,
-  renderPositionBtnsAtom,
   updateCandleTabVisibility,
   updateTabVisibility,
 } from '../state/chartState'
@@ -102,8 +101,6 @@ export function renderChartWithoutRanking() {
 
 export async function fetchChart(animation: boolean) {
   if (graphStore.get(chartModeAtom) === 'candlestick') {
-    graphStore.set(renderPositionBtnsAtom, true)
-
     // メンバーOHLCをAPI経由で取得
     graphStore.set(loadingAtom, true)
     const memberOhlcData = await fetcher<MemberOhlc[]>(
@@ -160,8 +157,6 @@ export async function fetchChart(animation: boolean) {
 
   // メンバーグラフのみの場合
   if (ranking === 'none') {
-    graphStore.set(renderPositionBtnsAtom, true)
-
     if (chart.getIsHour()) {
       graphStore.set(loadingAtom, true)
       await fetcher<RankingPositionChart>(
@@ -181,7 +176,6 @@ export async function fetchChart(animation: boolean) {
   await fetcher<RankingPositionChart>(
     `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery(param, chart.getIsHour())}`
   ).then((data) => {
-    graphStore.set(renderPositionBtnsAtom, true)
     renderChart(param, animation, limit)(data)
   })
 }
