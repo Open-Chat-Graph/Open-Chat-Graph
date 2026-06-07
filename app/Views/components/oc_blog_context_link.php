@@ -14,13 +14,33 @@
 
 if (\Shared\MimimalCmsConfig::$urlRoot !== '') return;
 
-// 5,000 人上限（拡張で 1 万人）に近い・超えている部屋 → 上限の仕組み記事
+// 訪問者の大半は「部屋を探している人」なので、運営者向け記事（増やし方等）は
+// 管理人が見ている可能性が高い状態（小規模・ピークから縮小）だけに絞り、
+// よくある状態（安定・増加・減少）には探す人の疑問に刺さる記事を当てる。
 if ($member >= 4500) {
+    // 5,000 人上限（拡張で 1 万人）に近い・超えている部屋
     $_link = ['openchat-ninzu-jogen', 'オープンチャットの人数は何人まで？上限と「拡張」の仕組み'];
-} elseif (in_array($pattern, ['surge_up', 'strong_growth'], true)) {
+} elseif (in_array($pattern, ['surge_up', 'strong_growth', 'recovering'], true)) {
+    // 急成長・復活 → 「なぜ伸びてる？」
     $_link = ['growing-openchat-features', '伸びるオープンチャットに共通する特徴とは？'];
-} elseif (in_array($pattern, ['declining', 'shrinking_from_peak', 'surge_down'], true)) {
+} elseif (in_array($pattern, ['surge_down', 'declining', 'stagnant'], true)) {
+    // 急減・減少・更新停止 → 「何があった？」(検索落ち・圏外の実データ記事)
+    $_link = ['openchat-kensaku-ranking-ochi', '検索に出てこない・ランキングから消える部屋で何が起きている？'];
+} elseif ($pattern === 'shrinking_from_peak') {
+    // かつて大規模→縮小 = 管理人が見ている可能性が最も高い文脈にだけ運営者向け記事
     $_link = ['openchat-member-fuyasu', 'オープンチャットのメンバーを増やすには？'];
+} elseif ($pattern === 'tiny') {
+    // 小規模（最多層）→ もっと探したい人向け
+    $_link = ['openchat-sagashikata', '自分に合うオープンチャットの探し方のコツ'];
+} elseif ($pattern === 'new') {
+    // 開設直後 → 「自分も作ってみたい」
+    $_link = ['openchat-hajimekata', 'オープンチャットの始め方・作り方（最初のメンバー集めまで）'];
+} elseif (in_array($pattern, ['growing', 'gradual_up'], true)) {
+    // 着実増加 → 「ランキングはどう決まる？」
+    $_link = ['openchat-ranking-shikumi', 'オープンチャットのランキングの仕組みと公式に載る条件とは？'];
+} elseif (in_array($pattern, ['stable', 'gradual_down'], true)) {
+    // 安定・緩やか減（最多層）→ 参加前の不安に答える記事
+    $_link = ['openchat-kiken-anzen', 'オープンチャットは危険？参加前に知っておくリスクと自衛策'];
 } else {
     return;
 }
