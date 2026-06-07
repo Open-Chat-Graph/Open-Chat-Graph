@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
 import { OfficialIcon, SpecialIcon } from '@/components/icons'
+import { Sparkline } from '@/components/Common/Sparkline'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
 import { searchHighlightClass } from '@/lib/theme-colors'
-import { diffColorClass } from '@/lib/colors'
+import { diffColorClass, diffBgClass } from '@/lib/colors'
 import type { OpenChat } from '@/types/api'
 
 interface OpenChatCardProps {
@@ -28,6 +29,9 @@ interface OpenChatCardProps {
   currentSort?: string
   // 検索キーワード（ハイライト用）
   searchKeyword?: string
+  // スパークライン（7日の人数推移ポイント列）。
+  // sparklinePoints を渡すページだけ右端カラムが表示される（渡さない画面には影響しない）。
+  sparklinePoints?: number[]
 }
 
 // ランキングデータが有効かチェック
@@ -154,6 +158,7 @@ export const OpenChatCard = memo(({
   onEnterSelectionMode,
   currentSort,
   searchKeyword,
+  sparklinePoints,
 }: OpenChatCardProps) => {
   const hasHourlyData = isValidRankingData(chat.increasedMember)
   const has24hData = isValidRankingData(chat.diff24h)
@@ -345,6 +350,24 @@ export const OpenChatCard = memo(({
             ) : null}
           </div>
         </div>
+
+        {/* スパークライン＋増減チップ（w-16 確保・未着時は幅だけ保持） */}
+        {(sparklinePoints !== undefined || (metricKey && metric && metric.has)) && (
+          <div className="flex-shrink-0 flex flex-col items-end gap-1 w-16">
+            {sparklinePoints !== undefined && sparklinePoints.length >= 2 ? (
+              <Sparkline points={sparklinePoints} width={64} height={22} />
+            ) : (
+              <div style={{ width: 64, height: 22 }} />
+            )}
+            {metricKey && metric && metric.has && metric.diff !== 0 && (
+              <span
+                className={`inline-block rounded-full px-1.5 py-0 text-[11px] font-mono leading-5 whitespace-nowrap ${diffBgClass(metric.diff)}`}
+              >
+                {formatDiff(metric.diff)}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* 追加 / 削除ボタン */}
         {!selectionMode && (onRemove || onAddToMyList) && (

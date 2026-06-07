@@ -35,6 +35,7 @@ interface FolderListProps {
   onEnterSelectionMode?: () => void
   sortType?: MyListSortType
   sortOrder?: SortOrder
+  sparklines?: Record<number, number[] | undefined>
 }
 
 interface FolderItemProps {
@@ -88,6 +89,7 @@ export function FolderList({
   onEnterSelectionMode,
   sortType = 'member',
   sortOrder = 'desc',
+  sparklines = {},
 }: FolderListProps) {
   // 表示する内容を取得
   const { folders: visibleFolders, items: visibleItems } = getVisibleContent(
@@ -136,6 +138,7 @@ export function FolderList({
             allItemIds={sortedItemIds}
             onEnterSelectionMode={onEnterSelectionMode}
             currentSort={sortType}
+            sparklinePoints={sparklines[item.id]}
           />
         )
       })}

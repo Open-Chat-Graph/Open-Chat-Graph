@@ -9,6 +9,7 @@ import { ListProgressRegion, ListProgressFooter } from '@/components/Common/List
 import { SearchLanding } from '@/components/Common/SearchLanding'
 import { useListProgress } from '@/hooks/useListProgress'
 import { useInfiniteList } from '@/hooks/useInfiniteList'
+import { useSparklines } from '@/hooks/useSparklines'
 import { alphaApi } from '@/api/alpha'
 import { addSearchHistory } from '@/services/searchHistory'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
@@ -109,6 +110,15 @@ const SearchPage = memo(() => {
       : undefined,
   })
   const hasResults = results.length > 0
+
+  // 表示中（reveal済み）アイテムの ID に対してスパークラインを取得
+  const visibleIds = useMemo(
+    () => results.slice(0, visibleCount).map((c) => c.id),
+    // visibleCount は増える一方なので毎回新配列だが useMemo で安定化
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [results, visibleCount],
+  )
+  const sparklines = useSparklines(visibleIds)
 
   const handleCardClick = useCallback((chatId: number) => {
     // 検索クエリ（キーワード + ソート設定）をsessionStorageに保存してから詳細ページに遷移
@@ -225,6 +235,7 @@ const SearchPage = memo(() => {
                 onAddToMyList={handleAddToMyList}
                 currentSort={sort}
                 searchKeyword={urlKeyword}
+                sparklinePoints={sparklines[chat.id]}
               />
             ))}
           </div>

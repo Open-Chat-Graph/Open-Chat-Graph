@@ -35,6 +35,7 @@ import { useBulkOperations } from '@/hooks/useBulkOperations'
 import { useFolderManagement } from '@/hooks/useFolderManagement'
 import { useFolderNavigation } from '@/hooks/useFolderNavigation'
 import { useScrollDirection } from '@/hooks/useScrollDirection'
+import { useSparklines } from '@/hooks/useSparklines'
 import type { MyListData } from '@/types/storage'
 import type { BatchStatsResponse } from '@/types/api'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
@@ -75,6 +76,9 @@ const MyListPage = memo(() => {
     itemIds.length > 0 ? ['batch-stats', JSON.stringify(itemIds)] : null,
     () => alphaApi.batchStats(itemIds)
   )
+
+  // スパークライン（全マイリストアイテム分を一括取得）
+  const sparklines = useSparklines(itemIds)
 
   const bulkOps = useBulkOperations({
     myListData,
@@ -392,6 +396,7 @@ const MyListPage = memo(() => {
             onEnterSelectionMode={selection.enterSelectionMode}
             sortType={sortType}
             sortOrder={order}
+            sparklines={sparklines}
           />
         )}
           </div>
