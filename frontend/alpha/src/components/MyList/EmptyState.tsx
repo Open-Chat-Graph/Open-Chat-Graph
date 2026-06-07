@@ -1,42 +1,64 @@
 import { memo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FolderOpen, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState as CommonEmptyState } from '@/components/Common/EmptyState'
+import { useViewNavigation } from '@/hooks/useViewNavigation'
+
+/** マイリスト空状態のゴーストプレビュー（ダミーカード輪郭 × 2） */
+function GhostCards() {
+  return (
+    <div className="w-full space-y-2 px-1">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+        >
+          {/* アバター placeholder */}
+          <div className="h-10 w-10 flex-shrink-0 rounded-md bg-muted" />
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="h-3 w-3/4 rounded bg-muted" />
+            <div className="h-2.5 w-1/2 rounded bg-muted" />
+          </div>
+          {/* スパークライン SVG ダミー */}
+          <svg
+            width={64}
+            height={22}
+            viewBox="0 0 64 22"
+            className="flex-shrink-0 text-primary"
+            aria-hidden="true"
+          >
+            <polyline
+              points={i === 0 ? '2,18 12,14 24,10 36,8 48,5 62,3' : '2,5 12,9 24,14 36,12 48,16 62,19'}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.6}
+            />
+          </svg>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export const EmptyState = memo(() => {
-  const navigate = useNavigate()
+  const { goToView } = useViewNavigation()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">マイリスト</h1>
-        <p className="text-muted-foreground">
-          お気に入りのオープンチャットを管理
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="flex flex-col items-center py-12 text-center">
-          <FolderOpen className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-sm font-medium text-foreground">
-            マイリストは空です
-          </p>
-          {/* 価値訴求: なぜマイリスト（フォルダ）に入れると嬉しいのか */}
-          <p className="mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
-            複数の部屋をフォルダにまとめると、成長を重ねたグラフで比較でき、増減をまとめてアラートできます。
-          </p>
-          <Button
-            className="mt-5 gap-1.5"
-            onClick={() => navigate('/')}
-            data-testid="empty-open-search"
-          >
-            <Search className="h-4 w-4" />
-            検索を開く
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+    <CommonEmptyState
+      icon={<FolderOpen />}
+      title="マイリストに部屋を追加しよう"
+      description="部屋をフォルダにまとめると、成長を1グラフで比較・増減をまとめてアラートできます。"
+      action={{
+        label: '部屋を探す',
+        onClick: () => goToView('search'),
+        icon: <Search />,
+      }}
+      hint="フォルダにキーワードを設定すると新着部屋が自動で入ります"
+    >
+      <GhostCards />
+    </CommonEmptyState>
   )
 })
 

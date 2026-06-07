@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen } from 'lucide-react'
+import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { EmptyState } from '@/components/Common/EmptyState'
 import {
   Select,
   SelectContent,
@@ -228,7 +229,7 @@ export default function WatchSettingsPage() {
           <div className="h-7 w-7 animate-spin rounded-full border-b-2 border-primary" />
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-8">
           {/* (1) キーワードのアラート */}
           <Section
             icon={<Sparkles className="h-4 w-4 text-primary" />}
@@ -298,9 +299,12 @@ export default function WatchSettingsPage() {
                 ))}
               </ul>
             ) : (
-              <EmptyHint>
-                アラートを設定したキーワードはまだありません。上の入力欄か、検索画面から追加できます。
-              </EmptyHint>
+              <EmptyState
+                small
+                icon={<Sparkles />}
+                title="キーワードがまだありません"
+                description="上の入力欄か、検索画面から追加できます。"
+              />
             )}
           </Section>
 
@@ -341,9 +345,12 @@ export default function WatchSettingsPage() {
                 ))}
               </ul>
             ) : (
-              <EmptyHint>
-                増減アラートを設定した部屋はまだありません。部屋の詳細画面の「増減アラート」から設定できます。
-              </EmptyHint>
+              <EmptyState
+                small
+                icon={<Bell />}
+                title="設定済みの部屋はありません"
+                description="部屋の詳細画面の「増減アラート」から設定できます。"
+              />
             )}
           </Section>
 
@@ -368,12 +375,16 @@ export default function WatchSettingsPage() {
             description="マイリストの部屋に、設定したしきい値を超える増減があれば通知します。"
           >
             {myListEmpty && (
-              <EmptyHint>
-                マイリストに部屋を追加すると有効になります。
-                <Link to="/mylist" className="ml-1 font-medium text-primary underline-offset-4 hover:underline">
-                  マイリストを開く
-                </Link>
-              </EmptyHint>
+              <EmptyState
+                small
+                icon={<Search />}
+                title="マイリストが空です"
+                description="部屋を追加すると、まとめて増減を通知できます。"
+                action={{
+                  label: 'マイリストを開く',
+                  onClick: () => navigate('/mylist'),
+                }}
+              />
             )}
             <label className={`flex items-center gap-2 text-sm ${myListEmpty ? 'opacity-50' : ''}`}>
               <Checkbox
@@ -484,10 +495,3 @@ function Section({
   )
 }
 
-function EmptyHint({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-md border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
-      {children}
-    </p>
-  )
-}

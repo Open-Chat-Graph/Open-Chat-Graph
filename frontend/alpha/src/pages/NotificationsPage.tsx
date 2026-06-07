@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Settings2, Sparkles, Activity, CheckCheck, Radio, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/Common/EmptyState'
 import { useAlerts } from '@/hooks/useAlerts'
 import {
   KeywordHitCard,
@@ -195,16 +196,15 @@ function FeedRow({
 
 function EmptyMessage({ onSettings }: { onSettings: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <Bell className="h-10 w-10 text-muted-foreground/50" />
-      <p className="font-medium">アラートの動きや新着部屋がここに出ます。</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
-        キーワードや部屋・マイリスト全体にアラートを設定すると、ここに時系列で出ます。
-      </p>
-      <Button variant="outline" size="sm" className="mt-1 gap-1.5" onClick={onSettings}>
-        <Settings2 className="h-4 w-4" />
-        アラート設定を開く
-      </Button>
-    </div>
+    <EmptyState
+      icon={<Bell />}
+      title="通知はまだありません"
+      description="ウォッチした部屋の増減・機微、キーワード新着、フォルダ自動追加がここに時系列で届きます。"
+      action={{
+        label: 'アラートを設定',
+        onClick: onSettings,
+        icon: <Settings2 />,
+      }}
+    />
   )
 }

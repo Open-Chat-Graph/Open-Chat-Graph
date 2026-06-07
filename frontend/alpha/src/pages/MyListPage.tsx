@@ -219,14 +219,14 @@ const MyListPage = memo(() => {
   // Early returns for error and empty states
   if (error) {
     return (
-      <div className="p-3 md:p-6">
+      <div className="absolute inset-0 overflow-y-auto p-3 md:p-6">
         <ErrorState />
       </div>
     )
   }
   if (myListData.items.length === 0) {
     return (
-      <div className="p-3 md:p-6">
+      <div className="absolute inset-0 overflow-y-auto p-3 md:p-6">
         <EmptyState />
       </div>
     )

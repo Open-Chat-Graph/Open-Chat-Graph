@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { History, Bookmark, X, Trash2 } from 'lucide-react'
-import { categoryName } from '@/lib/categories'
+import { History, Bookmark, X, Trash2, Search } from 'lucide-react'
+import { CATEGORIES, categoryName } from '@/lib/categories'
 import { sortMetricLabel } from '@/lib/sort-options'
 import { useLayout } from '@/contexts/layout-context'
 import {
@@ -15,6 +15,7 @@ import {
   removeSavedSearch,
   type SavedSearch,
 } from '@/services/savedSearches'
+import { EmptyState } from './EmptyState'
 
 /** 条件の短い要約（カテゴリ・ソート軸）。キーワードはチップ本体に出すのでここでは出さない。 */
 function conditionSummary(category: number, sort: string, order: string): string {
@@ -24,10 +25,16 @@ function conditionSummary(category: number, sort: string, order: string): string
   return parts.join(' ・ ')
 }
 
+/** 初回ランディング向けの人気カテゴリ（id=0 除く上位8件） */
+const FEATURED_CATEGORIES = CATEGORIES.filter((c) => c.id !== 0).slice(0, 8)
+
 /**
  * 検索の初期/空状態ランディング。
  * 「最近の検索キーワード」（自動履歴）と「保存した検索条件」を出し、
  * タップで再検索（キーワード＋カテゴリ＋ソートを復元）する。localStorage 駆動。
+ *
+ * 履歴・保存条件が一切無い初回アクセスは EmptyState（カテゴリチップ）を出す。
+ * 履歴がある場合の表示は現状維持。
  *
  * 履歴の自動追記は SearchPage 側（検索完了時）が行う。ここは表示・再適用・削除のみ。
  */
@@ -66,7 +73,33 @@ export function SearchLanding() {
   const hasHistory = history.length > 0
   const hasSaved = saved.length > 0
 
-  if (!hasHistory && !hasSaved) return null
+  // 履歴も保存条件も無い初回: カテゴリチップで誘導
+  if (!hasHistory && !hasSaved) {
+    return (
+      <div data-testid="search-landing-first" className="space-y-5">
+        <EmptyState
+          icon={<Search />}
+          title="キーワードでオプチャを探す"
+          description="上の検索バーにキーワードを入力するか、カテゴリから探してみてください。"
+        />
+        <section className="px-1">
+          <h2 className="mb-2.5 text-xs font-medium text-muted-foreground">カテゴリから探す</h2>
+          <div className="flex flex-wrap gap-2">
+            {FEATURED_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => apply('', cat.id, 'member', 'desc')}
+                className="rounded-full border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:border-primary/40"
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6" data-testid="search-landing">
