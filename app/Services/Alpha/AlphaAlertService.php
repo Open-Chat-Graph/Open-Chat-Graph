@@ -20,6 +20,7 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *          両経路とも「ウォッチ登録より前から在った部屋を初回に大量配信しない」点で対称。
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
  *   ③ マイリスト          … %しきい値での上昇・下降を検出
+ *   ④ 機微シグナル        … ウォッチ部屋の room_change / rank_jump / pace（AlphaSignalDetectionService に委譲）
  *
  * 負荷対策:
  *   - LINE公式APIは「登録キーワード(＋カテゴリ)のユニーク集合」に対してのみ叩く（ユーザー数に依存しない）。
@@ -28,10 +29,11 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  * 重複防止:
  *   - ① emid は alpha_keyword_seen_ja(keyword_watch_id, emid) に記録、2回目以降は通知しない。
  *   - ②③ は alpha_notification_ja.dedup_key（時刻 bucket 込み）で同一毎時の重複保存を防ぐ。
+ *   - ④ は dedup_key（room_change=変更内容hash+毎時 / rank_jump・pace=日1回）で防ぐ。
  *
  * 毎時処理を止めないため、各ステップは try/catch で握りつぶしログのみ（呼び出し側で集約）。
  *
- * @return array{computedAt:string, keywordHits:int, movements:int, notifiedUserIds:string[], errors:array<int,string>}
+ * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, notifiedUserIds:string[], errors:array<int,string>}
  */
 class AlphaAlertService
 {
@@ -49,13 +51,14 @@ class AlphaAlertService
     public function __construct(
         private AlphaAlertRepository $repo,
         private AlphaKeywordSearchClient $searchClient,
+        private AlphaSignalDetectionService $signalDetection,
     ) {
     }
 
     /**
      * 毎時 cron 本体。
      *
-     * @return array{computedAt:string, keywordHits:int, movements:int, notifiedUserIds:string[], errors:array<int,string>}
+     * @return array{computedAt:string, keywordHits:int, movements:int, signals:int, notifiedUserIds:string[], errors:array<int,string>}
      */
     public function run(): array
     {
@@ -64,6 +67,7 @@ class AlphaAlertService
         $errors = [];
         $keywordHits = 0;
         $movements = 0;
+        $signals = 0;
         $this->notifiedUserIds = [];
 
         try {
@@ -84,10 +88,24 @@ class AlphaAlertService
             $errors[] = 'mylist: ' . $e->getMessage();
         }
 
+        // ④ ウォッチ部屋の機微検知（room_change / rank_jump / pace）。
+        //    通知ユーザーは既存の notifiedUserIds 機構に合流し Web Push tickle の対象になる。
+        try {
+            $sig = $this->signalDetection->detect($hourBucket);
+            $signals = $sig['count'];
+            foreach ($sig['notifiedUserIds'] as $uid) {
+                $this->notifiedUserIds[$uid] = true;
+            }
+            $errors = array_merge($errors, $sig['errors']);
+        } catch (\Throwable $e) {
+            $errors[] = 'signal: ' . $e->getMessage();
+        }
+
         return [
             'computedAt' => $computedAt,
             'keywordHits' => $keywordHits,
             'movements' => $movements,
+            'signals' => $signals,
             'notifiedUserIds' => array_keys($this->notifiedUserIds),
             'errors' => $errors,
         ];

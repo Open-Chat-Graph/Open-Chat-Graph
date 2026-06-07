@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ApiRepositories\Alpha;
 
 use App\Models\Repositories\DB;
+use App\Models\SQLite\SQLiteRankingPosition;
 use App\Models\UserLogRepositories\UserLogDB;
 
 /**
@@ -686,6 +687,64 @@ class AlphaAlertRepository
             $map[(string)$r['emid']] = (int)$r['id'];
         }
         return $map;
+    }
+
+    // ====================== SQLite参照（rank_jump 検知用） ======================
+
+    /**
+     * SQLite ranking_position（日次の公式ランキング順位）から、指定部屋の直近観測を取得する。
+     *
+     * ranking テーブルは dailyTask が1日1回まとめて書く日次データで、
+     * 1部屋につき category=0（全体）と部屋自身のカテゴリの行が日ごとに入る
+     * （掲載されていない日・カテゴリは行が無い）。
+     * 読み方（category=0=全体ランキング）は AlphaInsightsService の position_trend と同じ。
+     *
+     * 返り値:
+     *   - lastDate: ランキングデータ全体の最新スナップショット日（total_count の最大 time の日付）。
+     *               「現在掲載されているか」のフレッシュネス判定に使う。取れなければ null。
+     *   - rows:     (open_chat_id, category, date DESC) 順の観測行。lookback 日以内のみ。
+     *
+     * @param int[] $ocIds
+     * @return array{
+     *     lastDate: ?string,
+     *     rows: array<int, array{open_chat_id:int, category:int, position:int, time:string, date:string}>
+     * }
+     */
+    public function getRecentRankingObservations(array $ocIds, int $lookbackDays = 14): array
+    {
+        $ocIds = array_values(array_filter(array_map('intval', $ocIds), static fn($i) => $i > 0));
+        if (empty($ocIds)) {
+            return ['lastDate' => null, 'rows' => []];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ocIds), '?'));
+        $since = date('Y-m-d', strtotime('-' . max(1, $lookbackDays) . ' days'));
+
+        SQLiteRankingPosition::connect(['mode' => '?mode=ro']);
+
+        // 最新スナップショット日（total_count は1日×カテゴリにつき1行の小さなテーブル）
+        $lastDate = SQLiteRankingPosition::fetchColumn("SELECT DATE(MAX(time)) FROM total_count");
+
+        $rows = SQLiteRankingPosition::fetchAll(
+            "SELECT open_chat_id, category, position, time, date
+             FROM ranking
+             WHERE open_chat_id IN ({$placeholders}) AND date >= ?
+             ORDER BY open_chat_id ASC, category ASC, date DESC",
+            array_merge($ocIds, [$since])
+        );
+
+        SQLiteRankingPosition::$pdo = null;
+
+        return [
+            'lastDate' => $lastDate !== false && $lastDate !== null ? (string)$lastDate : null,
+            'rows' => array_map(static fn($r) => [
+                'open_chat_id' => (int)$r['open_chat_id'],
+                'category' => (int)$r['category'],
+                'position' => (int)$r['position'],
+                'time' => (string)$r['time'],
+                'date' => (string)$r['date'],
+            ], $rows),
+        ];
     }
 
     private function nullableInt(mixed $v): ?int

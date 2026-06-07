@@ -1061,6 +1061,9 @@ class AlphaApiController
      * GET /alpha-api/alerts
      *   ?markRead=all          … 取得後に全件既読化
      *   ?markRead=1,2,3        … 指定id既読化
+     *
+     * 応答: keywordHits / movements（payload 展開済み）＋ signals（機微シグナル3種
+     * room_change / rank_jump / pace。payload はネストのまま）。unreadCount は全 type 込み。
      */
     function alertsGet(AuthInterface $auth, AlphaAlertRepository $repo)
     {
@@ -1077,11 +1080,26 @@ class AlphaApiController
         $notifications = $repo->getNotifications($userId);
 
         // type 別に振り分けてフロントが扱いやすい形にする
+        // 機微シグナル3種は payload をネストしたまま返す（フロント契約: {id,type,isRead,createdAt,payload}）
+        $signalTypes = ['room_change' => true, 'rank_jump' => true, 'pace' => true];
         $keywordHits = [];
         $movements = [];
+        $signals = [];
         $unreadCount = 0;
         foreach ($notifications as $n) {
             if (!$n['is_read']) $unreadCount++;
+
+            if (isset($signalTypes[$n['type']])) {
+                $signals[] = [
+                    'id' => $n['id'],
+                    'type' => $n['type'],
+                    'isRead' => $n['is_read'],
+                    'createdAt' => strtotime($n['created_at']),
+                    'payload' => $n['payload'],
+                ];
+                continue;
+            }
+
             $item = [
                 'id' => $n['id'],
                 'type' => $n['type'],
@@ -1107,6 +1125,7 @@ class AlphaApiController
         return response([
             'keywordHits' => $keywordHits,
             'movements' => $movements,
+            'signals' => $signals,
             'unreadCount' => $unreadCount,
             'computedAt' => $notifications[0]['created_at'] ?? null,
         ]);
