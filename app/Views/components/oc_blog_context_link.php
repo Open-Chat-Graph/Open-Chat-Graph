@@ -41,7 +41,7 @@ if (in_array($pattern, ['surge_up', 'strong_growth', 'recovering'], true)) {
 ?>
 <a class="oc-narrative__article unset" href="<?php echo url('blog/' . $_link[0]) ?>"><span aria-hidden="true">📖</span> <?php echo h($_link[1]) ?> →</a>
 <style>
-    /* 「押せそう」を優先しテキストリンクの慣習(青+下線)に寄せる。サイズ・太さは控えめのまま */
-    .oc-narrative__article { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: bold; color: var(--c-text-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; font-family: var(--font-family); }
-    .oc-narrative__article:hover { text-decoration-thickness: 2px; }
+    /* 「押せそう」は下線で出す。リンク青はダークの無彩色基調から浮くため、文字は本文格・下線だけ薄める */
+    .oc-narrative__article { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: bold; color: var(--c-text-1); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--c-text-3); font-family: var(--font-family); }
+    .oc-narrative__article:hover { color: var(--c-brand); text-decoration-color: var(--c-brand); }
 </style>
