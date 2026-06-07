@@ -13,6 +13,7 @@ use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
+use App\Services\Alpha\AlphaGraphEmbedService;
 use App\Services\Alpha\AlphaInsightsService;
 use App\Services\Alpha\AlphaLineUrlFormatter;
 use App\Services\Alpha\AlphaReferrerFormatter;
@@ -258,6 +259,24 @@ class AlphaApiController
             'members' => $members,
             'rankings' => $rankings,
         ]);
+    }
+
+    /**
+     * グラフ埋め込みデータ取得API（Alpha SPA 向け）
+     * GET /alpha-api/oc/{open_chat_id}/graph-embed
+     */
+    function graphEmbed(
+        AlphaGraphEmbedService $graphEmbedService,
+        int $open_chat_id
+    ) {
+        Reception::$isJson = true;
+
+        $payload = $graphEmbedService->build($open_chat_id);
+        if ($payload === null) {
+            return response(['error' => 'OpenChat not found'], 404);
+        }
+
+        return response($payload);
     }
 
     /**

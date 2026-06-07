@@ -922,6 +922,11 @@ Route::path('alpha-api/stats/{open_chat_id}/graph', [AlphaApiController::class, 
     ->matchStr('rankingCategory', emptyAble: true, maxLen: 20, default: 'all')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - グラフ埋め込みデータ取得（Alpha SPA 向け）
+Route::path('alpha-api/oc/{open_chat_id}/graph-embed', [AlphaApiController::class, 'graphEmbed'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 // Alpha API - 一括統計取得（マイリスト用）
 Route::path('alpha-api/batch-stats@post', [AlphaApiController::class, 'batchStats'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
