@@ -57,13 +57,13 @@ function MetricTile({
   sub?: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border bg-muted/30 px-3 py-2.5">
+    <div className="surface-tonal flex flex-col gap-1 px-3 py-2.5">
       <div className="flex items-center gap-1.5">
         <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', accent)} aria-hidden />
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-[11px] tracking-wide font-medium text-muted-foreground">{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className="font-display text-xl font-bold leading-none tabular-nums text-foreground">
+        <span className="font-display text-2xl font-bold leading-none tabular-nums text-foreground">
           {value}
         </span>
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}

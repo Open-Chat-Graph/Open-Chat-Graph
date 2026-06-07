@@ -20,6 +20,7 @@ interface LabsRankingCardProps {
   rank: number
   primary: LabsPrimary
   onRoomClick: (id: number) => void
+  highlight?: boolean
 }
 
 // 1指標。主役は大きく primary 色、それ以外は控えめ。sub に「うちSEO経由/直接・間接」を添える。
@@ -57,7 +58,7 @@ function Stat({
 function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPrimary }) {
   const seoTotal = room.searchClicks + room.seoIndirect
   return (
-    <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
+    <div className="surface-tonal mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 px-2.5 py-2">
       <Stat label="アクセス数" value={room.pageviews} unit="PV" emphasize={primary === 'pv'} />
       <Stat
         label="SEO流入(合計)"
@@ -79,7 +80,7 @@ function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPr
 // 入室数は到達した部屋の参加リンク押下を流入PV比で按分した近似値。
 function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: LabsPrimary }) {
   return (
-    <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 rounded-md border bg-muted/40 px-2.5 py-2">
+    <div className="surface-tonal mt-2 flex flex-wrap items-end gap-x-5 gap-y-2 px-2.5 py-2">
       <Stat label="アクセス数" value={page.pageviews} unit="PV" emphasize={primary === 'pv'} />
       <Stat
         label="SEO流入"
@@ -107,14 +108,14 @@ function RankBadge({ rank }: { rank: number }) {
   )
 }
 
-export const LabsRankingCard = memo(({ entity, rank, primary, onRoomClick }: LabsRankingCardProps) => {
+export const LabsRankingCard = memo(({ entity, rank, primary, onRoomClick, highlight }: LabsRankingCardProps) => {
   // 非オプチャページ。本家ページを新規タブで開く。
   if (entity.kind === 'page') {
     const { page } = entity
     return (
       <Card
         data-testid={`labs-page-${page.path}`}
-        className="cursor-pointer select-none overflow-hidden transition-shadow hover:shadow-md"
+        className={cn('cursor-pointer select-none overflow-hidden transition-shadow hover:shadow-md', highlight && 'surface-highlight')}
         onClick={() => window.open('https://openchat-review.me' + page.path, '_blank', 'noopener')}
       >
         <CardContent className="flex items-start gap-3 p-3 md:p-4">
@@ -146,7 +147,7 @@ export const LabsRankingCard = memo(({ entity, rank, primary, onRoomClick }: Lab
   return (
     <Card
       data-testid={`labs-card-${room.id}`}
-      className="cursor-pointer select-none overflow-hidden transition-shadow hover:shadow-md"
+      className={cn('cursor-pointer select-none overflow-hidden transition-shadow hover:shadow-md', highlight && 'surface-highlight')}
       onClick={() => onRoomClick(room.id)}
     >
       <CardContent className="flex items-start gap-3 p-3 md:p-4">

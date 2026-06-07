@@ -262,6 +262,7 @@ const LabsPage = memo(() => {
                     rank={index + 1}
                     primary={primary}
                     onRoomClick={handleCardClick}
+                    highlight={index === 0}
                   />
                 ))}
               </div>

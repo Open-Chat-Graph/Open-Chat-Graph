@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  /* 主役面: primary色の淡い背景＋リング。ダーク/ライト両対応。border無し。 */
+  .surface-highlight {
+    @apply bg-primary/[0.06] ring-1 ring-primary/20 rounded-lg;
+  }
+
+  /* 副次面: muted の薄い背景。border無し。 */
+  .surface-tonal {
+    @apply bg-muted/40 rounded-lg;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

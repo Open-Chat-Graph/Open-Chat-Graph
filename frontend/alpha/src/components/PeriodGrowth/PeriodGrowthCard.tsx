@@ -49,16 +49,17 @@ export const PeriodGrowthCard = memo(({ item, rank, onCardClick }: PeriodGrowthC
   const isDown = item.diff < 0
   const createdAtText = formatUnixDate(item.createdAt)
   const registeredAtText = formatUnixDate(item.registeredAt)
+  const isTopThree = rank <= 3
 
   return (
     <Card
       data-testid={`period-growth-card-${item.id}`}
-      className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden select-none"
+      className={`hover:shadow-md transition-shadow cursor-pointer overflow-hidden select-none${isTopThree ? ' surface-highlight' : ''}`}
       onClick={() => onCardClick(item.id)}
     >
       <CardContent className="flex items-start gap-3 p-3 md:p-4">
-        {/* 順位 */}
-        <span className="flex-shrink-0 w-6 pt-0.5 text-center text-sm font-bold tabular-nums text-muted-foreground">
+        {/* 順位: 上位3位は primary 色＋大きく、4位以下は muted */}
+        <span className={`flex-shrink-0 w-8 pt-0.5 text-center text-2xl font-bold tabular-nums leading-none${isTopThree ? ' text-primary' : ' text-muted-foreground'}`}>
           {rank}
         </span>
 
@@ -114,14 +115,14 @@ export const PeriodGrowthCard = memo(({ item, rank, onCardClick }: PeriodGrowthC
           )}
 
           {/* 期間増減：pastMember → current の遷移 ＋ 実日付 */}
-          <div className="mt-2 rounded-md border bg-muted/40 px-2.5 py-1.5">
+          <div className="surface-tonal mt-2 px-2.5 py-1.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground min-w-0">
                 <span className="whitespace-nowrap">{formatMemberCompact(item.pastMember)}</span>
                 <ArrowRight className="h-3 w-3 flex-shrink-0 opacity-60" aria-hidden />
                 <span className="whitespace-nowrap font-medium text-foreground">{formatMemberCompact(item.member)}</span>
               </div>
-              <div className={`flex items-center gap-1 whitespace-nowrap text-sm font-bold tabular-nums ${diffColorClass(item.diff)}`}>
+              <div className={`flex items-center gap-1 whitespace-nowrap text-base font-bold tabular-nums ${diffColorClass(item.diff)}`}>
                 {isUp && <TrendingUp className="h-3.5 w-3.5" aria-hidden />}
                 {isDown && <TrendingDown className="h-3.5 w-3.5" aria-hidden />}
                 <span>{formatDiff(item.diff)}</span>

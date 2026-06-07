@@ -82,26 +82,26 @@ export const DetailStats = memo(({
   // 1指標分の表示（ラベル＋符号付き増減＋%）。本家詳細同様、3指標を横並びで見せる。
   const renderMetric = (label: string, has: boolean, diff: number | null, percent: number | null) => (
     <div key={label} className="flex flex-col">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-[11px] tracking-wide text-muted-foreground">{label}</span>
       {has && diff !== null ? (
-        <span className={`text-sm font-semibold tabular-nums ${diffColor(diff)}`}>
+        <span className={`text-base font-semibold tabular-nums ${diffColor(diff)}`}>
           {fmtDiff(diff)}
           {percent !== null && percent !== undefined && diff !== 0 && (
             <span className="ml-0.5 text-xs font-normal">({percent > 0 ? '+' : ''}{percent.toFixed(1)}%)</span>
           )}
         </span>
       ) : (
-        <span className="text-sm font-semibold text-muted-foreground">N/A</span>
+        <span className="text-base font-semibold text-muted-foreground">N/A</span>
       )}
     </div>
   )
 
   return (
     <div className="max-w-[var(--content-w)] mx-auto space-y-3">
-      {/* メンバー数（主役）＋ 3指標 */}
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+      {/* メンバー数（主役）＋ 3指標: surface-highlight で主役の面に昇格 */}
+      <div className="surface-highlight flex flex-wrap items-end gap-x-6 gap-y-3 px-4 py-3">
         <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground">メンバー</span>
+          <span className="text-[11px] tracking-wide text-muted-foreground">メンバー</span>
           <span className="text-2xl font-bold leading-none tabular-nums">
             {currentMember.toLocaleString()}
             <span className="ml-0.5 text-base font-medium text-muted-foreground">人</span>
