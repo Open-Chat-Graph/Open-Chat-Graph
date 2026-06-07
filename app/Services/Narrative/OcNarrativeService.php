@@ -504,8 +504,7 @@ class OcNarrativeService
      * - new / stagnant: % は出さず実数のみ (7 日)
      * - 小規模 (tiny): % はノイズなので実数のみ (30 日 / 7 日)
      * - 通常: 3 ヶ月 / 1 ヶ月 を実数 + % 併記。
-     *   1 週間はほぼ常に 0 近傍でノイズなので、トレンド文が直近 24h / 1 週間に
-     *   言及するサージ時のみ添える
+     *   1 週間の数字はヘッダーの stats に常時表示されているため本文には出さない
      */
     private function buildPeriodSentence(string $pattern, array $m, int $curr): ?string
     {
@@ -526,10 +525,8 @@ class OcNarrativeService
         }
 
         // 通常パターン: 実数 + % 併記
-        $pct7 = $this->safePct($m['m7'] ?? null, $curr);
         $pct30 = $this->safePct($m['m30'] ?? null, $curr);
         $pct90 = $this->safePct($m['m90'] ?? null, $curr);
-        $diff7 = $this->diff($curr, $m['m7'] ?? null);
         $diff30 = $this->diff($curr, $m['m30'] ?? null);
         $diff90 = $this->diff($curr, $m['m90'] ?? null);
 
@@ -539,9 +536,6 @@ class OcNarrativeService
         }
         if ($pct30 !== null && $diff30 !== null) {
             $parts[] = sprintfT('1 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff30), $this->signedFloatFormat($pct30));
-        }
-        if (in_array($pattern, ['surge_up', 'surge_down'], true) && $pct7 !== null && $diff7 !== null) {
-            $parts[] = sprintfT('1 週間で %s 人 (%s%%)', $this->signedNumberFormat($diff7), $this->signedFloatFormat($pct7));
         }
         if (empty($parts)) {
             return null;
