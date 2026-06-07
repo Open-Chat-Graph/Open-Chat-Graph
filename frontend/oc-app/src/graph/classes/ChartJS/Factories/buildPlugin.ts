@@ -57,6 +57,9 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return chart.data.datasets.map((ds: any, i: number) => ({
                   text: ds.label,
+                  // fontColor を渡さないと fillStyle が未設定のまま描画され
+                  // ダークテーマで文字が背景と同化する（Chart.js は item.fontColor を参照）
+                  fontColor: getColors().text.primary,
                   fillStyle: colors[i] ?? getColors().text.tertiary,
                   strokeStyle: colors[i] ?? getColors().text.tertiary,
                   lineWidth: 0,
