@@ -65,6 +65,15 @@
     --header-searchbar-h: calc(var(--header-h) + var(--searchbar-h)); /* 初期値104px。実際は実測で上書き（下記） */
   }
 
+  /* デスクトップは中央カラムを広げる（700px固定だとPCで幅が狭すぎる）。
+     上限1080px・常に左右24pxの余白を確保。--shell-* / --main-offset-* は
+     calc が使用時解決のため、この上書きだけで全消費箇所（ヘッダ/パネル/オーバーレイ/詳細）に効く */
+  @media (min-width: 1024px) {
+    :root {
+      --content-w: min(1080px, calc(100vw - var(--sidebar-lg) - 48px));
+    }
+  }
+
   /*
    * ===== オフセット契約（重ね＋位置の意図。重ね順は tailwind.config.js の zIndex を参照）=====
    * 固定ヘッダの上にコンテンツが潜らないための約束事。

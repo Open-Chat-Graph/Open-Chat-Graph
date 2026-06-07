@@ -165,7 +165,7 @@ const DetailPage = memo(() => {
           の2カラム。モバイル(〜lg未満)は従来の縦積み順を維持（DOM順そのまま、掲載履歴のみ
           2箇所マウントの表示切替で末尾に残す）。右カラムは固定320pxで、コンテナが広がっても
           補助ブロックが間延びしないようにする。 */}
-      <div className="space-y-4 pb-20 md:pb-0 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] lg:gap-6 lg:items-start lg:space-y-0">
+      <div className="space-y-4 pb-20 md:pb-0 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)] xl:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:gap-6 lg:items-start lg:space-y-0">
         {/* 左カラム: ヒーロー（画像・名前・説明・統計）＋グラフ＋掲載履歴(lgのみ) */}
         <div className="space-y-4 min-w-0">
           {/* 画像はマージンなし */}
