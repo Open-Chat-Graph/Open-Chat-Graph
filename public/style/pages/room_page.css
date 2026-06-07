@@ -37,7 +37,8 @@ html {
 .oc-narrative__text {
   margin: 0;
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 130%;
+  letter-spacing: -0.1px;
   color: var(--c-text-soft);
   word-break: break-word;
 }
@@ -68,13 +69,14 @@ html {
 
 .oc-narrative__label {
   font-weight: 700;
+  line-height: 140%;
   color: var(--c-text-body);
 }
 
 /* detail はラベルの下に改行して、stats タイトルと同格のグレーで控えめに */
 .oc-narrative__detail {
   display: block;
-  margin-top: 3px;
+  margin-top: 8px;
   color: var(--c-text-3);
 }
 
@@ -85,7 +87,6 @@ html {
 
   .oc-narrative__text {
     font-size: 15px;
-    line-height: 1.85;
   }
 
   .oc-narrative__badge {
@@ -146,27 +147,18 @@ html {
   justify-content: space-between;
   gap: 0;
   margin: 0 1rem;
-  /* スマホ幅: 上の罫線 (.oc-header-hr) を消す分、stats との間に余白で呼吸を持たせる */
-  padding: 14px 0 12px 0;
+  /* 罫線(hr)は全廃し、stats との間も narrative との間も余白のみで区切る */
+  padding: 14px 0 18px 0;
   border: unset;
 }
 
-/* スマホ幅: ヘッダー(stats)とカテゴリ/タグの間は罫線なし (余白のみで区切る) */
-@media screen and (max-width: 511.98px) {
-  .oc-header-hr {
-    display: none;
-  }
-}
-
-/* スマホ幅: カテゴリ/タグ ブロックとボタンの間に細い区切り線を入れ、
-   2つの役割(回遊チップ / 主アクション)を視覚的に分離。上下に均等な余白。 */
+/* スマホ幅: カテゴリ/タグ ブロックとボタンは区切り線なしで、余白のみで分離 */
 .oc-desc-nav .oc-desc-nav-actions {
   display: flex;
   gap: 8px;
   width: 100%;
-  margin-top: 14px;
+  margin-top: 12px;
   padding-top: 16px;
-  border-top: 1px solid var(--c-border);
 }
 
 @media screen and (min-width: 512px) {
@@ -176,17 +168,16 @@ html {
     align-items: center;
     justify-content: space-evenly;
     gap: 1rem;
-    padding: 12px 0;             /* PC: 上の罫線は .oc-header-hr が担う */
+    padding: 20px 0;             /* PC: 罫線廃止のぶん上下余白で呼吸を持たせる */
     border: unset;
   }
 
-  /* PC: 区切り線/上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
+  /* PC: 上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
      ボタンは下の max-width:250px で頭打ち＋右寄せ＝元のPCレイアウトに復元。
      長いタグがボタン下に潜り込まないよう、チップ側を max-width で頭打ちにし省略(…)で truncate(下の .oc-nav-chip)。 */
   .oc-desc-nav .oc-desc-nav-actions {
     margin-top: 0;
     padding-top: 0;
-    border-top: none;
   }
 
   .oc-desc-nav .open-btn.sp-btn {
