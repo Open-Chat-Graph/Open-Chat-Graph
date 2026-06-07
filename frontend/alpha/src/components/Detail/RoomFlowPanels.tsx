@@ -51,8 +51,11 @@ export function RoomFlowPanels({
   searchQueries: RoomSearchQuery[]
   referrers: RoomReferrer[]
 }) {
+  // 横並びはビューポートでなく実コンテナ幅で判定（auto-fit）。
+  // PCの詳細2カラムでは右カラム(340-400px)に入るため、固定 sm:grid-cols-2 だと
+  // 1窓170px前後になりラベルが数文字で切れる。508px未満なら自動で縦積み1カラム
   return (
-    <div className="grid grid-cols-1 gap-2 px-3 pb-3 sm:grid-cols-2">
+    <div className="grid gap-2 px-3 pb-3 [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
       {/* 流入キーワード：Google 検索でこのページに辿り着いた語（多い順） */}
       {searchQueries.length > 0 && (
         <FlowPanel
