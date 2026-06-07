@@ -225,6 +225,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </aside>
     <?php endif ?>
 
+    <?php // ブログへの回遊導線（ja のみ・部屋の統計を見る文脈に合う記事を選定） ?>
+    <?php viewComponent('blog_related_shelf', ['slugs' => ['openchat-kiken-anzen', 'openchat-member-fuyasu', 'openchat-ninzu-jogen']]) ?>
+
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
       <section class="comment-section" style="padding-top: var(--sp-section-gap); padding-bottom: 12px;" id="comment-section">

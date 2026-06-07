@@ -125,6 +125,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('theme_discovery', ['discovery' => $_discovery]) ?>
     <?php endif ?>
 
+    <?php // ブログへの回遊導線（ja のみ・部屋を探している文脈に合う記事を選定） ?>
+    <?php viewComponent('blog_related_shelf', ['slugs' => ['openchat-sagashikata', 'openchat-hajimekata', 'openchat-kiken-anzen']]) ?>
+
     <?php viewComponent('footer_inner') ?>
 
   </article>
