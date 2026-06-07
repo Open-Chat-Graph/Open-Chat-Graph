@@ -16,6 +16,13 @@ class StatisticsChartDto
 
     public string $endDate = '';
 
+    /**
+     * 期間タブ毎にローソク足(OHLC)データが存在するか
+     *
+     * @var array{ week: bool, month: bool, all: bool }
+     */
+    public array $ohlcAvailability = ['week' => false, 'month' => false, 'all' => false];
+
     function __construct(string $startDate, string $endDate)
     {
         $this->startDate = $startDate;

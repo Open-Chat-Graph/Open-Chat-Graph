@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Statistics;
 
+use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 
@@ -11,6 +12,7 @@ class StatisticsChartArrayService
 {
     function __construct(
         private StatisticsPageRepositoryInterface $statisticsPageRepository,
+        private StatisticsOhlcRepositoryInterface $statisticsOhlcRepository,
     ) {}
 
     /**
@@ -28,11 +30,47 @@ class StatisticsChartArrayService
 
         $dto = new StatisticsChartDto($memberStats[0]['date'], $memberStats[count($memberStats) - 1]['date']);
 
-        return $this->generateChartArray(
+        $this->generateChartArray(
             $dto,
             $this->generateDateArray($dto->startDate, $dto->endDate),
             $memberStats
         );
+
+        $this->setOhlcAvailability($dto, $open_chat_id);
+
+        return $dto;
+    }
+
+    /**
+     * 期間タブ毎のローソク足(OHLC)データ有無を設定する
+     *
+     * 各期間タブはグラフ末尾からの日数ウィンドウ（1週間=8件, 1ヶ月=31件）を表示するため、
+     * ウィンドウ内のOHLC件数で判定する
+     * - 1週間: ウィンドウ内の全日分が揃っている場合のみ有効
+     * - 1ヶ月: ウィンドウ内の半分以上の日にあれば有効
+     * - 全期間: 1件でもあれば有効
+     */
+    private function setOhlcAvailability(StatisticsChartDto $dto, int $open_chat_id): void
+    {
+        $len = count($dto->date);
+        $weekWindow = min(8, $len);
+        $monthWindow = min(31, $len);
+
+        $counts = $this->statisticsOhlcRepository->getOhlcCounts(
+            $open_chat_id,
+            $dto->date[$len - $weekWindow],
+            $dto->date[$len - $monthWindow],
+        );
+
+        if ($counts['all_count'] === 0) {
+            return;
+        }
+
+        $dto->ohlcAvailability = [
+            'week' => $counts['week_count'] >= $weekWindow,
+            'month' => $counts['month_count'] * 2 >= $monthWindow,
+            'all' => true,
+        ];
     }
 
     /**  
