@@ -21,7 +21,7 @@ li {
 
 .recommend-header-time {
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .ranking-page-main {
@@ -38,7 +38,7 @@ li {
 
 .ranking-page-main .talkroom_banner_img_figure figcaption {
   font-size: 9px;
-  color: #b7b7b7;
+  color: var(--c-text-5);
   display: block;
   /*   text-overflow: ellipsis;
   white-space: nowrap;
@@ -97,7 +97,7 @@ li {
   font-size: 21px;
   font-weight: bold;
   line-height: 1.25;
-  color: #111;
+  color: var(--c-text-1);
   display: block;
   white-space: break-spaces;
   margin-bottom: 4px;
@@ -121,28 +121,28 @@ li {
 
 .recommend-data-desc {
   font-size: 13px;
-  color: #06c755;
+  color: var(--c-brand);
 }
 
 .recommend-header-desc {
   display: block;
   padding: 0 1rem;
   font-size: 14px;
-  color: #555;
+  color: var(--c-text-mid-2);
   line-height: 1.3;
   margin-bottom: 8px;
 }
 
 .recommend-header-desc.desc-bottom {
   font-size: 15px;
-  color: #555;
+  color: var(--c-text-mid-2);
   line-height: 1.6;
   margin: 0;
 }
 
 .recommend-header-desc.desc-bottom .desc-aside {
   font-size: 12px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .top-ranking-list-aside {
@@ -269,11 +269,11 @@ li {
   text-decoration: none;
   cursor: pointer;
   align-items: center;
-  background-color: #fff;
-  border: 1px solid #e8e8e8;
+  background-color: var(--c-bg);
+  border: 1px solid var(--c-border-plain);
   border-radius: 36px;
   box-sizing: border-box;
-  color: #111;
+  color: var(--c-text-1);
   display: inline-flex;
   font-size: 13px;
   height: 36px;
@@ -296,13 +296,13 @@ li {
 }
 
 .recommend-desc {
-  color: #555;
+  color: var(--c-text-mid-2);
   font-size: 14px;
   line-height: 1.9;
 }
 
 .recommend-desc2 {
-  color: #555;
+  color: var(--c-text-mid-2);
   font-size: 14px;
   line-height: 1.9;
 }
@@ -327,7 +327,7 @@ section aside:hover {
 }
 
 .list-title {
-  color: #111;
+  color: var(--c-text-1);
   font-size: 15px;
   margin-bottom: 6px;
   display: flex;
@@ -344,7 +344,7 @@ section aside:hover {
 .list-aside details {
   margin: 0;
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
   font-weight: normal;
 }
 
@@ -362,7 +362,7 @@ section aside:hover {
 
 .list-aside-desc {
   font-size: 13px;
-  color: #555;
+  color: var(--c-text-mid-2);
   display: block;
 }
 
@@ -373,7 +373,7 @@ section aside:hover {
   display: inline-block;
   fill: currentcolor;
   flex-shrink: 0;
-  color: rgb(7, 181, 59);
+  color: var(--c-up);
   font-size: 11px;
   margin: -1px -4px;
 }
@@ -393,8 +393,8 @@ section aside:hover {
   content: '';
   width: 6px;
   height: 6px;
-  border-top: 1px solid #111;
-  border-right: 1px solid #111;
+  border-top: 1px solid var(--c-text-1);
+  border-right: 1px solid var(--c-text-1);
   transform: rotate(135deg);
   margin-bottom: 3px;
 }
@@ -404,22 +404,22 @@ section aside:hover {
   display: flex;
   gap: 8px;
   font-size: 12px;
-  color: #888;
+  color: var(--c-text-mid-3);
 }
 
 .diff-member div {
   padding: 2px 4px;
-  border: 1px solid #efefef;
+  border: 1px solid var(--c-border);
   border-radius: 4px;
 }
 
 .app_link a {
   font-size: 13px;
-  color: #777;
+  color: var(--c-text-3);
 }
 
 .recommend-header-desc-text {
-  color: #111;
+  color: var(--c-text-1);
   font-size: 18px;
   white-space: unset;
   font-weight: bold;
@@ -435,17 +435,8 @@ section aside:hover {
     sans-serif;
   line-height: 1.3;
   padding: 0 1rem;
-  margin: 6px 0 2px 0;
-}
-
-.hr-top.recommend {
-  all: unset;
-  display: block;
-  border-bottom: 1px solid #efefef;
-  margin: 0 auto;
-  margin-bottom: 1px;
-  padding: 1px 0;
-  width: calc(100% - 2rem);
+  /* メタ行(統計バッジ+時刻)との区切りは罫線レス。ブロック上側余白をトークンで統一 */
+  margin: var(--sp-section-gap-sm) 0 2px 0;
 }
 
 @media screen and (min-width: 512px) {
@@ -466,7 +457,7 @@ section aside:hover {
   }
 
   .recommend-header h2 {
-    color: #111;
+    color: var(--c-text-1);
     line-height: 1.5;
     font-size: 21px;
   }
@@ -565,7 +556,7 @@ section aside:hover {
   font-weight: 400;
   line-height: 1.7;
   letter-spacing: 0.005em;
-  color: #6b7178;
+  color: var(--c-rg-text);
 }
 
 @media screen and (min-width: 512px) {
@@ -580,7 +571,7 @@ section aside:hover {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #9aa0a6;
+  color: var(--c-rg-muted);
   padding: 2px 0 2px 2px;
 }
 
@@ -588,17 +579,13 @@ section aside:hover {
 /* サーバー側でインラインSVGを生成するため JS/Webフォント不要・高さ固定/img は width&height 明示で CLSなし。 */
 /* 順位改善=緑(#06c755) / 悪化=赤橙(#e8553e) / 横ばい=灰(#9aa0a6)。数値は等幅で誠実に揃える。       */
 .recommend-growth {
-  --rg-color: #9aa0a6;
+  --rg-color: var(--c-rg-muted);
   /* 方向色(ヒーロー方向クラスで上書き)。淡い色味も同時に持たせて装飾に使う。 */
   display: block;
   position: relative;
-  margin: 12px 1rem 4px;
-  padding: 11px 14px 11px;
-  border: 1px solid #eceff3;
-  border-radius: 14px;
-  background: #fff;
-  /* 白地に白で同化しないよう、極薄2枚のシャドウで唯一の"箱"として持ち上げる(主役化)。 */
-  box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 4px 16px rgba(20, 22, 26, 0.05);
+  /* カード装飾(枠/影/角丸/内側パディング)は廃止し、他ブロックと同じ余白リズムに揃える */
+  margin: var(--sp-section-gap) 1rem var(--sp-section-gap);
+  padding: 0;
   overflow: hidden;
   /* 統計の信頼感: 数字は等幅(tabular)で桁を揃える。 */
   font-variant-numeric: tabular-nums;
@@ -638,13 +625,13 @@ section aside:hover {
 /* 2つのアイコンをわずかに重ねて「LINE×オプチャ」のアプリ・ロックアップに見せる。 */
 .recommend-growth__brandimg--oc {
   margin-left: -5px;
-  box-shadow: -1px 0 0 0 #fff, 0 0 0 1.5px #fff;
+  box-shadow: -1px 0 0 0 var(--c-bg), 0 0 0 1.5px var(--c-bg);
 }
 
 .recommend-growth__brandtext {
   font-size: 12px;
   font-weight: 700;
-  color: #2b2f36;
+  color: var(--c-rg-text-strong);
   letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
@@ -656,7 +643,7 @@ section aside:hover {
   margin: 0 0 1px;
   font-size: 16px;
   font-weight: 800;
-  color: #1f2328;
+  color: var(--c-rg-text-heading);
   letter-spacing: 0.01em;
   line-height: 1.25;
 }
@@ -666,7 +653,7 @@ section aside:hover {
   margin: 0 0 10px;
   font-size: 11px;
   font-weight: 500;
-  color: #7b828b;
+  color: var(--c-rg-text-soft);
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
@@ -677,7 +664,7 @@ section aside:hover {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.55;
-  color: #2b2f36;
+  color: var(--c-rg-text-strong);
 }
 
 /* どの部屋の話か: 最高順位を持つ部屋への小さなリンク(サムネ+名前+順位+人数)。 */
@@ -687,17 +674,17 @@ section aside:hover {
   gap: 9px;
   margin-top: 11px;
   padding: 7px 9px;
-  border: 1px solid #e7eaee;
+  border: 1px solid var(--c-rg-line);
   border-radius: 11px;
-  background: #f7f8fa;
+  background: var(--c-rg-surface);
   text-decoration: none;
   color: inherit;
   -webkit-tap-highlight-color: transparent;
 }
 
 .recommend-growth__leader:hover {
-  background: #eef6f0;
-  border-color: #cfe9d9;
+  background: var(--c-rg-green-bg);
+  border-color: var(--c-rg-green-border);
 }
 
 .recommend-growth__leader-img {
@@ -706,7 +693,7 @@ section aside:hover {
   height: 36px;
   border-radius: 8px;
   object-fit: cover;
-  background: #e7eaee;
+  background: var(--c-rg-line);
 }
 
 .recommend-growth__leader-body {
@@ -720,7 +707,7 @@ section aside:hover {
 .recommend-growth__leader-name {
   font-size: 12.5px;
   font-weight: 700;
-  color: #2b2f36;
+  color: var(--c-rg-text-strong);
   line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
@@ -730,7 +717,7 @@ section aside:hover {
 .recommend-growth__leader-meta {
   font-size: 11px;
   font-weight: 600;
-  color: #777e87;
+  color: var(--c-rg-text-mid);
   line-height: 1.3;
 }
 
@@ -738,7 +725,7 @@ section aside:hover {
   flex-shrink: 0;
   font-size: 18px;
   font-weight: 700;
-  color: var(--rg-color, #9aa0a6);
+  color: var(--rg-color, var(--c-rg-muted));
   line-height: 1;
   transition: transform 140ms ease;
 }
@@ -757,7 +744,7 @@ section aside:hover {
   margin-top: 4px;
   font-size: 10.5px;
   font-weight: 600;
-  color: #9aa0a6;
+  color: var(--c-rg-muted);
   letter-spacing: 0.02em;
 }
 
@@ -814,11 +801,6 @@ section aside:hover {
 
 /* デスクトップ: zoom ではなくパディング/余白を素直に広げて精度を保つ。 */
 @media screen and (min-width: 768px) {
-  .recommend-growth {
-    padding: 14px 18px 14px;
-    border-radius: 16px;
-  }
-
   .recommend-growth__metric {
     font-size: 15px;
   }

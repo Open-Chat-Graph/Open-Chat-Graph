@@ -109,7 +109,7 @@ export default function SiteHeaderSearch({
                 sx={{ position: 'absolute', right: '5px', top: '7px', zIndex: 2004 }}
                 onClick={deleteInput}
               >
-                <HighlightOffIcon sx={{ fontSize: '22px', color: '#777' }} />
+                <HighlightOffIcon sx={{ fontSize: '22px', color: 'var(--c-text-3)' }} />
               </IconButton>
             )}
           </Box>

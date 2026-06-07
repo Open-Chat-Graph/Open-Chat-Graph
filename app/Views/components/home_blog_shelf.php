@@ -37,14 +37,14 @@ if (!$_posts) return;
     .home-blog-shelf .hbs-title { all: unset; display: flex; align-items: center; gap: 5px; }
     .home-blog-shelf .hbs-title span:last-child { font-size: 15px; }
     /* タップ領域は padding で広げ、負マージンで見た目の位置は変えない */
-    .home-blog-shelf .hbs-more { font-size: 13.5px; font-weight: bold; color: #06c755; text-decoration: none; white-space: nowrap; padding: .6rem 0 .6rem .6rem; margin: -.6rem 0; }
+    .home-blog-shelf .hbs-more { font-size: 13.5px; font-weight: bold; color: var(--c-brand); text-decoration: none; white-space: nowrap; padding: .6rem 0 .6rem .6rem; margin: -.6rem 0; }
     .home-blog-shelf .hbs-list { all: unset; display: grid; gap: 8px; }
     .home-blog-shelf .hbs-list li { all: unset; }
-    .home-blog-shelf .hbs-card { display: block; padding: .8rem .95rem; border: 1px solid #ededf0; border-radius: 12px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
-    .home-blog-shelf .hbs-card:hover { border-color: #06c755; box-shadow: 0 3px 12px rgba(6, 199, 85, .09); }
-    .home-blog-shelf .hbs-card-t { font-size: 14.5px; font-weight: bold; color: #111; line-height: 1.5; }
+    .home-blog-shelf .hbs-card { display: block; padding: .8rem .95rem; border: 1px solid var(--c-border-muted); border-radius: 12px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+    .home-blog-shelf .hbs-card:hover { border-color: var(--c-brand); box-shadow: 0 3px 12px var(--c-brand-shadow-soft); }
+    .home-blog-shelf .hbs-card-t { font-size: 14.5px; font-weight: bold; color: var(--c-text-1); line-height: 1.5; }
     .home-blog-shelf .hbs-card-m { margin-top: 5px; display: flex; align-items: center; gap: 7px; }
-    .home-blog-shelf .hbs-cat { border: 1px solid #06c755; color: #05a648; border-radius: 999px; padding: 1px 9px; font-weight: bold; font-size: 11px; }
-    .home-blog-shelf .hbs-date { font-size: 11.5px; color: #9aa0a6; }
+    .home-blog-shelf .hbs-cat { border: 1px solid var(--c-brand); color: var(--c-btn-blog-text); border-radius: 999px; padding: 1px 9px; font-weight: bold; font-size: 11px; }
+    .home-blog-shelf .hbs-date { font-size: 11.5px; color: var(--c-rg-muted); }
     @media (min-width: 600px) { .home-blog-shelf .hbs-list { grid-template-columns: 1fr 1fr; } }
 </style>

@@ -31,7 +31,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <div class="openchat-header-right">
           <div>
             <h1 class="talkroom_link_h1 unset"><?php if ($oc['emblem'] === 1) : ?><span class="super-icon sp"></span><?php elseif ($oc['emblem'] === 2) : ?><span class="super-icon official"></span><?php endif ?><?php echo $oc['name'] ?></h1>
-            <a class="link-mark" style="text-decoration: none; width: fit-content;" title="<?php echo $oc['name'] ?>" rel="external" target="_blank" href="<?php echo AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX ?>"><span class="link-title" style="background: unset; color: #b7b7b7; -webkit-text-fill-color: unset; font-weight: normal; line-height: 125%; margin-bottom: -1px;"><!-- <span aria-hidden="true" style="font-size: 10px; margin-right:2px;">🔗</span> --><?php echo t('LINEオープンチャット') ?></span></a>
+            <a class="link-mark" style="text-decoration: none; width: fit-content;" title="<?php echo $oc['name'] ?>" rel="external" target="_blank" href="<?php echo AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX ?>"><span class="link-title" style="background: unset; color: var(--c-text-5); -webkit-text-fill-color: unset; font-weight: normal; line-height: 125%; margin-bottom: -1px;"><!-- <span aria-hidden="true" style="font-size: 10px; margin-right:2px;">🔗</span> --><?php echo t('LINEオープンチャット') ?></span></a>
           </div>
 
           <div class="talkroom_description_box close" id="talkroom_description_box">
@@ -41,7 +41,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             <button id="talkroom-description-close-btn" class="close-btn" title="<?php echo t('一部を表示') ?>"><?php echo t('一部を表示') ?></button>
             <div class="more" id="read_more_btn">
               <div class="more-separater">&nbsp;</div>
-              <button class="unset more-text" style="font-weight: bold; color: #111;" title="<?php echo t('すべて見る') ?>">…<?php echo t('すべて見る') ?></button>
+              <button class="unset more-text" style="font-weight: bold; color: var(--c-text-1);" title="<?php echo t('すべて見る') ?>">…<?php echo t('すべて見る') ?></button>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </div>
 
           <?php if (isset($_hourlyRange)) : ?>
-            <div class="talkroom_number_of_stats" style="line-height: 135%; margin-top: 3px;">
+            <div class="talkroom_number_of_stats stats-hourly" style="line-height: 135%; margin-top: 3px;">
               <div class="number-box ">
                 <span aria-hidden="true" style="margin-right: 1px; font-size: 9px; user-select: none;">🔥</span>
                 <span style="margin-right: 4px;" class="openchat-itme-stats-title"><?php echo $_hourlyRange ?></span>
@@ -61,7 +61,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             </div>
           <?php endif ?>
 
-          <div class="talkroom_number_of_stats">
+          <div class="talkroom_number_of_stats stats-daily">
 
             <?php if (isset($oc['rh24_diff_member']) && $oc['rh24_diff_member'] >= AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) : ?>
               <div class="number-box " style="margin-right: 6px;">
@@ -112,25 +112,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       </section>
 
-      <hr class="hr-top" style="margin-bottom: 8px;">
+      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み (margin/padding/border 含む)。
+               ヘッダーとの区切り罫線(hr)は廃止し、余白のみで区切る */ ?>
 
-      <style>
-        /* /oc のカテゴリ・タグを「押せる」チップ化（回遊強化）。タグ=緑→/recommend、カテゴリ=中立→/ranking。 */
-        .oc-nav-chip{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;border:1px solid transparent;transition:background .12s,border-color .12s,transform .08s}
-        .oc-nav-chip:active{transform:scale(.97)}
-        .oc-nav-chip--category{background:#f1f3f5;color:#28303c;border-color:#e4e8ee}
-        .oc-nav-chip--category:hover{background:#e7eaee}
-        .oc-nav-chip--tag{background:#eefcf3;color:#067a37;border-color:#bfead0}
-        .oc-nav-chip--tag:hover{background:#e2f9ea;border-color:#a6e0bd}
-        /* チップ前置きラベル(カテゴリー/タグ)。チップを主役にし、ラベルは小さく控えめなグレーで補助。
-           「ラベル+チップ」を1ユニット(.oc-nav-pair)としてグルーピングし、左揃え・横並び→入らなければ
-           ユニット単位で改行(各チップが自分のラベルを連れて折り返すので列ズレが出ない)。 */
-        .oc-nav-chips{display:flex;flex-wrap:wrap;align-items:center;column-gap:16px;row-gap:10px;width:100%}
-        .oc-nav-pair{display:inline-flex;align-items:center;gap:8px;min-width:0}
-        .oc-nav-pair__label{font-size:11.5px;font-weight:600;color:#9aa3af;white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
-      </style>
-
-      <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
+      <nav class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
           <span class="oc-nav-chips">
             <?php if (is_int($oc['api_created_at'])) : ?>
@@ -150,16 +135,16 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
         <div class="oc-desc-nav-actions">
           <?php if (isset($_adminDto)) : ?>
-            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #7eb8ff, #3a7bd5); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">✕</a>
+            <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-blue-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">✕</a>
           <?php else : ?>
-            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: linear-gradient(135deg, #ffa751, #e85d04); border-radius: 99px; color: white; text-decoration: none; font-size: 18px;">⚙</a>
+            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-orange-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
           <?php endif ?>
           <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>
               <a href="<?php echo url('oc', $oc['id'], 'jump') ?>" class="openchat_link" style="font-size: 16px;">
                 <div style="display: flex; align-items: center; justify-content: center;">
                   <?php if ($oc['join_method_type'] !== 0) : ?>
-                    <svg style="height: 12px; fill: white; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
+                    <svg style="height: 12px; fill: var(--c-text-inverse); margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.4 489.4" xml:space="preserve">
                       <path d="M99 147v51.1h-3.4c-21.4 0-38.8 17.4-38.8 38.8v213.7c0 21.4 17.4 38.8 38.8 38.8h298.2c21.4 0 38.8-17.4 38.8-38.8V236.8c0-21.4-17.4-38.8-38.8-38.8h-1v-51.1C392.8 65.9 326.9 0 245.9 0 164.9.1 99 66 99 147m168.7 206.2c-3 2.2-3.8 4.3-3.8 7.8.1 15.7.1 31.3.1 47 .3 6.5-3 12.9-8.8 15.8-13.7 7-27.4-2.8-27.4-15.8v-.1c0-15.7 0-31.4.1-47.1 0-3.2-.7-5.3-3.5-7.4-14.2-10.5-18.9-28.4-11.8-44.1 6.9-15.3 23.8-24.3 39.7-21.1 17.7 3.6 30 17.8 30.2 35.5 0 12.3-4.9 22.3-14.8 29.5M163.3 147c0-45.6 37.1-82.6 82.6-82.6 45.6 0 82.6 37.1 82.6 82.6v51.1H163.3z" />
                     </svg>
                   <?php endif ?>
@@ -173,20 +158,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
-      <hr class="hr-top" style="margin-bottom: 8px;">
       <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
-        <section class="oc-narrative" aria-labelledby="oc-narrative-title">
-          <h2 class="oc-narrative__title" id="oc-narrative-title">
-            <span class="oc-narrative__title-icon" aria-hidden="true">📊</span><?php echo t('オプチャグラフの分析') ?>
-          </h2>
-          <p class="oc-narrative__summary"><?php echo h($narrative['summary']) ?></p>
-          <?php if (!empty($narrative['detail'])): ?>
-            <p class="oc-narrative__detail"><?php echo nl2br(h($narrative['detail'])) ?></p>
-          <?php endif ?>
+        <section class="oc-narrative" aria-label="<?php echo t('オプチャグラフの分析') ?>">
+          <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
         </section>
-        <hr class="hr-top" style="margin-bottom: 8px;">
       <?php endif ?>
-      <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
+      <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -248,11 +225,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </aside>
     <?php endif ?>
 
-    <hr class="hr-top" style="margin-bottom: 8px;">
-
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
-      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;" id="comment-section">
+      <section class="comment-section" style="padding-top: var(--sp-section-gap); padding-bottom: 12px;" id="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">

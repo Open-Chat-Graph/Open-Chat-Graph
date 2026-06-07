@@ -1,0 +1,207 @@
+/* ============================================================
+   トップページ (top_content.php)
+   ヒーロー(ブランドロックアップ + 検索) とセクションの縦リズム。
+   区切り罫線(hr)は使わず余白のみで区切る。
+   ============================================================ */
+
+/* ---------- ヒーロー ---------- */
+.oc-home-hero {
+  /* グローバルな section { display:flex; align-items:center } の影響を遮断して通常フローに戻す */
+  display: block;
+  position: relative;
+  padding: 14px 1rem 4px;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* 装飾: 右上の成長スパークライン（ブランドモチーフ）。本文より沈めて気配だけ出す。 */
+.oc-home-hero__spark {
+  position: absolute;
+  right: 10px;
+  top: 12px;
+  width: 150px;
+  height: 52px;
+  color: var(--c-brand);
+  opacity: 0.13;
+  pointer-events: none;
+}
+
+.oc-home-hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.oc-home-hero__eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  color: var(--c-brand);
+}
+
+.oc-home-hero__title {
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
+  color: var(--c-text-1);
+}
+
+/* テーマ切替ピル: タイトル右肩。site_footer.css の見た目を流用し位置だけ調整 */
+.oc-home-hero__theme {
+  margin: 2px 0 0;
+  flex-shrink: 0;
+}
+
+.oc-home-hero__tagline {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 140%;
+  letter-spacing: -0.1px;
+  color: var(--c-text-3);
+}
+
+/* 更新インジケータ: 「生きている統計」の鼓動。ブランド緑の小さなピル */
+.oc-home-hero__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--c-brand);
+  background: var(--c-brand-tint);
+  border-radius: 999px;
+}
+
+.oc-home-hero__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-brand);
+}
+
+.oc-home-hero__time {
+  font-weight: 500;
+}
+
+/* ---------- 検索（公式LINEオープンチャットのトップに倣う） ---------- */
+.oc-hero-search {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.oc-hero-search__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  fill: var(--c-cool-text-weak);
+  pointer-events: none;
+}
+
+/* iOS Safari のフォーカス時オートズーム回避のため font-size は16px以上 */
+.oc-hero-search__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  height: 48px;
+  margin: 0;
+  padding: 0 44px;
+  font-size: 16px;
+  color: var(--c-cool-text-deep);
+  background: var(--c-cool-surface);
+  border: 1.5px solid var(--c-border-2);
+  border-radius: 12px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.oc-hero-search__input::placeholder {
+  color: var(--c-cool-text-weak);
+}
+
+.oc-hero-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.oc-hero-search__input:focus {
+  background: var(--c-bg);
+  border-color: var(--c-brand);
+  box-shadow: 0 0 0 3px var(--c-brand-ring);
+}
+
+.oc-hero-search__clear {
+  position: absolute;
+  right: 6px;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-cool-text-weak);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.oc-hero-search__clear:hover {
+  color: var(--c-cool-text);
+}
+
+.oc-hero-search__clear[hidden] {
+  display: none;
+}
+
+/* ---------- セクションの縦リズム（罫線レス・値は tokens.css の --sp-* で管理） ---------- */
+.top-page .top-ranking,
+.top-page .recent-comment-list {
+  padding: var(--sp-section-gap) 0 var(--sp-section-pad-btm);
+}
+
+.top-page .home-blog-shelf {
+  margin-top: var(--sp-section-gap);
+}
+
+.top-page .modify-top-padding {
+  margin-top: var(--sp-section-gap-sm);
+}
+
+/* ---------- デスクトップ ---------- */
+@media screen and (min-width: 512px) {
+  .oc-home-hero {
+    padding-top: 20px;
+  }
+
+  .oc-home-hero__title {
+    font-size: 34px;
+  }
+
+  .oc-home-hero__spark {
+    right: 16px;
+    width: 180px;
+    height: 62px;
+  }
+}

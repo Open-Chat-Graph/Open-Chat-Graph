@@ -1,0 +1,834 @@
+/* ============================================================
+   デザイントークン（色の単一ソース）
+
+   【ルール】
+   - サイト内で「生の色リテラル」を書いてよいのは原則このファイルだけ。
+     各 CSS / View / React(sx) は var(--c-*) を参照する。
+     検査: `make css-check`（scripts/check-css-colors.sh）
+   - コンポーネントが参照してよいのはセマンティック層（--c-*）のみ。
+     プリミティブ層を直接参照しない。
+   - 例外: admin/* は独自デザインシステムのため対象外。
+     Chart.js 等の canvas 描画色は CSS 変数が効かないため
+     frontend 側の theme.ts（TSパレット）が一次ソース（相互参照コメントで同期）。
+   - 値の追加はこのファイルへ。近似色の勝手な統合はしない
+     （例: 緑 #06c755 / #07b53b / #11d871、青 #1a73e8 / #4d73ff は別トークン）。
+
+   【ダークモード】
+   末尾の「3) ダークモード」ブロック参照（Slate系・shadcn/ui 準拠）。
+   手動トグル（[data-theme]）と OS 連動（prefers-color-scheme）の
+   2系統があり、両ブロックの内容は常に同期させること。
+   ダーク値の正: 旧試験実装 Open-Chat-Graph-Frontend-Stats-Graph の
+   src/util/theme.ts / src/app.tsx（値を変えずに移植）。
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1) プリミティブ層（ブランド系のみ。乱用しない）
+   ------------------------------------------------------------ */
+:root {
+  /* LINE ブランドグリーン */
+  --green-line: #06c755;
+
+  /* ブランド緑グラデーション 5段（site_header のチェックボックス装飾等の実値） */
+  --grad-green-1: #0dc95a;
+  --grad-green-2: #11d871;
+  --grad-green-3: #11d593;
+  --grad-green-4: #12cfcd;
+  --grad-green-5: #16c2c1;
+
+  /* Slate スケール（ダークモード用・shadcn/ui 準拠 + 中間2段） */
+  --slate-50: #f5f7f8;
+  --slate-100: #eff1f2;
+  --slate-200: #e7e9ea;
+  --slate-300: #d3d6d8;
+  --slate-400: #7d8287;
+  --slate-500: #686d72;
+  --slate-600: #3f4347;
+  --slate-700: #2f3336;
+  --slate-750: #1e2126;
+  --slate-800: #16181c;
+  --slate-850: #0d0f10;
+  --slate-900: #000000;
+  --slate-950: #0a0a0a;
+
+  /* 合成グラデーション（チェックボックス等の 332deg 帯） */
+  --c-brand-gradient: linear-gradient(
+    332deg,
+    var(--grad-green-1),
+    var(--grad-green-2) 23.96%,
+    var(--grad-green-3) 55.46%,
+    var(--grad-green-4) 83.85%,
+    var(--grad-green-5)
+  );
+}
+
+/* ------------------------------------------------------------
+   アイコン（data-URI SVG・fill 色込み）
+   SVG-as-image では fill='currentColor' は親の color を継承せず
+   黒に解決される点に注意（--icon-search は事実上の黒アイコン）。
+   ダークモード導入時は、このセクションのトークンごと
+   fill 違いの URI に差し替える（描画パスを変えないため）。
+   ------------------------------------------------------------ */
+:root {
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23b7b7b7' d='M256 0C179.9 0 111.7 33.4 64.9 86.2L0 21.3V192h170.7l-60.2-60.2C145.6 90.5 197.5 64 256 64c106 0 192 85.9 192 192s-86 192-192 192c-53 0-101-21.5-135.8-56.2L75 437c46.4 46.3 110.4 75 181 75 141.4 0 256-114.6 256-256S397.4 0 256 0zm-21.3 106.7v170.7h128v-42.7h-85.3v-128h-42.7z' /%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml, %3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 27' class='search-icon'%3E%3Cpath d='M11.56,3.43a8.26,8.26,0,0,0,0,16.52,8.18,8.18,0,0,0,5-1.72l4.7,4.7a1.1,1.1,0,0,0,1.56,0,1.09,1.09,0,0,0,0-1.55l0,0-4.7-4.7a8.18,8.18,0,0,0,1.72-5A8.28,8.28,0,0,0,11.56,3.43Zm0,2.2A6.06,6.06,0,1,1,5.5,11.69,6,6,0,0,1,11.56,5.63Z' fill='currentColor'%3E%3C/path%3E%3C/svg%3E");
+  --icon-external-teal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%2316c2c1' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
+  --icon-external-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%23b7b7b7' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
+  --icon-info-brand: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 32 32' id='info'%3E%3Cg fill='%2306c755'%3E%3Cpath d='M16 0C7.164 0 0 7.164 0 16s7.164 16 16 16 16-7.164 16-16S24.836 0 16 0zm0 30C8.28 30 2 23.72 2 16S8.28 2 16 2s14 6.28 14 14-6.28 14-14 14zm0-18a2 2 0 0 0-2 2v10a2 2 0 0 0 4 0V14a2 2 0 0 0-2-2zm-2-3.968a2 2 1080 1 0 4 0 2 2 1080 1 0-4 0z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------
+   2) セマンティック層（コンポーネントはここだけ参照する）
+      ライト値 = 既存デザインの現行値（視覚ゼロチェンジ）
+   ------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  /* ------------------------------------------------------------
+     スペーシング（罫線レスの縦リズム）
+     セクションの区切りは hr ではなく余白のみで表現する。
+     値はテーマ非依存（ダークブロックでの再定義は不要）。
+     ------------------------------------------------------------ */
+  --sp-section-gap: 28px;     /* セクション間の標準余白（旧 hr+8px 相当の置き換え） */
+  --sp-section-gap-sm: 16px;  /* セクション内の小区切り（リンク群⇔ボタン群 等） */
+  --sp-section-pad-btm: 14px; /* セクション下の軽い抜け */
+
+  /* テキスト（濃 → 淡） */
+  --c-text-1: #111;            /* 本文・見出し */
+  --c-text-2: #333;            /* やや弱い本文・<b> */
+  --c-text-3: #777;            /* 補足 */
+  --c-text-desc: #777;         /* リストの説明文（React/PHP 共通。ダークは #9aa0a6） */
+  --c-text-stat: #777;         /* メンバー数などの主要数値（ダークでは白＝X流） */
+  --c-text-meta: #aaa;         /* リスト下段のメタ行（メンバー数・増減。ダークは #8b9196） */
+  --c-text-soft: #333;         /* 本文だがダークでは控えめに沈める長文（分析詳細など） */
+  --c-text-body: #111;         /* ルーム説明などの本文（ダークは本文格 #c9cdd1） */
+  --c-text-4: #aaa;            /* 弱い補足 */
+  --c-text-5: #b7b7b7;         /* 最弱・アイコン */
+  --c-text-steel: #8a9097;     /* 青みグレー（リスト補足） */
+  --c-text-link: #1a73e8;      /* テキストリンク青 */
+  --c-text-inverse: #fff;      /* 濃色面の上の文字 */
+
+  /* 背景・サーフェス */
+  --c-bg: #fff;                /* ページ背景 */
+  --c-bg-sub: #fafafa;         /* 微弱背景・ホバー（= rgb(250,250,250)） */
+  --c-surface: #f5f5f5;        /* カード・チップ等の面 */
+  --c-surface-2: #ededf0;      /* 一段濃い面 */
+
+  /* ボーダー */
+  --c-border: #efefef;         /* 標準の罫線 */
+  --c-border-2: #e4e8ee;       /* 青みの罫線 */
+  --c-border-3: rgb(207, 217, 222); /* フォーム・テーブル枠 / disabled 背景（MVP由来） */
+
+  /* ブランド・アクセント */
+  --c-brand: var(--green-line);
+  --c-brand-2: #11d871;        /* 明るいブランド緑（ロゴ・強調） */
+  --c-chip-bg: #fff;           /* タグチップ等の面（ダークでは地より一段持ち上げる） */
+  --c-brand-line: var(--green-line); /* 緑の枠線（ダークでは減光する） */
+  --c-card-bg: #fff;                 /* 記事内カードの面 */
+  --c-green-wash: #eafaf1;           /* 結論ボックスの淡い緑ウォッシュ */
+  --c-btn-brand-bg: var(--green-line);      /* ブランドCTAボタン面 */
+  --c-btn-brand-bg-hover: #05a648;
+  --c-pill-brand-bg: var(--green-line);     /* 「結論」等の小ピル面 */
+  --c-pill-brand-text: #fff;
+  --c-accent-blue: #4d73ff;    /* React 系 UI アクセント青 */
+  --c-accent-teal: #16c2c1;    /* ティール（アイコン・グラデ終端） */
+  --c-accent-red: #d9333f;     /* 強調赤（ランキング帯等） */
+  --c-up: #07b53b;             /* 上昇・増加 */
+  --c-down: #ff5d6d;           /* 下降・減少 */
+
+  /* 影・エフェクト */
+  --c-shadow: rgba(0, 0, 0, 0.1);   /* 半透明シャドウ */
+  --c-shadow-2: #f4f4f4;            /* ソリッドな淡い影（MVP box-shadow） */
+  --c-tap-highlight: rgba(0, 0, 0, 0.1); /* モバイルタップハイライト */
+
+  /* ヘッダー・フッター */
+  --c-header-backdrop: rgba(255, 255, 255, 0.85); /* 固定ヘッダーの半透明背景（blur 併用） */
+  --c-bg-bright: #fffffe;            /* ほぼ純白の面（バッジ・反転文字） */
+  --c-outline-highlight: #bae8e8;    /* 選択アウトライン（淡ティール） */
+  --c-text-dim: #303030;             /* 統合候補: --c-text-2 */
+  --c-border-strong: rgb(189, 189, 189); /* コピーボタン等のはっきりした枠 */
+  --c-overlay: rgba(0, 0, 0, 0.8);   /* ツールチップ・モーダルの黒幕 */
+  --c-surface-3: #f0f0f0;            /* 広告情報ボタン等の小さな面 */
+
+  /* ブログボタン（ヘッダー内・緑系） */
+  --c-btn-blog-text: #05a648;
+  --c-btn-blog-bg: #f1faf4;
+  --c-btn-blog-border: #bfe9cf;
+
+  /* SNS ブランド色（シェアアイコン背景） */
+  --c-sns-x: #000000;
+  --c-sns-hatena: #00a4de;
+
+  /* クールグレー系（テーマ発見 UI・recommend 系） */
+  --c-cool-surface: #f6f8fa;
+  --c-cool-surface-hover: #eef1f5;
+  --c-cool-border-soft: #eef0f3;
+  --c-cool-border: #d7dde6;
+  --c-cool-text-weak: #9aa3af;       /* プレースホルダ・補足 */
+  --c-cool-text: #5b6573;            /* 棚ラベル・メタ情報 */
+  --c-cool-text-strong: #28303c;     /* チップ文字 */
+  --c-cool-text-heading: #1f2937;    /* 行タイトル */
+  --c-cool-text-deep: #0f1620;       /* 見出し・入力文字 */
+
+  /* 一覧ページ系 */
+  --c-border-plain: #e8e8e8;          /* フォーム・タグボタンの控えめな枠 */
+  --c-text-mid: #616161;              /* 統合候補: --c-text-3 */
+  --c-text-mid-2: #555;               /* 統合候補: --c-text-2 */
+  --c-text-taupe: #978170;            /* グラデ文字の非対応ブラウザ用フォールバック */
+  --c-text-gray-mid: rgb(124, 124, 124); /* MUIチップ文字 */
+  --c-red-soft: #ff6868;              /* 入力エラー */
+  --c-green-soft: rgb(77, 199, 100);  /* 登録ボタン緑 */
+  --c-green-soft-50: rgba(77, 199, 100, 0.5);
+  --c-green-ring: rgba(77, 199, 100, 0.9); /* 入力フォーカスリング */
+  --c-green-deep: rgb(52, 134, 67);   /* 登録ボタン hover */
+  --c-highlight-teal: rgba(227, 246, 245, 0.7); /* focus-visible 背景 */
+  --c-shadow-soft: rgba(0, 0, 0, 0.06);
+
+  /* 装飾グラデーション（一覧の見出し文字・もっと見るボタン） */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    rgb(253, 18, 226) 20%,
+    rgb(164, 67, 221),
+    rgb(84, 126, 255) 90%
+  );
+
+  /* 白へのフェード（リスト端の装飾。ダーク時は背景色側に追従させる） */
+  --c-fade-right: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.95) 37%,
+    rgba(255, 255, 255, 1) 99%
+  );
+  --c-fade-bottom: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+
+  /* 公開分析（labs/publication-analytics）系 */
+  --c-text-charcoal: #3d4043;        /* リード文・チップ文字 */
+  --c-text-neutral: #5b6066;         /* ラベル・補足（統合候補: --c-cool-text） */
+  --c-border-muted: #ededf0;         /* 控えめな枠（値は --c-surface-2 と同一、役割で分離） */
+  --c-brand-tint: #06c75514;         /* ブランド緑の薄い面（選択状態） */
+  --c-green-mist: #f7faf8;           /* 緑がかったホバー面・サマリー背景 */
+  --c-green-tint: #e9faf0;           /* 復帰バッジの淡緑面 */
+  --c-red-tint: #fdf1f2;             /* 消滅バッジの淡赤面 */
+  --c-surface-gray: #f4f5f6;         /* グレー系の小さな面・スケルトン */
+  --c-surface-gray-2: #f3f4f6;       /* ページャ無効面（stg改修で追加） */
+  --c-border-soft-gray: #d0d3d6;     /* ページャ枠（stg改修で追加） */
+
+  /* ルーム詳細・labs 系 */
+  --c-fade-right-2: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)); /* 説明文の続きを隠す */
+  --c-green-tab: rgb(3, 199, 85);    /* labs タブ下線（統合候補: --c-brand） */
+  --c-text-black: #000;              /* 統合候補: --c-text-1 */
+  --c-labs-blue: #118bee;            /* labs 見出し・タブ下線の青 */
+  --c-surface-slate: #eff1f2;        /* labs ボタン hover 面 */
+
+  /* /oc ナビチップ（カテゴリ=中立） */
+  --c-chip-cat-bg: #f1f3f5;
+  --c-chip-cat-bg-hover: #e7eaee;
+
+  /* 管理者用ミニボタンのグラデーション（/oc 内・一般には非表示） */
+  --c-grad-blue-btn: linear-gradient(135deg, #7eb8ff, #3a7bd5);
+  --c-grad-orange-btn: linear-gradient(135deg, #ffa751, #e85d04);
+
+  /* ブログ系 */
+  --c-green-pale: #e2f6ea;           /* パンくず hover */
+  --c-green-underline: #a8e6c2;      /* リンク下線 */
+  --c-green-text-deep: #235f3e;      /* 引用ブロック文字 */
+  --c-text-silver: #c5c9ce;          /* パンくず区切り */
+  --c-blog-icon-border: #bfe7cd;     /* 記事アイコンの淡緑枠（統合候補: --c-chip-hot-border） */
+  --c-brand-shadow: rgba(6, 199, 85, 0.28);
+  --c-brand-shadow-soft: rgba(6, 199, 85, 0.09);
+  --c-brand-shadow-soft-2: rgba(6, 199, 85, 0.1);
+  --c-ink-shadow: rgba(17, 17, 17, 0.03);
+  --c-shadow-3: #777;                /* terms カードのぼかし影 */
+  --c-border-plain-2: #e6e6e6;       /* labs フォーム枠（統合候補: --c-border-plain） */
+  --c-border-mid: #ccc;              /* 管理プレビュー枠 */
+  --c-text-mid-3: #888;              /* 統合候補: --c-text-3 */
+
+  /* recommend グループUI（--c-rg-*） */
+  --c-rg-text-strong: #2b2f36;
+  --c-rg-text-heading: #1f2328;
+  --c-rg-text: #6b7178;
+  --c-rg-text-soft: #7b828b;
+  --c-rg-text-mid: #777e87;
+  --c-rg-muted: #9aa0a6;
+  --c-rg-border: #eceff3;
+  --c-rg-line: #e7eaee;              /* 枠と淡面の兼用 */
+  --c-rg-surface: #f7f8fa;
+  --c-rg-green-bg: #eef6f0;
+  --c-rg-green-border: #cfe9d9;
+  --c-rg-shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 4px 16px rgba(20, 22, 26, 0.05);
+
+  /* React UI 系 */
+  --c-tap-highlight-weak: rgba(0, 0, 0, 0.05);
+  --c-text-soft-black: rgba(0, 0, 0, 0.47);   /* 補足テキスト */
+  --c-chip-dark: #1f1f1f;                     /* 選択中チップの黒面 */
+  --c-icon-ghost: rgba(0, 0, 0, 0.12);        /* ヘルプアイコン等の極薄 */
+  --c-shadow-strong: rgba(0, 0, 0, 0.3);      /* 検索オーバーレイの影 */
+  --c-border-gray: #e0e0e0;                   /* 画像添付・ギャラリー枠 */
+  --c-mui-blue: #1976d2;                      /* ドラッグ中の枠（MUI標準青） */
+  --c-green-shelf: #06a34a;                   /* テーマ棚の緑文字（統合候補: --c-btn-blog-text） */
+  --c-overlay-60: rgba(0, 0, 0, 0.6);         /* 画像プレビュー黒幕 */
+  --c-overlay-text: rgba(255, 255, 255, 0.7); /* 黒幕上の白70% */
+  --c-overlay-btn: rgba(255, 255, 255, 0.15);
+  --c-overlay-btn-hover: rgba(255, 255, 255, 0.25);
+  --c-bg-fade-end: rgba(255, 255, 255, 0);        /* 白→透明フェードの終端（ダーク時は背景色側に追従） */
+  --c-bg-93: rgba(255, 255, 255, 0.93);       /* チップ列の白フェード */
+  --c-spinner-grad-1: #e01cd5;                /* グラデスピナー */
+  --c-spinner-grad-2: #1cb5e0;
+
+  /* テーマチップ（hot・緑系） */
+  --c-chip-hot-text: #067a37;
+  --c-chip-hot-bg: #eefcf3;
+  --c-chip-hot-border: #bfead0;
+  --c-chip-hot-bg-hover: #e2f9ea;
+  --c-chip-hot-border-hover: #a6e0bd;
+  --c-brand-ring: rgba(6, 199, 85, 0.14); /* 検索フォーカスの緑リング */
+
+  /* --- MVP フレームワーク残骸（使用箇所僅少。ダーク対応時に個別判断） --- */
+  --c-legacy-accent: #118bee15;          /* code/samp 背景・テーブル縞 */
+  --c-legacy-table: #118bee;             /* テーブルヘッダ青 */
+  --c-legacy-secondary: #920de9;         /* aside 縁・sup 背景の紫 */
+  --c-legacy-secondary-accent: #920de90b;
+}
+
+/* ------------------------------------------------------------
+   入室確認ページ（/oc/{id}/jump）の名前空間トークン --ocj-*
+   「公式の安全確認ゲート」: 紙色背景 + 警告=琥珀 / 行動=LINEグリーン。
+   定義は oc-jump.css から移設（半径・影トークンも色と同様にここで管理）。
+   ------------------------------------------------------------ */
+:root {
+  --ocj-bg: #f6f5f3;
+  --ocj-bg-dim: #efeded;
+  --ocj-bg-dim-2: #f3f2ef;
+  --ocj-card: #ffffff;
+  --ocj-card-soft: #faf9f7;
+  --ocj-border: #e9e7e3;
+  --ocj-border-soft: #efedea;
+  --ocj-border-faint: #f0eeea;
+  --ocj-ink: #1c1b19;
+  --ocj-ink-strong: #2c2a27;
+  --ocj-ink-soft: #5c5953;
+  --ocj-ink-mute: #8a857d;
+  --ocj-amber: #d98a00;
+  --ocj-amber-deep: #8a5800;
+  --ocj-amber-soft-text: #9a7320;
+  --ocj-amber-bg: #fdf6e8;
+  --ocj-amber-line: #f0d9a8;
+  --ocj-line-green: var(--green-line);
+  --ocj-line-green-press: #05a647;
+  --ocj-green-bg: #eef7f0;
+  --ocj-green-text: #1f9d54;
+  --ocj-radius: 14px;
+  --ocj-radius-sm: 10px;
+  --ocj-shadow: 0 1px 2px rgba(28, 27, 25, 0.04), 0 6px 18px rgba(28, 27, 25, 0.05);
+  --ocj-shadow-btn: 0 6px 16px rgba(6, 199, 85, 0.32);
+  --ocj-shadow-btn-hover: 0 8px 20px rgba(6, 199, 85, 0.38);
+  --ocj-shadow-btn-press: 0 3px 10px rgba(6, 199, 85, 0.3);
+}
+
+/* ------------------------------------------------------------
+   ページ地色（サイト全体で唯一の背景定義）
+   どのヘッダ系統でも必ず読まれる本ファイルで html に一度だけ当てる。
+   （/ranking は mvp.css を読まないため body 任せだと地色が抜け、
+   UA の color-scheme 既定色が露出してページ毎に背景が揺れていた）
+   ------------------------------------------------------------ */
+html,
+body {
+  /* Safari 26 はルートの明示色を要求（透明だと白フォールバック） */
+  background-color: var(--c-bg);
+}
+
+/* ------------------------------------------------------------
+   3) ダークモード
+   ------------------------------------------------------------ */
+:root[data-theme="dark"] {
+/* ============================================================
+   ダークモード（X風ニュートラル黒。当初のSlate系から基調変更: 青みグレー不評のため）
+   - 値の正: 旧試験実装 Open-Chat-Graph-Frontend-Stats-Graph の
+     theme.ts / app.tsx（グラフ・MUI まで調整済みの完成形）。
+     対応が無いトークンのみ slate スケールから補完（「要調整」コメント付き
+     → 仕上げPRの実画面確認で確定）。
+   - ダーク値は var(--slate-*) を参照せずリテラルで書く
+     （属性切替時に Chromium が連鎖 var() の再計算を取りこぼし、
+      ライブトグルで旧値が残留する実バグを確認したため）。
+   - 適用は2系統で同値を維持すること:
+     1) [data-theme="dark"]            … 手動トグル
+     2) prefers-color-scheme + 非light … OS設定連動（明示ライト選択を尊重）
+   ============================================================ */
+  color-scheme: dark;
+
+  /* テキスト */
+  --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
+  --c-text-2: #d3d6d8 /* slate-300 */;
+  --c-text-3: #7d8287 /* slate-400 */;      /* theme.ts text.secondary #7d8287 */
+  --c-text-4: #686d72 /* slate-500 */;
+  --c-text-5: #686d72 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-steel: #7d8287 /* slate-400 */;
+  --c-text-link: #1d9bf0;            /* app.tsx primary.main */
+  /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
+
+  /* 背景・サーフェス */
+  --c-bg: #000000 /* slate-900 */;          /* app.tsx background.default #000000 */
+  --c-bg-sub: #0d0f10 /* slate-850 */;
+  --c-surface: #16181c /* slate-800 */;     /* app.tsx background.paper #16181c */
+  --c-surface-2: #2f3336 /* slate-700 */;
+  --c-surface-3: #1e2126 /* slate-750 */;
+  --c-surface-gray: #16181c /* slate-800 */;
+  --c-surface-slate: #1e2126 /* slate-750 */;
+  --c-bg-bright: #0a0a0a /* slate-950 */;   /* 要調整: 反転バッジ面 */
+
+  /* ボーダー */
+  --c-border: #2f3336 /* slate-700 */;      /* theme.ts grid #2f3336 */
+  --c-border-2: #3f4347 /* slate-600 */;    /* theme.ts border #3f4347 */
+  --c-border-3: #3f4347 /* slate-600 */;
+  --c-border-plain: #2f3336 /* slate-700 */;
+  --c-border-plain-2: #2f3336 /* slate-700 */;
+  --c-border-muted: #2f3336 /* slate-700 */;
+  --c-border-strong: #686d72 /* slate-500 */;
+  --c-border-gray: #3f4347 /* slate-600 */;
+  --c-border-mid: #686d72 /* slate-500 */;
+
+  /* ブランド・アクセント（緑は維持、赤系のみ明度を上げる） */
+  --c-accent-blue: #7a9aff;          /* 要調整 */
+  --c-accent-red: #fb7185;           /* theme.ts sunday (rose-400) */
+  --c-red-soft: #fb7185;
+
+  /* 影・エフェクト */
+  --c-shadow: rgba(0, 0, 0, 0.4);
+  --c-shadow-2: rgba(0, 0, 0, 0.35); /* 元はソリッド淡灰 #f4f4f4 */
+  --c-shadow-soft: rgba(0, 0, 0, 0.3);
+  --c-shadow-strong: rgba(0, 0, 0, 0.6);
+  --c-shadow-3: rgba(0, 0, 0, 0.5);
+  --c-tap-highlight: rgba(255, 255, 255, 0.08);
+  --c-tap-highlight-weak: rgba(255, 255, 255, 0.05);
+  --c-ink-shadow: rgba(0, 0, 0, 0.2);
+
+  /* ヘッダー・フッター */
+  --c-header-backdrop: rgba(0, 0, 0, 0.85);
+  --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
+  --c-text-dim: #d3d6d8 /* slate-300 */;
+  --c-overlay: rgba(0, 0, 0, 0.85);
+
+  /* ブログボタン（緑系・暗面用に反転） */
+  --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
+  --c-btn-blog-bg: rgba(6, 199, 85, 0.12);
+  --c-btn-blog-border: rgba(6, 199, 85, 0.35);
+
+  /* クールグレー系 → slate へ寄せる */
+  --c-cool-surface: #16181c /* slate-800 */;
+  --c-cool-surface-hover: #1e2126 /* slate-750 */;
+  --c-cool-border-soft: #2f3336 /* slate-700 */;
+  --c-cool-border: #3f4347 /* slate-600 */;
+  --c-cool-text-weak: #686d72 /* slate-500 */;
+  --c-cool-text: #7d8287 /* slate-400 */;
+  --c-cool-text-strong: #e7e9ea /* slate-200 */;
+  --c-cool-text-heading: #eff1f2 /* slate-100 */;
+  --c-cool-text-deep: #eff1f2 /* slate-100 */;
+
+  /* 一覧ページ系 */
+  --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
+  --c-text-desc: #9aa0a6;            /* 説明文: slate-400(#7d8287)では暗く本文格(#c9cdd1)では明るいため中間 */
+  --c-text-stat: #c9cdd1;            /* メンバー数も本文格に統一 */
+  --c-text-meta: #8b9196;            /* リスト下段メタ行: 説明文(#9aa0a6)より一段控えめ */
+  --c-text-soft: #9aa0a6;            /* 長文補足も説明文と同格に */
+  --c-text-body: #c9cdd1;
+  --c-text-mid-2: #d3d6d8 /* slate-300 */;
+  --c-text-mid-3: #7d8287 /* slate-400 */;
+  --c-text-taupe: #7d8287 /* slate-400 */;
+  --c-text-gray-mid: #7d8287 /* slate-400 */;
+  --c-text-silver: #686d72 /* slate-500 */;
+  --c-text-charcoal: #d3d6d8 /* slate-300 */;
+  --c-text-neutral: #7d8287 /* slate-400 */;
+  --c-text-black: #e7e9ea /* slate-200 */;
+  --c-green-soft: rgb(77, 199, 100);  /* ボタン緑は維持 */
+  --c-green-soft-50: rgba(77, 199, 100, 0.5);
+  --c-green-ring: rgba(77, 199, 100, 0.9);
+  --c-green-deep: rgb(52, 134, 67);
+  --c-highlight-teal: rgba(45, 212, 191, 0.15); /* 要調整 */
+  --c-green-mist: rgba(6, 199, 85, 0.08);
+  --c-green-tint: rgba(6, 199, 85, 0.14);
+  --c-red-tint: rgba(251, 113, 133, 0.14);
+  --c-brand-tint: rgba(6, 199, 85, 0.14);
+
+  /* 白フェード → 背景色フェードへ追従 */
+  --c-fade-right: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.95) 37%,
+    rgba(0, 0, 0, 1) 99%
+  );
+  --c-fade-bottom: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-fade-right-2: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-bg-fade-end: rgba(0, 0, 0, 0);
+  --c-bg-93: rgba(0, 0, 0, 0.93);
+
+  /* ルーム詳細・labs 系 */
+  --c-labs-blue: #1d9bf0;
+  --c-chip-cat-bg: #1e2126 /* slate-750 */;
+  --c-chip-cat-bg-hover: #2f3336 /* slate-700 */;
+
+  /* React UI 系 */
+  --c-text-soft-black: rgba(226, 232, 240, 0.55);
+  --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
+  --c-icon-ghost: rgba(255, 255, 255, 0.18);
+  --c-mui-blue: #1d9bf0;
+  --c-green-shelf: #4ade80;          /* 要調整 */
+  --c-overlay-60: rgba(0, 0, 0, 0.7);
+
+  /* 公開分析バッジ・チップ */
+  --c-green-tab: rgb(3, 199, 85);
+
+  /* テーマチップ（hot）・ /oc タグチップ */
+  --c-chip-hot-text: #4ade80;        /* 要調整 green-400 */
+  --c-chip-hot-bg: rgba(6, 199, 85, 0.1);
+  --c-chip-hot-border: rgba(6, 199, 85, 0.32);
+  --c-chip-hot-bg-hover: rgba(6, 199, 85, 0.18);
+  --c-chip-hot-border-hover: rgba(6, 199, 85, 0.45);
+  --c-brand-ring: rgba(6, 199, 85, 0.25);
+
+  /* ブログ系 */
+  --c-green-pale: rgba(6, 199, 85, 0.14);
+  --c-green-underline: rgba(6, 199, 85, 0.5);
+  --c-green-text-deep: #6ee7a0;      /* 要調整 */
+  --c-blog-icon-border: rgba(6, 199, 85, 0.3);
+  --c-brand-shadow: rgba(0, 0, 0, 0.5);
+  --c-brand-shadow-soft: rgba(0, 0, 0, 0.35);
+  --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
+
+  /* recommend グループUI */
+  --c-rg-text-strong: #e7e9ea /* slate-200 */;
+  --c-rg-text-heading: #eff1f2 /* slate-100 */;
+  --c-rg-text: #7d8287 /* slate-400 */;
+  --c-rg-text-soft: #686d72 /* slate-500 */;
+  --c-rg-text-mid: #7d8287 /* slate-400 */;
+  --c-rg-muted: #686d72 /* slate-500 */;
+  --c-rg-border: #2f3336 /* slate-700 */;
+  --c-rg-line: #2f3336 /* slate-700 */;
+  --c-rg-surface: #16181c /* slate-800 */;
+  --c-rg-green-bg: rgba(6, 199, 85, 0.1);
+  --c-rg-green-border: rgba(6, 199, 85, 0.3);
+  --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  /* MVP レガシー */
+  --c-legacy-accent: rgba(91, 156, 246, 0.12);
+  --c-legacy-table: #1d9bf0;
+  --c-legacy-secondary: #a78bfa;     /* 要調整 violet-400 */
+  --c-legacy-secondary-accent: rgba(167, 139, 250, 0.08);
+
+  /* アイコン（fill 差し替え版 URI） */
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%2394a3b8' d='M256 0C179.9 0 111.7 33.4 64.9 86.2L0 21.3V192h170.7l-60.2-60.2C145.6 90.5 197.5 64 256 64c106 0 192 85.9 192 192s-86 192-192 192c-53 0-101-21.5-135.8-56.2L75 437c46.4 46.3 110.4 75 181 75 141.4 0 256-114.6 256-256S397.4 0 256 0zm-21.3 106.7v170.7h128v-42.7h-85.3v-128h-42.7z' /%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml, %3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 27' class='search-icon'%3E%3Cpath d='M11.56,3.43a8.26,8.26,0,0,0,0,16.52,8.18,8.18,0,0,0,5-1.72l4.7,4.7a1.1,1.1,0,0,0,1.56,0,1.09,1.09,0,0,0,0-1.55l0,0-4.7-4.7a8.18,8.18,0,0,0,1.72-5A8.28,8.28,0,0,0,11.56,3.43Zm0,2.2A6.06,6.06,0,1,1,5.5,11.69,6,6,0,0,1,11.56,5.63Z' fill='%23e2e8f0'%3E%3C/path%3E%3C/svg%3E");
+  --icon-external-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%2394a3b8' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
+
+  /* 入室確認ページ（紙色 → 夜の紙色） */
+  --ocj-bg: #000000 /* slate-900 */;
+  --ocj-bg-dim: #0d0f10 /* slate-850 */;
+  --ocj-bg-dim-2: #0d0f10 /* slate-850 */;
+  --ocj-card: #16181c /* slate-800 */;
+  --ocj-card-soft: #1e2126 /* slate-750 */;
+  --ocj-border: #2f3336 /* slate-700 */;
+  --ocj-border-soft: #2f3336 /* slate-700 */;
+  --ocj-border-faint: #1e2126 /* slate-750 */;
+  --ocj-ink: #e7e9ea /* slate-200 */;
+  --ocj-ink-strong: #eff1f2 /* slate-100 */;
+  --ocj-ink-soft: #7d8287 /* slate-400 */;
+  --ocj-ink-mute: #686d72 /* slate-500 */;
+  --ocj-amber: #fbbf24;              /* amber-400 */
+  --ocj-amber-deep: #fcd34d;
+  --ocj-amber-soft-text: #eab308;
+  --ocj-amber-bg: rgba(251, 191, 36, 0.1);
+  --ocj-amber-line: rgba(251, 191, 36, 0.35);
+  --ocj-green-bg: rgba(6, 199, 85, 0.12);
+  --ocj-green-text: #4ade80;
+
+  /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
+  --c-chip-bg: #16181c;              /* チップを地から持ち上げる */
+  --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
+  --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
+  --c-chip-hot-text: #34d399;
+  --c-green-shelf: #34d399;
+  --c-green-text-deep: #34d399;
+  --ocj-green-text: #34d399;
+
+  /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、
+     輝度そのものを落とした深い緑→ティールの実色（emerald/teal 600番台相当）にする */
+  --grad-green-1: #0a9d4c;
+  --grad-green-2: #0ca85b;
+  --grad-green-3: #0ca476;
+  --grad-green-4: #0d9e9b;
+  --grad-green-5: #109493;
+  /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
+  --c-brand-gradient: linear-gradient(
+    332deg,
+    #0a9d4c,
+    #0ca85b 23.96%,
+    #0ca476 55.46%,
+    #0d9e9b 83.85%,
+    #109493
+  );
+  /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
+  --c-brand-line: rgba(6, 199, 85, 0.55);
+  --c-card-bg: #16181c;              /* 記事内カード面 = slate-800 */
+  --c-green-wash: rgba(6, 199, 85, 0.07);
+  --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
+  --c-btn-brand-bg-hover: #047857;
+  --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
+  --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
+  --c-surface-gray-2: #16181c;
+  --c-border-soft-gray: #3f4347;
+  /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    #d65ce0 20%,
+    #9d8af2,
+    #7c97f5 90%
+  );
+  --ocj-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* OS設定がダークで、ユーザーが明示的にライトを選んでいない場合。
+   ★ 上の [data-theme="dark"] ブロックと内容を常に同期させること */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+/* ============================================================
+   ダークモード（X風ニュートラル黒。当初のSlate系から基調変更: 青みグレー不評のため）
+   - 値の正: 旧試験実装 Open-Chat-Graph-Frontend-Stats-Graph の
+     theme.ts / app.tsx（グラフ・MUI まで調整済みの完成形）。
+     対応が無いトークンのみ slate スケールから補完（「要調整」コメント付き
+     → 仕上げPRの実画面確認で確定）。
+   - ダーク値は var(--slate-*) を参照せずリテラルで書く
+     （属性切替時に Chromium が連鎖 var() の再計算を取りこぼし、
+      ライブトグルで旧値が残留する実バグを確認したため）。
+   - 適用は2系統で同値を維持すること:
+     1) [data-theme="dark"]            … 手動トグル
+     2) prefers-color-scheme + 非light … OS設定連動（明示ライト選択を尊重）
+   ============================================================ */
+  color-scheme: dark;
+
+  /* テキスト */
+  --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
+  --c-text-2: #d3d6d8 /* slate-300 */;
+  --c-text-3: #7d8287 /* slate-400 */;      /* theme.ts text.secondary #7d8287 */
+  --c-text-4: #686d72 /* slate-500 */;
+  --c-text-5: #686d72 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-steel: #7d8287 /* slate-400 */;
+  --c-text-link: #1d9bf0;            /* app.tsx primary.main */
+  /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
+
+  /* 背景・サーフェス */
+  --c-bg: #000000 /* slate-900 */;          /* app.tsx background.default #000000 */
+  --c-bg-sub: #0d0f10 /* slate-850 */;
+  --c-surface: #16181c /* slate-800 */;     /* app.tsx background.paper #16181c */
+  --c-surface-2: #2f3336 /* slate-700 */;
+  --c-surface-3: #1e2126 /* slate-750 */;
+  --c-surface-gray: #16181c /* slate-800 */;
+  --c-surface-slate: #1e2126 /* slate-750 */;
+  --c-bg-bright: #0a0a0a /* slate-950 */;   /* 要調整: 反転バッジ面 */
+
+  /* ボーダー */
+  --c-border: #2f3336 /* slate-700 */;      /* theme.ts grid #2f3336 */
+  --c-border-2: #3f4347 /* slate-600 */;    /* theme.ts border #3f4347 */
+  --c-border-3: #3f4347 /* slate-600 */;
+  --c-border-plain: #2f3336 /* slate-700 */;
+  --c-border-plain-2: #2f3336 /* slate-700 */;
+  --c-border-muted: #2f3336 /* slate-700 */;
+  --c-border-strong: #686d72 /* slate-500 */;
+  --c-border-gray: #3f4347 /* slate-600 */;
+  --c-border-mid: #686d72 /* slate-500 */;
+
+  /* ブランド・アクセント（緑は維持、赤系のみ明度を上げる） */
+  --c-accent-blue: #7a9aff;          /* 要調整 */
+  --c-accent-red: #fb7185;           /* theme.ts sunday (rose-400) */
+  --c-red-soft: #fb7185;
+
+  /* 影・エフェクト */
+  --c-shadow: rgba(0, 0, 0, 0.4);
+  --c-shadow-2: rgba(0, 0, 0, 0.35); /* 元はソリッド淡灰 #f4f4f4 */
+  --c-shadow-soft: rgba(0, 0, 0, 0.3);
+  --c-shadow-strong: rgba(0, 0, 0, 0.6);
+  --c-shadow-3: rgba(0, 0, 0, 0.5);
+  --c-tap-highlight: rgba(255, 255, 255, 0.08);
+  --c-tap-highlight-weak: rgba(255, 255, 255, 0.05);
+  --c-ink-shadow: rgba(0, 0, 0, 0.2);
+
+  /* ヘッダー・フッター */
+  --c-header-backdrop: rgba(0, 0, 0, 0.85);
+  --c-outline-highlight: #2dd4bf;    /* 要調整: 淡ティール枠 → teal-400 */
+  --c-text-dim: #d3d6d8 /* slate-300 */;
+  --c-overlay: rgba(0, 0, 0, 0.85);
+
+  /* ブログボタン（緑系・暗面用に反転） */
+  --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
+  --c-btn-blog-bg: rgba(6, 199, 85, 0.12);
+  --c-btn-blog-border: rgba(6, 199, 85, 0.35);
+
+  /* クールグレー系 → slate へ寄せる */
+  --c-cool-surface: #16181c /* slate-800 */;
+  --c-cool-surface-hover: #1e2126 /* slate-750 */;
+  --c-cool-border-soft: #2f3336 /* slate-700 */;
+  --c-cool-border: #3f4347 /* slate-600 */;
+  --c-cool-text-weak: #686d72 /* slate-500 */;
+  --c-cool-text: #7d8287 /* slate-400 */;
+  --c-cool-text-strong: #e7e9ea /* slate-200 */;
+  --c-cool-text-heading: #eff1f2 /* slate-100 */;
+  --c-cool-text-deep: #eff1f2 /* slate-100 */;
+
+  /* 一覧ページ系 */
+  --c-text-mid: #c9cdd1; /* 本文格: ライトの#616161は本文用のためメタ灰でなく明るく */
+  --c-text-desc: #9aa0a6;            /* 説明文: slate-400(#7d8287)では暗く本文格(#c9cdd1)では明るいため中間 */
+  --c-text-stat: #c9cdd1;            /* メンバー数も本文格に統一 */
+  --c-text-meta: #8b9196;            /* リスト下段メタ行: 説明文(#9aa0a6)より一段控えめ */
+  --c-text-soft: #9aa0a6;            /* 長文補足も説明文と同格に */
+  --c-text-body: #c9cdd1;
+  --c-text-mid-2: #d3d6d8 /* slate-300 */;
+  --c-text-mid-3: #7d8287 /* slate-400 */;
+  --c-text-taupe: #7d8287 /* slate-400 */;
+  --c-text-gray-mid: #7d8287 /* slate-400 */;
+  --c-text-silver: #686d72 /* slate-500 */;
+  --c-text-charcoal: #d3d6d8 /* slate-300 */;
+  --c-text-neutral: #7d8287 /* slate-400 */;
+  --c-text-black: #e7e9ea /* slate-200 */;
+  --c-green-soft: rgb(77, 199, 100);  /* ボタン緑は維持 */
+  --c-green-soft-50: rgba(77, 199, 100, 0.5);
+  --c-green-ring: rgba(77, 199, 100, 0.9);
+  --c-green-deep: rgb(52, 134, 67);
+  --c-highlight-teal: rgba(45, 212, 191, 0.15); /* 要調整 */
+  --c-green-mist: rgba(6, 199, 85, 0.08);
+  --c-green-tint: rgba(6, 199, 85, 0.14);
+  --c-red-tint: rgba(251, 113, 133, 0.14);
+  --c-brand-tint: rgba(6, 199, 85, 0.14);
+
+  /* 白フェード → 背景色フェードへ追従 */
+  --c-fade-right: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0),
+    rgba(0, 0, 0, 0.95) 37%,
+    rgba(0, 0, 0, 1) 99%
+  );
+  --c-fade-bottom: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-fade-right-2: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  --c-bg-fade-end: rgba(0, 0, 0, 0);
+  --c-bg-93: rgba(0, 0, 0, 0.93);
+
+  /* ルーム詳細・labs 系 */
+  --c-labs-blue: #1d9bf0;
+  --c-chip-cat-bg: #1e2126 /* slate-750 */;
+  --c-chip-cat-bg-hover: #2f3336 /* slate-700 */;
+
+  /* React UI 系 */
+  --c-text-soft-black: rgba(226, 232, 240, 0.55);
+  --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
+  --c-icon-ghost: rgba(255, 255, 255, 0.18);
+  --c-mui-blue: #1d9bf0;
+  --c-green-shelf: #4ade80;          /* 要調整 */
+  --c-overlay-60: rgba(0, 0, 0, 0.7);
+
+  /* 公開分析バッジ・チップ */
+  --c-green-tab: rgb(3, 199, 85);
+
+  /* テーマチップ（hot）・ /oc タグチップ */
+  --c-chip-hot-text: #4ade80;        /* 要調整 green-400 */
+  --c-chip-hot-bg: rgba(6, 199, 85, 0.1);
+  --c-chip-hot-border: rgba(6, 199, 85, 0.32);
+  --c-chip-hot-bg-hover: rgba(6, 199, 85, 0.18);
+  --c-chip-hot-border-hover: rgba(6, 199, 85, 0.45);
+  --c-brand-ring: rgba(6, 199, 85, 0.25);
+
+  /* ブログ系 */
+  --c-green-pale: rgba(6, 199, 85, 0.14);
+  --c-green-underline: rgba(6, 199, 85, 0.5);
+  --c-green-text-deep: #6ee7a0;      /* 要調整 */
+  --c-blog-icon-border: rgba(6, 199, 85, 0.3);
+  --c-brand-shadow: rgba(0, 0, 0, 0.5);
+  --c-brand-shadow-soft: rgba(0, 0, 0, 0.35);
+  --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
+
+  /* recommend グループUI */
+  --c-rg-text-strong: #e7e9ea /* slate-200 */;
+  --c-rg-text-heading: #eff1f2 /* slate-100 */;
+  --c-rg-text: #7d8287 /* slate-400 */;
+  --c-rg-text-soft: #686d72 /* slate-500 */;
+  --c-rg-text-mid: #7d8287 /* slate-400 */;
+  --c-rg-muted: #686d72 /* slate-500 */;
+  --c-rg-border: #2f3336 /* slate-700 */;
+  --c-rg-line: #2f3336 /* slate-700 */;
+  --c-rg-surface: #16181c /* slate-800 */;
+  --c-rg-green-bg: rgba(6, 199, 85, 0.1);
+  --c-rg-green-border: rgba(6, 199, 85, 0.3);
+  --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  /* MVP レガシー */
+  --c-legacy-accent: rgba(91, 156, 246, 0.12);
+  --c-legacy-table: #1d9bf0;
+  --c-legacy-secondary: #a78bfa;     /* 要調整 violet-400 */
+  --c-legacy-secondary-accent: rgba(167, 139, 250, 0.08);
+
+  /* アイコン（fill 差し替え版 URI） */
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%2394a3b8' d='M256 0C179.9 0 111.7 33.4 64.9 86.2L0 21.3V192h170.7l-60.2-60.2C145.6 90.5 197.5 64 256 64c106 0 192 85.9 192 192s-86 192-192 192c-53 0-101-21.5-135.8-56.2L75 437c46.4 46.3 110.4 75 181 75 141.4 0 256-114.6 256-256S397.4 0 256 0zm-21.3 106.7v170.7h128v-42.7h-85.3v-128h-42.7z' /%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml, %3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 27' class='search-icon'%3E%3Cpath d='M11.56,3.43a8.26,8.26,0,0,0,0,16.52,8.18,8.18,0,0,0,5-1.72l4.7,4.7a1.1,1.1,0,0,0,1.56,0,1.09,1.09,0,0,0,0-1.55l0,0-4.7-4.7a8.18,8.18,0,0,0,1.72-5A8.28,8.28,0,0,0,11.56,3.43Zm0,2.2A6.06,6.06,0,1,1,5.5,11.69,6,6,0,0,1,11.56,5.63Z' fill='%23e2e8f0'%3E%3C/path%3E%3C/svg%3E");
+  --icon-external-gray: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' fill='%2394a3b8' viewBox='0 0 20 20'%3E%3Cpath d='M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a%0A1 1 0 102 0V4a1 1 0 00-1-1h-5z'/%3E%3Cpath d='M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z'/%3E%3C/svg%3E");
+
+  /* 入室確認ページ（紙色 → 夜の紙色） */
+  --ocj-bg: #000000 /* slate-900 */;
+  --ocj-bg-dim: #0d0f10 /* slate-850 */;
+  --ocj-bg-dim-2: #0d0f10 /* slate-850 */;
+  --ocj-card: #16181c /* slate-800 */;
+  --ocj-card-soft: #1e2126 /* slate-750 */;
+  --ocj-border: #2f3336 /* slate-700 */;
+  --ocj-border-soft: #2f3336 /* slate-700 */;
+  --ocj-border-faint: #1e2126 /* slate-750 */;
+  --ocj-ink: #e7e9ea /* slate-200 */;
+  --ocj-ink-strong: #eff1f2 /* slate-100 */;
+  --ocj-ink-soft: #7d8287 /* slate-400 */;
+  --ocj-ink-mute: #686d72 /* slate-500 */;
+  --ocj-amber: #fbbf24;              /* amber-400 */
+  --ocj-amber-deep: #fcd34d;
+  --ocj-amber-soft-text: #eab308;
+  --ocj-amber-bg: rgba(251, 191, 36, 0.1);
+  --ocj-amber-line: rgba(251, 191, 36, 0.35);
+  --ocj-green-bg: rgba(6, 199, 85, 0.12);
+  --ocj-green-text: #4ade80;
+
+  /* --- 仕上げ調整（実画面確認に基づく確定値） --- */
+  --c-chip-bg: #16181c;              /* チップを地から持ち上げる */
+  --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
+  --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
+  --c-chip-hot-text: #34d399;
+  --c-green-shelf: #34d399;
+  --c-green-text-deep: #34d399;
+  --ocj-green-text: #34d399;
+
+  /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、
+     輝度そのものを落とした深い緑→ティールの実色（emerald/teal 600番台相当）にする */
+  --grad-green-1: #0a9d4c;
+  --grad-green-2: #0ca85b;
+  --grad-green-3: #0ca476;
+  --grad-green-4: #0d9e9b;
+  --grad-green-5: #109493;
+  /* 連鎖varの切替バグ回避のため合成もリテラルで再定義 */
+  --c-brand-gradient: linear-gradient(
+    332deg,
+    #0a9d4c,
+    #0ca85b 23.96%,
+    #0ca476 55.46%,
+    #0d9e9b 83.85%,
+    #109493
+  );
+  /* 緑ボーダー用（ベタの #06c755 はダークでは強すぎる） */
+  --c-brand-line: rgba(6, 199, 85, 0.55);
+  --c-card-bg: #16181c;              /* 記事内カード面 = slate-800 */
+  --c-green-wash: rgba(6, 199, 85, 0.07);
+  --c-btn-brand-bg: #059669;         /* CTAボタンは emerald-600（白文字でAA確保） */
+  --c-btn-brand-bg-hover: #047857;
+  --c-pill-brand-bg: rgba(6, 199, 85, 0.2);
+  --c-pill-brand-text: #6ee7b7;      /* emerald-300 */
+  --c-surface-gray-2: #16181c;
+  --c-border-soft-gray: #3f4347;
+  /* ビビッドグラデ見出し: ダークでは彩度・明度を一段落として地に馴染ませる */
+  --c-vivid-gradient: -webkit-linear-gradient(
+    45deg,
+    #d65ce0 20%,
+    #9d8af2,
+    #7c97f5 90%
+  );
+  --ocj-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+}

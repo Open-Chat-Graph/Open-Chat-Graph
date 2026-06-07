@@ -1,5 +1,5 @@
 main {
-  color: #616161;
+  color: var(--c-text-mid);
   max-width: 812px;
   margin: auto;
 }
@@ -28,7 +28,7 @@ h1 {
   letter-spacing: 0.1em;
   margin: 0;
   text-align: center;
-  color: #333;
+  color: var(--c-text-2);
   font-size: 21px;
 }
 
@@ -48,11 +48,11 @@ h1 {
   font-weight: 700;
   line-height: 1.5;
   outline: 0;
-  color: #333;
+  color: var(--c-text-2);
 }
 
 .terms section h3 {
-  color: #333;
+  color: var(--c-text-2);
   margin-top: 2.5rem;
   font-size: 18px;
 }
@@ -66,20 +66,20 @@ h1 {
 }
 
 #comment-root .MuiPaper-outlined.MuiPaper-rounded {
-  border: 1px solid rgb(207, 217, 222);
+  border: 1px solid var(--c-border-3);
 }
 
 #comment-root .comment-term-text-color {
-  color: #b7b7b7;
+  color: var(--c-text-5);
 }
 
 .terms .ranking-readMore {
-  color: #333;
+  color: var(--c-text-2);
 }
 
 .terms .ranking-readMore::after {
-  border-top: 1px solid #333;
-  border-right: 1px solid #333;
+  border-top: 1px solid var(--c-text-2);
+  border-right: 1px solid var(--c-text-2);
   margin-bottom: 2px;
 }
 
@@ -88,6 +88,6 @@ h1 {
   width: 87.5%;
   margin: auto;
   margin-bottom: 2rem;
-  box-shadow: 1px 3px 15px -5px #777;
+  box-shadow: 1px 3px 15px -5px var(--c-shadow-3);
   border-radius: 4px;
 }

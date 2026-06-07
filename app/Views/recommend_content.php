@@ -37,8 +37,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </div>
 
-      <hr class="hr-top recommend">
-
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
           <?php echo sprintfT('いま伸びている「%s」のオープンチャット', $tag) ?><?php echo $countTitle ? ' ' . $countTitle : '' ?>
@@ -83,7 +81,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                   <?php // 同一H2の反復(量産シグナル)を避け、継続チャンクは見出しではなく軽い順位区切りにする ?>
                   <div class="recommend-ranking-continue"><?php echo sprintfT('%s位', $currentCount + 1) ?>〜</div>
                 <?php else : ?>
-                  <h2 style="all: unset; font-size: 15px; font-weight: bold; color: #111; display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
+                  <h2 style="all: unset; font-size: 15px; font-weight: bold; color: var(--c-text-1); display: flex; flex-direction:row; flex-wrap:wrap; line-height: 1.3;">
                     <div><?php echo sprintfT("「%s」でいま人数が伸びているルーム", $extractTag) ?>&nbsp;</div>
                     <div>(<?php echo $hourlyUpdatedAt->format('G:i') ?>)</div>
                   </h2>

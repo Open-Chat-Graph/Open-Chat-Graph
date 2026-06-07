@@ -21,9 +21,13 @@ class RankingBanPageRepository
         int $limit,
         string $since = '',
         string $until = '',
+        int $dmin = 0,
+        int $dmax = 0,
+        string $now = '',
     ): array {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
-            . $this->buildDateClause($since, $until, $dateParams);
+            . $this->buildDateClause($since, $until, $dateParams)
+            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -58,11 +62,11 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                compact('offset', 'limit') + $dateParams,
+                compact('offset', 'limit') + $dateParams + $durationParams,
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), compact('offset', 'limit') + $dateParams);
+            return DB::fetchAll($query(''), compact('offset', 'limit') + $dateParams + $durationParams);
         }
     }
 
@@ -70,10 +74,11 @@ class RankingBanPageRepository
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
      */
-    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = ''): array
+    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = ''): array
     {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
-            . $this->buildDateClause($since, $until, $dateParams);
+            . $this->buildDateClause($since, $until, $dateParams)
+            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -93,12 +98,12 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                $dateParams ?: null,
+                ($dateParams + $durationParams) ?: null,
                 fetchAllArgs: [\PDO::FETCH_COLUMN, 0],
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), $dateParams ?: null, args: [\PDO::FETCH_COLUMN, 0]);
+            return DB::fetchAll($query(''), ($dateParams + $durationParams) ?: null, args: [\PDO::FETCH_COLUMN, 0]);
         }
     }
 
@@ -120,6 +125,36 @@ class RankingBanPageRepository
         if ($until !== '') {
             $clause .= ' AND rb.datetime <= :until';
             $dateParams['until'] = $until . ' 23:59:59';
+        }
+        return $clause;
+    }
+
+    /**
+     * 「消えていた期間」の絞り込み。復活済み（end_datetime あり）は復活までにかかった時間、
+     * 未掲載中（end_datetime なし）は基準時刻 $now（毎時クロールの最新時刻）までの経過時間。
+     * いずれも時間単位で、dmin は「超」(>)・dmax は「以下」(<=)。
+     * 変更後の復活は「ちょうど24時間」(TIMESTAMPDIFF=24) に集中するため、dmax=24（24時間以内）が
+     * 典型の24時間戻りを含み、dmin=24（1〜3日）はそれを除く——この境界で直感と一致させる。
+     * 値はバインドパラメータで渡す（連結しない）。
+     *
+     * @param int $dmin 下限（時間・この値を超える）。0なら条件なし
+     * @param int $dmax 上限（時間・この値以下）。0なら条件なし
+     * @param string $now 基準時刻 'Y-m-d H:i:s'
+     * @param array|null $durationParams バインド用パラメータの出力先
+     */
+    private function buildDurationClause(int $dmin, int $dmax, string $now, ?array &$durationParams): string
+    {
+        $durationParams = [];
+        if (($dmin <= 0 && $dmax <= 0) || $now === '') return '';
+
+        $clause = '';
+        if ($dmin > 0) {
+            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dminNow)) > :dmin';
+            $durationParams += ['dminNow' => $now, 'dmin' => $dmin];
+        }
+        if ($dmax > 0) {
+            $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dmaxNow)) <= :dmax';
+            $durationParams += ['dmaxNow' => $now, 'dmax' => $dmax];
         }
         return $clause;
     }

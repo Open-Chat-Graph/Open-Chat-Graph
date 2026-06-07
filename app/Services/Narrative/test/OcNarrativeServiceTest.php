@@ -465,48 +465,23 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertIsString($result['pattern']);
     }
 
-    public function test_opening_info_uses_api_created_at_not_created_at(): void
+    public function test_detail_omits_page_duplicated_info(): void
     {
-        // ルーム開設日は LINE API 由来の api_created_at のみ使う。
-        // created_at (= 我々のサイトへの登録日) はフォールバックにも使わない。
+        // 開設情報・カテゴリ・現在人数はページ内 (title bar / オプチャ情報) に表示済みの
+        // 重複情報なので detail に出さない。summary にも現在人数は出さない。
         $oc = $this->buildOc([
-            'api_created_at' => '2026-01-14 00:00:00', // 実開設
-            'created_at' => '2026-04-06 00:00:00',     // サイトへの登録 (使われないはず)
+            'api_created_at' => '2024-03-14 00:00:00',
+            'category' => 5,
         ]);
         $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
         $service = $this->makeService($m);
-        $result = $service->generate(1, $oc);
-
-        $this->assertNotNull($result);
-        $this->assertStringContainsString('2026年1月', $result['detail']);
-        $this->assertStringNotContainsString('2026年4月', $result['detail']);
-    }
-
-    public function test_opening_info_omitted_when_api_created_at_missing_no_fallback(): void
-    {
-        // api_created_at が null のときは created_at にフォールバックせず、開設情報の文を省略する。
-        $oc = $this->buildOc([
-            'api_created_at' => null,
-            'created_at' => '2026-04-06 00:00:00', // 使われない
-        ]);
-        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
-        $service = $this->makeService($m);
-        $result = $service->generate(1, $oc);
+        $result = $service->generate(1, $oc, '学校・同窓会');
 
         $this->assertNotNull($result);
         $this->assertStringNotContainsString('開設', $result['detail']);
-        $this->assertStringNotContainsString('2026年4月', $result['detail']);
-    }
-
-    public function test_opening_info_omitted_when_api_created_at_is_zero_date(): void
-    {
-        $oc = $this->buildOc(['api_created_at' => '0000-00-00 00:00:00']);
-        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 900]);
-        $service = $this->makeService($m);
-        $result = $service->generate(1, $oc);
-
-        $this->assertNotNull($result);
-        $this->assertStringNotContainsString('開設', $result['detail']);
+        $this->assertStringNotContainsString('運営', $result['detail']);
+        $this->assertStringNotContainsString('カテゴリのオープンチャット', $result['detail']);
+        $this->assertStringNotContainsString('現在', $result['summary']);
     }
 
     public function test_html_special_chars_in_name_are_returned_as_plain_for_caller_escape(): void
@@ -539,15 +514,40 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertLessThanOrEqual(161, mb_strlen($result['meta_description']));
     }
 
-    public function test_detail_contains_multiple_sentences_separated_by_newline(): void
+    public function test_detail_is_single_paragraph_with_multiple_sentences(): void
     {
         $m = $this->metricsFixture(['curr' => 2000, 'm30' => 1500]); // strong_growth (規模大)
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
 
         $this->assertNotNull($result);
-        // detail に改行で複数文が含まれること
-        $this->assertStringContainsString("\n", $result['detail']);
+        // 1 段落として流し込むため改行は含まない (ja は句点で直結)
+        $this->assertStringNotContainsString("\n", $result['detail']);
+        // トレンド文 + 単日最大 + 期間比較 の複数文が連結されていること
+        $this->assertGreaterThanOrEqual(2, mb_substr_count($result['detail'], '。'));
+    }
+
+    public function test_week_figure_omitted(): void
+    {
+        // 「1 週間で N 人」はヘッダー stats に常時表示されるため本文には出さない
+        $m = $this->metricsFixture(['curr' => 1000, 'm30' => 980, 'm90' => 940, 'm7' => 995]);
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('1 ヶ月で', $result['detail']);
+        $this->assertStringNotContainsString('1 週間で', $result['detail']);
+
+        // サージ時も同様に 1 週間の数字は出さない (トレンド文「直近 1 週間で〜」の言及のみ)
+        $m = $this->metricsFixture([
+            'curr' => 1000, 'm1' => 999, 'm7' => 800, 'm30' => 780, 'm90' => 760,
+        ]); // diff7 +200 (+25%) → surge_up
+        $service = $this->makeService($m);
+        $result = $service->generate(1, $this->buildOc());
+
+        $this->assertNotNull($result);
+        $this->assertSame('surge_up', $result['pattern']);
+        $this->assertDoesNotMatchRegularExpression('/1 週間で [+\-]/u', $result['detail']);
     }
 
     public function test_peak_mentioned_when_peak_significantly_higher(): void

@@ -1,4 +1,4 @@
-.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats build-frontend\:alpha _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets shared-setup up-shared down-shared _shared-config _shared-prepare _shared-ports _up-shared
+.PHONY: help init init-y init-y-n _init up down restart rebuild ssh up-mock cron cron-stop show cert ci-test phpstan css-check build-frontend build-frontend\:ranking build-frontend\:oc-app build-frontend\:all-room-stats build-frontend\:alpha _build-one-frontend _wait-mysql _is-mock _check-data-protection sync-setup sync-update _ensure-prod-sync-secrets shared-setup up-shared down-shared _shared-config _shared-prepare _shared-ports _up-shared
 
 # .envファイルを読み込み（存在しない場合はスキップ）
 -include .env
@@ -349,6 +349,9 @@ phpstan: ## PHPStan静的解析を実行
 	else \
 		docker compose exec app vendor/bin/phpstan analyse --autoload-file=phpstan-bootstrap.php; \
 	fi
+
+css-check: ## 色リテラル検査（tokens.css以外の生色を検出）
+	@./scripts/check-css-colors.sh
 
 ci-test: _check-data-protection ## ローカルでCIテストを実行（Mock環境でクローリング+URLテスト）
 	@echo "$(GREEN)========================================"

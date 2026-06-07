@@ -8,9 +8,9 @@ import {
 } from 'chart.js'
 import OpenChatChart from '../../OpenChatChart'
 import { resetTooltip } from './getEventCatcherPlugin'
+import { getColors } from '../../../util/theme'
 
 const defaultVerticalLine = {
-  color: 'black',
   lineWidth: 1,
   setLineDash: [6, 6],
 }
@@ -99,7 +99,7 @@ export const getTooltipAndLineCallback =
 
     // 1週間表示時以外
     if (!(ocChart.limit === 8 || ocChart.zoomWeekday === 2) && pos.x != null) {
-      verticalLine(ocChart.chart, defaultVerticalLine, pos.x)
+      verticalLine(ocChart.chart, { ...defaultVerticalLine, color: getColors().verticalLine }, pos.x)
     }
 
     isShow = true
