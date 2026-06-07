@@ -3,6 +3,20 @@ import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
 
+// batch-stats の API 側上限（51件以上を1回で送ると 400）。超える分は分割して並列フェッチする。
+const BATCH_STATS_CHUNK_SIZE = 50
+
+async function fetchBatchStatsChunk(ids: number[]): Promise<BatchStatsResponse> {
+  const res = await fetch(`${API_BASE}/batch-stats`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  })
+  if (!res.ok) throw new Error('Batch stats API failed')
+
+  return res.json()
+}
+
 export const alphaApi = {
   async search(params: SearchParams): Promise<SearchResponse> {
     const query = new URLSearchParams()
@@ -28,15 +42,17 @@ export const alphaApi = {
     return res.json()
   },
 
+  // 件数無制限のバッチ統計取得。API 上限（50件/回）に合わせて分割→並列フェッチ→結合する。
+  // マイリストがスマートフォルダ等で 50件を超えても一覧が表示できる。
   async batchStats(ids: number[]): Promise<BatchStatsResponse> {
-    const res = await fetch(`${API_BASE}/batch-stats`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    })
-    if (!res.ok) throw new Error('Batch stats API failed')
+    if (ids.length <= BATCH_STATS_CHUNK_SIZE) return fetchBatchStatsChunk(ids)
 
-    return res.json()
+    const chunks: number[][] = []
+    for (let i = 0; i < ids.length; i += BATCH_STATS_CHUNK_SIZE) {
+      chunks.push(ids.slice(i, i + BATCH_STATS_CHUNK_SIZE))
+    }
+    const results = await Promise.all(chunks.map(fetchBatchStatsChunk))
+    return { data: results.flatMap((r) => r.data) }
   },
 
   // グラフ埋め込み用 DTO ＋ ハッシュ付きスクリプトパス（oc-app グラフを SPA にマウントする）

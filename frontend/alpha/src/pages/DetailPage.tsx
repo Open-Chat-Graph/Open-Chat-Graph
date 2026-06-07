@@ -141,7 +141,7 @@ const DetailPage = memo(() => {
         data-testid="ranking-history-empty"
       >
         <History className="h-5 w-5 flex-shrink-0 text-muted-foreground/70" />
-        <span className="flex-1 text-sm font-medium text-muted-foreground">ランキング掲載履歴</span>
+        <span className="flex-1 text-sm font-medium text-muted-foreground">公式ランキング掲載状況</span>
         <span className="text-xs tabular-nums text-muted-foreground">0件</span>
       </div>
     ) : (
@@ -151,7 +151,7 @@ const DetailPage = memo(() => {
         className="flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:bg-accent"
       >
         <History className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-        <span className="flex-1 text-sm font-medium">ランキング掲載履歴</span>
+        <span className="flex-1 text-sm font-medium">公式ランキング掲載状況</span>
         {historyCount !== undefined && (
           <span className="text-xs tabular-nums text-muted-foreground">{historyCount}件</span>
         )}

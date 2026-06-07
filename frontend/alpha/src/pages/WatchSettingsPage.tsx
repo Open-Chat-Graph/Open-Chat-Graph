@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import { ThresholdInput, type ThresholdUnit } from '@/components/Notifications/T
 import { resolveScopeOcIds } from '@/components/Notifications/mylistScope'
 import { alphaApi } from '@/api/alpha'
 import type {
+  AlertsConfigRequest,
   AlertsConfigRequestKeyword,
   AlertsConfigRequestRoom,
   MylistAlertScope,
@@ -58,8 +59,11 @@ const thresholdToRequest = (
  *  (3) マイリスト変動アラート … 全体／ルート直下のみ／特定フォルダ配下 の3スコープ。
  *      しきい値は部屋詳細と同じ %/人数 プルダウン（ThresholdInput）を使い回す。
  *
- * 保存は PUT 全置き換え。configToRequest(config) を土台に、編集した keywords / rooms /
- * mylistThreshold を上書きして送る。
+ * 保存モデル: 即時保存（検索結果の「このキーワードをアラート」と同じ）。
+ * 操作のたびに 500ms debounce で PUT 全置き換え。configToRequest(config) を土台に、
+ * 編集した keywords / rooms / mylistThreshold を上書きした「最新のフル状態」を送る。
+ * 連打時の順序逆転を防ぐため保存は直列化する。保存/キャンセルのバーは無し
+ * （「自動保存されます」表示のみ）。失敗時は控えめなエラー表示＋再試行。
  */
 export default function WatchSettingsPage() {
   const navigate = useNavigate()
@@ -83,6 +87,10 @@ export default function WatchSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
 
+  // 即時保存のトリガ。ユーザー操作のたびに increment → 500ms debounce で保存。
+  const [dirty, setDirty] = useState(0)
+  const markDirty = useCallback(() => setDirty((d) => d + 1), [])
+
   // マイリスト本体（localStorage）。フォルダ選択肢とスコープ解決に使う。
   const [myList] = useState(() => loadMyList())
   const myListEmpty = myList.items.length === 0
@@ -90,9 +98,11 @@ export default function WatchSettingsPage() {
   // 設定済みルームの名前解決（batchStats）。id => name。
   const [roomNames, setRoomNames] = useState<Record<number, string>>({})
 
-  // config 到着時にローカル状態を初期化
+  // config 到着時にローカル状態を初期化（初回のみ。保存後の SWR 更新で編集中状態を潰さない）
+  const initializedRef = useRef(false)
   useEffect(() => {
-    if (!config) return
+    if (!config || initializedRef.current) return
+    initializedRef.current = true
     const req = configToRequest(config)
     setKeywords(req.keywords ?? [])
     setRooms(req.rooms ?? [])
@@ -151,13 +161,18 @@ export default function WatchSettingsPage() {
     setKeywords((prev) => [...prev, { keyword: kw, category: cat }])
     setNewKeyword('')
     setNewCategory(0)
+    markDirty()
   }
 
-  const removeKeyword = (idx: number) =>
+  const removeKeyword = (idx: number) => {
     setKeywords((prev) => prev.filter((_, i) => i !== idx))
+    markDirty()
+  }
 
-  const removeRoom = (openChatId: number) =>
+  const removeRoom = (openChatId: number) => {
     setRooms((prev) => prev.filter((r) => r.openChatId !== openChatId))
+    markDirty()
+  }
 
   // 設定済みルームのしきい値の表示文（±N人/％）。
   const roomThresholdLabel = (r: AlertsConfigRequestRoom): string => {
@@ -168,58 +183,89 @@ export default function WatchSettingsPage() {
     return '設定済み'
   }
 
-  const handleSave = async () => {
+  // 最新のフル状態から PUT リクエスト（全置き換え）を組み立てる。
+  const buildRequest = (): AlertsConfigRequest => {
+    const req = configToRequest(config!)
+    const n = toPositive(mylistValue)
+    // scope!=='all' のときだけ対象集合を解決して送る。
+    const targetOcIds =
+      mylistScope === 'all'
+        ? undefined
+        : resolveScopeOcIds(myList, mylistScope, mylistFolderId)
+    return {
+      ...req,
+      keywords,
+      rooms,
+      mylistThreshold: {
+        enabled: mylistEnabled,
+        scope: mylistScope,
+        ...(targetOcIds ? { targetOcIds } : {}),
+        ...thresholdToRequest(n, mylistUnit),
+      },
+    }
+  }
+
+  // 保存の直列化（全置き換え PUT の順序逆転防止）と保存中カウント（連続保存時のフリッカ防止）。
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve())
+  const pendingRef = useRef(0)
+
+  const doSave = async () => {
     if (!config) return
+    const req = buildRequest()
+    pendingRef.current += 1
     setSaving(true)
     setSaveError(false)
+    const run = saveQueueRef.current.then(() => save(req))
+    saveQueueRef.current = run.catch(() => {})
     try {
-      const req = configToRequest(config)
-      const n = toPositive(mylistValue)
-      // scope!=='all' のときだけ対象集合を解決して送る。
-      const targetOcIds =
-        mylistScope === 'all'
-          ? undefined
-          : resolveScopeOcIds(myList, mylistScope, mylistFolderId)
-      await save({
-        ...req,
-        keywords,
-        rooms,
-        mylistThreshold: {
-          enabled: mylistEnabled,
-          scope: mylistScope,
-          ...(targetOcIds ? { targetOcIds } : {}),
-          ...thresholdToRequest(n, mylistUnit),
-        },
-      })
-      navigate(-1)
+      await run
     } catch {
       setSaveError(true)
     } finally {
-      setSaving(false)
+      pendingRef.current -= 1
+      if (pendingRef.current === 0) setSaving(false)
     }
   }
+
+  // 即時保存: 操作（markDirty）のたびに 500ms debounce で保存。
+  // dirty が変わるたび effect が張り直されるため、closure は常に最新 state を持つ。
+  // deps は dirty のみ（config は保存応答で参照が変わるため、含めると保存ループになる）。
+  useEffect(() => {
+    if (dirty === 0) return
+    const t = setTimeout(() => {
+      void doSave()
+    }, 500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty])
 
   return (
     <ListScreen
       header={
-        /* 固定ヘッダーバー: 最終更新ヒント＋保存。骨格（固定／背景／border／z）は ListScreen が持つ。 */
-        <div className="flex items-center gap-2 px-3 py-2 md:px-6">
+        /* 固定ヘッダーバー: 自動保存の案内＋保存状態。骨格（固定／背景／border／z）は ListScreen が持つ。 */
+        <div className="flex min-h-10 items-center gap-2 px-3 py-2 md:px-6">
           <p className="text-xs text-muted-foreground">
-            設定は毎時のデータ更新後に反映されます
+            変更は自動保存されます（毎時のデータ更新後に反映）
           </p>
           <div className="ml-auto flex items-center gap-2">
-            {saveError && <span className="text-xs text-destructive">保存に失敗</span>}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              disabled={saving}
-            >
-              キャンセル
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving || isLoading} data-testid="watch-save">
-              {saving ? '保存中…' : '保存'}
-            </Button>
+            {saving && (
+              <span className="text-xs text-muted-foreground" data-testid="watch-saving">
+                保存中…
+              </span>
+            )}
+            {!saving && saveError && (
+              <>
+                <span className="text-xs text-destructive">保存に失敗しました</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={markDirty}
+                  data-testid="watch-retry"
+                >
+                  再試行
+                </Button>
+              </>
+            )}
           </div>
         </div>
       }
@@ -390,7 +436,10 @@ export default function WatchSettingsPage() {
               <Checkbox
                 checked={mylistEnabled}
                 disabled={myListEmpty}
-                onCheckedChange={(c) => setMylistEnabled(c === true)}
+                onCheckedChange={(c) => {
+                  setMylistEnabled(c === true)
+                  markDirty()
+                }}
                 data-testid="watch-mylist-enabled"
               />
               マイリストの部屋の増減を通知する
@@ -402,7 +451,10 @@ export default function WatchSettingsPage() {
               <Select
                 value={mylistScope}
                 disabled={myListEmpty || !mylistEnabled}
-                onValueChange={(v) => setMylistScope(v as MylistAlertScope)}
+                onValueChange={(v) => {
+                  setMylistScope(v as MylistAlertScope)
+                  markDirty()
+                }}
               >
                 <SelectTrigger className="h-10" data-testid="watch-mylist-scope">
                   <SelectValue />
@@ -422,7 +474,10 @@ export default function WatchSettingsPage() {
                 <Select
                   value={mylistFolderId ?? ''}
                   disabled={myListEmpty || !mylistEnabled}
-                  onValueChange={(v) => setMylistFolderId(v || null)}
+                  onValueChange={(v) => {
+                    setMylistFolderId(v || null)
+                    markDirty()
+                  }}
                 >
                   <SelectTrigger className="h-10" data-testid="watch-mylist-folder">
                     <SelectValue placeholder="フォルダを選択" />
@@ -450,8 +505,14 @@ export default function WatchSettingsPage() {
                 value={mylistValue}
                 unit={mylistUnit}
                 disabled={myListEmpty || !mylistEnabled}
-                onValueChange={setMylistValue}
-                onUnitChange={setMylistUnit}
+                onValueChange={(v) => {
+                  setMylistValue(v)
+                  markDirty()
+                }}
+                onUnitChange={(u) => {
+                  setMylistUnit(u)
+                  markDirty()
+                }}
                 ariaPrefix="マイリスト変動の"
               />
               <p className="mt-1.5 text-xs text-muted-foreground">

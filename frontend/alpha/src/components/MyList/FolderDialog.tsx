@@ -82,6 +82,11 @@ export function FolderDialog({
               }}
             />
           </div>
+          {mode === 'create' && (
+            <p className="text-xs text-muted-foreground">
+              作成後、キーワードを設定すると一致する新着部屋が自動で入ります
+            </p>
+          )}
         </div>
         <DialogFooter className="!flex-row justify-between items-center gap-2">
           {/* 削除ボタン（左寄せ） */}

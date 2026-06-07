@@ -7,9 +7,11 @@ interface UseFolderManagementProps {
   myListData: MyListData
   setMyListData: (data: MyListData) => void
   onConfirm: (options: ConfirmOptions) => Promise<boolean>
+  /** フォルダ新規作成直後に呼ばれる（作成→フォルダ設定を1動線にする導線用） */
+  onFolderCreated?: (folder: Folder) => void
 }
 
-export function useFolderManagement({ myListData, setMyListData, onConfirm }: UseFolderManagementProps) {
+export function useFolderManagement({ myListData, setMyListData, onConfirm, onFolderCreated }: UseFolderManagementProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedFolder, setSelectedFolder] = useState<Folder | undefined>()
@@ -31,12 +33,15 @@ export function useFolderManagement({ myListData, setMyListData, onConfirm }: Us
       if (dialogMode === 'create') {
         const updated = addFolder(myListData, name, parentId)
         setMyListData(updated)
+        // addFolder は末尾に追加するため、最後の要素が作成されたフォルダ
+        const created = updated.folders[updated.folders.length - 1]
+        if (created) onFolderCreated?.(created)
       } else if (selectedFolder) {
         const updated = updateFolder(myListData, selectedFolder.id, { name, parentId })
         setMyListData(updated)
       }
     },
-    [dialogMode, myListData, selectedFolder, setMyListData]
+    [dialogMode, myListData, selectedFolder, setMyListData, onFolderCreated]
   )
 
   const handleDeleteFolder = useCallback(async () => {

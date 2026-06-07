@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { ArrowLeft, CheckSquare, FolderPlus, ArrowUpDown, Check, LineChart, Layers } from 'lucide-react'
@@ -67,7 +68,11 @@ const MyListPage = memo(() => {
   const [folderSettingsTarget, setFolderSettingsTarget] = useState<import('@/types/storage').Folder | null>(null)
 
   const handleFolderSettings = useCallback((folder: import('@/types/storage').Folder) => {
-    setFolderSettingsTarget(folder)
+    // 初回は条件付き mount（folderSettingsTarget && …）のため、まず「閉じた状態の mount」を
+    // flushSync で確定させてから開く。同時に open=true で mount すると StrictMode の
+    // mount 二重実行で useBackDismiss が push→back→push と走り、遅延した back が
+    // 開いた直後のダイアログを即閉じしてしまう（dev のみだが動線が壊れる）。
+    flushSync(() => setFolderSettingsTarget(folder))
     setFolderSettingsOpen(true)
   }, [])
 
@@ -85,9 +90,32 @@ const MyListPage = memo(() => {
     })
   }, [])
 
+  // フォルダ作成→設定を1動線に: 作成直後にそのままフォルダ設定ダイアログを開く
+  // （スマートフォルダ＝自動追加ルールに気付ける導線）。
+  // FolderDialog は閉じ際に useBackDismiss が history.back() でダミーエントリを取り除くため、
+  // 即座に開くと設定ダイアログ側のダミーが巻き込まれて閉じてしまう。
+  // その popstate が落ち着いてから（来なければ 400ms 後に）開く。
+  const handleFolderCreated = useCallback((folder: import('@/types/storage').Folder) => {
+    let done = false
+    const openNow = () => {
+      if (done) return
+      done = true
+      window.removeEventListener('popstate', onPop)
+      handleFolderSettings(folder)
+    }
+    const onPop = () => setTimeout(openNow, 0)
+    window.addEventListener('popstate', onPop)
+    setTimeout(openNow, 400)
+  }, [handleFolderSettings])
+
   // Custom hooks
   const selection = useMyListSelection()
-  const folderMgmt = useFolderManagement({ myListData, setMyListData, onConfirm: confirmDialog.confirm })
+  const folderMgmt = useFolderManagement({
+    myListData,
+    setMyListData,
+    onConfirm: confirmDialog.confirm,
+    onFolderCreated: handleFolderCreated,
+  })
   const folderNav = useFolderNavigation(folderId)
   const scrollDirection = useScrollDirection()
   // タブ再押下時の先頭スクロール＋再マウント（＝データ再読込）は画面表示状態カーネルが担う。
@@ -214,7 +242,7 @@ const MyListPage = memo(() => {
   if (error) {
     return (
       <div className="absolute inset-0 overflow-y-auto p-3 md:p-6">
-        <ErrorState />
+        <ErrorState onRetry={() => mutate()} />
       </div>
     )
   }
