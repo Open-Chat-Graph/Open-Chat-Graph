@@ -380,12 +380,18 @@ export interface AlertsResponse {
 }
 
 // フォルダへの自動追加通知（type: 'folder_add'）
+// count が存在する場合は初回フィルのサマリ通知（複数部屋をまとめた1通）。
+// count が存在しない場合は毎時の新着個別通知（openChatId / name / member が必ず存在する）。
 export interface FolderAddPayload {
   folderId: string
   folderName: string
-  openChatId: number
-  name: string
-  member: number
+  // サマリ通知のとき存在する
+  count?: number
+  sampleNames?: string[]
+  // 個別通知のとき存在する（サマリ通知では undefined）
+  openChatId?: number
+  name?: string
+  member?: number
 }
 
 export interface FolderAdd extends AlertBase {

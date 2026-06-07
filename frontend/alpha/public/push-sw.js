@@ -75,8 +75,15 @@ async function buildNotificationOptions() {
       }
     } else if (firstFolderAdd) {
       const folderName = firstFolderAdd.payload ? firstFolderAdd.payload.folderName : ''
-      const roomName = firstFolderAdd.payload ? firstFolderAdd.payload.name : ''
-      firstText = `「${folderName}」に【${roomName}】が自動追加`
+      const count = firstFolderAdd.payload ? firstFolderAdd.payload.count : undefined
+      if (count !== undefined) {
+        // サマリ通知（初回フィル）
+        firstText = `「${folderName}」に${count}件が自動追加されました`
+      } else {
+        // 個別通知（毎時の新着）
+        const roomName = firstFolderAdd.payload ? firstFolderAdd.payload.name : ''
+        firstText = `「${folderName}」に【${roomName}】が自動追加`
+      }
     } else if (firstKeyword) {
       firstText = `【${firstKeyword.name}】`
     }

@@ -55,13 +55,15 @@ class AlphaSmartFolderService
     /**
      * ルール設定時の初回フィル。現在の一致部屋・人数上位 INITIAL_FILL_LIMIT 件を即時追加する。
      * 既にフォルダ/seen にある部屋・マイリストの他の場所にある部屋は追加しない（カウントもしない）。
+     * 部屋ごとの個別通知はせず、追加件数をまとめた**サマリ通知1通**を発行する。
      *
+     * @param string $ruleCreatedAt ルールの rule_created_at（'Y-m-d H:i:s'）。サマリ通知の dedup キーに使う。
      * @return int 実際に追加した件数（autoAdded）
      */
-    public function initialFill(string $userId, string $folderId, string $folderName, string $keyword, ?int $category): int
+    public function initialFill(string $userId, string $folderId, string $folderName, string $keyword, ?int $category, string $ruleCreatedAt): int
     {
         $rooms = $this->repo->findMatchingRooms($keyword, $category, self::INITIAL_FILL_LIMIT);
-        return $this->addRoomsToFolder($userId, $folderId, $folderName, $rooms);
+        return $this->addRoomsToFolder($userId, $folderId, $folderName, $rooms, markNotified: false, summaryMode: true, ruleCreatedAt: $ruleCreatedAt);
     }
 
     // ====================== 毎時処理（AlphaAlertService::run() の⑤） ======================
@@ -168,6 +170,8 @@ class AlphaSmartFolderService
      *
      * @param array<int, array{id:int, name:string, member:int, created_at:?string}> $rooms
      * @param bool $markNotified true なら通知ユーザーを notifiedUserIds（Push tickle 対象）へ合流
+     * @param bool $summaryMode  true なら部屋ごとの個別通知をやめ、追加完了後にサマリ通知1通を発行する（初回フィル用）
+     * @param string $ruleCreatedAt サマリ通知の dedup キー用タイムスタンプ（summaryMode=true 時に使用）
      */
     private function addRoomsToFolder(
         string $userId,
@@ -175,6 +179,8 @@ class AlphaSmartFolderService
         string $folderName,
         array $rooms,
         bool $markNotified = false,
+        bool $summaryMode = false,
+        string $ruleCreatedAt = '',
     ): int {
         if (empty($rooms)) {
             return 0;
@@ -184,6 +190,9 @@ class AlphaSmartFolderService
         $nextOrder = $this->repo->getNextSortOrder($userId, $folderId);
 
         $count = 0;
+        /** @var string[] $sampleNames サマリ用：先頭3部屋の名前 */
+        $sampleNames = [];
+
         foreach ($rooms as $room) {
             $ocId = $room['id'];
             if (isset($seen[$ocId])) {
@@ -197,6 +206,16 @@ class AlphaSmartFolderService
             }
             $nextOrder++;
 
+            if ($summaryMode) {
+                // サマリモード: 個別通知は発行しない。名前だけ収集して後でまとめる
+                if (count($sampleNames) < 3) {
+                    $sampleNames[] = $room['name'];
+                }
+                $count++;
+                continue;
+            }
+
+            // 通常モード（毎時の新着追加）: 部屋ごとに個別通知
             $payload = [
                 'folderId' => $folderId,
                 'folderName' => $folderName,
@@ -209,6 +228,21 @@ class AlphaSmartFolderService
                 $this->notifiedUserIds[$userId] = true;
             }
             $count++;
+        }
+
+        // サマリモード: 1通のまとめ通知を発行（追加0件ならスキップ）
+        if ($summaryMode && $count > 0) {
+            // dedup キー: rule_created_at の unix 秒を使う（同じルール設定では一度だけ）。
+            // 空の場合は現在時刻にフォールバック（念のため）。
+            $ruleCreatedTs = $ruleCreatedAt !== '' ? strtotime($ruleCreatedAt) : time();
+            $dedup = 'fa:' . $folderId . ':backfill:' . $ruleCreatedTs;
+            $payload = [
+                'folderId' => $folderId,
+                'folderName' => $folderName,
+                'count' => $count,
+                'sampleNames' => $sampleNames,
+            ];
+            $this->alertRepo->insertNotification($userId, 'folder_add', $payload, $dedup);
         }
 
         return $count;
