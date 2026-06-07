@@ -12,14 +12,19 @@ import {
 import fetcher from './fetcher'
 import { t } from './translation'
 
-export const chatArgDto: RankingPositionChartArgDto = JSON.parse(
-  (document.getElementById('chart-arg') as HTMLScriptElement).textContent!
-)
-export const statsDto: StatisticsChartDto = JSON.parse(
-  (document.getElementById('stats-dto') as HTMLScriptElement).textContent!
-)
+// DTO は「PHPページの JSON タグ」または「α SPA の mountOcGraph()」から setDtos() で注入される。
+// モジュール読込時には DOM を読まない（#chart-arg が無いページでも安全に import できる）。
+// 参照側は ESM の live binding 経由で常に最新値を見る
+export let chatArgDto: RankingPositionChartArgDto
+export let statsDto: StatisticsChartDto
+export let langCode: '' | 'tw' | 'th' = ''
 
-export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
+/** マウント前に必ず呼ぶ。再マウント時は別ルームの DTO に差し替わる */
+export function setDtos(arg: RankingPositionChartArgDto, stats: StatisticsChartDto) {
+  chatArgDto = arg
+  statsDto = stats
+  langCode = arg.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
+}
 
 const getApiQuery = (param: ChartApiParam, isHour: boolean) => {
   const query = {

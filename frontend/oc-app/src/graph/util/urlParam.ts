@@ -1,5 +1,13 @@
 import { updateURLSearchParams } from './util'
 
+// α SPA 埋め込み（mountOcGraph の urlSync: false）時に false。
+// false の間は location / history を一切読み書きしない（状態はメモリのみ）
+let urlSyncEnabled = true
+
+export function setUrlSyncEnabled(enabled: boolean) {
+  urlSyncEnabled = enabled
+}
+
 const categoryParam: urlParamsValue<'category'>[] = ['in', 'all']
 const barParam: urlParamsValue<'bar'>[] = ['ranking', 'rising', 'none']
 const limitParam: urlParamsValue<'limit'>[] = ['hour', 'week', 'month', 'all']
@@ -72,6 +80,11 @@ export const defaultLimitNum: ChartLimit | 25 = 8
 export const defaultChart: urlParamsValue<'chart'> = getStoregeChartSetting()
 
 export function getCurrentUrlParams(): urlParams {
+  // URL 同期オフ時は URL を読まずデフォルト値から開始する
+  if (!urlSyncEnabled) {
+    return { category: defaultCategory, bar: defaultBar, limit: defaultLimit, chart: defaultChart }
+  }
+
   const url = new URL(window.location.href)
   return {
     category: validParam<'category'>(categoryParam, url, 'category') ?? defaultCategory,
@@ -82,6 +95,9 @@ export function getCurrentUrlParams(): urlParams {
 }
 
 export function setUrlParams(params: urlParams) {
+  // URL 同期オフ時は history を書き換えない
+  if (!urlSyncEnabled) return
+
   window.history.replaceState(
     null,
     '',

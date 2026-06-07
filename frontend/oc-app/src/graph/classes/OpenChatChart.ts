@@ -46,6 +46,8 @@ export default class OpenChatChart implements ChartFactory {
   ohlcDates: string[] = []
   private isHour: boolean = false
   private mode: ChartMode = 'line'
+  // 再マウントしても visibilitychange リスナーを重複登録しないためのフラグ
+  private visibilityListenerAdded = false
 
   constructor() {
     ChartJS.register(ChartDataLabels)
@@ -58,7 +60,10 @@ export default class OpenChatChart implements ChartFactory {
   init(canvas: HTMLCanvasElement) {
     this.setSize()
     this.canvas = canvas
-    !this.isPC && this.visibilitychange()
+    if (!this.isPC && !this.visibilityListenerAdded) {
+      this.visibilitychange()
+      this.visibilityListenerAdded = true
+    }
   }
 
   private visibilitychange() {
@@ -126,6 +131,35 @@ export default class OpenChatChart implements ChartFactory {
     this.enableZoom = value
     this.chart.destroy()
     this.createChart(false)
+  }
+
+  /**
+   * マウント解除・再マウント時に Chart.js インスタンスとルームごとの状態を破棄する。
+   * ChartJS.register したプラグインが this を捕捉しているため、
+   * インスタンス自体は使い回す（シングルトンのまま中身だけ初期化）
+   */
+  dispose() {
+    this.chart?.destroy()
+    this.chart = null!
+    this.canvas = undefined
+    this.initData = ModelFactory.initChartArgs()
+    this.data = ModelFactory.initChartData()
+    this.option = ModelFactory.initOpenChatChartOption()
+    this.memberOhlcApiData = []
+    this.ohlcData = []
+    this.ohlcRankingData = []
+    this.ohlcRankingNullLow = new Set()
+    this.ohlcDates = []
+    this.limit = 0
+    this.zoomWeekday = 0
+    this.graph2Max = 0
+    this.graph2Min = 0
+    this.isZooming = false
+    this.onZooming = false
+    this.onPaning = false
+    this.enableZoom = false
+    this.isHour = false
+    this.mode = 'line'
   }
 
   /** テーマ（ライト/ダーク）切替時にチャートを現在のデータのまま作り直す */

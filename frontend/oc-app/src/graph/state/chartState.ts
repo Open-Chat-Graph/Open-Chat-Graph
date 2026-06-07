@@ -79,6 +79,15 @@ export function markInitialLoadComplete() {
   isInitialLoad = false
 }
 
+/**
+ * 埋め込み（unmountOcGraph / 再マウント）時にモジュールレベルの状態を初期化する。
+ * チャート本体の破棄と「初回読込」フラグの復元を行う
+ */
+export function resetChartModuleState() {
+  isInitialLoad = true
+  chart.dispose()
+}
+
 export function setUrlParamsFromChartStates() {
   let limit: urlParamsValue<'limit'> = 'hour'
   switch (graphStore.get(limitAtom)) {

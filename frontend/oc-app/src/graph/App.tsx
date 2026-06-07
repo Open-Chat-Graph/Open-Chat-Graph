@@ -59,7 +59,10 @@ function AppInner() {
   useEffect(() => {
     chart.init(canvas.current!)
     init()
-    document.getElementById('graph-box')!.style.opacity = '1'
+    // 祖先の #graph-box（PHPページのフェードイン用ラッパー）があれば表示する。
+    // α SPA 埋め込みでは存在しないことがあるため任意
+    const graphBox = canvas.current?.closest<HTMLElement>('#graph-box')
+    if (graphBox) graphBox.style.opacity = '1'
     // ダークモード切替時: 現在のデータのままチャートを再構築（canvas は CSS 変数が効かないため）
     return onThemeChange(() => chart.applyTheme())
   }, [])

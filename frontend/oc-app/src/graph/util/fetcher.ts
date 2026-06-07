@@ -4,6 +4,12 @@ const cache: { url: string[]; data: any[] } = {
   data: [],
 }
 
+/** 再マウント時にキャッシュを破棄する（ルーム切替・データ鮮度のため） */
+export function clearFetcherCache() {
+  cache.url.length = 0
+  cache.data.length = 0
+}
+
 export default async function fetcher<T>(url: string) {
   const cacheIndex = cache.url.indexOf(url)
   if (cacheIndex !== -1) {
