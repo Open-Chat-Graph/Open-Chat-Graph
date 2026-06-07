@@ -50,7 +50,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           </div>
 
           <?php if (isset($_hourlyRange)) : ?>
-            <div class="talkroom_number_of_stats" style="line-height: 135%; margin-top: 3px;">
+            <div class="talkroom_number_of_stats stats-hourly" style="line-height: 135%; margin-top: 3px;">
               <div class="number-box ">
                 <span aria-hidden="true" style="margin-right: 1px; font-size: 9px; user-select: none;">🔥</span>
                 <span style="margin-right: 4px;" class="openchat-itme-stats-title"><?php echo $_hourlyRange ?></span>
@@ -61,7 +61,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             </div>
           <?php endif ?>
 
-          <div class="talkroom_number_of_stats">
+          <div class="talkroom_number_of_stats stats-daily">
 
             <?php if (isset($oc['rh24_diff_member']) && $oc['rh24_diff_member'] >= AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) : ?>
               <div class="number-box " style="margin-right: 6px;">
@@ -112,11 +112,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       </section>
 
-      <hr class="hr-top" style="margin-bottom: 8px;">
+      <hr class="hr-top oc-header-hr" style="margin-bottom: 8px;">
 
-      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み */ ?>
+      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み (margin/padding/border 含む) */ ?>
 
-      <nav style="margin: 0 1rem; padding: 8px 0 10px 0; border: unset;" class="oc-desc-nav">
+      <nav class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
           <span class="oc-nav-chips">
             <?php if (is_int($oc['api_created_at'])) : ?>
@@ -161,16 +161,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php endif ?>
       <hr class="hr-top" style="margin-bottom: 8px;">
       <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
-        <section class="oc-narrative" aria-labelledby="oc-narrative-title">
-          <h2 class="oc-narrative__title" id="oc-narrative-title">
-            <span class="oc-narrative__title-icon" aria-hidden="true">📊</span><?php echo t('オプチャグラフの分析') ?>
-          </h2>
-          <p class="oc-narrative__summary"><?php echo h($narrative['summary']) ?></p>
-          <?php if (!empty($narrative['detail'])): ?>
-            <p class="oc-narrative__detail"><?php echo nl2br(h($narrative['detail'])) ?></p>
-          <?php endif ?>
+        <section class="oc-narrative" aria-label="<?php echo t('オプチャグラフの分析') ?>">
+          <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
         </section>
-        <hr class="hr-top" style="margin-bottom: 8px;">
       <?php endif ?>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
