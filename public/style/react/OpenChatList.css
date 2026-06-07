@@ -124,7 +124,7 @@ html {
 
 .item-desc {
   all: unset;
-  color: var(--c-text-3);
+  color: var(--c-text-desc);
   font-size: 13px;
   line-height: 130%;
   display: -webkit-box;
@@ -145,7 +145,7 @@ html {
 
 .item-lower-stats {
   display: flex;
-  color: var(--c-text-4);
+  color: var(--c-text-meta);
   font-size: 13px;
   line-height: 1.1rem;
   gap: 12px;
