@@ -404,6 +404,39 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         ];
     }
 
+    public function getHourPositionCounts(
+        int $open_chat_id,
+        int $inCategory,
+        int $intervalHour,
+        \DateTime $endTime
+    ): array {
+        $firstTime = (new \DateTime($endTime->format('Y-m-d H:i:s')))
+            ->modify("- {$intervalHour}hour")
+            ->format('Y-m-d H:i:s');
+
+        $query =
+            "SELECT
+                (SELECT COUNT(*) FROM member WHERE open_chat_id = :open_chat_id AND time >= :first_time) AS member,
+                (SELECT COUNT(*) FROM ranking WHERE open_chat_id = :open_chat_id AND category = :in_category AND time >= :first_time) AS ranking_in,
+                (SELECT COUNT(*) FROM ranking WHERE open_chat_id = :open_chat_id AND category = 0 AND time >= :first_time) AS ranking_all,
+                (SELECT COUNT(*) FROM rising WHERE open_chat_id = :open_chat_id AND category = :in_category AND time >= :first_time) AS rising_in,
+                (SELECT COUNT(*) FROM rising WHERE open_chat_id = :open_chat_id AND category = 0 AND time >= :first_time) AS rising_all";
+
+        $result = RankingPositionDB::fetch($query, [
+            'open_chat_id' => $open_chat_id,
+            'in_category' => $inCategory,
+            'first_time' => $firstTime,
+        ]);
+
+        return [
+            'member' => (int)($result['member'] ?? 0),
+            'ranking_in' => (int)($result['ranking_in'] ?? 0),
+            'ranking_all' => (int)($result['ranking_all'] ?? 0),
+            'rising_in' => (int)($result['rising_in'] ?? 0),
+            'rising_all' => (int)($result['rising_all'] ?? 0),
+        ];
+    }
+
     public function getLastHour(int $offset = 0): string|false
     {
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];
