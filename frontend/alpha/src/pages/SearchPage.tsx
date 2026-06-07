@@ -15,7 +15,6 @@ import { addSearchHistory } from '@/services/searchHistory'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
 import type { SearchResponse, SearchEtaParams } from '@/types/api'
 import type { SortType, SortOrder } from '@/lib/sort-options'
-import { STORAGE_KEYS } from '@/lib/storage-keys'
 import { useLayout } from '@/contexts/layout-context'
 
 const LIMIT = 300
@@ -121,17 +120,12 @@ const SearchPage = memo(() => {
   const sparklines = useSparklines(visibleIds)
 
   const handleCardClick = useCallback((chatId: number) => {
-    // 検索クエリ（キーワード + ソート設定）をsessionStorageに保存してから詳細ページに遷移
-    if (urlKeyword) {
-      sessionStorage.setItem(STORAGE_KEYS.searchQuery, searchParams.toString())
-    }
-
     // リストから該当するデータを見つけてstateで渡す（DetailPageでのフェッチを避ける）
     const chatData = results.find(chat => chat.id === chatId)
     navigate(`/openchat/${chatId}`, {
       state: chatData ? { initialData: chatData } : undefined
     })
-  }, [navigate, urlKeyword, searchParams, results])
+  }, [navigate, results])
 
   const handleAddToMyList = useCallback((chatId: number, event: React.MouseEvent) => {
     event.stopPropagation()

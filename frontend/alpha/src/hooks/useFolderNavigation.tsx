@@ -1,8 +1,5 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { STORAGE_KEYS } from '@/lib/storage-keys'
-
-const STORAGE_KEY = STORAGE_KEYS.myListCurrentFolder
 
 export interface UseFolderNavigationReturn {
   currentFolderId: string | null
@@ -13,8 +10,9 @@ export interface UseFolderNavigationReturn {
 /**
  * フォルダナビゲーションフック
  *
- * URLをフォルダ状態の真実の情報源として扱い、sessionStorageは
- * 「最後にいたフォルダ」を記憶するためだけに使用します。
+ * URLをフォルダ状態の唯一の真実の情報源として扱います。
+ * （旧「最後にいたフォルダ」の sessionStorage 記憶は、タブ進入を常にルートへ
+ * 破棄する挙動になったため廃止。）
  *
  * @param currentFolderId - URLから取得した現在のフォルダID（useParams経由）
  */
@@ -22,18 +20,14 @@ export function useFolderNavigation(currentFolderId: string | null | undefined):
   const navigate = useNavigate()
 
   const navigateToFolder = useCallback((folderId: string | null) => {
-    // sessionStorageに最後のフォルダを保存（メニューから戻るため）
     if (folderId) {
-      sessionStorage.setItem(STORAGE_KEY, folderId)
       navigate(`/mylist/${folderId}`)
     } else {
-      sessionStorage.removeItem(STORAGE_KEY)
       navigate('/mylist')
     }
   }, [navigate])
 
   const resetNavigation = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY)
     navigate('/mylist')
   }, [navigate])
 
@@ -42,12 +36,4 @@ export function useFolderNavigation(currentFolderId: string | null | undefined):
     navigateToFolder,
     resetNavigation,
   }
-}
-
-/**
- * sessionStorageから最後にいたフォルダIDを取得
- * メニューからマイリストに戻る際に使用
- */
-export function getLastFolderId(): string | null {
-  return sessionStorage.getItem(STORAGE_KEY)
 }

@@ -41,7 +41,6 @@ import { useSparklines } from '@/hooks/useSparklines'
 import type { MyListData } from '@/types/storage'
 import type { BatchStatsResponse } from '@/types/api'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
-import { STORAGE_KEYS } from '@/lib/storage-keys'
 
 const MyListPage = memo(() => {
   const navigate = useNavigate()
@@ -128,11 +127,6 @@ const MyListPage = memo(() => {
     if (location.pathname === '/mylist' || location.pathname.startsWith('/mylist/')) {
       setMyListData(loadMyList())
       mutate()
-    }
-
-    // マイリストルートに来た場合、sessionStorageの最後のフォルダIDをクリア
-    if (location.pathname === '/mylist' && !folderId) {
-      sessionStorage.removeItem(STORAGE_KEYS.myListCurrentFolder)
     }
   }, [location.pathname, folderId, mutate])
 

@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { History, Bookmark, X, Trash2, Search } from 'lucide-react'
 import { CATEGORIES, categoryName } from '@/lib/categories'
 import { sortMetricLabel } from '@/lib/sort-options'
-import { useLayout } from '@/contexts/layout-context'
+import { useApplySearchParams } from '@/hooks/useApplySearchParams'
 import {
   loadSearchHistory,
   removeSearchHistory,
@@ -39,8 +38,7 @@ const FEATURED_CATEGORIES = CATEGORIES.filter((c) => c.id !== 0).slice(0, 8)
  * 履歴の自動追記は SearchPage 側（検索完了時）が行う。ここは表示・再適用・削除のみ。
  */
 export function SearchLanding() {
-  const [, setSearchParams] = useSearchParams()
-  const { triggerSearch } = useLayout()
+  const applySearchParams = useApplySearchParams()
 
   const [history, setHistory] = useState<SearchHistoryItem[]>(() => loadSearchHistory())
   const [saved, setSaved] = useState<SavedSearch[]>(() => loadSavedSearches())
@@ -52,10 +50,9 @@ export function SearchLanding() {
       if (category !== 0) next.set('category', String(category))
       next.set('sort', sort)
       next.set('order', order)
-      setSearchParams(next)
-      triggerSearch() // 同じ条件でも再フェッチ
+      applySearchParams(next) // 検索済み条件ならキャッシュから即表示（同一条件のみ nonce 再フェッチ）
     },
-    [setSearchParams, triggerSearch],
+    [applySearchParams],
   )
 
   const handleRemoveHistory = useCallback((q: string, category: number) => {

@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select'
 import { SORT_METRICS, sortMetricLabel } from '@/lib/sort-options'
 import { CATEGORIES, categoryName } from '@/lib/categories'
-import { useLayout } from '@/contexts/layout-context'
+import { useApplySearchParams } from '@/hooks/useApplySearchParams'
 import { SavedSearchControls } from './SavedSearchControls'
 
 const SEARCH_PLACEHOLDER = 'キーワードを入力...'
@@ -28,7 +28,7 @@ const SEARCH_PLACEHOLDER = 'キーワードを入力...'
  */
 export function HeaderSearchBar() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { triggerSearch } = useLayout()
+  const applySearchParams = useApplySearchParams()
   const [value, setValue] = useState('')
   const [isFocused, setIsFocused] = useState(false)
 
@@ -42,9 +42,10 @@ export function HeaderSearchBar() {
     const next = new URLSearchParams(searchParams)
     if (q) next.set('q', q)
     else next.delete('q')
-    setSearchParams(next)
-    triggerSearch() // 同じキーワードでも再フェッチさせる
-  }, [value, searchParams, setSearchParams, triggerSearch])
+    // 条件が変わるなら URL 遷移（検索済みならキャッシュ即表示）、
+    // 同じキーワードのままなら nonce で強制再フェッチ（従来挙動）。
+    applySearchParams(next)
+  }, [value, searchParams, applySearchParams])
 
   // iOS Safari: 入力中（IME確定）のタップを優先し、他要素のクリックを一時的に抑止
   useEffect(() => {

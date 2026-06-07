@@ -6,13 +6,20 @@ const REVEAL_STEP = 30
 
 /**
  * 一覧3画面（検索 / 期間増減 / Labs）共通の SWR Infinite オプション。
- * revalidateIfStale:false 等は <Activity> 再表示（タブ復帰/オーバーレイ閉じ）の
- * 同一キー再検証を抑止するため（実フェッチの無い再描画で読み込み挙動を起こさない）。
+ *
+ * revalidateIfStale は既定(true)＝標準の stale-while-revalidate。タブ切替は「破棄して
+ * 再マウント」モデルになったため（旧: <Activity> 復帰の同一キー再検証を抑止する false）、
+ * 再マウント時はキャッシュから即描画し、stale なら背景で再検証する。
+ *
+ * revalidateFirstPage:false は維持（重要）: true だと無限スクロールの append（setSize）の
+ * たびに1ページ目の重いクエリが再発火し二重フェッチになる（swr/infinite の仕様）。
+ * 副作用として「全ページがキャッシュ済みのキー」の mount 再検証はネットワークを発生させず
+ * キャッシュ解決で完了する（＝重いクエリの背景再発火も起きない。データは毎時更新なので許容）。
+ *
  * errorRetryCount/errorRetryInterval: SW/ネットワーク起因の一時的失敗から素早く復帰させる。
  */
 const SWR_INFINITE_OPTIONS = {
   revalidateFirstPage: false,
-  revalidateIfStale: false,
   revalidateOnFocus: false,
   revalidateOnReconnect: false,
   dedupingInterval: 60000,
@@ -100,8 +107,13 @@ export function useInfiniteList<P extends { data: readonly unknown[] }>({
   const hasMore = pages.length > 0 ? getHasMore(pages, items.length) : false
 
   // size===1 の validation は1ページ目そのもの（初回/条件変更/再実行）、size>1 は append。
+  // 「データが既にある状態の再検証」（再マウント時の stale 再検証＝キャッシュ即答）は
+  // 背景扱いにして 'first' にしない（読み込みバー・dim を出さず裏で更新だけする）。
+  // isLoading は SWR 的に「応答待ちかつ表示データ無し」なので、初回／条件変更／
+  // エラー後の再試行（データ破棄済み）はこれで漏れなく 'first' になる。
   const isLoadingMore = isValidating && size > 1
-  const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
+  const hasLoadedPages = data !== undefined && data.length > 0
+  const firstPageLoading = (isLoading || (isValidating && !hasLoadedPages)) && !isLoadingMore
   const phase: ListLoadPhase = firstPageLoading ? 'first' : isLoadingMore ? 'more' : 'idle'
 
   const [visibleCount, setVisibleCount] = useState(REVEAL_STEP)

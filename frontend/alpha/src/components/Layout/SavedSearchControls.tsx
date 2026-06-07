@@ -28,7 +28,7 @@ import {
 } from '@/services/savedSearches'
 import { categoryName } from '@/lib/categories'
 import { sortMetricLabel } from '@/lib/sort-options'
-import { useLayout } from '@/contexts/layout-context'
+import { useApplySearchParams } from '@/hooks/useApplySearchParams'
 
 /** 自動命名: 「キーワード（カテゴリ名）」。キーワードが空ならカテゴリ名のみ。 */
 function buildDefaultName(q: string, category: number): string {
@@ -54,8 +54,8 @@ function summarize(s: SavedSearch): string {
  * 現在条件は useSearchParams から読む。
  */
 export function SavedSearchControls() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const { triggerSearch } = useLayout()
+  const [searchParams] = useSearchParams()
+  const applySearchParams = useApplySearchParams()
 
   const [saved, setSaved] = useState<SavedSearch[]>(() => loadSavedSearches())
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -98,10 +98,9 @@ export function SavedSearchControls() {
       if (s.category !== 0) next.set('category', String(s.category))
       next.set('sort', s.sort)
       next.set('order', s.order)
-      setSearchParams(next)
-      triggerSearch() // 同じ条件でも再フェッチ
+      applySearchParams(next) // 条件が変われば URL 遷移（キャッシュ即表示）、同一なら nonce で再フェッチ
     },
-    [setSearchParams, triggerSearch],
+    [applySearchParams],
   )
 
   const handleRemove = useCallback((id: string) => {
