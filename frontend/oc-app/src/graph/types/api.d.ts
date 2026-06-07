@@ -11,6 +11,8 @@ type StatisticsChartDto = {
   member: (number | null)[]
   startDate: string
   endDate: string
+  /** 期間タブ毎にローソク足(OHLC)データが存在するか */
+  ohlcAvailability: { week: boolean; month: boolean; all: boolean }
 }
 
 interface MemberOhlc {
