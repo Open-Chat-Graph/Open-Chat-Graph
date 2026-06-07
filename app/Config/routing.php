@@ -999,5 +999,17 @@ Route::path('alpha-api/alerts', [AlphaApiController::class, 'alertsGet'])
     ->matchStr('markRead', emptyAble: true, maxLen: 2000, default: '')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - Web Push: VAPID公開鍵（フロントの購読登録用）
+Route::path('alpha-api/push/config', [AlphaApiController::class, 'pushConfig'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - Web Push: 購読登録（同一endpointはupsert）
+Route::path('alpha-api/push/subscribe@post', [AlphaApiController::class, 'pushSubscribe'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - Web Push: 購読解除
+Route::path('alpha-api/push/unsubscribe@post', [AlphaApiController::class, 'pushUnsubscribe'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 cache();
 Route::run();

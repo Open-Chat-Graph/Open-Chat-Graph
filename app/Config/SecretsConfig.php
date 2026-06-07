@@ -40,6 +40,33 @@ class SecretsConfig
     static string $googleApiClientSecret = '';
     static string $googleApiRefreshToken = '';
 
+    // ------------------------------------------------------------------
+    // Alpha Web Push: VAPID (RFC8292) 鍵（ペイロード無し tickle 送信用）
+    //
+    // local-secrets.php に書く（gitignore 済）。鍵生成（openssl CLI）:
+    //   openssl ecparam -genkey -name prime256v1 -noout -out vapid_private.pem
+    //   公開鍵(base64url 未圧縮P-256 65byte):
+    //     openssl ec -in vapid_private.pem -pubout -outform DER | tail -c 65 \
+    //       | base64 | tr '+/' '-_' | tr -d '=\n'
+    //
+    //   - $vapidPublicKey  base64url(未圧縮point 65byte)。フロントの applicationServerKey と同一値
+    //   - $vapidPrivateKey 秘密鍵 PEM 全文（-----BEGIN EC PRIVATE KEY----- ...）
+    //   - $vapidSubject    連絡先（例 'mailto:admin@openchat-review.me'）
+    //
+    // 未設定なら push/config は enabled:false を返し、送信バッチは何もしない。
+    // ------------------------------------------------------------------
+    static string $vapidPublicKey = '';
+    static string $vapidPrivateKey = '';
+    static string $vapidSubject = '';
+
+    /** Alpha Web Push の VAPID 鍵が揃っているか。 */
+    public static function isVapidConfigured(): bool
+    {
+        return self::$vapidPublicKey !== ''
+            && self::$vapidPrivateKey !== ''
+            && self::$vapidSubject !== '';
+    }
+
     /**
      * Alpha のGA/GSC同期に必要な設定が揃っているか。
      * 1つでも欠けていれば false（バッチはこの場合 何もせず exit 0 する）。

@@ -31,12 +31,20 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
  *
  * 毎時処理を止めないため、各ステップは try/catch で握りつぶしログのみ（呼び出し側で集約）。
  *
- * @return array{computedAt:string, keywordHits:int, movements:int, errors:array<int,string>}
+ * @return array{computedAt:string, keywordHits:int, movements:int, notifiedUserIds:string[], errors:array<int,string>}
  */
 class AlphaAlertService
 {
     /** LINE検索APIに渡す1キーワードあたりの取得件数 */
     private const SEARCH_LIMIT = 20;
+
+    /**
+     * この実行で「新規に通知をINSERTした」ユーザーID集合（dedupで弾かれたものは含まない）。
+     * Web Push tickle（AlphaPushService::notifyUsers）の対象抽出に使う。
+     *
+     * @var array<string, true>
+     */
+    private array $notifiedUserIds = [];
 
     public function __construct(
         private AlphaAlertRepository $repo,
@@ -47,7 +55,7 @@ class AlphaAlertService
     /**
      * 毎時 cron 本体。
      *
-     * @return array{computedAt:string, keywordHits:int, movements:int, errors:array<int,string>}
+     * @return array{computedAt:string, keywordHits:int, movements:int, notifiedUserIds:string[], errors:array<int,string>}
      */
     public function run(): array
     {
@@ -56,6 +64,7 @@ class AlphaAlertService
         $errors = [];
         $keywordHits = 0;
         $movements = 0;
+        $this->notifiedUserIds = [];
 
         try {
             $keywordHits = $this->computeKeywordHits();
@@ -79,6 +88,7 @@ class AlphaAlertService
             'computedAt' => $computedAt,
             'keywordHits' => $keywordHits,
             'movements' => $movements,
+            'notifiedUserIds' => array_keys($this->notifiedUserIds),
             'errors' => $errors,
         ];
     }
@@ -220,6 +230,7 @@ class AlphaAlertService
             $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
             $this->repo->markEmidSeen($w['id'], $emid);
             if ($inserted) {
+                $this->notifiedUserIds[$w['user_id']] = true;
                 $count++;
             }
         }
@@ -270,6 +281,7 @@ class AlphaAlertService
             $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
             $this->repo->markEmidSeen($w['id'], $emid);
             if ($inserted) {
+                $this->notifiedUserIds[$w['user_id']] = true;
                 $count++;
             }
         }
@@ -307,6 +319,7 @@ class AlphaAlertService
             $payload = $this->buildMovementPayload('room', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
             $dedup = 'room:' . $ocId . ':' . $direction . ':' . $hourBucket;
             if ($this->repo->insertNotification($w['user_id'], 'room', $payload, $dedup)) {
+                $this->notifiedUserIds[$w['user_id']] = true;
                 $count++;
             }
         }
@@ -426,6 +439,7 @@ class AlphaAlertService
                 $payload = $this->buildMovementPayload('mylist', $ocId, $ocMap[$ocId] ?? null, $diff, $percent, $direction);
                 $dedup = 'mylist:' . $ocId . ':' . $direction . ':' . $hourBucket;
                 if ($this->repo->insertNotification($userId, 'mylist', $payload, $dedup)) {
+                    $this->notifiedUserIds[(string)$userId] = true;
                     $count++;
                 }
             }

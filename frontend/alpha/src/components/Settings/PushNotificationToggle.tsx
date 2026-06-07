@@ -14,12 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bell, BellOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  getPushStatus,
-  subscribe,
-  unsubscribe,
-  type PushStatus,
-} from '@/services/pushSubscription'
+import { getPushStatus, subscribe, unsubscribe } from '@/services/pushSubscription'
 
 /** サーバーから公開鍵設定の enabled フラグを取得 */
 async function fetchPushEnabled(): Promise<boolean> {

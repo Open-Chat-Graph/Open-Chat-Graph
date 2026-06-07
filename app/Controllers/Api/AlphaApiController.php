@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\AppConfig;
+use App\Config\SecretsConfig;
 use App\Models\ApiRepositories\Alpha\AlphaOpenChatRepository;
 use App\Models\ApiRepositories\Alpha\AlphaPeriodGrowthRepository;
 use App\Models\ApiRepositories\Alpha\AlphaStatsRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
+use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
@@ -1107,6 +1109,80 @@ class AlphaApiController
             'unreadCount' => $unreadCount,
             'computedAt' => $notifications[0]['created_at'] ?? null,
         ]);
+    }
+
+    // ============================================================
+    // Web Push（ペイロード無し tickle 方式。送信は AlphaPushService）
+    // ============================================================
+
+    /**
+     * VAPID 公開鍵の取得（フロントの pushManager.subscribe 用）
+     * GET /alpha-api/push/config
+     */
+    function pushConfig()
+    {
+        Reception::$isJson = true;
+        $publicKey = SecretsConfig::isVapidConfigured() ? SecretsConfig::$vapidPublicKey : '';
+
+        return response([
+            'publicKey' => $publicKey,
+            'enabled' => $publicKey !== '',
+        ]);
+    }
+
+    /**
+     * Push 購読の登録（同一 endpoint は upsert）
+     * POST /alpha-api/push/subscribe
+     * Body: { endpoint:string, keys:{ p256dh:string, auth:string } }
+     */
+    function pushSubscribe(AuthInterface $auth, AlphaPushRepository $repo, Reception $reception)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+        $body = $reception->input();
+
+        $endpoint = $this->validPushEndpoint($body['endpoint'] ?? null);
+        $keys = (isset($body['keys']) && is_array($body['keys'])) ? $body['keys'] : [];
+        $p256dh = trim((string)($keys['p256dh'] ?? ''));
+        $authKey = trim((string)($keys['auth'] ?? ''));
+        if ($p256dh === '' || strlen($p256dh) > 255 || $authKey === '' || strlen($authKey) > 64) {
+            throw new BadRequestException('Invalid keys');
+        }
+
+        $repo->upsertSubscription($userId, $endpoint, $p256dh, $authKey);
+
+        return response(['ok' => true]);
+    }
+
+    /**
+     * Push 購読の解除
+     * POST /alpha-api/push/unsubscribe
+     * Body: { endpoint:string }
+     */
+    function pushUnsubscribe(AlphaPushRepository $repo, Reception $reception)
+    {
+        Reception::$isJson = true;
+        $body = $reception->input();
+
+        $endpoint = $this->validPushEndpoint($body['endpoint'] ?? null);
+        $repo->deleteByEndpoint($endpoint);
+
+        return response(['ok' => true]);
+    }
+
+    /** push endpoint の検証（https・500字以内）。不正は BadRequest。 */
+    private function validPushEndpoint(mixed $v): string
+    {
+        $endpoint = trim((string)($v ?? ''));
+        if (
+            $endpoint === ''
+            || strlen($endpoint) > 500
+            || !str_starts_with($endpoint, 'https://')
+            || filter_var($endpoint, FILTER_VALIDATE_URL) === false
+        ) {
+            throw new BadRequestException('Invalid endpoint');
+        }
+        return $endpoint;
     }
 
     /**

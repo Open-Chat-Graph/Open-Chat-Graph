@@ -55,6 +55,9 @@
 | GET | `/alpha-api/period-growth` | 任意N日増減（無限スクロール: `page`(1始) / `limit`、応答に `page`/`hasMore`。access-ranking と同形） |
 | GET/PUT | `/alpha-api/alerts/config` | アラート設定（キーワード/部屋/マイリスト） |
 | GET | `/alpha-api/alerts` | 通知一覧（新着部屋＋増減） |
+| GET | `/alpha-api/push/config` | Web Push: VAPID公開鍵 `{publicKey, enabled}`（鍵未設定時 enabled:false） |
+| POST | `/alpha-api/push/subscribe` | Web Push: 購読登録 `{endpoint, keys:{p256dh,auth}}`。Cookieユーザーに紐付け、同一endpointはupsert |
+| POST | `/alpha-api/push/unsubscribe` | Web Push: 購読解除 `{endpoint}` |
 | GET | `/alpha-api/access-ranking` | Labs rooms タブの唯一の入口。部屋集合は常に PV>0 で固定し `sort` で並びだけ切替（`pageviews`=アクセス数 / `seo_total`=SEO合計(直接+間接) / `jump_clicks`=入室数）。各部屋に全指標＋`keywords`(流入KW top8)。流入KW集計は `getRoomsTopKeywords` が SQL の `ROW_NUMBER()` で部屋ごと上位8件に絞りDBで完結（全件転送なし）。`scope=pages` で非部屋ページ（`jumpClicks`/`jumpClicksOrganic` 含む） |
 | GET | `/alpha-api/search-ranking` | Labs: 検索流入(GSC)。pages タブ seo 用途のみ（rooms は access-ranking に一本化） |
 | GET | `/alpha-api/search-query-ranking` | Labs: 上位検索クエリ(GSC) |
@@ -64,13 +67,14 @@
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
 
 - **全αテーブルは userlog DB・テーブル名 `_ja` サフィックス**（2026-06-06 移設。言語はサフィックス方式＝多言語化時は `_tw` 等を増設。userlog は言語共有DBだがテーブル名で分離）。αテーブルへのクエリは `UserLogDB::`、`open_chat` 等 ocreview 側との跨ぎ JOIN は ocreview 側だけを実行時DB名（`AppConfig::$dbName['']`）で修飾（`DB::execute` 自動再接続対策）。マイリスト本体 `oc_list_user` はαのテーブルではないためサフィックス無し。
-- ユーザー系(7): `alpha_keyword_watch_ja` / `alpha_room_watch_ja` / `alpha_mylist_threshold_ja` / `alpha_keyword_seen_ja` / `alpha_search_seen_room_ja` / `alpha_search_timing_ja` / `alpha_notification_ja`
+- ユーザー系(8): `alpha_keyword_watch_ja` / `alpha_room_watch_ja` / `alpha_mylist_threshold_ja` / `alpha_keyword_seen_ja` / `alpha_search_seen_room_ja` / `alpha_search_timing_ja` / `alpha_notification_ja` / `alpha_push_subscription_ja`（Web Push購読。endpointが長いためUNIQUEは`endpoint_hash`=SHA-256。送信失敗5回 or 404/410で自動削除）
 - GA集計系(6): `alpha_room_access_daily_ja`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily_ja`（非部屋ページ）／ `alpha_search_query_daily_ja`（上位検索クエリ）／ `alpha_room_search_query_daily_ja`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily_ja`（部屋別 リファラ元）／ `alpha_page_jump_daily_ja`（非部屋ページの入室数近似・日次事前集計。算出: 部屋の当日 jump_clicks を「その部屋の当日リファラ PV 中、該当ページ由来の割合」で按分した近似値。分母は外部・direct を含む全リファラ PV でページ合計≦部屋合計が保証される。`alpha_ga_sync.php` が各日書込み後に自動更新。初回投入・再集計は `batch/exec/alpha_rebuild_page_jump.php` でバックフィル）
 - **本番デプロイ後の手動移行（必須・1回）**: ①schema-sync が userlog に `_ja` 13枚を自動作成（空） ②データコピー: 集計系5枚（page_jump除く）を `INSERT INTO userlog.alpha_xxx_ja SELECT * FROM ocreview.alpha_xxx`（旧行に NULL があり新テーブルは NOT NULL のため、失敗時は NOT NULL カラムを `COALESCE(col, 0)` で埋めて SELECT）、ユーザー系7枚を `INSERT INTO userlog.alpha_xxx_ja SELECT * FROM userlog.alpha_xxx`（DB名は本番の実名） ③`php batch/exec/alpha_rebuild_page_jump.php`（全期間・新按分ロジックで再構築） ④動作確認後、旧13テーブル（ocreview の集計6＋userlog の旧名7）を手動DROP。**これを忘れると Labs/通知が空データで動く**
 
 ### バッチ / cron
 
-- `batch/exec/alpha_hourly.php`: 毎時クロール後にアラート3種を算出・保存（ja限定、`cron_crawling.php`から）。
+- `batch/exec/alpha_hourly.php`: 毎時クロール後にアラート3種を算出・保存（ja限定、`cron_crawling.php`から）。保存後、新規通知が入ったユーザーの購読へ Web Push tickle を送信（`AlphaPushService::notifyUsers`）。
+- **Web Push（ペイロード無し tickle 方式）**: RFC8291 暗号化はせず、VAPID(RFC8292) の ES256 JWT を付けた空POSTを push エンドポイントへ送るだけ。通知の中身は SW が `/alpha-api/alerts` を fetch して表示。実装は `AlphaPushService`（JWT生成: openssl_sign のDER署名を JOSE raw r||s 64byte に変換。audごとに実行内キャッシュ）＋`AlphaPushRepository`。VAPID鍵は `SecretsConfig::$vapidPublicKey/$vapidPrivateKey(PEM)/$vapidSubject`（local-secrets.php。生成コマンドは SecretsConfig のコメント参照）。未設定なら `push/config` が enabled:false を返し送信はスキップ。
 - `batch/exec/alpha_ga_sync.php`: 日次でGA4/GSCを部屋別集計（`SyncOpenChat::dailyTask()`末尾、設定済みのときのみ）。各日の room/referrer 書込み後に `rebuildPageJumpDaily` を呼び `alpha_page_jump_daily` を自動更新。
 - `batch/exec/alpha_rebuild_page_jump.php`: `alpha_page_jump_daily` の派生バックフィル CLI。`alpha_room_referrer_daily` に存在する全日付（または `--from`/`--to` 指定範囲）を再集計（GA再取得不要・DB内完結）。
 

@@ -15,6 +15,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Services\Alpha\AlphaAlertService;
+use App\Services\Alpha\AlphaPushService;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Utility\CronUtility;
 use ExceptionHandler\ExceptionHandler;
@@ -28,9 +29,28 @@ try {
     $service = app(AlphaAlertService::class);
     $result = $service->run();
 
+    // 新規通知が入ったユーザーへ Web Push tickle を送る（失敗しても通知算出は成功扱い）
+    $pushLog = '';
+    if (!empty($result['notifiedUserIds'])) {
+        try {
+            /** @var AlphaPushService $push */
+            $push = app(AlphaPushService::class);
+            $pushResult = $push->notifyUsers($result['notifiedUserIds']);
+            if ($pushResult['subscriptions'] > 0) {
+                $pushLog = ' push=' . $pushResult['sent'] . '/' . $pushResult['subscriptions']
+                    . ($pushResult['removed'] > 0 ? ' removed=' . $pushResult['removed'] : '')
+                    . ($pushResult['failed'] > 0 ? ' pushFailed=' . $pushResult['failed'] : '');
+            }
+        } catch (\Throwable $e) {
+            ExceptionHandler::errorLog($e);
+            $pushLog = ' pushError=' . $e->getMessage();
+        }
+    }
+
     CronUtility::addCronLog(
         '【Alpha通知】完了 keywordHits=' . $result['keywordHits']
             . ' movements=' . $result['movements']
+            . $pushLog
             . (empty($result['errors']) ? '' : ' errors=' . implode(' | ', $result['errors']))
     );
 } catch (\Throwable $e) {

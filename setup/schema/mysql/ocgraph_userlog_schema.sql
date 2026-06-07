@@ -236,3 +236,21 @@ CREATE TABLE `alpha_notification_ja` (
   UNIQUE KEY `uq_user_dedup` (`user_id`,`dedup_key`),
   KEY `user_created` (`user_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Web Push 購読（α: ペイロード無し tickle 送信用）
+-- endpoint は長い（FCM等で~400字）ため UNIQUE は SHA-256 ハッシュ列に張る
+DROP TABLE IF EXISTS `alpha_push_subscription_ja`;
+CREATE TABLE `alpha_push_subscription_ja` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(64) NOT NULL,
+  `endpoint` varchar(500) NOT NULL,
+  `endpoint_hash` varchar(64) NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(64) NOT NULL,
+  `fail_count` tinyint(4) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `last_sent_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_endpoint_hash` (`endpoint_hash`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
