@@ -5,7 +5,8 @@
     <div class="site_header">
         <a class="<?php echo t('header_site_title') ?> unset" href="<?php echo url() ?>">
             <img src="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>" alt="">
-            <?php if (strpos(path(), '/oc') === false || isset($titleP)) : ?>
+            <?php // $demoteTitle: ページ本文側に h1 があるページ（トップのヒーロー等）はヘッダーを p に降格して h1 重複を避ける ?>
+            <?php if ((strpos(path(), '/oc') === false || isset($titleP)) && empty($demoteTitle)) : ?>
                 <h1><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: var(--c-text-mid-3);">' . t(' (開発環境)') . '</span>'; ?></h1>
             <?php else : ?>
                 <p><?php echo t('サイトタイトル'); if (\App\Config\AppConfig::$isStaging) echo '<span style="font-size: 0.7em; color: var(--c-text-mid-3);">' . t(' (開発環境)') . '</span>'; ?></p>

@@ -39,6 +39,17 @@
                     <span class="footer-theme-toggle-label"><?php echo t('テーマ') ?>: <span class="theme-label-light"><?php echo t('ライト') ?></span><span class="theme-label-dark"><?php echo t('ダーク') ?></span><span class="theme-label-auto"><?php echo t('自動') ?></span></span>
                 </button>
             </div>
+            <?php // 言語切り替え（トップのヒーローから移設）。各言語のブランド名をアンカーにする ?>
+            <div class="footer-lang-row" aria-label="Language">
+                <span class="footer-lang-globe" aria-hidden="true">🌐</span>
+                <?php foreach (array_keys(\App\Config\AppConfig::LINE_OPEN_URL) as $lang): ?>
+                    <?php if ($lang === \Shared\MimimalCmsConfig::$urlRoot): ?>
+                        <span class="footer-lang-current"><?php echo t('オプチャグラフ', $lang) ?></span>
+                    <?php else: ?>
+                        <a class="unset" href="<?php echo url(["urlRoot" => "", "paths" => [$lang]]) ?>"><?php echo t('オプチャグラフ', $lang) ?></a>
+                    <?php endif ?>
+                <?php endforeach ?>
+            </div>
             <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/Open-Chat-Graph" target="_blank">Project on GitHub @Open-Chat-Graph</a><span class="line-link-icon777"></span></span></div>
     </nav>
 </footer>
