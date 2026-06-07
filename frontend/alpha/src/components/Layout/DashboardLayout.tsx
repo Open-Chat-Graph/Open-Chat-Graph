@@ -7,7 +7,7 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { HeaderSearchBar } from './HeaderSearchBar'
 import { cn } from '@/lib/utils'
 import { useViewNavigation } from '@/hooks/useViewNavigation'
-import type { ViewKey } from '@/lib/viewNavigation'
+import { canGoBackInApp, type ViewKey } from '@/lib/viewNavigation'
 import { useAlerts } from '@/hooks/useAlerts'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
@@ -60,9 +60,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     || location.pathname === '/watch'
     || location.pathname === '/labs'
 
-  // 戻るボタンの動作: 履歴があればブラウザバック、なければトップページへ
+  // 戻るボタンの動作: SPA 内履歴があればブラウザバック、なければトップページへ。
+  // window.history.length は外部サイト経由の直リンク入場でも大きい値になるため
+  // React Router が付与する history.state.idx を使って SPA 内遷移かを判定する。
   const handleBack = () => {
-    if (window.history.length > 2) {
+    if (canGoBackInApp()) {
       navigate(-1)
     } else {
       navigate('/')

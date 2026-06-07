@@ -95,6 +95,15 @@ export function resolveEnterPath(key: ViewKey): string {
 }
 
 /**
+ * SPA 内で「戻れる」かどうかを判定する。
+ * `window.history.length > 2` は外部サイト経由の直リンク入場（history.length>2 かつ SPA idx=0）
+ * でも true になるため使わない。React Router が history.state.idx に積む SPA 内遷移カウンタを使う。
+ */
+export function canGoBackInApp(): boolean {
+  return (window.history.state?.idx ?? 0) > 0
+}
+
+/**
  * 現在地に応じて「記録すべきビュー状態」を sessionStorage に保存する（enter 復元用）。
  * App 直下の effect から location 変化のたびに呼ぶ。マイリストのフォルダ記憶は
  * useFolderNavigation 側が担うのでここでは扱わない。

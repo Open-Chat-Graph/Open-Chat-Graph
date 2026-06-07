@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { X } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import * as VisuallyHiddenPrimitive from '@radix-ui/react-visually-hidden'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { imgPreviewUrl, imgUrl } from '@/lib/imageUrl'
 
 interface DetailHeaderProps {
@@ -73,7 +74,13 @@ export const DetailHeader = memo(({ thumbnail, name, imageModalOpen, onImageModa
 
       {/* Image Modal */}
       <Dialog open={imageModalOpen} onOpenChange={onImageModalOpenChange}>
-        <DialogContent className="max-w-full w-full h-full p-0 bg-black/90 border-0">
+        {/* Radix Dialog はアクセシビリティ上 DialogTitle が必須。
+            画像のみのモーダルはビジュアル上タイトルが不要なので VisuallyHidden で包む。
+            aria-describedby={undefined} は Radix の「description 未指定」警告を抑止する。 */}
+        <DialogContent aria-describedby={undefined} className="max-w-full w-full h-full p-0 bg-black/90 border-0">
+          <DialogTitle asChild>
+            <VisuallyHiddenPrimitive.VisuallyHidden>{name}の画像</VisuallyHiddenPrimitive.VisuallyHidden>
+          </DialogTitle>
           {/* 画像モーダル内の閉じるボタン。z-50 は DialogContent(層=modal) 内のローカル重ね
               （画像の上に出すだけ）でアプリ全体の重ね順トークンとは無関係。 */}
           <button

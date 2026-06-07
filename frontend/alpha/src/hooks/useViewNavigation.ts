@@ -8,6 +8,7 @@ import {
   resolveEnterPath,
   viewOwning,
   isOverlayPath,
+  canGoBackInApp,
   type ViewKey,
 } from '@/lib/viewNavigation'
 
@@ -31,8 +32,8 @@ export function useViewNavigation() {
       const intent = resolveIntent(location.pathname, key)
 
       if (intent === 'back') {
-        // 詳細／統合グラフを閉じる。履歴があれば戻る、無ければ対象ビューへ入る。
-        if ((window.history.state?.idx ?? 0) > 0) navigate(-1)
+        // 詳細／統合グラフを閉じる。SPA 内履歴があれば戻る、無ければ対象ビューへ入る。
+        if (canGoBackInApp()) navigate(-1)
         else navigate(resolveEnterPath(key))
         return
       }
