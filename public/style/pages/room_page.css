@@ -25,76 +25,71 @@ html {
 }
 
 /* オプチャグラフの分析 (narrative) section
- * 既存 description / graph-title トーンに合わせつつ、
- * 左の細いアクセントラインで「分析セクション」であることを示す。
+ * 見出し・強調ボックスは持たない 1 段落構成。
+ * 「分析テキスト」であることは文頭の極小ブランドピル (blog の「結論」ピルと同イディオム:
+ * --c-pill-brand-bg / --c-pill-brand-text) と太字の状態ラベルで示す。
  */
 .oc-narrative {
-  padding: 12px 1rem 14px 1rem;
+  padding: 10px 1rem 12px 1rem;
   font-family: var(--font-family);
-  color: var(--c-text-1);
 }
 
-.oc-narrative__title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--c-text-1);
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.oc-narrative__title-icon {
-  font-size: 14px;
-  user-select: none;
-  line-height: 1;
-}
-
-.oc-narrative__summary {
+.oc-narrative__text {
   margin: 0;
-  padding: 8px 10px;
   font-size: 13px;
-  line-height: 1.6;
-  color: var(--c-text-body);
-  background-color: var(--c-bg-sub);
-  border-left: 3px solid var(--c-brand-2);
-  border-radius: 0 6px 6px 0;
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.oc-narrative__detail {
-  margin: 10px 0 0 0;
-  padding: 0 2px;
-  font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.8;
   color: var(--c-text-soft);
   word-break: break-word;
 }
 
+.oc-narrative__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1.5px 9px 1.5px 7px;
+  margin-right: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  color: var(--c-pill-brand-text);
+  background: var(--c-pill-brand-bg);
+  border-radius: 999px;
+  vertical-align: 2px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.oc-narrative__badge::before {
+  content: "📊";
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+.oc-narrative__label {
+  font-weight: 700;
+  color: var(--c-text-body);
+}
+
+/* detail はラベルの下に改行して、stats タイトルと同格のグレーで控えめに */
+.oc-narrative__detail {
+  display: block;
+  margin-top: 3px;
+  color: var(--c-text-3);
+}
+
 @media screen and (min-width: 512px) {
   .oc-narrative {
-    padding: 14px 1rem 16px 1rem;
+    padding: 12px 1rem 14px 1rem;
   }
 
-  .oc-narrative__title {
-    font-size: 1rem;
-    margin-bottom: 10px;
-  }
-
-  .oc-narrative__title-icon {
+  .oc-narrative__text {
     font-size: 15px;
+    line-height: 1.85;
   }
 
-  .oc-narrative__summary {
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-
-  .oc-narrative__detail {
-    font-size: 14px;
-    line-height: 1.8;
+  .oc-narrative__badge {
+    font-size: 11.5px;
   }
 }
 
@@ -137,8 +132,12 @@ html {
   margin: 0;
 }
 
-.talkroom_description_box.close br {
-  display: none;
+/* スマホ幅のみ: 閉じた説明文は改行を潰して密度を上げる。
+   PC は原文の改行を活かす (スペースに余裕があり、原文の見た目に近い方が読みやすい) */
+@media screen and (max-width: 511.98px) {
+  .talkroom_description_box.close br {
+    display: none;
+  }
 }
 
 .oc-desc-nav {
@@ -146,8 +145,17 @@ html {
   flex-direction: column;        /* スマホ幅: カテゴリ/タグの下に「LINEで開く」を独立行(全幅)で落とし、長いタグとの重なりを解消 */
   justify-content: space-between;
   gap: 0;
-  padding: 1rem 0;
-  border-top: 1px solid var(--c-border);
+  margin: 0 1rem;
+  /* スマホ幅: 上の罫線 (.oc-header-hr) を消す分、stats との間に余白で呼吸を持たせる */
+  padding: 14px 0 12px 0;
+  border: unset;
+}
+
+/* スマホ幅: ヘッダー(stats)とカテゴリ/タグの間は罫線なし (余白のみで区切る) */
+@media screen and (max-width: 511.98px) {
+  .oc-header-hr {
+    display: none;
+  }
 }
 
 /* スマホ幅: カテゴリ/タグ ブロックとボタンの間に細い区切り線を入れ、
@@ -168,8 +176,8 @@ html {
     align-items: center;
     justify-content: space-evenly;
     gap: 1rem;
-    padding: 1rem 0;
-    border-top: 1px solid var(--c-border);
+    padding: 12px 0;             /* PC: 上の罫線は .oc-header-hr が担う */
+    border: unset;
   }
 
   /* PC: 区切り線/上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
@@ -419,6 +427,21 @@ html {
   width: fit-content;
   align-items: flex-start;
   margin-top: 2px;
+}
+
+/* スマホ幅: 24時間 / 1週間 はラベルの下に数値を落とした 2 カラムで並べる
+   (一行に収まらず崩れるため。🔥1時間 は短いので 1 行のまま) */
+@media screen and (max-width: 511.98px) {
+  .talkroom_number_of_stats.stats-daily {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .talkroom_number_of_stats.stats-daily .number-box > div {
+    flex-basis: 100%;   /* 数値ブロックをラベルの下の行へ */
+  }
 }
 
 .number-box {
