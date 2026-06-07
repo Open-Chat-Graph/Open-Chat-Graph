@@ -7,7 +7,7 @@
 ## 実装済み機能
 
 - 検索: キーワード＋カテゴリ絞り込み、ソート軸（人数 / 1時間・24時間・1週間増減 / 作成日）＋昇降トグル、検索条件の保存（localStorage）、無限スクロール。読み込み表示は全状態で同一の細いプログレスバーに統一（初回＝上部バー＋キャプション／再検索＝前回結果を薄くdim＋同じ上部バー／追加読み込み＝リスト末尾に同じバー。スピナーは使わない）。初期/空状態のランディングに「最近の検索」（自動履歴・チップ・タップで再検索・個別/一括削除）と「保存した検索条件」（タップで再検索・削除）を表示。カードは本家風のコンパクト行で、ソート軸に対応する増減を表示。
-- 詳細: 丸アイコンヘッダ＋画像モーダル（URL駆動）、人数＋3期間の増減、Preactグラフ（人数＋順位線。操作タブ列の高さを `--chart-controls-h` で予約し描画完了時のレイアウトシフト無し）、ランキング掲載履歴（遅延オーバーレイ・件数表示／0件はグレーアウト）、高次の考察ブロック、アクション（LINEで開く / マイリスト）、増減アラート（枠上部の開閉トグル。未有効時は「解除」を出さず「ONにする」のみ／有効時は人数・％しきい値の編集と「解除」）。
+- 詳細: 丸アイコンヘッダ＋画像モーダル（URL駆動）、人数＋3期間の増減、本家と同じoc-appグラフを埋め込み（人数＋順位線。操作タブ列の高さを `--chart-controls-h` で予約し描画完了時のレイアウトシフト無し）、ランキング掲載履歴（遅延オーバーレイ・件数表示／0件はグレーアウト）、高次の考察ブロック、アクション（LINEで開く / マイリスト）、増減アラート（枠上部の開閉トグル。未有効時は「解除」を出さず「ONにする」のみ／有効時は人数・％しきい値の編集と「解除」）。
 - 詳細のアクセス・検索指標ブロック: 純PV / UU / SEO流入 / 参加リンク押下（うちSEO=Organic起点を併記）/ 平均滞在 ＋ 流入キーワード窓（GSC・多い順）＋ 参照元窓（GA4 pageReferrer・多い順、本家内からの遷移は「SEO経由」バッジ＝SEO動線で間接流入した部屋が分かる）。本家が出さない数字を出すαの中核価値。
 - 高次の考察: 一目で分からない高次シグナルだけを提示。種類: 急上昇ランキング順位 / 公式ランキング（全体, 上位300位以内のみ）の推移・最高位 / 同カテゴリのメンバー数順位・シェア・規模 / 単日最大増加 / ペース異常。データ不足・下位・ノイズは黙る。
 - 任意のN日増減 (`/period-growth`): キーワード(＋カテゴリ)一致のうち「N日前と現在の両方に統計がある部屋」に絞り、その期間の増減で並べる。**キーワードは任意（空欄＝全部屋対象。member降順の候補プール上限内）**。期間は**既定30日** ＋ カレンダーで開始〜終了の任意範囲（`PeriodRangePicker`、`allowAll={false}` で「全期間」非表示）。コントロールは**2段**（1段目: キーワード＋検索 / 2段目: カテゴリ＋並び順＋期間ピッカー）。期間は `PeriodValue`（`lib/period.ts`）で管理し `periodToParams` で API の `days` か `start`/`end` に変換。range指定時の `days` は実日数（+1）で統一。作成日/登録日も表示。APIレスポンスに `poolLimited`/`candidateLimit` を含み、件数がプール上限（3,000件）に達した場合はUIで補足注記＋リスト末尾に明示。**無限スクロール（useSWRInfinite＋page/limit。読み込み表示は検索・Labsと同一のプログレスバー＝初回上部バー／再取得dim＋同バー／末尾の追加読み込みバー）**。本家ソートより長い任意期間＋「始点から継続」絞り込みが差別点。
@@ -27,6 +27,7 @@
 - 画面骨格（固定サブヘッダ＋スクロール領域）は `components/Layout/ListScreen.tsx` に集約。ヘッダをスクロール外の flex 兄弟に置きカードの覗き込みを物理的に防ぐ（旧 `sticky -mt -mx` 方式を廃止）。利用ページ(labs/watch)は `KEEP_ALIVE_PAGES` で `scrollable:false`。`scrollResetKey` prop 変化で内部スクロールコンテナを先頭へ戻す（Labs タブ切替などで使用）。
 - 無限スクロールは「ネットワーク1000件取得・描画30件ずつ reveal」分離方式（`hooks/useInfiniteReveal.ts`）。バッファに未表示分があれば即時 +30、使い切ったとき・hasMore があれば次の1000件をネットワーク取得。検索・Labs・period-growth 共通。一覧3画面（検索/period-growth/Labs）の `useSWRInfinite` は `revalidateIfStale: false`（`<Activity>` 復帰時の同一キー再検証を抑止し幽霊ローディングを防ぐ）。
 - リスト取得の応答待ち表示は `components/Common/ListProgress.tsx` に集約し、3状態すべて同一の `ListProgressBar`（細い primary バー・スピナー不使用）に統一: 初回＝`ListProgressRegion` の上部バー＋キャプション／再取得＝`ListRefetchBar`（前回結果を薄くdim＋同じ上部バー）／追加読み込み（無限スクロール次ページ）＝`ListProgressFooter`（リスト末尾に同じバー。次ページETAは取れないので約900msの軽いindeterminate ramp）。検索・Labs・period-growth が共用し同一描画（先頭ページ進行値は `useListProgress`）。旧 `InfiniteScrollLoader`（Loader2スピナー）は廃止。
+- 詳細グラフは本家 `frontend/oc-app` のグラフバンドルを埋め込み（`components/Detail/OcGraph.tsx`）。`/alpha-api/oc/{id}/graph-embed` で DTO＋ハッシュ付き `scriptPath`（サーバー側で glob 解決＝SPAは常に最新ビルドをロード）を取得し、`window.mountOcGraph({container, chatArgDto, statsDto, urlSync: false})` でマウント（`urlSync: false` 必須＝グラフがαのURL/historyを書き換えない）。テーマは theme-provider が `<html>` に `data-theme` を設定＋`octhemechange` を発火しグラフ側が再適用（再マウント不要）。旧 Preactチャート（`/js/preact-chart`）は廃止。
 - ビルド: `make build-frontend:alpha` → `public/js/alpha`（成果物コミット＝gitベースデプロイ）。
 - 主要ディレクトリ: `src/{pages,components,api,hooks,lib,services,contexts,types}`。
 
@@ -47,6 +48,7 @@
 | GET | `/alpha-api/search` | キーワード/カテゴリ/ソート検索 |
 | GET | `/alpha-api/stats/{id}` | 基本情報（軽量） |
 | GET | `/alpha-api/stats/{id}/graph` | グラフ時系列（人数/順位） |
+| GET | `/alpha-api/oc/{id}/graph-embed` | 詳細グラフ埋め込み（oc-appグラフの chartArgDto/statsDto＋ハッシュ付き scriptPath） |
 | POST | `/alpha-api/batch-stats` | 複数IDの一括基本情報 |
 | GET | `/alpha-api/ranking-history/{id}` | ランキング掲載履歴 |
 | GET | `/alpha-api/insights/{id}` | 高次の考察 |

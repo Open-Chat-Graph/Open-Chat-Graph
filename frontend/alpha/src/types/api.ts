@@ -66,6 +66,15 @@ export interface GraphDataResponse {
   rankings: (number | null)[]
 }
 
+// グラフ埋め込み（oc-app グラフ）- /alpha-api/oc/{id}/graph-embed
+// DTO の中身は oc-app 側（window.mountOcGraph）の契約なのでここでは不透明に扱う
+export interface GraphEmbedResponse {
+  /** ハッシュ付きバンドルのパス（サーバー側で glob 解決済み。例: js/oc-app/graph-XXXX.js） */
+  scriptPath: string
+  chartArgDto: Record<string, unknown>
+  statsDto: Record<string, unknown>
+}
+
 // 後方互換性のため残す（BasicInfo + GraphData）
 export interface StatsResponse extends BasicInfoResponse {
   dates: string[]

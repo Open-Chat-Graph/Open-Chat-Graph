@@ -22,6 +22,16 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
+// 埋め込み oc-app グラフ（OcGraph）とのテーマ契約:
+// グラフは <html> の data-theme 属性を読み、octhemechange イベントで再適用する
+// （canvas は CSS 変数が効かないため。再マウント不要）
+function applyResolvedTheme(root: HTMLElement, resolved: 'dark' | 'light') {
+  root.classList.remove('light', 'dark')
+  root.classList.add(resolved)
+  root.setAttribute('data-theme', resolved)
+  document.dispatchEvent(new Event('octhemechange'))
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
@@ -42,23 +52,20 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove('light', 'dark')
-
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
         : 'light'
 
-      root.classList.add(systemTheme)
+      applyResolvedTheme(root, systemTheme)
       setResolvedTheme(systemTheme)
 
       // Listen for system theme changes
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handleChange = (e: MediaQueryListEvent) => {
         const newTheme = e.matches ? 'dark' : 'light'
-        root.classList.remove('light', 'dark')
-        root.classList.add(newTheme)
+        applyResolvedTheme(root, newTheme)
         setResolvedTheme(newTheme)
       }
 
@@ -66,7 +73,7 @@ export function ThemeProvider({
       return () => mediaQuery.removeEventListener('change', handleChange)
     }
 
-    root.classList.add(theme)
+    applyResolvedTheme(root, theme as 'dark' | 'light')
     setResolvedTheme(theme as 'dark' | 'light')
   }, [theme])
 

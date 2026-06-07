@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse, EtaParams, EtaResponse } from '../types/api'
+import type { SearchParams, SearchResponse, BasicInfoResponse, BatchStatsResponse, GraphEmbedResponse, RankingHistoryResponse, InsightsResponse, PeriodGrowthParams, PeriodGrowthResponse, AlertsConfigResponse, AlertsConfigRequest, AlertsResponse, RankingParams, AccessRankingResponse, SearchRankingResponse, SearchEtaParams, SearchEtaResponse, RoomMetricsResponse, SearchQueryRankingParams, SearchQueryRankingResponse, EtaParams, EtaResponse } from '../types/api'
 import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
@@ -35,6 +35,14 @@ export const alphaApi = {
       body: JSON.stringify({ ids }),
     })
     if (!res.ok) throw new Error('Batch stats API failed')
+
+    return res.json()
+  },
+
+  // グラフ埋め込み用 DTO ＋ ハッシュ付きスクリプトパス（oc-app グラフを SPA にマウントする）
+  async getGraphEmbed(openChatId: number): Promise<GraphEmbedResponse> {
+    const res = await fetch(`${API_BASE}/oc/${openChatId}/graph-embed`)
+    if (!res.ok) throw new Error('Graph embed API failed')
 
     return res.json()
   },

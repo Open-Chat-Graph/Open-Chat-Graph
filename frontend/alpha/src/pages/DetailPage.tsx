@@ -4,11 +4,10 @@ import useSWR from 'swr'
 import { History, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
-import { DetailHeader, DetailInfo, DetailStats, DetailActions, PreactChart, InsightsBlock, RoomMetricsBlock, RankingHistoryOverlay } from '@/components/Detail'
+import { DetailHeader, DetailInfo, DetailStats, DetailActions, OcGraph, InsightsBlock, RoomMetricsBlock, RankingHistoryOverlay } from '@/components/Detail'
 import { WatchRoomControl } from '@/components/Notifications'
 import { alphaApi } from '@/api/alpha'
 import { loadMyList, addItem, removeItem, isInMyList } from '@/services/storage'
-import { useTheme } from '@/providers/theme-provider'
 import { useLayout } from '@/contexts/layout-context'
 import type { BasicInfoResponse, OpenChat, RankingHistoryResponse } from '@/types/api'
 
@@ -16,7 +15,6 @@ const DetailPage = memo(() => {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  const { resolvedTheme } = useTheme()
   const { setDetailTitle } = useLayout()
 
   const [myListData, setMyListData] = useState(() => loadMyList())
@@ -164,13 +162,9 @@ const DetailPage = memo(() => {
           isInRanking={basicInfo.isInRanking}
         />
 
-        {/* Graph（外部Preactバンドルをコンポーネント化。idが変わったらkeyで再マウント） */}
-        <PreactChart
-          key={basicInfo.id}
-          chatId={basicInfo.id}
-          categoryKey={basicInfo.category}
-          theme={resolvedTheme}
-        />
+        {/* Graph（本家と同じoc-appグラフバンドルを埋め込み。idが変わったらkeyで再マウント。
+            テーマはdata-theme＋octhemechangeでグラフ側が追従するためpropsに含めない） */}
+        <OcGraph key={basicInfo.id} chatId={basicInfo.id} />
 
         <DetailActions
           url={basicInfo.url}
