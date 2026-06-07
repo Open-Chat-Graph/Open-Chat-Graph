@@ -138,6 +138,8 @@ export default function ToggleButtons() {
     rising: avail.rising_in || avail.rising_all,
     ranking: avail.ranking_in || avail.ranking_all,
   }
+  // 表示中の期間にデータが全く無い場合は見出しも薄く
+  const enableAny = enableChip.rising || enableChip.ranking
 
   return (
     <Box>
@@ -147,7 +149,13 @@ export default function ToggleButtons() {
         alignItems="center"
         justifyContent={isPc ? 'space-around' : 'space-between'}
       >
-        <Typography variant="h3" fontSize="13px" fontWeight="bold" color="var(--c-text-1)">
+        <Typography
+          variant="h3"
+          fontSize="13px"
+          fontWeight="bold"
+          color="var(--c-text-1)"
+          sx={{ opacity: enableAny ? undefined : 0.4 }}
+        >
           {t('ランキングの順位を表示')}
         </Typography>
         {limit === 0 && !isPc && <SwitchLabels />}
