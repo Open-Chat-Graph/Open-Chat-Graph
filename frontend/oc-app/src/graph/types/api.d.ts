@@ -6,6 +6,14 @@ type RankingPositionChartArgDto = {
   urlRoot: string
 }
 
+/** ランキング種別(ranking/rising)×カテゴリ(in/all)毎に順位データが存在するか */
+type PositionAvailability = {
+  ranking_in: boolean
+  ranking_all: boolean
+  rising_in: boolean
+  rising_all: boolean
+}
+
 type StatisticsChartDto = {
   date: string[]
   member: (number | null)[]
@@ -13,6 +21,15 @@ type StatisticsChartDto = {
   endDate: string
   /** 期間タブ毎にローソク足(OHLC)データが存在するか */
   ohlcAvailability: { week: boolean; month: boolean; all: boolean }
+  /** 最新24時間タブに表示できる毎時メンバー数データが存在するか */
+  hourAvailability: boolean
+  /** 期間タブ毎の順位データ有無 */
+  positionAvailability: {
+    hour: PositionAvailability
+    week: PositionAvailability
+    month: PositionAvailability
+    all: PositionAvailability
+  }
 }
 
 interface MemberOhlc {
