@@ -7,6 +7,7 @@ import {
   handleChangeChartMode,
   handleChangeLimit,
   hasOhlcData,
+  hasOhlcDataForLimit,
   limitAtom,
   toggleDisplay24hAtom,
   toggleDisplayAllAtom,
@@ -19,8 +20,8 @@ function CandlestickToggle() {
   const limit = useAtomValue(limitAtom)
   if (!hasOhlcData()) return null
   const isCandlestick = chartMode === 'candlestick'
-  const isHourMode = limit === 25
-  const disabled = isHourMode && !isCandlestick
+  // 表示中の期間タブにOHLCデータが無い場合はグレーアウト（24時間タブも常に該当）
+  const disabled = !isCandlestick && !hasOhlcDataForLimit(limit)
 
   const handleToggle = () => {
     if (disabled) return
