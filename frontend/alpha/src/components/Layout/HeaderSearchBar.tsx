@@ -156,7 +156,12 @@ export function HeaderSearchBar() {
             「すべてのカテゴリ」のまま。min-w は行が詰まった際の潰れ防止の下限。 */}
         <Select
           value={currentCategory}
-          onValueChange={(v) => updateParam((p) => (v === '0' ? p.delete('category') : p.set('category', v)))}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(searchParams)
+            if (v === '0') next.delete('category')
+            else next.set('category', v)
+            applySearchParams(next)
+          }}
         >
           <SelectTrigger className="h-10 max-w-fit min-w-[6rem]" data-testid="toolbar-category-select">
             <SelectValue placeholder="カテゴリ">

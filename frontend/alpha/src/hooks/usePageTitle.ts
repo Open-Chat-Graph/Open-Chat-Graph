@@ -4,6 +4,7 @@ import { useLayout } from '@/contexts/layout-context'
 import type { DetailTitle } from '@/contexts/layout-context'
 import { loadMyList } from '@/services/storage'
 import { UNIFIED_SORT_OPTIONS } from '@/lib/sort-options'
+import { categoryName } from '@/lib/categories'
 
 /**
  * 現在のルートからヘッダーのページタイトルを導出するフック。
@@ -63,11 +64,15 @@ function computeTitle(
 
   if (pathname === '/') {
     const keyword = searchParams.get('q')
+    const sort = searchParams.get('sort') || 'member'
+    const order = searchParams.get('order') || 'desc'
+    const label = UNIFIED_SORT_OPTIONS.find((o) => o.value === sort && o.order === order)?.label ?? '人数降順'
     if (keyword) {
-      const sort = searchParams.get('sort') || 'member'
-      const order = searchParams.get('order') || 'desc'
-      const label = UNIFIED_SORT_OPTIONS.find((o) => o.value === sort && o.order === order)?.label ?? '人数降順'
       return `「${keyword}」の検索結果 - ${label}`
+    }
+    const cat = Number(searchParams.get('category') || '0')
+    if (cat !== 0) {
+      return `カテゴリ「${categoryName(cat)}」 - ${label}`
     }
     return 'オプチャグラフα'
   }

@@ -51,8 +51,8 @@ const SearchPage = memo(() => {
   // SWR Infinite のキー（sort, order, category, searchNonce を含めて再実行に対応）
   const getKey = useCallback(
     (pageIndex: number, previousPageData: SearchResponse | null) => {
-      // キーワードがない場合はnullを返してフェッチしない
-      if (!urlKeyword) return null
+      // キーワードもカテゴリも無いときだけフェッチしない
+      if (!urlKeyword && !category) return null
 
       // 前のページデータがあり、それが最後のページなら nullを返す
       if (previousPageData && previousPageData.data.length === 0) return null
@@ -65,7 +65,7 @@ const SearchPage = memo(() => {
 
   // 検索条件の識別キー（getKey と同じ識別。pageIndex を除く）。
   // 変化したときだけ表示件数が先頭へ戻る（useInfiniteList が ref 比較で判定）。
-  const searchKey = urlKeyword ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
+  const searchKey = (urlKeyword || category) ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
 
   // ページング＋reveal＋無限スクロールは共通コントローラに集約（検索/期間増減/Labs 同一）。
   const { pages, items: results, error, phase, hasMore, visibleCount, sentinelRef, mutate } =
@@ -83,7 +83,7 @@ const SearchPage = memo(() => {
 
   const etaParams = useMemo<SearchEtaParams | null>(
     () =>
-      urlKeyword
+      (urlKeyword || category)
         ? { keyword: urlKeyword, category: category || undefined, sort, order }
         : null,
     [urlKeyword, category, sort, order],
@@ -178,7 +178,7 @@ const SearchPage = memo(() => {
         </Card>
       )}
 
-      {urlKeyword && phase !== 'first' && !progressActive && results.length === 0 && (
+      {(urlKeyword || category) && phase !== 'first' && !progressActive && results.length === 0 && (
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground text-center">
@@ -188,7 +188,7 @@ const SearchPage = memo(() => {
         </Card>
       )}
 
-      {urlKeyword && results.length > 0 && (
+      {(urlKeyword || category) && results.length > 0 && (
         <div className="space-y-4">
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ const SearchPage = memo(() => {
       )}
       </ListProgressRegion>
 
-      {!urlKeyword && phase !== 'first' && (
+      {!urlKeyword && !category && phase !== 'first' && (
         <>
           {/* 初期/空状態のランディング: 最近の検索＋保存した検索条件（あれば）。 */}
           <SearchLanding />
@@ -254,7 +254,7 @@ const SearchPage = memo(() => {
             <CardContent className="py-12 text-center">
               <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <p className="mt-4 text-sm text-muted-foreground">
-                キーワードを入力して検索してください
+                キーワードを入力するか、カテゴリを選んで検索してください
               </p>
             </CardContent>
           </Card>

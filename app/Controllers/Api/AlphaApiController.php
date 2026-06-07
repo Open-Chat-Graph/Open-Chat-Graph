@@ -1469,7 +1469,7 @@ class AlphaApiController
             $repo->saveRule($userId, $folderId, $keyword, $category, $enabled, $ruleCreatedAt);
 
             if ($needFill) {
-                $autoAdded = $service->initialFill($userId, $folderId, $folder['name'], $keyword, $category);
+                $autoAdded = $service->initialFill($userId, $folderId, $folder['name'], $keyword, $category, $ruleCreatedAt);
             }
         } else {
             // rule:null = ルール解除（既存の auto アイテムは残す）

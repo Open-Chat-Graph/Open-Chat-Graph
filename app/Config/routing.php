@@ -885,6 +885,8 @@ Route::path('alpha-api/search', [AlphaApiController::class, 'search'])
     ->matchNum('category', min: 0, emptyAble: true, default: 0)
     ->matchNum('page', min: 0, emptyAble: true, default: 0)
     ->matchNum('limit', min: 1, max: 1000, emptyAble: true, default: 20)
+    ->matchStr('sort', emptyAble: true, maxLen: 20, default: 'member')
+    ->matchStr('order', emptyAble: true, maxLen: 4, default: 'desc')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 // Alpha API - 検索ETA（プログレスバー用）
