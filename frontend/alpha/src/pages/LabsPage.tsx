@@ -1,6 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useSWRInfinite from 'swr/infinite'
 import { FlaskConical } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -14,7 +13,7 @@ import type { LabsMetric } from '@/components/Labs/LabsControls'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { ListScreen } from '@/components/Layout'
 import { useListProgress } from '@/hooks/useListProgress'
-import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
+import { useInfiniteList } from '@/hooks/useInfiniteList'
 import { alphaApi } from '@/api/alpha'
 import { DEFAULT_PERIOD, periodKey, periodToParams, type PeriodValue } from '@/lib/period'
 import type { EtaListType } from '@/types/api'
@@ -75,7 +74,6 @@ const LabsPage = memo(() => {
   const [metric, setMetric] = useState<LabsMetric>('pv')
   // キーワード絞り込み（rooms タブのみ）。
   const [keyword, setKeyword] = useState('')
-  const observerTarget = useRef<HTMLDivElement>(null!)
 
   // タブが変わったらキーワードをリセット。
   const handleTabChange = useCallback((t: LabsTab) => {
@@ -83,7 +81,8 @@ const LabsPage = memo(() => {
     setKeyword('')
   }, [])
 
-  // タブ/期間/カテゴリ/metric/keyword が変わるたびページングを先頭へ戻して取り直す。
+  // タブ/期間/カテゴリ/metric/keyword の識別キー。
+  // 値が実際に変化したときだけ表示件数が先頭へ戻る（useInfiniteList が ref 比較で判定）。
   const filterKey = `${tab}|${periodKey(period)}|${tab === 'rooms' ? category : 0}|${metric}|${tab === 'rooms' ? keyword : ''}`
 
   const getKey = useCallback(
@@ -120,30 +119,22 @@ const LabsPage = memo(() => {
     [tab, period, category, metric, keyword],
   )
 
-  const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<LabsPageResponse>(
-    getKey,
-    fetcher,
-    { revalidateFirstPage: false, revalidateIfStale: false, revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 },
-  )
+  // ページング＋reveal＋無限スクロールは共通コントローラに集約（検索/期間増減/Labs 同一）。
+  const { pages, error, phase, hasMore, visibleCount, sentinelRef } =
+    useInfiniteList<LabsPageResponse>({
+      listKey: filterKey,
+      getKey,
+      fetcher,
+      getHasMore: (loadedPages) => loadedPages[loadedPages.length - 1]?.hasMore ?? false,
+    })
 
-  // フィルタが変わったら先頭ページへ。
-  useEffect(() => {
-    setSize(1)
-  }, [filterKey, setSize])
-
-  const pages = useMemo(() => data ?? [], [data])
-  const lastPage = pages[pages.length - 1]
-  const hasMore = lastPage?.hasMore ?? false
   const updatedAt = pages[0]?.updatedAt ?? null
-  const isLoadingMore = isValidating && size > 1
-  const isEmpty = !isLoading && pages.length > 0 && (pages[0]?.data.length ?? 0) === 0
+  const isEmpty = phase !== 'first' && pages.length > 0 && (pages[0]?.data.length ?? 0) === 0
 
-  // ETAプログレス: filterKey（タブ/期間/カテゴリ/指標/キーワード）が変わるたびに ETA を取り直す。
-  // 初回ロードは上部バー、結果表示中のフィルタ変更はオーバーレイへ振り分ける（append は除外）。
-  const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
+  // ETAプログレス: 実フェッチ（1ページ目の応答待ち）の有無だけから導出。
+  // キャッシュ即答・Activity 復帰では loading が立たないのでバーも ETA 取得も発生しない。
   const { progress, active: progressActive } = useListProgress({
-    requestKey: filterKey,
-    loading: firstPageLoading,
+    loading: phase === 'first',
     fetchEta: async () => {
       // タブ＋指標で叩く ETA の種別を決める（fetcher と同じ対応）。
       // rooms は全 metric を access-ranking に一本化し sort で区別。pages の seo のみ search-ranking。
@@ -192,38 +183,12 @@ const LabsPage = memo(() => {
   }, [pages, tab])
 
   // 統合エンティティ（カード描画用）。部屋／ページを LabsEntity に束ねる。
-  // ※ useInfiniteReveal の loadedCount 計算に必要なため observer より先に定義する。
   const primary = metric === 'seo' ? 'seo' : metric === 'jump' ? 'jump' : 'pv'
 
   const entities = useMemo<LabsEntity[]>(() => {
     if (tab === 'pages') return pageRows.map((page) => ({ kind: 'page', page }))
     return rooms.map((room) => ({ kind: 'room', room }))
   }, [tab, rooms, pageRows])
-
-  // 取得1000件・表示30件ずつのウィンドウィング。
-  const { visibleCount, onReachEnd } = useInfiniteReveal({
-    loadedCount: tab === 'keywords' ? queries.length : entities.length,
-    hasMore,
-    setSize,
-    resetKey: filterKey,
-  })
-
-  // 無限スクロール（バッファ即時 reveal or 次の1000件取得）
-  useEffect(() => {
-    const el = observerTarget.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
-        if (entries[0].isIntersecting && !isValidating) {
-          onReachEnd()
-        }
-      },
-      { threshold: 0.1 },
-    )
-    observer.observe(el)
-    return () => observer.unobserve(el)
-  }, [onReachEnd, isValidating])
 
   const handleCardClick = useCallback(
     (id: number) => {
@@ -294,7 +259,7 @@ const LabsPage = memo(() => {
             )}
 
             {/* 無限スクロールの番兵＋ローディング（初回・再取得と同じ ListProgressBar に統一） */}
-            <ListProgressFooter isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+            <ListProgressFooter isLoading={phase === 'more'} hasMore={hasMore} observerRef={sentinelRef} />
 
             {updatedAt && (
               <p className="pt-1 text-center text-[11px] tabular-nums text-muted-foreground/70">

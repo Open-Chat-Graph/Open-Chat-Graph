@@ -73,8 +73,8 @@ interface ListProgressFooterProps {
   isLoading: boolean
   /** さらに次ページがあるか（番兵を出すか） */
   hasMore: boolean
-  /** IntersectionObserver の番兵 ref */
-  observerRef: React.RefObject<HTMLDivElement>
+  /** IntersectionObserver の番兵 ref（useInfiniteList の sentinelRef ＝ callback ref も可） */
+  observerRef: React.Ref<HTMLDivElement>
 }
 
 /**

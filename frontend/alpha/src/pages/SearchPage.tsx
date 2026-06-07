@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import useSWRInfinite from 'swr/infinite'
+import { useState, useEffect, memo, useCallback, useMemo } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
@@ -9,7 +8,7 @@ import { WatchKeywordButton } from '@/components/Notifications'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { SearchLanding } from '@/components/Common/SearchLanding'
 import { useListProgress } from '@/hooks/useListProgress'
-import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
+import { useInfiniteList } from '@/hooks/useInfiniteList'
 import { alphaApi } from '@/api/alpha'
 import { addSearchHistory } from '@/services/searchHistory'
 import { loadMyList, addItem, isInMyList } from '@/services/storage'
@@ -22,8 +21,22 @@ const LIMIT = 300
 
 const SearchPage = memo(() => {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const observerTarget = useRef<HTMLDivElement>(null!)
+  const location = useLocation()
+  const [routerParams] = useSearchParams()
+
+  // 外部パラメータガード: keep-alive で隠れている間は URL が他ページのもの（詳細 /openchat/:id や
+  // /analysis 等）になり ?q が消えるため、URL パラメータは「このページがルートを所有しているとき」
+  // だけ取り込む。隠れている間は最後に所有していた値を保持し、SWR キー／listKey を安定させる
+  // （変動すると useInfiniteList が「条件変更」と誤認し visibleCount が 30 に戻る）。
+  // PeriodGrowthPage と同一パターン。
+  const ownsRoute = location.pathname === '/'
+  const [searchParams, setOwnedParams] = useState(() =>
+    ownsRoute ? routerParams : new URLSearchParams(),
+  )
+  if (ownsRoute && searchParams !== routerParams) {
+    // レンダー中の state 調整（React 公式パターン）。所有中のみ URL に追従する。
+    setOwnedParams(routerParams)
+  }
 
   const urlKeyword = searchParams.get('q') || ''
   const sort = (searchParams.get('sort') as SortType) || 'member'
@@ -35,7 +48,7 @@ const SearchPage = memo(() => {
   // 検索バー再実行シグナル（同じキーワードでも SWR キーを変えて再フェッチ）
   const { searchNonce, bumpReset } = useLayout()
 
-  // useSWRInfinite でページングを管理
+  // SWR Infinite のキー（sort, order, category, searchNonce を含めて再実行に対応）
   const getKey = useCallback(
     (pageIndex: number, previousPageData: SearchResponse | null) => {
       // キーワードがない場合はnullを返してフェッチしない
@@ -44,53 +57,30 @@ const SearchPage = memo(() => {
       // 前のページデータがあり、それが最後のページなら nullを返す
       if (previousPageData && previousPageData.data.length === 0) return null
 
-      // SWRのキーを返す（sort, order, category, searchNonce を含めて再実行に対応）
       // pageIndexは0始まりなので、そのまま渡す
       return ['search', urlKeyword, sort, order, category, pageIndex, LIMIT, searchNonce]
     },
     [urlKeyword, sort, order, category, searchNonce]
   )
 
-  const {
-    data,
-    error,
-    size,
-    setSize,
-    isLoading,
-    isValidating,
-  } = useSWRInfinite<SearchResponse>(
-    getKey,
-    ([, keyword, sortType, sortOrder, cat, page, limit]) =>
-      alphaApi.search({ keyword, category: cat as number, page: page as number, limit: limit as number, sort: sortType as SortType, order: sortOrder as SortOrder }),
-    {
-      revalidateFirstPage: false,
-      // Activity 再表示（タブ復帰/オーバーレイ閉じ）の同一キー再検証を抑止（ALPHA_SPEC: 実フェッチの無い再描画で読み込み挙動を起こさない）
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-    }
-  )
-
-  // 全ページのデータを結合
-  const results = useMemo(() => {
-    return data ? data.flatMap(page => page.data) : []
-  }, [data])
-
-  const totalCount = data?.[0]?.totalCount || 0
-  const hasMore = results.length < totalCount
-
-  // 検索プログレス: SWR の getKey と同じ識別（pageIndex を除く）を1キーにまとめる。
-  // これが変わるたびに ETA を取り直し、0→90% のアニメを仕切り直す。
+  // 検索条件の識別キー（getKey と同じ識別。pageIndex を除く）。
+  // 変化したときだけ表示件数が先頭へ戻る（useInfiniteList が ref 比較で判定）。
   const searchKey = urlKeyword ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
 
-  // 取得1000件・表示30件ずつのウィンドウィング。
-  const { visibleCount, onReachEnd } = useInfiniteReveal({
-    loadedCount: results.length,
-    hasMore,
-    setSize,
-    resetKey: searchKey,
-  })
+  // ページング＋reveal＋無限スクロールは共通コントローラに集約（検索/期間増減/Labs 同一）。
+  const { pages, items: results, error, phase, hasMore, visibleCount, sentinelRef } =
+    useInfiniteList<SearchResponse>({
+      listKey: searchKey,
+      getKey,
+      fetcher: ([, keyword, sortType, sortOrder, cat, page, limit]: readonly [
+        string, string, SortType, SortOrder, number, number, number, number,
+      ]) =>
+        alphaApi.search({ keyword, category: cat, page, limit, sort: sortType, order: sortOrder }),
+      getHasMore: (loadedPages, loadedCount) => loadedCount < (loadedPages[0]?.totalCount ?? 0),
+    })
+
+  const totalCount = pages[0]?.totalCount || 0
+
   const etaParams = useMemo<SearchEtaParams | null>(
     () =>
       urlKeyword
@@ -103,58 +93,22 @@ const SearchPage = memo(() => {
   // localStorage 駆動・上限件数で古いものを捨てる（searchHistory サービス側）。
   useEffect(() => {
     if (!urlKeyword.trim()) return
-    if (isLoading) return
-    if (!data) return
+    if (phase === 'first') return
+    if (pages.length === 0) return
     addSearchHistory({ q: urlKeyword, category, sort, order })
     // urlKeyword/カテゴリ/ソートの組と「結果が来た」ことをトリガに1回だけ追記
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchKey, data, isLoading])
+  }, [searchKey, pages, phase])
 
-  // 検索キー（キーワード/ソート/カテゴリ/再実行）が変わったらページングを先頭へ戻す。
-  // これで「再検索＝size===1 の validation」「追加読み込み＝size>1 の validation」と素直に分けられ、
-  // 再検索のたびにスクロール位置・ページ数を持ち越さない（UX的にも先頭から見せたい）。
-  useEffect(() => {
-    setSize(1)
-  }, [searchKey, setSize])
-
-  // size===1 の validation は検索そのもの（初回/再検索）、size>1 は追加読み込み（append）。
-  const isLoadingMore = isValidating && size > 1
-  // 1ページ目（=検索そのもの）の応答待ちか。append は除外する。
-  // 初回ロードは上部バー、結果が見えている再検索はオーバーレイに振り分ける。
-  const firstPageLoading = (isLoading || isValidating) && !isLoadingMore
+  // プログレスは実フェッチ（1ページ目の応答待ち）の有無だけから導出される。
+  // キャッシュ即答・Activity 復帰では loading が立たないのでバーも ETA 取得も発生しない。
   const { progress, active: progressActive } = useListProgress({
-    requestKey: searchKey,
-    loading: firstPageLoading,
+    loading: phase === 'first',
     fetchEta: etaParams
       ? async () => (await alphaApi.getSearchEta(etaParams)).etaMs
       : undefined,
   })
   const hasResults = results.length > 0
-
-  // Intersection Observer for infinite scroll（バッファ即時 reveal or 次ページ取得）
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0]
-        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
-        if (first.isIntersecting && !isValidating && !isLoading) {
-          onReachEnd()
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.observe(currentTarget)
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget)
-      }
-    }
-  }, [onReachEnd, isValidating, isLoading])
 
   const handleCardClick = useCallback((chatId: number) => {
     // 検索クエリ（キーワード + ソート設定）をsessionStorageに保存してから詳細ページに遷移
@@ -211,7 +165,7 @@ const SearchPage = memo(() => {
         </Card>
       )}
 
-      {urlKeyword && !isLoading && !progressActive && results.length === 0 && (
+      {urlKeyword && phase !== 'first' && !progressActive && results.length === 0 && (
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground text-center">
@@ -268,15 +222,15 @@ const SearchPage = memo(() => {
 
           {/* 追加読み込み（無限スクロール）。初回・再取得と同じ ListProgressBar に統一。 */}
           <ListProgressFooter
-            isLoading={isLoadingMore}
+            isLoading={phase === 'more'}
             hasMore={hasMore}
-            observerRef={observerTarget}
+            observerRef={sentinelRef}
           />
         </div>
       )}
       </ListProgressRegion>
 
-      {!urlKeyword && !isLoading && (
+      {!urlKeyword && phase !== 'first' && (
         <>
           {/* 初期/空状態のランディング: 最近の検索＋保存した検索条件（あれば）。 */}
           <SearchLanding />

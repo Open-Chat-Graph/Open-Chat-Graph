@@ -1,12 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import useSWRInfinite from 'swr/infinite'
+import { memo, useCallback, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarRange, Info } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { PeriodGrowthCard, PeriodGrowthControls, type PeriodOrder, type PeriodGrowthQuery } from '@/components/PeriodGrowth'
 import { ListProgressRegion, ListProgressFooter } from '@/components/Common/ListProgress'
 import { useListProgress } from '@/hooks/useListProgress'
-import { useInfiniteReveal } from '@/hooks/useInfiniteReveal'
+import { useInfiniteList } from '@/hooks/useInfiniteList'
 import { alphaApi } from '@/api/alpha'
 import { categoryName } from '@/lib/categories'
 import { periodKey, periodToParams, type PeriodValue } from '@/lib/period'
@@ -57,8 +56,20 @@ function parsePeriodFromParams(params: URLSearchParams): PeriodValue {
 
 const PeriodGrowthPage = memo(() => {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const observerTarget = useRef<HTMLDivElement>(null!)
+  const location = useLocation()
+  const [routerParams, setSearchParams] = useSearchParams()
+
+  // 外部パラメータガード: keep-alive で隠れている間は URL が他ページのもの（例: 検索の /?q=…）に
+  // なるため、URL パラメータは「このページがルートを所有しているとき」だけ取り込む。
+  // 隠れている間は最後に所有していた値を保持し、他ページのクエリから live な SWR キーを作らない。
+  const ownsRoute = location.pathname === '/period-growth'
+  const [searchParams, setOwnedParams] = useState(() =>
+    ownsRoute ? routerParams : new URLSearchParams(),
+  )
+  if (ownsRoute && searchParams !== routerParams) {
+    // レンダー中の state 調整（React 公式パターン）。所有中のみ URL に追従する。
+    setOwnedParams(routerParams)
+  }
 
   const keyword = searchParams.get('q') || ''
   const category = Number(searchParams.get('category')) || 0
@@ -69,12 +80,13 @@ const PeriodGrowthPage = memo(() => {
   // 検索画面からの遷移(q付き)か、このページで「検索」を押した(go=1)ときに結果を出す。
   const searched = keyword !== '' || searchParams.has('go')
 
-  // 条件（キーワード/カテゴリ/期間/並び）をまとめた識別キー。変化で先頭ページへ戻す。
+  // 条件（キーワード/カテゴリ/期間/並び）をまとめた識別キー。
+  // 値が実際に変化したときだけ表示件数が先頭へ戻る（useInfiniteList が ref 比較で判定）。
   const filterKey = searched
     ? `${keyword}|${category}|${periodKey(period)}|${order}`
     : null
 
-  // useSWRInfinite でページングを管理（Labs/Search と同パターン）。
+  // SWR Infinite のキー（Labs/Search と同パターン）。
   const getKey = useCallback(
     (pageIndex: number, prev: PeriodGrowthResponse | null) => {
       if (!searched) return null
@@ -111,46 +123,22 @@ const PeriodGrowthPage = memo(() => {
     [period, keyword, category, order],
   )
 
-  const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<PeriodGrowthResponse>(
-    getKey,
-    fetcher,
-    {
-      revalidateFirstPage: false,
-      // Activity 再表示（タブ復帰/オーバーレイ閉じ）の同一キー再検証を抑止（ALPHA_SPEC: 実フェッチの無い再描画で読み込み挙動を起こさない）
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-    },
-  )
+  // ページング＋reveal＋無限スクロールは共通コントローラに集約（検索/期間増減/Labs 同一）。
+  const { pages, items, error, phase, hasMore, visibleCount, sentinelRef } =
+    useInfiniteList<PeriodGrowthResponse>({
+      listKey: filterKey,
+      getKey,
+      fetcher,
+      getHasMore: (loadedPages) => loadedPages[loadedPages.length - 1]?.hasMore ?? false,
+    })
 
-  // 条件が変わったら先頭ページへ戻す。
-  useEffect(() => {
-    setSize(1)
-  }, [filterKey, setSize])
-
-  const pages = useMemo(() => data ?? [], [data])
-  const items = useMemo(() => pages.flatMap((p) => p.data), [pages])
-  const lastPage = pages[pages.length - 1]
-  const hasMore = lastPage?.hasMore ?? false
   const firstPage = pages[0]
-  const isLoadingMore = isValidating && size > 1
   const hasResults = items.length > 0
 
-  // 取得1000件・表示30件ずつのウィンドウィング。
-  const { visibleCount, onReachEnd } = useInfiniteReveal({
-    loadedCount: items.length,
-    hasMore,
-    setSize,
-    resetKey: filterKey ?? '',
-  })
-
-  // ETAプログレス: 条件が変わるたびに ETA を取り直し 0→90%、応答到着で 100%。
-  // append（size>1）は除外。初回＝上部バー／結果表示中の再取得＝重ねバー。
-  const firstPageLoading = searched && (isLoading || isValidating) && !isLoadingMore
+  // ETAプログレス: 実フェッチ（1ページ目の応答待ち）の有無だけから導出。
+  // キャッシュ即答・Activity 復帰では loading が立たないのでバーも ETA 取得も発生しない。
   const { progress, active: progressActive } = useListProgress({
-    requestKey: filterKey,
-    loading: firstPageLoading,
+    loading: phase === 'first',
     fetchEta: searched
       ? async () => {
           const periodParams = periodToParams(period)
@@ -162,23 +150,6 @@ const PeriodGrowthPage = memo(() => {
         }
       : undefined,
   })
-
-  // 無限スクロール（バッファ即時 reveal or 次の1000件取得）
-  useEffect(() => {
-    const el = observerTarget.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // isValidating 中（ネットワーク取得中）は二重発火を防ぐ
-        if (entries[0].isIntersecting && !isValidating) {
-          onReachEnd()
-        }
-      },
-      { threshold: 0.1 },
-    )
-    observer.observe(el)
-    return () => observer.unobserve(el)
-  }, [onReachEnd, isValidating])
 
   const handleSubmit = useCallback(
     (next: PeriodGrowthQuery) => {
@@ -308,7 +279,7 @@ const PeriodGrowthPage = memo(() => {
               </div>
 
               {/* 追加読み込み（無限スクロール）。初回・再取得と同じ ListProgressBar に統一。 */}
-              <ListProgressFooter isLoading={isLoadingMore} hasMore={hasMore} observerRef={observerTarget} />
+              <ListProgressFooter isLoading={phase === 'more'} hasMore={hasMore} observerRef={sentinelRef} />
 
               {/* プールリミット注記：スクロール末尾・hasMore=false のときだけ表示 */}
               {!hasMore && firstPage?.poolLimited && (
