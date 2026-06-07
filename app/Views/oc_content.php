@@ -163,7 +163,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
         </section>
       <?php endif ?>
-      <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: 0.5rem;">
+      <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -225,11 +225,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </aside>
     <?php endif ?>
 
-    <hr class="hr-top" style="margin-bottom: 8px;">
-
-    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+    <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
-      <section class="comment-section" style="padding-top: 12px; padding-bottom: 12px;" id="comment-section">
+      <section class="comment-section" style="padding-top: var(--sp-section-gap); padding-bottom: 12px;" id="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">

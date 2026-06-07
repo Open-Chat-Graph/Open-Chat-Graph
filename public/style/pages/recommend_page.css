@@ -435,17 +435,8 @@ section aside:hover {
     sans-serif;
   line-height: 1.3;
   padding: 0 1rem;
-  margin: 6px 0 2px 0;
-}
-
-.hr-top.recommend {
-  all: unset;
-  display: block;
-  border-bottom: 1px solid var(--c-border);
-  margin: 0 auto;
-  margin-bottom: 1px;
-  padding: 1px 0;
-  width: calc(100% - 2rem);
+  /* メタ行(統計バッジ+時刻)との区切りは罫線レス。ブロック上側余白をトークンで統一 */
+  margin: var(--sp-section-gap-sm) 0 2px 0;
 }
 
 @media screen and (min-width: 512px) {
@@ -592,13 +583,9 @@ section aside:hover {
   /* 方向色(ヒーロー方向クラスで上書き)。淡い色味も同時に持たせて装飾に使う。 */
   display: block;
   position: relative;
-  margin: 12px 1rem 12px;
-  padding: 11px 14px 11px;
-  border: 1px solid var(--c-rg-border);
-  border-radius: 14px;
-  background: var(--c-bg);
-  /* 白地に白で同化しないよう、極薄2枚のシャドウで唯一の"箱"として持ち上げる(主役化)。 */
-  box-shadow: var(--c-rg-shadow);
+  /* カード装飾(枠/影/角丸/内側パディング)は廃止し、他ブロックと同じ余白リズムに揃える */
+  margin: var(--sp-section-gap) 1rem var(--sp-section-gap);
+  padding: 0;
   overflow: hidden;
   /* 統計の信頼感: 数字は等幅(tabular)で桁を揃える。 */
   font-variant-numeric: tabular-nums;
@@ -814,11 +801,6 @@ section aside:hover {
 
 /* デスクトップ: zoom ではなくパディング/余白を素直に広げて精度を保つ。 */
 @media screen and (min-width: 768px) {
-  .recommend-growth {
-    padding: 14px 18px 14px;
-    border-radius: 16px;
-  }
-
   .recommend-growth__metric {
     font-size: 15px;
   }
