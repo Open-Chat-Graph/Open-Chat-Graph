@@ -2,7 +2,7 @@
 
 /**
  * テーマ発見セクション（/recommend 着地客の回遊導線）。
- * 全幅の検索（入力で全テーマを即時フィルタ）＋ 🚀急上昇 / 🔥人気 / 🗂近いカテゴリ の棚。
+ * 全幅の検索（入力で全テーマを即時フィルタ）＋ 🗂近いテーマ / 🚀急上昇 の棚。
  *
  * データは ThemeDiscoveryService が確定し、コントローラから `_discovery` で渡る
  * （= フレームワークの自動エスケープ対象外＝RAW）。表示名はこの View で明示エスケープする。
@@ -21,17 +21,15 @@ $chip = function (array $item, bool $hot = false) use ($base): void {
     echo '<a class="theme-disco-chip' . ($hot ? ' theme-disco-chip--hot' : '') . '" href="' . $href . '">' . $name . '</a>';
 };
 
+// ページ文脈(現在テーマに近い棚)を先頭に置き、汎用棚(急上昇)は後ろで控えめに。
+$nearbyLabel = $discovery->currentTagName !== ''
+    ? sprintfT('「%s」の近いテーマ', $discovery->currentTagName)
+    : ($discovery->nearbyCategoryName !== ''
+        ? sprintfT('「%s」の近いテーマ', $discovery->nearbyCategoryName)
+        : t('近いテーマ'));
 $shelves = array_values(array_filter([
+    ['hot' => false, 'icon' => '🗂', 'label' => $nearbyLabel, 'items' => $discovery->nearby],
     ['hot' => true,  'icon' => '🚀', 'label' => t('急上昇'), 'items' => $discovery->trending],
-    ['hot' => false, 'icon' => '🔥', 'label' => t('人気'),   'items' => $discovery->popular],
-    [
-        'hot' => false,
-        'icon' => '🗂',
-        'label' => $discovery->nearbyCategoryName !== ''
-            ? sprintfT('「%s」の近いテーマ', $discovery->nearbyCategoryName)
-            : t('近いテーマ'),
-        'items' => $discovery->nearby,
-    ],
 ], fn($shelf) => !empty($shelf['items'])));
 ?>
 <section class="theme-disco<?php echo $searchOnly ? ' theme-disco--search-only' : '' ?>" aria-labelledby="theme-disco-title">
