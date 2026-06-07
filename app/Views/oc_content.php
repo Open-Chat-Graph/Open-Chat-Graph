@@ -161,6 +161,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
         <section class="oc-narrative" aria-label="<?php echo t('オプチャグラフの分析') ?>">
           <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
+          <?php // 分析が立てた疑問に答える記事へのインライン導線（ja のみ・状態に合致したときだけ） ?>
+          <?php viewComponent('oc_blog_context_link', ['pattern' => (string)($narrative['pattern'] ?? ''), 'member' => (int)($oc['member'] ?? 0)]) ?>
         </section>
       <?php endif ?>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
@@ -225,8 +227,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </aside>
     <?php endif ?>
 
-    <?php // ブログへの回遊導線（ja のみ・部屋の統計を見る文脈に合う記事を選定） ?>
-    <?php viewComponent('blog_related_shelf', ['slugs' => ['openchat-kiken-anzen', 'openchat-member-fuyasu', 'openchat-ninzu-jogen']]) ?>
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
