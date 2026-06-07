@@ -12,7 +12,7 @@ interface RankingHistoryOverlayProps {
 }
 
 /**
- * ランキング掲載履歴の個別画面。詳細ページの上に重ねる全画面オーバーレイ。
+ * 公式ランキング掲載状況の個別画面。詳細ページの上に重ねる全画面オーバーレイ。
  * このコンポーネントがマウントされた時に初めて履歴を fetch する（遅延読み込み）。
  */
 export function RankingHistoryOverlay({ openChatId, onClose }: RankingHistoryOverlayProps) {
@@ -46,12 +46,16 @@ export function RankingHistoryOverlay({ openChatId, onClose }: RankingHistoryOve
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <span className="text-base font-semibold">ランキング掲載履歴</span>
+        <span className="text-base font-semibold">公式ランキング掲載状況</span>
       </header>
 
       {/* 本文 */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
         <div className="mx-auto max-w-[700px] p-3 md:p-6">
+          {/* 何の記録なのかを冒頭で明示（LINE公式ランキング＝LINEアプリ内のランキング） */}
+          <p className="mb-3 text-xs text-muted-foreground">
+            LINE公式ランキング（LINEアプリ内のランキング）への掲載記録です
+          </p>
           {isLoading ? (
             <div className="flex justify-center py-16">
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
@@ -60,7 +64,7 @@ export function RankingHistoryOverlay({ openChatId, onClose }: RankingHistoryOve
             <p className="py-16 text-center text-sm text-destructive">履歴の取得に失敗しました</p>
           ) : items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              ランキング掲載履歴はありません
+              掲載記録はまだありません
             </p>
           ) : (
             <RankingHistoryList items={items} />

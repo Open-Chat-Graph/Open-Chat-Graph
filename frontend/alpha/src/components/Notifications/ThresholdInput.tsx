@@ -39,41 +39,47 @@ export function ThresholdInput({
   ariaPrefix?: string
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-      <span>増減が ±</span>
-      <Input
-        type="number"
-        min={1}
-        inputMode="numeric"
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onValueChange(e.target.value)}
-        onBlur={onCommit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur()
-        }}
-        className="h-10 w-20"
-        aria-label={`${ariaPrefix}通知する増減のしきい値`}
-        data-testid="threshold-value"
-      />
-      <Select
-        value={unit}
-        disabled={disabled}
-        onValueChange={(v) => onUnitChange(v === 'percent' ? 'percent' : 'member')}
-      >
-        <SelectTrigger
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+        <span>増減が ±</span>
+        <Input
+          type="number"
+          min={1}
+          inputMode="numeric"
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onValueChange(e.target.value)}
+          onBlur={onCommit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+          }}
           className="h-10 w-20"
-          aria-label={`${ariaPrefix}しきい値の単位`}
-          data-testid="threshold-unit"
+          aria-label={`${ariaPrefix}通知する増減の条件`}
+          data-testid="threshold-value"
+        />
+        <Select
+          value={unit}
+          disabled={disabled}
+          onValueChange={(v) => onUnitChange(v === 'percent' ? 'percent' : 'member')}
         >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="member">人</SelectItem>
-          <SelectItem value="percent">％</SelectItem>
-        </SelectContent>
-      </Select>
-      <span>を超えたら通知</span>
+          <SelectTrigger
+            className="h-10 w-20"
+            aria-label={`${ariaPrefix}増減の単位`}
+            data-testid="threshold-unit"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="member">人</SelectItem>
+            <SelectItem value="percent">％</SelectItem>
+          </SelectContent>
+        </Select>
+        <span>を超えたら通知</span>
+      </div>
+      {/* 計測窓の説明。全利用箇所（部屋詳細/フォルダ設定/マイリスト変動）で共通表示する */}
+      <p className="text-xs text-muted-foreground/80">
+        毎時の更新ごとに、前回更新からの増減で判定します
+      </p>
     </div>
   )
 }

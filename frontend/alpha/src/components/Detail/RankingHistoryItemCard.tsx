@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { ArrowRight, Clock3, EyeOff, Users, Trophy, PencilLine } from 'lucide-react'
 
-/** 非掲載だった期間を「N時間」「N日」等の読みやすい文字列にする */
+/** 非掲載だった期間を「N時間」「N日間」等の読みやすい文字列にする */
 function formatDuration(start: string, end: string | null): string | null {
   const base = end ?? toLocalNowString()
   const ms = new Date(base.replace(' ', 'T')).getTime() - new Date(start.replace(' ', 'T')).getTime()
@@ -11,7 +11,7 @@ function formatDuration(start: string, end: string | null): string | null {
   const hours = Math.round(ms / 3_600_000)
   if (hours < 24) return `${hours}時間`
   const days = Math.round(hours / 24)
-  return `${days}日`
+  return `${days}日間`
 }
 
 /** 継続中の経過時間を出すための「現在時刻」を datetime と同じ書式で返す */
@@ -68,7 +68,7 @@ export function RankingHistoryItemCard({ item }: { item: RankingHistoryItem }) {
       {/* ステータス帯：状態が一目で分かる色付きヘッダー */}
       <div
         className={cn(
-          'flex items-center justify-between gap-2 border-b px-4 py-2.5',
+          'flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-4 py-2.5',
           ongoing
             ? 'border-amber-500/20 bg-amber-500/10'
             : 'border-emerald-500/20 bg-emerald-500/[0.07]',
@@ -89,16 +89,16 @@ export function RankingHistoryItemCard({ item }: { item: RankingHistoryItem }) {
             {ongoing ? 'ランキング掲載なし' : '一時的に掲載なし → 復帰'}
           </span>
         </div>
-        <Badge
-          className={cn(
-            'flex-shrink-0 border-transparent',
-            ongoing
-              ? 'bg-amber-500/20 text-amber-700 dark:bg-amber-500/25 dark:text-amber-300'
-              : 'bg-emerald-500/20 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300',
-          )}
-        >
-          {ongoing ? '継続中' : '復帰済み'}
-        </Badge>
+        {/* 継続中はバッジで煽らず、平文で状況を述べる（復帰済みのみバッジ） */}
+        {ongoing ? (
+          <span className="flex-shrink-0 text-xs text-muted-foreground">
+            {duration ? `${duration} ` : ''}非掲載が続いています
+          </span>
+        ) : (
+          <Badge className="flex-shrink-0 border-transparent bg-emerald-500/20 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300">
+            復帰済み
+          </Badge>
+        )}
       </div>
 
       <div className="space-y-3.5 p-4">

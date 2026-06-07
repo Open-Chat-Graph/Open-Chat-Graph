@@ -79,6 +79,9 @@ export function FolderSettingsDialog({
   const [thresholdValue, setThresholdValue] = useState('10')
   const [thresholdUnit, setThresholdUnit] = useState<ThresholdUnit>('percent')
 
+  // 自動追加ON でキーワード未入力のまま保存しようとしたときのクライアント側エラー
+  const [keywordError, setKeywordError] = useState(false)
+
   // 通信状態
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -94,6 +97,7 @@ export function FolderSettingsDialog({
       // 閉じたときにリセット
       setAutoAdded(null)
       setSaveError(false)
+      setKeywordError(false)
       return
     }
 
@@ -138,6 +142,11 @@ export function FolderSettingsDialog({
   }, [open, folder.id])
 
   const handleSave = async () => {
+    // 自動追加ON なのにキーワードが空なら、サーバへ投げずにその場で理由を示す
+    if (ruleEnabled && keyword.trim() === '') {
+      setKeywordError(true)
+      return
+    }
     setSaving(true)
     setSaveError(false)
     setAutoAdded(null)
@@ -208,7 +217,10 @@ export function FolderSettingsDialog({
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox
                   checked={ruleEnabled}
-                  onCheckedChange={(c) => setRuleEnabled(c === true)}
+                  onCheckedChange={(c) => {
+                    setRuleEnabled(c === true)
+                    if (c !== true) setKeywordError(false)
+                  }}
                   data-testid="folder-rule-enabled"
                 />
                 自動追加を有効にする
@@ -221,13 +233,22 @@ export function FolderSettingsDialog({
                 <Input
                   id="folder-keyword"
                   value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
+                  onChange={(e) => {
+                    setKeyword(e.target.value)
+                    if (keywordError) setKeywordError(false)
+                  }}
                   placeholder="キーワードを入力"
                   maxLength={190}
                   disabled={!ruleEnabled}
                   className="!text-base md:!text-sm"
+                  aria-invalid={keywordError || undefined}
                   data-testid="folder-rule-keyword"
                 />
+                {keywordError && (
+                  <p className="text-xs text-destructive" data-testid="folder-rule-keyword-error">
+                    キーワードを入力してください
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -251,12 +272,15 @@ export function FolderSettingsDialog({
               </div>
             </section>
 
-            {/* 増減アラート */}
+            {/* 増減アラート（フォルダ全体ではなく配下の各部屋ごとに判定する） */}
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-primary flex-shrink-0" />
-                <h3 className="text-sm font-semibold">増減アラート</h3>
+                <h3 className="text-sm font-semibold">フォルダ内の各部屋の増減を通知</h3>
               </div>
+              <p className="text-xs text-muted-foreground">
+                フォルダ配下のどれかの部屋が条件を超えたら通知します。
+              </p>
 
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox

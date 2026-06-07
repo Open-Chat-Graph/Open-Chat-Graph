@@ -12,7 +12,7 @@ import { ThresholdInput, thresholdUnitLabel, type ThresholdUnit } from './Thresh
  * - カード上部のヘッダ自体が開閉ボタン（タブ）。クリックで本文を開閉する。
  *   ヘッダには現在の状態（±N単位で通知中／オフ）を出す。
  * - 本文（展開時のみ）にしきい値エディタを置く。
- *   - 未有効: 「このしきい値でアラートON」ボタンのみ（解除ボタンは出さない）。
+ *   - 未有効: 「この条件でアラートON」ボタンのみ（解除ボタンは出さない）。
  *   - 有効中: しきい値は live 保存。下に「アラートを解除」ボタン＋確認ダイアログ。
  */
 export function WatchRoomControl({ openChatId }: { openChatId: number }) {
@@ -187,7 +187,7 @@ export function WatchRoomControl({ openChatId }: { openChatId: number }) {
               ) : (
                 <Bell className="h-4 w-4" />
               )}
-              このしきい値でアラートON
+              この条件でアラートON
             </Button>
           )}
         </div>

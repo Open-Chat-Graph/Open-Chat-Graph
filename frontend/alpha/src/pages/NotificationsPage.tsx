@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Settings2, Sparkles, Activity, CheckCheck, Radio, FolderOpen } from 'lucide-react'
+import { Bell, Settings, Sparkles, Activity, CheckCheck, Radio, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/Common/EmptyState'
 import { useAlerts } from '@/hooks/useAlerts'
@@ -14,7 +14,7 @@ import {
 } from '@/components/Notifications'
 import type { KeywordHit, Movement, Signal, FolderAdd, FolderMovement } from '@/types/api'
 
-// 統合タイムラインの1アイテム。新着部屋・増減アラート・機微シグナル・フォルダ系を混在させる。
+// 統合タイムラインの1アイテム。新着部屋・増減アラート・部屋の変化シグナル・フォルダ系を混在させる。
 type FeedItem =
   | { kind: 'keyword'; createdAt: number; data: KeywordHit }
   | { kind: 'movement'; createdAt: number; data: Movement }
@@ -99,17 +99,16 @@ export default function NotificationsPage() {
               すべて既読
             </Button>
           )}
-          {/* フィードの設定は控えめな歯車で（主たる入口は設定タブ）。慣習的な「通知の設定」位置。 */}
+          {/* アラート設定への入口。アイコン単体だと絞り込みに見えるため、歯車＋文字で明示する */}
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
             onClick={openWatchSettings}
-            aria-label="アラート設定"
-            title="アラート設定"
             data-testid="open-watch-settings"
           >
-            <Settings2 className="h-4 w-4" />
+            <Settings className="h-4 w-4" />
+            アラート設定
           </Button>
         </div>
       </div>
@@ -182,7 +181,7 @@ function FeedRow({
           ? 'フォルダ自動追加'
           : type === 'folder_movement'
             ? 'フォルダ増減アラート'
-            : '機微シグナル'
+            : '部屋の変化'
   return (
     <div>
       <div className="mb-1 flex items-center gap-1 px-0.5 text-[11px] font-medium text-muted-foreground">
@@ -199,11 +198,11 @@ function EmptyMessage({ onSettings }: { onSettings: () => void }) {
     <EmptyState
       icon={<Bell />}
       title="通知はまだありません"
-      description="ウォッチした部屋の増減・機微、キーワード新着、フォルダ自動追加がここに時系列で届きます。"
+      description="ウォッチした部屋の増減や変化、キーワード新着、フォルダ自動追加がここに時系列で届きます。"
       action={{
         label: 'アラートを設定',
         onClick: onSettings,
-        icon: <Settings2 />,
+        icon: <Settings />,
       }}
     />
   )

@@ -2,6 +2,7 @@ import { memo, useState, useRef } from 'react'
 import { Plus, Check, AlertCircle, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { InfoChip } from '@/components/ui/info-chip'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
 import { OfficialIcon, SpecialIcon } from '@/components/icons'
@@ -333,10 +334,19 @@ export const OpenChatCard = memo(({
                 <span className="text-muted-foreground">{formatOpenDate(chat.registeredAt)} 開設</span>
               </span>
             ) : isNotInRanking ? (
-              <Badge variant="secondary" className="ml-auto flex items-center gap-1 text-[11px] h-5 px-1.5 font-normal">
-                <AlertCircle className="h-3 w-3" />
-                非掲載
-              </Badge>
+              // タップで意味（公式ランキング非掲載）を表示。カードのクリック（詳細遷移）には伝播させない
+              <span className="ml-auto flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <InfoChip
+                  trigger={
+                    <Badge variant="secondary" className="flex items-center gap-1 text-[11px] h-5 px-1.5 font-normal">
+                      <AlertCircle className="h-3 w-3" />
+                      非掲載
+                    </Badge>
+                  }
+                >
+                  LINE公式ランキングに現在掲載されていません
+                </InfoChip>
+              </span>
             ) : metricKey && metric && metric.has ? (
               <span className="ml-auto whitespace-nowrap">
                 <span className="text-muted-foreground">{sortMetricLabel(metricKey)} </span>

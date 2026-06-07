@@ -30,7 +30,7 @@ const AnalysisPage = memo(() => {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        本家のデータを使った、αならではの分析ツール。
+        オプチャグラフ本体のデータを使った、αならではの分析ツール。
       </p>
 
       <div className="space-y-2">
@@ -46,8 +46,9 @@ const AnalysisPage = memo(() => {
               <t.icon className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{t.title}</span>
-              <span className="block truncate text-xs text-muted-foreground">{t.desc}</span>
+              <span className="block text-sm font-medium">{t.title}</span>
+              {/* モバイルで途切れて読めないため truncate せず2行まで折り返す */}
+              <span className="block text-xs leading-snug text-muted-foreground line-clamp-2">{t.desc}</span>
             </span>
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           </button>

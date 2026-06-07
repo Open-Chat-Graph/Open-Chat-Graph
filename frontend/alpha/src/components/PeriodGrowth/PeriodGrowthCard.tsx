@@ -103,14 +103,14 @@ export const PeriodGrowthCard = memo(({ item, rank, onCardClick }: PeriodGrowthC
             )}
           </div>
 
-          {/* 作成日・登録日（小さめの muted メタ行） */}
+          {/* 開設日（LINE上の部屋開設）・グラフ登録日（オプチャグラフへの登録）。小さめの muted メタ行 */}
           {(createdAtText || registeredAtText) && (
             <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-none text-muted-foreground/80 tabular-nums">
-              {createdAtText && <span>作成 {createdAtText}</span>}
+              {createdAtText && <span>開設 {createdAtText}</span>}
               {createdAtText && registeredAtText && (
                 <span aria-hidden className="opacity-50">・</span>
               )}
-              {registeredAtText && <span>登録 {registeredAtText}</span>}
+              {registeredAtText && <span>グラフ登録 {registeredAtText}</span>}
             </div>
           )}
 

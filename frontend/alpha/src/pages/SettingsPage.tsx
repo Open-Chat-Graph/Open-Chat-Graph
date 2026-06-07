@@ -18,7 +18,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>通知</CardTitle>
           <CardDescription>
-            アラートする部屋・キーワードや通知のしきい値を設定します。
+            アラートする部屋・キーワードや通知する条件を設定します。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

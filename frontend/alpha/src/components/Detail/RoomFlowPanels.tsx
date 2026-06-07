@@ -62,7 +62,7 @@ export function RoomFlowPanels({
           icon={Search}
           accent="text-primary"
           title="流入キーワード"
-          hint="Google検索でこのページに来た語"
+          hint="Google検索からこの部屋のページに来た語"
         >
           {searchQueries.map((q, i) => (
             <li key={`${q.query}-${i}`} className="flex items-center gap-2 px-3 py-1.5">
@@ -124,7 +124,7 @@ export function RoomFlowPanels({
           {/* 「SEO経由」バッジの意味を、ごく控えめに 1 行で補足 */}
           {referrers.some((r) => r.isInternal) && (
             <li className="px-3 py-1.5 text-[10px] leading-tight text-muted-foreground/70">
-              「SEO経由」＝本家のSEOページから流入してこの部屋に来た動線
+              「SEO経由」＝検索でオプチャグラフに来た人がサイト内からこの部屋に来た動線
             </li>
           )}
         </FlowPanel>

@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { InfoChip } from '@/components/ui/info-chip'
 import { diffColorClass } from '@/lib/colors'
 
 interface DetailStatsProps {
@@ -142,10 +143,18 @@ export const DetailStats = memo(({
           </>
         )}
         {isNotInRanking && (
-          <Badge variant="secondary" className="ml-1 flex items-center gap-1 h-5 px-1.5 text-[11px] font-normal">
-            <AlertCircle className="h-3 w-3" />
-            ランキング非掲載
-          </Badge>
+          // タップで意味（公式ランキング非掲載）をポップオーバー表示する
+          <InfoChip
+            triggerClassName="ml-1 flex-shrink-0"
+            trigger={
+              <Badge variant="secondary" className="flex items-center gap-1 h-5 px-1.5 text-[11px] font-normal">
+                <AlertCircle className="h-3 w-3" />
+                ランキング非掲載
+              </Badge>
+            }
+          >
+            LINE公式ランキングに現在掲載されていません
+          </InfoChip>
         )}
       </div>
     </div>

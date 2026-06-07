@@ -7,10 +7,12 @@ import {
   Search,
   ExternalLink,
   Timer,
+  Info,
   type LucideIcon,
 } from 'lucide-react'
 import { alphaApi } from '@/api/alpha'
 import { cn } from '@/lib/utils'
+import { InfoChip } from '@/components/ui/info-chip'
 import { PeriodRangePicker } from '@/components/ui/period-range-picker'
 import { DEFAULT_PERIOD, periodKey, type PeriodValue } from '@/lib/period'
 import { RoomFlowPanels } from './RoomFlowPanels'
@@ -24,7 +26,7 @@ interface RoomMetricsBlockProps {
  * GA/GSC 由来のアクセス・検索メトリクスブロック（詳細ページ向け）。
  *
  * グラフ（メンバー数の推移）が見せられない「人がどう訪れているか」を補う補助ブロック。
- * 純PV・ユニークユーザー・SEO流入・参加リンク押下・平均エンゲージメント時間を、
+ * ページ閲覧数・ユニークユーザー・SEO流入・参加リンクのタップ・平均エンゲージメント時間を、
  * 数字を主役に静かに並べる。期間は既定30日。プルダウンでプリセット/カレンダー/全期間を選べる。
  *
  * creds 投入前は updatedAt が null で全指標がゼロで返る。その場合は「壊れている」のではなく
@@ -41,6 +43,7 @@ function formatEngagement(seconds: number): string {
 }
 
 // 1指標タイル。数値は Sora の tabular-nums で構造化。アイコンは控えめなアクセント。
+// info を渡すとラベル横にⓘが付き、タップで説明ポップオーバー（InfoChip）を出す。
 function MetricTile({
   icon: Icon,
   accent,
@@ -48,6 +51,7 @@ function MetricTile({
   value,
   unit,
   sub,
+  info,
 }: {
   icon: LucideIcon
   accent: string
@@ -55,12 +59,21 @@ function MetricTile({
   value: string
   unit?: string
   sub?: ReactNode
+  info?: ReactNode
 }) {
   return (
     <div className="surface-tonal flex flex-col gap-1 px-3 py-2.5">
       <div className="flex items-center gap-1.5">
         <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', accent)} aria-hidden />
         <span className="text-[11px] tracking-wide font-medium text-muted-foreground">{label}</span>
+        {info && (
+          <InfoChip
+            trigger={<Info className="h-3 w-3 text-muted-foreground/70" aria-label={`${label}の説明`} />}
+            triggerClassName="flex-shrink-0"
+          >
+            {info}
+          </InfoChip>
+        )}
       </div>
       <div className="flex items-baseline gap-1">
         <span className="font-display text-2xl font-bold leading-none tabular-nums text-foreground">
@@ -111,11 +124,12 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       className="max-w-[var(--content-w)] mx-auto overflow-hidden rounded-xl border bg-card shadow-sm"
       aria-label="アクセス・検索の指標"
     >
-      {/* 見出し帯：オプチャグラフ上での“見られ方・送客”を示す控えめなヘッダー */}
-      <header className="flex items-center gap-2 border-b bg-muted/30 px-4 py-2.5">
+      {/* 見出し帯：オプチャグラフ上での“見られ方・送客”を示す控えめなヘッダー。
+          副題は出所の手がかりなので常時表示（狭い幅では折り返す） */}
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b bg-muted/30 px-4 py-2.5">
         <BarChart3 className="h-4 w-4 flex-shrink-0 text-primary" />
         <h2 className="text-sm font-bold">アクセス・検索の指標</h2>
-        <span className="hidden text-[11px] font-normal text-muted-foreground sm:inline">
+        <span className="text-[11px] font-normal text-muted-foreground">
           オプチャグラフ上での見られ方
         </span>
         {/* 期間指定：既定30日／プリセット／カレンダー／全期間 */}
@@ -129,7 +143,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
         <MetricTile
           icon={Eye}
           accent="text-primary"
-          label="純PV"
+          label="ページ閲覧数"
           value={data.pageviews.toLocaleString()}
           unit="回"
         />
@@ -148,6 +162,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
           // 直接が0でも間接が多い部屋があるので合計で見せる。
           value={(data.searchClicks + data.seoIndirect).toLocaleString()}
           unit="流入"
+          info="直接=Google検索の結果からこのページに来た数。間接=検索でオプチャグラフに来た人がサイト内を回遊してこのページに来た数。"
           sub={
             <>
               直接 {data.searchClicks.toLocaleString()}クリック ・ 間接 {data.seoIndirect.toLocaleString()}PV
@@ -164,13 +179,13 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
         <MetricTile
           icon={ExternalLink}
           accent="text-amber-600 dark:text-amber-400"
-          label="参加リンク押下"
+          label="参加リンクのタップ"
           value={data.jumpClicks.toLocaleString()}
           unit="回"
-          // 参加に至った押下のうち、Google検索起点で間接的に来た数（本家が出さない数字）
+          // 参加に至ったタップのうち、Google検索起点で来た数（本家が出さない数字）
           sub={
             data.jumpClicks > 0
-              ? `うちSEO経由 ${(data.jumpClicksOrganic ?? 0).toLocaleString()}回`
+              ? `うち検索経由 ${(data.jumpClicksOrganic ?? 0).toLocaleString()}回`
               : 'LINEへの送客'
           }
         />
@@ -186,6 +201,11 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       {(searchQueries.length > 0 || referrers.length > 0) && (
         <RoomFlowPanels searchQueries={searchQueries} referrers={referrers} />
       )}
+
+      {/* 数字の出所の注記。LINEアプリ内の数字と誤読されないように明示する */}
+      <p className="px-4 pb-3 text-[11px] leading-relaxed text-muted-foreground/80">
+        ※ オプチャグラフ内のこの部屋の紹介ページの閲覧データです（LINEアプリ内の数字ではありません）
+      </p>
 
       {/* 集計の鮮度を控えめに（更新日時） */}
       {data.updatedAt && (

@@ -23,7 +23,7 @@ interface LabsRankingCardProps {
   highlight?: boolean
 }
 
-// 1指標。主役は大きく primary 色、それ以外は控えめ。sub に「うちSEO経由/直接・間接」を添える。
+// 1指標。主役は大きく primary 色、それ以外は控えめ。sub に「うち検索経由/直接・間接」を添える。
 function Stat({
   label,
   value,
@@ -69,7 +69,7 @@ function RoomMetrics({ room, primary }: { room: LabsRankingRoom; primary: LabsPr
       <Stat
         label="入室数"
         value={room.jumpClicks}
-        sub={`うちSEO経由（間接含む）${room.jumpClicksOrganic.toLocaleString()}`}
+        sub={`うち検索経由 ${room.jumpClicksOrganic.toLocaleString()}`}
         emphasize={primary === 'jump'}
       />
     </div>
@@ -91,7 +91,7 @@ function PageMetrics({ page, primary }: { page: RankingPageMetric; primary: Labs
       <Stat
         label="入室数"
         value={page.jumpClicks}
-        sub={`うちSEO経由（間接含む）${page.jumpClicksOrganic.toLocaleString()}・流入PV比で按分した近似値`}
+        sub={`うち検索経由 ${page.jumpClicksOrganic.toLocaleString()}・流入PV比で按分した近似値`}
         emphasize={primary === 'jump'}
       />
       <Stat label="ユニークユーザー" value={page.activeUsers} unit="人" />

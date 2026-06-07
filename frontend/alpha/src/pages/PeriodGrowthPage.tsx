@@ -186,7 +186,7 @@ const PeriodGrowthPage = memo(() => {
     <div className="space-y-4">
       {/* 見出し＋戻るは固定タイトルバー（DashboardLayout）が担うので、ここでは説明のみ。 */}
       <p className="text-sm text-muted-foreground">
-        指定した期間の前後どちらにもデータがある部屋だけを並べます。
+        期間の最初と最後の両方で人数が分かる部屋を、増減順に並べます。
       </p>
 
       <PeriodGrowthControls
