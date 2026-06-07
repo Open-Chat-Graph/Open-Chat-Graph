@@ -96,7 +96,10 @@ class OpenChatPageController
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
 
-        $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
+        $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray(
+            $open_chat_id,
+            isset($oc['category']) ? (int)$oc['category'] : null
+        );
         if (!$_statsDto) {
             $_statsDto = new StatisticsChartDto((new \DateTime('-1day'))->format('Y-m-d'), (new \DateTime('now'))->format('Y-m-d'));
         }
