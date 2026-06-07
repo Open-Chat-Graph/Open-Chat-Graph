@@ -4,7 +4,6 @@
 
 use App\Config\AppConfig;
 use Shared\MimimalCmsConfig;
-use App\Views\Ads\GoogleAdsense as GAd;
 
 $enableAdsense = true;
 
@@ -17,35 +16,35 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
     <?php endif ?>
 
     <?php // トップ表示時は最上部に独自の検索を置くため、ヘッダーの検索ボタンは隠す（hideSearchButton） ?>
-    <?php viewComponent('site_header', compact('_updatedAt') + ['hideSearchButton' => true]) ?>
+    <?php // ヒーロー側が h1 を持つため、ヘッダーのサイトタイトルは p に降格（demoteTitle） ?>
+    <?php viewComponent('site_header', compact('_updatedAt') + ['hideSearchButton' => true, 'demoteTitle' => true]) ?>
     <div class="pad-side-top-ranking body" style="overflow: hidden; padding-top: 0;">
 
-        <div style="padding: 0 1rem; margin-bottom: 1rem;">
-            <div style="margin: 1rem 0;">
-                <small style="display: block; color: var(--c-text-black); font-size: 11px; font-weight: bold; line-height: 1;">LINE</small>
-                <h1 style="margin: 0; padding: 0; font-size: 28px; font-weight: bold; line-height: 1;">OPENCHAT Graph <?php echo MimimalCmsConfig::$urlRoot ? strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?>📈</h1>
+        <?php // ホームヒーロー: 日本語ブランドを主役にしたロックアップ + 検索。
+              // 言語切り替えリンクはフッター(footer_inner)へ移設。スタイルは pages/top_page.css ?>
+        <section class="oc-home-hero">
+            <svg class="oc-home-hero__spark" viewBox="0 0 160 56" aria-hidden="true"><polyline points="2,50 28,42 52,45 78,30 104,34 130,16 158,5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <div class="oc-home-hero__top">
+                <div>
+                    <small class="oc-home-hero__eyebrow">LINE OPENCHAT GRAPH<?php echo MimimalCmsConfig::$urlRoot ? ' ' . strtoupper(str_replace('/', '', MimimalCmsConfig::$urlRoot)) : '' ?></small>
+                    <h1 class="oc-home-hero__title"><?php echo t('オプチャグラフ') ?></h1>
+                </div>
+                <?php // テーマ切替（フッターと同型ピル・3状態）。スタイルは site_footer.css を共用 ?>
+                <div class="footer-theme-toggle-row oc-home-hero__theme">
+                    <button class="footer-theme-toggle theme-toggle-btn unset" type="button" aria-label="<?php echo t('ダークモード切替') ?>">
+                        <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <svg class="theme-icon-auto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+                        <span class="footer-theme-toggle-label"><?php echo t('テーマ') ?>: <span class="theme-label-light"><?php echo t('ライト') ?></span><span class="theme-label-dark"><?php echo t('ダーク') ?></span><span class="theme-label-auto"><?php echo t('自動') ?></span></span>
+                    </button>
+                </div>
             </div>
-            <small style="display: block; color: var(--c-text-black); font-size: 10px; margin: .5rem 0 1rem 0;">
-                <?php
-                $languages = array_keys(AppConfig::LINE_OPEN_URL);
-                ?>
+            <p class="oc-home-hero__tagline"><?php echo t('LINEオープンチャットの人数推移とランキングを毎時間記録') ?></p>
+            <div class="oc-home-hero__meta"><span class="oc-home-hero__dot" aria-hidden="true"></span><?php echo t('1時間ごとに更新') ?><span class="oc-home-hero__time">・<?php echo $_updatedAt->format('G:i') ?></span></div>
 
-                <?php foreach ($languages as $key => $lang): ?>
-                    <?php if ($lang === MimimalCmsConfig::$urlRoot): ?>
-                        <span style="color: inherit; font-weight: bold;"><?php echo t('オプチャグラフ', $lang) ?></span>
-                    <?php else: ?>
-                        <a href="<?php echo url(["urlRoot" => "", "paths" => [$lang]]) ?>" style="color: inherit;"><?php echo t('オプチャグラフ', $lang) ?></a>
-                    <?php endif; ?>
-                    <?php if ($key !== count($languages) - 1): ?>／<?php endif; ?>
-                <?php endforeach; ?>
-            </small>
-        </div>
-
-        <?php // 公式LINEオープンチャットのトップに倣い、最上部に「オープンチャットを検索」を設置。送信先はヘッダー検索と同じ /ranking。
-              // CSSは自己完結（theme_discovery 非依存）。 ?>
-        <div style="padding: 0 1rem; margin-bottom: 1rem;">
+            <?php // 公式LINEオープンチャットのトップに倣い「オープンチャットを検索」。送信先はヘッダー検索と同じ /ranking。 ?>
             <form method="GET" action="<?php echo url('ranking') ?>" role="search" class="oc-hero-search">
-                <svg class="oc-hero-search__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);fill:var(--c-cool-text-weak);pointer-events:none"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
+                <svg class="oc-hero-search__icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z" /></svg>
                 <input id="oc-hero-input" class="oc-hero-search__input" type="search" name="keyword" inputmode="search" enterkeyhint="search"
                     autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" required
                     placeholder="<?php echo t('オープンチャットを検索') ?>" aria-label="<?php echo t('オープンチャットを検索') ?>">
@@ -54,29 +53,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 <input type="hidden" name="sort" value="member">
                 <input type="hidden" name="order" value="desc">
             </form>
-        </div>
-        <?php // テーマ切替（フッターと同型ピル・3状態）。スタイルは site_footer.css を共用 ?>
-        <div class="footer-theme-toggle-row" style="justify-content: flex-end; margin: -4px 1rem 0 0;">
-            <button class="footer-theme-toggle theme-toggle-btn unset" type="button" aria-label="<?php echo t('ダークモード切替') ?>">
-                <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                <svg class="theme-icon-auto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
-                <span class="footer-theme-toggle-label"><?php echo t('テーマ') ?>: <span class="theme-label-light"><?php echo t('ライト') ?></span><span class="theme-label-dark"><?php echo t('ダーク') ?></span><span class="theme-label-auto"><?php echo t('自動') ?></span></span>
-            </button>
-        </div>
-        <style>
-            /* トップ最上部「オープンチャットを検索」。自己完結CSS（グローバルな汎用 form 枠は打ち消す）。 */
-            .oc-hero-search{position:relative;display:block;width:100%;margin:0;padding:0;border:0;background:none;box-shadow:none}
-            .oc-hero-search__icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;fill:var(--c-cool-text-weak);pointer-events:none}
-            /* iOS Safari のフォーカス時オートズーム回避のため font-size は16px以上 */
-            .oc-hero-search__input{display:block;width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 44px;font-size:16px;color:var(--c-cool-text-deep);background:var(--c-cool-surface);border:1.5px solid var(--c-border-2);border-radius:12px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s,box-shadow .15s}
-            .oc-hero-search__input::placeholder{color:var(--c-cool-text-weak)}
-            .oc-hero-search__input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
-            .oc-hero-search__input:focus{background:var(--c-bg);border-color:var(--c-brand);box-shadow:0 0 0 3px var(--c-brand-ring)}
-            .oc-hero-search__clear{position:absolute;right:6px;top:0;bottom:0;width:40px;display:flex;align-items:center;justify-content:center;color:var(--c-cool-text-weak);font-size:20px;line-height:1;cursor:pointer;-webkit-user-select:none;user-select:none}
-            .oc-hero-search__clear:hover{color:var(--c-cool-text)}
-            .oc-hero-search__clear[hidden]{display:none}
-        </style>
+        </section>
         <script>
             /* クリア✕: テーマ検索と同じ挙動。変換(IME)確定前は✕を隠し、iOSで「消去後に入力できない」状態を防ぐ。 */
             (function () {
@@ -102,35 +79,26 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         ?>
             <div id="myListDiv" style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <div class="modify-top-padding" style="margin-bottom: 0rem;">
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
 
         <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。急上昇テーマ直後（≈20%深度）に置き到達率を最大化。ja のみ。 ?>
-            <hr class="hr-top" style="margin-bottom: 8px;">
             <?php viewComponent('home_blog_shelf') ?>
         <?php endif ?>
 
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
             <?php viewComponent('top_ranking_recent_comments') ?>
         <?php endif ?>
 
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
 
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
-        <hr class="hr-top" style="margin-bottom: 8px;">
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
 
         <?php viewComponent('footer_inner') ?>

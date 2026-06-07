@@ -527,9 +527,9 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertGreaterThanOrEqual(2, mb_substr_count($result['detail'], '。'));
     }
 
-    public function test_week_figure_omitted_except_surge(): void
+    public function test_week_figure_omitted(): void
     {
-        // 通常パターンでは「1 週間で N 人」はノイズなので出さない
+        // 「1 週間で N 人」はヘッダー stats に常時表示されるため本文には出さない
         $m = $this->metricsFixture(['curr' => 1000, 'm30' => 980, 'm90' => 940, 'm7' => 995]);
         $service = $this->makeService($m);
         $result = $service->generate(1, $this->buildOc());
@@ -538,7 +538,7 @@ class OcNarrativeServiceTest extends TestCase
         $this->assertStringContainsString('1 ヶ月で', $result['detail']);
         $this->assertStringNotContainsString('1 週間で', $result['detail']);
 
-        // サージ時 (トレンド文が直近の動きに言及する) は 1 週間の数字を添える
+        // サージ時も同様に 1 週間の数字は出さない (トレンド文「直近 1 週間で〜」の言及のみ)
         $m = $this->metricsFixture([
             'curr' => 1000, 'm1' => 999, 'm7' => 800, 'm30' => 780, 'm90' => 760,
         ]); // diff7 +200 (+25%) → surge_up
@@ -547,7 +547,7 @@ class OcNarrativeServiceTest extends TestCase
 
         $this->assertNotNull($result);
         $this->assertSame('surge_up', $result['pattern']);
-        $this->assertStringContainsString('1 週間で +200 人 (+25.0%)', $result['detail']);
+        $this->assertDoesNotMatchRegularExpression('/1 週間で [+\-]/u', $result['detail']);
     }
 
     public function test_peak_mentioned_when_peak_significantly_higher(): void

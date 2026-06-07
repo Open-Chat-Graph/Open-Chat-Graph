@@ -47,6 +47,33 @@
   height: 14px;
 }
 
+/* 言語切り替え（トップのヒーローから移設）。各言語のブランド名で各国トップへ */
+.footer-lang-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+  padding: 0 1rem;
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--c-text-4);
+}
+
+.footer-lang-row a {
+  color: var(--c-text-4);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-lang-current {
+  font-weight: 700;
+}
+
+.footer-lang-globe {
+  font-size: 12px;
+}
+
 .copyright {
   width: fit-content;
   display: flex;
