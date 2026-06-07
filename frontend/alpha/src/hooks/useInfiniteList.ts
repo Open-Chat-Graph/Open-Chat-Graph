@@ -8,6 +8,7 @@ const REVEAL_STEP = 30
  * 一覧3画面（検索 / 期間増減 / Labs）共通の SWR Infinite オプション。
  * revalidateIfStale:false 等は <Activity> 再表示（タブ復帰/オーバーレイ閉じ）の
  * 同一キー再検証を抑止するため（実フェッチの無い再描画で読み込み挙動を起こさない）。
+ * errorRetryCount/errorRetryInterval: SW/ネットワーク起因の一時的失敗から素早く復帰させる。
  */
 const SWR_INFINITE_OPTIONS = {
   revalidateFirstPage: false,
@@ -15,6 +16,8 @@ const SWR_INFINITE_OPTIONS = {
   revalidateOnFocus: false,
   revalidateOnReconnect: false,
   dedupingInterval: 60000,
+  errorRetryCount: 2,
+  errorRetryInterval: 2000,
 } as const
 
 /**
@@ -55,6 +58,8 @@ interface UseInfiniteListResult<P extends { data: readonly unknown[] }> {
   visibleCount: number
   /** 無限スクロール番兵 <div> に渡す callback ref（ListProgressFooter の observerRef へ）。 */
   sentinelRef: (el: HTMLDivElement | null) => void
+  /** エラー時の手動再試行（キャッシュを破棄して再フェッチ）。 */
+  mutate: () => void
 }
 
 /**
@@ -84,7 +89,7 @@ export function useInfiniteList<P extends { data: readonly unknown[] }>({
   fetcher,
   getHasMore,
 }: UseInfiniteListOptions<P>): UseInfiniteListResult<P> {
-  const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<P>(
+  const { data, error, isLoading, isValidating, size, setSize, mutate } = useSWRInfinite<P>(
     getKey,
     fetcher as (key: unknown) => Promise<P>,
     SWR_INFINITE_OPTIONS,
@@ -178,5 +183,8 @@ export function useInfiniteList<P extends { data: readonly unknown[] }>({
     observer.observe(el)
   }, [visibleCount, items.length, hasMore, isValidating, isLoading])
 
-  return { pages, items, error, phase, hasMore, visibleCount, sentinelRef }
+  // mutate でキャッシュを破棄して再フェッチ（エラー時の手動再試行ボタンから呼ぶ）
+  const retry = useCallback(() => { mutate() }, [mutate])
+
+  return { pages, items, error, phase, hasMore, visibleCount, sentinelRef, mutate: retry }
 }

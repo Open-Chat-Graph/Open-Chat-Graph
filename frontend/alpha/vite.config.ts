@@ -80,7 +80,10 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        // registerSW.js と index.html はαでは使われない（登録はalpha_content.php インライン、
+        // HTMLはPHPが返す）。プリキャッシュから除外して不要なキャッシュを作らない。
+        globPatterns: ['**/*.{js,css,ico,png,svg,webmanifest}'],
+        globIgnores: ['registerSW.js', 'index.html'],
         navigateFallback: null,
         runtimeCaching: [
           {
@@ -102,25 +105,14 @@ export default defineConfig(({ mode }) => {
               expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
               cacheableResponse: { statuses: [0, 200] }
             }
-          },
-          {
-            urlPattern: /^.*\/alpha-api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
-          },
-          {
-            urlPattern: /^.*\/oc\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'oc-api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
-              cacheableResponse: { statuses: [0, 200] }
-            }
           }
+          // /alpha-api/ と /oc/ の NetworkFirst ルートは削除:
+          // SW がリクエストを respondWith で握ると、SW インスタンス終了時に
+          // ERR_FAILED で落ちてブラウザ本来の再試行が効かなくなる。
+          // ルートが存在しなければリクエストはブラウザ管理になり SW 終了の影響を受けない。
+          // /alpha-api/ は SWR が独自にキャッシュ・リトライする。
+          // /oc/ は PHP・Preact が直接 fetch するため SW オフロードの恩恵がなく
+          // 中断リスクだけが残る。
         ]
       }
     })

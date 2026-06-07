@@ -68,7 +68,7 @@ const SearchPage = memo(() => {
   const searchKey = urlKeyword ? `${urlKeyword}|${sort}|${order}|${category}|${searchNonce}` : null
 
   // ページング＋reveal＋無限スクロールは共通コントローラに集約（検索/期間増減/Labs 同一）。
-  const { pages, items: results, error, phase, hasMore, visibleCount, sentinelRef } =
+  const { pages, items: results, error, phase, hasMore, visibleCount, sentinelRef, mutate } =
     useInfiniteList<SearchResponse>({
       listKey: searchKey,
       getKey,
@@ -159,8 +159,17 @@ const SearchPage = memo(() => {
       >
       {error && (
         <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <p className="text-sm text-destructive">データの取得に失敗しました</p>
+          <CardContent className="pt-6 space-y-3">
+            <p className="text-sm text-destructive">
+              データの取得に失敗しました。自動的に再試行します…
+            </p>
+            <button
+              type="button"
+              onClick={() => mutate()}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              今すぐ再試行
+            </button>
           </CardContent>
         </Card>
       )}
