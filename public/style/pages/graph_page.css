@@ -89,9 +89,11 @@
     background-color: var(--c-surface);
   }
 
+  /* タッチで :hover が残留しても基本状態と同色に固定する（ランキングページのチップと同じ
+     OpenChat.css の .selected と同色トークン。--c-text-1 だとダークで白背景×白文字に白浮きする） */
   .MuiChip-root.openchat-item-header-chip.graph.selected:hover {
     color: var(--c-text-inverse);
-    background-color: var(--c-text-1);
+    background-color: var(--c-chip-dark);
   }
 }
 
