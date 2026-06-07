@@ -44,7 +44,6 @@
     --main-offset-md: max(var(--sidebar-md), calc((100vw - var(--shell-md)) / 2 + var(--sidebar-md)));
     --main-offset-lg: max(var(--sidebar-lg), calc((100vw - var(--shell-lg)) / 2 + var(--sidebar-lg)));
     --header-searchbar-h: calc(var(--header-h) + var(--searchbar-h)); /* 初期値104px。実際は実測で上書き（下記） */
-    --chart-controls-h: 144px; /* oc-appグラフ下の操作タブ列(マウント先div in-flow)の予約高。下記オフセット契約参照。 */
   }
 
   /*
@@ -59,12 +58,12 @@
    *      ヘッダに戻る/タイトルを出すため。よって overlay 側は pt-12 でヘッダ分を必ず空ける。
    *  - --content-w / --main-offset-* : 中央カラム幅とサイドバー分の左オフセット。ヘッダ/パネル/オーバーレイで共通利用。
    *  - --bottomnav-h : モバイル下部ナビ高。パネルの bottom 余白に使う。
-   *  - --chart-controls-h: 詳細グラフ(OcGraph)の予約高のうち「操作タブ列」分。
-   *      canvas 本体は .chart-canvas-box(ダミー枠)が aspect-ratio で幅確定時に予約済みだが、
-   *      その下の期間/カテゴリ MUI タブ(マウント先div の in-flow 部分)は描画完了で初めて現れ、
-   *      下の RoomMetricsBlock 以降を押し下げていた。マウント先div の min-height(OcGraph.tsx の
-   *      インラインstyle)にこの高さを予約し描画前後で不変にする。
-   *      タブ列の高さを変える時はここ1箇所だけ直す（実測 約141px → 余裕込み144px）。
+   *  - 詳細グラフ(OcGraph)の「操作列」予約高: canvas 本体は .chart-canvas-box(ダミー枠)が
+   *      aspect-ratio で幅確定時に予約済みだが、その下のタブ/トグル列(マウント先div の
+   *      in-flow 部分)は描画完了で初めて現れ、下の RoomMetricsBlock 以降を押し下げていた。
+   *      表示有無がデータ依存（ローソク足トグル行・ランキングトグル列）のため固定値ではなく、
+   *      OcGraph.tsx の controlsHeight() が DTO から実高を計算して min-height に予約する。
+   *      高さの内訳・定数は OcGraph.tsx 冒頭の TABS_ROW_H 等を参照（そこだけ直す）。
    */
 
   .dark {
@@ -123,7 +122,7 @@
 
 /* oc-app Graph Styles（本家 public/style/pages/graph_page.css のチャート必須分を移植。
    canvas のレイアウトシフト防止は .chart-canvas-box(ダミー枠)の aspect-ratio 予約、
-   操作タブ列はマウント先div の min-height(--chart-controls-h, OcGraph.tsx)で予約。 */
+   操作列はマウント先div の min-height(OcGraph.tsx の controlsHeight())で予約。 */
 
 /* グラフ内コンポーネント(ChartLimitBtns/ToggleButtons)が直接参照する本家トークン。
    αには本家 tokens.css が無いため shadcn トークンへ写像する（.dark でも自動追従） */

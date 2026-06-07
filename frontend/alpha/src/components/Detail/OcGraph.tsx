@@ -21,6 +21,28 @@ declare global {
 const OC_GRAPH_SCRIPT_ID = 'oc-graph-script'
 const MOUNT_WAIT_TIMEOUT_MS = 5000
 
+/* ===== 操作列（グラフ下の in-flow 部分）の予約高 =====
+ * 描画完了（opacity 0→1）の瞬間に下の要素がずれないよう、oc-app が実際に描く高さを
+ * DTO から事前計算してマウント先 div の min-height に予約する。内訳は oc-app 側
+ * (frontend/oc-app/src/graph/App.tsx / ChartLimitBtns.tsx) と対で管理:
+ *  - タブ列: MUI Tabs 48 + 下罫線 1 + .limit-btns margin-bottom 8 = 57（常時表示）
+ *  - ローソク足トグル行: pt 16 + Chip(small) 24 = 40。hasOhlcData＝statsDto.date が2点以上で表示
+ *  - 期間/カテゴリのトグル列(ToggleButtons): 84。ランキング掲載時（categoryKey !== null）のみ
+ */
+const TABS_ROW_H = 57
+const CANDLE_TOGGLE_H = 40
+const POSITION_BTNS_H = 84
+/** データ未着時の既定値＝最頻ケース（統計2点以上＋ランキング掲載） */
+const DEFAULT_CONTROLS_H = TABS_ROW_H + CANDLE_TOGGLE_H + POSITION_BTNS_H // 181
+
+function controlsHeight(data: GraphEmbedResponse | undefined): number {
+  if (!data) return DEFAULT_CONTROLS_H
+  const dates = (data.statsDto as { date?: unknown[] }).date
+  const hasOhlc = Array.isArray(dates) && dates.length > 1
+  const listed = (data.chartArgDto as { categoryKey?: number | null }).categoryKey !== null
+  return TABS_ROW_H + (hasOhlc ? CANDLE_TOGGLE_H : 0) + (listed ? POSITION_BTNS_H : 0)
+}
+
 interface OcGraphProps {
   chatId: number
 }
@@ -110,10 +132,10 @@ export function OcGraph({ chatId }: OcGraphProps) {
       >
         {/* canvas 領域は .chart-canvas-box(ダミー枠)が aspect-ratio で予約
             （実 canvas は React ツリー内の position:absolute な同クラス枠に描画される）。
-            操作タブ列はマウント先の min-height(--chart-controls-h, index.css)で予約。
+            操作列はマウント先の min-height（DTO から controlsHeight() で実高を事前計算）で予約。
             両方を事前予約することで描画完了時に下要素がずれない。 */}
         <div className="chart-canvas-box" id="dummy-canvas"></div>
-        <div ref={containerRef} style={{ minHeight: 'var(--chart-controls-h)' }}></div>
+        <div ref={containerRef} style={{ minHeight: controlsHeight(data) }}></div>
       </div>
     </div>
   )
