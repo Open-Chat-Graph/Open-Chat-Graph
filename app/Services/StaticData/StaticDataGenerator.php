@@ -7,6 +7,7 @@ namespace App\Services\StaticData;
 use App\Config\AppConfig;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
+use App\Services\Recommend\RelatedTagsService;
 use App\Services\Recommend\TopPageRecommendList;
 use App\Services\StaticData\Dto\StaticRecommendPageDto;
 use App\Services\StaticData\Dto\StaticTopPageDto;
@@ -21,6 +22,7 @@ class StaticDataGenerator
         private TopPageRecommendList $topPageRecommendList,
         private RecommendRankingRepository $recommendPageRepository,
         private FileStorageInterface $fileStorage,
+        private RelatedTagsService $relatedTagsService,
     ) {}
 
     function getTopPageDataFromDB(): StaticTopPageDto
@@ -126,10 +128,19 @@ class StaticDataGenerator
         return $this->recommendPageRepository->getRecommendTagAndCategoryAll();
     }
 
+    /**
+     * 関連タグマップ（タグ => [関連タグ => 共起スコア]）。RelatedTagsService 参照。
+     */
+    function getRelatedTags(): array
+    {
+        return $this->relatedTagsService->build();
+    }
+
     function updateStaticData()
     {
         $this->fileStorage->safeFileRewrite('@hourlyRealUpdatedAtDatetime', (new \DateTime)->format('Y-m-d H:i:s'));
         $this->fileStorage->saveSerializedFile('@tagList', $this->getTagList());
+        $this->fileStorage->saveSerializedFile('@relatedTags', $this->getRelatedTags());
         $this->fileStorage->saveSerializedFile('@topPageRankingData', $this->getTopPageDataFromDB());
         $this->fileStorage->saveSerializedFile('@rankingArgDto', $this->getRankingArgDto());
         $this->fileStorage->saveSerializedFile('@recommendPageDto', $this->getRecommendPageDto());
