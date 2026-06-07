@@ -37,8 +37,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </div>
 
-      <hr class="hr-top recommend">
-
       <div class="recommend-header-desc-wrapper">
         <h1 class="recommend-header-desc-text">
           <?php echo sprintfT('いま伸びている「%s」のオープンチャット', $tag) ?><?php echo $countTitle ? ' ' . $countTitle : '' ?>

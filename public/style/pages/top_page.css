@@ -175,18 +175,18 @@
   display: none;
 }
 
-/* ---------- セクションの縦リズム（罫線レス） ---------- */
+/* ---------- セクションの縦リズム（罫線レス・値は tokens.css の --sp-* で管理） ---------- */
 .top-page .top-ranking,
 .top-page .recent-comment-list {
-  padding: 16px 0 8px;
+  padding: var(--sp-section-gap) 0 var(--sp-section-pad-btm);
 }
 
 .top-page .home-blog-shelf {
-  margin-top: 16px;
+  margin-top: var(--sp-section-gap);
 }
 
 .top-page .modify-top-padding {
-  margin-top: 10px;
+  margin-top: var(--sp-section-gap-sm);
 }
 
 /* ---------- デスクトップ ---------- */

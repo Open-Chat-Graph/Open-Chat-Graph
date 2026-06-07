@@ -30,7 +30,8 @@ html {
  * --c-pill-brand-bg / --c-pill-brand-text) と太字の状態ラベルで示す。
  */
 .oc-narrative {
-  padding: 10px 1rem 12px 1rem;
+  /* ブロック間隔は上側のみ・--sp-section-gap で統一（下は次ブロックが持つ） */
+  padding: var(--sp-section-gap) 1rem 0 1rem;
   font-family: var(--font-family);
 }
 
@@ -81,10 +82,6 @@ html {
 }
 
 @media screen and (min-width: 512px) {
-  .oc-narrative {
-    padding: 12px 1rem 14px 1rem;
-  }
-
   .oc-narrative__text {
     font-size: 15px;
   }
@@ -147,18 +144,18 @@ html {
   justify-content: space-between;
   gap: 0;
   margin: 0 1rem;
-  /* 罫線(hr)は全廃し、stats との間も narrative との間も余白のみで区切る */
-  padding: 14px 0 18px 0;
+  /* 罫線(hr)は全廃。ブロック間隔は「各ブロックが上側の余白だけを持つ」方式で
+     tokens.css の --sp-section-gap に統一する（下側余白は持たない） */
+  padding: var(--sp-section-gap) 0 0 0;
   border: unset;
 }
 
-/* スマホ幅: カテゴリ/タグ ブロックとボタンは区切り線なしで、余白のみで分離 */
+/* スマホ幅: カテゴリ/タグ ブロックとボタンも他ブロックと同じ間隔で分離 */
 .oc-desc-nav .oc-desc-nav-actions {
   display: flex;
   gap: 8px;
   width: 100%;
-  margin-top: 12px;
-  padding-top: 16px;
+  margin-top: var(--sp-section-gap);
 }
 
 @media screen and (min-width: 512px) {
@@ -168,16 +165,15 @@ html {
     align-items: center;
     justify-content: space-evenly;
     gap: 1rem;
-    padding: 20px 0;             /* PC: 罫線廃止のぶん上下余白で呼吸を持たせる */
+    padding: var(--sp-section-gap) 0 0;  /* PC: 上側余白のみ（モバイルと同じ統一値） */
     border: unset;
   }
 
-  /* PC: 上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
+  /* PC: 横並びになるため上余白は解除。width:100%(基底)を維持して aside(min-width:50%) と分け合い、
      ボタンは下の max-width:250px で頭打ち＋右寄せ＝元のPCレイアウトに復元。
      長いタグがボタン下に潜り込まないよう、チップ側を max-width で頭打ちにし省略(…)で truncate(下の .oc-nav-chip)。 */
   .oc-desc-nav .oc-desc-nav-actions {
     margin-top: 0;
-    padding-top: 0;
   }
 
   .oc-desc-nav .open-btn.sp-btn {
