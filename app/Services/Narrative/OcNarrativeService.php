@@ -114,11 +114,12 @@ class OcNarrativeService
             $diff30 = $this->diff($curr, $metrics['m30'] ?? null);
             $pct30 = $this->safePct($metrics['m30'] ?? null, $curr);
 
-            $summary = $this->buildSummary($state, $curr, $openchatId, $oc);
-            $detail = $this->buildDetail($state, $metrics, $oc, $categoryLabel, $openchatId);
+            $summary = $this->buildSummary($state, $openchatId, $oc);
+            $detail = $this->buildDetail($state, $metrics);
             $metaDescription = $this->buildMetaDescription($oc, $curr, $diff30, $pct30, $categoryLabel);
 
-            if ($summary === '' || $detail === '' || $metaDescription === '') {
+            // detail はデータが薄いと空になり得るが、summary (状態ラベル) があれば narrative は出す
+            if ($summary === '' || $metaDescription === '') {
                 return null;
             }
 
@@ -396,47 +397,30 @@ class OcNarrativeService
     }
 
     /**
-     * summary 1 行: {評価ラベル(ランキング, あれば)}。{状態ラベル + 現在人数}。
+     * summary 1 行: {評価ラベル(ランキング, あれば)}。{状態ラベル}。
+     * 現在人数はページ上部 (ルーム名横) に表示済みなのでここでは繰り返さない。
      */
-    private function buildSummary(array $state, int $curr, int $openchatId, array $oc): string
+    private function buildSummary(array $state, int $openchatId, array $oc): string
     {
-        $currFmt = number_format($curr);
-
         // 評価ラベル (ランキング / 急上昇) を最優先で出す。該当無しなら空。
         $evalLabel = $this->buildSummaryEvalLabel($openchatId, $oc);
         $evalPart = $evalLabel !== null ? $evalLabel . $this->sentenceEnd() : '';
 
-        // 状態ラベル + 現在人数
-        $label = t($state['label']);
-        if ($state['pattern'] === 'stagnant') {
-            $statePart = sprintfT('現在 %s 人。%s。', $currFmt, $label);
-        } else {
-            $statePart = sprintfT('%s。現在 %s 人。', $label, $currFmt);
-        }
-
-        return $evalPart . $statePart;
+        return $evalPart . t($state['label']) . $this->sentenceEnd();
     }
 
     /**
-     * detail (複数文, \n 区切り):
-     *   開設情報 → カテゴリ → トレンド文 → ピーク / 縮小文脈 → 単日最大の伸び → 期間比較数字(最後)
+     * detail (複数文を 1 段落に連結):
+     *   トレンド文 → ピーク / 縮小文脈 → 単日最大の伸び → 期間比較数字(最後)
+     *
+     * 開設情報・カテゴリ・現在人数はページ内の「ルーム開設」「オプチャ情報」等に
+     * 表示済みの重複情報なので出さない (分析独自の情報だけに絞る)。
      */
-    private function buildDetail(array $state, array $m, array $oc, ?string $category, int $openchatId): string
+    private function buildDetail(array $state, array $m): string
     {
         $sentences = [];
         $curr = (int)$m['curr'];
         $pattern = $state['pattern'];
-
-        // 開設情報
-        $openInfo = $this->openingInfoSentence($oc, $m);
-        if ($openInfo !== null) {
-            $sentences[] = $openInfo;
-        }
-
-        // カテゴリ言及 (カテゴリ無いルームは出さない)。$category は Controller 解決済の locale 表示名
-        if ($category !== null && $category !== '') {
-            $sentences[] = sprintfT('%s カテゴリのオープンチャット。', $category);
-        }
 
         // トレンド文 (状態分類が選んだ 1 文)
         if ($state['trend'] !== null && $state['trend'] !== '') {
@@ -511,14 +495,17 @@ class OcNarrativeService
         }
         $sentences = array_slice($sentences, 0, 6);
 
-        return implode("\n", $sentences);
+        // 1 段落として流し込む (ja / tw は句点で終わるので直結、th はスペース区切り)
+        return implode($this->detailGlue(), $sentences);
     }
 
     /**
      * 期間比較数字の 1 文を組み立てる。
      * - new / stagnant: % は出さず実数のみ (7 日)
      * - 小規模 (tiny): % はノイズなので実数のみ (30 日 / 7 日)
-     * - 通常: 3 ヶ月 / 1 ヶ月 / 1 週間 を実数 + % 併記
+     * - 通常: 3 ヶ月 / 1 ヶ月 を実数 + % 併記。
+     *   1 週間はほぼ常に 0 近傍でノイズなので、トレンド文が直近 24h / 1 週間に
+     *   言及するサージ時のみ添える
      */
     private function buildPeriodSentence(string $pattern, array $m, int $curr): ?string
     {
@@ -553,7 +540,7 @@ class OcNarrativeService
         if ($pct30 !== null && $diff30 !== null) {
             $parts[] = sprintfT('1 ヶ月で %s 人 (%s%%)', $this->signedNumberFormat($diff30), $this->signedFloatFormat($pct30));
         }
-        if ($pct7 !== null && $diff7 !== null) {
+        if (in_array($pattern, ['surge_up', 'surge_down'], true) && $pct7 !== null && $diff7 !== null) {
             $parts[] = sprintfT('1 週間で %s 人 (%s%%)', $this->signedNumberFormat($diff7), $this->signedFloatFormat($pct7));
         }
         if (empty($parts)) {
@@ -610,27 +597,6 @@ class OcNarrativeService
         } catch (\Throwable $e) {
             return null;
         }
-    }
-
-    private function openingInfoSentence(array $oc, array $m): ?string
-    {
-        $dt = $this->parseApiCreatedAt($oc);
-        if ($dt === null) {
-            return null;
-        }
-        $now = new \DateTime('now');
-        $diff = $now->diff($dt);
-
-        $ym = $this->localizedYearMonth($dt);
-        $yearsRun = $diff->y;
-
-        if ($yearsRun >= 1) {
-            return sprintfT('%s 開設、運営 %d 年。', $ym, $yearsRun);
-        }
-        if ($diff->m >= 1) {
-            return sprintfT('%s 開設、運営 %d ヶ月。', $ym, $diff->m);
-        }
-        return sprintfT('%s 開設。', $ym);
     }
 
     private function extractCategoryId(array $oc): ?int
@@ -763,16 +729,6 @@ class OcNarrativeService
     }
 
     /**
-     * locale 別の日付表記 (年月)。localizedDate と同じ方針。
-     */
-    private function localizedYearMonth(\DateTime $dt): string
-    {
-        return MimimalCmsConfig::$urlRoot === '/th'
-            ? $dt->format('n/Y')
-            : $dt->format('Y年n月');
-    }
-
-    /**
      * locale 別の列挙区切り。ja / tw は読点「、」、th は半角スペース。
      */
     private function listSep(): string
@@ -787,6 +743,14 @@ class OcNarrativeService
     private function sentenceEnd(): string
     {
         return MimimalCmsConfig::$urlRoot === '/th' ? ' ' : '。';
+    }
+
+    /**
+     * detail の文を 1 段落に連結する区切り。ja / tw は句点で終わるので直結、th はスペース。
+     */
+    private function detailGlue(): string
+    {
+        return MimimalCmsConfig::$urlRoot === '/th' ? ' ' : '';
     }
 
     private function truncate(string $s, int $maxLen): string
