@@ -17,6 +17,7 @@ export const chartModeAtom = atom<ChartMode>('line')
 export const renderTabAtom = atom(false)
 export const renderPositionBtnsAtom = atom(false)
 export const toggleDisplay24hAtom = atom(true)
+export const toggleDisplayWeekAtom = atom(true)
 export const toggleDisplayMonthAtom = atom(true)
 export const toggleDisplayAllAtom = atom(true)
 
@@ -277,6 +278,7 @@ export function hasOhlcDataForLimit(limit: ChartLimit | 25): boolean {
 }
 
 export function updateTabVisibility(dataLength: number) {
+  graphStore.set(toggleDisplayWeekAtom, true)
   graphStore.set(toggleDisplayMonthAtom, dataLength > 8)
   graphStore.set(toggleDisplayAllAtom, dataLength > 31)
   fallbackHiddenLimit()
@@ -285,8 +287,10 @@ export function updateTabVisibility(dataLength: number) {
 /**
  * ローソク足モード: 期間タブ毎のウィンドウ内ローソク足本数に基づいてタブ表示を設定する
  *
- * OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
- * 件数ではなく各タブのウィンドウに実際に入る本数で判定する
+ * - ローソク足を利用できない期間（折れ線モードで切替ボタンがグレーアウトになる期間）の
+ *   タブは非表示にする
+ * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
+ *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
  */
 export function updateCandleTabVisibility(ohlcData: MemberOhlc[]) {
   const dates = statsDto.date
@@ -303,20 +307,29 @@ export function updateCandleTabVisibility(ohlcData: MemberOhlc[]) {
   const monthCount = countInWindow(31)
   const allCount = countInWindow(0)
 
-  // より短いタブで全て表示しきれないローソク足がある場合のみ表示
-  graphStore.set(toggleDisplayMonthAtom, monthCount > weekCount)
-  graphStore.set(toggleDisplayAllAtom, allCount > monthCount)
+  const showWeek = hasOhlcDataForLimit(8)
+  const showMonth = hasOhlcDataForLimit(31) && monthCount > (showWeek ? weekCount : 0)
+  const showAll = allCount > (showMonth ? monthCount : showWeek ? weekCount : 0)
+
+  graphStore.set(toggleDisplayWeekAtom, showWeek)
+  graphStore.set(toggleDisplayMonthAtom, showMonth)
+  graphStore.set(toggleDisplayAllAtom, showAll)
   fallbackHiddenLimit()
 }
 
 /** 非表示になったタブが選択中の場合、表示中のタブにフォールバックする */
 function fallbackHiddenLimit() {
-  if (graphStore.get(limitAtom) === 0 && !graphStore.get(toggleDisplayAllAtom)) {
-    graphStore.set(limitAtom, graphStore.get(toggleDisplayMonthAtom) ? 31 : 8)
+  const display: Record<ChartLimit, boolean> = {
+    8: graphStore.get(toggleDisplayWeekAtom),
+    31: graphStore.get(toggleDisplayMonthAtom),
+    0: graphStore.get(toggleDisplayAllAtom),
   }
-  if (graphStore.get(limitAtom) === 31 && !graphStore.get(toggleDisplayMonthAtom)) {
-    graphStore.set(limitAtom, 8)
-  }
+
+  const limit = graphStore.get(limitAtom)
+  if (limit === 25 || display[limit]) return
+
+  const fallback = ([31, 8, 0] as ChartLimit[]).find((l) => l !== limit && display[l])
+  fallback !== undefined && graphStore.set(limitAtom, fallback)
 }
 
 export function handleChangeChartMode(mode: ChartMode) {
