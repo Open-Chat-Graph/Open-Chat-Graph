@@ -219,10 +219,9 @@ const SearchPage = memo(() => {
             </span>
           </button>
 
-          {/* PC(lg+)は2カラムで幅を活かす。リスト本体のクラスのみ変更し、
-              reveal（visibleCount）・無限スクロールのロジックには触れない。
-              カード高さの不揃いは items-start で許容（行内ストレッチさせない）。 */}
-          <div className="grid gap-2 md:gap-4 lg:grid-cols-2 lg:gap-3 lg:items-start">
+          {/* ソート済みリストは1カラム（2カラムは視線がZ字に折り返し上から順の比較ができない）。
+              広いシェルでは1行が長くなりすぎないよう読みやすい幅にキャップして中央寄せ。 */}
+          <div className="grid gap-2 md:gap-4 lg:max-w-3xl lg:mx-auto lg:w-full">
             {results.slice(0, visibleCount).map((chat) => (
               <OpenChatCard
                 key={chat.id}
