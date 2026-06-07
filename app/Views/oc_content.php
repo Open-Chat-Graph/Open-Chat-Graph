@@ -112,9 +112,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
       </section>
 
-      <hr class="hr-top oc-header-hr" style="margin-bottom: 8px;">
-
-      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み (margin/padding/border 含む) */ ?>
+      <?php /* ナビチップのスタイルは style/pages/room_page.css に移設済み (margin/padding/border 含む)。
+               ヘッダーとの区切り罫線(hr)は廃止し、余白のみで区切る */ ?>
 
       <nav class="oc-desc-nav">
         <aside class="oc-desc-nav-category" style="display: flex; align-items:center; min-width: calc(50% - 1rem);">
@@ -159,7 +158,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
-      <hr class="hr-top" style="margin-bottom: 8px;">
       <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
         <section class="oc-narrative" aria-label="<?php echo t('オプチャグラフの分析') ?>">
           <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
