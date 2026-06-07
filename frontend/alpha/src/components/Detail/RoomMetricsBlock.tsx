@@ -128,7 +128,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
       <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3">
         <MetricTile
           icon={Eye}
-          accent="text-sky-600 dark:text-sky-400"
+          accent="text-primary"
           label="純PV"
           value={data.pageviews.toLocaleString()}
           unit="回"
@@ -142,7 +142,7 @@ export const RoomMetricsBlock = memo(({ openChatId }: RoomMetricsBlockProps) => 
         />
         <MetricTile
           icon={Search}
-          accent="text-emerald-600 dark:text-emerald-400"
+          accent="text-primary"
           label="SEO流入"
           // 合計＝直接(Google→このページ)＋間接(本家内SEOページ経由で回遊到達)。
           // 直接が0でも間接が多い部屋があるので合計で見せる。

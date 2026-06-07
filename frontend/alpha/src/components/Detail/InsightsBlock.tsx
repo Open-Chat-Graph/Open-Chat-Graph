@@ -13,7 +13,6 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { alphaApi } from '@/api/alpha'
-import { cn } from '@/lib/utils'
 import type { InsightsResponse, InsightItem } from '@/types/api'
 
 interface InsightsBlockProps {
@@ -29,36 +28,25 @@ interface InsightsBlockProps {
  * ローディング/エラー/空はすべて無表示で、注意を奪わない。
  */
 
-// type ごとのアイコンとアクセント色。text を主役にするため装飾は控えめに。
+// type ごとのアイコンとラベル。アクセント色は全て text-primary に統一。
 type InsightStyle = {
   icon: LucideIcon
-  // ドット/アイコンのアクセント色（light/dark）
-  accent: string
   label: string
 }
 
 const INSIGHT_STYLES: Record<string, InsightStyle> = {
-  // 成長率の順位（同カテゴリ内などで伸びが際立つ）
-  growth_rank: { icon: TrendingUp, accent: 'text-emerald-600 dark:text-emerald-400', label: '成長の勢い' },
-  // 順位の推移トレンド（じわじわ上がっている/下がっている）
-  position_trend: { icon: LineChart, accent: 'text-sky-600 dark:text-sky-400', label: '順位の流れ' },
-  // 自己ベスト順位
-  best_rank: { icon: Trophy, accent: 'text-amber-600 dark:text-amber-400', label: '自己ベスト' },
-  // カテゴリ内の順位
-  category_rank: { icon: Layers, accent: 'text-indigo-600 dark:text-indigo-400', label: 'カテゴリ内順位' },
-  // カテゴリ内シェア
-  category_share: { icon: PieChart, accent: 'text-violet-600 dark:text-violet-400', label: 'カテゴリ内シェア' },
-  // カテゴリ内での規模感
-  category_scale: { icon: Ruler, accent: 'text-teal-600 dark:text-teal-400', label: 'カテゴリ内の規模' },
-  // 単日の記録（過去最大の伸び等）
-  record_single_day: { icon: CalendarClock, accent: 'text-rose-600 dark:text-rose-400', label: '記録的な1日' },
-  // 増加ペースの異常検知
-  pace_anomaly: { icon: Activity, accent: 'text-orange-600 dark:text-orange-400', label: 'ペースの変化' },
+  growth_rank: { icon: TrendingUp, label: '成長の勢い' },
+  position_trend: { icon: LineChart, label: '順位の流れ' },
+  best_rank: { icon: Trophy, label: '自己ベスト' },
+  category_rank: { icon: Layers, label: 'カテゴリ内順位' },
+  category_share: { icon: PieChart, label: 'カテゴリ内シェア' },
+  category_scale: { icon: Ruler, label: 'カテゴリ内の規模' },
+  record_single_day: { icon: CalendarClock, label: '記録的な1日' },
+  pace_anomaly: { icon: Activity, label: 'ペースの変化' },
 }
 
 const DEFAULT_STYLE: InsightStyle = {
   icon: Sparkles,
-  accent: 'text-primary',
   label: '考察',
 }
 
@@ -77,15 +65,12 @@ function formatGeneratedAt(s: string): string {
 }
 
 function InsightRow({ item }: { item: InsightItem }) {
-  const { icon: Icon, accent, label } = styleFor(item.type)
+  const { icon: Icon, label } = styleFor(item.type)
   return (
     <li className="flex gap-3 px-4 py-3">
-      {/* type アイコン：淡いリングの中に。色で種類を、形でカテゴリを示す */}
+      {/* type アイコン：淡いリングの中に。形でカテゴリを示す */}
       <span
-        className={cn(
-          'mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-muted/60',
-          accent,
-        )}
+        className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-muted/60 text-primary"
         aria-hidden
       >
         <Icon className="h-4 w-4" />
@@ -93,7 +78,7 @@ function InsightRow({ item }: { item: InsightItem }) {
       <div className="min-w-0 flex-1 space-y-0.5">
         {/* 見出し階層: 帯ヘッダ(text-sm font-bold) を基準に、行ラベルはその一段下として
             text-xs font-semibold で揃える。text(本文)が主役なので強くしすぎない。 */}
-        <span className={cn('text-xs font-semibold tracking-wide', accent)}>{label}</span>
+        <span className="text-xs font-semibold tracking-wide text-primary">{label}</span>
         {/* text を主役に。読み物として落ち着いた行間で */}
         <p className="text-sm leading-relaxed text-foreground">{item.text}</p>
       </div>

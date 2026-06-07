@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { OfficialIcon, SpecialIcon } from '@/components/icons'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
+import { diffColorClass } from '@/lib/colors'
 import type { PeriodGrowthItem } from '@/types/api'
 
 interface PeriodGrowthCardProps {
@@ -38,12 +39,7 @@ const formatUnixDate = (raw?: string | number | null): string | null => {
   return m ? `${m[1]}/${m[2]}/${m[3]}` : null
 }
 
-const diffColorClass = (diff: number): string =>
-  diff > 0
-    ? 'text-green-600 dark:text-green-500'
-    : diff < 0
-      ? 'text-red-600 dark:text-red-500'
-      : 'text-muted-foreground'
+// 増減値の色クラス → lib/colors.ts へ移動
 
 const formatDiff = (diff: number): string =>
   `${diff > 0 ? '+' : diff < 0 ? '' : '±'}${diff.toLocaleString()}`

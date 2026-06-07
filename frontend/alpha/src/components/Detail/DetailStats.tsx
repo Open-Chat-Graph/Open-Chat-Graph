@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { diffColorClass } from '@/lib/colors'
 
 interface DetailStatsProps {
   currentMember: number
@@ -53,13 +54,8 @@ const toDate = (timestamp: string | number | null | undefined): Date | null => {
 const formatTimestamp = (timestamp: string | number): string =>
   toDate(timestamp)?.toLocaleDateString('ja-JP') ?? String(timestamp)
 
-// 増減の色
-const diffColor = (diff: number): string =>
-  diff > 0
-    ? 'text-green-600 dark:text-green-500'
-    : diff < 0
-      ? 'text-red-600 dark:text-red-500'
-      : 'text-muted-foreground'
+// 増減の色 → lib/colors.ts の diffColorClass へ移動
+const diffColor = diffColorClass
 
 // 「+1,234」形式
 const fmtDiff = (diff: number): string =>

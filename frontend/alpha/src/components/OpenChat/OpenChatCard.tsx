@@ -8,6 +8,7 @@ import { OfficialIcon, SpecialIcon } from '@/components/icons'
 import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
 import { searchHighlightClass } from '@/lib/theme-colors'
+import { diffColorClass } from '@/lib/colors'
 import type { OpenChat } from '@/types/api'
 
 interface OpenChatCardProps {
@@ -67,13 +68,7 @@ const formatOpenDate = (raw?: string | number | null): string | null => {
   return m ? `${m[1]}/${m[2]}/${m[3]}` : null
 }
 
-// 増減値の色クラス
-const diffColorClass = (diff: number): string =>
-  diff > 0
-    ? 'text-green-600 dark:text-green-500'
-    : diff < 0
-      ? 'text-red-600 dark:text-red-500'
-      : 'text-muted-foreground'
+// 増減値の色クラス → lib/colors.ts へ移動
 
 // 増減値の表示文字列（符号付き）
 const formatDiff = (diff: number): string =>

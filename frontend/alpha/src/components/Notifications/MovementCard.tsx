@@ -7,6 +7,7 @@ import { imgPreviewUrl } from '@/lib/imageUrl'
 import { formatMemberCompact } from '@/lib/formatMember'
 import { categoryName } from '@/lib/categories'
 import { timeAgo, formatDateTime } from './timeAgo'
+import { diffColorClass } from '@/lib/colors'
 import type { Movement } from '@/types/api'
 
 interface MovementCardProps {
@@ -21,9 +22,7 @@ interface MovementCardProps {
 export const MovementCard = memo(({ movement, onOpen }: MovementCardProps) => {
   const navigate = useNavigate()
   const isUp = movement.direction === 'up'
-  const diffColor = isUp
-    ? 'text-green-600 dark:text-green-500'
-    : 'text-red-600 dark:text-red-500'
+  const diffColor = diffColorClass(isUp ? 1 : -1)
 
   const handleClick = () => {
     onOpen(movement)

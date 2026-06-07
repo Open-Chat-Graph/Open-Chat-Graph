@@ -57,7 +57,7 @@ export function RoomFlowPanels({
       {searchQueries.length > 0 && (
         <FlowPanel
           icon={Search}
-          accent="text-emerald-600 dark:text-emerald-400"
+          accent="text-primary"
           title="流入キーワード"
           hint="Google検索でこのページに来た語"
         >
@@ -76,7 +76,7 @@ export function RoomFlowPanels({
       {referrers.length > 0 && (
         <FlowPanel
           icon={Globe}
-          accent="text-sky-600 dark:text-sky-400"
+          accent="text-primary"
           title="参照元"
           hint="どこから来たか"
         >

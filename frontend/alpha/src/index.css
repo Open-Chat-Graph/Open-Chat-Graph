@@ -25,6 +25,8 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 258 80% 58%;
     --radius: 0.5rem;
+    --up: 152 55% 36%;
+    --down: 350 70% 45%;
 
     /*
      * レイアウト寸法の一元定義（旧コードはこれらの数値が App.tsx / DashboardLayout の
@@ -87,6 +89,8 @@
     --border: 215.4 16.3% 33.3%;       /* #475569 - slate-600, matches graph grid */
     --input: 215.4 16.3% 33.3%;        /* #475569 - Match border */
     --ring: 215.4 16.3% 46%;           /* #64748b - slate-500, toned down focus ring */
+    --up: 152 60% 52%;
+    --down: 350 80% 64%;
   }
 }
 

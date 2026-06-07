@@ -1,6 +1,7 @@
 import type { RankingHistoryItem } from '@/types/api'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { diffColorClass } from '@/lib/colors'
 import { ArrowRight, Clock3, EyeOff, Users, Trophy, PencilLine } from 'lucide-react'
 
 /** 非掲載だった期間を「N時間」「N日」等の読みやすい文字列にする */
@@ -151,8 +152,8 @@ export function RankingHistoryItemCard({ item }: { item: RankingHistoryItem }) {
                 <span
                   className={cn(
                     'ml-1 font-semibold tabular-nums',
-                    diffPositive && 'text-emerald-600 dark:text-emerald-400',
-                    diffNegative && 'text-red-600 dark:text-red-400',
+                    diffPositive && 'text-up',
+                    diffNegative && 'text-down',
                   )}
                 >
                   {diffPositive ? '+' : ''}
