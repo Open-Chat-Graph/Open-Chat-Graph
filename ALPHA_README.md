@@ -58,6 +58,10 @@
 | GET | `/alpha-api/push/config` | Web Push: VAPID公開鍵 `{publicKey, enabled}`（鍵未設定時 enabled:false） |
 | POST | `/alpha-api/push/subscribe` | Web Push: 購読登録 `{endpoint, keys:{p256dh,auth}}`。Cookieユーザーに紐付け、同一endpointはupsert |
 | POST | `/alpha-api/push/unsubscribe` | Web Push: 購読解除 `{endpoint}` |
+| GET | `/alpha-api/mylist` | マイリスト取得 `{exists, folders:[{id,name,parentId,order,expanded}], items:[{id,folderId,order,addedAt,source}], serverTime}` |
+| PUT | `/alpha-api/mylist` | マイリスト全置換。body: `{folders:[...], items:[...], loadedAt:"Y-m-d H:i:s"\|null}`。全置換＋auto行保護ガード（source='auto' かつ added_at > loadedAt の行は削除しない。loadedAt=null 時は auto 行を一切削除しない）。フォルダ上限100・アイテム上限2000 |
+| POST | `/alpha-api/mylist/items` | アイテム単発追加 `{id:int, folderId:string\|null}`。sort_order は同フォルダ内 max+1、source='manual'、重複はfolderId更新 |
+| DELETE | `/alpha-api/mylist/items/{id}` | アイテム単発削除 |
 | GET | `/alpha-api/access-ranking` | Labs rooms タブの唯一の入口。部屋集合は常に PV>0 で固定し `sort` で並びだけ切替（`pageviews`=アクセス数 / `seo_total`=SEO合計(直接+間接) / `jump_clicks`=入室数）。各部屋に全指標＋`keywords`(流入KW top8)。流入KW集計は `getRoomsTopKeywords` が SQL の `ROW_NUMBER()` で部屋ごと上位8件に絞りDBで完結（全件転送なし）。`scope=pages` で非部屋ページ（`jumpClicks`/`jumpClicksOrganic` 含む） |
 | GET | `/alpha-api/search-ranking` | Labs: 検索流入(GSC)。pages タブ seo 用途のみ（rooms は access-ranking に一本化） |
 | GET | `/alpha-api/search-query-ranking` | Labs: 上位検索クエリ(GSC) |
@@ -67,7 +71,7 @@
 ### 追加テーブル（加算のみ・`setup/schema/mysql/*.sql`＋`sync_mysql_schema.php`で反映）
 
 - **全αテーブルは userlog DB・テーブル名 `_ja` サフィックス**（2026-06-06 移設。言語はサフィックス方式＝多言語化時は `_tw` 等を増設。userlog は言語共有DBだがテーブル名で分離）。αテーブルへのクエリは `UserLogDB::`、`open_chat` 等 ocreview 側との跨ぎ JOIN は ocreview 側だけを実行時DB名（`AppConfig::$dbName['']`）で修飾（`DB::execute` 自動再接続対策）。マイリスト本体 `oc_list_user` はαのテーブルではないためサフィックス無し。
-- ユーザー系(8): `alpha_keyword_watch_ja` / `alpha_room_watch_ja` / `alpha_mylist_threshold_ja` / `alpha_keyword_seen_ja` / `alpha_search_seen_room_ja` / `alpha_search_timing_ja` / `alpha_notification_ja` / `alpha_push_subscription_ja`（Web Push購読。endpointが長いためUNIQUEは`endpoint_hash`=SHA-256。送信失敗5回 or 404/410で自動削除）
+- ユーザー系(10): `alpha_keyword_watch_ja` / `alpha_room_watch_ja` / `alpha_mylist_threshold_ja` / `alpha_keyword_seen_ja` / `alpha_search_seen_room_ja` / `alpha_search_timing_ja` / `alpha_notification_ja` / `alpha_push_subscription_ja`（Web Push購読。endpointが長いためUNIQUEは`endpoint_hash`=SHA-256。送信失敗5回 or 404/410で自動削除） / `alpha_mylist_folder_ja`（フォルダ定義。PK: user_id+folder_id） / `alpha_mylist_item_ja`（アイテム。PK: user_id+open_chat_id。source='manual'|'auto'。KEY user_folder(user_id,folder_id)）
 - GA集計系(6): `alpha_room_access_daily_ja`（GA4/GSC集計。`jump_clicks_organic`=参加クリックのうちOrganic Searchセッション由来）／ `alpha_page_access_daily_ja`（非部屋ページ）／ `alpha_search_query_daily_ja`（上位検索クエリ）／ `alpha_room_search_query_daily_ja`（部屋別 流入検索クエリ）／ `alpha_room_referrer_daily_ja`（部屋別 リファラ元）／ `alpha_page_jump_daily_ja`（非部屋ページの入室数近似・日次事前集計。算出: 部屋の当日 jump_clicks を「その部屋の当日リファラ PV 中、該当ページ由来の割合」で按分した近似値。分母は外部・direct を含む全リファラ PV でページ合計≦部屋合計が保証される。`alpha_ga_sync.php` が各日書込み後に自動更新。初回投入・再集計は `batch/exec/alpha_rebuild_page_jump.php` でバックフィル）
 - **本番デプロイ後の手動移行（必須・1回）**: ①schema-sync が userlog に `_ja` 13枚を自動作成（空） ②データコピー: 集計系5枚（page_jump除く）を `INSERT INTO userlog.alpha_xxx_ja SELECT * FROM ocreview.alpha_xxx`（旧行に NULL があり新テーブルは NOT NULL のため、失敗時は NOT NULL カラムを `COALESCE(col, 0)` で埋めて SELECT）、ユーザー系7枚を `INSERT INTO userlog.alpha_xxx_ja SELECT * FROM userlog.alpha_xxx`（DB名は本番の実名） ③`php batch/exec/alpha_rebuild_page_jump.php`（全期間・新按分ロジックで再構築） ④動作確認後、旧13テーブル（ocreview の集計6＋userlog の旧名7）を手動DROP。**これを忘れると Labs/通知が空データで動く**
 

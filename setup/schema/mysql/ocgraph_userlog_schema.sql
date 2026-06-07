@@ -237,6 +237,22 @@ CREATE TABLE `alpha_notification_ja` (
   KEY `user_created` (`user_id`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- ウォッチ部屋の機微検知 (room_change) 用スナップショット。
+-- open_chat は上書き更新で変更履歴が残らないため、ウォッチされている部屋の
+-- name/description/category を毎時ここに退避し、現在値との差分で「部屋情報の変更」を検知する。
+-- 1部屋1行（ユーザー横断）。ウォッチが消えた部屋の行は毎時処理が掃除（DELETE）する。
+-- カラム型は open_chat の該当列（name/description: text, category: int NULL）に合わせる。
+CREATE TABLE IF NOT EXISTS `alpha_room_snapshot_ja` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `open_chat_id` int(11) NOT NULL,
+  `name` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `category` int(11) DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_open_chat_id` (`open_chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- Web Push 購読（α: ペイロード無し tickle 送信用）
 -- endpoint は長い（FCM等で~400字）ため UNIQUE は SHA-256 ハッシュ列に張る
 DROP TABLE IF EXISTS `alpha_push_subscription_ja`;
@@ -254,3 +270,35 @@ CREATE TABLE `alpha_push_subscription_ja` (
   UNIQUE KEY `uq_endpoint_hash` (`endpoint_hash`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ============================================================
+-- α マイリスト サーバ保存（フォルダ構造対応）
+-- user_id は cookie-user-id の sha3-256（64字 varchar）。
+-- テーブルは ja サフィックス方式（userlog DB 内・言語横断を避けるため）。
+-- source: 'manual'（ユーザー操作）| 'auto'（スマートフォルダ毎時cron自動追加）。
+-- ============================================================
+
+-- マイリスト フォルダ定義
+CREATE TABLE `alpha_mylist_folder_ja` (
+  `user_id` varchar(64) NOT NULL,
+  `folder_id` varchar(36) NOT NULL,
+  `name` varchar(190) NOT NULL,
+  `parent_id` varchar(36) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `expanded` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`, `folder_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- マイリスト アイテム
+CREATE TABLE `alpha_mylist_item_ja` (
+  `user_id` varchar(64) NOT NULL,
+  `open_chat_id` int(11) NOT NULL,
+  `folder_id` varchar(36) DEFAULT NULL,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `source` varchar(8) NOT NULL DEFAULT 'manual',
+  `added_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`user_id`, `open_chat_id`),
+  KEY `user_folder` (`user_id`, `folder_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

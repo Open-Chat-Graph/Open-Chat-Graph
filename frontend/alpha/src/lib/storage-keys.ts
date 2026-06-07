@@ -9,4 +9,6 @@ export const STORAGE_KEYS = {
   searchHistory: 'alpha_search_history',
   /** 分析ビューで最後に開いていたサブ画面（/period-growth?... | /labs?...）。enter 時に復元する。 */
   analysisLastSub: 'alpha_analysis_last_sub',
+  /** マイリスト同期: 最後にサーバ状態を取り込んだ時刻（serverTime）。全置換 PUT の loadedAt に使う。 */
+  myListLoadedAt: 'alpha_mylist_loaded_at',
 } as const

@@ -17,6 +17,7 @@ import LabsPage from './pages/LabsPage'
 import AnalysisPage from './pages/AnalysisPage'
 import FolderChartPage from './pages/FolderChartPage'
 import { ensureSubscription } from './services/pushSubscription'
+import { initMylistSync } from './services/mylistSync'
 
 /**
  * 常駐（keep-alive）するベースページの定義。
@@ -184,6 +185,12 @@ function App() {
   // アプリ起動時に購読の自己修復を試みる（権限 granted + localStorage フラグ + SW 購読 null → 再購読）
   useEffect(() => {
     void ensureSubscription()
+  }, [])
+
+  // マイリストの初期同期（サーバ正本→ローカル上書き / 初回はローカル→サーバ移行）。
+  // 完了前でもローカルキャッシュで即表示でき、失敗時もローカルのみで動き続ける。
+  useEffect(() => {
+    void initMylistSync()
   }, [])
 
   return (

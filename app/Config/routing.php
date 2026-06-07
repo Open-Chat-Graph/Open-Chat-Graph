@@ -1011,5 +1011,22 @@ Route::path('alpha-api/push/subscribe@post', [AlphaApiController::class, 'pushSu
 Route::path('alpha-api/push/unsubscribe@post', [AlphaApiController::class, 'pushUnsubscribe'])
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
+// Alpha API - マイリスト: 取得(GET) / 全置換(PUT)
+Route::path(
+    'alpha-api/mylist@get@put',
+    [AlphaApiController::class, 'mylistGet', 'get'],
+    [AlphaApiController::class, 'mylistPut', 'put']
+)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - マイリスト: アイテム単発追加
+Route::path('alpha-api/mylist/items@post', [AlphaApiController::class, 'mylistItemAdd'])
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
+// Alpha API - マイリスト: アイテム単発削除
+Route::path('alpha-api/mylist/items/{open_chat_id}@delete', [AlphaApiController::class, 'mylistItemRemove'])
+    ->matchNum('open_chat_id', min: 1)
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
+
 cache();
 Route::run();

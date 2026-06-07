@@ -13,6 +13,7 @@ use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
 use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
 use App\Models\ApiRepositories\Alpha\AlphaAccessRankingRepository;
 use App\Models\ApiRepositories\Alpha\AlphaSearchTimingRepository;
+use App\Models\ApiRepositories\Alpha\AlphaMylistRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\RankingBanRepositories\RankingBanPageRepository;
 use App\Services\Alpha\AlphaGraphEmbedService;
@@ -1210,5 +1211,131 @@ class AlphaApiController
     private function floatOrNull(mixed $v): ?float
     {
         return ($v === null || $v === '') ? null : (float)$v;
+    }
+
+    // ============================================================
+    // α マイリスト（フォルダ構造） サーバ保存
+    // cookie-user-id ベースの user_id で識別する（alerts 系と同流儀）。
+    // ============================================================
+
+    /**
+     * マイリスト取得
+     * GET /alpha-api/mylist
+     *
+     * @return array{exists:bool, folders:list<mixed>, items:list<mixed>, serverTime:string}
+     */
+    function mylistGet(AuthInterface $auth, AlphaMylistRepository $repo)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+
+        return response($repo->getMylist($userId));
+    }
+
+    /**
+     * マイリスト全置換
+     * PUT /alpha-api/mylist
+     * Body: { folders:[{id,name,parentId?,order,expanded}], items:[{id,folderId?,order,addedAt?,source?}], loadedAt:"Y-m-d H:i:s"|null }
+     */
+    function mylistPut(AuthInterface $auth, AlphaMylistRepository $repo, Reception $reception)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+        $body   = $reception->input();
+
+        // フォルダ上限100・アイテム上限2000
+        $rawFolders = isset($body['folders']) && is_array($body['folders']) ? $body['folders'] : [];
+        $rawItems   = isset($body['items']) && is_array($body['items']) ? $body['items'] : [];
+        if (count($rawFolders) > 100) {
+            throw new BadRequestException('Too many folders (max 100)');
+        }
+        if (count($rawItems) > 2000) {
+            throw new BadRequestException('Too many items (max 2000)');
+        }
+
+        // loadedAt: "Y-m-d H:i:s" 形式か null
+        $loadedAt = null;
+        if (isset($body['loadedAt']) && $body['loadedAt'] !== null && $body['loadedAt'] !== '') {
+            $dt = \DateTime::createFromFormat('Y-m-d H:i:s', (string)$body['loadedAt']);
+            if ($dt !== false) {
+                $loadedAt = $dt->format('Y-m-d H:i:s');
+            }
+        }
+
+        $folders = [];
+        foreach ($rawFolders as $f) {
+            if (!is_array($f)) continue;
+            $id = trim((string)($f['id'] ?? ''));
+            if ($id === '') continue;
+            $folders[] = [
+                'id'       => $id,
+                'name'     => (string)($f['name'] ?? ''),
+                'parentId' => ($f['parentId'] ?? null) !== null ? (string)$f['parentId'] : null,
+                'order'    => (int)($f['order'] ?? 0),
+                'expanded' => (bool)($f['expanded'] ?? true),
+            ];
+        }
+
+        $items = [];
+        foreach ($rawItems as $item) {
+            if (!is_array($item)) continue;
+            $ocId = (int)($item['id'] ?? 0);
+            if ($ocId < 1) continue;
+            $items[] = [
+                'id'       => $ocId,
+                'folderId' => ($item['folderId'] ?? null) !== null ? (string)$item['folderId'] : null,
+                'order'    => (int)($item['order'] ?? 0),
+                'addedAt'  => !empty($item['addedAt']) ? (string)$item['addedAt'] : null,
+                'source'   => in_array($item['source'] ?? '', ['manual', 'auto'], true)
+                    ? (string)$item['source'] : 'manual',
+            ];
+        }
+
+        $repo->replaceMylist($userId, $folders, $items, $loadedAt);
+
+        return response(['ok' => true, 'serverTime' => date('Y-m-d H:i:s')]);
+    }
+
+    /**
+     * アイテム単発追加
+     * POST /alpha-api/mylist/items
+     * Body: { id:int, folderId:string|null }
+     */
+    function mylistItemAdd(AuthInterface $auth, AlphaMylistRepository $repo, Reception $reception)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+        $body   = $reception->input();
+
+        $ocId = (int)($body['id'] ?? 0);
+        if ($ocId < 1) {
+            throw new BadRequestException('Invalid id');
+        }
+        $folderId = ($body['folderId'] ?? null) !== null ? trim((string)$body['folderId']) : null;
+        if ($folderId === '') {
+            $folderId = null;
+        }
+
+        $repo->addItem($userId, $ocId, $folderId);
+
+        return response(['ok' => true, 'serverTime' => date('Y-m-d H:i:s')]);
+    }
+
+    /**
+     * アイテム単発削除
+     * DELETE /alpha-api/mylist/items/{open_chat_id}
+     */
+    function mylistItemRemove(AuthInterface $auth, AlphaMylistRepository $repo, int $open_chat_id)
+    {
+        Reception::$isJson = true;
+        $userId = $auth->loginCookieUserId();
+
+        if ($open_chat_id < 1) {
+            throw new BadRequestException('Invalid id');
+        }
+
+        $repo->removeItem($userId, $open_chat_id);
+
+        return response(['ok' => true]);
     }
 }

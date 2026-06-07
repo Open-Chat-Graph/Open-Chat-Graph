@@ -7,6 +7,35 @@ const STORAGE_KEY = STORAGE_KEYS.myList
 const SORT_SETTINGS_KEY = STORAGE_KEYS.myListSort
 const CURRENT_VERSION = 1
 
+/** MyListData の現行バージョン（サーバ同期でローカルを再構築する際に使う） */
+export const MYLIST_DATA_VERSION = CURRENT_VERSION
+
+// ===== サーバ同期への変更通知 =====
+// mylistSync.ts が import 循環を避けるためコールバック登録方式（sync → storage の一方向 import のみ）
+
+export type MylistMutationKind = 'addItem' | 'removeItem' | 'other'
+export interface MylistMutationDetail {
+  id?: number
+  folderId?: string | null
+}
+type MylistMutationListener = (kind: MylistMutationKind, detail?: MylistMutationDetail) => void
+
+let mylistMutationListener: MylistMutationListener | null = null
+
+/** mylistSync.ts がモジュール読み込み時に登録する */
+export function setMylistMutationListener(listener: MylistMutationListener | null): void {
+  mylistMutationListener = listener
+}
+
+function notifyMylistMutation(kind: MylistMutationKind, detail?: MylistMutationDetail): void {
+  try {
+    mylistMutationListener?.(kind, detail)
+  } catch (error) {
+    // 同期通知の失敗でローカル操作を壊さない
+    console.warn('MyList mutation listener failed:', error)
+  }
+}
+
 export type MyListSortType = SortType
 export type { SortOrder }
 
@@ -77,6 +106,7 @@ export function addFolder(data: MyListData, name: string, parentId: string | nul
   }
 
   saveMyList(updated)
+  notifyMylistMutation('other')
   return updated
 }
 
@@ -87,6 +117,7 @@ export function updateFolder(data: MyListData, folderId: string, updates: Partia
   }
 
   saveMyList(updated)
+  notifyMylistMutation('other')
   return updated
 }
 
@@ -116,6 +147,7 @@ export function deleteFolder(data: MyListData, folderId: string): MyListData {
   }
 
   saveMyList(updated)
+  notifyMylistMutation('other')
   return updated
 }
 
@@ -140,6 +172,7 @@ export function addItem(data: MyListData, chatId: number, folderId: string | nul
   }
 
   saveMyList(updated)
+  notifyMylistMutation('addItem', { id: chatId, folderId })
   return updated
 }
 
@@ -150,6 +183,7 @@ export function removeItem(data: MyListData, chatId: number): MyListData {
   }
 
   saveMyList(updated)
+  notifyMylistMutation('removeItem', { id: chatId })
   return updated
 }
 
@@ -187,6 +221,7 @@ export function moveItem(
   }
 
   saveMyList(updated)
+  notifyMylistMutation('other')
   return updated
 }
 
@@ -197,6 +232,7 @@ export function updateItemsOrder(data: MyListData, items: ChatItem[]): MyListDat
   }
 
   saveMyList(updated)
+  notifyMylistMutation('other')
   return updated
 }
 
@@ -224,7 +260,10 @@ export function getFolderItems(data: MyListData, folderId: string | null): ChatI
 }
 
 // Bulk operations
+// 注: bulk系は呼び出し側が同一tick内で saveMyList する前提。同期は800msデバウンスPUTなので
+// 通知時点で未保存でも、送信時に loadMyList() で最新状態が反映される。
 export function bulkRemoveItems(data: MyListData, chatIds: number[]): MyListData {
+  notifyMylistMutation('other')
   return {
     ...data,
     items: data.items.filter((item) => !chatIds.includes(item.id)),
@@ -236,6 +275,7 @@ export function bulkMoveItems(
   chatIds: number[],
   targetFolderId: string | null
 ): MyListData {
+  notifyMylistMutation('other')
   return {
     ...data,
     items: data.items.map((item) =>

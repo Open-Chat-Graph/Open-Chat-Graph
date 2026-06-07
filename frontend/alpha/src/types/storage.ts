@@ -11,6 +11,8 @@ export interface ChatItem {
   folderId: string | null
   order: number
   addedAt: string         // ISO 8601
+  /** 追加経路。'auto' はサーバ側の自動追加。undefined は既存ローカルデータ＝'manual' 扱い */
+  source?: 'manual' | 'auto'
 }
 
 export interface MyListData {
