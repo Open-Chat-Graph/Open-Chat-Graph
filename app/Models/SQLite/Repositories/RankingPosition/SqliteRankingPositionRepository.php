@@ -56,6 +56,54 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
         );
     }
 
+    public function getPositionCountsByPeriod(
+        int $open_chat_id,
+        int $inCategory,
+        string $weekStartDate,
+        string $monthStartDate
+    ): array {
+        $result = [];
+
+        SQLiteRankingPosition::connect(['mode' => '?mode=ro']);
+
+        foreach (['ranking', 'rising'] as $tableName) {
+            $row = SQLiteRankingPosition::fetch(
+                "SELECT
+                    COUNT(CASE WHEN category = :in_category THEN 1 END) AS in_all,
+                    COUNT(CASE WHEN category = :in_category AND date >= :month_start_date THEN 1 END) AS in_month,
+                    COUNT(CASE WHEN category = :in_category AND date >= :week_start_date THEN 1 END) AS in_week,
+                    COUNT(CASE WHEN category = 0 THEN 1 END) AS all_all,
+                    COUNT(CASE WHEN category = 0 AND date >= :month_start_date THEN 1 END) AS all_month,
+                    COUNT(CASE WHEN category = 0 AND date >= :week_start_date THEN 1 END) AS all_week
+                FROM
+                    {$tableName}
+                WHERE
+                    open_chat_id = :open_chat_id",
+                [
+                    'open_chat_id' => $open_chat_id,
+                    'in_category' => $inCategory,
+                    'week_start_date' => $weekStartDate,
+                    'month_start_date' => $monthStartDate,
+                ]
+            );
+
+            $result["{$tableName}_in"] = [
+                'week' => (int)($row['in_week'] ?? 0),
+                'month' => (int)($row['in_month'] ?? 0),
+                'all' => (int)($row['in_all'] ?? 0),
+            ];
+            $result["{$tableName}_all"] = [
+                'week' => (int)($row['all_week'] ?? 0),
+                'month' => (int)($row['all_month'] ?? 0),
+                'all' => (int)($row['all_all'] ?? 0),
+            ];
+        }
+
+        SQLiteRankingPosition::$pdo = null;
+
+        return $result;
+    }
+
     public function getLastDate(): string|false
     {
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];

@@ -112,24 +112,96 @@ export function initDisplay() {
   // データ数に基づいてタブ表示を設定
   updateTabVisibility(statsDto.date.length)
 
-  // ランキング未掲載の場合
-  if (chatArgDto.categoryKey === null) {
-    graphStore.set(renderPositionBtnsAtom, false)
+  // 最新24時間タブ: 毎時メンバー数データが無い場合は非表示（DTOのデータ有無で判定）
+  if (!statsDto.hourAvailability) {
     chart.setIsHour(false)
     graphStore.set(toggleDisplay24hAtom, false)
+    graphStore.get(limitAtom) === 25 && graphStore.set(limitAtom, 8)
+  }
 
+  // ランキング順位データが全期間・全組み合わせで0件の場合は「ランキングの順位を表示」を丸ごと非表示
+  if (!hasAnyPositionData()) {
+    graphStore.set(renderPositionBtnsAtom, false)
     graphStore.set(categoryAtom, 'in')
     graphStore.set(rankingRisingAtom, 'none')
-    graphStore.get(limitAtom) === 25 && graphStore.set(limitAtom, 8)
 
-    return false
+    // 24時間タブ表示中のみAPI取得が必要
+    return chart.getIsHour()
   }
+
+  graphStore.set(renderPositionBtnsAtom, true)
+  sanitizePositionSelection()
 
   return true
 }
 
+const emptyPositionAvailability: PositionAvailability = {
+  ranking_in: false,
+  ranking_all: false,
+  rising_in: false,
+  rising_all: false,
+}
+
+/** 指定の期間タブの順位データ有無を取得する */
+export function getPositionAvailabilityForLimit(limit: ChartLimit | 25): PositionAvailability {
+  const availability = statsDto.positionAvailability
+  if (!availability) return emptyPositionAvailability
+
+  switch (limit) {
+    case 25:
+      return availability.hour ?? emptyPositionAvailability
+    case 8:
+      return availability.week ?? emptyPositionAvailability
+    case 31:
+      return availability.month ?? emptyPositionAvailability
+    case 0:
+      return availability.all ?? emptyPositionAvailability
+  }
+}
+
+/** いずれかの期間・組み合わせで順位データが存在するか */
+export function hasAnyPositionData(): boolean {
+  const availability = statsDto.positionAvailability
+  if (!availability) return false
+
+  return Object.values(availability).some(
+    (p) => p && (p.ranking_in || p.ranking_all || p.rising_in || p.rising_all)
+  )
+}
+
+/**
+ * 現在の期間タブで選択中の順位表示(種別×カテゴリ)にデータが無い場合、
+ * データのある組み合わせへフォールバックする
+ *
+ * @returns 選択を変更した場合 true
+ */
+function sanitizePositionSelection(): boolean {
+  const sort = graphStore.get(rankingRisingAtom)
+  if (sort === 'none') return false
+
+  const avail = getPositionAvailabilityForLimit(graphStore.get(limitAtom))
+
+  // 種別自体にデータが無い場合は順位表示を解除する
+  if (!avail[`${sort}_in`] && !avail[`${sort}_all`]) {
+    graphStore.set(rankingRisingAtom, 'none')
+    return true
+  }
+
+  // 選択中のカテゴリにデータが無い場合はもう一方へ切り替える
+  const categoryKey = graphStore.get(categoryAtom) === 'all' ? 'all' : 'in'
+  if (!avail[`${sort}_${categoryKey}`]) {
+    graphStore.set(categoryAtom, categoryKey === 'all' ? 'in' : 'all')
+    return true
+  }
+
+  return false
+}
+
 export function handleChangeLimit(limit: ChartLimit | 25) {
   graphStore.set(limitAtom, limit)
+
+  // 移動先の期間タブでデータが無い順位表示(種別×カテゴリ)を解除する
+  const selectionChanged = sanitizePositionSelection()
 
   // 移動先の期間タブにOHLCデータが無い場合は折れ線グラフに戻す
   const fallbackToLine =
@@ -145,8 +217,8 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   } else if (chart.getIsHour()) {
     chart.setIsHour(false)
     fetchChart(true)
-  } else if (fallbackToLine) {
-    // モードが変わるため折れ線グラフ用のデータで再取得する
+  } else if (fallbackToLine || selectionChanged) {
+    // モードまたは順位表示の選択が変わるため、表示中のデータのままでは再描画できない
     fetchChart(true)
   } else {
     chart.update(limit)
@@ -164,6 +236,16 @@ export function handleChangeCategory(alignment: urlParamsValue<'category'> | nul
 
 export function handleChangeRankingRising(alignment: ToggleChart) {
   graphStore.set(rankingRisingAtom, alignment)
+
+  // 選択した種別で現在のカテゴリにデータが無い場合、データのあるカテゴリへ切り替える
+  if (alignment !== 'none') {
+    const avail = getPositionAvailabilityForLimit(graphStore.get(limitAtom))
+    const categoryKey = graphStore.get(categoryAtom) === 'all' ? 'all' : 'in'
+    if (!avail[`${alignment}_${categoryKey}`]) {
+      graphStore.set(categoryAtom, categoryKey === 'all' ? 'in' : 'all')
+    }
+  }
+
   fetchChart(false)
   setUrlParamsFromChartStates()
 }

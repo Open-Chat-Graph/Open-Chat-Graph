@@ -20,12 +20,13 @@ import {
   limitAtom,
   handleChangeEnableZoom,
   zoomEnableAtom,
+  getPositionAvailabilityForLimit,
 } from '../state/chartState'
 import SettingButton from './SettingButton'
 import { t } from '../util/translation'
 import { useIsDark } from '../../themeMui'
 
-const chips1: [string, ToggleChart][] = [
+const chips1: [string, Exclude<ToggleChart, 'none'>][] = [
   [t('急上昇'), 'rising'],
   [t('ランキング'), 'ranking'],
 ]
@@ -34,19 +35,31 @@ function CategoryToggle() {
   const rankingRising = useAtomValue(rankingRisingAtom)
   const category = useAtomValue(categoryAtom)
   const toggleShowCategory = useAtomValue(toggleShowCategoryAtom)
+  const limit = useAtomValue(limitAtom)
+
+  // 期間タブ毎: 選択中の種別でデータが無いカテゴリのボタンはグレーアウト
+  // （種別未選択時はどちらかの種別にデータがあれば有効扱い）
+  const avail = getPositionAvailabilityForLimit(limit)
+  const enableIn =
+    rankingRising === 'none' ? avail.ranking_in || avail.rising_in : avail[`${rankingRising}_in`]
+  const enableAll =
+    rankingRising === 'none'
+      ? avail.ranking_all || avail.rising_all
+      : avail[`${rankingRising}_all`]
 
   const handleChangeToggle = (_e: React.SyntheticEvent, alignment: urlParamsValue<'category'> | null) => {
     rankingRising !== 'none' && handleChangeCategory(alignment)
   }
 
   const isDark = useIsDark()
+  const isDisabled = rankingRising === 'none'
 
   return (
     <Stack
       direction="row"
       spacing={1}
       alignItems="center"
-      sx={{ opacity: rankingRising === 'none' ? 0.2 : undefined }}
+      sx={{ opacity: isDisabled ? 0.2 : undefined }}
     >
       <ToggleButtonGroup
         value={category}
@@ -63,7 +76,8 @@ function CategoryToggle() {
                   '&.Mui-selected': {
                     color: '#ffffff',
                     backgroundColor: '#565b60',
-                    borderColor: '#d3d6d8',
+                    /* グレーアウト時は明るい枠が悪目立ちするので通常枠と同じ色に */
+                    borderColor: isDisabled ? '#71767b' : '#d3d6d8',
                     '&:hover': {
                       backgroundColor: '#71767b',
                     },
@@ -71,16 +85,20 @@ function CategoryToggle() {
                   '&:hover': {
                     backgroundColor: 'rgba(231, 233, 234, 0.15)',
                   },
+                  '&.Mui-disabled': {
+                    color: 'rgba(239, 241, 242, 0.35)',
+                    borderColor: '#3f4347',
+                  },
                 },
               }
             : undefined
         }
       >
-        <ToggleButton value="all">
+        <ToggleButton value="all" disabled={!enableAll}>
           <Typography variant="caption">{t('すべて')}</Typography>
         </ToggleButton>
         {toggleShowCategory && (
-          <ToggleButton value="in">
+          <ToggleButton value="in" disabled={!enableIn}>
             <Typography variant="caption">{t('カテゴリー内')}</Typography>
           </ToggleButton>
         )}
@@ -113,6 +131,13 @@ export default function ToggleButtons() {
   const rankingRising = useAtomValue(rankingRisingAtom)
   const limit = useAtomValue(limitAtom)
   const toggleShowCategory = useAtomValue(toggleShowCategoryAtom)
+
+  // 期間タブ毎: データが0件の種別チップはグレーアウト（完全に消すと空白がバグに見えるため）
+  const avail = getPositionAvailabilityForLimit(limit)
+  const enableChip: Record<Exclude<ToggleChart, 'none'>, boolean> = {
+    rising: avail.rising_in || avail.rising_all,
+    ranking: avail.ranking_in || avail.ranking_all,
+  }
 
   return (
     <Box>
@@ -150,8 +175,17 @@ export default function ToggleButtons() {
                   key={chip[1]}
                   className={`openchat-item-header-chip graph ${rankingRising === chip[1] ? 'selected' : ''}`}
                   label={chip[0]}
-                  onClick={() => handleChangeRankingRising(rankingRising === chip[1] ? 'none' : chip[1])}
+                  onClick={
+                    enableChip[chip[1]]
+                      ? () => handleChangeRankingRising(rankingRising === chip[1] ? 'none' : chip[1])
+                      : undefined
+                  }
                   size={isMiniMobile ? 'small' : 'medium'}
+                  sx={
+                    enableChip[chip[1]]
+                      ? undefined
+                      : { opacity: 0.4, cursor: 'default', pointerEvents: 'none' }
+                  }
                 />
               )
           )}

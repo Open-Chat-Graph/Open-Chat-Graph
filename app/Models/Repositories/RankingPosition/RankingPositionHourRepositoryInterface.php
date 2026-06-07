@@ -68,4 +68,18 @@ interface RankingPositionHourRepositoryInterface
      * @return string|false Y-m-d H:i:s
      */
     public function getLastHour(int $offset = 0): string|false;
+
+    /**
+     * 最新24時間ウィンドウ内の毎時データ件数（メンバー数・ランキング種別×カテゴリ毎の掲載数）を取得する。
+     *
+     * @param int $inCategory カテゴリ内判定に使うカテゴリID（カテゴリ無しの部屋は -1 等の不一致値を渡す）
+     * @param \DateTime $endTime ウィンドウの終端（最新クロール時刻）
+     * @return array{ member: int, ranking_in: int, ranking_all: int, rising_in: int, rising_all: int }
+     */
+    public function getHourPositionCounts(
+        int $open_chat_id,
+        int $inCategory,
+        int $intervalHour,
+        \DateTime $endTime
+    ): array;
 }
