@@ -1,7 +1,6 @@
 import type { RankingHistoryItem } from '@/types/api'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { diffColorClass } from '@/lib/colors'
 import { ArrowRight, Clock3, EyeOff, Users, Trophy, PencilLine } from 'lucide-react'
 
 /** 非掲載だった期間を「N時間」「N日」等の読みやすい文字列にする */

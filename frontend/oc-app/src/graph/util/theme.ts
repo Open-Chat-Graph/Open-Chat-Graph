@@ -213,6 +213,49 @@ export const colors: { light: ChartColors; dark: ChartColors } = {
   },
 }
 
+/** alpha パレット（indigo-violet 系の線色）。lineGradient / barGradient / pointBackground のみ上書き */
+const alphaOverride: { light: Partial<ChartColors>; dark: Partial<ChartColors> } = {
+  light: {
+    lineGradient: {
+      stops: [
+        { offset: 1, color: 'rgba(99,102,241,1)' },   // indigo-500
+        { offset: 0.5, color: 'rgba(124,58,237,1)' },  // violet-600
+        { offset: 0, color: 'rgba(139,92,246,1)' },    // violet-500
+      ],
+    },
+    barGradient: {
+      stops: [
+        { offset: 1, color: 'rgba(99,102,241,0.2)' },
+        { offset: 0.5, color: 'rgba(124,58,237,0.2)' },
+        { offset: 0, color: 'rgba(139,92,246,0.2)' },
+      ],
+    },
+    pointBackground: 'rgba(99,102,241,0.15)',
+  },
+  dark: {
+    lineGradient: {
+      stops: [
+        { offset: 1, color: 'rgba(129,140,248,1)' },   // indigo-400
+        { offset: 0.5, color: 'rgba(148,116,254,1)' },  // violet-400/500 mix
+        { offset: 0, color: 'rgba(167,139,250,1)' },    // violet-400
+      ],
+    },
+    barGradient: {
+      stops: [
+        { offset: 1, color: 'rgba(129,140,248,0.3)' },
+        { offset: 0.5, color: 'rgba(148,116,254,0.3)' },
+        { offset: 0, color: 'rgba(167,139,250,0.3)' },
+      ],
+    },
+    pointBackground: 'rgba(129,140,248,0.15)',
+  },
+}
+
 export function getColors(): ChartColors {
-  return isDarkMode() ? colors.dark : colors.light
+  const base = isDarkMode() ? colors.dark : colors.light
+  if (document.documentElement.getAttribute('data-oc-palette') === 'alpha') {
+    const override = isDarkMode() ? alphaOverride.dark : alphaOverride.light
+    return { ...base, ...override }
+  }
+  return base
 }

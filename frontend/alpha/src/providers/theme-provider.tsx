@@ -25,10 +25,12 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 // 埋め込み oc-app グラフ（OcGraph）とのテーマ契約:
 // グラフは <html> の data-theme 属性を読み、octhemechange イベントで再適用する
 // （canvas は CSS 変数が効かないため。再マウント不要）
+// data-oc-palette="alpha" を恒久設定することで oc-app 側が alpha パレットを適用する
 function applyResolvedTheme(root: HTMLElement, resolved: 'dark' | 'light') {
   root.classList.remove('light', 'dark')
   root.classList.add(resolved)
   root.setAttribute('data-theme', resolved)
+  root.setAttribute('data-oc-palette', 'alpha')
   document.dispatchEvent(new Event('octhemechange'))
 }
 
