@@ -1,6 +1,6 @@
 <?php if (isset($adSlot) && $adSlot) \App\Views\Ads\GoogleAdsense::output($adSlot) ?>
-<footer class="footer-elem-outer" style="padding: 0;">
-    <hr class="hr-top" style="margin-bottom: 11px;">
+<?php // 罫線(hr)レス: 区切りは余白のみ。値は tokens.css の --sp-* で一元管理 ?>
+<footer class="footer-elem-outer" style="padding: var(--sp-section-gap) 0 0 0;">
     <nav class="footer-link-box-outer">
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
@@ -18,8 +18,7 @@
                 <?php endif ?>
             </ul>
         </section>
-        <hr class="hr-bottom" style="margin: 0 1rem; padding: 3.5px 0; margin-top: 4px;">
-        <aside class="open-btn2" style="padding: 0 1rem;">
+        <aside class="open-btn2" style="padding: 0 1rem; margin-top: var(--sp-section-gap-sm);">
             <a href="<?php echo t('https://openchat.line.me/jp') ?>" class="app_link app-dl" target="_blank">
                 <span class="text"><?php echo t('【公式】LINEオープンチャット') ?><span class="line-link-icon777"></span></span>
             </a>

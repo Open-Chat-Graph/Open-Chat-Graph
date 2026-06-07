@@ -8,7 +8,8 @@
    横も .blog の 1.15rem と二重になる）。mvp.css の main.no-pad と併用し、
    余白はここで一元管理する（main.no-pad と同特異度のため後勝ちで上書き）。 */
 main.blog-main {
-  padding: 14px 0 1.5rem;
+  /* 下余白は内側 .blog に一本化（main 側にも持つと二重にネストして広がりすぎる） */
+  padding: 14px 0 0;
   overflow: hidden;
 }
 
@@ -23,7 +24,8 @@ main.blog-main {
   --line: var(--c-border-muted);
   max-width: 720px;
   margin: 0 auto;
-  padding: 4px 1.15rem 2.5rem;
+  /* 下余白はブロック間隔トークンに統一（フッターも上余白を持つため二重に盛らない） */
+  padding: 4px 1.15rem var(--sp-section-gap);
   font-family: var(--font-family);
   color: var(--text);
 }
