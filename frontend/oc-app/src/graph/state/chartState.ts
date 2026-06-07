@@ -68,8 +68,8 @@ export function setChartStatesFromUrlParams() {
     }
   }
 
-  // ローソク足モードの復元（OHLCデータが存在する場合のみ、24時間モードでない場合）
-  if (params.chart === 'candlestick' && hasOhlcData() && graphStore.get(limitAtom) !== 25) {
+  // ローソク足モードの復元（表示中の期間タブにOHLCデータが存在する場合のみ）
+  if (params.chart === 'candlestick' && hasOhlcDataForLimit(graphStore.get(limitAtom))) {
     graphStore.set(chartModeAtom, 'candlestick')
     chart.setMode('candlestick')
   }
@@ -131,7 +131,10 @@ export function initDisplay() {
 export function handleChangeLimit(limit: ChartLimit | 25) {
   graphStore.set(limitAtom, limit)
 
-  if (graphStore.get(chartModeAtom) === 'candlestick' && limit === 25) {
+  // 移動先の期間タブにOHLCデータが無い場合は折れ線グラフに戻す
+  const fallbackToLine =
+    graphStore.get(chartModeAtom) === 'candlestick' && !hasOhlcDataForLimit(limit)
+  if (fallbackToLine) {
     graphStore.set(chartModeAtom, 'line')
     chart.setMode('line')
   }
@@ -141,6 +144,9 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
     fetchChart(true)
   } else if (chart.getIsHour()) {
     chart.setIsHour(false)
+    fetchChart(true)
+  } else if (fallbackToLine) {
+    // モードが変わるため折れ線グラフ用のデータで再取得する
     fetchChart(true)
   } else {
     chart.update(limit)
@@ -168,14 +174,61 @@ export function handleChangeEnableZoom(value: boolean) {
 }
 
 export function hasOhlcData(): boolean {
-  return statsDto.date.length > 1
+  return statsDto.ohlcAvailability?.all ?? false
+}
+
+/** 指定の期間タブにローソク足(OHLC)データが存在するか（24時間タブは常にfalse） */
+export function hasOhlcDataForLimit(limit: ChartLimit | 25): boolean {
+  const availability = statsDto.ohlcAvailability
+  if (!availability) return false
+
+  switch (limit) {
+    case 8:
+      return availability.week
+    case 31:
+      return availability.month
+    case 0:
+      return availability.all
+    default:
+      return false
+  }
 }
 
 export function updateTabVisibility(dataLength: number) {
   graphStore.set(toggleDisplayMonthAtom, dataLength > 8)
   graphStore.set(toggleDisplayAllAtom, dataLength > 31)
+  fallbackHiddenLimit()
+}
 
-  // 非表示になったタブが選択中の場合、表示中のタブにフォールバック
+/**
+ * ローソク足モード: 期間タブ毎のウィンドウ内ローソク足本数に基づいてタブ表示を設定する
+ *
+ * OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
+ * 件数ではなく各タブのウィンドウに実際に入る本数で判定する
+ */
+export function updateCandleTabVisibility(ohlcData: MemberOhlc[]) {
+  const dates = statsDto.date
+  const ohlcDateSet = new Set(ohlcData.map((r) => r.date))
+  const countInWindow = (limit: number) => {
+    let count = 0
+    for (let i = limit ? Math.max(0, dates.length - limit) : 0; i < dates.length; i++) {
+      if (ohlcDateSet.has(dates[i])) count++
+    }
+    return count
+  }
+
+  const weekCount = countInWindow(8)
+  const monthCount = countInWindow(31)
+  const allCount = countInWindow(0)
+
+  // より短いタブで全て表示しきれないローソク足がある場合のみ表示
+  graphStore.set(toggleDisplayMonthAtom, monthCount > weekCount)
+  graphStore.set(toggleDisplayAllAtom, allCount > monthCount)
+  fallbackHiddenLimit()
+}
+
+/** 非表示になったタブが選択中の場合、表示中のタブにフォールバックする */
+function fallbackHiddenLimit() {
   if (graphStore.get(limitAtom) === 0 && !graphStore.get(toggleDisplayAllAtom)) {
     graphStore.set(limitAtom, graphStore.get(toggleDisplayMonthAtom) ? 31 : 8)
   }

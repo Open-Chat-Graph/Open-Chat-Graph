@@ -7,6 +7,7 @@ import {
   loadingAtom,
   rankingRisingAtom,
   renderPositionBtnsAtom,
+  updateCandleTabVisibility,
   updateTabVisibility,
 } from '../state/chartState'
 import fetcher from './fetcher'
@@ -110,8 +111,8 @@ export async function fetchChart(animation: boolean) {
     )
     chart.memberOhlcApiData = memberOhlcData
 
-    // OHLCデータ数に基づいてタブ表示を更新
-    updateTabVisibility(memberOhlcData.length)
+    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新
+    updateCandleTabVisibility(memberOhlcData)
     const currentLimit = graphStore.get(limitAtom)
     const limit: ChartLimit = currentLimit === 25 ? 31 : currentLimit
 
