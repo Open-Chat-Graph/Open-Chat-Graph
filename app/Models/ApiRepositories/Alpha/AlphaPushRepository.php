@@ -120,6 +120,19 @@ class AlphaPushRepository
     }
 
     /**
+     * frozen=0（有効）な購読が1件以上あれば true。
+     * キーワードウォッチ保存前の購読存在チェックに使う。
+     */
+    public function hasActivePushSubscription(string $userId): bool
+    {
+        $row = UserLogDB::fetch(
+            "SELECT EXISTS(SELECT 1 FROM alpha_push_subscription_ja WHERE user_id = :uid AND frozen = 0) AS ex",
+            ['uid' => $userId]
+        );
+        return $row !== false && (bool)$row['ex'];
+    }
+
+    /**
      * 3日以上連続失敗している購読を凍結する（frozen=1）。
      * 毎時バッチから呼び出す想定（Phase 2 で配線予定）。
      *

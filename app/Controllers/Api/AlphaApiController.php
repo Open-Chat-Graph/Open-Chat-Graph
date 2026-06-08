@@ -986,7 +986,7 @@ class AlphaApiController
      * Body: { keywords:[{keyword,category?}], rooms:[{openChatId,upMember?,upPercent?,downMember?,downPercent?}],
      *         mylistThreshold:{upPercent?,downPercent?,enabled} }
      */
-    function alertsConfigPut(AuthInterface $auth, AlphaAlertRepository $repo, Reception $reception)
+    function alertsConfigPut(AuthInterface $auth, AlphaAlertRepository $repo, AlphaPushRepository $pushRepo, Reception $reception)
     {
         Reception::$isJson = true;
         $userId = $auth->loginCookieUserId();
@@ -1003,6 +1003,23 @@ class AlphaApiController
                     ? (int)$k['category'] : null;
                 $keywords[] = ['keyword' => $kw, 'category' => $cat];
             }
+        }
+
+        // ガード: キーワード上限チェック（20件超は保存しない）
+        if (count($keywords) > AlphaAlertRepository::MAX_KEYWORDS_PER_USER) {
+            return response([
+                'error' => 'ウォッチできるキーワードは20件までです',
+                'code' => 'KEYWORD_LIMIT',
+            ], 422);
+        }
+
+        // ガード: キーワードが1件以上あるのに有効な購読が無い場合は保存しない
+        // （キーワードが空＝全削除 の場合はこのチェックを通さない）
+        if (count($keywords) > 0 && !$pushRepo->hasActivePushSubscription($userId)) {
+            return response([
+                'error' => 'キーワード通知には通知の許可が必要です',
+                'code' => 'PUSH_REQUIRED',
+            ], 422);
         }
 
         // rooms

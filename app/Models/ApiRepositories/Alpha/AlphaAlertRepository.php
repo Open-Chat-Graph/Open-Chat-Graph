@@ -23,6 +23,9 @@ use App\Models\UserLogRepositories\UserLogDB;
  */
 class AlphaAlertRepository
 {
+    /** 1ユーザーが保存できるキーワードウォッチの上限件数。 */
+    public const MAX_KEYWORDS_PER_USER = 20;
+
     // ====================== ウォッチ設定: キーワード ======================
 
     /** @return array<int, array{id:int, keyword:string, category:?int, created_at:string}> */
