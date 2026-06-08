@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Alpha;
 
 use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
+use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
 
 /**
  * Alpha 通知/アラートの算出サービス（毎時 cron から呼ばれる）。
@@ -59,6 +60,7 @@ class AlphaAlertService
         private AlphaKeywordSearchClient $searchClient,
         private AlphaSignalDetectionService $signalDetection,
         private AlphaSmartFolderService $smartFolder,
+        private AlphaPushRepository $pushRepo,
     ) {
     }
 
@@ -509,6 +511,23 @@ class AlphaAlertService
             $set[$r['user_id'] . ':' . $r['open_chat_id']] = true;
         }
         return $set;
+    }
+
+    // ====================== 日次掃除 ======================
+
+    /**
+     * 日次掃除: 凍結sweep + 孤児 watch 削除。
+     *
+     * 1. 3日以上連続失敗の購読を frozen=1 に凍結（AlphaPushRepository::freezeStaleSubscriptions）。
+     * 2. 購読が1行も無いユーザーの keyword_watch と関連 seen 行を削除（AlphaAlertRepository::deleteOrphanKeywordWatches）。
+     *
+     * @return array{frozen:int, deletedWatches:int}
+     */
+    public function runDailyCleanup(): array
+    {
+        $frozen = $this->pushRepo->freezeStaleSubscriptions();
+        $deletedWatches = $this->repo->deleteOrphanKeywordWatches();
+        return ['frozen' => $frozen, 'deletedWatches' => $deletedWatches];
     }
 
     // ====================== 共通: movement payload ======================

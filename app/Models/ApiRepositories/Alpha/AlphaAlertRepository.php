@@ -280,11 +280,20 @@ class AlphaAlertRepository
         ], $rows);
     }
 
-    /** @return array<int, array{id:int, user_id:string, keyword:string, category:?int, created_at:string}> */
+    /**
+     * 非凍結の購読（frozen=0）を持つユーザーのウォッチだけを返す。
+     * 購読が無い／全端末凍結中のユーザーは毎時の LINE 検索処理から外れる（コスト上限化）。
+     * 行自体は消さない（後述の deleteOrphanKeywordWatches が担当）。
+     *
+     * @return array<int, array{id:int, user_id:string, keyword:string, category:?int, created_at:string}>
+     */
     public function getAllKeywordWatches(): array
     {
         $rows = UserLogDB::fetchAll(
-            "SELECT id, user_id, keyword, category, created_at FROM alpha_keyword_watch_ja ORDER BY id ASC"
+            "SELECT id, user_id, keyword, category, created_at
+             FROM alpha_keyword_watch_ja
+             WHERE user_id IN (SELECT user_id FROM alpha_push_subscription_ja WHERE frozen = 0 AND user_id IS NOT NULL)
+             ORDER BY id ASC"
         );
         return array_map(static fn($r) => [
             'id' => (int)$r['id'],
@@ -293,6 +302,39 @@ class AlphaAlertRepository
             'category' => $r['category'] === null ? null : (int)$r['category'],
             'created_at' => (string)$r['created_at'],
         ], $rows);
+    }
+
+    /**
+     * 購読行が1行も無いユーザー（frozen含め完全 Gone）の watch を削除する。
+     * 凍結中ユーザーは購読行が残っているため削除されない（凍結は復帰可能）。
+     * 親 watch が消えて孤児になった alpha_keyword_seen_ja 行も合わせて掃除する。
+     *
+     * @return int 削除した keyword_watch 件数
+     */
+    public function deleteOrphanKeywordWatches(): int
+    {
+        // 孤児 seen を先に掃除（watch 削除後に孤児になった行を拾う）
+        UserLogDB::execute(
+            "DELETE FROM alpha_keyword_seen_ja
+             WHERE keyword_watch_id NOT IN (
+                 SELECT id FROM alpha_keyword_watch_ja
+                 WHERE user_id NOT IN (SELECT user_id FROM alpha_push_subscription_ja WHERE user_id IS NOT NULL)
+             )"
+        );
+
+        // 購読が1行も無いユーザーの watch を削除
+        $stmt = UserLogDB::execute(
+            "DELETE FROM alpha_keyword_watch_ja
+             WHERE user_id NOT IN (SELECT user_id FROM alpha_push_subscription_ja WHERE user_id IS NOT NULL)"
+        );
+
+        // 削除後に残った孤児 seen（上の seen 掃除で捕捉できなかった場合の安全網）
+        UserLogDB::execute(
+            "DELETE FROM alpha_keyword_seen_ja
+             WHERE keyword_watch_id NOT IN (SELECT id FROM alpha_keyword_watch_ja)"
+        );
+
+        return $stmt->rowCount();
     }
 
     /** @return array<int, array{user_id:string, open_chat_id:int, up_member:?int, up_percent:?float, down_member:?int, down_percent:?float}> */

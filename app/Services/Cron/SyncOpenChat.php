@@ -17,6 +17,7 @@ use App\Services\OpenChat\OpenChatHourlyInvitationTicketUpdater;
 use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
+use App\Services\Alpha\AlphaAlertService;
 use App\Services\UpdateHourlyMemberColumnService;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shared\MimimalCmsConfig;
@@ -167,6 +168,20 @@ class SyncOpenChat
             $gaSyncPath = AppConfig::ROOT_PATH . 'batch/exec/alpha_ga_sync.php';
             exec(PHP_BINARY . " {$gaSyncPath} >/dev/null 2>&1 &");
             CronUtility::addVerboseCronLog('Alpha GA/GSC 日次同期をバックグラウンドで開始');
+        }
+
+        // Alpha 日次掃除: 凍結 sweep + 孤児 keyword_watch 削除（ja のみ）。
+        if (!MimimalCmsConfig::$urlRoot) {
+            try {
+                /** @var AlphaAlertService $alertService */
+                $alertService = app(AlphaAlertService::class);
+                $cleanup = $alertService->runDailyCleanup();
+                CronUtility::addVerboseCronLog(
+                    'Alpha日次掃除完了 frozen=' . $cleanup['frozen'] . ' deletedWatches=' . $cleanup['deletedWatches']
+                );
+            } catch (\Throwable $e) {
+                CronUtility::addVerboseCronLog('Alpha日次掃除失敗: ' . $e->getMessage());
+            }
         }
 
         CronUtility::addCronLog('【日次処理】完了');
