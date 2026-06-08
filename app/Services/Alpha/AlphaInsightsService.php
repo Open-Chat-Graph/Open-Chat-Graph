@@ -14,16 +14,13 @@ use App\Models\Repositories\OcNarrativeRepositoryInterface;
  * - 本家 narrative は SEO / 初心者向けの「現在値・期間増減の言い換え」を含む。
  *   α 詳細ページは既に メンバー数・1h/24h/1w 増減・推移グラフ・掲載履歴 を数値で持っているので、
  *   それらを見れば一目で分かる事実は **出さない** (ユーザー却下済)。
- * - ここで出すのは「一目では分からない高次の洞察」だけ:
- *     1. category_rank      : {カテゴリ名}カテゴリ内で現在 N 位 / M 件中 (上位 X%)
- *     2. category_share     : {カテゴリ名}カテゴリ内の総メンバーに占めるシェア (代表的ルームか)
- *     3. position_trend     : 全体ランキング順位が N 日で X→Y に変化 (上昇/下降。順位は総数/百分位付き)
- *     4. best_rank          : 直近の最高順位 (過去最高位の更新文脈。順位は総数/百分位付き)
- *     5. record_single_day  : 単日最大の増加は ◯月◯日の +N 人 (今がそれを更新中か)
- *     6. pace_anomaly       : 直近の伸びが過去平均ペースの N 倍 (普段と違う急変)
- *     7. growth_rank        : オプチャグラフ独自 1h/24h/1w 成長ランキングでの全体順位 (総数/百分位付き)
+ * - ここで出すのは「一目では分からない高次の洞察」を意味のある 3 軸に集約したもの:
+ *     1. momentum          : 勢い — 直近7日の純増を主役に、平常ペース比＋成長ランキング順位を統合
+ *     2. rank_position     : 公式ランキングでの位置 — 現在順位を主役に、30日推移＋自己最高位を統合
+ *     3. category_position : カテゴリ内での位置 — カテゴリ内順位を主役に、シェアを統合
  *
- * ※ category_scale (カテゴリ平均の N 倍の規模) は廃止。分布がロングテールで平均が無意味なため。
+ * - 各軸は最大 1 枚。データが無ければ黙ってスキップ (結果は 1〜3 枚)。
+ * - 優先度 (配列順): momentum → rank_position → category_position。
  *
  * ## 嘘を出さない安全策
  * - すべて try/catch。データ不足は「黙る」(その洞察を配列に入れない)。
@@ -56,17 +53,23 @@ class AlphaInsightsService
     /** カテゴリシェアを言及する下限 (%) */
     private const CATEGORY_SHARE_MIN_PCT = 1.0;
 
-    /** 単日最大の伸びを「記録級」として出す最小絶対値 */
-    private const RECORD_SINGLE_DAY_MIN = 30;
-
-    /** ペース異常を出す: 直近ペースが過去平均ペースの何倍以上か */
-    private const PACE_ANOMALY_RATIO = 2.0;
-
-    /** ペース異常を出す: 直近 7 日の最低実増加 (小さい揺れを誤検知しない) */
-    private const PACE_ANOMALY_MIN_DIFF7 = 15;
-
     /** カテゴリ文脈を出す最低カテゴリ規模 (小さすぎる母集団は順位に意味がない) */
     private const MIN_CATEGORY_TOTAL = 20;
+
+    /** 勢いを出す最低観測日数 (これ未満はノイズ) */
+    private const MOMENTUM_MIN_SAMPLE_N = 7;
+
+    /** 勢いを出す: 直近 7 日の最低実増加の下限 (curr*割合 と比較して大きい方を採用) */
+    private const MOMENTUM_MIN_DIFF7_FLOOR = 15;
+
+    /** 勢いを出す: 直近 7 日の純増が現在人数のこの割合以上 (微増を弾く) */
+    private const MOMENTUM_MIN_DIFF7_RATE = 0.005;
+
+    /** 勢いの「加速」文を出す: 直近ペースが過去平均ペースの何倍以上か */
+    private const MOMENTUM_ACCEL_RATIO = 2.0;
+
+    /** 成長ランキングを添える上限順位 (これ以内なら 2 文目に添える) */
+    private const GROWTH_RANK_MENTION_MAX = 50;
 
     public function __construct(
         private OcNarrativeRepositoryInterface $narrativeRepository,
@@ -91,21 +94,17 @@ class AlphaInsightsService
 
         $curr = ($metrics && $metrics['curr'] !== null) ? (int)$metrics['curr'] : null;
 
-        // ---- 成長ランキング (1h/24h/1w) ----
-        $this->appendGrowthRank($insights, $openChatId);
-
-        // ---- 全体順位の推移 / 最高順位 ----
-        $this->appendPositionTrend($insights, $openChatId);
-
-        // ---- カテゴリ文脈 (順位 / シェア / 規模) ----
-        if ($category !== null && $category > 0 && $curr !== null) {
-            $this->appendCategoryContext($insights, $openChatId, $category, $curr);
+        // ---- 軸1: 勢い (直近7日の純増 + 平常ペース比 + 成長ランキング順位) ----
+        if ($metrics !== null && $curr !== null) {
+            $this->buildMomentum($insights, $openChatId, $metrics, $curr);
         }
 
-        // ---- 単日最大の伸び (記録更新文脈) ----
-        if ($metrics !== null && $curr !== null) {
-            $this->appendRecordSingleDay($insights, $metrics, $curr);
-            $this->appendPaceAnomaly($insights, $metrics, $curr);
+        // ---- 軸2: 公式ランキングでの位置 (現在順位 + 30日推移 + 自己最高位) ----
+        $this->buildRankPosition($insights, $openChatId);
+
+        // ---- 軸3: カテゴリ内での位置 (カテゴリ内順位 + シェア) ----
+        if ($category !== null && $category > 0 && $curr !== null) {
+            $this->buildCategoryPosition($insights, $openChatId, $category, $curr);
         }
 
         return [
@@ -115,47 +114,119 @@ class AlphaInsightsService
     }
 
     /**
-     * オプチャグラフ独自の成長ランキング全体順位。
-     * 圏内 (上位) のときだけ出す。順位が低すぎる (= ほぼ全件) は黙る。
+     * 軸1: 勢い。
+     * 直近7日の純増 diff7 を主役に、平常ペース比 (直近7日/日 ÷ 過去90日/日) と
+     * 成長ランキング全体順位を 1 枚に統合する。
+     * 微増・横ばい・減少は黙る。
+     *
+     * @param array<string, mixed> $m getMemberMetrics の戻り
      */
-    private function appendGrowthRank(array &$insights, int $openChatId): void
+    private function buildMomentum(array &$insights, int $openChatId, array $m, int $curr): void
+    {
+        $sampleN = (int)($m['sample_n'] ?? 0);
+        $m7 = $m['m7'] ?? null;
+        if ($sampleN < self::MOMENTUM_MIN_SAMPLE_N || $m7 === null) {
+            return;
+        }
+
+        $diff7 = $curr - (int)$m7;
+        // 「意味のある増加」だけ語る。微増・横ばい・減少は黙る。
+        $minDiff7 = max(self::MOMENTUM_MIN_DIFF7_FLOOR, (int)ceil($curr * self::MOMENTUM_MIN_DIFF7_RATE));
+        if ($diff7 < $minDiff7) {
+            return;
+        }
+
+        // 平常ペース比 (既存 pace_anomaly と同式)。m90 が無い/長期が伸びていないなら ratio は出さない。
+        $ratio = null;
+        $m90 = $m['m90'] ?? null;
+        if ($m90 !== null) {
+            $diff90 = $curr - (int)$m90;
+            if ($diff90 > 0) {
+                $recentPace = $diff7 / 7.0;
+                $basePace = $diff90 / 90.0;
+                if ($basePace > 0) {
+                    $ratio = $recentPace / $basePace;
+                }
+            }
+        }
+
+        $item = [
+            'type' => 'momentum',
+            'kind' => 'momentum',
+            'diff7' => $diff7,
+        ];
+
+        // 1文目: 純増を主役に。加速していれば平常比を添える。
+        if ($ratio !== null && $ratio >= self::MOMENTUM_ACCEL_RATIO) {
+            $ratioR = round($ratio, 1);
+            $item['ratio'] = $ratioR;
+            $text = '過去7日で+' . number_format($diff7) . '人。普段の約' . $this->fmtRatio($ratioR) . '倍のペースで伸びています';
+        } else {
+            if ($ratio !== null) {
+                $item['ratio'] = round($ratio, 1);
+            }
+            $text = '過去7日で+' . number_format($diff7) . '人が参加しています';
+        }
+
+        // 2文目: 成長ランキング上位 (week>day>hour, 50位以内) なら添える。
+        $growth = $this->growthRankMention($openChatId);
+        if ($growth !== null) {
+            $item['growthRankPeriod'] = $growth['period'];
+            $item['growthRankPosition'] = $growth['position'];
+            if ($growth['percentile'] !== null) {
+                $item['growthRankPercentile'] = $growth['percentile'];
+            }
+            $text .= '。直近' . $growth['label'] . 'の伸びは全体' . $growth['phrase'];
+        }
+
+        $item['text'] = $text;
+        $insights[] = $item;
+    }
+
+    /**
+     * 成長ランキング (週>日>時) の最も意味のある期間で 50 位以内なら、添える句を返す。
+     * 取れない / 圏外なら null。
+     *
+     * @return array{period: string, label: string, position: int, percentile: ?float, phrase: string}|null
+     */
+    private function growthRankMention(int $openChatId): ?array
     {
         try {
             $pos = $this->narrativeRepository->getGrowthRankingPositions($openChatId);
         } catch (\Throwable $e) {
-            return;
+            return null;
         }
 
-        // 各期間の総件数 (ランキング掲載部屋数)。取れなければ null（百分位だけ出す等で吸収）
         try {
             $totals = $this->insightsRepository->getGrowthRankingTotalCounts();
         } catch (\Throwable $e) {
             $totals = ['hour' => null, 'day' => null, 'week' => null];
         }
 
-        // 週 > 日 > 時 の優先で 1 つだけ (最も意味のある期間)
-        foreach ([['week', '1週間', 50], ['day', '24時間', 50], ['hour', '1時間', 50]] as [$key, $label, $limit]) {
+        foreach ([['week', '1週間'], ['day', '24時間'], ['hour', '1時間']] as [$key, $label]) {
             $p = $pos[$key] ?? null;
-            if ($p !== null && $p >= 1 && $p <= $limit) {
+            if ($p !== null && $p >= 1 && $p <= self::GROWTH_RANK_MENTION_MAX) {
                 $total = $totals[$key] ?? null;
-                $item = [
-                    'type' => 'growth_rank',
+                $fields = $this->rankFields((int)$p, $total);
+                return [
                     'period' => $key,
-                    'position' => $p,
+                    'label' => $label,
+                    'position' => (int)$p,
+                    'percentile' => $fields['percentile'] ?? null,
+                    'phrase' => $this->rankPhrase((int)$p, $total),
                 ];
-                $item += $this->rankFields($p, $total);
-                $item['text'] = "過去{$label}で人数の伸びが全体" . $this->rankPhrase($p, $total);
-                $insights[] = $item;
-                return;
             }
         }
+
+        return null;
     }
 
     /**
-     * 全体ランキング (category=0, type=ranking) の順位推移と最高順位。
-     * 推移グラフには出ているが「N日でX→Yに動いた」「直近の最高位」は一目で読み取れない高次情報。
+     * 軸2: 公式ランキング (category=0, type=ranking) での位置。
+     * 現在順位を主役に、30 日推移と自己最高位を 1 枚に統合する。
+     * 下位 (MEANINGFUL_POSITION_MAX より下) / データ薄は黙る。
      */
-    private function appendPositionTrend(array &$insights, int $openChatId): void
+    private function buildRankPosition(array &$insights, int $openChatId): void
     {
         try {
             $mv = $this->narrativeRepository->getPositionMovement($openChatId, 0, 30);
@@ -171,57 +242,59 @@ class AlphaInsightsService
         $latest = $mv['latest_close'] ?? null;
         $best = $mv['best_high'] ?? null;
 
-        // 公式ランキング（全体）の最新総件数。順位に「／M件中（上位X%）」を付けるのに使う。
-        // 取れなければ null（百分位も付けられないが、順位＋方向だけは出す）。
+        // 現在順位が意味のある範囲 (上位) でなければ黙る。
+        if ($latest === null || (int)$latest > self::MEANINGFUL_POSITION_MAX) {
+            return;
+        }
+        $latest = (int)$latest;
+
+        // 公式ランキング（全体）の最新総件数。順位に「／M件中（上位X%）」を付ける。
         try {
             $total = $this->insightsRepository->getOfficialRankingTotalCount();
         } catch (\Throwable $e) {
             $total = null;
         }
 
-        // 順位の変化 (close_position は小さいほど上位)。
-        // 数千位の上下はノイズなので、上位(=MEANINGFUL_POSITION_MAX以内)に居た/居る時だけ語る。
-        $meaningful = ($oldest !== null && $oldest <= self::MEANINGFUL_POSITION_MAX)
-            || ($latest !== null && $latest <= self::MEANINGFUL_POSITION_MAX);
-        if ($oldest !== null && $latest !== null && $meaningful) {
+        $item = [
+            'type' => 'rank_position',
+            'kind' => 'rank_position',
+            'current' => $latest,
+        ];
+        $item += $this->rankFields($latest, $total);
+
+        // 1文目: 現在位置を主役に。
+        $text = '公式ランキング全体で現在' . $this->rankPhrase($latest, $total);
+
+        // 2文目: 30 日で動いていれば推移を、最高位が現在と違えば自己最高を添える。
+        $sentence2 = [];
+        if ($oldest !== null) {
+            $oldest = (int)$oldest;
             $delta = $oldest - $latest; // 正 = 上昇 (順位が小さくなった)
             if (abs($delta) >= self::POSITION_MOVE_MIN_DELTA) {
                 $dir = $delta > 0 ? '上昇' : '下降';
-                $item = [
-                    'type' => 'position_trend',
-                    'category' => 0,
-                    'from' => (int)$oldest,
-                    'to' => (int)$latest,
-                    'delta' => (int)$delta,
-                    'fromDate' => $mv['oldest_date'] ?? null,
-                    'toDate' => $mv['latest_date'] ?? null,
-                ];
-                // 現在(to)の順位に総数/百分位を付ける（推移の到達点を意味づける）
-                $item += $this->rankFields((int)$latest, $total);
-                $item['text'] = "公式ランキング（全体）が直近30日で{$oldest}→"
-                    . $this->rankPhrase((int)$latest, $total) . "に{$dir}";
-                $insights[] = $item;
+                $item['from'] = $oldest;
+                $item['to'] = $latest;
+                $sentence2[] = "30日で{$oldest}→{$latest}位に{$dir}";
             }
         }
-
-        // 直近 30 日の最高順位 (現在より明確に上 かつ 上位のときだけ = 過去にもっと上だった文脈)
-        if ($best !== null && $latest !== null && $best < $latest && $best <= self::MEANINGFUL_POSITION_MAX) {
-            $item = [
-                'type' => 'best_rank',
-                'category' => 0,
-                'bestPosition' => (int)$best,
-                'currentPosition' => (int)$latest,
-            ];
-            $item += $this->rankFields((int)$best, $total);
-            $item['text'] = "公式ランキング（全体）での直近30日の最高は" . $this->rankPhrase((int)$best, $total);
-            $insights[] = $item;
+        if ($best !== null && (int)$best < $latest && (int)$best <= self::MEANINGFUL_POSITION_MAX) {
+            $item['best'] = (int)$best;
+            $sentence2[] = '自己最高' . (int)$best . '位';
         }
+        if ($sentence2 !== []) {
+            $text .= '。' . implode('、', $sentence2);
+        }
+
+        $item['text'] = $text;
+        $insights[] = $item;
     }
 
     /**
-     * 同カテゴリ内での現在順位 / シェア / 規模倍率。
+     * 軸3: 同カテゴリ内での位置。
+     * カテゴリ内順位を主役に、シェアを 1 枚に統合する。
+     * 上位 25% 以内のときだけ。下位・小母集団は黙る。
      */
-    private function appendCategoryContext(array &$insights, int $openChatId, int $category, int $curr): void
+    private function buildCategoryPosition(array &$insights, int $openChatId, int $category, int $curr): void
     {
         try {
             $ctx = $this->insightsRepository->getCategoryContext($openChatId, $category);
@@ -234,42 +307,42 @@ class AlphaInsightsService
         if ($total < self::MIN_CATEGORY_TOTAL || $rank === null) {
             return;
         }
+        $rank = (int)$rank;
 
-        $catName = $this->categoryName($category); // 「ゲーム」等。取れなければ空
-        $catLabel = $catName !== '' ? "{$catName}カテゴリ内" : '同カテゴリ内';
-
-        // 1) カテゴリ内順位 (上位 X% のときのみ強調。下位は黙る)
+        // 上位 X% のときだけ。下位は黙る。
         $pct = ($rank / $total) * 100;
-        if ($pct <= self::CATEGORY_TOP_PCT) {
-            $insights[] = [
-                'type' => 'category_rank',
-                'category' => $category,
-                'categoryName' => $catName !== '' ? $catName : null,
-                'rank' => $rank,
-                'total' => $total,
-                'percentile' => $this->roundPct($pct),
-                'text' => "{$catLabel}のメンバー数で{$rank}位／" . number_format($total) . "件中（上位" . $this->fmtPct($pct) . "）",
-            ];
+        if ($pct > self::CATEGORY_TOP_PCT) {
+            return;
         }
 
-        // 2) カテゴリシェア (総メンバーに占める割合が無視できないときのみ)
+        $catName = $this->categoryName($category); // 「ゲーム」等。取れなければ空
+        $label = $catName !== '' ? $catName : '同カテゴリ';
+
+        $item = [
+            'type' => 'category_position',
+            'kind' => 'category_position',
+            'category' => $category,
+            'categoryName' => $catName !== '' ? $catName : null,
+            'rank' => $rank,
+            'total' => $total,
+            'percentile' => $this->roundPct($pct),
+        ];
+
+        $text = "{$label}で人数{$rank}位／" . number_format($total) . '件中（上位' . $this->fmtPct($pct) . '）';
+
+        // シェア (総メンバーに占める割合が 1% 以上のときだけ添える)。
         $sum = $ctx['sumMember'] ?? null;
         if ($sum !== null && $sum > 0) {
             $share = ($curr / $sum) * 100;
             if ($share >= self::CATEGORY_SHARE_MIN_PCT) {
                 $shareR = $this->roundPct($share);
-                $insights[] = [
-                    'type' => 'category_share',
-                    'category' => $category,
-                    'categoryName' => $catName !== '' ? $catName : null,
-                    'sharePercent' => $shareR,
-                    'text' => "{$catLabel}の人数の約{$shareR}%を占める",
-                ];
+                $item['sharePercent'] = $shareR;
+                $text .= '。カテゴリ全体の約' . $shareR . '%を占めます';
             }
         }
 
-        // ※ category_scale（カテゴリ平均の N 倍の規模）は廃止。
-        //   メンバー数分布はロングテールで平均がほぼ無意味になり、倍率が誤解を招くため出さない。
+        $item['text'] = $text;
+        $insights[] = $item;
     }
 
     /**
@@ -292,67 +365,6 @@ class AlphaInsightsService
             return $name !== false ? (string)$name : '';
         } catch (\Throwable $e) {
             return '';
-        }
-    }
-
-    /**
-     * 単日最大の伸びの記録。今まさに更新中なら強調。
-     */
-    private function appendRecordSingleDay(array &$insights, array $m, int $curr): void
-    {
-        $growth = $m['max_single_day_growth'] ?? null;
-        $date = $m['max_growth_date'] ?? null;
-        if ($growth === null || $date === null || (int)$growth < self::RECORD_SINGLE_DAY_MIN) {
-            return;
-        }
-        $growth = (int)$growth;
-
-        // 直近の伸び (m1=24h前) が過去単日最大に匹敵 / 超過しているか
-        $diff1 = ($m['m1'] !== null) ? $curr - (int)$m['m1'] : null;
-        $updating = ($diff1 !== null && $diff1 >= $growth);
-
-        $insights[] = [
-            'type' => 'record_single_day',
-            'maxGrowth' => $growth,
-            'maxGrowthDate' => (string)$date,
-            'updating' => $updating,
-            'text' => $updating
-                ? "単日最大の増加を更新中（{$this->fmtDate((string)$date)} +" . number_format($growth) . "人）"
-                : "単日最大の増加は{$this->fmtDate((string)$date)}の+" . number_format($growth) . "人",
-        ];
-    }
-
-    /**
-     * ペース異常検知: 直近 7 日の 1 日あたり増加が、過去 90 日平均ペースの N 倍以上。
-     * グラフを凝視しないと気づけない「普段と違う急変」を拾う。
-     */
-    private function appendPaceAnomaly(array &$insights, array $m, int $curr): void
-    {
-        $m7 = $m['m7'] ?? null;
-        $m90 = $m['m90'] ?? null;
-        if ($m7 === null || $m90 === null) {
-            return;
-        }
-        $diff7 = $curr - (int)$m7;
-        $diff90 = $curr - (int)$m90;
-        if ($diff7 < self::PACE_ANOMALY_MIN_DIFF7 || $diff90 <= 0) {
-            return; // 直近が伸びていない / 長期も伸びていないなら異常検知しない
-        }
-
-        $recentPace = $diff7 / 7.0;       // 1 日あたり (直近)
-        $basePace = $diff90 / 90.0;       // 1 日あたり (長期平均)
-        if ($basePace <= 0) {
-            return;
-        }
-        $ratio = $recentPace / $basePace;
-        if ($ratio >= self::PACE_ANOMALY_RATIO) {
-            $insights[] = [
-                'type' => 'pace_anomaly',
-                'ratio' => round($ratio, 1),
-                'recentPerDay' => round($recentPace, 1),
-                'basePerDay' => round($basePace, 1),
-                'text' => "増加ペースが平常の約" . round($ratio, 1) . "倍に加速",
-            ];
         }
     }
 
@@ -396,7 +408,7 @@ class AlphaInsightsService
         if ($pct > 0 && $pct < 0.1) {
             return 0.1;
         }
-        return $pct < 1 ? round($pct, 1) : round($pct, 1);
+        return round($pct, 1);
     }
 
     private function fmtPct(float $pct): string
@@ -410,12 +422,11 @@ class AlphaInsightsService
         return rtrim(rtrim(number_format($p, 1), '0'), '.') . '%';
     }
 
-    private function fmtDate(string $date): string
+    /**
+     * 倍率の表示。整数なら小数点を落とす (3倍 / 2.5倍)。
+     */
+    private function fmtRatio(float $ratio): string
     {
-        try {
-            return (new \DateTime($date))->format('Y年n月j日');
-        } catch (\Throwable $e) {
-            return $date;
-        }
+        return rtrim(rtrim(number_format($ratio, 1), '0'), '.');
     }
 }

@@ -3,13 +3,8 @@ import useSWR from 'swr'
 import {
   Sparkles,
   TrendingUp,
-  LineChart,
   Trophy,
   Layers,
-  PieChart,
-  Ruler,
-  CalendarClock,
-  Activity,
   type LucideIcon,
 } from 'lucide-react'
 import { alphaApi } from '@/api/alpha'
@@ -35,14 +30,9 @@ type InsightStyle = {
 }
 
 const INSIGHT_STYLES: Record<string, InsightStyle> = {
-  growth_rank: { icon: TrendingUp, label: '成長の勢い' },
-  position_trend: { icon: LineChart, label: '順位の流れ' },
-  best_rank: { icon: Trophy, label: '自己ベスト' },
-  category_rank: { icon: Layers, label: 'カテゴリ内順位' },
-  category_share: { icon: PieChart, label: 'カテゴリ内シェア' },
-  category_scale: { icon: Ruler, label: 'カテゴリ内の規模' },
-  record_single_day: { icon: CalendarClock, label: '記録的な1日' },
-  pace_anomaly: { icon: Activity, label: 'ペースの変化' },
+  momentum: { icon: TrendingUp, label: '勢い' },
+  rank_position: { icon: Trophy, label: '公式ランキングでの位置' },
+  category_position: { icon: Layers, label: 'カテゴリ内での位置' },
 }
 
 const DEFAULT_STYLE: InsightStyle = {

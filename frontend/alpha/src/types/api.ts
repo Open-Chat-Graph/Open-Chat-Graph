@@ -108,15 +108,10 @@ export interface RankingHistoryResponse {
 // type ごとに数値フィールドは異なるが、UI は text を主役に type でアイコン分けする。
 export interface InsightItem {
   type:
-    | 'growth_rank'
-    | 'position_trend'
-    | 'best_rank'
-    | 'category_rank'
-    | 'category_share'
-    | 'category_scale'
-    | 'record_single_day'
-    | 'pace_anomaly'
-    | string
+    | 'momentum'           // 勢い（直近7日の純増＋平常ペース比＋成長ランキング順位）
+    | 'rank_position'      // 公式ランキングでの位置（現在順位＋30日推移＋自己最高位）
+    | 'category_position'  // カテゴリ内での位置（カテゴリ内順位＋シェア）
+    | string               // 未知 type は fallback 描画（旧通知キャッシュ等の保険）
   text: string
   [key: string]: unknown
 }
