@@ -193,19 +193,20 @@ CREATE TABLE `alpha_keyword_seen_ja` (
   KEY `keyword_watch_id` (`keyword_watch_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 検索に出るが「オプチャグラフ未登録」の部屋を共有プールとして管理する。
+-- 検索に出るが「オプチャグラフ未登録」の部屋を、本体オプチャグラフへ自動登録するキュー。
 -- 毎時、全ユーザーのアラートキーワードのユニーク集合で LINE公式検索を叩き、
 -- open_chat に未登録の emid をここに upsert する（ユーザー横断で1行/部屋）。
--- keywords: その部屋を見つけたアラートキーワードの集合（カンマ連結・ユニーク）。
--- 配信は keyword_watch.created_at <= first_seen_at かつ K が keywords に完全一致 のものだけ。
+-- 毎時クロールの末尾でキューを古い順に消化し、本体へ登録（成功/既登録なら行を削除、
+-- 取得失敗は fail_count++ し上限到達で諦めて削除）。
+-- fail_count: 取得失敗のリトライ回数（上限到達で諦め）。
+-- 注意: 本番デプロイのスキーマ同期は「追加のみ」のため、旧カラム
+--   member / keywords / last_seen_at の物理 DROP は反映されない。本番では手動 ALTER が必要。
 DROP TABLE IF EXISTS `alpha_search_seen_room_ja`;
 CREATE TABLE `alpha_search_seen_room_ja` (
   `emid` varchar(255) NOT NULL,
   `name` varchar(190) DEFAULT NULL,
-  `member` int(11) DEFAULT NULL,
-  `keywords` text NOT NULL,
+  `fail_count` tinyint(4) NOT NULL DEFAULT 0,
   `first_seen_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `last_seen_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`emid`),
   KEY `first_seen_at` (`first_seen_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

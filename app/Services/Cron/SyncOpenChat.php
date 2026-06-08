@@ -18,6 +18,7 @@ use App\Services\RankingBan\RankingBanTableUpdater;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\SitemapGenerator;
 use App\Services\Alpha\AlphaAlertService;
+use App\Services\Alpha\AlphaSeenRoomRegistrationService;
 use App\Services\UpdateHourlyMemberColumnService;
 use App\Services\UpdateHourlyMemberRankingService;
 use Shared\MimimalCmsConfig;
@@ -93,6 +94,27 @@ class SyncOpenChat
         $this->rankingPositionHourPersistence->waitForBackgroundCompletion();
 
         $this->hourlyTaskAfterDbMerge();
+
+        // Alpha 未登録部屋の自動登録キュー消化（ja のみ・本体を止めない）。
+        // キューは前回までの Alpha 毎時検索(alpha_hourly.php=非同期)で溜まった未登録部屋。
+        // 今回分は handle() 完了後に非同期起動される alpha_hourly.php が積むため、
+        // ここでは「前回までに溜まった分」を古い順に消化する（自然な順序）。
+        if (!MimimalCmsConfig::$urlRoot) {
+            try {
+                /** @var AlphaSeenRoomRegistrationService $seenRoomReg */
+                $seenRoomReg = app(AlphaSeenRoomRegistrationService::class);
+                $r = $seenRoomReg->run(AlphaSeenRoomRegistrationService::REGISTER_LIMIT);
+                CronUtility::addVerboseCronLog(
+                    'Alpha未登録部屋の自動登録 processed=' . $r['processed']
+                        . ' registered=' . $r['registered']
+                        . ' already=' . $r['alreadyRegistered']
+                        . ' failed=' . $r['failed']
+                        . ' givenUp=' . $r['givenUp']
+                );
+            } catch (\Throwable $e) {
+                CronUtility::addVerboseCronLog('Alpha未登録部屋の自動登録に失敗: ' . $e->getMessage());
+            }
+        }
 
         CronUtility::addCronLog('【毎時処理】完了');
     }

@@ -396,123 +396,77 @@ class AlphaAlertRepository
         return array_values(array_filter(array_map('intval', $ids), static fn($i) => $i > 0));
     }
 
-    // ====================== 未登録部屋プール (alpha_search_seen_room_ja) ======================
+    // ====================== 未登録部屋の自動登録キュー (alpha_search_seen_room_ja) ======================
+
+    /** 取得失敗のリトライ上限。これに達したら諦めてキューから削除する。 */
+    public const SEEN_ROOM_MAX_FAIL = 3;
 
     /**
-     * 検索に出た「未登録部屋」を共有プールに upsert する。
+     * 検索に出た「未登録部屋」を自動登録キューに積む。
      *
-     * 既存行があれば name/member/last_seen_at を更新し、keywords に $keyword を
-     * （未収録なら）カンマ連結で追加する。新規行は first_seen_at = now。
+     * 既存行があれば name を更新するだけ（first_seen_at は初出時刻を据え置き＝古い順処理の基準）。
+     * 新規行は first_seen_at = now（DEFAULT）、fail_count = 0（DEFAULT）。
      *
-     * keywords はユーザー横断で「この部屋を見つけたアラートキーワードの集合」。
-     * 配信時に「K が keywords のいずれかに完全一致」で判定する。
-     *
-     * @param string  $emid    LINE square の emid（未登録）
-     * @param string  $name    部屋名
-     * @param int|null $member 人数（squareには無いので基本 null）
-     * @param string  $keyword この部屋を見つけたアラートキーワード
+     * @param string $emid LINE square の emid（未登録）
+     * @param string $name 部屋名
      */
-    public function upsertSeenRoom(string $emid, string $name, ?int $member, string $keyword): void
+    public function upsertSeenRoom(string $emid, string $name): void
     {
         if ($emid === '') {
             return;
         }
 
-        // keywords はカンマ区切り集合。keyword 自体のカンマは FIND_IN_SET を壊すので除去。
-        $keyword = $this->normalizeKeyword($keyword);
-
-        $row = UserLogDB::fetch(
-            "SELECT keywords FROM alpha_search_seen_room_ja WHERE emid = :emid",
-            ['emid' => $emid]
+        UserLogDB::execute(
+            "INSERT INTO alpha_search_seen_room_ja (emid, name)
+             VALUES (:emid, :name)
+             ON DUPLICATE KEY UPDATE name = VALUES(name)",
+            [
+                'emid' => $emid,
+                'name' => $this->truncate($name, 190),
+            ]
         );
-
-        if ($row) {
-            // 既存: keywords に keyword を（未収録なら）足し、name/member/last_seen を更新
-            $keywords = $this->mergeKeyword((string)$row['keywords'], $keyword);
-            UserLogDB::execute(
-                "UPDATE alpha_search_seen_room_ja
-                 SET name = :name, member = :member, keywords = :kw, last_seen_at = current_timestamp()
-                 WHERE emid = :emid",
-                [
-                    'name' => $this->truncate($name, 190),
-                    'member' => $member,
-                    'kw' => $keywords,
-                    'emid' => $emid,
-                ]
-            );
-        } else {
-            UserLogDB::execute(
-                "INSERT INTO alpha_search_seen_room_ja (emid, name, member, keywords)
-                 VALUES (:emid, :name, :member, :kw)
-                 ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
-                    member = VALUES(member),
-                    keywords = VALUES(keywords),
-                    last_seen_at = current_timestamp()",
-                [
-                    'emid' => $emid,
-                    'name' => $this->truncate($name, 190),
-                    'member' => $member,
-                    'kw' => $keyword,
-                ]
-            );
-        }
     }
 
     /**
-     * あるキーワード K にヒットする未登録部屋のうち、配信条件を満たすものを返す。
+     * 自動登録キューを古い順（first_seen_at ASC）に取得する。
+     * fail_count が上限未満の行だけを対象にする（諦めた行は除外）。
      *
-     * 条件:
-     *   - K が keywords（カンマ集合）のいずれかに完全一致
-     *   - first_seen_at >= :createdAt（このウォッチ登録時刻以降に初めて見つかった部屋）
-     *
-     * 重複排除（そのユーザーに未配信か）は呼び出し側で alpha_keyword_seen_ja を使って行う。
-     *
-     * @return array<int, array{emid:string, name:string, member:?int, first_seen_at:string}>
+     * @return array<int, array{emid:string, name:string, fail_count:int, first_seen_at:string}>
      */
-    public function getDeliverableSeenRooms(string $keyword, string $createdAt): array
+    public function getRegistrationQueue(int $limit): array
     {
-        // upsert 時と同じ正規化（カンマ除去）で照合する。
-        $keyword = $this->normalizeKeyword($keyword);
-
-        // keywords は「a,b,c」形式。完全一致のため FIND_IN_SET を使う。
         $rows = UserLogDB::fetchAll(
-            "SELECT emid, name, member, first_seen_at
+            "SELECT emid, name, fail_count, first_seen_at
              FROM alpha_search_seen_room_ja
-             WHERE first_seen_at >= :created
-               AND FIND_IN_SET(:kw, keywords)
-             ORDER BY first_seen_at ASC",
-            ['created' => $createdAt, 'kw' => $keyword]
+             WHERE fail_count < :maxFail
+             ORDER BY first_seen_at ASC
+             LIMIT :limit",
+            ['maxFail' => self::SEEN_ROOM_MAX_FAIL, 'limit' => $limit]
         );
         return array_map(static fn($r) => [
             'emid' => (string)$r['emid'],
             'name' => (string)($r['name'] ?? ''),
-            'member' => $r['member'] === null ? null : (int)$r['member'],
+            'fail_count' => (int)$r['fail_count'],
             'first_seen_at' => (string)$r['first_seen_at'],
         ], $rows);
     }
 
-    /**
-     * keywords のカンマ集合に keyword を（未収録なら）追加して返す。
-     * keyword 自体にカンマを含む場合は FIND_IN_SET が壊れるためカンマを除去して正規化する。
-     */
-    private function mergeKeyword(string $keywords, string $keyword): string
+    /** キューから1部屋を削除する（登録成功・既登録・諦め時）。 */
+    public function deleteSeenRoom(string $emid): void
     {
-        $keyword = $this->normalizeKeyword($keyword);
-        $set = array_values(array_filter(
-            array_map('trim', explode(',', $keywords)),
-            static fn($k) => $k !== ''
-        ));
-        if (!in_array($keyword, $set, true)) {
-            $set[] = $keyword;
-        }
-        return implode(',', $set);
+        UserLogDB::execute(
+            "DELETE FROM alpha_search_seen_room_ja WHERE emid = :emid",
+            ['emid' => $emid]
+        );
     }
 
-    /** keywords 集合に入れる前のキーワード正規化（カンマ除去・トリム）。 */
-    private function normalizeKeyword(string $keyword): string
+    /** 取得失敗時に fail_count を1増やす。 */
+    public function incrementSeenRoomFail(string $emid): void
     {
-        return trim(str_replace(',', ' ', $keyword));
+        UserLogDB::execute(
+            "UPDATE alpha_search_seen_room_ja SET fail_count = fail_count + 1 WHERE emid = :emid",
+            ['emid' => $emid]
+        );
     }
 
     private function truncate(string $s, int $max): string

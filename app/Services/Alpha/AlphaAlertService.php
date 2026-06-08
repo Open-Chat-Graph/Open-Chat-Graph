@@ -16,9 +16,8 @@ use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
  *          ウォッチ created_at 以降のものだけを「新着」として一度だけ通知（カテゴリ照合あり）。
  *          古い部屋（DB登録 < ウォッチ作成）は seen 記録だけ残してスキップする。
  *          open_chat.created_at が NULL の行は古い部屋とみなしスキップ（安全側）。
- *        - 未登録(オプチャグラフ未登録)部屋 … 共有プール alpha_search_seen_room_ja に貯め、
- *          「ウォッチ登録時刻(created_at)以降に初出（first_seen_at >= ウォッチ作成） ＆ 未配信」のものだけ配信。
- *          両経路とも「ウォッチ登録より前から在った部屋を初回に大量配信しない」点で対称。
+ *        - 未登録(オプチャグラフ未登録)部屋 … 通知はせず、自動登録キュー alpha_search_seen_room_ja に
+ *          積むだけ（毎時クロール末尾で本体オプチャグラフへ登録）。登録後は次回以降、上の登録済み経路で通知される。
  *   ② ウォッチ部屋        … 指定人数±/%± の上昇・下降を検出
  *   ③ マイリスト          … %しきい値での上昇・下降を検出
  *   ④ 機微シグナル        … ウォッチ部屋の room_change / rank_jump / pace（AlphaSignalDetectionService に委譲）
@@ -167,18 +166,17 @@ class AlphaAlertService
 
             // 登録済み一致: open_chat.created_at >= ウォッチ作成 の部屋のみ通知（新着性フィルタ）。
             // 古い部屋（DB登録 < ウォッチ作成 または created_at NULL）は seen 記録してスキップ。
+            // 未登録一致は通知せず、自動登録キュー(alpha_search_seen_room_ja)へ積むのみ
+            // （毎時クロール末尾でキューを消化し本体へ登録。登録後は次回以降この登録済み経路で通知される）。
             $count += $this->deliverRegisteredHits($w, $squares);
-
-            // 未登録一致は共有プールから「登録時刻以降に初出 ＆ 未配信」のみ配信
-            $count += $this->deliverUnregisteredHits($w);
         }
 
         return $count;
     }
 
     /**
-     * 検索結果の未登録 emid を共有プール(alpha_search_seen_room_ja)へ upsert する。
-     * 同一 emid が複数キーワードでヒットしても、各キーワードを keywords 集合に足す。
+     * 検索結果の未登録 emid を自動登録キュー(alpha_search_seen_room_ja)へ upsert する。
+     * 同一 emid が複数キーワードでヒットしても1行/部屋（first_seen_at は初出時刻を保持）。
      *
      * @param array<string, array<int, array{emid:string,name:string,desc:string,profileImageObsHash:string,joinMethodType:int}>> $searchCache
      */
@@ -196,8 +194,8 @@ class AlphaAlertService
                 if ($emid === '' || isset($registered[$emid])) {
                     continue; // 登録済みはプールに入れない（②の登録済み経路で扱う）
                 }
-                // square には member が無いので null（登録されれば後日 open_chat 側に出る）
-                $this->repo->upsertSeenRoom($emid, $sq['name'], null, (string)$keyword);
+                // 自動登録キューに積む（毎時クロール末尾で本体へ登録される）
+                $this->repo->upsertSeenRoom($emid, $sq['name']);
             }
         }
     }
@@ -268,57 +266,6 @@ class AlphaAlertService
                 'isRegistered' => true,
                 'member' => isset($ocMap[$ocId]['member']) ? (int)$ocMap[$ocId]['member'] : null,
                 'detectedAt' => time(), // 登録済みは初出時刻が無いので検出時刻
-            ];
-
-            $dedup = 'kw:' . $w['id'] . ':' . $emid;
-            $inserted = $this->repo->insertNotification($w['user_id'], 'keyword', $payload, $dedup);
-            $this->repo->markEmidSeen($w['id'], $emid);
-            if ($inserted) {
-                $this->notifiedUserIds[$w['user_id']] = true;
-                $count++;
-            }
-        }
-
-        return $count;
-    }
-
-    /**
-     * 未登録部屋（共有プール）から、このウォッチに配信すべきものを通知する。
-     *
-     * 条件: keyword が keywords 集合に完全一致 ＆ first_seen_at >= watch.created_at
-     *       ＆ そのユーザー(watch)に未配信(alpha_keyword_seen_ja で重複排除)。
-     * これにより、ウォッチ登録より前から存在した部屋が初回に大量配信されるのを防ぐ。
-     *
-     * @param array{id:int,user_id:string,keyword:string,category:?int,created_at:string} $w
-     */
-    private function deliverUnregisteredHits(array $w): int
-    {
-        $rooms = $this->repo->getDeliverableSeenRooms($w['keyword'], $w['created_at']);
-        if (empty($rooms)) {
-            return 0;
-        }
-
-        $seen = $this->repo->getSeenEmids($w['id']);
-
-        $count = 0;
-        foreach ($rooms as $room) {
-            $emid = $room['emid'];
-            if ($emid === '' || isset($seen[$emid])) {
-                continue; // 既に配信済み
-            }
-
-            $payload = [
-                'keyword' => $w['keyword'],
-                'category' => $w['category'],
-                'emid' => $emid,
-                'openChatId' => null, // 未登録
-                'name' => $room['name'],
-                'desc' => '',
-                'img' => '', // square の obsハッシュは保持していないので空（フロントは name 主体で表示）
-                'joinMethodType' => 0,
-                'isRegistered' => false,
-                'member' => $room['member'],
-                'detectedAt' => strtotime($room['first_seen_at']) ?: time(),
             ];
 
             $dedup = 'kw:' . $w['id'] . ':' . $emid;
