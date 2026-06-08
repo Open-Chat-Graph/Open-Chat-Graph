@@ -20,4 +20,13 @@ interface StatisticsOhlcRepositoryInterface
      * @return array{ date: string, open_member: int, high_member: int, low_member: int, close_member: int }[]
      */
     public function getOhlcDateAsc(int $open_chat_id): array;
+
+    /**
+     * メンバー数OHLCの件数を全期間・指定日以降（週/月ウィンドウ）でまとめて取得する。
+     *
+     * @param string $weekStartDate `Y-m-d` 週ウィンドウの開始日
+     * @param string $monthStartDate `Y-m-d` 月ウィンドウの開始日
+     * @return array{ all_count: int, week_count: int, month_count: int }
+     */
+    public function getOhlcCounts(int $open_chat_id, string $weekStartDate, string $monthStartDate): array;
 }

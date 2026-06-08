@@ -6,7 +6,7 @@ import {
   limitAtom,
   loadingAtom,
   rankingRisingAtom,
-  renderPositionBtnsAtom,
+  updateCandleTabVisibility,
   updateTabVisibility,
 } from '../state/chartState'
 import fetcher from './fetcher'
@@ -106,8 +106,6 @@ export function renderChartWithoutRanking() {
 
 export async function fetchChart(animation: boolean) {
   if (graphStore.get(chartModeAtom) === 'candlestick') {
-    graphStore.set(renderPositionBtnsAtom, true)
-
     // メンバーOHLCをAPI経由で取得
     graphStore.set(loadingAtom, true)
     const memberOhlcData = await fetcher<MemberOhlc[]>(
@@ -115,8 +113,8 @@ export async function fetchChart(animation: boolean) {
     )
     chart.memberOhlcApiData = memberOhlcData
 
-    // OHLCデータ数に基づいてタブ表示を更新
-    updateTabVisibility(memberOhlcData.length)
+    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新
+    updateCandleTabVisibility(memberOhlcData)
     const currentLimit = graphStore.get(limitAtom)
     const limit: ChartLimit = currentLimit === 25 ? 31 : currentLimit
 
@@ -164,8 +162,6 @@ export async function fetchChart(animation: boolean) {
 
   // メンバーグラフのみの場合
   if (ranking === 'none') {
-    graphStore.set(renderPositionBtnsAtom, true)
-
     if (chart.getIsHour()) {
       graphStore.set(loadingAtom, true)
       await fetcher<RankingPositionChart>(
@@ -185,7 +181,6 @@ export async function fetchChart(animation: boolean) {
   await fetcher<RankingPositionChart>(
     `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery(param, chart.getIsHour())}`
   ).then((data) => {
-    graphStore.set(renderPositionBtnsAtom, true)
     renderChart(param, animation, limit)(data)
   })
 }

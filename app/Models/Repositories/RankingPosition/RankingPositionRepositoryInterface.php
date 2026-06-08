@@ -29,4 +29,20 @@ interface RankingPositionRepositoryInterface
      * @return string|false Y-m-d
      */
     public function getLastDate(): string|false;
+
+    /**
+     * ランキング種別(ranking/rising)×カテゴリ(in/all)毎の掲載日数を
+     * 全期間・指定日以降（週/月ウィンドウ）でまとめて取得する。
+     *
+     * @param int $inCategory カテゴリ内判定に使うカテゴリID（カテゴリ無しの部屋は -1 等の不一致値を渡す）
+     * @param string $weekStartDate `Y-m-d` 週ウィンドウの開始日
+     * @param string $monthStartDate `Y-m-d` 月ウィンドウの開始日
+     * @return array<'ranking_in'|'ranking_all'|'rising_in'|'rising_all', array{ week: int, month: int, all: int }>
+     */
+    public function getPositionCountsByPeriod(
+        int $open_chat_id,
+        int $inCategory,
+        string $weekStartDate,
+        string $monthStartDate
+    ): array;
 }

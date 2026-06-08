@@ -17,6 +17,7 @@ export const chartModeAtom = atom<ChartMode>('line')
 export const renderTabAtom = atom(false)
 export const renderPositionBtnsAtom = atom(false)
 export const toggleDisplay24hAtom = atom(true)
+export const toggleDisplayWeekAtom = atom(true)
 export const toggleDisplayMonthAtom = atom(true)
 export const toggleDisplayAllAtom = atom(true)
 
@@ -68,8 +69,8 @@ export function setChartStatesFromUrlParams() {
     }
   }
 
-  // ローソク足モードの復元（OHLCデータが存在する場合のみ、24時間モードでない場合）
-  if (params.chart === 'candlestick' && hasOhlcData() && graphStore.get(limitAtom) !== 25) {
+  // ローソク足モードの復元（表示中の期間タブにOHLCデータが存在する場合のみ）
+  if (params.chart === 'candlestick' && hasOhlcDataForLimit(graphStore.get(limitAtom))) {
     graphStore.set(chartModeAtom, 'candlestick')
     chart.setMode('candlestick')
   }
@@ -121,26 +122,101 @@ export function initDisplay() {
   // データ数に基づいてタブ表示を設定
   updateTabVisibility(statsDto.date.length)
 
-  // ランキング未掲載の場合
-  if (chatArgDto.categoryKey === null) {
-    graphStore.set(renderPositionBtnsAtom, false)
+  // 最新24時間タブ: 毎時メンバー数データが無い場合は非表示（DTOのデータ有無で判定）
+  if (!statsDto.hourAvailability) {
     chart.setIsHour(false)
     graphStore.set(toggleDisplay24hAtom, false)
-
-    graphStore.set(categoryAtom, 'in')
-    graphStore.set(rankingRisingAtom, 'none')
     graphStore.get(limitAtom) === 25 && graphStore.set(limitAtom, 8)
-
-    return false
   }
 
+  // ランキング順位データが全期間・全組み合わせで0件の場合は「ランキングの順位を表示」を丸ごと非表示
+  if (!hasAnyPositionData()) {
+    graphStore.set(renderPositionBtnsAtom, false)
+    graphStore.set(categoryAtom, 'in')
+    graphStore.set(rankingRisingAtom, 'none')
+
+    // 24時間タブ表示中のみAPI取得が必要
+    return chart.getIsHour()
+  }
+
+  graphStore.set(renderPositionBtnsAtom, true)
+  sanitizePositionSelection()
+
   return true
+}
+
+const emptyPositionAvailability: PositionAvailability = {
+  ranking_in: false,
+  ranking_all: false,
+  rising_in: false,
+  rising_all: false,
+}
+
+/** 指定の期間タブの順位データ有無を取得する */
+export function getPositionAvailabilityForLimit(limit: ChartLimit | 25): PositionAvailability {
+  const availability = statsDto.positionAvailability
+  if (!availability) return emptyPositionAvailability
+
+  switch (limit) {
+    case 25:
+      return availability.hour ?? emptyPositionAvailability
+    case 8:
+      return availability.week ?? emptyPositionAvailability
+    case 31:
+      return availability.month ?? emptyPositionAvailability
+    case 0:
+      return availability.all ?? emptyPositionAvailability
+  }
+}
+
+/** いずれかの期間・組み合わせで順位データが存在するか */
+export function hasAnyPositionData(): boolean {
+  const availability = statsDto.positionAvailability
+  if (!availability) return false
+
+  return Object.values(availability).some(
+    (p) => p && (p.ranking_in || p.ranking_all || p.rising_in || p.rising_all)
+  )
+}
+
+/**
+ * 現在の期間タブで選択中の順位表示(種別×カテゴリ)にデータが無い場合、
+ * データのある組み合わせへフォールバックする
+ *
+ * @returns 選択を変更した場合 true
+ */
+function sanitizePositionSelection(): boolean {
+  const sort = graphStore.get(rankingRisingAtom)
+  if (sort === 'none') return false
+
+  const avail = getPositionAvailabilityForLimit(graphStore.get(limitAtom))
+
+  // 種別自体にデータが無い場合は順位表示を解除する
+  if (!avail[`${sort}_in`] && !avail[`${sort}_all`]) {
+    graphStore.set(rankingRisingAtom, 'none')
+    return true
+  }
+
+  // 選択中のカテゴリにデータが無い場合はもう一方へ切り替える
+  const categoryKey = graphStore.get(categoryAtom) === 'all' ? 'all' : 'in'
+  if (!avail[`${sort}_${categoryKey}`]) {
+    graphStore.set(categoryAtom, categoryKey === 'all' ? 'in' : 'all')
+    return true
+  }
+
+  return false
 }
 
 export function handleChangeLimit(limit: ChartLimit | 25) {
   graphStore.set(limitAtom, limit)
 
-  if (graphStore.get(chartModeAtom) === 'candlestick' && limit === 25) {
+  // 移動先の期間タブでデータが無い順位表示(種別×カテゴリ)を解除する
+  const selectionChanged = sanitizePositionSelection()
+
+  // 移動先の期間タブにOHLCデータが無い場合は折れ線グラフに戻す
+  const fallbackToLine =
+    graphStore.get(chartModeAtom) === 'candlestick' && !hasOhlcDataForLimit(limit)
+  if (fallbackToLine) {
     graphStore.set(chartModeAtom, 'line')
     chart.setMode('line')
   }
@@ -150,6 +226,9 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
     fetchChart(true)
   } else if (chart.getIsHour()) {
     chart.setIsHour(false)
+    fetchChart(true)
+  } else if (fallbackToLine || selectionChanged) {
+    // モードまたは順位表示の選択が変わるため、表示中のデータのままでは再描画できない
     fetchChart(true)
   } else {
     chart.update(limit)
@@ -167,6 +246,16 @@ export function handleChangeCategory(alignment: urlParamsValue<'category'> | nul
 
 export function handleChangeRankingRising(alignment: ToggleChart) {
   graphStore.set(rankingRisingAtom, alignment)
+
+  // 選択した種別で現在のカテゴリにデータが無い場合、データのあるカテゴリへ切り替える
+  if (alignment !== 'none') {
+    const avail = getPositionAvailabilityForLimit(graphStore.get(limitAtom))
+    const categoryKey = graphStore.get(categoryAtom) === 'all' ? 'all' : 'in'
+    if (!avail[`${alignment}_${categoryKey}`]) {
+      graphStore.set(categoryAtom, categoryKey === 'all' ? 'in' : 'all')
+    }
+  }
+
   fetchChart(false)
   setUrlParamsFromChartStates()
 }
@@ -177,20 +266,79 @@ export function handleChangeEnableZoom(value: boolean) {
 }
 
 export function hasOhlcData(): boolean {
-  return statsDto.date.length > 1
+  return statsDto.ohlcAvailability?.all ?? false
+}
+
+/** 指定の期間タブにローソク足(OHLC)データが存在するか（24時間タブは常にfalse） */
+export function hasOhlcDataForLimit(limit: ChartLimit | 25): boolean {
+  const availability = statsDto.ohlcAvailability
+  if (!availability) return false
+
+  switch (limit) {
+    case 8:
+      return availability.week
+    case 31:
+      return availability.month
+    case 0:
+      return availability.all
+    default:
+      return false
+  }
 }
 
 export function updateTabVisibility(dataLength: number) {
+  graphStore.set(toggleDisplayWeekAtom, true)
   graphStore.set(toggleDisplayMonthAtom, dataLength > 8)
   graphStore.set(toggleDisplayAllAtom, dataLength > 31)
+  fallbackHiddenLimit()
+}
 
-  // 非表示になったタブが選択中の場合、表示中のタブにフォールバック
-  if (graphStore.get(limitAtom) === 0 && !graphStore.get(toggleDisplayAllAtom)) {
-    graphStore.set(limitAtom, graphStore.get(toggleDisplayMonthAtom) ? 31 : 8)
+/**
+ * ローソク足モード: 期間タブ毎のウィンドウ内ローソク足本数に基づいてタブ表示を設定する
+ *
+ * - ローソク足を利用できない期間（折れ線モードで切替ボタンがグレーアウトになる期間）の
+ *   タブは非表示にする
+ * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
+ *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
+ */
+export function updateCandleTabVisibility(ohlcData: MemberOhlc[]) {
+  const dates = statsDto.date
+  const ohlcDateSet = new Set(ohlcData.map((r) => r.date))
+  const countInWindow = (limit: number) => {
+    let count = 0
+    for (let i = limit ? Math.max(0, dates.length - limit) : 0; i < dates.length; i++) {
+      if (ohlcDateSet.has(dates[i])) count++
+    }
+    return count
   }
-  if (graphStore.get(limitAtom) === 31 && !graphStore.get(toggleDisplayMonthAtom)) {
-    graphStore.set(limitAtom, 8)
+
+  const weekCount = countInWindow(8)
+  const monthCount = countInWindow(31)
+  const allCount = countInWindow(0)
+
+  const showWeek = hasOhlcDataForLimit(8)
+  const showMonth = hasOhlcDataForLimit(31) && monthCount > (showWeek ? weekCount : 0)
+  const showAll = allCount > (showMonth ? monthCount : showWeek ? weekCount : 0)
+
+  graphStore.set(toggleDisplayWeekAtom, showWeek)
+  graphStore.set(toggleDisplayMonthAtom, showMonth)
+  graphStore.set(toggleDisplayAllAtom, showAll)
+  fallbackHiddenLimit()
+}
+
+/** 非表示になったタブが選択中の場合、表示中のタブにフォールバックする */
+function fallbackHiddenLimit() {
+  const display: Record<ChartLimit, boolean> = {
+    8: graphStore.get(toggleDisplayWeekAtom),
+    31: graphStore.get(toggleDisplayMonthAtom),
+    0: graphStore.get(toggleDisplayAllAtom),
   }
+
+  const limit = graphStore.get(limitAtom)
+  if (limit === 25 || display[limit]) return
+
+  const fallback = ([31, 8, 0] as ChartLimit[]).find((l) => l !== limit && display[l])
+  fallback !== undefined && graphStore.set(limitAtom, fallback)
 }
 
 export function handleChangeChartMode(mode: ChartMode) {

@@ -7,10 +7,12 @@ import {
   handleChangeChartMode,
   handleChangeLimit,
   hasOhlcData,
+  hasOhlcDataForLimit,
   limitAtom,
   toggleDisplay24hAtom,
   toggleDisplayAllAtom,
   toggleDisplayMonthAtom,
+  toggleDisplayWeekAtom,
 } from '../state/chartState'
 import { t } from '../util/translation'
 
@@ -19,8 +21,8 @@ function CandlestickToggle() {
   const limit = useAtomValue(limitAtom)
   if (!hasOhlcData()) return null
   const isCandlestick = chartMode === 'candlestick'
-  const isHourMode = limit === 25
-  const disabled = isHourMode && !isCandlestick
+  // 表示中の期間タブにOHLCデータが無い場合はグレーアウト（24時間タブも常に該当）
+  const disabled = !isCandlestick && !hasOhlcDataForLimit(limit)
 
   const handleToggle = () => {
     if (disabled) return
@@ -50,6 +52,7 @@ export default function ChartLimitBtns() {
   const limit = useAtomValue(limitAtom)
   const chartMode = useAtomValue(chartModeAtom)
   const display24h = useAtomValue(toggleDisplay24hAtom)
+  const displayWeek = useAtomValue(toggleDisplayWeekAtom)
   const displayMonth = useAtomValue(toggleDisplayMonthAtom)
   const displayAll = useAtomValue(toggleDisplayAllAtom)
 
@@ -67,7 +70,7 @@ export default function ChartLimitBtns() {
           {display24h && chartMode !== 'candlestick' && (
             <Tab value={25} label={t('最新24時間')} />
           )}
-          <Tab value={8} label={t('1週間')} />
+          {displayWeek && <Tab value={8} label={t('1週間')} />}
           {displayMonth && <Tab value={31} label={t('1ヶ月')} />}
           {displayAll && <Tab value={0} label={t('全期間')} />}
         </Tabs>
