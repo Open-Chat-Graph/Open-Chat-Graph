@@ -255,6 +255,8 @@ CREATE TABLE `alpha_room_snapshot_ja` (
 
 -- Web Push 購読（α: ペイロード無し tickle 送信用）
 -- endpoint は長い（FCM等で~400字）ため UNIQUE は SHA-256 ハッシュ列に張る
+-- frozen=1 は一過性障害による凍結（送信対象外・行は残す）。404/410 は即削除。
+-- first_fail_at: 最初の送信失敗日時（3日連続失敗で凍結判定に使う）。
 DROP TABLE IF EXISTS `alpha_push_subscription_ja`;
 CREATE TABLE `alpha_push_subscription_ja` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -266,9 +268,12 @@ CREATE TABLE `alpha_push_subscription_ja` (
   `fail_count` tinyint(4) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `last_sent_at` datetime DEFAULT NULL,
+  `frozen` tinyint(1) NOT NULL DEFAULT 0,
+  `first_fail_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_endpoint_hash` (`endpoint_hash`),
-  KEY `user_id` (`user_id`)
+  KEY `user_id` (`user_id`),
+  KEY `frozen_first_fail` (`frozen`, `first_fail_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ============================================================

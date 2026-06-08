@@ -13,17 +13,16 @@ use App\Models\UserLogRepositories\UserLogDB;
  * 毎時バッチが新規通知のあったユーザーの購読へ空POST（VAPID付き）を送る。
  *
  * - endpoint は長い（FCM等で~400字）ため UNIQUE は SHA-256 ハッシュ列（endpoint_hash）。
- * - 同一 endpoint の再購読は upsert（user_id / 鍵を更新し fail_count をリセット）。
- * - 送信失敗が累積（fail_count >= 5）した購読は削除する。404/410 は即削除。
+ * - 同一 endpoint の再購読は upsert（user_id / 鍵を更新し fail_count・凍結をリセット）。
+ * - 404/410（購読が Gone）は即削除。一過性失敗（5xx/429/タイムアウト等）は fail_count を
+ *   加算し first_fail_at を記録するのみ（削除しない）。3日連続失敗で frozen=1 に凍結する
+ *   （freezeStaleSubscriptions で一括更新）。凍結中は送信対象外。成功・再購読で解凍。
  *
  * 接続規約: αテーブル（alpha_xxx_ja）は userlog DB（UserLogDB）。ja のみ稼働。
  */
 class AlphaPushRepository
 {
-    /** 連続失敗がこの回数に達した購読は無効とみなし削除する */
-    public const MAX_FAIL_COUNT = 5;
-
-    /** 同一 endpoint は1行に upsert（user_id・鍵更新、fail_count リセット）。 */
+    /** 同一 endpoint は1行に upsert（user_id・鍵更新、fail_count・凍結リセット）。 */
     public function upsertSubscription(string $userId, string $endpoint, string $p256dh, string $auth): void
     {
         UserLogDB::execute(
@@ -34,7 +33,9 @@ class AlphaPushRepository
                 endpoint = VALUES(endpoint),
                 p256dh = VALUES(p256dh),
                 auth = VALUES(auth),
-                fail_count = 0",
+                fail_count = 0,
+                frozen = 0,
+                first_fail_at = NULL",
             [
                 'uid' => $userId,
                 'ep' => $endpoint,
@@ -62,7 +63,7 @@ class AlphaPushRepository
     }
 
     /**
-     * 対象ユーザー群の全購読を取得（送信バッチ用）。
+     * 対象ユーザー群の全購読を取得（送信バッチ用）。凍結中（frozen=1）は除外。
      *
      * @param string[] $userIds
      * @return array<int, array{id:int, user_id:string, endpoint:string, p256dh:string, auth:string, fail_count:int}>
@@ -79,7 +80,7 @@ class AlphaPushRepository
         $placeholders = implode(',', array_fill(0, count($userIds), '?'));
         $rows = UserLogDB::fetchAll(
             "SELECT id, user_id, endpoint, p256dh, auth, fail_count
-             FROM alpha_push_subscription_ja WHERE user_id IN ({$placeholders})",
+             FROM alpha_push_subscription_ja WHERE user_id IN ({$placeholders}) AND frozen = 0",
             $userIds
         );
         return array_map(static fn($r) => [
@@ -92,36 +93,47 @@ class AlphaPushRepository
         ], $rows);
     }
 
-    /** 送信成功: last_sent_at を更新し fail_count をリセット。 */
+    /** 送信成功: last_sent_at を更新し fail_count・凍結をリセット。 */
     public function markSent(int $id): void
     {
         UserLogDB::execute(
             "UPDATE alpha_push_subscription_ja
-             SET last_sent_at = current_timestamp(), fail_count = 0
+             SET last_sent_at = current_timestamp(), fail_count = 0, frozen = 0, first_fail_at = NULL
              WHERE id = :id",
             ['id' => $id]
         );
     }
 
     /**
-     * 送信失敗: fail_count を加算し、MAX_FAIL_COUNT に達したら購読を削除する。
-     *
-     * @return bool 削除した場合 true
+     * 送信失敗（一過性）: fail_count を加算し、first_fail_at が NULL のときのみ現在時刻を記録する。
+     * 購読は削除しない。3日後に freezeStaleSubscriptions() で凍結する。
      */
-    public function incrementFail(int $id): bool
+    public function incrementFail(int $id): void
     {
         UserLogDB::execute(
-            "UPDATE alpha_push_subscription_ja SET fail_count = fail_count + 1 WHERE id = :id",
+            "UPDATE alpha_push_subscription_ja
+             SET fail_count = fail_count + 1,
+                 first_fail_at = COALESCE(first_fail_at, current_timestamp())
+             WHERE id = :id",
             ['id' => $id]
         );
-        $row = UserLogDB::fetch(
-            "SELECT fail_count FROM alpha_push_subscription_ja WHERE id = :id",
-            ['id' => $id]
+    }
+
+    /**
+     * 3日以上連続失敗している購読を凍結する（frozen=1）。
+     * 毎時バッチから呼び出す想定（Phase 2 で配線予定）。
+     *
+     * @return int 凍結した行数
+     */
+    public function freezeStaleSubscriptions(): int
+    {
+        $stmt = UserLogDB::execute(
+            "UPDATE alpha_push_subscription_ja
+             SET frozen = 1
+             WHERE frozen = 0
+               AND first_fail_at IS NOT NULL
+               AND first_fail_at < (current_timestamp() - INTERVAL 3 DAY)"
         );
-        if ($row && (int)$row['fail_count'] >= self::MAX_FAIL_COUNT) {
-            $this->deleteById($id);
-            return true;
-        }
-        return false;
+        return $stmt->rowCount();
     }
 }

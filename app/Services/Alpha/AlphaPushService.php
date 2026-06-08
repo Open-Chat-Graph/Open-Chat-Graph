@@ -17,7 +17,8 @@ use App\Models\ApiRepositories\Alpha\AlphaPushRepository;
  * - 外部ライブラリ不使用（openssl / curl のみ）。
  * - openssl_sign は DER 形式の ECDSA 署名を返すので、JOSE 用に raw r||s 64byte へ変換する。
  * - JWT は audience（endpoint の scheme://host）ごとに1実行内でキャッシュして再利用。
- * - 404/410（購読失効）は購読を即削除。その他の失敗は fail_count++（5回で削除）。
+ * - 404/410（購読失効）は購読を即削除。その他の失敗は fail_count++ のみ（削除しない）。
+ *   3日連続失敗で frozen=1 に凍結（freezeStaleSubscriptions で一括更新・Phase 2 配線予定）。
  */
 class AlphaPushService
 {
@@ -59,11 +60,9 @@ class AlphaPushService
                 $this->repo->deleteById($sub['id']);
                 $result['removed']++;
             } else {
-                if ($this->repo->incrementFail($sub['id'])) {
-                    $result['removed']++;
-                } else {
-                    $result['failed']++;
-                }
+                // 一過性失敗（5xx/429/タイムアウト/鍵エラー等）→ カウント加算のみ（削除しない）
+                $this->repo->incrementFail($sub['id']);
+                $result['failed']++;
             }
         }
 
@@ -74,7 +73,7 @@ class AlphaPushService
      * 1購読へ tickle（VAPID付き空POST）を送る。
      *
      * @param array{id:int, endpoint:string} $subscription
-     * @return bool 2xx で送信できたら true（404/410 は購読削除、その他は fail_count++）
+     * @return bool 2xx で送信できたら true（404/410 は購読削除、その他は fail_count++ のみ）
      */
     public function sendTickle(array $subscription): bool
     {
