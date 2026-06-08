@@ -48,7 +48,12 @@ class AlphaGraphEmbedService
 
         $chartArgDto = $this->chartArgDtoFactory->create($oc, $categoryName);
 
-        $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray($open_chat_id);
+        // category を渡す（OpenChatPageController と同じ）。渡さないと positionAvailability の
+        // カテゴリー内データ(ranking_in/rising_in)が常に false になり「カテゴリー内」トグルが常時グレーになる。
+        $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray(
+            $open_chat_id,
+            isset($oc['category']) ? (int)$oc['category'] : null
+        );
 
         $scriptPath = getFilePath('js/oc-app', 'graph-*.js');
 
