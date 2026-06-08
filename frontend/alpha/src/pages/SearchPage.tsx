@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, TrendingUp } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FolderSelectDialog } from '@/components/ui/folder-select-dialog'
 import { OpenChatCard } from '@/components/OpenChat'
@@ -46,7 +46,7 @@ const SearchPage = memo(() => {
   const [folderSelectOpen, setFolderSelectOpen] = useState(false)
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
   // 検索バー再実行シグナル（同じキーワードでも SWR キーを変えて再フェッチ）
-  const { searchNonce, bumpReset } = useLayout()
+  const { searchNonce } = useLayout()
 
   // SWR Infinite のキー（sort, order, category, searchNonce を含めて再実行に対応）
   const getKey = useCallback(
@@ -142,16 +142,6 @@ const SearchPage = memo(() => {
     setSelectedChatId(null)
   }, [selectedChatId, myListData])
 
-  // 検索→期間分析の橋渡し。今のキーワード（＋カテゴリ）を引き継いで期間の伸びで並べ直す。
-  // 画面表示状態カーネルの reset 契約で period-growth パネルを再マウント＋トップへ
-  // （前回の結果・スクロール位置を持ち越さない）。
-  const handleViewPeriodGrowth = useCallback(() => {
-    const params = new URLSearchParams()
-    params.set('q', urlKeyword)
-    if (category) params.set('category', String(category))
-    bumpReset('period-growth')
-    navigate(`/period-growth?${params.toString()}`)
-  }, [navigate, urlKeyword, category, bumpReset])
 
   return (
     <div className="space-y-6">
@@ -199,25 +189,6 @@ const SearchPage = memo(() => {
               <WatchKeywordButton keyword={urlKeyword} category={category} />
             </span>
           </div>
-
-          {/* 検索→期間分析の橋渡し。ソートの1時間/24時間/1週間より長い任意の期間で、
-              かつ期間の始点から在る部屋だけに絞る、という点が検索ソートとの違い。 */}
-          <button
-            type="button"
-            onClick={handleViewPeriodGrowth}
-            className="flex w-full items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent"
-            data-testid="search-to-period-growth"
-          >
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <TrendingUp className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">指定期間の増減ランキングで見る</span>
-              <span className="block text-xs text-muted-foreground">
-                1週間より長い任意の期間で、期間の始点から続く部屋だけを増減順に
-              </span>
-            </span>
-          </button>
 
           {/* ソート済みリストは1カラム（2カラムは視線がZ字に折り返し上から順の比較ができない）。
               広いシェルでは1行が長くなりすぎないよう読みやすい幅にキャップして中央寄せ。 */}

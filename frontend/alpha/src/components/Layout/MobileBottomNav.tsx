@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Search, List, Bell, Settings, LineChart } from 'lucide-react'
+import { Search, List, Bell, Settings, FlaskConical } from 'lucide-react'
 import { useViewNavigation } from '@/hooks/useViewNavigation'
 import type { ViewKey } from '@/lib/viewNavigation'
 import { useAlerts } from '@/hooks/useAlerts'
@@ -14,9 +14,9 @@ export function MobileBottomNav() {
     return [
       { path: '/', view: 'search' as ViewKey, icon: Search, label: '検索' },
       { path: '/mylist', view: 'mylist' as ViewKey, icon: List, label: 'マイリスト' },
-      { path: '/analysis', view: 'analysis' as ViewKey, icon: LineChart, label: '分析' },
       { path: '/notifications', view: 'notifications' as ViewKey, icon: Bell, label: '通知', badge: unreadCount },
       { path: '/settings', view: 'settings' as ViewKey, icon: Settings, label: '設定' },
+      { path: '/analysis', view: 'analysis' as ViewKey, icon: FlaskConical, label: 'Labs' },
     ]
   }, [unreadCount])
 
