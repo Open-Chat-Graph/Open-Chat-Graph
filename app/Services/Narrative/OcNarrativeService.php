@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Narrative;
 
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
+use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
 /**
@@ -79,7 +80,26 @@ class OcNarrativeService
 
     public function __construct(
         private OcNarrativeRepositoryInterface $repository,
+        private FileStorageInterface $fileStorage,
     ) {
+    }
+
+    /**
+     * メトリクスの「現在の基準日」を毎時クロール基準時刻 ('Y-m-d') から解決する。
+     * cron 時刻ファイルが空 / 不正 / 取得不能なら null を返し、Repository 側は従来の
+     * date('now') (SQLite 実行時刻) フォールバックで動く。
+     */
+    private function resolveBaseDate(): ?string
+    {
+        try {
+            $cron = trim($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+            if ($cron === '') {
+                return null;
+            }
+            return (new \DateTime($cron))->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -91,7 +111,7 @@ class OcNarrativeService
     public function generate(int $openchatId, array $oc, ?string $categoryLabel = null): ?array
     {
         try {
-            $metrics = $this->repository->getMemberMetrics($openchatId);
+            $metrics = $this->repository->getMemberMetrics($openchatId, $this->resolveBaseDate());
 
             // 最低条件: 現在値が取れること
             if (($metrics['curr'] ?? null) === null || (int)($metrics['sample_n'] ?? 0) <= 0) {

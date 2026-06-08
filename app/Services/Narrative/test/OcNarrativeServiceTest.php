@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
+use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
 
 class OcNarrativeServiceTest extends TestCase
@@ -82,7 +83,19 @@ class OcNarrativeServiceTest extends TestCase
         $repo->method('getPositionMovement')->willReturn($position ?? $this->emptyPositionMovement());
         $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
         $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
-        return new OcNarrativeService($repo);
+        return new OcNarrativeService($repo, $this->fileStorageMock());
+    }
+
+    /**
+     * cron 基準日解決用の FileStorage mock。空文字を返し baseDate=null
+     * (従来の date('now') フォールバック) で動かす。メトリクスは mock 固定なので
+     * baseDate の値はテスト結果に影響しない。
+     */
+    private function fileStorageMock(): FileStorageInterface
+    {
+        $fs = $this->createMock(FileStorageInterface::class);
+        $fs->method('getContents')->willReturn('');
+        return $fs;
     }
 
     // ============================================
@@ -374,7 +387,7 @@ class OcNarrativeServiceTest extends TestCase
     {
         $repo = $this->createMock(OcNarrativeRepositoryInterface::class);
         $repo->method('getMemberMetrics')->willThrowException(new \RuntimeException('DB unavailable'));
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
         $this->assertNull($service->generate(1, $this->buildOc()));
     }
 
@@ -386,7 +399,7 @@ class OcNarrativeServiceTest extends TestCase
         $repo->method('getPositionMovement')->willThrowException(new \RuntimeException('ranking DB error'));
         $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
         $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
 
         // 順位取得が落ちてもメンバー数推移ベースの narrative は返る
         $result = $service->generate(1, $this->buildOc());
@@ -596,7 +609,7 @@ class OcNarrativeServiceTest extends TestCase
         ]);
         $repo->method('getAveragePosition')->willReturn(['avg_position' => null, 'sample_n' => 0]);
         $repo->method('getGrowthRankingPositions')->willReturn(['hour' => null, 'day' => null, 'week' => null]);
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
 
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
         $this->assertNotNull($result);
@@ -615,7 +628,7 @@ class OcNarrativeServiceTest extends TestCase
             }
             return ['avg_position' => null, 'sample_n' => 0];
         });
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
@@ -634,7 +647,7 @@ class OcNarrativeServiceTest extends TestCase
             }
             return ['avg_position' => null, 'sample_n' => 0];
         });
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
@@ -658,7 +671,7 @@ class OcNarrativeServiceTest extends TestCase
             }
             return ['avg_position' => null, 'sample_n' => 0];
         });
-        $service = new OcNarrativeService($repo);
+        $service = new OcNarrativeService($repo, $this->fileStorageMock());
         $result = $service->generate(1, $this->buildOc(['category' => 5]));
 
         $this->assertNotNull($result);
