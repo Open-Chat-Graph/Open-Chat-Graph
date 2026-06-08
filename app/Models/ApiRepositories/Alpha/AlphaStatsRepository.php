@@ -20,7 +20,7 @@ class AlphaStatsRepository
     public function __construct(
         private FileStorageInterface $fileStorage,
     ) {
-        $this->queryBuilder = new AlphaQueryBuilder();
+        $this->queryBuilder = new AlphaQueryBuilder($fileStorage);
     }
 
     /**
@@ -28,8 +28,15 @@ class AlphaStatsRepository
      */
     public function findById(int $id): ?array
     {
-        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents($this->fileStorage->getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
-            ->format('Y-m-d H:i:s');
+        try {
+            $raw = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+            $cronValue = ($raw !== '') ? (new \DateTime($raw))->format('Y-m-d H:i:s') : null;
+        } catch (\Exception) {
+            $cronValue = null;
+        }
+
+        $cronForRanking = $cronValue !== null ? "'{$cronValue}'" : 'NOW()';
+        $cronDatetime   = $cronValue !== null ? "'{$cronValue}'" : 'NOW()';
 
         $sql = "
             SELECT
@@ -44,7 +51,7 @@ class AlphaStatsRepository
                 oc.created_at,
                 oc.join_method_type,
                 oc.url,
-                @is_in_ranking := (SELECT COUNT(*) FROM ocgraph_ranking.member WHERE open_chat_id = oc.id AND time = '{$hourlyCronUpdatedAtDatetime}'),
+                @is_in_ranking := (SELECT COUNT(*) FROM ocgraph_ranking.member WHERE open_chat_id = oc.id AND time = {$cronForRanking}),
                 CASE
                     WHEN @is_in_ranking = 0 THEN NULL
                     WHEN h.diff_member IS NULL THEN 0
@@ -57,20 +64,20 @@ class AlphaStatsRepository
                 END AS hourly_percent_increase,
                 CASE
                     WHEN @is_in_ranking = 0 THEN NULL
-                    WHEN d.diff_member IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, NOW()) >= 24 THEN 0
+                    WHEN d.diff_member IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, {$cronDatetime}) >= 24 THEN 0
                     ELSE d.diff_member
                 END AS daily_diff_member,
                 CASE
                     WHEN @is_in_ranking = 0 THEN NULL
-                    WHEN d.percent_increase IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, NOW()) >= 24 THEN 0
+                    WHEN d.percent_increase IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, {$cronDatetime}) >= 24 THEN 0
                     ELSE d.percent_increase
                 END AS daily_percent_increase,
                 CASE
-                    WHEN w.diff_member IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, NOW()) >= 7 THEN 0
+                    WHEN w.diff_member IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, {$cronDatetime}) >= 7 THEN 0
                     ELSE w.diff_member
                 END AS weekly_diff_member,
                 CASE
-                    WHEN w.percent_increase IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, NOW()) >= 7 THEN 0
+                    WHEN w.percent_increase IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, {$cronDatetime}) >= 7 THEN 0
                     ELSE w.percent_increase
                 END AS weekly_percent_increase,
                 CASE

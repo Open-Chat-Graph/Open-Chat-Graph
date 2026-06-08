@@ -6,6 +6,7 @@ namespace App\Models\ApiRepositories\Alpha;
 
 use App\Models\ApiRepositories\OpenChatApiArgs;
 use App\Models\Repositories\DB;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * Alpha検索・マイリスト統合リポジトリ
@@ -15,9 +16,10 @@ class AlphaOpenChatRepository
 {
     private AlphaQueryBuilder $queryBuilder;
 
-    public function __construct()
-    {
-        $this->queryBuilder = new AlphaQueryBuilder();
+    public function __construct(
+        FileStorageInterface $fileStorage,
+    ) {
+        $this->queryBuilder = new AlphaQueryBuilder($fileStorage);
     }
 
     /**

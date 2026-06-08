@@ -12,13 +12,36 @@ use App\Services\Storage\FileStorageInterface;
  */
 class AlphaQueryBuilder
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage,
+    ) {
+    }
+
+    /**
+     * hourlyCronUpdatedAtDatetime を "Y-m-d H:i:s" 形式で取得する。
+     * ファイルが空または不正な場合は null を返す（呼び出し側が NOW() にフォールバック）。
+     */
+    private function getCronDatetimeValue(): ?string
+    {
+        try {
+            $raw = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+            if ($raw === '') {
+                return null;
+            }
+            return (new \DateTime($raw))->format('Y-m-d H:i:s');
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
     /**
      * 全カラム（基本 + 統計）のSELECT句
      */
     private function getSelectClause(): string
     {
-        $hourlyCronUpdatedAtDatetime = (new \DateTime(file_get_contents(app(FileStorageInterface::class)->getStorageFilePath('hourlyCronUpdatedAtDatetime'))))
-            ->format('Y-m-d H:i:s');
+        $cronValue = $this->getCronDatetimeValue();
+        // @is_in_ranking 判定・TIMESTAMPDIFF 比較の両方に使う cron基準時刻（quoted literal または NOW()）
+        $cronDatetime = $cronValue !== null ? "'{$cronValue}'" : 'NOW()';
 
         return "
             oc.id,
@@ -31,7 +54,7 @@ class AlphaQueryBuilder
             oc.category,
             oc.created_at,
             oc.api_created_at,
-            @is_in_ranking := (SELECT COUNT(*) FROM ocgraph_ranking.member WHERE open_chat_id = oc.id AND time = '{$hourlyCronUpdatedAtDatetime}'),
+            @is_in_ranking := (SELECT COUNT(*) FROM ocgraph_ranking.member WHERE open_chat_id = oc.id AND time = {$cronDatetime}),
             CASE
                 WHEN @is_in_ranking = 0 THEN NULL
                 WHEN h.diff_member IS NULL THEN 0
@@ -44,20 +67,20 @@ class AlphaQueryBuilder
             END AS hourly_percent,
             CASE
                 WHEN @is_in_ranking = 0 THEN NULL
-                WHEN d.diff_member IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, NOW()) >= 24 THEN 0
+                WHEN d.diff_member IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, {$cronDatetime}) >= 24 THEN 0
                 ELSE d.diff_member
             END AS daily_diff,
             CASE
                 WHEN @is_in_ranking = 0 THEN NULL
-                WHEN d.percent_increase IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, NOW()) >= 24 THEN 0
+                WHEN d.percent_increase IS NULL AND TIMESTAMPDIFF(HOUR, oc.created_at, {$cronDatetime}) >= 24 THEN 0
                 ELSE d.percent_increase
             END AS daily_percent,
             CASE
-                WHEN w.diff_member IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, NOW()) >= 7 THEN 0
+                WHEN w.diff_member IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, {$cronDatetime}) >= 7 THEN 0
                 ELSE w.diff_member
             END AS weekly_diff,
             CASE
-                WHEN w.percent_increase IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, NOW()) >= 7 THEN 0
+                WHEN w.percent_increase IS NULL AND TIMESTAMPDIFF(DAY, oc.created_at, {$cronDatetime}) >= 7 THEN 0
                 ELSE w.percent_increase
             END AS weekly_percent,
             CASE
