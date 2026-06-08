@@ -100,9 +100,13 @@ export default defineConfig(({ mode }) => {
             }
           },
           {
-            // アプリ本体のJS/CSS/画像（/js/alpha/配下）
+            // アプリ本体のJS/CSS/画像（/js/alpha/配下）。
+            // index-[hash].js / index-[hash].css とハッシュ付きで URL=内容が不変なので
+            // CacheFirst で問題なく長期キャッシュできる（StaleWhileRevalidate のように
+            // 古い版を一旦掴んでから裏で更新…という挙動が不要になる）。
+            // 内容が変わればハッシュ＝URLが変わり別エントリとして取得される。
             urlPattern: /^.*\/js\/alpha\/.*/i,
-            handler: 'StaleWhileRevalidate',
+            handler: 'CacheFirst',
             options: {
               cacheName: 'alpha-assets',
               expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
@@ -139,10 +143,10 @@ export default defineConfig(({ mode }) => {
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        entryFileNames: 'index.js',
+        entryFileNames: 'index-[hash].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'index.css') return 'index.css'
+          if (assetInfo.name === 'index.css') return 'index-[hash].css'
           return 'assets/[name]-[hash][extname]'
         },
       },

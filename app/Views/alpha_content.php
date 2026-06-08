@@ -12,8 +12,10 @@
     <link rel="manifest" href="<?php echo fileUrl('js/alpha/manifest.webmanifest', urlRoot: '') ?>">
     <link rel="apple-touch-icon" href="<?php echo fileUrl('js/alpha/icons/icon-192x192.png', urlRoot: '') ?>">
 
-    <link rel="stylesheet" href="<?php echo fileUrl('js/alpha/index.css', urlRoot: '') ?>">
-    <script defer="defer" src="<?php echo fileUrl('js/alpha/index.js', urlRoot: '') ?>"></script>
+    <!-- ハッシュ付きバンドルを glob で解決（getFilePath は js/all-room-stats 等と同じ先例）。
+         URL にハッシュが入るため内容が変わるたび別URLになり、1リロードで新版を取得できる。 -->
+    <link rel="stylesheet" href="/<?php echo getFilePath('js/alpha', 'index-*.css') ?>">
+    <script defer="defer" src="/<?php echo getFilePath('js/alpha', 'index-*.js') ?>"></script>
 
     <!-- PWA: Service Worker を /alpha スコープで登録（sw.js は Service-Worker-Allowed: / 配信） -->
     <script>

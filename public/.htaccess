@@ -18,6 +18,18 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]
 
+# Service Worker 関連ファイルはキャッシュさせない（autoUpdate を確実に拾わせる）。
+# sw.js は basename でマッチするので /js/alpha/sw.js もここに該当する。
+# 下の mod_expires による 30日キャッシュより優先して no-cache を効かせる。
+<FilesMatch "^(sw\.js|registerSW\.js|push-sw\.js|workbox-.*\.js)$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </IfModule>
+  <IfModule mod_expires.c>
+    ExpiresActive Off
+  </IfModule>
+</FilesMatch>
+
 <IfModule mod_expires.c>
 ExpiresActive On
 ExpiresByType text/css "access plus 30 days"
