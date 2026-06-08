@@ -7,6 +7,7 @@ namespace App\Services\Alpha;
 use App\Models\ApiRepositories\Alpha\AlphaAlertRepository;
 use App\Models\ApiRepositories\Alpha\AlphaRoomSnapshotRepository;
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * ウォッチ部屋の「機微検知」サービス（AlphaAlertService::run() から毎時呼ばれる）。
@@ -64,7 +65,26 @@ class AlphaSignalDetectionService
         private AlphaAlertRepository $repo,
         private AlphaRoomSnapshotRepository $snapshotRepo,
         private OcNarrativeRepositoryInterface $narrativeRepository,
+        private FileStorageInterface $fileStorage,
     ) {
+    }
+
+    /**
+     * メトリクスの「現在の基準日」を毎時クロール基準時刻 ('Y-m-d') から解決する。
+     * cron 時刻ファイルが空 / 不正 / 取得不能なら null を返し、Repository 側は従来の
+     * date('now') (SQLite 実行時刻、UTC) フォールバックで動く。
+     */
+    private function resolveBaseDate(): ?string
+    {
+        try {
+            $cron = trim($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+            if ($cron === '') {
+                return null;
+            }
+            return (new \DateTime($cron))->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -384,9 +404,10 @@ class AlphaSignalDetectionService
     private function detectPaceAnomalies(array $watchersByOc, array $ocMap, string $date): int
     {
         $count = 0;
+        $baseDate = $this->resolveBaseDate();
         foreach ($watchersByOc as $ocId => $userIds) {
             try {
-                $m = $this->narrativeRepository->getMemberMetrics($ocId);
+                $m = $this->narrativeRepository->getMemberMetrics($ocId, $baseDate);
             } catch (\Throwable $e) {
                 continue; // データ不足は黙る（InsightsService と同じ安全策）
             }

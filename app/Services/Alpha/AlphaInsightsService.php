@@ -6,6 +6,7 @@ namespace App\Services\Alpha;
 
 use App\Models\ApiRepositories\Alpha\AlphaInsightsRepository;
 use App\Models\Repositories\OcNarrativeRepositoryInterface;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * α 個別ルーム詳細の「高次の考察」生成サービス。
@@ -74,7 +75,26 @@ class AlphaInsightsService
     public function __construct(
         private OcNarrativeRepositoryInterface $narrativeRepository,
         private AlphaInsightsRepository $insightsRepository,
+        private FileStorageInterface $fileStorage,
     ) {
+    }
+
+    /**
+     * メトリクスの「現在の基準日」を毎時クロール基準時刻 ('Y-m-d') から解決する。
+     * cron 時刻ファイルが空 / 不正 / 取得不能なら null を返し、Repository 側は従来の
+     * date('now') (SQLite 実行時刻、UTC) フォールバックで動く。
+     */
+    private function resolveBaseDate(): ?string
+    {
+        try {
+            $cron = trim($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+            if ($cron === '') {
+                return null;
+            }
+            return (new \DateTime($cron))->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -87,7 +107,7 @@ class AlphaInsightsService
         $insights = [];
 
         try {
-            $metrics = $this->narrativeRepository->getMemberMetrics($openChatId);
+            $metrics = $this->narrativeRepository->getMemberMetrics($openChatId, $this->resolveBaseDate());
         } catch (\Throwable $e) {
             $metrics = null;
         }
