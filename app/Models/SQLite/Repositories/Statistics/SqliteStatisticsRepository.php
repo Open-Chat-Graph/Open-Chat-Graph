@@ -139,8 +139,13 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
         return SQLiteStatistics::fetchColumn($query);
     }
 
-    public function getMemberMetricsForNarrative(int $open_chat_id): array
+    public function getMemberMetricsForNarrative(int $open_chat_id, ?string $baseDate = null): array
     {
+        // 「現在の基準日」。指定時は毎時クロール基準時刻 ('Y-m-d') を、null 時は SQLite 実行時刻
+        // (date('now')、UTC) を使う。後者は深夜帯の UTC 日付差で最新日とズレ、m7 等が誤った日に
+        // 丸まり diff7=0 になりうるため、呼び出し側から cron 基準日を渡せるようにした (後方互換)。
+        $base = $baseDate !== null ? ':base_date' : "'now'";
+
         // 直近 200 日を母集団に、期間値・ピーク・単日最大伸びを 1 クエリで集約。
         // 単日最大伸びは daily member の前日差分 (LAG) で算出 (OHLC の close-open ではなく)。
         $query =
@@ -149,15 +154,15 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
                        member - LAG(member) OVER (ORDER BY date ASC) AS day_diff
                   FROM statistics
                  WHERE open_chat_id = :open_chat_id
-                   AND date >= date('now', '-200 days')
+                   AND date >= date({$base}, '-200 days')
             )
             SELECT
                 (SELECT member FROM o ORDER BY date DESC LIMIT 1) AS curr,
                 (SELECT date   FROM o ORDER BY date DESC LIMIT 1) AS curr_date,
-                (SELECT member FROM o WHERE date <= date('now','-1 days')  ORDER BY date DESC LIMIT 1) AS m1,
-                (SELECT member FROM o WHERE date <= date('now','-7 days')  ORDER BY date DESC LIMIT 1) AS m7,
-                (SELECT member FROM o WHERE date <= date('now','-30 days') ORDER BY date DESC LIMIT 1) AS m30,
-                (SELECT member FROM o WHERE date <= date('now','-90 days') ORDER BY date DESC LIMIT 1) AS m90,
+                (SELECT member FROM o WHERE date <= date({$base},'-1 days')  ORDER BY date DESC LIMIT 1) AS m1,
+                (SELECT member FROM o WHERE date <= date({$base},'-7 days')  ORDER BY date DESC LIMIT 1) AS m7,
+                (SELECT member FROM o WHERE date <= date({$base},'-30 days') ORDER BY date DESC LIMIT 1) AS m30,
+                (SELECT member FROM o WHERE date <= date({$base},'-90 days') ORDER BY date DESC LIMIT 1) AS m90,
                 (SELECT COUNT(*)    FROM o) AS sample_n,
                 (SELECT MAX(member) FROM o) AS peak_high,
                 (SELECT date FROM o ORDER BY member DESC, date DESC LIMIT 1) AS peak_date,
@@ -168,8 +173,13 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
                 (SELECT MAX(member) FROM statistics WHERE open_chat_id = :open_chat_id) AS all_time_peak,
                 (SELECT date FROM statistics WHERE open_chat_id = :open_chat_id ORDER BY member DESC, date DESC LIMIT 1) AS all_time_peak_date";
 
+        $params = ['open_chat_id' => $open_chat_id];
+        if ($baseDate !== null) {
+            $params['base_date'] = $baseDate;
+        }
+
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
-        $row = SQLiteStatistics::fetch($query, compact('open_chat_id'));
+        $row = SQLiteStatistics::fetch($query, $params);
         SQLiteStatistics::$pdo = null;
 
         $empty = [
