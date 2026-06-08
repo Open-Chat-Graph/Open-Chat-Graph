@@ -27,9 +27,9 @@ class OcNarrativeRepository implements OcNarrativeRepositoryInterface
     ) {
     }
 
-    public function getMemberMetrics(int $openChatId): array
+    public function getMemberMetrics(int $openChatId, ?string $baseDate = null): array
     {
-        return $this->statisticsRepository->getMemberMetricsForNarrative($openChatId);
+        return $this->statisticsRepository->getMemberMetricsForNarrative($openChatId, $baseDate);
     }
 
     public function getPositionMovement(int $openChatId, int $category, int $days = 30): array
