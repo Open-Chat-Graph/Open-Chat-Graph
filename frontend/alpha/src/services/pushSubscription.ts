@@ -155,10 +155,15 @@ export async function unsubscribe(): Promise<void> {
 }
 
 /**
- * アプリ起動時の自己修復:
- * 「権限 granted かつ localStorage フラグあり かつ pushManager 購読が null」
- * のとき静かに再購読する。
- * 失敗しても例外を投げない（ユーザーへの通知不要）。
+ * アプリ起動時の購読リフレッシュ（凍結解除トリガー）:
+ * 「権限 granted かつ localStorage フラグあり」のとき、現在の購読を
+ * 毎回サーバーへ upsert（再 POST /push/subscribe）する。
+ *
+ * - SW 購読が null（解除された）なら subscribe() で作り直す。
+ * - SW 購読が存在していても、その購読をサーバーへ再登録する。
+ *   サーバーの subscribe は upsert で frozen/fail フラグをリセットするため、
+ *   凍結された購読がユーザーの再訪問で解凍される。
+ * - 失敗しても例外を投げない（ユーザーへの通知不要）。
  */
 export async function ensureSubscription(): Promise<void> {
   if (
@@ -175,11 +180,33 @@ export async function ensureSubscription(): Promise<void> {
     const reg = await getRegistration()
     if (!reg) return
     const existing = await reg.pushManager.getSubscription()
-    if (existing) return // すでに購読済み
+    if (!existing) {
+      // 購読が消えていれば作り直す（subscribe 内でサーバー登録まで行う）。
+      await subscribe()
+      return
+    }
 
-    // SW が準備できていれば再購読を試みる
-    await subscribe()
+    // 購読が存在していても、サーバーへ毎回 upsert して凍結を解除する。
+    await postSubscribe(existing)
+    localStorage.setItem(LS_KEY, '1')
   } catch {
     // 失敗は無視（VAPID 未設定やネットワーク切断など）
   }
+}
+
+/**
+ * キーワードのアラート追加など「通知が前提」の操作の直前に呼び、
+ * 有効なプッシュ購読を担保する。
+ *
+ * - すでに購読済み（pushManager に購読あり）なら何もせず成功扱い。
+ * - 未購読 or 未許可なら subscribe()（通知許可リクエスト＋購読登録）を実行する。
+ * - 失敗時（権限拒否・VAPID 未設定・ネットワーク等）は例外を投げる。
+ *   呼び出し側で分かりやすいメッセージを出すこと。
+ */
+export async function ensureSubscribedForAlert(): Promise<void> {
+  const status = await getPushStatus()
+  if (status === 'subscribed') return
+  // unsupported / denied / unsubscribed はいずれも subscribe() を試みる。
+  // subscribe() は対応状況・権限・VAPID を確認し、不可なら例外を投げる。
+  await subscribe()
 }

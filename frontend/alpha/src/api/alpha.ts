@@ -3,6 +3,19 @@ import { periodToParams, type PeriodValue } from '@/lib/period'
 
 const API_BASE = '/alpha-api'
 
+/**
+ * PUT /alerts/config の 422（業務エラー）を表す例外。
+ * `code` で KEYWORD_LIMIT / PUSH_REQUIRED を判別できる。
+ */
+export class AlertsConfigError extends Error {
+  readonly code: 'KEYWORD_LIMIT' | 'PUSH_REQUIRED'
+  constructor(code: 'KEYWORD_LIMIT' | 'PUSH_REQUIRED', message: string) {
+    super(message)
+    this.name = 'AlertsConfigError'
+    this.code = code
+  }
+}
+
 // batch-stats の API 側上限（51件以上を1回で送ると 400）。超える分は分割して並列フェッチする。
 const BATCH_STATS_CHUNK_SIZE = 50
 
@@ -172,7 +185,18 @@ export const alphaApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    if (!res.ok) throw new Error('Alerts config save failed')
+    if (!res.ok) {
+      // 422 は業務エラー（上限超過・通知許可必須）。code 付きで投げ直す。
+      if (res.status === 422) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: string; code?: string }
+          | null
+        if (body?.code === 'KEYWORD_LIMIT' || body?.code === 'PUSH_REQUIRED') {
+          throw new AlertsConfigError(body.code, body.error ?? 'Alerts config save failed')
+        }
+      }
+      throw new Error('Alerts config save failed')
+    }
 
     return res.json()
   },

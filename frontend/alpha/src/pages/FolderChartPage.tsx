@@ -161,7 +161,7 @@ const FolderChartPage = memo(() => {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[700px] p-3 md:p-6">
+      <div className="mx-auto max-w-[700px] p-4 md:p-6">
         {/* 空フォルダ */}
         {targetIds.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-center">
@@ -175,7 +175,7 @@ const FolderChartPage = memo(() => {
         ) : (
           <>
             {/* 期間プリセット ＋ 任意入力 */}
-            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <div className="mb-5 flex flex-wrap items-center gap-1.5">
               <span className="mr-1 text-xs text-muted-foreground">期間</span>
               {PERIOD_PRESETS.map((p) => (
                 <Button

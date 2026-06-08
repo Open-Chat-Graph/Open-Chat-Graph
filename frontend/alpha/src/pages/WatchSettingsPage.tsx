@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen, Search } from 'lucide-react'
+import { Trash2, Sparkles, ListChecks, Plus, Bell, FolderOpen, Search, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -18,7 +18,9 @@ import { loadMyList } from '@/services/storage'
 import { useAlertsConfig, configToRequest } from '@/components/Notifications/useAlertsConfig'
 import { ThresholdInput, type ThresholdUnit } from '@/components/Notifications/ThresholdInput'
 import { resolveScopeOcIds } from '@/components/Notifications/mylistScope'
-import { alphaApi } from '@/api/alpha'
+import { alphaApi, AlertsConfigError } from '@/api/alpha'
+import { ensureSubscribedForAlert } from '@/services/pushSubscription'
+import { KEYWORD_LIMIT, ALERT_MESSAGES } from '@/lib/alerts'
 import type {
   AlertsConfigRequest,
   AlertsConfigRequestKeyword,
@@ -76,6 +78,10 @@ export default function WatchSettingsPage() {
   // キーワード追加フォーム
   const [newKeyword, setNewKeyword] = useState('')
   const [newCategory, setNewCategory] = useState(0)
+  // キーワード追加まわりのエラー（通知許可必須・上限超過など）
+  const [keywordError, setKeywordError] = useState<string | null>(null)
+  // 通知許可リクエスト中（連打防止＋ボタンスピナー）
+  const [keywordAdding, setKeywordAdding] = useState(false)
 
   // マイリスト変動
   const [mylistEnabled, setMylistEnabled] = useState(false)
@@ -150,13 +156,30 @@ export default function WatchSettingsPage() {
     [myList.folders],
   )
 
-  const addKeywordLocal = () => {
+  const addKeywordLocal = async () => {
+    if (keywordAdding) return
     const kw = newKeyword.trim().slice(0, 190)
     if (!kw) return
     const cat = newCategory || null
     if (keywords.some((k) => k.keyword === kw && (k.category ?? null) === cat)) {
       setNewKeyword('')
       return
+    }
+    // クライアント側の上限チェック（サーバ 422 KEYWORD_LIMIT の保険は doSave 側）。
+    if (keywords.length >= KEYWORD_LIMIT) {
+      setKeywordError(ALERT_MESSAGES.keywordLimit)
+      return
+    }
+    setKeywordError(null)
+    // キーワード通知は購読が前提。未購読なら通知許可をリクエストしてから追加する。
+    setKeywordAdding(true)
+    try {
+      await ensureSubscribedForAlert()
+    } catch {
+      setKeywordError(ALERT_MESSAGES.pushRequired)
+      return
+    } finally {
+      setKeywordAdding(false)
     }
     setKeywords((prev) => [...prev, { keyword: kw, category: cat }])
     setNewKeyword('')
@@ -218,9 +241,20 @@ export default function WatchSettingsPage() {
     const run = saveQueueRef.current.then(() => save(req))
     saveQueueRef.current = run.catch(() => {})
     try {
-      await run
-    } catch {
-      setSaveError(true)
+      const latest = await run
+      setKeywordError(null)
+      // サーバが受理した最新でローカルのキーワードを同期（上限切り捨て等のズレ防止）。
+      setKeywords(configToRequest(latest).keywords ?? [])
+    } catch (e) {
+      // 業務エラー（上限/通知必須）はキーワード欄に文言を出し、サーバ正本へ巻き戻す。
+      if (e instanceof AlertsConfigError) {
+        setKeywordError(
+          e.code === 'KEYWORD_LIMIT' ? ALERT_MESSAGES.keywordLimit : ALERT_MESSAGES.pushRequired,
+        )
+        if (config) setKeywords(configToRequest(config).keywords ?? [])
+      } else {
+        setSaveError(true)
+      }
     } finally {
       pendingRef.current -= 1
       if (pendingRef.current === 0) setSaving(false)
@@ -282,20 +316,29 @@ export default function WatchSettingsPage() {
             title="キーワードのアラート"
             description="指定したキーワードを含む新しい部屋が見つかると通知します。"
           >
+            {(() => {
+              const atLimit = keywords.length >= KEYWORD_LIMIT
+              return (
+            <>
             {/* 追加フォーム */}
             <div className="flex flex-wrap items-center gap-2">
               <Input
                 value={newKeyword}
                 onChange={(e) => setNewKeyword(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') addKeywordLocal()
+                  if (e.key === 'Enter') void addKeywordLocal()
                 }}
                 placeholder="キーワードを追加"
                 maxLength={190}
+                disabled={atLimit}
                 className="h-10 min-w-[8rem] flex-1"
                 data-testid="watch-keyword-input"
               />
-              <Select value={String(newCategory)} onValueChange={(v) => setNewCategory(Number(v))}>
+              <Select
+                value={String(newCategory)}
+                disabled={atLimit}
+                onValueChange={(v) => setNewCategory(Number(v))}
+              >
                 <SelectTrigger className="h-10 w-32" data-testid="watch-keyword-category">
                   <SelectValue />
                 </SelectTrigger>
@@ -311,14 +354,41 @@ export default function WatchSettingsPage() {
                 type="button"
                 size="default"
                 className="h-10 gap-1.5"
-                onClick={addKeywordLocal}
-                disabled={!newKeyword.trim()}
+                onClick={() => void addKeywordLocal()}
+                disabled={!newKeyword.trim() || atLimit || keywordAdding}
                 data-testid="watch-keyword-add"
               >
-                <Plus className="h-4 w-4" />
+                {keywordAdding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 追加
               </Button>
             </div>
+
+            {/* 件数 / 上限 とヒント */}
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className="text-xs tabular-nums text-muted-foreground"
+                data-testid="watch-keyword-count"
+              >
+                {keywords.length} / {KEYWORD_LIMIT}
+              </span>
+              {atLimit && (
+                <span className="text-xs text-muted-foreground">
+                  上限に達しました。追加するには既存のキーワードを削除してください。
+                </span>
+              )}
+            </div>
+            {keywordError && (
+              <p className="text-xs text-destructive" data-testid="watch-keyword-error">
+                {keywordError}
+              </p>
+            )}
+            </>
+              )
+            })()}
 
             {keywords.length > 0 ? (
               <ul className="space-y-1.5">

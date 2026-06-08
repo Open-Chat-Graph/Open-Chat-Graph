@@ -1,11 +1,23 @@
 import { useCallback } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
-import { alphaApi } from '@/api/alpha'
+import { alphaApi, AlertsConfigError } from '@/api/alpha'
+import { ensureSubscribedForAlert } from '@/services/pushSubscription'
+import { ALERT_MESSAGES } from '@/lib/alerts'
 import type {
   AlertsConfigResponse,
   AlertsConfigRequest,
   AlertsConfigRequestKeyword,
 } from '@/types/api'
+
+/**
+ * キーワード追加の結果。
+ * - added:  追加された
+ * - exists: すでに同一キーワードがある（無変更）
+ * - error:  失敗。message は表示用、code でハンドリング可（任意）。
+ */
+export type AddKeywordResult =
+  | { ok: true; added: boolean }
+  | { ok: false; message: string; code?: 'KEYWORD_LIMIT' | 'PUSH_REQUIRED' }
 
 const CONFIG_KEY = 'alpha-alerts-config'
 
@@ -59,21 +71,41 @@ export function useAlertsConfig() {
   )
 
   // 検索バー等からのキーワード追加。同一キーワード＋カテゴリの重複は足さない。
+  // キーワード通知は購読が前提なので、保存前に通知購読を担保する（未購読なら許可リクエスト）。
+  // 許可拒否・購読失敗・サーバ業務エラー（上限/購読必須）は ok:false を返す。
   const addKeyword = useCallback(
-    async (kw: AlertsConfigRequestKeyword): Promise<{ added: boolean }> => {
+    async (kw: AlertsConfigRequestKeyword): Promise<AddKeywordResult> => {
       const current = data ?? (await alphaApi.getAlertsConfig())
       const norm = kw.keyword.trim().slice(0, 190)
-      if (!norm) return { added: false }
+      if (!norm) return { ok: true, added: false }
       const cat = kw.category ?? null
       const exists = current.keywords.some(
         (k) => k.keyword === norm && (k.category ?? null) === cat,
       )
-      if (exists) return { added: false }
+      if (exists) return { ok: true, added: false }
+
+      // 通知購読を担保（未購読なら許可リクエスト＋購読登録）。失敗時は追加しない。
+      try {
+        await ensureSubscribedForAlert()
+      } catch {
+        return { ok: false, message: ALERT_MESSAGES.pushRequired, code: 'PUSH_REQUIRED' }
+      }
 
       const req = configToRequest(current)
       req.keywords = [...(req.keywords ?? []), { keyword: norm, category: cat }]
-      await save(req)
-      return { added: true }
+      try {
+        await save(req)
+      } catch (e) {
+        if (e instanceof AlertsConfigError) {
+          const message =
+            e.code === 'KEYWORD_LIMIT'
+              ? ALERT_MESSAGES.keywordLimit
+              : ALERT_MESSAGES.pushRequired
+          return { ok: false, message, code: e.code }
+        }
+        throw e
+      }
+      return { ok: true, added: true }
     },
     [data, save],
   )
