@@ -39,7 +39,7 @@ class OcNarrativeRepositoryTest extends TestCase
         $stats = $this->createMock(StatisticsRepositoryInterface::class);
         $stats->expects($this->once())
             ->method('getMemberMetricsForNarrative')
-            ->with(42)
+            ->with(42, null)
             ->willReturn($expected);
 
         $rankingOhlc = $this->createMock(RankingPositionOhlcRepositoryInterface::class);
