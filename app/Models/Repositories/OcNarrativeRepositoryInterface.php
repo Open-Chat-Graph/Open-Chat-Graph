@@ -14,6 +14,8 @@ interface OcNarrativeRepositoryInterface
     /**
      * narrative 用のメンバー数メトリクス（OHLC 集約）。
      *
+     * @param ?string $baseDate 「現在の基準日」('Y-m-d')。指定時はこの日基準で m1/m7/m30/m90 等を
+     *                          算出する。null 時は SQLite 実行時刻 (date('now')、UTC) 基準。
      * @return array{
      *     curr: ?int,
      *     curr_date: ?string,
@@ -31,7 +33,7 @@ interface OcNarrativeRepositoryInterface
      *     all_time_peak_date: ?string
      * }
      */
-    public function getMemberMetrics(int $openChatId): array;
+    public function getMemberMetrics(int $openChatId, ?string $baseDate = null): array;
 
     /**
      * 直近 N 日のカテゴリ内 (Ranking type) 順位推移サマリ。

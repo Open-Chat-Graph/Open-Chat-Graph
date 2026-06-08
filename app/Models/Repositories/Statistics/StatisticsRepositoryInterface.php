@@ -68,6 +68,9 @@ interface StatisticsRepositoryInterface
      * all_time_peak / all_time_peak_date は 200 日 window 外も含む全期間の最大値。
      * 長期的な縮小 (現在がピークを大きく下回る) の検知に使う。
      *
+     * @param ?string $baseDate 「現在の基準日」('Y-m-d')。指定時は m1/m7/m30/m90・200日窓を
+     *                          この日基準で算出する。null 時は SQLite 実行時刻 (date('now')、UTC) 基準。
+     *
      * @return array{
      *     curr: ?int, curr_date: ?string,
      *     m1: ?int, m7: ?int, m30: ?int, m90: ?int,
@@ -78,5 +81,5 @@ interface StatisticsRepositoryInterface
      *     all_time_peak: ?int, all_time_peak_date: ?string
      * }
      */
-    public function getMemberMetricsForNarrative(int $open_chat_id): array;
+    public function getMemberMetricsForNarrative(int $open_chat_id, ?string $baseDate = null): array;
 }
