@@ -34,7 +34,7 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
             ORDER BY
                 date ASC";
 
-        SQLiteStatisticsOhlc::connect(['mode' => '?mode=ro']);
+        SQLiteStatisticsOhlc::connect(['mode' => '?mode=rw']);
         $result = SQLiteStatisticsOhlc::fetchAll($query, compact('open_chat_id'));
         SQLiteStatisticsOhlc::$pdo = null;
 
@@ -56,7 +56,7 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
         $emptyResult = ['all_count' => 0, 'week_count' => 0, 'month_count' => 0];
 
         try {
-            SQLiteStatisticsOhlc::connect(['mode' => '?mode=ro']);
+            SQLiteStatisticsOhlc::connect(['mode' => '?mode=rw']);
         } catch (\PDOException) {
             // DBファイル未作成（OHLC統計の記録開始前の環境）は「データ無し」として扱う
             return $emptyResult;
