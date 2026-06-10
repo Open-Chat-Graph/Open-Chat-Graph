@@ -48,6 +48,17 @@ class OcPageCacheRepository
         }
 
         $pdo = SQLiteOcPageCache::connect(); // 既定 rwc: WAL有効・ファイル未作成なら生成
+
+        // 既存環境では setup スクリプト未再実行で .db/テーブルが無いことがあるため、
+        // バックフィルが自前でテーブルを作る（schema は setup/schema/sqlite/oc_page_cache.sql と同一）。
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS oc_page_cache ('
+                . 'open_chat_id INTEGER PRIMARY KEY, '
+                . "narrative_html TEXT NOT NULL DEFAULT '', "
+                . "recommend_html TEXT NOT NULL DEFAULT '', "
+                . 'updated_at TEXT NOT NULL)'
+        );
+
         $now = (new \DateTime)->format('Y-m-d H:i:s');
 
         $stmt = $pdo->prepare(
