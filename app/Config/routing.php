@@ -132,6 +132,14 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+// 統計チャートデータ。graph(React)が初回ロードで非同期取得する（/oc 本体から統計SQLite読み取りを外す）
+Route::path('oc/{open_chat_id}/stats', [OpenChatPageController::class, 'stats'])
+    ->matchNum('open_chat_id', min: 1)
+    ->matchNum('category', min: 0)
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
 // TODO: test-api
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)
