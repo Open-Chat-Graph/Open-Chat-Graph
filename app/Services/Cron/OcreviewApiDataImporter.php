@@ -70,6 +70,9 @@ class OcreviewApiDataImporter
         // オープンチャットマスターデータのインポート（差分同期）
         $this->importOpenChatMaster();
 
+        // 現存オープンチャットIDのインポート（全件洗い替え）
+        $this->importOpenChatExisting();
+
         // 成長ランキングのインポート（全件リフレッシュ）
         $this->importGrowthRankings();
 
@@ -88,6 +91,27 @@ class OcreviewApiDataImporter
         // コメント関連データのインポート（差分同期）
         $commentImporter = new OcreviewApiCommentDataImporter($this->sourceCommentPdo, $this->targetPdo);
         $commentImporter->execute();
+
+        // 全インポート完了時刻を記録（API の lastUpdate として返す）
+        $this->recordImportFinishedAt();
+    }
+
+    /**
+     * インポート処理の完了時刻を import_meta テーブルに記録する。
+     *
+     * ここに記録された時刻が、データAPIのレスポンスの lastUpdate として返される。
+     */
+    private function recordImportFinishedAt(): void
+    {
+        // 新規テーブルのため、存在しなければ作成（本番の既存DBにも自動反映）
+        $this->targetPdo->exec(
+            "CREATE TABLE IF NOT EXISTS import_meta (meta_key TEXT PRIMARY KEY, meta_value TEXT NOT NULL)"
+        );
+
+        $stmt = $this->targetPdo->prepare(
+            "INSERT OR REPLACE INTO import_meta (meta_key, meta_value) VALUES ('last_imported_at', ?)"
+        );
+        $stmt->execute([date('Y-m-d H:i:s')]);
     }
 
     /**
@@ -327,6 +351,59 @@ class OcreviewApiDataImporter
         // 初回または100件ごとにDiscord通知を送信
         if ($this->discordNotificationCount % self::DISCORD_NOTIFY_INTERVAL === 0) {
             AdminTool::sendDiscordNotify($message);
+        }
+    }
+
+    /**
+     * 現在オプチャグラフに存在するオープンチャットIDのインポート（全件洗い替え）
+     *
+     * メインDB（MySQL: open_chat）に存在するIDが「現在オプチャグラフに存在するルーム」です。
+     * openchat_master は過去に存在したルームも保持し続けるため、現存ルームだけを抽出するには
+     * このテーブルと JOIN します。差分ではなく毎回全件洗い替え（全削除→全挿入）します。
+     */
+    private function importOpenChatExisting(): void
+    {
+        // 新規テーブルのため、存在しなければ作成（本番の既存DBにも自動反映）
+        $this->targetPdo->exec(
+            "CREATE TABLE IF NOT EXISTS openchat_existing (openchat_id INTEGER PRIMARY KEY)"
+        );
+
+        $totalCount = (int)$this->sourcePdo->query("SELECT COUNT(*) FROM open_chat")->fetchColumn();
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        $query = "SELECT id AS openchat_id FROM open_chat ORDER BY id LIMIT ? OFFSET ?";
+        $stmt = $this->sourcePdo->prepare($query);
+
+        // 全削除→全挿入を1トランザクションにまとめる。
+        // WALモードのため、コミットされるまで読み取り側は洗い替え前の状態を見続け、
+        // テーブルが一瞬空になる窓は発生しない。失敗時はロールバックして旧データを保持する。
+        $this->targetPdo->beginTransaction();
+        try {
+            // 全件洗い替え（SQLiteはTRUNCATEをサポートしていないため DELETE を使用）
+            $this->targetPdo->exec("DELETE FROM openchat_existing");
+
+            $this->processInChunks(
+                $stmt,
+                [],
+                $totalCount,
+                self::CHUNK_SIZE,
+                function (array $data) {
+                    if (!empty($data)) {
+                        $this->sqlImporter->import($this->targetPdo, 'openchat_existing', $data, self::CHUNK_SIZE);
+                    }
+                },
+                'openchat_existing: %d / %d 件処理完了'
+            );
+
+            $this->targetPdo->commit();
+        } catch (\Throwable $e) {
+            if ($this->targetPdo->inTransaction()) {
+                $this->targetPdo->rollBack();
+            }
+            throw $e;
         }
     }
 
