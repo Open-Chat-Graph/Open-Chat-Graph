@@ -47,6 +47,13 @@ class OcPageCacheRepository
             return;
         }
 
+        // PDO rwc はファイルは作るがディレクトリは作らない。既存環境で dir が無い場合に備えて先に作る。
+        $dbPath = app(\App\Services\Storage\FileStorageInterface::class)->getStorageFilePath('sqliteOcPageCacheDb');
+        $dir = dirname($dbPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
         $pdo = SQLiteOcPageCache::connect(); // 既定 rwc: WAL有効・ファイル未作成なら生成
 
         // 既存環境では setup スクリプト未再実行で .db/テーブルが無いことがあるため、
