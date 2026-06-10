@@ -64,7 +64,7 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
     ): array {
         $result = [];
 
-        SQLiteRankingPosition::connect(['mode' => '?mode=rw']);
+        SQLiteRankingPosition::connect(['mode' => '?mode=ro']);
 
         foreach (['ranking', 'rising'] as $tableName) {
             $row = SQLiteRankingPosition::fetch(
