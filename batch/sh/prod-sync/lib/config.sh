@@ -95,6 +95,7 @@ SQLITE_DIRS=(
     ranking_position
     statistics_ohlc
     ranking_position_ohlc
+    oc_page_cache
 )
 SQLITE_SQLAPI_DIR="ocgraph_sqlapi"
 

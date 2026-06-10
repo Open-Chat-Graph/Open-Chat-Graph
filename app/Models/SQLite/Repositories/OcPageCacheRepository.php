@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Models\SQLite\Repositories;
 
 use App\Models\SQLite\SQLiteOcPageCache;
-use App\Services\Storage\FileStorageInterface;
 
 /**
  * ルーム個別ページの事前計算HTML断片（分析文・関連ルーム）の読み書き。
+ * DB/テーブルは他のSQLite同様、setup(setup/schema/sqlite/oc_page_cache.sql)と prod-sync が用意する。
  *
  * - 読み: /oc 表示時に PK 一発 SELECT（mode=rw。mode=ro×WAL の locking protocol を避けるため）。
  *   キャッシュ未生成（DBファイル無し・該当行無し）は null を返し、呼び出し側は空表示にフォールバックする。
@@ -18,11 +18,6 @@ use App\Services\Storage\FileStorageInterface;
  */
 class OcPageCacheRepository
 {
-    public function __construct(
-        private FileStorageInterface $fileStorage,
-    ) {
-    }
-
     /**
      * @return array{narrative_html: string, recommend_html: string}|null
      */
@@ -53,25 +48,7 @@ class OcPageCacheRepository
             return;
         }
 
-        // PDO rwc はファイルは作るがディレクトリは作らない。既存環境で dir が無い場合に備えて先に作る。
-        $dbPath = $this->fileStorage->getStorageFilePath('sqliteOcPageCacheDb');
-        $dir = dirname($dbPath);
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
-        }
-
-        $pdo = SQLiteOcPageCache::connect(); // 既定 rwc: WAL有効・ファイル未作成なら生成
-
-        // 既存環境では setup スクリプト未再実行で .db/テーブルが無いことがあるため、
-        // バックフィルが自前でテーブルを作る（schema は setup/schema/sqlite/oc_page_cache.sql と同一）。
-        $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS oc_page_cache ('
-                . 'open_chat_id INTEGER PRIMARY KEY, '
-                . "narrative_html TEXT NOT NULL DEFAULT '', "
-                . "recommend_html TEXT NOT NULL DEFAULT '', "
-                . 'updated_at TEXT NOT NULL)'
-        );
-
+        $pdo = SQLiteOcPageCache::connect();
         $now = (new \DateTime)->format('Y-m-d H:i:s');
 
         $stmt = $pdo->prepare(
