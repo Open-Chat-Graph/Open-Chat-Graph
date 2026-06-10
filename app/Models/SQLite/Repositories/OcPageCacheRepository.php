@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\SQLite\Repositories;
 
 use App\Models\SQLite\SQLiteOcPageCache;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * ルーム個別ページの事前計算HTML断片（分析文・関連ルーム）の読み書き。
@@ -17,6 +18,11 @@ use App\Models\SQLite\SQLiteOcPageCache;
  */
 class OcPageCacheRepository
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage,
+    ) {
+    }
+
     /**
      * @return array{narrative_html: string, recommend_html: string}|null
      */
@@ -48,7 +54,7 @@ class OcPageCacheRepository
         }
 
         // PDO rwc はファイルは作るがディレクトリは作らない。既存環境で dir が無い場合に備えて先に作る。
-        $dbPath = app(\App\Services\Storage\FileStorageInterface::class)->getStorageFilePath('sqliteOcPageCacheDb');
+        $dbPath = $this->fileStorage->getStorageFilePath('sqliteOcPageCacheDb');
         $dir = dirname($dbPath);
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
