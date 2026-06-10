@@ -14,13 +14,17 @@ import {
   setChartStatesFromUrlParams,
   setUrlParamsFromChartStates,
 } from './state/chartState'
-import { fetchChart, renderChartWithoutRanking } from './util/fetchRenderer'
+import { fetchChart, loadStatsDto, renderChartWithoutRanking } from './util/fetchRenderer'
 import { Box, CircularProgress } from '@mui/material'
 import { OcThemeProvider } from '../themeMui'
 import { onThemeChange } from './util/theme'
 import { t } from './util/translation'
 
 const init = async () => {
+  // 統計データを初回ロードで非同期取得（サーバー注入の #stats-dto は廃止）
+  graphStore.set(loadingAtom, true)
+  await loadStatsDto()
+
   setChartStatesFromUrlParams()
 
   if (initDisplay()) {
