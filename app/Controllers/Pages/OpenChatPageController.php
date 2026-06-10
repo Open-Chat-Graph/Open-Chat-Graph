@@ -98,15 +98,9 @@ class OpenChatPageController
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
 
-        $_statsDto = $statisticsChartArrayService->buildStatisticsChartArray(
-            $open_chat_id,
-            isset($oc['category']) ? (int)$oc['category'] : null
-        );
-        if (!$_statsDto) {
-            $_statsDto = new StatisticsChartDto((new \DateTime('-1day'))->format('Y-m-d'), (new \DateTime('now'))->format('Y-m-d'));
-        }
-
-        $oc += $statisticsViewUtility->getOcPageArrayElementMemberDiff($_statsDto, $oc['member']);
+        // 統計チャートデータは graph(React)が /oc/{id}/stats から初回も非同期取得する
+        // （bot が叩く /oc 本体から統計の重い SQLite 読み取りを外す）。
+        // ヘッダーの「1週間」差分は getOpenChatByIdWithTag の statistics_ranking_week JOIN(rw_*) で取得済み。
 
         $_css = [
             'components/room_list',
@@ -148,7 +142,7 @@ class OpenChatPageController
             $_meta->title,
             $_meta->description,
             new \DateTime($oc['created_at']),
-            new \DateTime($_statsDto->endDate),
+            new \DateTime($oc['updated_at']),
             $oc,
         );
 
@@ -171,7 +165,6 @@ class OpenChatPageController
             'oc',
             'category',
             '_chartArgDto',
-            '_statsDto',
             '_commentArgDto',
             '_breadcrumbsShema',
             '_schema',
@@ -185,6 +178,30 @@ class OpenChatPageController
             'formatedRowDescription',
             'narrative',
         ));
+    }
+
+    /**
+     * 統計チャートデータ（メンバー数推移・期間タブ可用性）を返す。
+     * graph(React) が初回ロード時にこれを fetch する。これにより bot が叩く /oc 本体の
+     * サーバーレンダリングから統計の重い SQLite 読み取り（member/OHLC/順位）を外す。
+     */
+    function stats(
+        StatisticsChartArrayService $statisticsChartArrayService,
+        int $open_chat_id,
+        int $category,
+    ) {
+        $dto = $statisticsChartArrayService->buildStatisticsChartArray(
+            $open_chat_id,
+            $category > 0 ? $category : null
+        );
+        if (!$dto) {
+            $dto = new StatisticsChartDto(
+                (new \DateTime('-1day'))->format('Y-m-d'),
+                (new \DateTime('now'))->format('Y-m-d')
+            );
+        }
+
+        return response($dto);
     }
 
     private function getAdminDto(int $open_chat_id)

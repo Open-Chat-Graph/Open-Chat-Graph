@@ -66,6 +66,8 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 rh.percent_increase AS rh_percent_increase,
                 rh24.diff_member AS rh24_diff_member,
                 rh24.percent_increase AS rh24_percent_increase,
+                rw.diff_member AS rw_diff_member,
+                rw.percent_increase AS rw_percent_increase,
                 tg.tag AS tag1,
                 tg2.tag AS tag2,
                 tg3.tag AS tag3
@@ -73,6 +75,7 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 open_chat AS oc
                 LEFT JOIN statistics_ranking_hour AS rh ON oc.id = rh.open_chat_id
                 LEFT JOIN statistics_ranking_hour24 AS rh24 ON oc.id = rh24.open_chat_id
+                LEFT JOIN statistics_ranking_week AS rw ON oc.id = rw.open_chat_id
                 LEFT JOIN recommend AS tg ON oc.id = tg.id
                 LEFT JOIN oc_tag AS tg2 ON oc.id = tg2.id
                 LEFT JOIN oc_tag2 AS tg3 ON oc.id = tg3.id
