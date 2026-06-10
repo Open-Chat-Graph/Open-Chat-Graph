@@ -12,11 +12,59 @@ class DB extends \Shadow\DB implements DBInterface
 {
     public static ?\PDO $pdo = null;
 
+    /**
+     * 接続数上限エラー時のリトライ回数（初回 + リトライ）
+     */
+    private const CONNECT_MAX_ATTEMPTS = 3;
+
     public static function connect(?array $config = null): \PDO
     {
-        return parent::connect($config ?? [
-            'dbName' => AppConfig::$dbName[MimimalCmsConfig::$urlRoot]
-        ]);
+        $config ??= ['dbName' => AppConfig::$dbName[MimimalCmsConfig::$urlRoot]];
+
+        for ($attempt = 0; $attempt < self::CONNECT_MAX_ATTEMPTS; $attempt++) {
+            try {
+                return parent::connect($config);
+            } catch (\PDOException $e) {
+                // 接続数上限（max_user_connections / too many connections）の瞬間的なスパイクは
+                // 少し待ってリトライすれば空きが出て捌ける場合がある。
+                // 失敗時は static::$pdo は null のまま（new \PDO が例外を投げたため）なので再試行できる。
+                if ($attempt < self::CONNECT_MAX_ATTEMPTS - 1 && static::isTooManyConnections($e)) {
+                    // FPMワーカーを長時間占有しないよう待機は短く、軽いジッタで分散させる
+                    usleep(random_int(100000, 250000) * ($attempt + 1)); // 約0.1〜0.5秒
+                    continue;
+                }
+
+                throw $e;
+            }
+        }
+
+        throw new \LogicException('Unreachable');
+    }
+
+    /**
+     * 接続数上限エラーかどうかを判定する
+     *
+     * connect()（PDO::__construct）で発生するため errorInfo が未設定のことが多い。
+     * その場合に備えてメッセージでも判定する。
+     */
+    private static function isTooManyConnections(\PDOException $e): bool
+    {
+        // 1226: ER_USER_LIMIT_REACHED (max_user_connections)
+        // 1040: ER_CON_COUNT_ERROR (Too many connections)
+        $driverCode = $e->errorInfo[1] ?? null;
+        if ($driverCode !== null) {
+            $driverCode = (int) $driverCode;
+            if ($driverCode === 1226 || $driverCode === 1040) {
+                return true;
+            }
+        }
+
+        $message = $e->getMessage();
+        return str_contains($message, 'max_user_connections')
+            || str_contains($message, 'max_connections')
+            || str_contains($message, 'Too many connections')
+            || str_contains($message, '[1226]')
+            || str_contains($message, '[1040]');
     }
 
     public static function execute(string $query, ?array $params = null): \PDOStatement
