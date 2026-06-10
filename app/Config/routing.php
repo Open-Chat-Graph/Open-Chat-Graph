@@ -132,6 +132,10 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+// /oc 本体から外した分析文・関連ルームを非同期で返す（高負荷対策。JS実行する実ユーザーのみ叩く）
+Route::path('oc/{open_chat_id}/deferred-sections', [OpenChatPageController::class, 'deferredSections'])
+    ->matchNum('open_chat_id', min: 1);
+
 // TODO: test-api
 Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1)

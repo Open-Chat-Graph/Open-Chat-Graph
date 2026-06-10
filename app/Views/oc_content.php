@@ -124,10 +124,11 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
                 <a class="oc-nav-chip oc-nav-chip--category" href="<?php echo url('ranking' . ($oc['category'] ? ('/' . $oc['category']) : '')) ?>"><?php echo $category ?></a>
               </span>
             <?php endif ?>
-            <?php if (isset($recommend[2]) && $recommend[2]) : ?>
+            <?php // タグチップは getOpenChatByIdWithTag が返す tag1 を直接使う（recommend は非同期化したため） ?>
+            <?php if (!empty($oc['tag1'])) : ?>
               <span class="oc-nav-pair">
                 <span class="oc-nav-pair__label"><?php echo t('タグ') ?></span>
-                <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode($recommend[2]))) ?>"><?php echo $recommend[2] ?></a>
+                <a class="oc-nav-chip oc-nav-chip--tag" href="<?php echo url('recommend/' . urlencode(htmlspecialchars_decode((string)$oc['tag1']))) ?>"><?php echo $oc['tag1'] ?></a>
               </span>
             <?php endif ?>
           </span>
@@ -158,13 +159,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
-      <?php if (!empty($narrative) && is_array($narrative) && !empty($narrative['summary'])): ?>
-        <section class="oc-narrative" aria-label="<?php echo t('オプチャグラフの分析') ?>">
-          <p class="oc-narrative__text"><span class="oc-narrative__badge" aria-hidden="true"><?php echo t('分析') ?></span><b class="oc-narrative__label"><?php echo h($narrative['summary']) ?></b><?php if (!empty($narrative['detail'])): ?><span class="oc-narrative__detail"><?php echo h($narrative['detail']) ?></span><?php endif ?></p>
-          <?php // 分析が立てた疑問に答える記事へのインライン導線（ja のみ・状態に合致したときだけ） ?>
-          <?php viewComponent('oc_blog_context_link', ['pattern' => (string)($narrative['pattern'] ?? ''), 'member' => (int)($oc['member'] ?? 0)]) ?>
-        </section>
-      <?php endif ?>
+      <?php // 分析文(narrative)は非同期注入（/oc 本体から narrative の SQLite 読み取りを外す）。プレースホルダのみ ?>
+      <div id="oc-deferred-narrative"></div>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
@@ -210,22 +206,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php endif ?>
 
-    <?php if (isset($similarSize) && $similarSize) : ?>
-      <aside class="recommend-list-aside" id="similar-size-rooms">
-        <?php viewComponent('similar_size_rooms', [
-          'rooms'         => $similarSize['rooms'],
-          'recommend'     => $similarSize['recommend'],
-          'mode'          => $similarSize['mode'],
-          'currentMember' => $oc['member'],
-          'category'      => $oc['category'] ?? null,
-          'tag'           => $oc['tag1'] ?? null,
-        ]) ?>
-      </aside>
-    <?php elseif ($recommend[3]) : ?>
-      <aside class="recommend-list-aside" id="recommend-list-aside1">
-        <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => '', 'id' => $oc['id']]) ?>
-      </aside>
-    <?php endif ?>
+    <?php // 関連ルーム(類似サイズ/おすすめ)は非同期注入（/oc 本体から recommend/similarSize を外す）。プレースホルダのみ ?>
+    <div id="oc-deferred-recommend"></div>
 
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
@@ -292,7 +274,28 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     })();
   </script>
 
-  <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
+  <?php // 分析文・関連ルームを非同期取得して注入（bot が叩く /oc 本体の DB 負荷を下げ、JS実行する実ユーザーのみ取得） ?>
+  <script async>
+    (function() {
+      var url = '<?php echo url('oc', $oc['id'], 'deferred-sections') ?>';
+      fetch(url, { headers: { 'Accept': 'application/json' } })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (!data) return;
+          if (data.narrative) {
+            var n = document.getElementById('oc-deferred-narrative');
+            if (n) n.innerHTML = data.narrative;
+          }
+          if (data.recommend) {
+            var rc = document.getElementById('oc-deferred-recommend');
+            if (rc) rc.innerHTML = data.recommend;
+          }
+        })
+        .catch(function() {});
+    })();
+  </script>
+
+  <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
   ?>
     <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/oc-app', 'comments-*.css') ?>">
     <script defer type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'comments-*.js') ?>"></script>
