@@ -1,6 +1,9 @@
 -- SQLite schema for ocgraph_sqlapi database
 -- Migrated from MySQL with full comment preservation
 -- Generated: 2026-01-10
+--
+-- このDBをAPI経由で叩く方法・サンプルSQL・GASコードは、リポジトリ直下の
+-- API_README.md にまとめてある（コピペしやすいMarkdown形式）。
 
 -- ==============================================================================
 -- カテゴリマスタテーブル（25レコード）
@@ -118,6 +121,25 @@ CREATE TABLE IF NOT EXISTS openchat_master (
 );
 CREATE INDEX IF NOT EXISTS idx_openchat_master_category ON openchat_master(category_id);
 CREATE INDEX IF NOT EXISTS idx_openchat_master_updated ON openchat_master(last_updated_at);
+
+-- ==============================================================================
+-- 現在オプチャグラフに存在するオープンチャットのID一覧（毎時、全件洗い替え）
+-- メインDB（MySQL）の現存オープンチャットIDをそのまま反映する。
+-- openchat_master は過去に存在したルームも保持し続けるため、現存ルームだけを抽出したい場合は
+-- このテーブルと openchat_id で JOIN する。
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS openchat_existing (
+    openchat_id INTEGER PRIMARY KEY         -- 現在オプチャグラフに存在するオープンチャットID（openchat_master.openchat_idと紐づく）
+);
+
+-- ==============================================================================
+-- インポート処理のメタ情報（キーバリュー）
+-- last_imported_at: OcreviewApiDataImporter が最後にインポートを完了した日時（API の lastUpdate）
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS import_meta (
+    meta_key TEXT PRIMARY KEY,              -- メタ情報のキー（例: last_imported_at）
+    meta_value TEXT NOT NULL                -- 値
+);
 
 -- ==============================================================================
 -- 削除されたオープンチャット履歴

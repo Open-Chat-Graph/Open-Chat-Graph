@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use Shared\Exceptions\ValidationException;
@@ -13,18 +12,13 @@ class DatabaseApiController
 {
     // Migrated to SQLite - no longer need DB_NAME constant
     // private const DB_NAME = 'ocgraph_sqlapi';
-    private const MAX_LIMIT = 10000;
-    private const DEFAULT_LIMIT = 1000;
+    private const MAX_LIMIT = 20;
+    private const DEFAULT_LIMIT = 20;
 
     function index(string $stmt)
     {
         header('Content-Type: application/json');
         ob_start('ob_gzhandler');
-
-        // データベースの最終更新時間を取得
-        $lastUpdateQuery = "SELECT MAX(time) as last_update FROM rising";
-        $lastUpdateStmt = RankingPositionDB::connect()->query($lastUpdateQuery);
-        $lastUpdate = $lastUpdateStmt->fetchColumn();
 
         try {
             $pdo = $this->getPdo();
@@ -33,9 +27,10 @@ class DatabaseApiController
             echo json_encode([
                 'status' => 'success',
                 'data' => $result->fetchAll(\PDO::FETCH_ASSOC),
-                'lastUpdate' => $lastUpdate,
+                'lastUpdate' => $this->getLastImportedAt($pdo),
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         } catch (\Exception $e) {
+            http_response_code(400);
             echo json_encode([
                 'status' => 'error',
                 'message' => $e->getMessage(),
@@ -76,16 +71,11 @@ class DatabaseApiController
             // 改行で分割して配列として返す
             $schemaLines = explode("\n", $schemaContent);
 
-            // データベースの最終更新時間を取得
-            $lastUpdateQuery = "SELECT MAX(time) as last_update FROM rising";
-            $lastUpdateStmt = RankingPositionDB::connect()->query($lastUpdateQuery);
-            $lastUpdate = $lastUpdateStmt->fetchColumn();
-
             // レスポンス
             $response = [
                 'database_type' => 'SQLite 3',
                 'schema' => $schemaLines,
-                'lastUpdate' => $lastUpdate
+                'lastUpdate' => $this->getLastImportedAt($this->getPdo())
             ];
 
             echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -100,6 +90,23 @@ class DatabaseApiController
     {
         // Use SQLite connection
         return SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']); // Read-only mode
+    }
+
+    /**
+     * インポート処理（OcreviewApiDataImporter）が最後に完了した時刻を返す。
+     * import_meta テーブルが無い・未記録の場合は null。
+     */
+    private function getLastImportedAt(\PDO $pdo): ?string
+    {
+        try {
+            $value = $pdo
+                ->query("SELECT meta_value FROM import_meta WHERE meta_key = 'last_imported_at'")
+                ->fetchColumn();
+
+            return $value === false ? null : $value;
+        } catch (\Exception) {
+            return null;
+        }
     }
 
     private function filterQuery(string $query): string

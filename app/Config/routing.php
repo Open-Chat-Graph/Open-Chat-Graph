@@ -46,6 +46,7 @@ use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
+use Shadow\Kernel\Validator;
 use Shared\Exceptions\UnauthorizedException;
 use Shared\MimimalCmsConfig;
 
@@ -787,39 +788,80 @@ Route::path(
             return false;
     });
 
+// データベースAPI（読み取り専用）
+// /database/{username}/... の {username} で挙動が分かれる:
+//   1. {username} が adminApiKey なら従来どおり
+//   2. {username} が ApiUser::$apiUser に存在するなら Basic認証を要求
+//   3. それ以外の {username} は 404（return false）
+$databaseApiAuth = function (string $username) {
+    if (MimimalCmsConfig::$urlRoot !== '') {
+        return false;
+    }
+
+    // 1. 管理用キー
+    if ($username === SecretsConfig::$adminApiKey) {
+        allowCORS();
+        return true;
+    }
+
+    // 2. 登録済みユーザーなら Basic認証
+    // ApiUser クラス自体が存在しない場合は、登録ユーザーなし＝ログイン失敗として扱う
+    $apiUsers = class_exists(ApiUser::class) ? ApiUser::$apiUser : [];
+    foreach ($apiUsers as $apiUser) {
+        if ($apiUser['username'] === $username) {
+            allowCORS();
+
+            $auth = getBasicAuthCredentials();
+            if ($auth['user'] !== $apiUser['username'] || $auth['pass'] !== $apiUser['password']) {
+                header('WWW-Authenticate: Basic realm="Database SQL API"');
+                response([
+                    'status' => 'error',
+                    'message' => 'Basic authentication is required to access the database API.',
+                ], 401)->send();
+                exit;
+            }
+
+            return true;
+        }
+    }
+
+    // 3. 未登録ユーザーは 403
+    response([
+        'status' => 'error',
+        'message' => 'User not found',
+    ], 403)->send();
+    exit;
+};
+
 Route::path(
-    'database/{user}/query@get@options',
+    'database/{username}/query@get@options',
     [DatabaseApiController::class, 'index']
 )
-    ->match(function (string $user) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
+    ->match(function (string $username, $stmt) use ($databaseApiAuth) {
+        if (!$databaseApiAuth($username)) {
             return false;
+        }
 
-        allowCORS();
-    })
-    ->matchStr('stmt');
-
-Route::path(
-    'database/{user}/schema@get@options',
-    [DatabaseApiController::class, 'schema']
-)
-    ->match(function (string $user) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        allowCORS();
+        if (!Validator::str($stmt)) {
+            response([
+                'status' => 'error',
+                'message' => 'The "stmt" parameter is required and must be a string.',
+            ], 400)->send();
+            exit;
+        }
     });
 
 Route::path(
-    'database/{user}/ban@get@options',
+    'database/{username}/schema@get@options',
+    [DatabaseApiController::class, 'schema']
+)
+    ->match($databaseApiAuth);
+
+Route::path(
+    'database/{username}/ban@get@options',
     [DatabaseApiController::class, 'ban']
 )
-    ->match(function (string $user) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        allowCORS();
-    })
+    ->match($databaseApiAuth)
     ->matchStr('date');
 
 cache();
