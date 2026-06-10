@@ -67,8 +67,12 @@ class OpenChatPageController
 
             // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
         $recommend = [false, false, '', false];
-            // 関連ルーム(similarSize)は非同期 deferredSections に移譲（高負荷対策）
-            $similarSize = false;
+            $similarSize = $similarSizeRoomService->fetch(
+                (int)$oc['id'],
+                (int)$oc['member'],
+                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+                isset($oc['category']) ? (int)$oc['category'] : null
+            );
         } else {
             // TW/TH も ja と同じくタグ表示・関連ルームを出す。
             // tag(recommend) / oc_tag / oc_tag2 は言語別DBに格納済みのため、
@@ -83,8 +87,12 @@ class OpenChatPageController
 
             // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
         $recommend = [false, false, '', false];
-            // 関連ルーム(similarSize)は非同期 deferredSections に移譲（高負荷対策）
-            $similarSize = false;
+            $similarSize = $similarSizeRoomService->fetch(
+                (int)$oc['id'],
+                (int)$oc['member'],
+                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+                isset($oc['category']) ? (int)$oc['category'] : null
+            );
         }
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
@@ -177,57 +185,6 @@ class OpenChatPageController
             'formatedRowDescription',
             'narrative',
         ));
-    }
-
-    /**
-     * /oc 本体から外した「分析文(narrative)」「関連ルーム(recommend/similarSize)」を
-     * 非同期で生成し HTML 断片で返す。
-     *
-     * 高負荷対策: bot が叩く /oc 本体の同期レンダリングから recommend(最大6 MySQLクエリ)・
-     * similarSize・narrative(SQLite) を外し、JS を実行する実ユーザーのみがこの endpoint を叩く。
-     */
-    function deferredSections(
-        OpenChatPageRepositoryInterface $ocRepo,
-        RecommendGenarator $recommendGenarator,
-        SimilarSizeRoomService $similarSizeRoomService,
-        OcNarrativeService $narrativeService,
-        CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
-        int $open_chat_id,
-    ) {
-        $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
-        if (!$oc) {
-            return response(['narrative' => '', 'recommend' => '']);
-        }
-
-        $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
-        $similarSize = $similarSizeRoomService->fetch(
-            (int)$oc['id'],
-            (int)$oc['member'],
-            $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
-            isset($oc['category']) ? (int)$oc['category'] : null
-        );
-
-        $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
-        $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
-
-        $categoryLabel = null;
-        $catId = $oc['category'] ?? null;
-        if (is_int($catId) && $catId > 0) {
-            $catMap = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] ?? [];
-            $label = array_search($catId, $catMap, true);
-            $categoryLabel = $label !== false ? (string)$label : null;
-        }
-        $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription], $categoryLabel);
-
-        ob_start();
-        viewComponent('oc_narrative_section', compact('narrative', 'oc'));
-        $narrativeHtml = ob_get_clean();
-
-        ob_start();
-        viewComponent('oc_recommend_aside', compact('similarSize', 'recommend', 'oc'));
-        $recommendHtml = ob_get_clean();
-
-        return response(['narrative' => $narrativeHtml, 'recommend' => $recommendHtml]);
     }
 
     private function getAdminDto(int $open_chat_id)
