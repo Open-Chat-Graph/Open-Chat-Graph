@@ -18,6 +18,7 @@ class FileStorageServiceConfig
         'sqliteStatisticsOhlcDb' =>       '/SQLite/statistics_ohlc/statistics_ohlc.db',
         'sqliteRankingPositionOhlcDb' =>  '/SQLite/ranking_position_ohlc/ranking_position_ohlc.db',
         'sqliteRankingPositionDb' =>      '/SQLite/ranking_position/ranking_position.db',
+        'sqliteOcPageCacheDb' =>          '/SQLite/oc_page_cache/oc_page_cache.db',
         'openChatSubCategories' =>        '/open_chat_sub_categories/subcategories.json',
         'openChatRankingPositionDir' =>   '/ranking_position/ranking',
         'openChatRisingPositionDir' =>    '/ranking_position/rising',
