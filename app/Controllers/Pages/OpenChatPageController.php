@@ -6,7 +6,6 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Config\SecretsConfig;
-use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\SQLite\Repositories\OcPageCacheRepository;
@@ -14,15 +13,12 @@ use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
-use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
-use App\Services\Narrative\OcNarrativeService;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
-use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
@@ -36,18 +32,13 @@ class OpenChatPageController
     function index(
         OpenChatPageRepositoryInterface $ocRepo,
         OcPageMeta $meta,
-        StatisticsChartArrayService $statisticsChartArrayService,
-        StatisticsViewUtility $statisticsViewUtility,
         PageBreadcrumbsListSchema $breadcrumbsShema,
         OcPageSchema $ocPageSchema,
         StaticDataFile $staticDataGeneration,
         RecommendGenarator $recommendGenarator,
-        RecentCommentListRepositoryInterface $recentCommentListRepository,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
-        OcNarrativeService $narrativeService,
-        SimilarSizeRoomService $similarSizeRoomService,
         OcPageCacheRepository $ocPageCacheRepository,
         int $open_chat_id,
         ?string $isAdminPage,
