@@ -22,7 +22,7 @@ class SqliteStatisticsPageRepository implements StatisticsPageRepositoryInterfac
             ORDER BY
                 date ASC";
 
-        SQLiteStatistics::connect(['mode' => '?mode=ro']);
+        SQLiteStatistics::connect(['mode' => '?mode=rw']);
         $result = SQLiteStatistics::fetchAll($query, compact('open_chat_id'));
         SQLiteStatistics::$pdo = null;
 

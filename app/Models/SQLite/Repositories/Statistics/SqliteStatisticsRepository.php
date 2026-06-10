@@ -178,7 +178,7 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
             $params['base_date'] = $baseDate;
         }
 
-        SQLiteStatistics::connect(['mode' => '?mode=ro']);
+        SQLiteStatistics::connect(['mode' => '?mode=rw']);
         $row = SQLiteStatistics::fetch($query, $params);
         SQLiteStatistics::$pdo = null;
 
