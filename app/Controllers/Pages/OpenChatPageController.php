@@ -9,6 +9,7 @@ use App\Config\SecretsConfig;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
+use App\Models\SQLite\Repositories\OcPageCacheRepository;
 use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\OfficialPageList;
@@ -47,6 +48,7 @@ class OpenChatPageController
         FileStorageInterface $fileStorage,
         OcNarrativeService $narrativeService,
         SimilarSizeRoomService $similarSizeRoomService,
+        OcPageCacheRepository $ocPageCacheRepository,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -65,14 +67,6 @@ class OpenChatPageController
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
             }
 
-            // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
-        $recommend = [false, false, '', false];
-            $similarSize = $similarSizeRoomService->fetch(
-                (int)$oc['id'],
-                (int)$oc['member'],
-                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
-                isset($oc['category']) ? (int)$oc['category'] : null
-            );
         } else {
             // TW/TH も ja と同じくタグ表示・関連ルームを出す。
             // tag(recommend) / oc_tag / oc_tag2 は言語別DBに格納済みのため、
@@ -85,15 +79,13 @@ class OpenChatPageController
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
             }
 
-            // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
-        $recommend = [false, false, '', false];
-            $similarSize = $similarSizeRoomService->fetch(
-                (int)$oc['id'],
-                (int)$oc['member'],
-                $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
-                isset($oc['category']) ? (int)$oc['category'] : null
-            );
         }
+
+        // 分析文・関連ルームは事前計算済みHTML断片を oc_page_cache(SQLite) からPK一発で読むだけ。
+        // 未生成（バックフィル前/生成不可）は null → 空表示。bot が叩く /oc 本体で重い計算をしない。
+        $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
+        $_narrativeHtml = $ocPageCache['narrative_html'] ?? '';
+        $_recommendHtml = $ocPageCache['recommend_html'] ?? '';
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
@@ -116,22 +108,9 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        // narrative section 用データ (全言語対応)。
-        // - Service の出力文字列は t()/sprintfT() で多言語化済 (ja/tw/th)。
-        // - category label の locale-aware 解決もここで行い、Service は平に文字列を消費する
-        //   (OPEN_CHAT_CATEGORY は現在の urlRoot キーで引くため、各言語の表示名になる)
-        // - Service が失敗しても null が返るので section / meta は既存挙動を完全維持
-        $categoryLabel = null;
-        $catId = $oc['category'] ?? null;
-        if (is_int($catId) && $catId > 0) {
-            $catMap = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] ?? [];
-            $label = array_search($catId, $catMap, true);
-            $categoryLabel = $label !== false ? (string)$label : null;
-        }
-        // 緊急: 高負荷対策として narrative(分析文) を一時的に空にする（後で非同期フェッチ化する）
-        $narrative = null;
-
-        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], $narrative)->setImageUrl(imgUrl($oc['img_url']));
+        // 分析文(narrative)・関連ルームは oc_page_cache から読み済み（$_narrativeHtml/$_recommendHtml）。
+        // meta への narrative 連携は無し(null)＝#372以降の現行挙動を踏襲（meta description は room description ベース）。
+        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
@@ -168,15 +147,14 @@ class OpenChatPageController
             '_commentArgDto',
             '_breadcrumbsShema',
             '_schema',
-            'recommend',
-            'similarSize',
+            '_narrativeHtml',
+            '_recommendHtml',
             '_hourlyRange',
             '_adminDto',
             'officialDto',
             'topPageDto',
             'formatedDescription',
             'formatedRowDescription',
-            'narrative',
         ));
     }
 
