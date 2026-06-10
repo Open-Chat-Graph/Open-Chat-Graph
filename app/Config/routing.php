@@ -847,12 +847,52 @@ $databaseApiAuth = function (string $username) {
     exit;
 };
 
+// /database/{username}/query・/schema 用の認証（いずれも POST）:
+//   - Basic認証ではなく、POSTボディの password で認証する
+//   - password は ApiUser の登録パスワードを SHA256 した16進文字列を送る
+//   - {username} が adminApiKey の場合は従来どおり password 不要
+$databaseApiPostAuth = function (string $username, $password = null) {
+    if (MimimalCmsConfig::$urlRoot !== '') {
+        return false;
+    }
+
+    allowCORS(); // OPTIONS プリフライトはここで終了
+
+    // 1. 管理用キー（password 不要）
+    if ($username === SecretsConfig::$adminApiKey) {
+        return true;
+    }
+
+    // 2. 登録済みユーザーは POSTされた password（SHA256）で照合
+    $apiUsers = class_exists(ApiUser::class) ? ApiUser::$apiUser : [];
+    foreach ($apiUsers as $apiUser) {
+        if ($apiUser['username'] === $username) {
+            $expected = hash('sha256', $apiUser['password']);
+            if (!is_string($password) || !hash_equals($expected, strtolower($password))) {
+                response([
+                    'status' => 'error',
+                    'message' => 'Authentication failed.',
+                ], 401)->send();
+                exit;
+            }
+            return true;
+        }
+    }
+
+    // 3. 未登録ユーザーは 403
+    response([
+        'status' => 'error',
+        'message' => 'User not found',
+    ], 403)->send();
+    exit;
+};
+
 Route::path(
-    'database/{username}/query@get@options',
+    'database/{username}/query@post@options',
     [DatabaseApiController::class, 'index']
 )
-    ->match(function (string $username, $stmt) use ($databaseApiAuth) {
-        if (!$databaseApiAuth($username)) {
+    ->match(function (string $username, $password = null, $stmt = null) use ($databaseApiPostAuth) {
+        if (!$databaseApiPostAuth($username, $password)) {
             return false;
         }
 
@@ -866,10 +906,10 @@ Route::path(
     });
 
 Route::path(
-    'database/{username}/schema@get@options',
+    'database/{username}/schema@post@options',
     [DatabaseApiController::class, 'schema']
 )
-    ->match($databaseApiAuth);
+    ->match($databaseApiPostAuth);
 
 Route::path(
     'database/{username}/ban@get@options',
