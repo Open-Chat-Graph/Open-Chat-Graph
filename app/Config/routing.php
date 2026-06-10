@@ -604,6 +604,12 @@ Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
         return MimimalCmsConfig::$urlRoot === '';
     });
 
+// ルーム個別ページ静的キャッシュ(oc_page_cache)のバックフィル実行（admin・背景実行）
+Route::path('admin/genocpagecache/{lang}', [AdminPageController::class, 'genocpagecache'])
+    ->match(function () {
+        return MimimalCmsConfig::$urlRoot === '';
+    });
+
 Route::path(
     'admin-api@post',
     [AdminEndPointController::class, 'index']

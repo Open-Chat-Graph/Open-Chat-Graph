@@ -242,6 +242,32 @@ class AdminPageController
     }
 
     /**
+     * ルーム個別ページの分析文/関連ルームの静的キャッシュ(oc_page_cache)を生成する。
+     * 指定言語の全ルームをバックフィルする（背景実行・長時間）。
+     * 例: /admin/genocpagecache/ja  (tw / th も可)
+     */
+    function genocpagecache(string $lang)
+    {
+        $urlRoot = match ($lang) {
+            'ja' => '',
+            'tw' => '/tw',
+            'th' => '/th',
+            default => null,
+        };
+
+        if (is_null($urlRoot)) {
+            return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。ja / tw / th を指定してください。']);
+        }
+
+        $path = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
+        $arg = escapeshellarg($urlRoot);
+
+        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
+
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . " ({$lang}) を背景実行しました（全ルームのバックフィル・完了まで時間がかかります）。"]);
+    }
+
+    /**
      * 日次ランキング更新
      */
     function updatedailyranking(UpdateDailyRankingService $updateRankingService,)
