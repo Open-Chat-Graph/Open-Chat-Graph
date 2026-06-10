@@ -42,9 +42,12 @@ abstract class AbstractSQLite extends DB implements DBInterface
         // Set busy timeout for all modes (including read-only) to handle concurrent access
         static::$pdo->exec('PRAGMA busy_timeout=10000');
 
-        // Apply write-related PRAGMA settings only for read-write mode
-        // Read-only mode (mode=ro) cannot execute journal_mode and synchronous
-        if (!str_contains($mode, 'mode=ro')) {
+        // Apply write-related PRAGMA settings only when the DB may be created (rwc / default).
+        // Reader connections use mode=rw (read-write, must-exist): they must NOT run journal_mode
+        // /synchronous (those attempt a write and add contention), but mode=rw still lets the
+        // reader open the WAL -shm wal-index. Using mode=ro on a WAL DB fails to access -shm and
+        // causes "locking protocol" (SQLITE_PROTOCOL) under concurrency, so readers must use rw.
+        if (str_contains($mode, 'rwc')) {
             // Enable WAL mode for concurrent read/write performance
             static::$pdo->exec('PRAGMA journal_mode=WAL');
 
