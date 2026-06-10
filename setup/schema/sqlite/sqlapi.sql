@@ -157,7 +157,7 @@ CREATE INDEX IF NOT EXISTS idx_deleted_date ON open_chat_deleted(deleted_at);
 CREATE TABLE IF NOT EXISTS comment (
     comment_id INTEGER PRIMARY KEY,         -- コメントID
     open_chat_id INTEGER NOT NULL,          -- オープンチャットID（openchat_master.openchat_idと紐づく）
-    id INTEGER NOT NULL,                    -- 旧ID（互換性のため保持）
+    id INTEGER NOT NULL,                    -- ルーム内の連番
     user_id TEXT NOT NULL,                  -- ユーザーID
     name TEXT NOT NULL,                     -- ユーザー名
     text TEXT NOT NULL,                     -- コメント本文
