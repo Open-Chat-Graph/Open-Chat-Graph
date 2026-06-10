@@ -65,7 +65,8 @@ class OpenChatPageController
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
             }
 
-            $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+            // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
+        $recommend = [false, false, '', false];
             $similarSize = $similarSizeRoomService->fetch(
                 (int)$oc['id'],
                 (int)$oc['member'],
@@ -84,7 +85,8 @@ class OpenChatPageController
                 return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
             }
 
-            $recommend = $recommendGenarator->getRecommend($oc['tag1'], $oc['tag2'], $oc['tag3'], $oc['category']);
+            // 緊急: 高負荷対策として recommend(おすすめ) を一時的に空にする（後で非同期フェッチ化する）
+        $recommend = [false, false, '', false];
             $similarSize = $similarSizeRoomService->fetch(
                 (int)$oc['id'],
                 (int)$oc['member'],
@@ -132,7 +134,8 @@ class OpenChatPageController
             $label = array_search($catId, $catMap, true);
             $categoryLabel = $label !== false ? (string)$label : null;
         }
-        $narrative = $narrativeService->generate($open_chat_id, [...$oc, 'description' => $formatedDescription], $categoryLabel);
+        // 緊急: 高負荷対策として narrative(分析文) を一時的に空にする（後で非同期フェッチ化する）
+        $narrative = null;
 
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], $narrative)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
