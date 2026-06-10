@@ -15,9 +15,15 @@ import { t } from './translation'
 export const chatArgDto: RankingPositionChartArgDto = JSON.parse(
   (document.getElementById('chart-arg') as HTMLScriptElement).textContent!
 )
-export const statsDto: StatisticsChartDto = JSON.parse(
-  (document.getElementById('stats-dto') as HTMLScriptElement).textContent!
-)
+// statsDto はサーバー注入(#stats-dto)をやめ、初回ロードで /oc/{id}/stats から非同期取得する
+// （bot が叩く /oc 本体から統計の重い SQLite 読み取りを外すため）
+export let statsDto: StatisticsChartDto
+
+export async function loadStatsDto() {
+  statsDto = await fetcher<StatisticsChartDto>(
+    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/stats?category=${chatArgDto.categoryKey ?? 0}`
+  )
+}
 
 export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
 
