@@ -41,7 +41,6 @@ use App\Controllers\Pages\StagingIconController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
-use App\ServiceProvider\ApiCommentListControllerServiceProvider;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
@@ -384,19 +383,6 @@ Route::path(
         'post'
     )
     ->middleware([VerifyCsrfToken::class], 'get');
-
-// アーカイブコメントAPI（認証付き、読み取り専用）
-Route::path(
-    'comment/{user}/oc/comment/{open_chat_id}@get',
-    [CommentListApiController::class, 'index', 'get']
-)
-    ->matchNum('open_chat_id', min: 0)
-    ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1, max: 10)
-    ->match(function (string $user) {
-        app(ApiCommentListControllerServiceProvider::class)->register();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
-    });
 
 // コメントリアクションAPI
 Route::path(
