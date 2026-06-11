@@ -79,6 +79,13 @@ class OpenChatPageController
         $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
         $_narrativeHtml = $ocPageCache['narrative_html'] ?? '';
 
+        // 応急修復: 過去にCLIで生成されたキャッシュにはホスト欠落URL(href="http:///...")が
+        // 残っている(HTTP_HOST不在時のurl()の不具合・生成側は修正済み)。バックフィルで
+        // 再生成されるまでの間、表示時にルート相対URLへ置換して直す（正常なHTMLには無害）。
+        if ($_narrativeHtml !== '') {
+            $_narrativeHtml = str_replace('"http:///', '"/', $_narrativeHtml);
+        }
+
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
         // ファイル読み＋unserialize のみで部屋ごとの MySQL クエリは発生しない。
         // キャッシュ未生成の部屋でも関連ルーム枠は常に表示される。
