@@ -15,7 +15,6 @@ import afterOpenChatChartJSFactory from './ChartJS/Factories/afterOpenChatChartJ
 import getIncreaseLegendSpacingPlugin from './ChartJS/Plugin/getIncreaseLegendSpacingPlugin.ts'
 import getEventCatcherPlugin from './ChartJS/Plugin/getEventCatcherPlugin.ts'
 import paddingArray from './ChartJS/Util/paddingArray.ts'
-import { statsDto } from '../util/fetchRenderer'
 import { t } from '../util/translation'
 import { getColors } from '../util/theme'
 
@@ -239,7 +238,7 @@ export default class OpenChatChart implements ChartFactory {
 
   private buildCandlestickData() {
     const limit = this.limit
-    const dates = statsDto.date
+    const dates = this.initData.date
     const len = dates.length
 
     const startIdx = limit ? Math.max(0, len - limit) : 0

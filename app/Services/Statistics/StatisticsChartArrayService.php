@@ -28,9 +28,10 @@ class StatisticsChartArrayService
      * 日毎のメンバー数の統計を取得する
      *
      * @param int|null $category 部屋のカテゴリID（未掲載・その他はnull/0）
+     * @param bool $withAvailability タブ・ボタン出し分け用の可用性メタデータを計算するか
      * @return array{ date: string, member: int }[] date: Y-m-d
      */
-    function buildStatisticsChartArray(int $open_chat_id, int|null $category = null): StatisticsChartDto|false
+    function buildStatisticsChartArray(int $open_chat_id, int|null $category = null, bool $withAvailability = true): StatisticsChartDto|false
     {
         $memberStats = $this->statisticsPageRepository->getDailyMemberStatsDateAsc($open_chat_id);
 
@@ -46,8 +47,10 @@ class StatisticsChartArrayService
             $memberStats
         );
 
-        $this->setOhlcAvailability($dto, $open_chat_id);
-        $this->setPositionAvailability($dto, $open_chat_id, $category);
+        if ($withAvailability) {
+            $this->setOhlcAvailability($dto, $open_chat_id);
+            $this->setPositionAvailability($dto, $open_chat_id, $category);
+        }
 
         return $dto;
     }

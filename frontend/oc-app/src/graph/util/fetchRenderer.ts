@@ -15,173 +15,141 @@ import { t } from './translation'
 export const chatArgDto: RankingPositionChartArgDto = JSON.parse(
   (document.getElementById('chart-arg') as HTMLScriptElement).textContent!
 )
-// statsDto はサーバー注入(#stats-dto)をやめ、初回ロードで /oc/{id}/stats から非同期取得する
-// （bot が叩く /oc 本体から統計の重い SQLite 読み取りを外すため）
-export let statsDto: StatisticsChartDto
 
-export async function loadStatsDto() {
-  statsDto = await fetcher<StatisticsChartDto>(
-    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/stats?category=${chatArgDto.categoryKey ?? 0}`
-  )
-}
+// タブ・ボタン出し分け用の可用性メタデータ。初回ロードの meta=1 レスポンスで設定される
+export let chartMeta: ChartMeta
 
 export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
 
-const getApiQuery = (param: ChartApiParam, isHour: boolean) => {
-  const query = {
-    sort: '',
-    category: '',
-    start_date: isHour ? '' : statsDto.startDate,
-    end_date: isHour ? '' : statsDto.endDate,
-  }
+/**
+ * 現在のチャート状態が指す表示ビューをAPIクエリ文字列にする。
+ * 同一ビューは同一URLになるため、fetcher のURLキャッシュがそのまま効く
+ */
+export function getChartViewQuery(withMeta = false): string {
+  const mode = graphStore.get(chartModeAtom)
+  const sort = graphStore.get(rankingRisingAtom)
+  const span = mode === 'line' && chart.getIsHour() ? 'hour' : 'day'
+  const scope = sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
 
-  switch (param) {
-    case 'ranking':
-      query.sort = 'ranking'
-      query.category = chatArgDto.categoryKey?.toString() ?? ''
-      break
-    case 'ranking_all':
-      query.sort = 'ranking'
-      query.category = '0'
-      break
-    case 'rising':
-      query.sort = 'rising'
-      query.category = chatArgDto.categoryKey?.toString() ?? ''
-      break
-    case 'rising_all':
-      query.sort = 'rising'
-      query.category = '0'
-  }
+  const query = new URLSearchParams({
+    span,
+    sort,
+    scope,
+    category: (chatArgDto.categoryKey ?? 0).toString(),
+    mode,
+  })
+  if (withMeta) query.set('meta', '1')
 
-  return new URLSearchParams(query).toString()
+  return query.toString()
 }
 
-const renderChart =
-  (param: ChartApiParam, animation: boolean, limit: ChartLimit) => (data: RankingPositionChart) => {
-    graphStore.set(loadingAtom, false)
-    const isRising = param === 'rising' || param === 'rising_all'
+export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
+  const data = await fetcher<ChartResponse>(
+    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
+  )
+  if (data.meta) {
+    chartMeta = data.meta
+  }
+  return data
+}
 
-    chart.render(
-      {
-        date: data.date.length ? data.date : statsDto.date,
-        graph1: data.member.length ? data.member : statsDto.member,
-        graph2: data.position,
-        time: data.time,
-        totalCount: data.totalCount,
-      },
-      {
-        label1: t('メンバー数'),
-        label2: isRising ? t('公式急上昇の順位') : t('公式ランキングの順位'),
-        category: param.indexOf('all') !== -1 ? t('すべて') : chatArgDto.categoryName,
-        isRising,
-      },
-      animation,
-      limit
-    )
+const renderPositionChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
+  const isRising = graphStore.get(rankingRisingAtom) === 'rising'
+
+  chart.render(
+    {
+      date: data.date,
+      graph1: data.member,
+      graph2: data.position,
+      time: data.time,
+      totalCount: data.totalCount,
+    },
+    {
+      label1: t('メンバー数'),
+      label2: isRising ? t('公式急上昇の順位') : t('公式ランキングの順位'),
+      category: graphStore.get(categoryAtom) === 'all' ? t('すべて') : chatArgDto.categoryName,
+      isRising,
+    },
+    animation,
+    limit
+  )
+}
+
+const renderMemberChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
+  chart.render(
+    {
+      date: data.date,
+      graph1: data.member,
+      graph2: [],
+      time: [],
+      totalCount: [],
+    },
+    {
+      label1: t('メンバー数'),
+      label2: '',
+      category: chatArgDto.categoryName,
+    },
+    animation,
+    limit
+  )
+}
+
+const renderCandlestickChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
+  const isRising = graphStore.get(rankingRisingAtom) === 'rising'
+
+  chart.render(
+    {
+      date: data.date,
+      graph1: data.member,
+      graph2: [],
+      time: [],
+      totalCount: [],
+      rankingOhlc: data.positionOhlc,
+    },
+    {
+      label1: t('メンバー数'),
+      label2: isRising ? t('急上昇') : t('ランキング'),
+      category: graphStore.get(categoryAtom) === 'all' ? t('すべて') : chatArgDto.categoryName,
+      isRising,
+    },
+    animation,
+    limit
+  )
+}
+
+/** 取得済みのレスポンスを現在のチャート状態に従って描画する */
+export function renderChartData(data: ChartResponse, animation: boolean) {
+  graphStore.set(loadingAtom, false)
+
+  const currentLimit = graphStore.get(limitAtom)
+  const limit: ChartLimit = currentLimit === 25 ? 31 : currentLimit
+  const sort = graphStore.get(rankingRisingAtom)
+
+  if (graphStore.get(chartModeAtom) === 'candlestick') {
+    chart.memberOhlcApiData = data.memberOhlc ?? []
+
+    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新
+    updateCandleTabVisibility(chart.memberOhlcApiData, data.date)
+
+    if (sort === 'none') {
+      renderMemberChart(data, animation, limit)
+    } else {
+      renderCandlestickChart(data, animation, limit)
+    }
+    return
   }
 
-const renderMemberChart =
-  (animation: boolean, limit: ChartLimit) => (data: RankingPositionChart | StatisticsChartDto) => {
-    graphStore.set(loadingAtom, false)
-    chart.render(
-      {
-        date: data.date,
-        graph1: data.member,
-        graph2: [],
-        time: [],
-        totalCount: [],
-      },
-      {
-        label1: t('メンバー数'),
-        label2: '',
-        category: chatArgDto.categoryName,
-      },
-      animation,
-      limit
-    )
-  }
+  // 折れ線グラフモード: 日次データ数に基づいてタブ表示を復元
+  updateTabVisibility(chartMeta.dateCount)
 
-export function renderChartWithoutRanking() {
-  renderMemberChart(true, graphStore.get(limitAtom) as ChartLimit)(statsDto)
+  if (sort === 'none') {
+    renderMemberChart(data, animation, limit)
+  } else {
+    renderPositionChart(data, animation, limit)
+  }
 }
 
 export async function fetchChart(animation: boolean) {
-  if (graphStore.get(chartModeAtom) === 'candlestick') {
-    // メンバーOHLCをAPI経由で取得
-    graphStore.set(loadingAtom, true)
-    const memberOhlcData = await fetcher<MemberOhlc[]>(
-      `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/member_ohlc`
-    )
-    chart.memberOhlcApiData = memberOhlcData
-
-    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新
-    updateCandleTabVisibility(memberOhlcData)
-    const currentLimit = graphStore.get(limitAtom)
-    const limit: ChartLimit = currentLimit === 25 ? 31 : currentLimit
-
-    if (graphStore.get(rankingRisingAtom) !== 'none') {
-      const sort = graphStore.get(rankingRisingAtom)
-      const category = graphStore.get(categoryAtom) === 'all' ? 0 : chatArgDto.categoryKey
-      const ohlcData = await fetcher<RankingPositionOhlc[]>(
-        `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/position_ohlc?sort=${sort}&category=${category}`
-      )
-      graphStore.set(loadingAtom, false)
-      const isRising = sort === 'rising'
-      chart.render(
-        {
-          date: statsDto.date,
-          graph1: statsDto.member,
-          graph2: [],
-          time: [],
-          totalCount: [],
-          rankingOhlc: ohlcData,
-        },
-        {
-          label1: t('メンバー数'),
-          label2: isRising ? t('急上昇') : t('ランキング'),
-          category: graphStore.get(categoryAtom) === 'all' ? t('すべて') : chatArgDto.categoryName,
-          isRising,
-        },
-        animation,
-        limit
-      )
-    } else {
-      graphStore.set(loadingAtom, false)
-      renderMemberChart(animation, limit)(statsDto)
-    }
-    return
-  }
-
-  // 折れ線グラフモード: statsDto基準でタブ表示を復元
-  updateTabVisibility(statsDto.date.length)
-
-  const path: PotisionPath = chart.getIsHour() ? 'position_hour' : 'position'
-  const currentLimit2 = graphStore.get(limitAtom)
-  const limit: ChartLimit = currentLimit2 === 25 ? 31 : currentLimit2
-
-  const ranking = graphStore.get(rankingRisingAtom)
-
-  // メンバーグラフのみの場合
-  if (ranking === 'none') {
-    if (chart.getIsHour()) {
-      graphStore.set(loadingAtom, true)
-      await fetcher<RankingPositionChart>(
-        `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery('ranking', true)}`
-      ).then(renderMemberChart(animation, limit))
-    } else {
-      renderMemberChart(animation, limit)(statsDto)
-    }
-    return
-  }
-
-  const param: ChartApiParam = `${ranking}${
-    graphStore.get(categoryAtom) === 'all' ? '_all' : ''
-  }` as ChartApiParam
-
   graphStore.set(loadingAtom, true)
-  await fetcher<RankingPositionChart>(
-    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/${path}?${getApiQuery(param, chart.getIsHour())}`
-  ).then((data) => {
-    renderChart(param, animation, limit)(data)
-  })
+  renderChartData(await fetchChartData(), animation)
 }
