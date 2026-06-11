@@ -951,7 +951,7 @@ class OcreviewApiDataImporter
      *
      * 【idカラムについて】
      * open_chat_deleted.id は AUTO_INCREMENT だが、実際には openchat_id の値が明示的に挿入されています。
-     * このため、ApiDeletedOpenChatListRepository では om.openchat_id = ocd.id でJOINできます。
+     * このため、openchat_master.openchat_id = open_chat_deleted.id でJOINできます。
      */
     private function importOpenChatDeleted(): void
     {
