@@ -10,7 +10,6 @@ use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\SQLite\Repositories\OcPageCacheRepository;
 use App\Services\OpenChatAdmin\AdminOpenChat;
-use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
@@ -42,6 +41,7 @@ class OpenChatPageController
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
         OcPageCacheRepository $ocPageCacheRepository,
+        OfficialPageList $officialPageList,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -142,7 +142,7 @@ class OpenChatPageController
             'openChatName' => $oc['name'],
         ];
 
-        $officialDto = ($oc['emblem'] ?? 0) > 0 ? $this->buildOfficialDto($oc['emblem']) : null;
+        $officialDto = ($oc['emblem'] ?? 0) > 0 ? $officialPageList->getListDto($oc['emblem']) : null;
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
@@ -196,13 +196,6 @@ class OpenChatPageController
         /** @var AdminOpenChat $admin */
         $admin = app(AdminOpenChat::class);
         return $admin->getDto($open_chat_id);
-    }
-
-    private function buildOfficialDto(int $emblem): RecommendListDto
-    {
-        /** @var OfficialPageList $officialPageList */
-        $officialPageList = app(OfficialPageList::class);
-        return $officialPageList->getListDto($emblem);
     }
 
     /**
