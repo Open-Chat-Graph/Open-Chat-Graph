@@ -29,7 +29,6 @@ class JumpOpenChatPageController
             'pages/room_page',
             'react/OpenChat',
             'pages/graph_page',
-            'components/ads_element'
         ];
 
         switch (MimimalCmsConfig::$urlRoot) {

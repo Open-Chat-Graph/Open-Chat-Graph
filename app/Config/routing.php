@@ -360,16 +360,6 @@ Route::path(
         checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/live_content.php'));
     });
 
-/* Route::path(
-    'labs/tags',
-    [TagLabsPageController::class, 'index']
-)
-    ->matchStr('ads', emptyAble: true)
-    ->match(function () {
-                if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
-    }); */
-
 Route::path(
     'labs/all-room-stats',
     [AllRoomStatsPageController::class, 'index']
@@ -724,65 +714,6 @@ Route::path(
         noStore();
         return ['isAdminPage' => '1'];
     });
-
-/* Route::path(
-    'ads/register@post',
-    [AdsRegistrationApiController::class, 'register']
-)
-    ->matchStr('ads_title')
-    ->matchStr('ads_sponsor_name')
-    ->matchStr('ads_paragraph', emptyAble: true)
-    ->matchStr('ads_href')
-    ->matchStr('ads_img_url')
-    ->matchStr('ads_tracking_url', emptyAble: true)
-    ->matchStr('ads_title_button');
-
-Route::path(
-    'ads/update@post',
-    [AdsRegistrationApiController::class, 'update']
-)
-    ->matchNum('id', min: 1)
-    ->matchStr('ads_title')
-    ->matchStr('ads_sponsor_name')
-    ->matchStr('ads_paragraph', emptyAble: true)
-    ->matchStr('ads_href')
-    ->matchStr('ads_img_url')
-    ->matchStr('ads_tracking_url', emptyAble: true)
-    ->matchStr('ads_title_button');
-
-Route::path(
-    'ads/delete@post',
-    [AdsRegistrationApiController::class, 'delete']
-)
-    ->matchNum('id', min: 1);
-
-Route::path(
-    'ads/update-tagmap@post',
-    [AdsRegistrationApiController::class, 'updateTagsMap']
-)
-    ->matchNum('ads_id')
-    ->matchStr('tag');
-
-Route::path(
-    'ads/tags@post',
-    [AdsRegistrationApiController::class, 'updateTagsMap']
-)
-    ->matchNum('id', min: 1)
-    ->matchStr('tag');
-
-Route::path(
-    'ads',
-    [AdsRegistrationPageController::class, 'index']
-)
-    ->matchNum('id', emptyAble: true);
-
-Route::path(
-    'labs/tags/ads',
-    [TagLabsPageController::class, 'index']
-)
-    ->match(function () {
-        return ['isAdminPage' => '1'];
-    }); */
 
 Route::path('furigana@POST')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')

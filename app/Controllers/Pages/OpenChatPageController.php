@@ -112,7 +112,6 @@ class OpenChatPageController
             'pages/room_page',
             'react/OpenChat',
             'pages/graph_page',
-            'components/ads_element'
         ];
 
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
