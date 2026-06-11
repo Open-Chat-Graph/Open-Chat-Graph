@@ -204,8 +204,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <?php endif ?>
 
-    <?php // 関連ルーム(類似サイズ/おすすめ)は oc_page_cache の事前計算済みHTMLを生出力。未生成は空 ?>
-    <?php echo $_recommendHtml ?>
+    <?php // 関連ルーム(類似サイズ/おすすめ)は recommend 静的キャッシュ(.dat)から都度組み立て（MySQL不使用） ?>
+    <?php viewComponent('oc_recommend_aside', ['similarSize' => $_similarSize, 'recommend' => $_recommend, 'oc' => $oc]) ?>
 
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効

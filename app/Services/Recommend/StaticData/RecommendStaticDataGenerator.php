@@ -80,11 +80,21 @@ class RecommendStaticDataGenerator
         );
     }
 
+    /** @var array<string, RecommendListDto> リクエスト内メモ。/oc では同じタグの .dat を
+     *  recommend(おすすめ枠)と SimilarSizeRoomService(人数絞り込み)が読むため、
+     *  母集団300件化した .dat の unserialize を1回に抑える。 */
+    private static array $memo = [];
+
     /**
      * 静的データ(.dat)を読む。無い/無効化時は $liveBuild() でDBから即時生成する。
      */
     private function fromFileOrDb(string $dirKey, string $fileName, callable $liveBuild): RecommendListDto
     {
+        $memoKey = "{$dirKey}/{$fileName}";
+        if (isset(self::$memo[$memoKey]) && !AppConfig::$disableStaticDataFile) {
+            return self::$memo[$memoKey];
+        }
+
         $data = $this->fileStorage->getSerializedFile(
             $this->fileStorage->getStorageFilePath($dirKey) . "/{$fileName}.dat"
         );
@@ -101,7 +111,7 @@ class RecommendStaticDataGenerator
             noStore();
         }
 
-        return $data;
+        return self::$memo[$memoKey] = $data;
     }
 
     // ============================================================
