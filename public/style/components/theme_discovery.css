@@ -1,6 +1,6 @@
 /* ============================================================
    テーマ発見セクション（components/theme_discovery.php）
-   /recommend 着地客の回遊導線: 全幅検索 + 急上昇/人気/近いカテゴリの棚。
+   /recommend 着地客の回遊導線: 急上昇/近いテーマのタグチップ棚。
    色は style/tokens.css のトークン（--c-*）を参照する。
    ============================================================ */
 
@@ -12,12 +12,6 @@
   margin-top: 10px;
   padding: 18px 1rem 6px;
   border-top: 1px solid var(--c-cool-border-soft);
-}
-
-.theme-disco--search-only {
-  border-top: 0;
-  margin-top: 6px;
-  padding-top: 2px;
 }
 
 .theme-disco__title {
@@ -41,127 +35,13 @@
   margin-right: 8px;
 }
 
-/* ---------- 検索ボックス ---------- */
-
-.theme-disco__search {
-  position: relative;
-  display: block;
-  width: 100%;
-}
-
-.theme-disco__icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  fill: var(--c-cool-text-weak);
-  pointer-events: none;
-}
-
-/* font-size は必ず16px以上: iOS Safari のフォーカス時オートズーム回避 */
-.theme-disco__input {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  height: 48px;
-  margin: 0;
-  padding: 0 44px 0 44px;
-  font-size: 16px;
-  color: var(--c-cool-text-deep);
-  background: var(--c-cool-surface);
-  border: 1.5px solid var(--c-border-2);
-  border-radius: 12px;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    box-shadow 0.15s;
-}
-
-.theme-disco__input::placeholder {
-  color: var(--c-cool-text-weak);
-}
-
-/* type=search のネイティブ取消ボタンを抑止（自作✕と二重表示になるため）。iOS は元々非表示 */
-.theme-disco__input::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
-}
-
-.theme-disco__input:focus {
-  background: var(--c-bg);
-  border-color: var(--c-brand);
-  box-shadow: 0 0 0 3px var(--c-brand-ring);
-}
-
-.theme-disco__clear {
-  position: absolute;
-  right: 6px;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-cool-text-weak);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.theme-disco__clear:hover {
-  color: var(--c-cool-text);
-}
-
-.theme-disco__clear[hidden] {
-  display: none;
-}
-
-.theme-disco__spinner {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid var(--c-cool-border);
-  border-top-color: var(--c-brand);
-  border-radius: 50%;
-  animation: theme-disco-spin 0.7s linear infinite;
-  margin: 8px 2px;
-}
-
-@keyframes theme-disco-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ---------- 結果・棚 ---------- */
-
-.theme-disco__results {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  align-content: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-}
+/* ---------- 棚 ---------- */
 
 .theme-disco__shelves {
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin-top: 16px;
-}
-
-/* [hidden] を確実に優先（display:flex に勝たせる） */
-.theme-disco__results[hidden],
-.theme-disco__shelves[hidden] {
-  display: none;
 }
 
 .theme-disco__shelf {
@@ -251,69 +131,4 @@
 .theme-disco-chip--hot:hover {
   background: var(--c-chip-hot-bg-hover);
   border-color: var(--c-chip-hot-border-hover);
-}
-
-.theme-disco__empty {
-  font-size: 13px;
-  color: var(--c-cool-text-weak);
-  padding: 6px 2px;
-}
-
-/* ---------- テーマ0件時のフォールバック
-     （一致するオープンチャット＝部屋。チップでなくリスト行で“部屋”と分かる見せ方） ---------- */
-
-.theme-disco__rooms {
-  display: block;
-  width: 100%;
-}
-
-.theme-disco__note {
-  font-size: 13px;
-  color: var(--c-cool-text-weak);
-  padding: 2px 2px 0;
-}
-
-.theme-disco__rooms-h {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--c-cool-text);
-  margin: 10px 0 8px;
-}
-
-.theme-disco__rooms-h::before {
-  content: '💬';
-  font-size: 12px;
-}
-
-.theme-disco__room {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 9px 11px;
-  margin-bottom: 8px;
-  background: var(--c-bg);
-  border: 1px solid var(--c-cool-border-soft);
-  border-radius: 10px;
-  text-decoration: none;
-}
-
-.theme-disco__room:active {
-  background: var(--c-cool-surface);
-}
-
-.theme-disco__room-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--c-cool-text-heading);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.theme-disco__room-meta {
-  font-size: 12px;
-  color: var(--c-cool-text);
 }
