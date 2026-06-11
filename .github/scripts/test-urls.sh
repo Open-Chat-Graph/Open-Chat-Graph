@@ -77,6 +77,32 @@ test_url() {
     fi
 }
 
+# JSON APIテスト関数（ステータス200に加え、レスポンス本文が期待パターンを含むか確認）
+test_json_url() {
+    local url="$1"
+    local expected_pattern="$2"
+    local description="$3"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+    echo -n "Testing JSON: ${url} ... " | tee -a "$LOG_FILE"
+
+    local body_file=$(mktemp)
+    local status_code=$(curl -k -s -o "$body_file" -w "%{http_code}" --max-time 30 "$url")
+
+    if [ "$status_code" = "200" ] && grep -qE "$expected_pattern" "$body_file"; then
+        echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
+        rm -f "$body_file"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    else
+        echo -e "${RED}FAILED (Status: ${status_code}, Body: $(head -c 100 "$body_file"))${NC}" | tee -a "$LOG_FILE"
+        rm -f "$body_file"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+}
+
 # サイトマップにURLが含まれているかテスト
 test_sitemap_contains_url() {
     local sitemap_dir="$1"
@@ -331,6 +357,23 @@ main() {
     fi
     echo ""
 
+    # 統計グラフデータAPI（graphが初回ロードで非同期取得する /oc/{id}/stats）のテスト
+    # date配列が空でないことまで確認し「200だがグラフが空」の劣化も検知する
+    log "統計グラフデータAPIのテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（category=0）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/stats?category=8" '"positionAvailability"' "統計グラフデータ（category=8）"
+    fi
+
+    if [ -n "$TH_OC_ID" ]; then
+        test_json_url "${BASE_URL}/th/oc/${TH_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（タイ語）"
+    fi
+
+    if [ -n "$TW_OC_ID" ]; then
+        test_json_url "${BASE_URL}/tw/oc/${TW_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（繁体字）"
+    fi
+    echo ""
+
     # 各種ページ
     log "各種ページのテスト（多言語）"
     test_url "${BASE_URL}/policy" "ポリシーページ"
@@ -446,6 +489,10 @@ main() {
     log "コメントページのテスト"
     test_url "${BASE_URL}/comment/0?page=0&limit=10" "コメント（ID=0）"
     test_url "${BASE_URL}/comment/1?page=10&limit=10" "コメント（ID=1、page=10）"
+    # 個別ルームページが初回ロードで呼ぶ実在ルームIDでのコメント一覧（JSON配列が返ること）
+    if [ -n "$JA_OC_ID" ]; then
+        test_json_url "${BASE_URL}/comment/${JA_OC_ID}?page=0&limit=10" '^\[' "コメント一覧（実在ルームID）"
+    fi
     test_url "${BASE_URL}/comments-timeline" "コメントタイムライン"
     echo ""
 
