@@ -168,6 +168,14 @@ class SyncOpenChat
             ],
         );
 
+        // 日次クロール対象（変動・新規・週次更新の部屋）のページキャッシュを再生成する。
+        // ランキング外の部屋は毎時フックでは拾えないため、日次クロールと同じ対象を追従させる
+        // （週次更新部屋も含むため、全部屋のキャッシュが最長でも約1週間周期で更新される）。
+        $ocPageCachePath = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
+        $urlRootArg = escapeshellarg(MimimalCmsConfig::$urlRoot);
+        exec(PHP_BINARY . " {$ocPageCachePath} {$urlRootArg} daily >/dev/null 2>&1 &");
+        CronUtility::addVerboseCronLog('ページキャッシュ日次更新をバックグラウンドで開始');
+
         CronUtility::addCronLog('【日次処理】完了');
     }
 

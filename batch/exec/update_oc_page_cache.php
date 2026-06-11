@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -17,10 +18,13 @@ use Shared\MimimalCmsConfig;
  * ルーム個別ページの「分析文/関連ルーム」事前計算キャッシュ(oc_page_cache)を生成する。
  *
  * 使い方:
- *   php batch/exec/update_oc_page_cache.php <urlRoot> [hourly|idCsv]
+ *   php batch/exec/update_oc_page_cache.php <urlRoot> [hourly|daily|idCsv]
  *     - <urlRoot>: '' | '/tw' | '/th'（保存先SQLite・HTMLの言語を決める）
  *     - hourly   : 毎時モード。直近1時間でメンバー数が変動した（またはランキングに
  *                  新規掲載された）ルームだけ再生成する（SyncOpenChat毎時処理から起動）。
+ *     - daily    : 日次モード。日次クロールと同じ対象（変動・新規・週次更新の部屋）を
+ *                  再生成する（SyncOpenChat日次処理から起動）。ランキング外の部屋は
+ *                  毎時モードでは拾えないため、これで最長でも週次周期で全部屋が更新される。
  *     - idCsv    : カンマ区切りID指定時はそのルームだけ再生成（write-through用）。
  *     - 省略時   : 全ルーム(getOpenChatIdAll)をバックフィル。
  *
@@ -40,11 +44,11 @@ try {
     $state = app(SyncOpenChatStateRepositoryInterface::class);
 
     if ($state->getBool(StateType::isUpdateOcPageCacheActive)) {
-        if ($mode === 'hourly') {
-            // 毎時モードは実行中（フルバックフィル等）をkillせず今回をスキップする。
+        if ($mode === 'hourly' || $mode === 'daily') {
+            // 毎時/日次モードは実行中（フルバックフィル等）をkillせず今回をスキップする。
             // フラグも下ろしておく＝プロセス異常終了でフラグだけ残った場合に次回から自走再開できる
             // （実行中プロセスが本当に居れば完走時/エラー時に自分でフラグを下ろすため矛盾しない）。
-            CronUtility::addCronLog('ページキャッシュ毎時更新: 実行中のためスキップ');
+            CronUtility::addCronLog("ページキャッシュ更新({$mode}): 実行中のためスキップ");
             $state->setFalse(StateType::isUpdateOcPageCacheActive);
             exit;
         }
@@ -60,8 +64,15 @@ try {
 
     $state->setTrue(StateType::isUpdateOcPageCacheActive);
 
-    // 対象ID: hourly=直近1時間の変動ルーム / idCsv=指定ルーム / 省略=全ルーム
-    if ($mode === 'hourly') {
+    // 対象ID: hourly=直近1時間の変動ルーム / daily=日次クロール対象 / idCsv=指定ルーム / 省略=全ルーム
+    if ($mode === 'daily') {
+        // 日次クロールが使ったフィルター（変動・新規・週次更新）と同じ対象を再生成する。
+        // 同一日付キーなら日次処理が保存した .dat キャッシュから読むだけで、
+        // 重い statistics クエリは再実行されない（ja は翌日23時まで同一日付になる）。
+        /** @var MemberChangeFilterCacheRepositoryInterface $filterRepo */
+        $filterRepo = app(MemberChangeFilterCacheRepositoryInterface::class);
+        $ids = $filterRepo->getForDaily(OpenChatServicesUtility::getCronModifiedStatsMemberDate());
+    } elseif ($mode === 'hourly') {
         /** @var RankingPositionHourRepositoryInterface $hourRepo */
         $hourRepo = app(RankingPositionHourRepositoryInterface::class);
 
