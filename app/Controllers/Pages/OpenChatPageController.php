@@ -78,15 +78,9 @@ class OpenChatPageController
         // レンダリングはリクエスト時に oc_narrative_section テンプレートが行う。
         // 未生成（バックフィル前/生成不可）は null → 空表示。bot が叩く /oc 本体で重い計算をしない。
         $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
-        $_narrative = null;
-        $_narrativeLegacyHtml = '';
-        if (!empty($ocPageCache['narrative_data'])) {
-            $_narrative = json_decode($ocPageCache['narrative_data'], true) ?: null;
-        } elseif (!empty($ocPageCache['narrative_html'])) {
-            // 旧形式（事前レンダリングHTML）の行。バックフィル/毎時フックで narrative_data に
-            // 置き換わるまでの移行期のみ。ホスト欠落URL(http:///)の応急修復も移行期間中は維持する。
-            $_narrativeLegacyHtml = str_replace('"http:///', '"/', $ocPageCache['narrative_html']);
-        }
+        $_narrative = !empty($ocPageCache['narrative_data'])
+            ? (json_decode($ocPageCache['narrative_data'], true) ?: null)
+            : null;
 
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
         // ファイル読み＋unserialize のみで部屋ごとの MySQL クエリは発生しない。
@@ -165,7 +159,6 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             '_narrative',
-            '_narrativeLegacyHtml',
             '_recommend',
             '_similarSize',
             '_hourlyRange',

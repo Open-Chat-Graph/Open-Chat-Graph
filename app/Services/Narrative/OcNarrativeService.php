@@ -85,21 +85,35 @@ class OcNarrativeService
     }
 
     /**
-     * メトリクスの「現在の基準日」を毎時クロール基準時刻 ('Y-m-d') から解決する。
-     * cron 時刻ファイルが空 / 不正 / 取得不能なら null を返し、Repository 側は従来の
-     * date('now') (SQLite 実行時刻) フォールバックで動く。
+     * メトリクス・経過日数の「現在」の基準時刻を毎時クロール完了時刻
+     * (@hourlyCronUpdatedAtDatetime) から解決する。
+     *
+     * narrative はクロールで採れたデータの「最終時点」を基準に経過日数・停滞判定を
+     * 行うべきで、wall-clock の now ではない。クロールが止まった環境（ローカル/共有）で
+     * 古いデータに now を当てると、経過日数が水増しされ「停滞」誤判定や経過月数の不正が起きる。
+     * 取得不能なら null（呼び出し側は new \DateTime('now') にフォールバック）。
      */
-    private function resolveBaseDate(): ?string
+    private function cronNow(): ?\DateTime
     {
         try {
             $cron = trim($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
             if ($cron === '') {
                 return null;
             }
-            return (new \DateTime($cron))->format('Y-m-d');
+            return new \DateTime($cron);
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * メトリクスの「現在の基準日」を毎時クロール基準時刻 ('Y-m-d') から解決する。
+     * cron 時刻ファイルが空 / 不正 / 取得不能なら null を返し、Repository 側は従来の
+     * date('now') (SQLite 実行時刻) フォールバックで動く。
+     */
+    private function resolveBaseDate(): ?string
+    {
+        return $this->cronNow()?->format('Y-m-d');
     }
 
     /**
@@ -126,7 +140,7 @@ class OcNarrativeService
             // 実開設日 (api_created_at) からの経過日数。null = 開設日が不明。
             // 「新規」ラベルは sample_n ではなく実開設日で判定する (疎クロールの古い小規模ルーム対策)。
             $created = $this->parseApiCreatedAt($oc);
-            $roomAgeDays = $created !== null ? (int)$created->diff(new \DateTime('now'))->days : null;
+            $roomAgeDays = $created !== null ? (int)$created->diff($this->cronNow() ?? new \DateTime('now'))->days : null;
 
             // 決定的な状態分類 (summary ラベル / trend 文 / pattern を一貫して導く)
             $state = $this->classify($metrics, $roomAgeDays);
@@ -703,7 +717,8 @@ class OcNarrativeService
     {
         try {
             $dt = new \DateTime($date);
-            $now = new \DateTime('now');
+            // wall-clock ではなくクロール最終時点を基準に経過日数を測る（停滞判定・経過月数の整合）
+            $now = $this->cronNow() ?? new \DateTime('now');
             $diff = $dt->diff($now);
             return (int)$diff->days;
         } catch (\Throwable $e) {
