@@ -7,7 +7,6 @@ namespace App\Controllers\Api;
 use App\Config\AppConfig;
 use App\Config\SecretsConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
-use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use App\Services\Api\DatabaseApiRateLimiter;
 use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\ValidationException;
@@ -73,21 +72,6 @@ class DatabaseApiController
             'status' => 'error',
             'message' => $message,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-    }
-
-    function ban(ApiDeletedOpenChatListRepository $repo, string $date)
-    {
-        header('Content-Type: application/json');
-        ob_start('ob_gzhandler');
-
-        $result = $repo->getDeletedOpenChatList($date, 999999);
-
-        $response = [];
-        if($result) {
-            $response = array_column($result, 'openchat_id');
-        }
-
-        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     function schema()

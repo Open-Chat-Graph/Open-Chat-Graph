@@ -659,50 +659,6 @@ Route::path(
     });
 
 // データベースAPI（読み取り専用）
-// /database/{username}/... の {username} で挙動が分かれる:
-//   1. {username} が adminApiKey なら従来どおり
-//   2. {username} が ApiUser::$apiUser に存在するなら Basic認証を要求
-//   3. それ以外の {username} は 404（return false）
-$databaseApiAuth = function (string $username) {
-    if (MimimalCmsConfig::$urlRoot !== '') {
-        return false;
-    }
-
-    // 1. 管理用キー
-    if ($username === SecretsConfig::$adminApiKey) {
-        allowCORS();
-        return true;
-    }
-
-    // 2. 登録済みユーザーなら Basic認証
-    // ApiUser クラス自体が存在しない場合は、登録ユーザーなし＝ログイン失敗として扱う
-    $apiUsers = class_exists(ApiUser::class) ? ApiUser::$apiUser : [];
-    foreach ($apiUsers as $apiUser) {
-        if ($apiUser['username'] === $username) {
-            allowCORS();
-
-            $auth = getBasicAuthCredentials();
-            if ($auth['user'] !== $apiUser['username'] || $auth['pass'] !== $apiUser['password']) {
-                header('WWW-Authenticate: Basic realm="Database SQL API"');
-                response([
-                    'status' => 'error',
-                    'message' => 'Basic authentication is required to access the database API.',
-                ], 401)->send();
-                exit;
-            }
-
-            return true;
-        }
-    }
-
-    // 3. 未登録ユーザーは 403
-    response([
-        'status' => 'error',
-        'message' => 'User not found',
-    ], 403)->send();
-    exit;
-};
-
 // /database/{username}/query・/schema 用の認証（いずれも POST）:
 //   - Basic認証ではなく、POSTボディの password で認証する
 //   - password は ApiUser の登録パスワードを SHA256 した16進文字列を送る
@@ -766,13 +722,6 @@ Route::path(
     [DatabaseApiController::class, 'schema']
 )
     ->match($databaseApiPostAuth);
-
-Route::path(
-    'database/{username}/ban@get@options',
-    [DatabaseApiController::class, 'ban']
-)
-    ->match($databaseApiAuth)
-    ->matchStr('date');
 
 cache();
 Route::run();
