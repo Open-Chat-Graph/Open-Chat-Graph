@@ -51,7 +51,7 @@ for LOC in "" /tw /th; do
     echo "OK  ランキングAPI${LOC} (id=${OC_ID})"
 
     check "ルームページ${LOC}" "${SITE_URL}${LOC}/oc/${OC_ID}"
-    check "グラフAPI${LOC}" "${SITE_URL}${LOC}/oc/${OC_ID}/stats?category=0" '"date":\['
+    check "グラフAPI${LOC}" "${SITE_URL}${LOC}/oc/${OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=line&meta=1" '"date":\['
 
     case "$LOC" in
         "")    RECO="%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89" ;;

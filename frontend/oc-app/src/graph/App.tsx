@@ -5,8 +5,9 @@ import { graphStore } from './state/store'
 import ChartLimitBtns from './components/ChartLimitBtns'
 import ToggleButtons from './components/ToggleButtons'
 import {
+  applyAvailabilityFallbacks,
+  applyUncategorizedDefaults,
   chart,
-  initDisplay,
   loadingAtom,
   markInitialLoadComplete,
   renderPositionBtnsAtom,
@@ -14,23 +15,28 @@ import {
   setChartStatesFromUrlParams,
   setUrlParamsFromChartStates,
 } from './state/chartState'
-import { fetchChart, loadStatsDto, renderChartWithoutRanking } from './util/fetchRenderer'
+import { fetchChart, fetchChartData, getChartViewQuery, renderChartData } from './util/fetchRenderer'
 import { Box, CircularProgress } from '@mui/material'
 import { OcThemeProvider } from '../themeMui'
 import { onThemeChange } from './util/theme'
 import { t } from './util/translation'
 
 const init = async () => {
-  // 統計データを初回ロードで非同期取得（サーバー注入の #stats-dto は廃止）
-  graphStore.set(loadingAtom, true)
-  await loadStatsDto()
-
+  // URLパラメータとローカル設定から表示ビューを組み立て、楽観的に1リクエストで
+  // 描画データ+可用性メタデータ(meta=1)を取得する
   setChartStatesFromUrlParams()
+  applyUncategorizedDefaults()
 
-  if (initDisplay()) {
-    await fetchChart(true)
+  graphStore.set(loadingAtom, true)
+  const viewQuery = getChartViewQuery()
+  const data = await fetchChartData(true)
+
+  // メタデータ判定でデータが無いビューだった場合のみ、フォールバック先を補正フェッチする
+  applyAvailabilityFallbacks()
+  if (getChartViewQuery() === viewQuery) {
+    renderChartData(data, true)
   } else {
-    renderChartWithoutRanking()
+    await fetchChart(true)
   }
 
   markInitialLoadComplete()

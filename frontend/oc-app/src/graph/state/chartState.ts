@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { graphStore } from './store'
-import { chatArgDto, fetchChart, statsDto } from '../util/fetchRenderer'
+import { chartMeta, chatArgDto, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
 import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
 
@@ -69,8 +69,8 @@ export function setChartStatesFromUrlParams() {
     }
   }
 
-  // ローソク足モードの復元（表示中の期間タブにOHLCデータが存在する場合のみ）
-  if (params.chart === 'candlestick' && hasOhlcDataForLimit(graphStore.get(limitAtom))) {
+  // ローソク足モードの復元（24時間タブにローソク足は無い。OHLCデータ有無はメタ取得後に判定）
+  if (params.chart === 'candlestick' && graphStore.get(limitAtom) !== 25) {
     graphStore.set(chartModeAtom, 'candlestick')
     chart.setMode('candlestick')
   }
@@ -102,22 +102,34 @@ export function setUrlParamsFromChartStates() {
   })
 }
 
-export function initDisplay() {
-  // カテゴリがその他の場合
+/** カテゴリがその他・未掲載の部屋の初期状態を設定する（メタデータ不要、初回フェッチ前に実行） */
+export function applyUncategorizedDefaults() {
   if (chatArgDto.categoryKey === 0) {
     graphStore.set(toggleShowCategoryAtom, false)
     graphStore.set(categoryAtom, 'all')
     graphStore.get(rankingRisingAtom) !== 'rising' && graphStore.set(rankingRisingAtom, 'none')
   }
+}
 
-  // データ数に基づいてタブ表示を設定
-  updateTabVisibility(statsDto.date.length)
+/**
+ * 初回ロードで取得した可用性メタデータに基づき、データが無いビューからフォールバックする。
+ * ここで表示ビューが変わった場合のみ補正フェッチが必要になる
+ */
+export function applyAvailabilityFallbacks() {
+  // 日次データ数に基づいてタブ表示を設定
+  updateTabVisibility(chartMeta.dateCount)
 
-  // 最新24時間タブ: 毎時メンバー数データが無い場合は非表示（DTOのデータ有無で判定）
-  if (!statsDto.hourAvailability) {
+  // 最新24時間タブ: 毎時メンバー数データが無い場合は非表示
+  if (!chartMeta.hourAvailability) {
     chart.setIsHour(false)
     graphStore.set(toggleDisplay24hAtom, false)
     graphStore.get(limitAtom) === 25 && graphStore.set(limitAtom, 8)
+  }
+
+  // ローソク足モード: 表示中の期間タブにOHLCデータが無い場合は折れ線に戻す
+  if (graphStore.get(chartModeAtom) === 'candlestick' && !hasOhlcDataForLimit(graphStore.get(limitAtom))) {
+    graphStore.set(chartModeAtom, 'line')
+    chart.setMode('line')
   }
 
   // ランキング順位データが全期間・全組み合わせで0件の場合は「ランキングの順位を表示」を丸ごと非表示
@@ -125,15 +137,11 @@ export function initDisplay() {
     graphStore.set(renderPositionBtnsAtom, false)
     graphStore.set(categoryAtom, 'in')
     graphStore.set(rankingRisingAtom, 'none')
-
-    // 24時間タブ表示中のみAPI取得が必要
-    return chart.getIsHour()
+    return
   }
 
   graphStore.set(renderPositionBtnsAtom, true)
   sanitizePositionSelection()
-
-  return true
 }
 
 const emptyPositionAvailability: PositionAvailability = {
@@ -145,7 +153,7 @@ const emptyPositionAvailability: PositionAvailability = {
 
 /** 指定の期間タブの順位データ有無を取得する */
 export function getPositionAvailabilityForLimit(limit: ChartLimit | 25): PositionAvailability {
-  const availability = statsDto.positionAvailability
+  const availability = chartMeta.positionAvailability
   if (!availability) return emptyPositionAvailability
 
   switch (limit) {
@@ -162,7 +170,7 @@ export function getPositionAvailabilityForLimit(limit: ChartLimit | 25): Positio
 
 /** いずれかの期間・組み合わせで順位データが存在するか */
 export function hasAnyPositionData(): boolean {
-  const availability = statsDto.positionAvailability
+  const availability = chartMeta.positionAvailability
   if (!availability) return false
 
   return Object.values(availability).some(
@@ -257,12 +265,12 @@ export function handleChangeEnableZoom(value: boolean) {
 }
 
 export function hasOhlcData(): boolean {
-  return statsDto.ohlcAvailability?.all ?? false
+  return chartMeta.ohlcAvailability?.all ?? false
 }
 
 /** 指定の期間タブにローソク足(OHLC)データが存在するか（24時間タブは常にfalse） */
 export function hasOhlcDataForLimit(limit: ChartLimit | 25): boolean {
-  const availability = statsDto.ohlcAvailability
+  const availability = chartMeta.ohlcAvailability
   if (!availability) return false
 
   switch (limit) {
@@ -292,8 +300,7 @@ export function updateTabVisibility(dataLength: number) {
  * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
  *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
  */
-export function updateCandleTabVisibility(ohlcData: MemberOhlc[]) {
-  const dates = statsDto.date
+export function updateCandleTabVisibility(ohlcData: MemberOhlc[], dates: string[]) {
   const ohlcDateSet = new Set(ohlcData.map((r) => r.date))
   const countInWindow = (limit: number) => {
     let count = 0
