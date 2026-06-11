@@ -627,7 +627,10 @@ Route::path(
 // /database/{username}/query・/schema 用の認証（いずれも POST）:
 //   - Basic認証ではなく、POSTボディの password で認証する
 //   - password は ApiUser の登録パスワードを SHA256 した16進文字列を送る
-//   - {username} が adminApiKey の場合は従来どおり password 不要
+//   - 管理者は {username} を admin にして password へ adminApiKey をそのまま送る
+//     （URLパスはフレームワークが小文字化するため、大文字を含むキーは
+//       {username} に直接入れても照合できない。POSTボディは小文字化されない）
+//   - {username} が adminApiKey の場合は従来どおり password 不要（小文字のみのキー用）
 $databaseApiPostAuth = function (string $username, $password = null) {
     if (MimimalCmsConfig::$urlRoot !== '') {
         return false;
@@ -635,7 +638,24 @@ $databaseApiPostAuth = function (string $username, $password = null) {
 
     allowCORS(); // OPTIONS プリフライトはここで終了
 
-    // 1. 管理用キー（password 不要）
+    // 1. 管理用キー
+    //    a) username=admin + POSTの password に adminApiKey
+    if ($username === 'admin') {
+        if (
+            SecretsConfig::$adminApiKey !== ''
+            && is_string($password)
+            && hash_equals(SecretsConfig::$adminApiKey, $password)
+        ) {
+            return true;
+        }
+        response([
+            'status' => 'error',
+            'message' => 'Authentication failed.',
+        ], 401)->send();
+        exit;
+    }
+
+    //    b) {username} に adminApiKey（password 不要）
     if ($username === SecretsConfig::$adminApiKey) {
         return true;
     }
