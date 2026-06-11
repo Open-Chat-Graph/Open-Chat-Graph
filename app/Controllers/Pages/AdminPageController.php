@@ -130,30 +130,6 @@ class AdminPageController
     }
 
     /**
-     * おすすめタグのみの更新テストバッチ実行
-     */
-    function recommendtagupdate()
-    {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update_onlyrecommend.php';
-
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
-    }
-
-    /**
-     * 毎時処理途中経過チェックバッチ実行
-     */
-    private function halfcheck()
-    {
-        $path = AppConfig::ROOT_PATH . 'batch/cron/cron_half_check.php';
-
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
-    }
-
-    /**
      * オープンチャット削除
      */
     function deleteoc(?string $oc, \App\Services\OpenChat\Updater\OpenChatDeleter $openChatDeleter)
@@ -281,7 +257,6 @@ class AdminPageController
     {
         $commands = [
             'pkill -f cron_crawling.php',
-            'pkill -f cron_half_check.php',
         ];
 
         foreach ($commands as $cmd) {
