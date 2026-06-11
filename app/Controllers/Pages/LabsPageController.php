@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\Pages;
 
-use App\Services\StaticData\StaticDataFile;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 
 class LabsPageController
@@ -14,20 +13,16 @@ class LabsPageController
 
     function index(
         PageBreadcrumbsListSchema $breadcrumbsShema,
-        StaticDataFile $staticDataGeneration
     ) {
         $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms'];
         $_meta = meta()->setTitle(self::Title);
         $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(self::Title);
 
-        $_recommendDto = $staticDataGeneration->getRecommendPageDto();
-
         return view('labs_content', compact(
             '_meta',
             '_css',
             '_breadcrumbsShema',
-            '_recommendDto',
         ));
     }
 

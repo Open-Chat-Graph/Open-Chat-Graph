@@ -106,13 +106,8 @@ class StaticDataGenerator
 
     function getRecommendPageDto(): StaticRecommendPageDto
     {
-        $tagList = $this->fileStorage->getSerializedFile('@tagList');
-        if (!$tagList)
-            $tagList = $this->getTagList();
-
         $dto = new StaticRecommendPageDto;
         $dto->hourlyUpdatedAt = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
-        $dto->tagCount = array_sum(array_map(fn($el) => count($el), $tagList));
 
         $dto->tagRecordCounts = [];
         array_map(
