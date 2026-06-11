@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -79,6 +78,8 @@ class OpenChatDailyCrawling
 
     /**
      * 現在日時をkillフラグに設定して、既存のcrawling処理を停止させる
+     *
+     * 外部（別プロセス）から呼ばれる静的コンテキストのためコンストラクタ注入が使えず、app() で解決する
      */
     static function setKillFlagTrue()
     {

@@ -2,133 +2,25 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminTool;
-use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\CronUtility;
-use App\Services\Recommend\RecommendUpdater;
-use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
-use App\Services\Recommend\TagDefinition\TagMetadata;
-use ExceptionHandler\ExceptionHandler;
+use App\Services\Recommend\StaticData\UpdateRecommendStaticDataService;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600 * 2);
 
+if (isset($argv[1]) && $argv[1]) {
+    MimimalCmsConfig::$urlRoot = $argv[1];
+}
+
 try {
-    if (isset($argv[1]) && $argv[1]) {
-        MimimalCmsConfig::$urlRoot = $argv[1];
-    }
-
     /**
-     * @var SyncOpenChatStateRepositoryInterface $state
+     * @var UpdateRecommendStaticDataService $service
      */
-    $state = app(SyncOpenChatStateRepositoryInterface::class);
-
-    // 既に実行中の場合はkill
-    if ($state->getBool(StateType::isUpdateRecommendStaticDataActive)) {
-        $message = 'おすすめ静的データ生成: 既に実行中のため前回の処理をkill';
-        CronUtility::addCronLog($message);
-        AdminTool::sendDiscordNotify($message);
-
-        // 自分以外のバックグラウンドプロセスをkill
-        $myPid = getmypid();
-        $cmd = "ps aux | grep update_recommend_static_data.php | grep -v grep | grep -v '{$myPid}' | awk '{print \$2}' | xargs -r kill";
-        exec($cmd, $output, $returnCode);
-        CronUtility::addCronLog('kill結果: ' . implode(' ', $output) . ' (return code: ' . $returnCode . ')');
-
-        $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
-        sleep(5); // プロセス終了を待つ
-    }
-
-    // 実行中フラグを立てる
-    $state->setTrue(StateType::isUpdateRecommendStaticDataActive);
-
-    /**
-     * @var RecommendUpdater $recommendUpdater
-     */
-    $recommendUpdater = app(RecommendUpdater::class);
-
-    // タグ定義JSON(ja.json/th.json/tw.json)に変更があれば全レコードを再適用、無ければ通常の差分更新。
-    //  - ja: 無停止シャドウスワップ (rebuildAllViaShadowSwap)
-    //  - th/tw: data/{lang}.json を JSON 駆動マッチングで運用するため、定義変更を検知したら
-    //        フル再構築 (updateRecommendTables(false))。shadow-swap は ja 専用のため使わない。
-    //        これによりデプロイ後やGUI編集後に、CRON が自動で th/tw タグを反映する。
-    $didRebuild = false;
-    // ja/th/tw とも TagMetadata::jsonPath() でロケール別パスを解決（パス組み立てを一本化）。
-    $tagJsonPath = TagMetadata::jsonPath(MimimalCmsConfig::$urlRoot);
-    {
-        $currentHash = is_file($tagJsonPath) ? hash('sha256', (string)file_get_contents($tagJsonPath)) : '';
-        $storedHash = $state->getString(StateType::recommendTagsJsonHash);
-        if ($currentHash !== '' && $currentHash !== $storedHash) {
-            if ($state->getBool(StateType::isRecommendTagRebuildActive)) {
-                CronUtility::addCronLog('タグ定義変更を検知したが再適用が実行中のためスキップ（次回CRONで再試行）');
-            } else {
-                $state->setTrue(StateType::isRecommendTagRebuildActive);
-                try {
-                    CronUtility::addCronLog('タグ定義の変更を検知 → 全レコード再適用開始 (urlRoot=' . MimimalCmsConfig::$urlRoot . ')');
-                    if (MimimalCmsConfig::$urlRoot === '') {
-                        $recommendUpdater->rebuildAllViaShadowSwap();
-                    } else {
-                        // th/tw: PRIMARY KEY(id) 付きテーブルへフル再構築（差分でなく全件）
-                        $recommendUpdater->updateRecommendTables(false);
-                    }
-                    $state->setString(StateType::recommendTagsJsonHash, $currentHash);
-                    $didRebuild = true;
-                    CronUtility::addCronLog('全レコード再適用 完了');
-                } finally {
-                    $state->setFalse(StateType::isRecommendTagRebuildActive);
-                }
-            }
-        }
-    }
-    if (!$didRebuild) {
-        CronUtility::addVerboseCronLog('おすすめ情報更新中（バックグラウンド）');
-        $recommendUpdater->updateRecommendTables();
-        CronUtility::addVerboseCronLog('おすすめ情報更新完了（バックグラウンド）');
-    }
-
-    /**
-     * @var RecommendStaticDataGenerator $recommendStaticDataGenerator
-     */
-    $recommendStaticDataGenerator = app(RecommendStaticDataGenerator::class);
-
-    CronUtility::addVerboseCronLog('おすすめ静的データを生成中（バックグラウンド）');
-
-    $recommendStaticDataGenerator->updateStaticData();
-
-    CronUtility::addVerboseCronLog('おすすめ静的データ生成完了（バックグラウンド）');
-
-    // CDNキャッシュ削除
-    CronUtility::addVerboseCronLog('CDNキャッシュ削除中（バックグラウンド）');
-
-    $result = purgeCacheCloudFlare(
-        files: [
-            ltrim(getSiteDomainUrl(), "/"),
-        ],
-        prefixes: [
-            getCdnPrefixUrl('recommend'),
-            getCdnPrefixUrl('oc'),
-            getCdnPrefixUrl('ranking'),
-            getCdnPrefixUrl('oclist'),
-            getCdnPrefixUrl('recently-registered'),
-            getCdnPrefixUrl('labs'),
-            getCdnPrefixUrl('policy'),
-            getCdnPrefixUrl('furigana'),
-        ]
-    );
-
-    CronUtility::addVerboseCronLog($result . '（バックグラウンド）');
-
-    CronUtility::addVerboseCronLog('【毎時処理】バックグラウンド処理完了');
-    // 実行中フラグを下ろす
-    $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
+    $service = app(UpdateRecommendStaticDataService::class);
+    $service->handle();
 } catch (\Throwable $e) {
-    // エラー時もフラグを下ろす
-    if (isset($state)) {
-        $state->setFalse(StateType::isUpdateRecommendStaticDataActive);
-    }
-
+    // サービス解決自体の失敗（デプロイ中のクラス入れ替わり等）に備えた最終防衛のみ
     CronUtility::addCronLog($e->__toString());
     AdminTool::sendDiscordNotify($e->__toString());
-    ExceptionHandler::errorLog($e);
 }

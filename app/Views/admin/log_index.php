@@ -144,7 +144,7 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/UpdateHourlyMemberRankingService.php', 28) ?>
             </li>
             <li class="sub">おすすめ情報更新・静的データ生成をバックグラウンドで開始（完了後にCDNキャッシュ削除）
-                <?php echo githubLink('batch/exec/update_recommend_static_data.php', 47) ?>
+                <?php echo githubLink('app/Services/Recommend/StaticData/UpdateRecommendStaticDataService.php', 33) ?>
             </li>
             <li>
                 参加URLの一括取得
