@@ -43,6 +43,7 @@ public/sitemap*.xml
 # ストレージ
 storage/exception.log
 storage/furigana/**
+storage/*/api_rate_limit/**
 storage/*/logs/*
 storage/*/SQLite/statistics/statistics.db
 storage/*/SQLite/statistics_ohlc/statistics_ohlc.db

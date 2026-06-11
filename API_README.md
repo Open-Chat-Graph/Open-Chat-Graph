@@ -56,6 +56,12 @@ X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご
 - `LIMIT` は最大 20。未指定なら自動で `LIMIT 20`、20超はエラー。20件より多く取るときは `OFFSET` でページング。
 - `stmt` は最大 10000 文字。
 
+### レートリミット
+
+- **同時リクエストは1件まで**。前のリクエストの完了を待たずに次を送ると 429 が返る。
+- **5分間で取得できるレコード数は合計1000件まで**。超えると 429 が返り、`Retry-After` ヘッダに再試行までの秒数が入る。
+- 取得件数は「実際に返ってきた行数」でカウントされる（エラーになったリクエストはカウントされない）。
+
 ---
 
 ## エラー
@@ -71,6 +77,8 @@ X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご
 | `LIMIT` が20超 | 400 | `LIMIT cannot exceed 20` |
 | `stmt` が10000文字超 | 400 | `Query too long` |
 | SQL 実行エラー | 400 | `SQLSTATE[...] ...`（DBのエラーメッセージ） |
+| 同時リクエストが2件以上 | 429 | `Too many concurrent requests: ...` |
+| 5分間の取得レコード数が1000件超 | 429 | `Rate limit exceeded: ...`（`Retry-After` ヘッダ付き） |
 
 ---
 
