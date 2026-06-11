@@ -42,6 +42,10 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# JSON API はサイト内JSからのfetchを示す独自ヘッダーが無いと404を返す（直叩き収集対策）。
+# ページにも付与して問題ないため、GET系テストでは常に付与する。
+API_CLIENT_HEADER="X-Ocg-Client: 1"
+
 # ログ関数
 log() {
     echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
@@ -65,12 +69,12 @@ test_url() {
     echo -n "Testing: ${url} ... " | tee -a "$LOG_FILE"
 
     # curlでアクセス（SSL証明書の検証を無効化、リダイレクトを追跡）
-    if curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "$url" | grep -qE "^(200|301|302)$"; then
+    if curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$API_CLIENT_HEADER" "$url" | grep -qE "^(200|301|302)$"; then
         echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        local status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "$url")
+        local status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$API_CLIENT_HEADER" "$url")
         echo -e "${RED}FAILED (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         return 1
@@ -88,7 +92,7 @@ test_json_url() {
     echo -n "Testing JSON: ${url} ... " | tee -a "$LOG_FILE"
 
     local body_file=$(mktemp)
-    local status_code=$(curl -k -s -o "$body_file" -w "%{http_code}" --max-time 30 "$url")
+    local status_code=$(curl -k -s -o "$body_file" -w "%{http_code}" --max-time 30 -H "$API_CLIENT_HEADER" "$url")
 
     if [ "$status_code" = "200" ] && grep -qE "$expected_pattern" "$body_file"; then
         echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
@@ -466,6 +470,20 @@ main() {
         PASSED_TESTS=$((PASSED_TESTS + 1))
     else
         echo -e "${RED}FAILED (Status: ${status_code}, expected 400 or 200)${NC}" | tee -a "$LOG_FILE"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+    fi
+    echo ""
+
+    # 独自ヘッダー検証のテスト（ヘッダー無しのAPI直叩きは404が期待される結果）
+    log "API独自ヘッダー検証のテスト"
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    echo -n "Testing: ${BASE_URL}/oclist (without ${API_CLIENT_HEADER}) ... " | tee -a "$LOG_FILE"
+    status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=all&sort=member&order=desc")
+    if [ "$status_code" = "404" ]; then
+        echo -e "${GREEN}OK (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        echo -e "${RED}FAILED (Status: ${status_code}, expected 404)${NC}" | tee -a "$LOG_FILE"
         FAILED_TESTS=$((FAILED_TESTS + 1))
     fi
     echo ""

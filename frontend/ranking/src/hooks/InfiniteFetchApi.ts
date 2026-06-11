@@ -5,7 +5,8 @@ import { isSP } from '../utils/utils'
 import { rankingArgDto } from '../config/config'
 
 async function fetchApi<T>(url: string) {
-  const response = await fetch(url)
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+  const response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
   const data: T | ErrorResponse = await response.json()
   if (!response.ok) {
     const errorMessage = (data as ErrorResponse).error.message
