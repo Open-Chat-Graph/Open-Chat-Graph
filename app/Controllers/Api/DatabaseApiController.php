@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Config\AppConfig;
 use App\Config\SecretsConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use App\Services\Api\DatabaseApiRateLimiter;
+use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\ValidationException;
 
 class DatabaseApiController
@@ -25,7 +27,7 @@ class DatabaseApiController
         // レートリミット（管理用キーは対象外）
         $limiter = null;
         if ($username !== SecretsConfig::$adminApiKey) {
-            $limiter = new DatabaseApiRateLimiter($username);
+            $limiter = new DatabaseApiRateLimiter($username, app(FileStorageInterface::class));
 
             // 1. 同時実行は1リクエストまで
             if (!$limiter->acquireLock()) {
@@ -39,8 +41,8 @@ class DatabaseApiController
                 header('Retry-After: ' . $retryAfter);
                 $this->sendError(429, sprintf(
                     'Rate limit exceeded: up to %d records can be fetched per %d minutes. Retry after %d seconds.',
-                    DatabaseApiRateLimiter::MAX_RECORDS_PER_WINDOW,
-                    DatabaseApiRateLimiter::WINDOW_SECONDS / 60,
+                    AppConfig::API_RATE_LIMIT_MAX_RECORDS,
+                    AppConfig::API_RATE_LIMIT_WINDOW_SECONDS / 60,
                     $retryAfter,
                 ));
                 return;
@@ -95,7 +97,7 @@ class DatabaseApiController
 
         try {
             // schema.sqlファイルの内容をそのまま返す
-            $schemaFilePath = \App\Config\AppConfig::SQLITE_SCHEMA_SQLAPI;
+            $schemaFilePath = AppConfig::SQLITE_SCHEMA_SQLAPI;
 
             if (!file_exists($schemaFilePath)) {
                 throw new \Exception('Schema file not found: ' . $schemaFilePath);

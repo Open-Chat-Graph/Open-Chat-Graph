@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Api;
 
+use App\Config\AppConfig;
+use App\Services\Storage\FileStorageInterface;
+
 /**
  * データAPI（/database/{username}/query）のユーザー単位レートリミッター
  *
@@ -12,34 +15,29 @@ namespace App\Services\Api;
  * 2. レコード数制限: 直近5分間に取得できるレコード数は合計1000件まで
  *    （取得履歴 [時刻, 件数] をユーザーごとのJSONファイルに保存して集計する）
  *
- * 状態ファイルは storage/api_rate_limit/ 配下に置く（gitignore対象）。
+ * 状態ファイルは storage/{locale}/api_rate_limit/ 配下に置く（gitignore対象）。
  * 取得履歴ファイルの読み書きは同時実行ロックを保持した状態でのみ行うため、
  * 履歴ファイル自体の排他制御は不要。
  */
 class DatabaseApiRateLimiter
 {
-    public const WINDOW_SECONDS = 300;
-    public const MAX_RECORDS_PER_WINDOW = 1000;
-
-    private const STORAGE_DIR = __DIR__ . '/../../../storage/api_rate_limit';
-
     /** @var resource|null 同時実行ロックのファイルハンドル */
     private $lockHandle = null;
 
     private string $lockFile;
     private string $usageFile;
 
-    public function __construct(string $username)
+    public function __construct(string $username, FileStorageInterface $fileStorage)
     {
-        // username はURLパス由来のためファイル名にはハッシュを使う
-        $key = hash('sha256', $username);
-
-        if (!is_dir(self::STORAGE_DIR)) {
-            mkdir(self::STORAGE_DIR, 0777, true);
+        $dir = $fileStorage->getStorageFilePath('apiRateLimitDir');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
         }
 
-        $this->lockFile = self::STORAGE_DIR . '/' . $key . '.lock';
-        $this->usageFile = self::STORAGE_DIR . '/' . $key . '.json';
+        // username はURLパス由来のためファイル名にはハッシュを使う
+        $key = hash('sha256', $username);
+        $this->lockFile = $dir . '/' . $key . '.lock';
+        $this->usageFile = $dir . '/' . $key . '.json';
     }
 
     /**
@@ -76,7 +74,7 @@ class DatabaseApiRateLimiter
      */
     public function isQuotaExceeded(): bool
     {
-        return $this->getUsedRecordCount() >= self::MAX_RECORDS_PER_WINDOW;
+        return $this->getUsedRecordCount() >= AppConfig::API_RATE_LIMIT_MAX_RECORDS;
     }
 
     /**
@@ -97,8 +95,8 @@ class DatabaseApiRateLimiter
 
         foreach ($entries as [$time, $count]) {
             $used -= $count;
-            if ($used < self::MAX_RECORDS_PER_WINDOW) {
-                return max(1, $time + self::WINDOW_SECONDS - time());
+            if ($used < AppConfig::API_RATE_LIMIT_MAX_RECORDS) {
+                return max(1, $time + AppConfig::API_RATE_LIMIT_WINDOW_SECONDS - time());
             }
         }
 
@@ -135,7 +133,7 @@ class DatabaseApiRateLimiter
             return [];
         }
 
-        $threshold = time() - self::WINDOW_SECONDS;
+        $threshold = time() - AppConfig::API_RATE_LIMIT_WINDOW_SECONDS;
 
         return array_values(array_filter(
             $entries,
