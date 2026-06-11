@@ -395,7 +395,8 @@ class OcreviewApiDataImporter
                         $this->sqlImporter->import($this->targetPdo, 'openchat_existing', $data, self::CHUNK_SIZE);
                     }
                 },
-                'openchat_existing: %d / %d 件処理完了'
+                // 毎時全件洗い替え（常に20万件超）のため進捗のDiscord通知はしない
+                null
             );
 
             $this->targetPdo->commit();

@@ -36,6 +36,7 @@ class FileStorageServiceConfig
         'recommendPageDto' =>             '/static_data_top/recommend_page_dto.dat',
         'tagList' =>                      '/static_data_top/tag_list.dat',
         'relatedTags' =>                  '/static_data_top/related_tags.dat',
+        'apiRateLimitDir' =>              '/api_rate_limit',
         'recommendStaticDataDir' =>       '/static_data_recommend/tag',
         'categoryStaticDataDir' =>        '/static_data_recommend/category',
         'officialStaticDataDir' =>        '/static_data_recommend/official',

@@ -41,6 +41,11 @@ class AppConfig
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
     const LIST_LIMIT_RECOMMEND = 30;
 
+    // データAPI（/database/{username}/query）のユーザー単位レートリミット。
+    // この秒数の間に取得できる最大レコード数を超えると 429 を返す。
+    const API_RATE_LIMIT_WINDOW_SECONDS = 300;
+    const API_RATE_LIMIT_MAX_RECORDS = 1000;
+
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
     // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団

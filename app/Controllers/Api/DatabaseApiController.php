@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Config\AppConfig;
+use App\Config\SecretsConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
+use App\Services\Api\DatabaseApiRateLimiter;
+use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\ValidationException;
 
 class DatabaseApiController
@@ -15,27 +19,60 @@ class DatabaseApiController
     private const MAX_LIMIT = 20;
     private const DEFAULT_LIMIT = 20;
 
-    function index(string $stmt)
+    function index(string $username, string $stmt)
     {
         header('Content-Type: application/json');
         ob_start('ob_gzhandler');
 
+        // レートリミット（管理用キーは対象外）
+        $limiter = null;
+        if ($username !== SecretsConfig::$adminApiKey) {
+            $limiter = new DatabaseApiRateLimiter($username, app(FileStorageInterface::class));
+
+            // 1. 同時実行は1リクエストまで
+            if (!$limiter->acquireLock()) {
+                $this->sendError(429, 'Too many concurrent requests: only one request can be processed at a time. Please wait for the previous request to finish.');
+                return;
+            }
+
+            // 2. 直近5分間で取得できるレコード数は1000件まで
+            if ($limiter->isQuotaExceeded()) {
+                $retryAfter = $limiter->getRetryAfterSeconds();
+                header('Retry-After: ' . $retryAfter);
+                $this->sendError(429, sprintf(
+                    'Rate limit exceeded: up to %d records can be fetched per %d minutes. Retry after %d seconds.',
+                    AppConfig::API_RATE_LIMIT_MAX_RECORDS,
+                    AppConfig::API_RATE_LIMIT_WINDOW_SECONDS / 60,
+                    $retryAfter,
+                ));
+                return;
+            }
+        }
+
         try {
             $pdo = $this->getPdo();
             $result = $pdo->query($this->filterQuery($stmt));
+            $data = $result->fetchAll(\PDO::FETCH_ASSOC);
+
+            $limiter?->addRecordCount(count($data));
 
             echo json_encode([
                 'status' => 'success',
-                'data' => $result->fetchAll(\PDO::FETCH_ASSOC),
+                'data' => $data,
                 'lastUpdate' => $this->getLastImportedAt($pdo),
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         } catch (\Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            $this->sendError(400, $e->getMessage());
         }
+    }
+
+    private function sendError(int $code, string $message): void
+    {
+        http_response_code($code);
+        echo json_encode([
+            'status' => 'error',
+            'message' => $message,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     function ban(ApiDeletedOpenChatListRepository $repo, string $date)
@@ -60,7 +97,7 @@ class DatabaseApiController
 
         try {
             // schema.sqlファイルの内容をそのまま返す
-            $schemaFilePath = \App\Config\AppConfig::SQLITE_SCHEMA_SQLAPI;
+            $schemaFilePath = AppConfig::SQLITE_SCHEMA_SQLAPI;
 
             if (!file_exists($schemaFilePath)) {
                 throw new \Exception('Schema file not found: ' . $schemaFilePath);
