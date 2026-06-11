@@ -203,10 +203,12 @@ jobs:
 
       # デプロイ直後の本番スモークテスト（最小限・数秒で完了）
       # 失敗するとjobがfailし、既存の「Notify Discord (deploy failure)」で通知される
+      # GitHub runnerのIPはCloudflareにチャレンジされ全UAで403になるため（2026-06-12実証）、
+      # デプロイ先サーバー自身から公開URL経由で実行する（サーバーIPはCFを通過する）
       - name: Post-deploy smoke test
-        env:
-          SITE_URL: ${{ steps.config.outputs.tweet_url }}
-        run: bash ./.github/scripts/post-deploy-smoke.sh
+        run: |
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} \
+            "cd ${{ steps.config.outputs.ssh_path }} && SITE_URL=${{ steps.config.outputs.tweet_url }} IS_STG=${IS_STG} bash .github/scripts/post-deploy-smoke.sh"
 
       - name: Notify Discord (deploy success)
         env:
