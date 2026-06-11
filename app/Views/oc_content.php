@@ -159,8 +159,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
-      <?php // 分析文は oc_page_cache の事前計算済みHTMLを生出力（_接頭辞=自動エスケープ対象外）。未生成は空 ?>
-      <?php echo $_narrativeHtml ?>
+      <?php // 分析はキャッシュ済み「データ」からリクエスト時にレンダリング（url()等はここで解決される） ?>
+      <?php if ($_narrative !== null): ?>
+        <?php viewComponent('oc_narrative_section', ['narrative' => $_narrative, 'oc' => $oc]) ?>
+      <?php else: ?>
+        <?php // 旧形式（事前レンダリングHTML）の行が再生成されるまでの移行期のみ。未生成は空 ?>
+        <?php echo $_narrativeLegacyHtml ?>
+      <?php endif ?>
       <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">

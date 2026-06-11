@@ -12,18 +12,21 @@ use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use Shared\MimimalCmsConfig;
 
 /**
- * ルーム個別ページの「分析文(narrative)」を事前計算し、
- * レンダリング済みHTML断片として oc_page_cache(SQLite) に保存する。
+ * ルーム個別ページの「分析(narrative)」データを事前計算し、
+ * JSON({summary,detail,meta_description,pattern}) として oc_page_cache(SQLite) に保存する。
+ *
+ * キャッシュに入れるのは「データ」のみ。HTMLは保存しない——レンダリング
+ * (oc_narrative_section テンプレート・url() 等のURLヘルパー)はリクエスト時に行う。
+ * CLIでHTMLを生成すると HTTP_HOST 不在で url() が壊れる事故(#400)の再発を構造的に防ぐ。
  *
  * /oc 表示時はこのキャッシュをPK一発SELECTで読むだけにし、bot クロール時に
- * narrative の重い読み取りを発生させない。
+ * narrative の重い統計読み取りを発生させない。
  *
  * 関連ルーム(recommend/similarSize)はここでは生成しない。/oc 表示時に
- * recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる方式に移行した
- * （SimilarSizeRoomService）。recommend_html カラムは互換のため空文字で埋める。
+ * recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる（SimilarSizeRoomService）。
  *
- * 注: 出力HTMLは url()/t() 等が現在の MimimalCmsConfig::$urlRoot に依存するため、
- * 言語別 cron 文脈（urlRoot 設定済み）から呼ぶこと。保存先 SQLite も urlRoot の storage 配下になる。
+ * 注: 言語別 cron 文脈（urlRoot 設定済み）から呼ぶこと。分類ラベルと保存先 SQLite が
+ * urlRoot に依存するため。
  */
 class OcPageCacheGenerator
 {
@@ -68,14 +71,11 @@ class OcPageCacheGenerator
                 $categoryLabel
             );
 
-            ob_start();
-            viewComponent('oc_narrative_section', ['narrative' => $narrative, 'oc' => $oc]);
-            $narrativeHtml = ob_get_clean();
-
             $rows[] = [
                 'open_chat_id' => $id,
-                'narrative_html' => (string)$narrativeHtml,
-                'recommend_html' => '',
+                'narrative_data' => $narrative === null
+                    ? ''
+                    : json_encode($narrative, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             ];
         }
 

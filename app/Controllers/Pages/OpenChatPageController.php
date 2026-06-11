@@ -74,16 +74,18 @@ class OpenChatPageController
 
         }
 
-        // 分析文(narrative)は事前計算済みHTML断片を oc_page_cache(SQLite) からPK一発で読むだけ。
+        // 分析(narrative)は事前計算済み「データ」(JSON)を oc_page_cache(SQLite) からPK一発で読み、
+        // レンダリングはリクエスト時に oc_narrative_section テンプレートが行う。
         // 未生成（バックフィル前/生成不可）は null → 空表示。bot が叩く /oc 本体で重い計算をしない。
         $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
-        $_narrativeHtml = $ocPageCache['narrative_html'] ?? '';
-
-        // 応急修復: 過去にCLIで生成されたキャッシュにはホスト欠落URL(href="http:///...")が
-        // 残っている(HTTP_HOST不在時のurl()の不具合・生成側は修正済み)。バックフィルで
-        // 再生成されるまでの間、表示時にルート相対URLへ置換して直す（正常なHTMLには無害）。
-        if ($_narrativeHtml !== '') {
-            $_narrativeHtml = str_replace('"http:///', '"/', $_narrativeHtml);
+        $_narrative = null;
+        $_narrativeLegacyHtml = '';
+        if (!empty($ocPageCache['narrative_data'])) {
+            $_narrative = json_decode($ocPageCache['narrative_data'], true) ?: null;
+        } elseif (!empty($ocPageCache['narrative_html'])) {
+            // 旧形式（事前レンダリングHTML）の行。バックフィル/毎時フックで narrative_data に
+            // 置き換わるまでの移行期のみ。ホスト欠落URL(http:///)の応急修復も移行期間中は維持する。
+            $_narrativeLegacyHtml = str_replace('"http:///', '"/', $ocPageCache['narrative_html']);
         }
 
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
@@ -123,7 +125,7 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        // 分析文(narrative)は oc_page_cache から読み済み（$_narrativeHtml）。関連ルームは上で組み立て済み。
+        // 分析(narrative)データは oc_page_cache から読み済み（$_narrative）。関連ルームは上で組み立て済み。
         // meta への narrative 連携は無し(null)＝#372以降の現行挙動を踏襲（meta description は room description ベース）。
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
@@ -162,7 +164,8 @@ class OpenChatPageController
             '_commentArgDto',
             '_breadcrumbsShema',
             '_schema',
-            '_narrativeHtml',
+            '_narrative',
+            '_narrativeLegacyHtml',
             '_recommend',
             '_similarSize',
             '_hourlyRange',
