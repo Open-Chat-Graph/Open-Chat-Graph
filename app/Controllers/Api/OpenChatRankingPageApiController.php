@@ -7,9 +7,6 @@ namespace App\Controllers\Api;
 use App\Config\AppConfig;
 use App\Models\ApiRepositories\OpenChatStatsRankingApiRepository;
 use App\Models\ApiRepositories\OpenChatApiArgs;
-use App\Models\ApiRepositories\OpenChatOfficialRankingApiRepository;
-use App\Services\OpenChat\Enum\RankingType;
-use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\BadRequestException as HTTP400;
 use Shadow\Kernel\Reception as Recp;
 use Shadow\Kernel\Validator as Valid;
@@ -19,7 +16,6 @@ class OpenChatRankingPageApiController
 {
     function __construct(
         private OpenChatApiArgs $args,
-        private FileStorageInterface $fileStorage
     ) {
         $this->validateInputs();
     }
@@ -33,7 +29,7 @@ class OpenChatRankingPageApiController
         $this->args->limit = Valid::num(Recp::input('limit'), min: 1, max: 20, e: $error);
         $this->args->category = (int)Valid::str(Recp::input('category', '0'), regex: AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot], e: $error);
 
-        $this->args->list = Valid::str(Recp::input('list', 'daily'), regex: ['hourly', 'daily', 'weekly', 'all', 'ranking', 'rising'], e: $error);
+        $this->args->list = Valid::str(Recp::input('list', 'daily'), regex: ['hourly', 'daily', 'weekly', 'all'], e: $error);
         $this->args->order = Valid::str(Recp::input('order', 'asc'), regex: ['asc', 'desc'], e: $error);
         $this->args->sort = Valid::str(Recp::input('sort', 'rank'), regex: ['rank', 'increase', 'rate', 'member', 'created_at'], e: $error);
 
@@ -63,18 +59,6 @@ class OpenChatRankingPageApiController
         }
     }
 
-    private function officialRankingRooms(RankingType $type): array
-    {
-        /** @var OpenChatOfficialRankingApiRepository $repo */
-        $repo = app(OpenChatOfficialRankingApiRepository::class);
-
-        $time = new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-        $time->modify('-1hour');
-        $timeStr = $time->format('Y-m-d H:i:s');
-
-        return $repo->findOfficialRanking($this->args, $type, $timeStr);
-    }
-
     /**
      * 現在の絞り込み（list/category/keyword/sort/order）での上位ルームを返す。
      * @return \App\Models\ApiRepositories\OpenChatListDto[]
@@ -90,10 +74,6 @@ class OpenChatRankingPageApiController
                 return $repo->findWeeklyStatsRanking($this->args);
             case 'all':
                 return $repo->findStatsAll($this->args);
-            case 'ranking':
-                return $this->officialRankingRooms(RankingType::Ranking);
-            case 'rising':
-                return $this->officialRankingRooms(RankingType::Rising);
         }
         return [];
     }

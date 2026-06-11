@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import { Box, Slide, Toolbar, useMediaQuery, useScrollTrigger } from '@mui/material'
 import { OCListSortMenu, allOptions2, rankingOptions2 } from './OCListSortMenu'
-import ListToggleChips, { officialButtons, toggleButtons } from './ListToggleChips'
+import ListToggleChips, { toggleButtons } from './ListToggleChips'
 import { useParams } from 'react-router-dom'
 import SubCategoryChips from './SubCategoryChips'
 import { useAtomValue } from 'jotai'
@@ -51,22 +51,6 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
     )
   }
 
-  function OfficialToolbar() {
-    return (
-      <Toolbar
-        style={{
-          minHeight: 0,
-          height: height,
-          paddingRight: 0,
-          paddingTop: '12px',
-          marginBottom: '10px',
-        }}
-      >
-        <ListToggleChips list={params.list} toggleButtons={officialButtons} />
-      </Toolbar>
-    )
-  }
-
   return (
     <Box
       sx={{
@@ -92,11 +76,7 @@ export const CategoryListAppBar = memo(function HideListAppBar() {
             width: '100%',
           }}
         >
-          {params.list !== 'ranking' && params.list !== 'rising' ? (
-            <ToggleToolbar />
-          ) : (
-            <OfficialToolbar />
-          )}
+          <ToggleToolbar />
         </Box>
       </HideOnScroll>
     </Box>

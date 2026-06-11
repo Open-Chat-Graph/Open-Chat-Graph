@@ -40,14 +40,4 @@ class PolicyPageController
         return view('term_content');
     }
 
-    function ads()
-    {
-        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms', 'components/ads_element'];
-        $_meta = meta()->setTitle('広告について');
-        $_meta->image_url = '';
-        $desc = 'この広告は行動ターゲティング広告ではないため、クッキーの取得を行いません。サイト内のコンテンツに関連するアフィリエイトプログラム広告を自動的に表示しています。';
-        $_meta->setDescription($desc)->setOgpDescription($desc);
-
-        return view('ads_policy_content', compact('_meta', '_css'));
-    }
 }

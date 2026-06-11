@@ -12,6 +12,7 @@ use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
+use App\Controllers\Api\OpenChatStatsApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
@@ -40,9 +41,6 @@ use App\Controllers\Pages\StagingIconController;
 use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
-use App\ServiceProvider\ApiCommentListControllerServiceProvider;
-use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
-use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
@@ -66,18 +64,6 @@ Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
-
-/* Route::path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
-    ->matchStr('list', default: 'rising', emptyAble: true)
-    ->matchNum('category', min: 1)
-    ->match(function (int $category) {
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
-    });
-
-Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
-    ->matchStr('list', default: 'rising', emptyAble: true)
-    ->matchNum('category', emptyAble: true);
- */
 
 Route::path('policy', [PolicyPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
@@ -134,21 +120,11 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
     });
 
 // 統計チャートデータ。graph(React)が初回ロードで非同期取得する（/oc 本体から統計SQLite読み取りを外す）
-Route::path('oc/{open_chat_id}/stats', [OpenChatPageController::class, 'stats'])
+Route::path('oc/{open_chat_id}/stats', [OpenChatStatsApiController::class, 'stats'])
     ->matchNum('open_chat_id', min: 1)
     ->matchNum('category', min: 0)
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-// TODO: test-api
-Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
-    ->matchNum('open_chat_id', min: 1)
-    ->match(function (string $user) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        app(ApiDbOpenChatControllerServiceProvider::class)->register();
     });
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
@@ -181,30 +157,6 @@ Route::path(
         return true;
     });
 
-// TODO: test-api
-Route::path(
-    'ranking-position/{user}/oc/{open_chat_id}/position',
-    [RankingPositionApiController::class, 'rankingPosition']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->matchStr('start_date')
-    ->matchStr('end_date')
-    ->match(function (string $start_date, string $end_date, string $user, FileStorageInterface $fileStorage) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        $isValid = $start_date === date("Y-m-d", strtotime($start_date))
-            && $end_date === date("Y-m-d", strtotime($end_date))
-            && strtotime($start_date) <= strtotime($end_date);
-        if (!$isValid)
-            return false;
-
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-        app(ApiRankingPositionPageRepositoryServiceProvider::class)->register();
-    });
-
 
 Route::path(
     'oc/{open_chat_id}/member_ohlc',
@@ -235,21 +187,6 @@ Route::path(
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-// TODO: test-api
-Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
-    ->match(function (string $user) {
-        if (!MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        return response([
-            'date' => ['01/01 00:00'],
-            'member' => [0],
-            'position' => [0],
-            'time' => ['00:00'],
-            'totalCount' => [0],
-        ]);
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
@@ -360,16 +297,6 @@ Route::path(
         checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/live_content.php'));
     });
 
-/* Route::path(
-    'labs/tags',
-    [TagLabsPageController::class, 'index']
-)
-    ->matchStr('ads', emptyAble: true)
-    ->match(function () {
-                if (MimimalCmsConfig::$urlRoot !== '')
-            return false;
-    }); */
-
 Route::path(
     'labs/all-room-stats',
     [AllRoomStatsPageController::class, 'index']
@@ -456,19 +383,6 @@ Route::path(
         'post'
     )
     ->middleware([VerifyCsrfToken::class], 'get');
-
-// アーカイブコメントAPI（認証付き、読み取り専用）
-Route::path(
-    'comment/{user}/oc/comment/{open_chat_id}@get',
-    [CommentListApiController::class, 'index', 'get']
-)
-    ->matchNum('open_chat_id', min: 0)
-    ->matchNum('page', 'get', min: 0)
-    ->matchNum('limit', 'get', min: 1, max: 10)
-    ->match(function (string $user) {
-        app(ApiCommentListControllerServiceProvider::class)->register();
-        return MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey;
-    });
 
 // コメントリアクションAPI
 Route::path(
@@ -724,65 +638,6 @@ Route::path(
         noStore();
         return ['isAdminPage' => '1'];
     });
-
-/* Route::path(
-    'ads/register@post',
-    [AdsRegistrationApiController::class, 'register']
-)
-    ->matchStr('ads_title')
-    ->matchStr('ads_sponsor_name')
-    ->matchStr('ads_paragraph', emptyAble: true)
-    ->matchStr('ads_href')
-    ->matchStr('ads_img_url')
-    ->matchStr('ads_tracking_url', emptyAble: true)
-    ->matchStr('ads_title_button');
-
-Route::path(
-    'ads/update@post',
-    [AdsRegistrationApiController::class, 'update']
-)
-    ->matchNum('id', min: 1)
-    ->matchStr('ads_title')
-    ->matchStr('ads_sponsor_name')
-    ->matchStr('ads_paragraph', emptyAble: true)
-    ->matchStr('ads_href')
-    ->matchStr('ads_img_url')
-    ->matchStr('ads_tracking_url', emptyAble: true)
-    ->matchStr('ads_title_button');
-
-Route::path(
-    'ads/delete@post',
-    [AdsRegistrationApiController::class, 'delete']
-)
-    ->matchNum('id', min: 1);
-
-Route::path(
-    'ads/update-tagmap@post',
-    [AdsRegistrationApiController::class, 'updateTagsMap']
-)
-    ->matchNum('ads_id')
-    ->matchStr('tag');
-
-Route::path(
-    'ads/tags@post',
-    [AdsRegistrationApiController::class, 'updateTagsMap']
-)
-    ->matchNum('id', min: 1)
-    ->matchStr('tag');
-
-Route::path(
-    'ads',
-    [AdsRegistrationPageController::class, 'index']
-)
-    ->matchNum('id', emptyAble: true);
-
-Route::path(
-    'labs/tags/ads',
-    [TagLabsPageController::class, 'index']
-)
-    ->match(function () {
-        return ['isAdminPage' => '1'];
-    }); */
 
 Route::path('furigana@POST')
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')

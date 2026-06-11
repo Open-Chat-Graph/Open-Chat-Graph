@@ -93,20 +93,4 @@ class StaticDataFile
 
         return $data;
     }
-
-    /**
-     * 関連タグマップ（タグ => [関連タグ => 共起スコア]）。RelatedTagsService 参照。
-     *
-     * @return array<string, array<string, int>>
-     */
-    function getRelatedTags(): array
-    {
-        /** @var array|false $data */
-        $data = $this->fileStorage->getSerializedFile('@relatedTags');
-        if (!$data || AppConfig::$disableStaticDataFile) {
-            $data = $this->staticDataGenerator()->getRelatedTags();
-        }
-
-        return is_array($data) ? $data : [];
-    }
 }

@@ -4,11 +4,76 @@ declare(strict_types=1);
 
 namespace App\Models\ApiRepositories;
 
+use App\Config\AppConfig;
 use App\Models\Repositories\DB;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
+use App\Services\Storage\FileStorageInterface;
 
 class OpenChatStatsRankingApiRepository
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage,
+    ) {}
+
+    /**
+     * 絞り込み無しランキング各リスト(hour/hour24/week)の総件数を
+     * カテゴリ別に集計して返す（毎時バッチが事前計算して .dat に保存する用）。
+     *
+     * 戻り値: [tableName => [0 => 全カテゴリ合計, category => 件数, ...]]
+     * キー 0 は「カテゴリ未指定(=全件)」を表す。ページネーションの totalCount は
+     * open_chat × ランキング表の JOIN を52k〜63k行ぶん数える重い count(*) だが、
+     * 値はランキング表と同じく毎時しか変わらないため、ここで1回だけ集計する。
+     *
+     * @return array<string, array<int, int>>
+     */
+    public function buildListCountCache(): array
+    {
+        $cache = [];
+        foreach (
+            [
+                AppConfig::RANKING_HOUR_TABLE_NAME,
+                AppConfig::RANKING_DAY_TABLE_NAME,
+                AppConfig::RANKING_WEEK_TABLE_NAME,
+            ] as $tableName
+        ) {
+            // category は open_chat 側のみが持つ列。getStatsRanking の
+            // `WHERE category = N` / `WHERE 1` と同じ母集合をカテゴリ別に1クエリで数える。
+            $rows = DB::fetchAll(
+                "SELECT oc.category AS category, COUNT(*) AS cnt
+                 FROM open_chat AS oc
+                 JOIN {$tableName} AS sr ON oc.id = sr.open_chat_id
+                 GROUP BY oc.category"
+            );
+
+            $byCategory = [];
+            $total = 0;
+            foreach ($rows as $row) {
+                $cnt = (int)$row['cnt'];
+                $total += $cnt;
+                // category が NULL の部屋は合計には入るが、特定カテゴリ絞り込みには出ない
+                if ($row['category'] !== null) {
+                    $byCategory[(int)$row['category']] = $cnt;
+                }
+            }
+            $byCategory[0] = $total;
+            $cache[$tableName] = $byCategory;
+        }
+
+        return $cache;
+    }
+
+    /**
+     * 事前計算済みの総件数を返す。キャッシュが無ければ null（呼び出し側がライブ集計にフォールバック）。
+     */
+    private function cachedListCount(string $tableName, int $category): ?int
+    {
+        $cache = $this->fileStorage->getSerializedFile('@rankingListCounts');
+        if (is_array($cache) && isset($cache[$tableName][$category])) {
+            return (int)$cache[$tableName][$category];
+        }
+        return null;
+    }
+
     function findHourlyStatsRanking(OpenChatApiArgs $args): array
     {
         return array_map(
@@ -136,8 +201,11 @@ class OpenChatStatsRankingApiRepository
                 return $result;
             }
 
-            // 1ページ目の場合は件数を含める
-            $result[0]['totalCount'] = DB::fetchColumn($countQuery($categoryStatement)('WHERE'));
+            // 1ページ目の場合は件数を含める。
+            // 絞り込み無しの総件数は毎時バッチが事前計算済み（cachedListCount）。
+            // 未生成時のみ従来の重い count(*) にフォールバックする。
+            $result[0]['totalCount'] = $this->cachedListCount($tableName, $args->category)
+                ?? DB::fetchColumn($countQuery($categoryStatement)('WHERE'));
             return $result;
         }
 
