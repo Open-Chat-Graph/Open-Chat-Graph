@@ -24,7 +24,6 @@ class SqliteStatisticsPageRepository implements StatisticsPageRepositoryInterfac
 
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
         $result = SQLiteStatistics::fetchAll($query, compact('open_chat_id'));
-        SQLiteStatistics::$pdo = null;
 
         return $result;
     }

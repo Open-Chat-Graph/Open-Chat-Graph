@@ -12,8 +12,22 @@ abstract class AbstractSQLite extends DB implements DBInterface
 {
     public static ?\PDO $pdo = null;
 
-    private const MAX_RETRIES = 5;
-    private const RETRY_WAIT_MICROSECONDS = 100000; // 0.1 seconds
+    /**
+     * リトライ設計（クローラー殺到時の WAL 読み取り競合対策）:
+     *
+     * 「locking protocol」(SQLITE_PROTOCOL) は busy_timeout が効かない。WAL の読み取りマーク
+     * スロットは最大5個しかなく、読み側がクエリごとに接続を開き直す本アプリの構造上、
+     * アクセス集中時はスロット争奪のリトライ上限超過でこのエラーが出る。
+     * 一過性の輻輳なので、指数バックオフ＋ジッターで待てばほぼ確実に抜けられる。
+     *
+     * - 固定間隔だと全 php-fpm ワーカーが同周期で再衝突する（リトライハード）ため、
+     *   ±50% のジッターで分散させる
+     * - 最大待機合計は約2.4秒（+ジッター）に制限。殺到時にワーカーを長時間塞ぐと
+     *   fpm プール枯渇で別の障害になるため、無制限には待たない
+     */
+    private const MAX_RETRIES = 7;
+    private const RETRY_BASE_WAIT_MICROSECONDS = 50000;   // 初回 0.05 秒
+    private const RETRY_MAX_WAIT_MICROSECONDS = 800000;   // 1回あたり上限 0.8 秒
     private const RETRYABLE_ERRORS = [
         'database disk image is malformed',
         'database is locked',
@@ -24,10 +38,24 @@ abstract class AbstractSQLite extends DB implements DBInterface
     /**
      * @param ?array{storageFileKey: string, mode?: ?string} $config mode default is '?mode=rwc'
      */
+    /** @var array<class-string, string> 接続中のモード（接続使い回し判定用） */
+    private static array $connectedMode = [];
+
     public static function connect(?array $config = null): \PDO
     {
+        $mode = $config['mode'] ?? '?mode=rwc';
+
         if (static::$pdo !== null) {
-            return static::$pdo;
+            // 同一モードなら使い回す。WALの読み取りスナップショット取得や私的wal-index再構築は
+            // 接続のたびに発生するため、クエリごとの開き直しはアクセス集中時の
+            // 「locking protocol」の温床になる（リクエスト内では1接続を維持する）。
+            // モードが変わるときだけ張り直す（ro読み→rwc書きの取り違え防止。
+            // 以前は connect がモード指定を無視したため、各リポジトリが毎回
+            // `::$pdo = null` で切断するしかなかった——その明示切断は全廃済み）。
+            if ((self::$connectedMode[static::class] ?? null) === $mode) {
+                return static::$pdo;
+            }
+            static::$pdo = null;
         }
 
         if (empty($config['storageFileKey'])) {
@@ -35,9 +63,9 @@ abstract class AbstractSQLite extends DB implements DBInterface
         }
 
         $sqliteFilePath = app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
-        $mode = $config['mode'] ?? '?mode=rwc';
 
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);
+        self::$connectedMode[static::class] = $mode;
 
         // Set busy timeout for all modes (including read-only) to handle concurrent access
         static::$pdo->exec('PRAGMA busy_timeout=10000');
@@ -80,7 +108,12 @@ abstract class AbstractSQLite extends DB implements DBInterface
                 $attempts++;
 
                 if ($attempts < self::MAX_RETRIES) {
-                    usleep(self::RETRY_WAIT_MICROSECONDS);
+                    $wait = min(
+                        self::RETRY_BASE_WAIT_MICROSECONDS * (2 ** ($attempts - 1)),
+                        self::RETRY_MAX_WAIT_MICROSECONDS
+                    );
+                    // ±50% ジッター（同時リトライの再衝突を分散）
+                    usleep(random_int((int)($wait / 2), (int)($wait * 1.5)));
                 }
             }
         }

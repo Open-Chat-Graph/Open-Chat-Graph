@@ -127,7 +127,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             ['today' => $today, 'today2' => $today, 'modifier' => $modifier]
         );
 
-        SQLiteOcgraphSqlapi::$pdo = null;
 
         return [
             'increased' => (int) ($existing['increased'] ?? 0),
@@ -169,7 +168,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             ['today' => $today, 'modifier' => $modifier, 'today2' => $today, 'past_date' => $pastDate]
         )->fetch(\PDO::FETCH_ASSOC);
 
-        SQLiteOcgraphSqlapi::$pdo = null;
 
         return [
             'closed_rooms' => (int) ($result['closed_rooms'] ?? 0),
@@ -282,7 +280,6 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
             ['today' => $today, 'today2' => $today, 'today3' => $today, 'today4' => $today]
         );
 
-        SQLiteOcgraphSqlapi::$pdo = null;
 
         // トレンドをカテゴリーIDでインデックス
         $trendByCategory = [];

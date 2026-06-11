@@ -41,7 +41,6 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
 
         SQLiteRankingPositionOhlc::connect(['mode' => '?mode=ro']);
         $result = SQLiteRankingPositionOhlc::fetchAll($query, ['open_chat_id' => $open_chat_id, 'category' => $category, 'type' => $typeValue]);
-        SQLiteRankingPositionOhlc::$pdo = null;
 
         return $result;
     }
@@ -76,7 +75,6 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
             'type' => $typeValue,
             'since' => $since,
         ]);
-        SQLiteRankingPositionOhlc::$pdo = null;
 
         if (!$row || !is_array($row)) {
             return [
@@ -121,7 +119,6 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
             'type' => $typeValue,
             'since' => $since,
         ]);
-        SQLiteRankingPositionOhlc::$pdo = null;
 
         if (!$row || !is_array($row) || (int)($row['sample_n'] ?? 0) === 0) {
             return ['avg_position' => null, 'sample_n' => 0];
