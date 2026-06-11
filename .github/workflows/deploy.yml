@@ -142,7 +142,7 @@ jobs:
 
       - name: Initialize SQLite databases
         run: |
-          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc oc_page_cache; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
 
       # setup/schema/mysql/*.sql を source of truth に、全DBグループ(ocreview/ranking/comment/userlog)へ
       # 不足テーブル・カラム・索引を「加算のみ」で冪等反映する (MySQL/MariaDB 両対応)。
