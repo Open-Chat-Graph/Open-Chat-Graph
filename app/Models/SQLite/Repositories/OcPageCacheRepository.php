@@ -12,7 +12,8 @@ use App\Models\SQLite\SQLiteOcPageCache;
  * （レンダリングはリクエスト時に oc_narrative_section テンプレートが行う）。
  * DB/テーブルは他のSQLite同様、setup(setup/schema/sqlite/oc_page_cache.sql)と prod-sync が用意する。
  *
- * - 読み: /oc 表示時に PK 一発 SELECT（mode=rw。mode=ro×WAL の locking protocol を避けるため）。
+ * - 読み: /oc 表示時に PK 一発 SELECT（mode=ro。読み取り専用接続。書き込み権限や
+ *   WAL チェックポイントを発生させず、Web(www-data)から安全に読むため）。
  *   キャッシュ未生成（DBファイル無し・該当行無し）は null を返し、呼び出し側は空表示にフォールバックする。
  *   narrative_html は旧形式（事前レンダリングHTML）の行のための移行期読み取り専用。
  * - 書き: 背景バッチ（OcPageCacheGenerator）が単一プロセスで INSERT OR REPLACE する。
@@ -30,7 +31,7 @@ class OcPageCacheRepository
     public function get(int $open_chat_id): ?array
     {
         try {
-            SQLiteOcPageCache::connect(['mode' => '?mode=rw']);
+            SQLiteOcPageCache::connect(['mode' => '?mode=ro']);
             $row = SQLiteOcPageCache::fetch(
                 'SELECT narrative_data, narrative_html FROM oc_page_cache WHERE open_chat_id = ?',
                 [$open_chat_id]
