@@ -64,7 +64,6 @@ class OcNarrativeRepository implements OcNarrativeRepositoryInterface
         try {
             SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
             $row = SQLiteOcgraphSqlapi::fetch($query, ['id' => $openChatId]);
-            SQLiteOcgraphSqlapi::$pdo = null;
         } catch (\Throwable $e) {
             return ['hour' => null, 'day' => null, 'week' => null];
         }

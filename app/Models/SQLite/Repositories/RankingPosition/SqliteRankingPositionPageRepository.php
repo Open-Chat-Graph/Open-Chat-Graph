@@ -43,7 +43,6 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
 
         $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
 
-        SQLiteRankingPosition::$pdo = null;
 
         if (!$result) {
             return $dto;

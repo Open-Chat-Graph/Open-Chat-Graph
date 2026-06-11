@@ -99,7 +99,6 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
             ];
         }
 
-        SQLiteRankingPosition::$pdo = null;
 
         return $result;
     }

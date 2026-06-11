@@ -38,10 +38,24 @@ abstract class AbstractSQLite extends DB implements DBInterface
     /**
      * @param ?array{storageFileKey: string, mode?: ?string} $config mode default is '?mode=rwc'
      */
+    /** @var array<class-string, string> 接続中のモード（接続使い回し判定用） */
+    private static array $connectedMode = [];
+
     public static function connect(?array $config = null): \PDO
     {
+        $mode = $config['mode'] ?? '?mode=rwc';
+
         if (static::$pdo !== null) {
-            return static::$pdo;
+            // 同一モードなら使い回す。WALの読み取りスナップショット取得や私的wal-index再構築は
+            // 接続のたびに発生するため、クエリごとの開き直しはアクセス集中時の
+            // 「locking protocol」の温床になる（リクエスト内では1接続を維持する）。
+            // モードが変わるときだけ張り直す（ro読み→rwc書きの取り違え防止。
+            // 以前は connect がモード指定を無視したため、各リポジトリが毎回
+            // `::$pdo = null` で切断するしかなかった——その明示切断は全廃済み）。
+            if ((self::$connectedMode[static::class] ?? null) === $mode) {
+                return static::$pdo;
+            }
+            static::$pdo = null;
         }
 
         if (empty($config['storageFileKey'])) {
@@ -49,9 +63,9 @@ abstract class AbstractSQLite extends DB implements DBInterface
         }
 
         $sqliteFilePath = app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
-        $mode = $config['mode'] ?? '?mode=rwc';
 
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);
+        self::$connectedMode[static::class] = $mode;
 
         // Set busy timeout for all modes (including read-only) to handle concurrent access
         static::$pdo->exec('PRAGMA busy_timeout=10000');

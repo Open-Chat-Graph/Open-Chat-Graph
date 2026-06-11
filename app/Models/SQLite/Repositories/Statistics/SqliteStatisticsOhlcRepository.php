@@ -36,7 +36,6 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
 
         SQLiteStatisticsOhlc::connect(['mode' => '?mode=ro']);
         $result = SQLiteStatisticsOhlc::fetchAll($query, compact('open_chat_id'));
-        SQLiteStatisticsOhlc::$pdo = null;
 
         return $result;
     }
@@ -67,7 +66,6 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
             'week_start_date' => $weekStartDate,
             'month_start_date' => $monthStartDate,
         ]);
-        SQLiteStatisticsOhlc::$pdo = null;
 
         if (!is_array($result)) {
             return $emptyResult;
