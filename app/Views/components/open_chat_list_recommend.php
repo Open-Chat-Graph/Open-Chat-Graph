@@ -29,8 +29,18 @@
         </h3>
         <p class="openchat-item-desc unset"><?php
                                             // SEO: LINE 公式 description のコピー量を削減するため 40 字で truncate
-                                            $collapsedDesc = CollapseKeywordEnumerations::collapse(htmlspecialchars_decode($oc['description']), extraText: htmlspecialchars_decode($oc['name']));
-                                            echo h(mb_strlen($collapsedDesc) > 40 ? mb_substr($collapsedDesc, 0, 40) . '…' : $collapsedDesc);
+                                            // desc40 = .dat 生成時に collapse + truncate 済みの表示用説明文
+                                            // (BulkRecommendRankingBuilder::buildDisplayDescription)。
+                                            // 無い行(ライブ生成・旧形式 .dat)は従来どおり描画時に計算する。
+                                            // htmlspecialchars_decode はフレームワークの自動エスケープ経由(タグページ)と
+                                            // 生値経由(/ocのviewComponent)の両方を原文に正規化するためのもの。
+                                            if (isset($oc['desc40'])) {
+                                              $displayDesc = htmlspecialchars_decode($oc['desc40']);
+                                            } else {
+                                              $collapsedDesc = CollapseKeywordEnumerations::collapse(htmlspecialchars_decode($oc['description'] ?? ''), extraText: htmlspecialchars_decode($oc['name']));
+                                              $displayDesc = mb_strlen($collapsedDesc) > 40 ? mb_substr($collapsedDesc, 0, 40) . '…' : $collapsedDesc;
+                                            }
+                                            echo h($displayDesc);
                                             ?></p>
         <footer class="openchat-item-lower-outer">
           <div class="openchat-item-lower unset" style="font-size: 13px; margin-top: 0;">

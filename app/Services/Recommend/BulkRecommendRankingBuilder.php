@@ -7,6 +7,7 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
+use App\Views\Classes\CollapseKeywordEnumerations;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
@@ -69,7 +70,6 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
 
     /**
      * タグ別ランキングを構築する
-     * tag1 = oc_tag, tag2 = oc_tag2（RecommendRankingRepositoryと同じ）
      */
     function buildTagRanking(string $tag, string $listName): RecommendListDto
     {
@@ -82,14 +82,11 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             $listName,
             $candidateIds,
             $candidateIds,
-            fn(array $row) => $row['oc_tag'],    // tag1
-            fn(array $row) => $row['oc_tag2'],   // tag2
         );
     }
 
     /**
      * カテゴリ別ランキングを構築する
-     * tag1 = recommend_tag, tag2 = oc_tag2（CategoryRankingRepositoryと同じ）
      *
      * 旧SQLではtier1-3でrecommend JOINのidを使っていたため、
      * recommendタグを持つルームのみがtier1-3に含まれていた。
@@ -110,14 +107,11 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             $listName,
             $statsCandidateIds,
             $allCandidateIds,
-            fn(array $row) => $row['recommend_tag'], // tag1
-            fn(array $row) => $row['oc_tag2'],       // tag2
         );
     }
 
     /**
      * 公式ルーム別ランキングを構築する
-     * tag1 = recommend_tag, tag2 = oc_tag2（OfficialRoomRankingRepositoryと同じ）
      */
     function buildOfficialRanking(int $emblem, string $listName): RecommendListDto
     {
@@ -134,8 +128,6 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             $listName,
             $statsCandidateIds,
             $allCandidateIds,
-            fn(array $row) => $row['recommend_tag'], // tag1
-            fn(array $row) => $row['oc_tag2'],       // tag2
         );
     }
 
@@ -155,16 +147,12 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
      *
      * @param int[] $statsCandidateIds tier1-3の対象ID群
      * @param int[] $memberCandidateIds tier4の対象ID群
-     * @param \Closure $getTag1 行からtag1を取得するクロージャ
-     * @param \Closure $getTag2 行からtag2を取得するクロージャ
      */
     private function buildRanking(
         RecommendListType $type,
         string $listName,
         array $statsCandidateIds,
         array $memberCandidateIds,
-        \Closure $getTag1,
-        \Closure $getTag2,
     ): RecommendListDto {
         $limit = AppConfig::LIST_LIMIT_RECOMMEND;
 
@@ -182,7 +170,7 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         );
         $growing = array_slice($growing, 0, $limit);
         $growingRows = array_map(
-            fn(array $row) => $this->formatRow($row, $getTag1, $getTag2, AppConfig::RANKING_DAY_TABLE_NAME, (int)$row['hour24_diff']),
+            fn(array $row) => $this->formatRow($row, AppConfig::RANKING_DAY_TABLE_NAME, (int)$row['hour24_diff']),
             $growing
         );
 
@@ -192,8 +180,6 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             $memberCandidateIds,
             array_column($growing, 'id'),
             AppConfig::LIST_LIMIT_RECOMMEND_POOL,
-            $getTag1,
-            $getTag2,
         );
 
         // DTO は先頭(=表示順)に伸び部屋、末尾に裾を渡す（旧 hour/day/week の4段は廃止）。
@@ -248,8 +234,6 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         array $candidateIds,
         array $excludeIds,
         int $limit,
-        \Closure $getTag1,
-        \Closure $getTag2,
     ): array {
         $excludeMap = array_flip($excludeIds);
         $filtered = [];
@@ -283,18 +267,25 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         );
 
         return array_map(
-            fn(array $row) => $this->formatRow($row, $getTag1, $getTag2, 'open_chat'),
+            fn(array $row) => $this->formatRow($row, 'open_chat'),
             $filtered
         );
     }
 
     /**
-     * 行データをAbstractRecommendRankingRepository::SelectPageと同じ形式にフォーマットする
+     * 行データを表示に必要な最小フィールドへフォーマットする。
+     *
+     * .dat は1タグあたり最大 LIST_LIMIT_RECOMMEND_POOL(300)件の行を持ち、
+     * /oc・/recommend のアクセスごとに gzdecode + unserialize されるため、
+     * テンプレート(open_chat_list_recommend)が描画に使うフィールドだけを保存して
+     * ファイルサイズと毎リクエストのCPUを抑える。
+     *
+     * description はテンプレートがアクセスごとに行っていた
+     * 「キーワード列挙の collapse + 40字 truncate」を生成時に1回だけ計算し、
+     * 結果(desc40)のみを保存する（最大1000字の原文は保存しない）。
      */
     private function formatRow(
         array $row,
-        \Closure $getTag1,
-        \Closure $getTag2,
         string $tableName,
         ?int $diff24h = null,
     ): array {
@@ -302,22 +293,28 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
             'id' => $row['id'],
             'name' => $row['name'],
             'img_url' => $row['img_url'],
-            'api_img_url' => $row['api_img_url'],
             'member' => $row['member'],
-            'description' => $row['description'],
             'emblem' => $row['emblem'],
-            'category' => $row['category'],
-            'emid' => $row['emid'],
-            'url' => $row['url'],
             'api_created_at' => $row['api_created_at'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
             'join_method_type' => $row['join_method_type'],
-            'tag1' => $getTag1($row),
-            'tag2' => $getTag2($row),
             'table_name' => $tableName,
             // 伸び部屋のみ24h増を持たせる（裾は null＝バッジ非表示）。SQLランキングの diff_member_24h と整合。
             'diff_member_24h' => $diff24h,
+            'desc40' => self::buildDisplayDescription((string)($row['description'] ?? ''), (string)$row['name']),
         ];
+    }
+
+    /**
+     * リスト表示用の説明文（collapse + 40字 truncate 済み）を生成する。
+     * open_chat_list_recommend.php が描画時に行っていた処理と同一
+     * （テンプレート側のフォールバック実装と揃えること）。
+     */
+    public static function buildDisplayDescription(string $description, string $name): string
+    {
+        $collapsedDesc = CollapseKeywordEnumerations::collapse(
+            htmlspecialchars_decode($description),
+            extraText: htmlspecialchars_decode($name)
+        );
+        return mb_strlen($collapsedDesc) > 40 ? mb_substr($collapsedDesc, 0, 40) . '…' : $collapsedDesc;
     }
 }
