@@ -118,6 +118,36 @@ class RecommendListDto
         return max($count, 0);
     }
 
+    /**
+     * 「メンバー数が近い」ルームを人数レンジで絞り込んで返す（/oc の関連ルーム用）。
+     *
+     * 母集団は伸び部屋(hour) + 人数降順の裾(member, LIST_LIMIT_RECOMMEND_POOL件)の全候補。
+     * 表示用 mergedElements(30件キャップ)とは独立に探すため取りこぼしが少ない。
+     * 並び順は旧 SimilarSizeRoomRepository の SQL と同一: |人数差| ASC, member DESC。
+     *
+     * @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[]
+     */
+    function findByMemberRange(int $excludeId, int $currentMember, int $minMember, int $maxMember, int $limit): array
+    {
+        $seen = [];
+        $result = [];
+        foreach (array_merge($this->hour, $this->day, $this->week, $this->member) as $row) {
+            $id = (int)$row['id'];
+            if ($id === $excludeId || isset($seen[$id])) continue;
+            $seen[$id] = true;
+
+            $m = (int)$row['member'];
+            if ($m < $minMember || $m > $maxMember) continue;
+            $result[] = $row;
+        }
+
+        usort($result, fn(array $a, array $b) =>
+            (abs((int)$a['member'] - $currentMember) <=> abs((int)$b['member'] - $currentMember))
+                ?: ((int)$b['member'] <=> (int)$a['member']));
+
+        return array_slice($result, 0, $limit);
+    }
+
     /** @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[] */
     function getPreviewList(int $len): array
     {

@@ -2,7 +2,7 @@
 
 /**
  * 関連ルーム(類似サイズ or おすすめ)セクション。
- * OcPageCacheGenerator が事前計算してHTML化し、/oc 表示時はキャッシュHTMLをそのまま出力する。
+ * /oc 表示時に recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てて描画する（MySQL不使用）。
  *
  * @var array|false $similarSize
  * @var array{0:mixed,1:mixed,2:string,3:mixed} $recommend

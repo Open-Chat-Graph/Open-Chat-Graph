@@ -187,10 +187,11 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         );
 
         // 伸びていない部屋は member 降順で裾を埋める（痩せタグ対策・既存の大型部屋）。
+        // 表示は30件のままだが、/oc 関連ルームの人数絞り込み母集団として300件保持する。
         $member = $this->buildMemberTier(
             $memberCandidateIds,
             array_column($growing, 'id'),
-            $limit,
+            AppConfig::LIST_LIMIT_RECOMMEND_POOL,
             $getTag1,
             $getTag2,
         );
