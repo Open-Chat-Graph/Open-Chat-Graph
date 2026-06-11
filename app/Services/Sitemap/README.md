@@ -29,16 +29,11 @@
 閾値の式は `LastmodPolicy` と更新SQLの両方に現れるので、変えるときは両方を一致させること
 (`LastmodPolicy` が仕様の正)。詳細は各ファイルのコメント参照。
 
-## 初期化 (一度きり・手動)
+## 初期化 (一度きり・手動・完了済み)
 
-テーブルはデプロイ時に schema-sync が自動で作る([../Schema/README.md](../Schema/README.md))が、
-**初期化だけは手動**で locale ごとに1回実行する:
+テーブルはデプロイ時に schema-sync が自動で作る([../Schema/README.md](../Schema/README.md))。
+初期データ投入は locale ごとに1回 `batch/exec/seed_sitemap_lastmod.php` を手動実行する手順だったが、
+**全 locale で投入完了に伴いスクリプトは削除済み**（必要になったら git 履歴から復元する）。
 
-```bash
-php batch/exec/seed_sitemap_lastmod.php       # JP
-php batch/exec/seed_sitemap_lastmod.php /tw   # TW
-php batch/exec/seed_sitemap_lastmod.php /th   # TH
-```
-
-JP は分析(narrative)を全部屋に載せた日を下限にして更新日を底上げし、再クロールの波を起こす。
-TW/TH は底上げせず最小日時を下限にするだけ。以後の維持は日次更新が担う。
+JP は分析(narrative)を全部屋に載せた日を下限にして更新日を底上げし、再クロールの波を起こした。
+TW/TH は底上げせず最小日時を下限にしただけ。以後の維持は日次更新が担う。

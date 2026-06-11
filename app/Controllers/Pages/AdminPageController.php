@@ -92,16 +92,6 @@ class AdminPageController
     }
 
     /**
-     * ランキングbanテーブル更新テストバッチ実行
-     */
-    function rankingban_test()
-    {
-        $this->batchScriptLauncher->launchInBackground(BatchScript::rankingBanTest);
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::rankingBanTest->absolutePath() . ' を実行しました。']);
-    }
-
-    /**
      * 日次処理リトライテストバッチ実行
      */
     function retry_daily_test()

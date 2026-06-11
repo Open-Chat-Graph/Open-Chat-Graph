@@ -21,7 +21,6 @@ enum BatchScript: string
     case ocreviewApiDataImportBackground = 'batch/exec/ocreview_api_data_import_background.php';
     case persistRankingPositionBackground = 'batch/exec/persist_ranking_position_background.php';
     case genetopExec = 'batch/exec/admin/genetop_exec.php';
-    case rankingBanTest = 'batch/exec/ranking_ban_test.php';
     case retryDailyTask = 'batch/exec/admin/retry_daily_task.php';
     case updateApiDb = 'batch/exec/update_api_db.php';
 
