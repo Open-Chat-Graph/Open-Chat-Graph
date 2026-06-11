@@ -123,10 +123,9 @@ class RecommendOpenChatPageController
 
         // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
         // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
-        // 関連タグは .dat に同梱済みの自タグ分（毎時バッチが related_tags マップと同時刻に生成）を使い、
-        // 未同梱（旧 .dat・ライブ生成）の場合のみ従来どおり全タグ分のマップを読む。
-        $relatedTagsForTag = ($recommend ? $recommend->relatedTags : null)
-            ?? $staticDataGeneration->getRelatedTags()[$tag] ?? [];
+        // 関連タグは .dat に同梱済みの自タグ分（毎時バッチが related_tags マップと同時刻に生成）。
+        // 未同梱（移行期の旧 .dat・ライブ生成）は空表示とし、次の毎時生成で自然に埋まる。
+        $relatedTagsForTag = $recommend ? ($recommend->relatedTags ?? []) : [];
         $_discovery = $themeDiscoveryService
             ->build(
                 $staticDataGeneration->getTagList(),

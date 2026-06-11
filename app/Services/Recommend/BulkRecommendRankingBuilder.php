@@ -7,7 +7,6 @@ namespace App\Services\Recommend;
 use App\Config\AppConfig;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
-use App\Views\Classes\CollapseKeywordEnumerations;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
@@ -170,7 +169,7 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         );
         $growing = array_slice($growing, 0, $limit);
         $growingRows = array_map(
-            fn(array $row) => $this->formatRow($row, AppConfig::RANKING_DAY_TABLE_NAME, (int)$row['hour24_diff']),
+            fn(array $row) => RecommendRowFormat::slim($row, AppConfig::RANKING_DAY_TABLE_NAME, (int)$row['hour24_diff']),
             $growing
         );
 
@@ -267,54 +266,9 @@ class BulkRecommendRankingBuilder implements BulkRecommendRankingBuilderInterfac
         );
 
         return array_map(
-            fn(array $row) => $this->formatRow($row, 'open_chat'),
+            fn(array $row) => RecommendRowFormat::slim($row, 'open_chat', null),
             $filtered
         );
     }
 
-    /**
-     * 行データを表示に必要な最小フィールドへフォーマットする。
-     *
-     * .dat は1タグあたり最大 LIST_LIMIT_RECOMMEND_POOL(300)件の行を持ち、
-     * /oc・/recommend のアクセスごとに gzdecode + unserialize されるため、
-     * テンプレート(open_chat_list_recommend)が描画に使うフィールドだけを保存して
-     * ファイルサイズと毎リクエストのCPUを抑える。
-     *
-     * description はテンプレートがアクセスごとに行っていた
-     * 「キーワード列挙の collapse + 40字 truncate」を生成時に1回だけ計算し、
-     * 結果(desc40)のみを保存する（最大1000字の原文は保存しない）。
-     */
-    private function formatRow(
-        array $row,
-        string $tableName,
-        ?int $diff24h = null,
-    ): array {
-        return [
-            'id' => $row['id'],
-            'name' => $row['name'],
-            'img_url' => $row['img_url'],
-            'member' => $row['member'],
-            'emblem' => $row['emblem'],
-            'api_created_at' => $row['api_created_at'],
-            'join_method_type' => $row['join_method_type'],
-            'table_name' => $tableName,
-            // 伸び部屋のみ24h増を持たせる（裾は null＝バッジ非表示）。SQLランキングの diff_member_24h と整合。
-            'diff_member_24h' => $diff24h,
-            'desc40' => self::buildDisplayDescription((string)($row['description'] ?? ''), (string)$row['name']),
-        ];
-    }
-
-    /**
-     * リスト表示用の説明文（collapse + 40字 truncate 済み）を生成する。
-     * open_chat_list_recommend.php が描画時に行っていた処理と同一
-     * （テンプレート側のフォールバック実装と揃えること）。
-     */
-    public static function buildDisplayDescription(string $description, string $name): string
-    {
-        $collapsedDesc = CollapseKeywordEnumerations::collapse(
-            htmlspecialchars_decode($description),
-            extraText: htmlspecialchars_decode($name)
-        );
-        return mb_strlen($collapsedDesc) > 40 ? mb_substr($collapsedDesc, 0, 40) . '…' : $collapsedDesc;
-    }
 }

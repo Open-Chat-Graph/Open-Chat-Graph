@@ -25,10 +25,10 @@ class RecommendListDto
     public ?array $themeMomentum = null;
 
     /**
-     * このタグの関連タグ（related_tags.dat 全体マップのうち自タグ分のスライス。
-     * タグ => 共起スコア）。毎時バッチの .dat 生成時に同梱し、/recommend ページが
-     * アクセスごとに全タグ分のマップ(展開後245KB)を読むのを無くす。
-     * null = 未同梱（旧 .dat / マップ未生成環境）→ ページ側が従来どおり全体マップを読む。
+     * このタグの関連タグ（related_tags 全体マップのうち自タグ分のスライス。タグ => 共起スコア）。
+     * 毎時バッチの .dat 生成時に同梱し、/recommend ページがアクセスごとに
+     * 全タグ分のマップ(展開後245KB)を読むのを無くす。
+     * null = 未同梱（移行期の旧 .dat / ライブ生成）。利用側は [] と同義に扱う。
      */
     public ?array $relatedTags = null;
 
