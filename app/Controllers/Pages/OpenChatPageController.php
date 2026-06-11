@@ -6,7 +6,6 @@ namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
 use App\Config\SecretsConfig;
-use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\SQLite\Repositories\OcPageCacheRepository;
@@ -17,12 +16,10 @@ use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
-use App\Services\Narrative\OcNarrativeService;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
-use App\Views\StatisticsViewUtility;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
@@ -36,18 +33,14 @@ class OpenChatPageController
     function index(
         OpenChatPageRepositoryInterface $ocRepo,
         OcPageMeta $meta,
-        StatisticsChartArrayService $statisticsChartArrayService,
-        StatisticsViewUtility $statisticsViewUtility,
         PageBreadcrumbsListSchema $breadcrumbsShema,
         OcPageSchema $ocPageSchema,
         StaticDataFile $staticDataGeneration,
         RecommendGenarator $recommendGenarator,
-        RecentCommentListRepositoryInterface $recentCommentListRepository,
+        SimilarSizeRoomService $similarSizeRoomService,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
-        OcNarrativeService $narrativeService,
-        SimilarSizeRoomService $similarSizeRoomService,
         OcPageCacheRepository $ocPageCacheRepository,
         int $open_chat_id,
         ?string $isAdminPage,
@@ -81,11 +74,26 @@ class OpenChatPageController
 
         }
 
-        // 分析文・関連ルームは事前計算済みHTML断片を oc_page_cache(SQLite) からPK一発で読むだけ。
+        // 分析文(narrative)は事前計算済みHTML断片を oc_page_cache(SQLite) からPK一発で読むだけ。
         // 未生成（バックフィル前/生成不可）は null → 空表示。bot が叩く /oc 本体で重い計算をしない。
         $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
         $_narrativeHtml = $ocPageCache['narrative_html'] ?? '';
-        $_recommendHtml = $ocPageCache['recommend_html'] ?? '';
+
+        // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
+        // ファイル読み＋unserialize のみで部屋ごとの MySQL クエリは発生しない。
+        // キャッシュ未生成の部屋でも関連ルーム枠は常に表示される。
+        $_recommend = $recommendGenarator->getRecommend(
+            $oc['tag1'],
+            $oc['tag2'],
+            $oc['tag3'],
+            $oc['category']
+        );
+        $_similarSize = $similarSizeRoomService->fetch(
+            (int)$oc['id'],
+            (int)$oc['member'],
+            $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
+            isset($oc['category']) ? (int)$oc['category'] : null
+        );
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
@@ -108,7 +116,7 @@ class OpenChatPageController
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
         $formatedDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $collapsedDescription));
 
-        // 分析文(narrative)・関連ルームは oc_page_cache から読み済み（$_narrativeHtml/$_recommendHtml）。
+        // 分析文(narrative)は oc_page_cache から読み済み（$_narrativeHtml）。関連ルームは上で組み立て済み。
         // meta への narrative 連携は無し(null)＝#372以降の現行挙動を踏襲（meta description は room description ベース）。
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)->setImageUrl(imgUrl($oc['img_url']));
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
@@ -148,7 +156,8 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             '_narrativeHtml',
-            '_recommendHtml',
+            '_recommend',
+            '_similarSize',
             '_hourlyRange',
             '_adminDto',
             'officialDto',

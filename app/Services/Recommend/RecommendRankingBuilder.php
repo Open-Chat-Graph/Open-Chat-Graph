@@ -38,10 +38,11 @@ class RecommendRankingBuilder
         );
 
         // 伸びていない部屋は member 降順で裾を埋める（痩せタグ対策・既存の大型部屋）。
+        // 表示は30件のままだが、/oc 関連ルームの人数絞り込み母集団として300件保持する。
         $member = $repository->getListOrderByMemberDesc(
             $entity,
             array_column($growing, 'id'),
-            $limit
+            AppConfig::LIST_LIMIT_RECOMMEND_POOL
         );
 
         // DTO は先頭(=表示順)に伸び部屋、末尾に裾を渡す（旧 hour/day/week の4段は廃止）。

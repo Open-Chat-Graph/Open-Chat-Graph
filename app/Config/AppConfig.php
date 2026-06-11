@@ -41,6 +41,12 @@ class AppConfig
     const LIST_LIMIT_RECENTLY_REGISTERED = 100;
     const LIST_LIMIT_RECOMMEND = 30;
 
+    // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
+    // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
+    // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団
+    // （部屋ごとの MySQL クエリを使わずキャッシュ流用で取りこぼしを防ぐ）。
+    const LIST_LIMIT_RECOMMEND_POOL = 300;
+
     const RECOMMEND_MIN_MEMBER_DIFF_HOUR = 3;
     const RECOMMEND_MIN_MEMBER_DIFF_H24 = 8;
     const RECOMMEND_MIN_MEMBER_DIFF_WEEK = 10;

@@ -47,7 +47,6 @@ class MimimalCmsConfig
         \App\Models\Repositories\OcSitemapLastmodRepositoryInterface::class => \App\Models\Repositories\OcSitemapLastmodRepository::class,
 
         \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface::class => \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository::class,
-        \App\Models\Repositories\SimilarSizeRoomRepositoryInterface::class => \App\Models\Repositories\SimilarSizeRoomRepository::class,
         \App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface::class => \App\Models\Repositories\Recommend\RecommendGrowthRepository::class,
         \App\Models\Repositories\Recommend\TrendingThemeRepositoryInterface::class => \App\Models\Repositories\Recommend\TrendingThemeRepository::class,
 
