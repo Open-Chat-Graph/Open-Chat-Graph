@@ -32,7 +32,8 @@ CREATE TABLE `comment` (
   `text` text NOT NULL,
   `time` datetime NOT NULL DEFAULT current_timestamp(),
   `flag` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`comment_id`)
+  PRIMARY KEY (`comment_id`),
+  KEY `idx_open_chat_id` (`open_chat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `like`;
 CREATE TABLE `like` (
@@ -52,7 +53,8 @@ CREATE TABLE `log` (
   `data` text NOT NULL,
   `ip` text NOT NULL,
   `ua` text NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_entity_id` (`entity_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `comment_image`;
 CREATE TABLE `comment_image` (
