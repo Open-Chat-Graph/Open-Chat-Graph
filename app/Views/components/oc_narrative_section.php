@@ -2,7 +2,8 @@
 
 /**
  * 分析文(narrative)セクション。
- * OcPageCacheGenerator が事前計算してHTML化し、/oc 表示時はキャッシュHTMLをそのまま出力する。
+ * OcPageCacheGenerator が事前計算した「データ」(oc_page_cache.narrative_data) を受け取り、
+ * /oc 表示時にレンダリングする（url() 等のURLヘルパーはリクエスト文脈で解決される）。
  *
  * - summary があれば分析本文 + 状態に合った記事リンク
  * - summary が無くても pattern があれば記事リンクだけ出す（「空ならブログリンクだけ」）
