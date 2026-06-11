@@ -12,7 +12,7 @@ use Shared\MimimalCmsConfig;
 
 /**
  * テーマ発見セクション（/recommend 着地客の回遊導線）の表示データを組み立てる。
- * View にロジックを置かないため、棚(🗂近いテーマ/🚀急上昇)と検索インデックスをここで確定する。
+ * View にロジックを置かないため、棚(🗂近いテーマ/🚀急上昇)をここで確定する。
  *
  * 入力(getTagList の行)はコントローラ段階の生データ。各タグは RAW（未エスケープ）で扱い、
  * 表示名は extractTag、URL スラッグは urlencode で確定する。View へは `_discovery` で渡し、
@@ -49,7 +49,7 @@ class ThemeDiscoveryService
         }
         unset($tagMember[$currentTag], $tagCategory[$currentTag]);
         if (!$tagMember) {
-            return new ThemeDiscoveryDto([], [], '', '', []);
+            return new ThemeDiscoveryDto([], [], '', '');
         }
 
         // 🗂 近いテーマ: ページ文脈の主役なので最初に確定する。
@@ -102,17 +102,12 @@ class ThemeDiscoveryService
             'name' => RecommendUtility::extractTag($canonical),
             'slug' => urlencode($canonical),
         ];
-        $searchIndex = array_map(
-            static fn(string $canonical): array => [RecommendUtility::extractTag($canonical), urlencode($canonical)],
-            array_keys($tagMember)
-        );
 
         return new ThemeDiscoveryDto(
             array_map($toItem, array_keys($trendingSet)),
             array_map($toItem, $nearby),
             $nearbyCategoryName,
             RecommendUtility::extractTag($currentTag),
-            $searchIndex,
         );
     }
 }

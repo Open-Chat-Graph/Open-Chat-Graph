@@ -17,14 +17,12 @@ class ThemeDiscoveryDto
      * @param list<array{name:string,slug:string}> $nearby   🗂同カテゴリ
      * @param string $nearbyCategoryName 近いカテゴリの表示名（無ければ空）
      * @param string $currentTagName 現在ページのテーマ表示名（棚見出しの文脈用。無ければ空）
-     * @param list<array{0:string,1:string}> $searchIndex 検索用 [表示名, スラッグ]
      */
     public function __construct(
         public readonly array $trending,
         public readonly array $nearby,
         public readonly string $nearbyCategoryName,
         public readonly string $currentTagName,
-        public readonly array $searchIndex,
     ) {}
 
     public function isEmpty(): bool
