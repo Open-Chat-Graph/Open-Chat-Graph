@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\SQLite\Repositories;
 
 use App\Models\SQLite\SQLiteOcPageCache;
+use App\Services\Storage\FileStorageInterface;
 
 /**
  * ルーム個別ページの分析(narrative)事前計算データの読み書き。
@@ -22,6 +23,11 @@ use App\Models\SQLite\SQLiteOcPageCache;
  */
 class OcPageCacheRepository
 {
+    public function __construct(
+        private FileStorageInterface $fileStorage,
+    ) {
+    }
+
     /**
      * narrative_data はデプロイ時の冪等ALTERで追加されたカラムのため、
      * 移行された既存行では NULL があり得る（呼び出し側は empty() で判定する）。
@@ -57,7 +63,9 @@ class OcPageCacheRepository
         }
 
         $pdo = SQLiteOcPageCache::connect();
-        $now = (new \DateTime)->format('Y-m-d H:i:s');
+        // updated_at は「データの最終時点」= 毎時クロール完了時刻を採る（wall-clock の now ではない）。
+        // クロールが止まった環境で再生成しても、キャッシュの鮮度がデータと一致する。取得不能なら now。
+        $now = $this->generatedAt();
 
         $stmt = $pdo->prepare(
             'INSERT OR REPLACE INTO oc_page_cache
@@ -79,5 +87,21 @@ class OcPageCacheRepository
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * キャッシュ行の updated_at（= データの最終時点）。毎時クロール完了時刻を採り、
+     * 取得不能（ファイル無し/空/不正）なら wall-clock の now にフォールバックする。
+     */
+    private function generatedAt(): string
+    {
+        try {
+            $cron = trim((string)$this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+            if ($cron !== '') {
+                return (new \DateTime($cron))->format('Y-m-d H:i:s');
+            }
+        } catch (\Throwable) {
+        }
+        return (new \DateTime)->format('Y-m-d H:i:s');
     }
 }
