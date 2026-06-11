@@ -6,6 +6,7 @@ namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
 use App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface;
+use App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface;
 use App\Models\RecommendRepositories\CategoryRankingRepository;
 use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
@@ -32,6 +33,7 @@ class RecommendStaticDataGenerator
         private FileStorageInterface $fileStorage,
         private BulkRankingDataRepositoryInterface $bulkRankingDataRepository,
         private BulkRecommendRankingBuilderInterface $bulkRecommendRankingBuilder,
+        private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
     // ============================================================
@@ -140,11 +142,34 @@ class RecommendStaticDataGenerator
     {
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
+            $dto = $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
+            $this->setThemeMomentum($dto);
             $this->fileStorage->saveSerializedFile(
                 $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
-                $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag)
+                $dto
             );
         }
+    }
+
+    /**
+     * テーマの勢い(themeMomentum)を事前計算して DTO に同梱する。
+     *
+     * /recommend/{tag} がアクセスごとに ranking_position.db / statistics.db を集計していたのを、
+     * 毎時の .dat 生成時の1回に寄せる。対象はタグ .dat のみ（勢いを表示するのはタグページだけ）。
+     * 集計窓の起点・対象IDはページ側のライブ計算と同一
+     * (RecommendOpenChatPageController::index と揃えること)。
+     */
+    private function setThemeMomentum(RecommendListDto $dto): void
+    {
+        if (!$dto->getCount()) {
+            $dto->themeMomentum = [];
+            return;
+        }
+
+        $dto->themeMomentum = $this->recommendGrowthRepository->themeMomentum(
+            array_column($dto->getList(false, null), 'id'),
+            new \DateTime($dto->hourlyUpdatedAt)
+        );
     }
 
     private function updateCategoryStaticDataBulk(): void

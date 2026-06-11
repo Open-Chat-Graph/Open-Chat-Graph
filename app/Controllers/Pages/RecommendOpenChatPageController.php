@@ -166,11 +166,13 @@ class RecommendOpenChatPageController
             $tag
         );
 
-        // テーマの勢い: rank/rising は ranking_position.db(ロケール別)、
-        // member(合計人数)は statistics.db(ロケール別)から集計。ja/tw/th 全ロケール対応。
-        // 集計窓の起点は現在時刻ではなく最終 cron 時刻($hourlyUpdatedAt)を渡す。クロール遅延や
+        // テーマの勢い: 毎時バッチが .dat 生成時に事前計算して DTO に同梱している
+        // (RecommendStaticDataGenerator::setThemeMomentum)。アクセスごとの SQLite 集計はしない。
+        // null は未計算（旧 .dat / per-tag 即時生成）の場合のみで、そのときだけライブ集計に
+        // フォールバックする（[] は計算済みデータ不足なので再計算しない）。
+        // 集計窓の起点は現在時刻ではなく最終 cron 時刻($hourlyUpdatedAt)。クロール遅延や
         // ローカルの古いデータでも窓が実データに乗るようにするため(時刻取得はこの利用元の責務)。
-        $growth = $this->recommendGrowthRepository->themeMomentum(
+        $growth = $recommend->themeMomentum ?? $this->recommendGrowthRepository->themeMomentum(
             array_column($recommend->getList(false, null), 'id'),
             $hourlyUpdatedAt
         );
