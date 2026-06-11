@@ -32,6 +32,7 @@ class FileStorageServiceConfig
         'commentUpdatedAtMicrotime' =>    '/static_data_top/comment_updated_at.dat',
         'tagUpdatedAtDatetime' =>         '/static_data_top/tag_updated_at.dat',
         'topPageRankingData' =>           '/static_data_top/ranking_list.dat',
+        'rankingListCounts' =>            '/static_data_top/ranking_list_counts.dat',
         'rankingArgDto' =>                '/static_data_top/ranking_arg_dto.dat',
         'recommendPageDto' =>             '/static_data_top/recommend_page_dto.dat',
         'tagList' =>                      '/static_data_top/tag_list.dat',

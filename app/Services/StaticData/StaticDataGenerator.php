@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\StaticData;
 
 use App\Config\AppConfig;
+use App\Models\ApiRepositories\OpenChatStatsRankingApiRepository;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Recommend\RelatedTagsService;
@@ -23,6 +24,7 @@ class StaticDataGenerator
         private RecommendRankingRepository $recommendPageRepository,
         private FileStorageInterface $fileStorage,
         private RelatedTagsService $relatedTagsService,
+        private OpenChatStatsRankingApiRepository $statsRankingRepository,
     ) {}
 
     function getTopPageDataFromDB(): StaticTopPageDto
@@ -131,6 +133,9 @@ class StaticDataGenerator
         $this->fileStorage->saveSerializedFile('@tagList', $this->getTagList());
         $this->fileStorage->saveSerializedFile('@relatedTags', $this->getRelatedTags());
         $this->fileStorage->saveSerializedFile('@topPageRankingData', $this->getTopPageDataFromDB());
+        // 絞り込み無しランキング(hour/hour24/week)各カテゴリの総件数。
+        // /oclist 1ページ目の totalCount を、アクセスごとの重い count(*) から事前計算に寄せる。
+        $this->fileStorage->saveSerializedFile('@rankingListCounts', $this->statsRankingRepository->buildListCountCache());
         $this->fileStorage->saveSerializedFile('@rankingArgDto', $this->getRankingArgDto());
         $this->fileStorage->saveSerializedFile('@recommendPageDto', $this->getRecommendPageDto());
     }
