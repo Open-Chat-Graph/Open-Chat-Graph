@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\CommentRepositories;
 
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentDB;
-use App\Models\Repositories\DB;
+use Shared\MimimalCmsConfig;
 
 class RecentCommentListRepository implements RecentCommentListRepositoryInterface
 {
@@ -20,52 +21,41 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
         int $open_chat_id = 0,
         string $order = 'DESC',
     ): array {
+        $order = $order === 'ASC' ? 'ASC' : 'DESC';
+        // comment DB と open_chat DB は同一 MySQL サーバー上にあるためクロスDB JOIN できる
+        $mainDb = AppConfig::$dbName[MimimalCmsConfig::$urlRoot];
+
         $query =
             "SELECT
-                comment_id,
-                open_chat_id,
-                time,
-                name,
+                c.comment_id,
+                c.open_chat_id,
+                c.time,
+                c.name,
                 CASE
-                    WHEN flag = 5 THEN 5
-                    WHEN user_id = :user_id THEN 0
-                    ELSE flag
+                    WHEN c.flag = 5 THEN 5
+                    WHEN c.user_id = :user_id THEN 0
+                    ELSE c.flag
                 END AS flag,
-                text
+                c.text,
+                oc.name AS oc_name,
+                oc.img_url AS oc_img_url,
+                oc.category AS oc_category,
+                oc.member AS oc_member,
+                oc.emblem AS oc_emblem
             FROM
-                comment
+                comment AS c
+                LEFT JOIN `{$mainDb}`.`open_chat` AS oc ON oc.id = c.open_chat_id
             WHERE
-                NOT user_id = :adminId
-                AND (flag != 1 OR user_id = :user_id)
-                AND (open_chat_id != :open_chat_id OR open_chat_id = 0)
+                NOT c.user_id = :adminId
+                AND (c.flag != 1 OR c.user_id = :user_id)
+                AND (c.open_chat_id != :open_chat_id OR c.open_chat_id = 0)
+                AND (c.open_chat_id = 0 OR oc.id IS NOT NULL)
             ORDER BY
-                time {$order}
+                c.time {$order}
             LIMIT
                 :offset, :limit;";
 
         $comments = CommentDB::fetchAll($query, compact('offset', 'limit', 'adminId', 'user_id', 'open_chat_id'));
-        if (empty($comments)) return [];
-
-        $ids = array_unique(array_column($comments, 'open_chat_id'));
-        $ids = implode(',', $ids);
-
-        $ocQuery =
-            "SELECT
-                oc.id,
-                oc.name,
-                oc.img_url,
-                oc.category,
-                oc.member,
-                oc.emblem
-            FROM
-                open_chat AS oc
-            WHERE
-                id IN ({$ids})";
-
-
-        $oc = DB::fetchAll($ocQuery);
-
-        $idArray = array_column($oc, 'id');
 
         $result = [];
         foreach ($comments as $el) {
@@ -85,20 +75,17 @@ class RecentCommentListRepository implements RecentCommentListRepositoryInterfac
                 continue;
             }
 
-            $key = array_search($el['open_chat_id'], $idArray);
-            if ($key === false) continue;
-
             $result[] = [
                 'id' => $el['open_chat_id'],
                 'comment_id' => $el['comment_id'],
                 'user' => in_array($el['flag'], [0, 4]) ? ($el['name']  ?: '匿名') : '***',
-                'name' => $oc[$key]['name'],
-                'img_url' => $oc[$key]['img_url'],
-                'emblem' => $oc[$key]['emblem'],
+                'name' => $el['oc_name'],
+                'img_url' => $el['oc_img_url'],
+                'emblem' => $el['oc_emblem'],
                 'description' => in_array($el['flag'], [0, 4]) ? $el['text'] : '',
                 'time' => $el['time'],
-                'member' => $oc[$key]['member'],
-                'category' => $oc[$key]['category'],
+                'member' => $el['oc_member'],
+                'category' => $el['oc_category'],
             ];
         }
 
