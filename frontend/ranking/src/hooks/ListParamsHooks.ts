@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useSetAtom } from 'jotai'
 import { keywordState, listParamsState } from '../store/atom'
 import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
-import { useLocation } from 'react-router-dom'
 
 const getValidParam = <T extends ListParamsKey>(
   value: string | null,
@@ -17,24 +16,16 @@ const listParamsRanking: ValidListParams = {
   default: 'all',
 }
 
-const listParamsOfficial: ValidListParams = {
-  list: ['ranking', 'rising'],
-  default: 'rising',
-}
-
 const paramsSortRanking: ListParams['sort'][] = ['rank', 'increase', 'rate']
 const paramsSortAll: ListParams['sort'][] = ['member', 'created_at']
 const paramsOrder: ListParams['order'][] = ['asc', 'desc']
 
-export const getValidListParams = (params: URLSearchParams, location: { pathname: string }): ListParams => {
+export const getValidListParams = (params: URLSearchParams): ListParams => {
   const orderParam = (defaultValue: ListParams['order']) =>
     getValidParam<'order'>(params.get('order'), defaultValue, paramsOrder)
   const sortParam = (defaultValue: ListParams['sort'], paramsSort: ListParams['sort'][]) =>
     getValidParam<'sort'>(params.get('sort'), defaultValue, paramsSort)
-  const paramsList =
-    location.pathname.split('/')[1] === 'ranking' || location.pathname.split('/')[2] === 'ranking'
-      ? listParamsRanking
-      : listParamsOfficial
+  const paramsList = listParamsRanking
 
   const keyword = params.get('keyword') ?? ''
   const sub_category = params.get('sub_category') ?? ''
@@ -61,15 +52,11 @@ export const getValidListParams = (params: URLSearchParams, location: { pathname
 export function useSetListParams(): SetListParamsValue {
   const setKeyword = useSetAtom(keywordState)
   const setListParams = useSetAtom(listParamsState)
-  const location = useLocation()
 
   return useCallback(
     (getNewParams: (currentParams: ListParams) => ListParams) => {
       setListParams((currentParams) => {
-        const newParams = getValidListParams(
-          new URLSearchParams(getNewParams(currentParams)),
-          location
-        )
+        const newParams = getValidListParams(new URLSearchParams(getNewParams(currentParams)))
 
         window.history.replaceState(null, '', updateURLSearchParams(newParams))
         setTitle(newParams)
@@ -79,6 +66,6 @@ export function useSetListParams(): SetListParamsValue {
         return newParams
       })
     },
-    [location, setKeyword, setListParams]
+    [setKeyword, setListParams]
   )
 }

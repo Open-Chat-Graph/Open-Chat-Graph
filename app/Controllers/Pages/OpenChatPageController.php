@@ -10,16 +10,13 @@ use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\SQLite\Repositories\OcPageCacheRepository;
 use App\Services\OpenChatAdmin\AdminOpenChat;
-use App\Services\Recommend\OfficialPageList;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
-use App\Services\Statistics\StatisticsChartArrayService;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
-use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface;
 use App\Services\Storage\FileStorageInterface;
@@ -41,7 +38,6 @@ class OpenChatPageController
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
         OcPageCacheRepository $ocPageCacheRepository,
-        OfficialPageList $officialPageList,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -49,7 +45,6 @@ class OpenChatPageController
         AppConfig::$listLimitTopRanking = 5;
 
         $_adminDto = isset($isAdminPage) ? $this->getAdminDto($open_chat_id) : null;
-        $topPageDto = $staticDataGeneration->getTopPageData();
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $oc = $ocRepo->getOpenChatByIdWithTag($open_chat_id);
@@ -57,7 +52,7 @@ class OpenChatPageController
                 if (isset($isAdminPage) || !$ocRepo->isWithinIdRange($open_chat_id)) {
                     return false;
                 }
-                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $staticDataGeneration->getTopPageData());
             }
 
         } else {
@@ -69,7 +64,7 @@ class OpenChatPageController
                 if (!$ocRepo->isWithinIdRange($open_chat_id)) {
                     return false;
                 }
-                return $this->deletedResponse($recommendGenarator, $open_chat_id, $topPageDto);
+                return $this->deletedResponse($recommendGenarator, $open_chat_id, $staticDataGeneration->getTopPageData());
             }
 
         }
@@ -85,18 +80,20 @@ class OpenChatPageController
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
         // ファイル読み＋unserialize のみで部屋ごとの MySQL クエリは発生しない。
         // キャッシュ未生成の部屋でも関連ルーム枠は常に表示される。
-        $_recommend = $recommendGenarator->getRecommend(
-            $oc['tag1'],
-            $oc['tag2'],
-            $oc['tag3'],
-            $oc['category']
-        );
         $_similarSize = $similarSizeRoomService->fetch(
             (int)$oc['id'],
             (int)$oc['member'],
             $oc['tag1'] !== null && $oc['tag1'] !== '' ? (string)$oc['tag1'] : null,
             isset($oc['category']) ? (int)$oc['category'] : null
         );
+
+        // 表示されるのは similarSize か category おすすめ枠のどちらか一方のみ
+        // (oc_recommend_aside)。tag1/tag2 の .dat はこのページでは描画されないため読まない
+        // (tag1 .dat は必要時に SimilarSizeRoomService が読む)。category .dat も
+        // similarSize が確定したら不要なので読まない。
+        $_recommend = $_similarSize
+            ? [false, false, '', false]
+            : $recommendGenarator->getRecommend(null, null, null, $oc['category']);
 
         $categoryValue = $oc['category'] ? array_search($oc['category'], AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot]) : null;
         $category = $categoryValue ?? t('未指定');
@@ -113,7 +110,6 @@ class OpenChatPageController
             'pages/room_page',
             'react/OpenChat',
             'pages/graph_page',
-            'components/ads_element'
         ];
 
         $collapsedDescription = $collapseKeywordEnumerations->collapse($oc['description'], extraText: $oc['name']);
@@ -145,10 +141,10 @@ class OpenChatPageController
             'openChatName' => $oc['name'],
         ];
 
-        $officialDto = ($oc['emblem'] ?? 0) > 0 ? $officialPageList->getListDto($oc['emblem']) : null;
-
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
+        // officialDto / topPageDto は oc_content では未使用のため取得も view 渡しもしない
+        // (ファイル読み込みとビューの再帰エスケープの無駄を避ける)。410 ページは別経路で取得する。
         return view('oc_content', compact(
             '_meta',
             '_css',
@@ -163,36 +159,11 @@ class OpenChatPageController
             '_similarSize',
             '_hourlyRange',
             '_adminDto',
-            'officialDto',
-            'topPageDto',
             'formatedDescription',
             'formatedRowDescription',
         ));
     }
 
-    /**
-     * 統計チャートデータ（メンバー数推移・期間タブ可用性）を返す。
-     * graph(React) が初回ロード時にこれを fetch する。これにより bot が叩く /oc 本体の
-     * サーバーレンダリングから統計の重い SQLite 読み取り（member/OHLC/順位）を外す。
-     */
-    function stats(
-        StatisticsChartArrayService $statisticsChartArrayService,
-        int $open_chat_id,
-        int $category,
-    ) {
-        $dto = $statisticsChartArrayService->buildStatisticsChartArray(
-            $open_chat_id,
-            $category > 0 ? $category : null
-        );
-        if (!$dto) {
-            $dto = new StatisticsChartDto(
-                (new \DateTime('-1day'))->format('Y-m-d'),
-                (new \DateTime('now'))->format('Y-m-d')
-            );
-        }
-
-        return response($dto);
-    }
 
     private function getAdminDto(int $open_chat_id)
     {

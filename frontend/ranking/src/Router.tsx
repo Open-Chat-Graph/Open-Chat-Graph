@@ -16,8 +16,6 @@ export const Router = () => {
     <BrowserRouter>
       <Routes>
         <Route path={`${basePath}/:category?`} element={<OCListPage />} />
-        {/* <Route path={`official-ranking/`} element={<OCListPage />} /> */}
-        {/* <Route path='official-ranking/:category' element={<OCListPage />} /> */}
         <Route path="*" element={<RedirectTo404 />} />
       </Routes>
     </BrowserRouter>

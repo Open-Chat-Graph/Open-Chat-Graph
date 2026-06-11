@@ -119,21 +119,26 @@ class RecommendOpenChatPageController
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
+        $recommend = $recommendPageList->getListDto($tag);
+
         // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
         // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
+        // 関連タグは .dat に同梱済みの自タグ分（毎時バッチが related_tags マップと同時刻に生成）。
+        // 未同梱（移行期の旧 .dat・ライブ生成）は空表示とし、次の毎時生成で自然に埋まる。
+        $relatedTagsForTag = $recommend ? ($recommend->relatedTags ?? []) : [];
         $_discovery = $themeDiscoveryService
             ->build(
                 $staticDataGeneration->getTagList(),
                 $tag,
                 $topPageDto,
-                $staticDataGeneration->getRelatedTags()[$tag] ?? [],
+                $relatedTagsForTag,
             );
-
-        $recommend = $recommendPageList->getListDto($tag);
         if (!$recommend || !$recommend->getCount()) {
             $_schema = '';
             $_meta->setTitle(sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag));
             noStore();
+            // topPageDto は ThemeDiscoveryService への入力のみで recommend_content では未使用のため
+            // view へは渡さない (ビューの再帰エスケープの無駄を避ける)
             return view('recommend_content', compact(
                 '_meta',
                 '_css',
@@ -143,7 +148,6 @@ class RecommendOpenChatPageController
                 'count',
                 '_schema',
                 '_dto',
-                'topPageDto',
                 '_discovery',
                 'canonical',
                 'tagDescription',
@@ -171,6 +175,16 @@ class RecommendOpenChatPageController
         // ため、コントローラでは同梱値を使うだけ（アクセスごとの SQLite 集計はしない）。
         $growth = $recommend->themeMomentum ?? [];
 
+        // ビュー(recommend_content)が使うのは mergedElements(表示30件) とスカラーのみ。
+        // 母集団300件(hour/member等)を空にして、view() の再帰エスケープが
+        // 表示されない数百行(各行に最大1000字のdescription)を毎回走査するのを避ける。
+        // このDTOはリクエスト内メモ共有だが、以降このリクエストで母集団を使う処理は無い。
+        $recommend->hour = [];
+        $recommend->day = [];
+        $recommend->week = [];
+        $recommend->member = [];
+        $recommend->shuffledMergedElements = null;
+
         return view('recommend_content', compact(
             '_meta',
             '_css',
@@ -181,7 +195,6 @@ class RecommendOpenChatPageController
             'count',
             '_schema',
             '_dto',
-            'topPageDto',
             '_discovery',
             'canonical',
             'hourlyUpdatedAt',

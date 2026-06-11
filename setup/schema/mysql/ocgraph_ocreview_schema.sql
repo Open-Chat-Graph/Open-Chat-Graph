@@ -5,26 +5,6 @@
 CREATE DATABASE IF NOT EXISTS `ocgraph_ocreview` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `ocgraph_ocreview`;
 
-DROP TABLE IF EXISTS `ads`;
-CREATE TABLE `ads` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ads_title` text NOT NULL,
-  `ads_sponsor_name` text NOT NULL,
-  `ads_paragraph` text NOT NULL,
-  `ads_href` text NOT NULL,
-  `ads_img_url` text NOT NULL,
-  `ads_tracking_url` text NOT NULL,
-  `ads_title_button` text NOT NULL,
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-DROP TABLE IF EXISTS `ads_tag_map`;
-CREATE TABLE `ads_tag_map` (
-  `tag` varchar(255) NOT NULL,
-  `ads_id` int(11) NOT NULL,
-  UNIQUE KEY `tag` (`tag`),
-  KEY `ads_tag` (`ads_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `api_data_download_state`;
 CREATE TABLE `api_data_download_state` (
   `category` int(11) NOT NULL,

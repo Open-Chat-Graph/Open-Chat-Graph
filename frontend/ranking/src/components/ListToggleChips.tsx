@@ -12,11 +12,6 @@ export const toggleButtons: ToggleButtons = [
   ['all', t('人数')],
 ]
 
-export const officialButtons: ToggleButtons = [
-  ['rising', '急上昇'],
-  ['ranking', 'ランキング'],
-]
-
 const ListToggleChips = memo(function ListToggleButton({
   list,
   toggleButtons,
