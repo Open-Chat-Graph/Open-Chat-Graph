@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\Repositories\Api\ApiDeletedOpenChatListRepository;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
@@ -39,21 +38,6 @@ class AdminPageController
     }
 
     /**
-     * 削除されたオープンチャット取得APIの結果を表示
-     * @param string $date YYYY-MM-DD
-     */
-    function ban(ApiDeletedOpenChatListRepository $repo, string $date)
-    {
-        $result = $repo->getDeletedOpenChatList($date, 999999);
-        $result = array_map(function ($item) {
-            $item['description'] = truncateDescription($item['description']);
-            return $item;
-        }, $result);
-
-        pre_var_dump($result);
-    }
-
-    /** 
      * Cronバッチ実行テスト
      * @param string $lang ja|tw|th
      */
