@@ -608,7 +608,8 @@ Route::path('admin/adminer@get@post', [AdminPageController::class, 'adminer'])
 Route::path('admin/genocpagecache/{lang}', [AdminPageController::class, 'genocpagecache'])
     ->match(function () {
         return MimimalCmsConfig::$urlRoot === '';
-    });
+    })
+    ->matchStr('lang', regex: ['ja', 'th', 'tw']);
 
 Route::path(
     'admin-api@post',
