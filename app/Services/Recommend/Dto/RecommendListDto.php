@@ -16,6 +16,14 @@ class RecommendListDto
     public ?array $shuffledMergedElements = null;
     public array $sortAndUniqueTags = [];
 
+    /**
+     * テーマの勢い(RecommendGrowthRepository::themeMomentum の結果)。毎時バッチの .dat 生成時に
+     * 事前計算して同梱し、/recommend ページのアクセスごとの SQLite 集計を無くす。
+     * null = 未計算（旧 .dat / per-tag 即時生成）→ ページ側がライブ計算にフォールバック。
+     * []   = 計算済みでデータ不足（フォールバック不要）。
+     */
+    public ?array $themeMomentum = null;
+
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
         public RecommendListType $type,
