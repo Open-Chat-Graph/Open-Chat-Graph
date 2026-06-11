@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\Admin\AdminAuthService;
+use App\Services\Cron\Enum\BatchScript;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Recommend\TagDefinition\TagMetadata;
 use Shadow\Kernel\Reception;
 use Shared\Exceptions\NotFoundException;
@@ -60,7 +62,7 @@ class AdminRecommendTagController
     private const JSON_ENCODE_FLAGS =
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT;
 
-    public function __construct(AdminAuthService $adminAuthService)
+    public function __construct(AdminAuthService $adminAuthService, private BatchScriptLauncher $batchScriptLauncher)
     {
         if (!$adminAuthService->auth()) {
             throw new NotFoundException;
@@ -136,10 +138,8 @@ class AdminRecommendTagController
      */
     public function rebuild()
     {
-        $path = \App\Config\AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
         // urlRoot を渡してロケール別に再構築（'' なら ja）。バックグラウンドで起動。
-        $urlRootArg = escapeshellarg((string)MimimalCmsConfig::$urlRoot);
-        exec(\App\Config\AppConfig::$phpBinary . " {$path} {$urlRootArg} >/dev/null 2>&1 &");
+        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate, (string)MimimalCmsConfig::$urlRoot);
         return response(['ok' => true]);
     }
 

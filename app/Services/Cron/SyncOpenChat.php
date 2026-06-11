@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\OcSitemapLastmodRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\BatchScript;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\OpenChatApiDbMerger;
 use App\Services\DailyUpdateCronService;
@@ -32,6 +33,7 @@ class SyncOpenChat
         private RankingBanTableUpdater $rankingBanUpdater,
         private SyncOpenChatStateRepositoryInterface $state,
         private OcSitemapLastmodRepositoryInterface $lastmodRepo,
+        private BatchScriptLauncher $batchScriptLauncher,
     ) {
         ini_set('memory_limit', '2G');
     }
@@ -121,15 +123,12 @@ class SyncOpenChat
         // ルーム個別ページの分析文/関連ルームキャッシュ(oc_page_cache)を毎時更新する。
         // 直近1時間でメンバー数が変動したルームだけを対象にバックグラウンドで再生成
         // （実行中のバックフィルがあればバッチ側でスキップされる）。
-        $ocPageCachePath = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
-        $urlRootArg = escapeshellarg(MimimalCmsConfig::$urlRoot);
-        exec(PHP_BINARY . " {$ocPageCachePath} {$urlRootArg} hourly >/dev/null 2>&1 &");
+        $this->batchScriptLauncher->launchInBackground(BatchScript::updateOcPageCache, MimimalCmsConfig::$urlRoot, 'hourly');
         CronUtility::addVerboseCronLog('ページキャッシュ毎時更新をバックグラウンドで開始');
 
         // アーカイブ用DBインポート処理をバックグラウンドで実行（日本のみ）
         if (!MimimalCmsConfig::$urlRoot) {
-            $path = AppConfig::ROOT_PATH . 'batch/exec/ocreview_api_data_import_background.php';
-            exec(PHP_BINARY . " {$path} >/dev/null 2>&1 &");
+            $this->batchScriptLauncher->launchInBackground(BatchScript::ocreviewApiDataImportBackground);
             CronUtility::addVerboseCronLog('アーカイブ用DBインポート処理をバックグラウンドで開始');
         }
     }
@@ -171,9 +170,7 @@ class SyncOpenChat
         // 日次クロール対象（変動・新規・週次更新の部屋）のページキャッシュを再生成する。
         // ランキング外の部屋は毎時フックでは拾えないため、日次クロールと同じ対象を追従させる
         // （週次更新部屋も含むため、全部屋のキャッシュが最長でも約1週間周期で更新される）。
-        $ocPageCachePath = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
-        $urlRootArg = escapeshellarg(MimimalCmsConfig::$urlRoot);
-        exec(PHP_BINARY . " {$ocPageCachePath} {$urlRootArg} daily >/dev/null 2>&1 &");
+        $this->batchScriptLauncher->launchInBackground(BatchScript::updateOcPageCache, MimimalCmsConfig::$urlRoot, 'daily');
         CronUtility::addVerboseCronLog('ページキャッシュ日次更新をバックグラウンドで開始');
 
         CronUtility::addCronLog('【日次処理】完了');

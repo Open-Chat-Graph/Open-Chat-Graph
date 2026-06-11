@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
+use App\Services\Cron\Enum\BatchScript;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\StaticData\StaticDataGenerator;
 use App\Services\Storage\FileStorageInterface;
@@ -20,6 +21,7 @@ class UpdateHourlyMemberRankingService
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
         private MemberChangeFilterCacheRepositoryInterface $memberChangeFilterCacheRepository,
         private FileStorageInterface $fileStorage,
+        private BatchScriptLauncher $batchScriptLauncher,
     ) {}
 
     function update()
@@ -59,9 +61,7 @@ class UpdateHourlyMemberRankingService
 
     private function executeRecommendStaticDataGeneratorInBackground()
     {
-        $arg = escapeshellarg(\Shared\MimimalCmsConfig::$urlRoot);
-        $path = AppConfig::ROOT_PATH . 'batch/exec/update_recommend_static_data.php';
-        exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
+        $this->batchScriptLauncher->launchInBackground(BatchScript::updateRecommendStaticData, \Shared\MimimalCmsConfig::$urlRoot);
         CronUtility::addVerboseCronLog('おすすめ静的データ生成をバックグラウンドで開始');
     }
 }
