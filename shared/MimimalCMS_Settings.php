@@ -25,6 +25,14 @@ date_default_timezone_set('Asia/Tokyo');
 
 $httpHost = 'openchat-review.me';
 
+// CLI(cron・バッチ)には HTTP_HOST が無く、url() 等のURLヘルパーが「http:///path」という
+// 不正な絶対URLを生成してしまう（oc_page_cache の事前レンダリングHTMLに混入し、
+// ルームページの分析ブログリンクが壊れていた）。本番ホストで補完する。
+if (PHP_SAPI === 'cli' && !isset($_SERVER['HTTP_HOST'])) {
+    $_SERVER['HTTP_HOST'] = $httpHost;
+    $_SERVER['HTTPS'] = 'on';
+}
+
 if (
     ($_SERVER['HTTP_HOST'] ?? '') === $httpHost
     || ($_SERVER['HTTPS'] ?? '') === 'on'
