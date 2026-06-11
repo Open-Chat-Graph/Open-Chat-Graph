@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistenceProcess;
 use PHPUnit\Framework\TestCase;
@@ -19,29 +20,31 @@ class RankingPositionHourPersistenceTest extends TestCase
         // モックを作成
         $processMock = $this->createMock(RankingPositionHourPersistenceProcess::class);
         $repositoryMock = $this->createMock(RankingPositionHourRepositoryInterface::class);
-        $stateMock = $this->createMock(SyncOpenChatStateRepositoryInterface::class);
+        $stateMock = $this->createStub(SyncOpenChatStateRepositoryInterface::class);
+        $launcherMock = $this->createMock(BatchScriptLauncher::class);
 
-        // モックの期待値を設定
-        $processMock->expects($this->once())
-            ->method('initializeCache');
+        // 親プロセス生存確認用のstateは空（parentPid未登録）を返す
+        $stateMock->method('getArray')->willReturn([]);
 
         // 1サイクル目で全完了を返す
         $processMock->expects($this->once())
             ->method('processOneCycle')
-            ->with($this->isType('string'))
+            ->with($this->isString(), $this->isString())
             ->willReturn(true);
 
-        $processMock->expects($this->once())
-            ->method('afterClearCache');
-
         $repositoryMock->expects($this->once())
-            ->method('insertTotalCount');
+            ->method('insertTotalCount')
+            ->willReturn(['total_count_all_category_rising' => 100, 'total_count_all_category_ranking' => 200]);
 
         $repositoryMock->expects($this->once())
             ->method('delete');
 
+        // 正常完了時はタイムアウト時のcron再実行（バッチスクリプト起動）が行われないこと
+        $launcherMock->expects($this->never())
+            ->method('launchInBackground');
+
         // インスタンス作成して実行
-        $instance = new RankingPositionHourPersistence($processMock, $repositoryMock, $stateMock);
+        $instance = new RankingPositionHourPersistence($processMock, $repositoryMock, $stateMock, $launcherMock);
         $instance->persistAllCategoriesBackground();
 
         // 例外が発生せず完了すればOK
@@ -56,22 +59,31 @@ class RankingPositionHourPersistenceTest extends TestCase
         // モックを作成
         $processMock = $this->createMock(RankingPositionHourPersistenceProcess::class);
         $repositoryMock = $this->createMock(RankingPositionHourRepositoryInterface::class);
-        $stateMock = $this->createMock(SyncOpenChatStateRepositoryInterface::class);
+        $stateMock = $this->createStub(SyncOpenChatStateRepositoryInterface::class);
+        $launcherMock = $this->createMock(BatchScriptLauncher::class);
 
-        $processMock->expects($this->once())
-            ->method('initializeCache');
+        // 親プロセス生存確認用のstateは空（parentPid未登録）を返す
+        $stateMock->method('getArray')->willReturn([]);
 
         // 3サイクル目で完了
         $processMock->expects($this->exactly(3))
             ->method('processOneCycle')
-            ->with($this->isType('string'))
+            ->with($this->isString(), $this->isString())
             ->willReturnOnConsecutiveCalls(false, false, true);
 
-        $processMock->expects($this->once())
-            ->method('afterClearCache');
+        $repositoryMock->expects($this->once())
+            ->method('insertTotalCount')
+            ->willReturn(['total_count_all_category_rising' => 100, 'total_count_all_category_ranking' => 200]);
+
+        $repositoryMock->expects($this->once())
+            ->method('delete');
+
+        // 正常完了時はタイムアウト時のcron再実行（バッチスクリプト起動）が行われないこと
+        $launcherMock->expects($this->never())
+            ->method('launchInBackground');
 
         // インスタンス作成して実行
-        $instance = new RankingPositionHourPersistence($processMock, $repositoryMock, $stateMock);
+        $instance = new RankingPositionHourPersistence($processMock, $repositoryMock, $stateMock, $launcherMock);
         $instance->persistAllCategoriesBackground();
 
         $this->assertTrue(true);

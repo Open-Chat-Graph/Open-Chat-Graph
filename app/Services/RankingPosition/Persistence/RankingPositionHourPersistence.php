@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\RankingPosition\Persistence;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
+use App\Services\Cron\Enum\BatchScript;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shared\MimimalCmsConfig;
@@ -49,7 +50,8 @@ class RankingPositionHourPersistence
     function __construct(
         private RankingPositionHourPersistenceProcess $process,
         private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
-        private SyncOpenChatStateRepositoryInterface $state
+        private SyncOpenChatStateRepositoryInterface $state,
+        private BatchScriptLauncher $batchScriptLauncher
     ) {
         $this->startTime = OpenChatServicesUtility::getModifiedCronTime('now');
     }
@@ -83,10 +85,11 @@ class RankingPositionHourPersistence
             'parentPid' => $parentPid,
         ]);
 
-        $arg = escapeshellarg(\Shared\MimimalCmsConfig::$urlRoot);
-        $parentPidArg = escapeshellarg((string)$parentPid);
-        $path = AppConfig::ROOT_PATH . 'batch/exec/persist_ranking_position_background.php';
-        exec(PHP_BINARY . " {$path} {$arg} {$parentPidArg} >/dev/null 2>&1 &");
+        $this->batchScriptLauncher->launchInBackground(
+            BatchScript::persistRankingPositionBackground,
+            MimimalCmsConfig::$urlRoot,
+            (string)$parentPid
+        );
         CronUtility::addVerboseCronLog('毎時ランキングDB反映をバックグラウンドで開始');
     }
 
@@ -262,9 +265,7 @@ class RankingPositionHourPersistence
 
         if ($parentPid && $this->startTime == OpenChatServicesUtility::getModifiedCronTime('now')) {
             // cron_crawling.phpを再実行
-            $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
-            $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
-            exec(PHP_BINARY . " {$path} {$arg} >/dev/null 2>&1 &");
+            $this->batchScriptLauncher->launchInBackground(BatchScript::cronCrawling, MimimalCmsConfig::$urlRoot);
             CronUtility::addCronLog('毎時処理を再実行しました');
 
             throw new ApplicationException($message, ApplicationException::RANKING_PERSISTENCE_TIMEOUT);

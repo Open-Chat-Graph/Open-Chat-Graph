@@ -14,7 +14,7 @@
              下まで広がり、blur付きヘッダーとコンテンツが周囲に透ける（通常のSafari縦持ちでは
              この帯はSafari描画のため不可）。black-translucent はステータス文字が常に白の
              ためライトのPWA起動では視認性が落ちるトレードオフあり */ ?>
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <?php echo $_meta ?>
     <?php /* テーマ確定はCSSより先（FOUC防止のため同期読み込み） */ ?>

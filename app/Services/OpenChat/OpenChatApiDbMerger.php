@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\OpenChat;
 
-use App\Config\AppConfig;
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\Log\LogRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
@@ -64,7 +63,7 @@ class OpenChatApiDbMerger
      */
     function fetchOpenChatApiRankingAll(): array
     {
-        $this->setKillFlagFalse();
+        $this->syncOpenChatStateRepository->setFalse(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
         $startTime = microtime(true);
         CronUtility::addVerboseCronLog("LINE公式APIからランキングデータを取得開始");
 
@@ -183,17 +182,15 @@ class OpenChatApiDbMerger
         }
     }
 
+    /**
+     * 実行中のマージ処理を外部（別プロセス）から停止させる
+     *
+     * 静的コンテキストのためコンストラクタ注入が使えず、app() で解決する
+     */
     static function setKillFlagTrue()
     {
         /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
         $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
         $syncOpenChatStateRepository->setTrue(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
-    }
-
-    static function setKillFlagFalse()
-    {
-        /** @var SyncOpenChatStateRepositoryInterface $syncOpenChatStateRepository */
-        $syncOpenChatStateRepository = app(SyncOpenChatStateRepositoryInterface::class);
-        $syncOpenChatStateRepository->setFalse(SyncOpenChatStateType::openChatApiDbMergerKillFlag);
     }
 }
