@@ -24,6 +24,14 @@ class RecommendListDto
      */
     public ?array $themeMomentum = null;
 
+    /**
+     * このタグの関連タグ（related_tags.dat 全体マップのうち自タグ分のスライス。
+     * タグ => 共起スコア）。毎時バッチの .dat 生成時に同梱し、/recommend ページが
+     * アクセスごとに全タグ分のマップ(展開後245KB)を読むのを無くす。
+     * null = 未同梱（旧 .dat / マップ未生成環境）→ ページ側が従来どおり全体マップを読む。
+     */
+    public ?array $relatedTags = null;
+
     /** @var array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int } $list */
     function __construct(
         public RecommendListType $type,

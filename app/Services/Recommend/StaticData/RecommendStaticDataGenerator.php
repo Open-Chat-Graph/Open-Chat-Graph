@@ -150,10 +150,23 @@ class RecommendStaticDataGenerator
 
     private function updateRecommendStaticDataBulk(): void
     {
+        // 関連タグマップは毎時バッチで直前(StaticDataGenerator::updateStaticData)に
+        // 再生成済みのものを1回だけ読み、各タグの .dat に自タグ分のスライスを同梱する
+        // (/recommend がアクセスごとに全タグ分のマップを展開するのを無くす)。
+        // マップが無い環境(手動の部分実行等)では null のままにし、ページ側の
+        // 従来読みフォールバックに任せる。
+        $relatedTagsMap = $this->fileStorage->getSerializedFile('@relatedTags');
+        if (!is_array($relatedTagsMap)) {
+            $relatedTagsMap = null;
+        }
+
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
             $dto = $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
             $this->setThemeMomentum($dto);
+            if ($relatedTagsMap !== null) {
+                $dto->relatedTags = $relatedTagsMap[$tag] ?? [];
+            }
             $this->fileStorage->saveSerializedFile(
                 $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
                 $dto
