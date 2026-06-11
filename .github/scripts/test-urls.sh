@@ -464,7 +464,7 @@ main() {
     # 不正なパラメータに対しては400エラーが返されるのが正常
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     echo -n "Testing: ${BASE_URL}/oclist?page=0&limit=... (invalid params) ... " | tee -a "$LOG_FILE"
-    status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "${BASE_URL}/oclist?page=0&limit=\a\/%22%22%2&category=\a\/%22%22%2&\a\/%22%22%2=&keyword=33&list=hourly&sort=\//\\\\a\/%22%22%27|a&order=asc")
+    status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 -H "$API_CLIENT_HEADER" "${BASE_URL}/oclist?page=0&limit=\a\/%22%22%2&category=\a\/%22%22%2&\a\/%22%22%2=&keyword=33&list=hourly&sort=\//\\\\a\/%22%22%27|a&order=asc")
     if [ "$status_code" = "400" ] || [ "$status_code" = "200" ]; then
         echo -e "${GREEN}OK (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
         PASSED_TESTS=$((PASSED_TESTS + 1))
