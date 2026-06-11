@@ -118,6 +118,14 @@ class SyncOpenChat
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'ランキングBAN情報更新'],
         );
 
+        // ルーム個別ページの分析文/関連ルームキャッシュ(oc_page_cache)を毎時更新する。
+        // 直近1時間でメンバー数が変動したルームだけを対象にバックグラウンドで再生成
+        // （実行中のバックフィルがあればバッチ側でスキップされる）。
+        $ocPageCachePath = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
+        $urlRootArg = escapeshellarg(MimimalCmsConfig::$urlRoot);
+        exec(PHP_BINARY . " {$ocPageCachePath} {$urlRootArg} hourly >/dev/null 2>&1 &");
+        CronUtility::addVerboseCronLog('ページキャッシュ毎時更新をバックグラウンドで開始');
+
         // アーカイブ用DBインポート処理をバックグラウンドで実行（日本のみ）
         if (!MimimalCmsConfig::$urlRoot) {
             $path = AppConfig::ROOT_PATH . 'batch/exec/ocreview_api_data_import_background.php';
