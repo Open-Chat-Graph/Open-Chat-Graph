@@ -253,6 +253,27 @@ function checkLastModified(
 }
 
 /**
+ * JSON APIがサイト内のJS(fetch)から呼ばれたことを示す独自ヘッダーを検証する
+ *
+ * routing.phpのmatchクロージャで使用することを想定した関数。
+ * curl等でURLを直叩きする機械的なデータ収集（無料API扱い）への対策で、
+ * フロントの fetch は全て X-Ocg-Client: 1 を付与している。
+ *
+ * 失敗時は no-store を設定して false を返す（→ 404）。no-store が無いと
+ * Cloudflareのキャッシュ対象パス（/oclist 等）で拒否レスポンスがエッジに
+ * キャッシュされ、正規ユーザーにも404が返る事故になるため必須。
+ */
+function verifyApiClientHeader(): bool
+{
+    if (($_SERVER['HTTP_X_OCG_CLIENT'] ?? '') === '1') {
+        return true;
+    }
+
+    noStore();
+    return false;
+}
+
+/**
  * @return string 成功メッセージ
  * @throws \RuntimeException 失敗時
  */
