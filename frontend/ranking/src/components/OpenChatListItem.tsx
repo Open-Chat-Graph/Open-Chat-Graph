@@ -36,10 +36,6 @@ const getOcUrlParam = (listParam: ListParams['list'], cateIndex: number): string
       return '?limit=hour'
     case 'daily':
       return '?limit=hour'
-    case 'ranking':
-      return `?bar=ranking&limit=hour${cateIndex === 0 ? '&category=all' : ''}`
-    case 'rising':
-      return `?bar=rising&limit=hour${cateIndex === 0 ? '&category=all' : ''}`
     default:
       return ''
   }

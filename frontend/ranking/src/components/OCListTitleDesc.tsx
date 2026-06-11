@@ -87,22 +87,6 @@ function ListDesc({
           {isAll && <Typography {...p}>{t('表示対象は全てのルームです。')}</Typography>}
         </div>
       )
-    case 'ranking':
-      return (
-        <div>
-          <Typography {...p}>
-            前回(1時間前)の公式ランキングと、その掲載期間におけるメンバー増加を表示します。
-          </Typography>
-        </div>
-      )
-    case 'rising':
-      return (
-        <div>
-          <Typography {...p}>
-            前回(1時間前)の公式急上昇とその掲載期間におけるメンバー増加を表示します。
-          </Typography>
-        </div>
-      )
   }
 }
 
@@ -207,38 +191,6 @@ export default function OCListTitleDesc({
             ) : (
               <Typography sx={p}>{t('参加人数のランキング')}</Typography>
             )}
-            {visibility ? (
-              <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
-            ) : (
-              <HelpIcon />
-            )}
-          </div>
-        </div>
-      )
-    case 'ranking':
-      return (
-        <div style={outer}>
-          <Typography sx={{ ...p, mr: 1 }}>公式ランキング</Typography>
-          <div style={inner}>
-            <Typography sx={p}>
-              {`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
-            </Typography>
-            {visibility ? (
-              <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
-            ) : (
-              <HelpIcon />
-            )}
-          </div>
-        </div>
-      )
-    case 'rising':
-      return (
-        <div style={outer}>
-          <Typography sx={{ ...p, mr: 1 }}>公式急上昇</Typography>
-          <div style={inner}>
-            <Typography sx={p}>
-              {`1時間前(${hourlyPast.getHours()}:${hourlyPast.getMinutes()}〜${hourly.getHours()}:${hourly.getMinutes()})`}
-            </Typography>
             {visibility ? (
               <HelpButton list={list} cateIndex={cateIndex} isSearch={isSearch} />
             ) : (

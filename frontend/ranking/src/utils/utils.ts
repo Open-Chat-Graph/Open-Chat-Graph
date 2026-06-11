@@ -103,11 +103,6 @@ export function setTitle(params: ListParams, cateIndex?: number) {
     case 'all':
       title2 = t('参加人数のランキング')
       break
-    case 'ranking':
-      title2 = '公式ランキング(1時間前)'
-      break
-    case 'rising':
-      title2 = '公式急上昇(1時間前)'
   }
 
   document.title = title0 + title1 + title3 + title2 + '｜' + t('オプチャグラフ')
