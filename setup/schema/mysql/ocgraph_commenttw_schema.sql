@@ -33,7 +33,8 @@ CREATE TABLE `comment` (
   `time` datetime NOT NULL DEFAULT current_timestamp(),
   `flag` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`comment_id`),
-  KEY `idx_open_chat_id` (`open_chat_id`)
+  KEY `idx_open_chat_id` (`open_chat_id`),
+  KEY `idx_time` (`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 DROP TABLE IF EXISTS `like`;
 CREATE TABLE `like` (

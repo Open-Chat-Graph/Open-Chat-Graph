@@ -1,11 +1,52 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import { useInView } from 'react-intersection-observer'
 import { isSP } from '../utils/utils'
 import { rankingArgDto } from '../config/config'
 
+// 429(Cloudflareレートリミット)の再試行待機中フラグ。
+// jotai storeはOCListPageごとに分かれるため、fetcher(React外)から共有できる極小ストアにする
+let isRateLimitWaiting = false
+const rateLimitListeners = new Set<() => void>()
+const setRateLimitWaiting = (value: boolean) => {
+  isRateLimitWaiting = value
+  rateLimitListeners.forEach((listener) => listener())
+}
+export const useRateLimitWaiting = () =>
+  useSyncExternalStore(
+    (callback) => {
+      rateLimitListeners.add(callback)
+      return () => rateLimitListeners.delete(callback)
+    },
+    () => isRateLimitWaiting
+  )
+
+// 待機後の再試行でも429だった場合のエラー。表示側で通信エラーと文言を出し分ける
+export class RateLimitError extends Error {
+  name = 'RateLimitError'
+}
+
+export const RATE_LIMIT_RETRY_SECONDS = 10
+
 async function fetchApi<T>(url: string) {
-  const response = await fetch(url)
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+  let response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
+
+  // 429: スケルトンを出したまま(SWRのisValidatingが続く)10秒待って1回だけ再試行
+  if (response.status === 429) {
+    setRateLimitWaiting(true)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_SECONDS * 1000))
+      response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
+    } finally {
+      setRateLimitWaiting(false)
+    }
+    // 再試行も429ならJSONでない(CloudflareのHTML)ためparseせずに専用エラーにする
+    if (response.status === 429) {
+      throw new RateLimitError()
+    }
+  }
+
   const data: T | ErrorResponse = await response.json()
   if (!response.ok) {
     const errorMessage = (data as ErrorResponse).error.message

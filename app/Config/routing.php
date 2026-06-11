@@ -130,22 +130,30 @@ Route::path('oc/{open_chat_id}/chart', [OpenChatChartApiController::class, 'char
     ->matchStr('mode', regex: ['line', 'candlestick'])
     ->matchNum('meta', max: 1, emptyAble: true)
     ->match(function (FileStorageInterface $fileStorage) {
+        if (!verifyApiClientHeader())
+            return false;
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
+        if (!verifyApiClientHeader())
+            return false;
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'])
     ->match(function (FileStorageInterface $fileStorage) {
+        if (!verifyApiClientHeader())
+            return false;
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+        if (!verifyApiClientHeader())
             return false;
 
         noStore();
@@ -155,13 +163,15 @@ Route::path('recent-comment-api', [RecentCommentApiController::class, 'index'])
     ->match(function (RecentCommentListRepositoryInterface $recentCommentListRepository) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        if (!verifyApiClientHeader())
+            return false;
         $time = $recentCommentListRepository->getLatestCommentTime();
         if ($time) checkLastModified($time);
     })
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
 Route::path('recent-comment-api/nocache', [RecentCommentApiController::class, 'nocache'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
+    ->match(fn() => MimimalCmsConfig::$urlRoot === '' && verifyApiClientHeader())
     ->matchNum('open_chat_id', min: 1, emptyAble: true);
 
 // タグ関連のルーティング
@@ -315,6 +325,7 @@ Route::path(
     ->matchFile('image0', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
     ->matchFile('image1', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
     ->matchFile('image2', ['image/jpeg'], 8192, emptyAble: true, requestMethod: 'post')
+    ->match(fn() => verifyApiClientHeader(), 'get')
     ->match(
         function (string $text, string $name) {
             if (MimimalCmsConfig::$urlRoot !== '')
