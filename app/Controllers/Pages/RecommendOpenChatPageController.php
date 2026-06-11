@@ -134,6 +134,8 @@ class RecommendOpenChatPageController
             $_schema = '';
             $_meta->setTitle(sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag));
             noStore();
+            // topPageDto は ThemeDiscoveryService への入力のみで recommend_content では未使用のため
+            // view へは渡さない (ビューの再帰エスケープの無駄を避ける)
             return view('recommend_content', compact(
                 '_meta',
                 '_css',
@@ -143,7 +145,6 @@ class RecommendOpenChatPageController
                 'count',
                 '_schema',
                 '_dto',
-                'topPageDto',
                 '_discovery',
                 'canonical',
                 'tagDescription',
@@ -181,7 +182,6 @@ class RecommendOpenChatPageController
             'count',
             '_schema',
             '_dto',
-            'topPageDto',
             '_discovery',
             'canonical',
             'hourlyUpdatedAt',
