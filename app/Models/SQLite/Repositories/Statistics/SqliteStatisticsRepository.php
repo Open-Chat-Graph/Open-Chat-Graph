@@ -180,7 +180,6 @@ class SqliteStatisticsRepository implements StatisticsRepositoryInterface
 
         SQLiteStatistics::connect(['mode' => '?mode=ro']);
         $row = SQLiteStatistics::fetch($query, $params);
-        SQLiteStatistics::$pdo = null;
 
         $empty = [
             'curr' => null, 'curr_date' => null,
