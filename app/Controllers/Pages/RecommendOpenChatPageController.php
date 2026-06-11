@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface;
 use App\Services\Recommend\RecommendPageList;
+use App\Services\Recommend\ThemeDiscoveryService;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagFilters;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
@@ -19,7 +19,6 @@ class RecommendOpenChatPageController
 {
     function __construct(
         private PageBreadcrumbsListSchema $breadcrumbsShema,
-        private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
     /**
@@ -50,6 +49,7 @@ class RecommendOpenChatPageController
     function index(
         RecommendPageList $recommendPageList,
         StaticDataFile $staticDataGeneration,
+        ThemeDiscoveryService $themeDiscoveryService,
         string $tag
     ) {
         AppConfig::$listLimitTopRanking = 5;
@@ -121,7 +121,7 @@ class RecommendOpenChatPageController
 
         // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
         // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
-        $_discovery = app(\App\Services\Recommend\ThemeDiscoveryService::class)
+        $_discovery = $themeDiscoveryService
             ->build(
                 $staticDataGeneration->getTagList(),
                 $tag,
@@ -166,16 +166,10 @@ class RecommendOpenChatPageController
             $tag
         );
 
-        // テーマの勢い: 毎時バッチが .dat 生成時に事前計算して DTO に同梱している
-        // (RecommendStaticDataGenerator::setThemeMomentum)。アクセスごとの SQLite 集計はしない。
-        // null は未計算（旧 .dat / per-tag 即時生成）の場合のみで、そのときだけライブ集計に
-        // フォールバックする（[] は計算済みデータ不足なので再計算しない）。
-        // 集計窓の起点は現在時刻ではなく最終 cron 時刻($hourlyUpdatedAt)。クロール遅延や
-        // ローカルの古いデータでも窓が実データに乗るようにするため(時刻取得はこの利用元の責務)。
-        $growth = $recommend->themeMomentum ?? $this->recommendGrowthRepository->themeMomentum(
-            array_column($recommend->getList(false, null), 'id'),
-            $hourlyUpdatedAt
-        );
+        // テーマの勢い: 毎時バッチが .dat 生成時に事前計算して DTO に同梱している。
+        // .dat が無い場合のライブ集計フォールバックも静的データ層(getRecomendRanking)が保証する
+        // ため、コントローラでは同梱値を使うだけ（アクセスごとの SQLite 集計はしない）。
+        $growth = $recommend->themeMomentum ?? [];
 
         return view('recommend_content', compact(
             '_meta',

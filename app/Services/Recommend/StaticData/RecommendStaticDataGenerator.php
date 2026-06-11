@@ -42,7 +42,7 @@ class RecommendStaticDataGenerator
 
     function getRecomendRanking(string $tag): RecommendListDto
     {
-        return $this->fromFileOrDb(
+        $dto = $this->fromFileOrDb(
             'recommendStaticDataDir',
             hash('crc32', $tag),
             fn() => app(RecommendRankingBuilder::class)->getRanking(
@@ -52,6 +52,16 @@ class RecommendStaticDataGenerator
                 app(RecommendRankingRepository::class)
             )
         );
+
+        // テーマの勢いは毎時バッチが .dat に同梱する。null（新規タグの即時生成・旧 .dat）の場合も
+        // この層でライブ集計して埋め、呼び出し側へ null を漏らさない。
+        // 「静的データが無ければその場で生成してフォールバックする」のは静的データ層の責務
+        // （リスト本体の fromFileOrDb と同じ考え方）で、コントローラには持ち込まない。
+        if ($dto->themeMomentum === null) {
+            $this->setThemeMomentum($dto);
+        }
+
+        return $dto;
     }
 
     function getCategoryRanking(int $category): RecommendListDto
