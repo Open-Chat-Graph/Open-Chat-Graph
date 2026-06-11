@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\RankingPositionChartArrayService;
 use PHPUnit\Framework\TestCase;
 
@@ -18,8 +19,16 @@ class RankingPositionChartArrayServiceTest extends TestCase
     {
         $this->instance = app(RankingPositionChartArrayService::class);
 
-        $result = $this->instance->getRankingPositionChartArray(192, 8);
+        $result = $this->instance->getRankingPositionChartArray(
+            RankingType::Ranking,
+            192,
+            8,
+            new \DateTime('-1 month'),
+            new \DateTime('now')
+        );
         debug(json_encode($result));
-        $this->assertTrue(true);
+
+        $this->assertSame(count($result->time), count($result->position));
+        $this->assertSame(count($result->time), count($result->totalCount));
     }
 }

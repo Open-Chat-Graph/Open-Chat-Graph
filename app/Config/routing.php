@@ -12,9 +12,8 @@ use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
-use App\Controllers\Api\OpenChatStatsApiController;
+use App\Controllers\Api\OpenChatChartApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
-use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
@@ -119,10 +118,17 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-// 統計チャートデータ。graph(React)が初回ロードで非同期取得する（/oc 本体から統計SQLite読み取りを外す）
-Route::path('oc/{open_chat_id}/stats', [OpenChatStatsApiController::class, 'stats'])
+// 統計グラフデータ。graph(React)が表示ビュー（期間×順位種別×カテゴリ×モード）を指定して
+// 描画に必要な系列を1リクエストで取得する。初回ロードは meta=1 でタブ可用性メタも同梱
+// （/oc 本体から統計SQLite読み取りを外すため非同期取得）
+Route::path('oc/{open_chat_id}/chart', [OpenChatChartApiController::class, 'chart'])
     ->matchNum('open_chat_id', min: 1)
     ->matchNum('category', min: 0)
+    ->matchStr('span', regex: ['hour', 'day'])
+    ->matchStr('sort', regex: ['none', 'ranking', 'rising'])
+    ->matchStr('scope', regex: ['in', 'all'])
+    ->matchStr('mode', regex: ['line', 'candlestick'])
+    ->matchNum('meta', max: 1, emptyAble: true)
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
@@ -133,58 +139,6 @@ Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     });
 
 Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'])
-    ->match(function (FileStorageInterface $fileStorage) {
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-Route::path(
-    'oc/{open_chat_id}/position',
-    [RankingPositionApiController::class, 'rankingPosition']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->matchStr('start_date')
-    ->matchStr('end_date')
-    ->match(function (string $start_date, string $end_date, Reception $reception, FileStorageInterface $fileStorage) {
-        $isValid = $start_date === date("Y-m-d", strtotime($start_date))
-            && $end_date === date("Y-m-d", strtotime($end_date))
-            && strtotime($start_date) <= strtotime($end_date);
-        if (!$isValid)
-            return false;
-
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-        return true;
-    });
-
-
-Route::path(
-    'oc/{open_chat_id}/member_ohlc',
-    [RankingPositionApiController::class, 'memberOhlc']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->match(function (FileStorageInterface $fileStorage) {
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-Route::path(
-    'oc/{open_chat_id}/position_ohlc',
-    [RankingPositionApiController::class, 'rankingPositionOhlc']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->match(function (FileStorageInterface $fileStorage) {
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-Route::path(
-    'oc/{open_chat_id}/position_hour',
-    [RankingPositionApiController::class, 'rankingPositionHour']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
