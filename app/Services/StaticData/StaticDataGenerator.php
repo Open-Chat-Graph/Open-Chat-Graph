@@ -39,12 +39,6 @@ class StaticDataGenerator
         $dto->dailyUpdatedAt = new \DateTime($this->fileStorage->getContents('@dailyCronUpdatedAtDate'));
         $dto->rankingUpdatedAt = new \DateTime($this->fileStorage->getContents('@hourlyRealUpdatedAtDatetime'));
 
-        $tagList = $this->fileStorage->getSerializedFile('@tagList');
-        if (!$tagList)
-            $tagList = $this->getTagList();
-
-        $dto->tagCount = array_sum(array_map(fn($el) => count($el), $tagList));
-
         return $dto;
     }
 
