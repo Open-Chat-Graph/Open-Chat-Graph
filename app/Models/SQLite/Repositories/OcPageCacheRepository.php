@@ -16,7 +16,6 @@ use App\Services\Storage\FileStorageInterface;
  * - 読み: /oc 表示時に PK 一発 SELECT（mode=ro。読み取り専用接続。書き込み権限や
  *   WAL チェックポイントを発生させず、Web(www-data)から安全に読むため）。
  *   キャッシュ未生成（DBファイル無し・該当行無し）は null を返し、呼び出し側は空表示にフォールバックする。
- *   narrative_html は旧形式（事前レンダリングHTML）の行のための移行期読み取り専用。
  * - 書き: 背景バッチ（OcPageCacheGenerator）が単一プロセスで INSERT OR REPLACE する。
  *   値はクォートを含むため、SQLiteInsertImporter（値を素で埋め込む・OR IGNORE）は使わず、
  *   パラメータ化したプリペアドステートメント + トランザクションで upsert する。
@@ -30,16 +29,16 @@ class OcPageCacheRepository
 
     /**
      * narrative_data はデプロイ時の冪等ALTERで追加されたカラムのため、
-     * 移行された既存行では NULL があり得る（呼び出し側は empty() で判定する）。
+     * 未生成の既存行では NULL があり得る（呼び出し側は empty() で判定する）。
      *
-     * @return array{narrative_data: ?string, narrative_html: string}|null
+     * @return array{narrative_data: ?string}|null
      */
     public function get(int $open_chat_id): ?array
     {
         try {
             SQLiteOcPageCache::connect(['mode' => '?mode=ro']);
             $row = SQLiteOcPageCache::fetch(
-                'SELECT narrative_data, narrative_html FROM oc_page_cache WHERE open_chat_id = ?',
+                'SELECT narrative_data FROM oc_page_cache WHERE open_chat_id = ?',
                 [$open_chat_id]
             );
         } catch (\PDOException) {
