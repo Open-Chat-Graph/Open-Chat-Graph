@@ -208,23 +208,12 @@ main() {
     test_url "${BASE_URL}/th" "トップページ（タイ語）"
     echo ""
 
-    # オープンチャット詳細ページ（DBから実際のIDと日付を取得）
+    # オープンチャット詳細ページ（DBから実際のIDを取得）
     log "オープンチャット詳細ページのテスト"
-    # MySQLから最初のopen_chat IDとcreated_atを取得
-    local JA_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
-    local JA_OC_ID=$(echo "$JA_OC_DATA" | awk '{print $1}')
-    local JA_START_DATE=$(echo "$JA_OC_DATA" | awk '{print $2}')
-    local JA_END_DATE=$(date -d "$JA_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
-
-    local TH_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreviewth.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
-    local TH_OC_ID=$(echo "$TH_OC_DATA" | awk '{print $1}')
-    local TH_START_DATE=$(echo "$TH_OC_DATA" | awk '{print $2}')
-    local TH_END_DATE=$(date -d "$TH_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
-
-    local TW_OC_DATA=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id, DATE(created_at) FROM ocgraph_ocreviewtw.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
-    local TW_OC_ID=$(echo "$TW_OC_DATA" | awk '{print $1}')
-    local TW_START_DATE=$(echo "$TW_OC_DATA" | awk '{print $2}')
-    local TW_END_DATE=$(date -d "$TW_START_DATE + 1 day" +%Y-%m-%d 2>/dev/null || echo "")
+    # MySQLから最初のopen_chat IDを取得
+    local JA_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreview.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TH_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewth.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
+    local TW_OC_ID=$(docker exec "$MYSQL_CONTAINER" mysql -uroot -ptest_root_pass -sN -e "SELECT id FROM ocgraph_ocreviewtw.open_chat ORDER BY id LIMIT 1" 2>/dev/null || echo "")
 
     if [ -n "$JA_OC_ID" ]; then
         test_url "${BASE_URL}/oc/${JA_OC_ID}" "OC詳細ページ (ID=${JA_OC_ID})"
@@ -278,103 +267,77 @@ main() {
     fi
     echo ""
 
-    # OC順位ページ（時間別・日別）のテスト
-    log "OC順位ページのテスト"
-    if [ -n "$JA_OC_ID" ] && [ -n "$JA_START_DATE" ] && [ -n "$JA_END_DATE" ]; then
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=ranking&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/ranking/category=8）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=rising&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/rising/category=8）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=ranking&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/ranking/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_hour?sort=rising&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（時間別/rising/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=ranking&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/ranking/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=rising&category=0&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/rising/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=rising&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/rising/category=8）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position?sort=ranking&category=8&start_date=${JA_START_DATE}&end_date=${JA_END_DATE}" "OC順位（日別/ranking/category=8）"
-    elif [ -n "$JA_OC_ID" ]; then
-        log_error "日本語のopen_chatから日付を取得できませんでした"
-        FAILED_TESTS=$((FAILED_TESTS + 8))
-        TOTAL_TESTS=$((TOTAL_TESTS + 8))
-    fi
-
-    if [ -n "$TH_OC_ID" ] && [ -n "$TH_START_DATE" ] && [ -n "$TH_END_DATE" ]; then
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=ranking&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/ranking/category=8）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=rising&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/rising/category=8）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=ranking&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/ranking/category=0）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_hour?sort=rising&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/時間別/rising/category=0）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=ranking&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/ranking/category=0）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=rising&category=0&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/rising/category=0）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=rising&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/rising/category=8）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position?sort=ranking&category=8&start_date=${TH_START_DATE}&end_date=${TH_END_DATE}" "OC順位（タイ語/日別/ranking/category=8）"
-    elif [ -n "$TH_OC_ID" ]; then
-        log_error "タイ語のopen_chatから日付を取得できませんでした"
-        FAILED_TESTS=$((FAILED_TESTS + 8))
-        TOTAL_TESTS=$((TOTAL_TESTS + 8))
-    fi
-
-    if [ -n "$TW_OC_ID" ] && [ -n "$TW_START_DATE" ] && [ -n "$TW_END_DATE" ]; then
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=ranking&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/ranking/category=8）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=rising&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/rising/category=8）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=ranking&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/ranking/category=0）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_hour?sort=rising&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/時間別/rising/category=0）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=ranking&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/ranking/category=0）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=rising&category=0&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/rising/category=0）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=rising&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/rising/category=8）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position?sort=ranking&category=8&start_date=${TW_START_DATE}&end_date=${TW_END_DATE}" "OC順位（繁体字/日別/ranking/category=8）"
-    elif [ -n "$TW_OC_ID" ]; then
-        log_error "繁体字のopen_chatから日付を取得できませんでした"
-        FAILED_TESTS=$((FAILED_TESTS + 8))
-        TOTAL_TESTS=$((TOTAL_TESTS + 8))
-    fi
-    echo ""
-
-    # OC順位OHLCデータAPI（ローソク足チャート用）のテスト
-    log "OC順位OHLCデータAPIのテスト"
+    # 統計グラフAPI 順位ビュー（時間別・日別）のテスト
+    log "統計グラフAPI（順位ビュー）のテスト"
     if [ -n "$JA_OC_ID" ]; then
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（ranking/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（rising/category=0）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=ranking&category=8" "OC順位OHLC（ranking/category=8）"
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/position_ohlc?sort=rising&category=8" "OC順位OHLC（rising/category=8）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=hour&sort=ranking&scope=in&category=8&mode=line" "OC順位（時間別/ranking/カテゴリ内）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=hour&sort=rising&scope=in&category=8&mode=line" "OC順位（時間別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=hour&sort=ranking&scope=all&category=8&mode=line" "OC順位（時間別/ranking/すべて）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=hour&sort=rising&scope=all&category=8&mode=line" "OC順位（時間別/rising/すべて）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=line" "OC順位（日別/ranking/すべて）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=rising&scope=all&category=8&mode=line" "OC順位（日別/rising/すべて）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=rising&scope=in&category=8&mode=line" "OC順位（日別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=ranking&scope=in&category=8&mode=line" "OC順位（日別/ranking/カテゴリ内）"
     fi
 
     if [ -n "$TH_OC_ID" ]; then
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（タイ語/ranking/category=0）"
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（タイ語/rising/category=0）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=hour&sort=ranking&scope=in&category=8&mode=line" "OC順位（タイ語/時間別/ranking/カテゴリ内）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=hour&sort=rising&scope=in&category=8&mode=line" "OC順位（タイ語/時間別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=hour&sort=ranking&scope=all&category=8&mode=line" "OC順位（タイ語/時間別/ranking/すべて）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=hour&sort=rising&scope=all&category=8&mode=line" "OC順位（タイ語/時間別/rising/すべて）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=line" "OC順位（タイ語/日別/ranking/すべて）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=rising&scope=all&category=8&mode=line" "OC順位（タイ語/日別/rising/すべて）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=rising&scope=in&category=8&mode=line" "OC順位（タイ語/日別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=ranking&scope=in&category=8&mode=line" "OC順位（タイ語/日別/ranking/カテゴリ内）"
     fi
 
     if [ -n "$TW_OC_ID" ]; then
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=ranking&category=0" "OC順位OHLC（繁体字/ranking/category=0）"
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/position_ohlc?sort=rising&category=0" "OC順位OHLC（繁体字/rising/category=0）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=hour&sort=ranking&scope=in&category=8&mode=line" "OC順位（繁体字/時間別/ranking/カテゴリ内）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=hour&sort=rising&scope=in&category=8&mode=line" "OC順位（繁体字/時間別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=hour&sort=ranking&scope=all&category=8&mode=line" "OC順位（繁体字/時間別/ranking/すべて）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=hour&sort=rising&scope=all&category=8&mode=line" "OC順位（繁体字/時間別/rising/すべて）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=line" "OC順位（繁体字/日別/ranking/すべて）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=rising&scope=all&category=8&mode=line" "OC順位（繁体字/日別/rising/すべて）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=rising&scope=in&category=8&mode=line" "OC順位（繁体字/日別/rising/カテゴリ内）"
+        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=ranking&scope=in&category=8&mode=line" "OC順位（繁体字/日別/ranking/カテゴリ内）"
     fi
     echo ""
 
-    # OCメンバーOHLCデータAPI（ローソク足チャート用）のテスト
-    log "OCメンバーOHLCデータAPIのテスト"
+    # 統計グラフAPI ローソク足ビュー（メンバーOHLC・順位OHLC）のテスト
+    log "統計グラフAPI（ローソク足ビュー）のテスト"
     if [ -n "$JA_OC_ID" ]; then
-        test_url "${BASE_URL}/oc/${JA_OC_ID}/member_ohlc" "OCメンバーOHLC"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=candlestick" '"memberOhlc"' "メンバーOHLC"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（ranking/すべて）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=rising&scope=all&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（rising/すべて）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=ranking&scope=in&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（ranking/カテゴリ内）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=rising&scope=in&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（rising/カテゴリ内）"
     fi
 
     if [ -n "$TH_OC_ID" ]; then
-        test_url "${BASE_URL}/th/oc/${TH_OC_ID}/member_ohlc" "OCメンバーOHLC（タイ語）"
+        test_json_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=candlestick" '"memberOhlc"' "メンバーOHLC（タイ語）"
+        test_json_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（タイ語/ranking/すべて）"
     fi
 
     if [ -n "$TW_OC_ID" ]; then
-        test_url "${BASE_URL}/tw/oc/${TW_OC_ID}/member_ohlc" "OCメンバーOHLC（繁体字）"
+        test_json_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=candlestick" '"memberOhlc"' "メンバーOHLC（繁体字）"
+        test_json_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=ranking&scope=all&category=8&mode=candlestick" '"positionOhlc"' "順位OHLC（繁体字/ranking/すべて）"
     fi
     echo ""
 
-    # 統計グラフデータAPI（graphが初回ロードで非同期取得する /oc/{id}/stats）のテスト
-    # date配列が空でないことまで確認し「200だがグラフが空」の劣化も検知する
-    log "統計グラフデータAPIのテスト"
+    # 統計グラフAPI 初回ロード（graphが meta=1 で取得するビュー）のテスト
+    # date配列が空でないこととメタデータの同梱まで確認し「200だがグラフが空」の劣化も検知する
+    log "統計グラフAPI（初回ロード）のテスト"
     if [ -n "$JA_OC_ID" ]; then
-        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（category=0）"
-        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/stats?category=8" '"positionAvailability"' "統計グラフデータ（category=8）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=line&meta=1" '"date":\["' "統計グラフデータ（日別+メタ）"
+        test_json_url "${BASE_URL}/oc/${JA_OC_ID}/chart?span=hour&sort=none&scope=all&category=8&mode=line&meta=1" '"positionAvailability"' "統計グラフデータ（時間別+メタ）"
     fi
 
     if [ -n "$TH_OC_ID" ]; then
-        test_json_url "${BASE_URL}/th/oc/${TH_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（タイ語）"
+        test_json_url "${BASE_URL}/th/oc/${TH_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=line&meta=1" '"date":\["' "統計グラフデータ（タイ語）"
     fi
 
     if [ -n "$TW_OC_ID" ]; then
-        test_json_url "${BASE_URL}/tw/oc/${TW_OC_ID}/stats?category=0" '"date":\["' "統計グラフデータ（繁体字）"
+        test_json_url "${BASE_URL}/tw/oc/${TW_OC_ID}/chart?span=day&sort=none&scope=all&category=0&mode=line&meta=1" '"date":\["' "統計グラフデータ（繁体字）"
     fi
     echo ""
 
