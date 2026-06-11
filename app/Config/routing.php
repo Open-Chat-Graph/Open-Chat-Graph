@@ -12,6 +12,7 @@ use App\Controllers\Api\DatabaseApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
+use App\Controllers\Api\OpenChatStatsApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\RankingPositionApiController;
 use App\Controllers\Api\MyListApiController;
@@ -120,7 +121,7 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
     });
 
 // 統計チャートデータ。graph(React)が初回ロードで非同期取得する（/oc 本体から統計SQLite読み取りを外す）
-Route::path('oc/{open_chat_id}/stats', [OpenChatPageController::class, 'stats'])
+Route::path('oc/{open_chat_id}/stats', [OpenChatStatsApiController::class, 'stats'])
     ->matchNum('open_chat_id', min: 1)
     ->matchNum('category', min: 0)
     ->match(function (FileStorageInterface $fileStorage) {
