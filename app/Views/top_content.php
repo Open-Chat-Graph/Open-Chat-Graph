@@ -127,7 +127,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                     return
                 }
 
-                fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api')
+                fetch('<?php echo MimimalCmsConfig::$urlRoot ?>/mylist-api', { headers: { 'X-Ocg-Client': '1' } })
                     .then((res) => {
                         if (res.status === 200)
                             return res.text();

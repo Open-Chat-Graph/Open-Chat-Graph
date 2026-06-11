@@ -1,5 +1,5 @@
 import React, { memo, useRef } from 'react'
-import useInfiniteFetchApi from '../hooks/InfiniteFetchApi'
+import useInfiniteFetchApi, { useRateLimitWaiting } from '../hooks/InfiniteFetchApi'
 import { useAtomValue } from 'jotai'
 import { listParamsState } from '../store/atom'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
@@ -23,8 +23,16 @@ const DummyList = memo(function DummyList({
   isLastPage: boolean
   useInViewRef: (node?: Element | null | undefined) => void
 }) {
+  // 429の再試行待機中はスケルトン(isValidatingで表示が続く)に重ねて案内文を出す
+  const rateLimitWaiting = useRateLimitWaiting()
+
   return (
     <>
+      {rateLimitWaiting && (
+        <div style={{ textAlign: 'center', padding: '0.5rem' }}>
+          {t('アクセスが集中しています。10秒ほど待って自動で再読み込みします…')}
+        </div>
+      )}
       {((!data && !error) || isValidating) && (
         <ol className="openchat-item-container" style={dummyContainerStyle}>
           <DummyOpenChatListItem />
@@ -35,7 +43,13 @@ const DummyList = memo(function DummyList({
           <DummyOpenChatListItem />
         </ol>
       )}
-      {error && <div style={{ textAlign: 'center' }}>{t('通信エラー')}😥</div>}
+      {error && !rateLimitWaiting && (
+        <div style={{ textAlign: 'center' }}>
+          {error.name === 'RateLimitError'
+            ? t('アクセスが集中しています。しばらくしてから再度お試しください') + '🙏'
+            : t('通信エラー') + '😥'}
+        </div>
+      )}
     </>
   )
 })
