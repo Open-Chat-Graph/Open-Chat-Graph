@@ -41,8 +41,6 @@ use App\Controllers\Pages\LogController;
 use App\Controllers\Pages\AdminPageController;
 use App\Middleware\VerifyCsrfToken;
 use App\ServiceProvider\ApiCommentListControllerServiceProvider;
-use App\ServiceProvider\ApiDbOpenChatControllerServiceProvider;
-use App\ServiceProvider\ApiRankingPositionPageRepositoryServiceProvider;
 use App\Models\CommentRepositories\RecentCommentListRepositoryInterface;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception;
@@ -66,18 +64,6 @@ Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
-
-/* Route::path('official-ranking/{category}', [ReactRankingPageController::class, 'ranking'])
-    ->matchStr('list', default: 'rising', emptyAble: true)
-    ->matchNum('category', min: 1)
-    ->match(function (int $category) {
-        return isset(array_flip(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot])[$category]);
-    });
-
-Route::path('official-ranking', [ReactRankingPageController::class, 'ranking'])
-    ->matchStr('list', default: 'rising', emptyAble: true)
-    ->matchNum('category', emptyAble: true);
- */
 
 Route::path('policy', [PolicyPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
@@ -141,16 +127,6 @@ Route::path('oc/{open_chat_id}/stats', [OpenChatPageController::class, 'stats'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-// TODO: test-api
-Route::path('ocapi/{user}/{open_chat_id}', [OpenChatPageController::class, 'index'])
-    ->matchNum('open_chat_id', min: 1)
-    ->match(function (string $user) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        app(ApiDbOpenChatControllerServiceProvider::class)->register();
-    });
-
 Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
@@ -179,30 +155,6 @@ Route::path(
 
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
         return true;
-    });
-
-// TODO: test-api
-Route::path(
-    'ranking-position/{user}/oc/{open_chat_id}/position',
-    [RankingPositionApiController::class, 'rankingPosition']
-)
-    ->matchNum('open_chat_id', min: 1)
-    ->matchNum('category', min: 0)
-    ->matchStr('sort', regex: ['ranking', 'rising'])
-    ->matchStr('start_date')
-    ->matchStr('end_date')
-    ->match(function (string $start_date, string $end_date, string $user, FileStorageInterface $fileStorage) {
-        if (MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        $isValid = $start_date === date("Y-m-d", strtotime($start_date))
-            && $end_date === date("Y-m-d", strtotime($end_date))
-            && strtotime($start_date) <= strtotime($end_date);
-        if (!$isValid)
-            return false;
-
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-        app(ApiRankingPositionPageRepositoryServiceProvider::class)->register();
     });
 
 
@@ -235,21 +187,6 @@ Route::path(
     ->matchStr('sort', regex: ['ranking', 'rising'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
-// TODO: test-api
-Route::path('ranking-position/{user}/oc/{open_chat_id}/position_hour')
-    ->match(function (string $user) {
-        if (!MimimalCmsConfig::$urlRoot === '' && $user === SecretsConfig::$adminApiKey)
-            return false;
-
-        return response([
-            'date' => ['01/01 00:00'],
-            'member' => [0],
-            'position' => [0],
-            'time' => ['00:00'],
-            'totalCount' => [0],
-        ]);
     });
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
