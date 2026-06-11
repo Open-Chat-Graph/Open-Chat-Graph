@@ -12,7 +12,9 @@ use Shadow\DB;
 use App\Models\SQLite\SQLiteStatistics;
 use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Admin\AdminTool;
+use App\Services\Cron\Enum\BatchScript;
 use App\Services\Cron\Enum\SyncOpenChatStateType;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\SitemapGenerator;
 use App\Services\UpdateDailyRankingService;
@@ -23,7 +25,7 @@ use Shared\MimimalCmsConfig;
 
 class AdminPageController
 {
-    function __construct(AdminAuthService $adminAuthService)
+    function __construct(AdminAuthService $adminAuthService, private BatchScriptLauncher $batchScriptLauncher)
     {
         if (!$adminAuthService->auth()) {
             throw new NotFoundException;
@@ -74,12 +76,9 @@ class AdminPageController
             return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。']);
         }
 
-        $path = AppConfig::ROOT_PATH . 'batch/cron/cron_crawling.php';
-        $arg = escapeshellarg($urlRoot);
+        $this->batchScriptLauncher->launchInBackground(BatchScript::cronCrawling, $urlRoot);
 
-        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::cronCrawling->absolutePath() . ' を実行しました。']);
     }
 
     /**
@@ -87,23 +86,9 @@ class AdminPageController
      */
     function apidb_test()
     {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/update_api_db.php';
+        $this->batchScriptLauncher->launchInBackground(BatchScript::updateApiDb);
 
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
-    }
-
-    /**
-     * ランキングbanテーブル更新テストバッチ実行
-     */
-    function rankingban_test()
-    {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/ranking_ban_test.php';
-
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::updateApiDb->absolutePath() . ' を実行しました。']);
     }
 
     /**
@@ -111,14 +96,9 @@ class AdminPageController
      */
     function retry_daily_test()
     {
-        $urlRoot = MimimalCmsConfig::$urlRoot;
+        $this->batchScriptLauncher->launchInBackground(BatchScript::retryDailyTask, MimimalCmsConfig::$urlRoot);
 
-        $path = AppConfig::ROOT_PATH . 'batch/exec/retry_daily_tast.php';
-        $arg = escapeshellarg($urlRoot);
-
-        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::retryDailyTask->absolutePath() . ' を実行しました。']);
     }
     
     /**
@@ -134,35 +114,9 @@ class AdminPageController
      */
     function tagupdate()
     {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update.php';
+        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate);
 
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
-    }
-
-    /**
-     * おすすめタグのみの更新テストバッチ実行
-     */
-    function recommendtagupdate()
-    {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/tag_update_onlyrecommend.php';
-
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
-    }
-
-    /**
-     * 毎時処理途中経過チェックバッチ実行
-     */
-    private function halfcheck()
-    {
-        $path = AppConfig::ROOT_PATH . 'batch/cron/cron_half_check.php';
-
-        exec(AppConfig::$phpBinary . " {$path} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::tagUpdate->absolutePath() . ' を実行しました。']);
     }
 
     /**
@@ -233,12 +187,9 @@ class AdminPageController
      */
     function genetop()
     {
-        $path = AppConfig::ROOT_PATH . 'batch/exec/genetop_exec.php';
-        $arg = escapeshellarg(MimimalCmsConfig::$urlRoot);
+        $this->batchScriptLauncher->launchInBackground(BatchScript::genetopExec, MimimalCmsConfig::$urlRoot);
 
-        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . ' を実行しました。']);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::genetopExec->absolutePath() . ' を実行しました。']);
     }
 
     /**
@@ -259,12 +210,9 @@ class AdminPageController
             return view('admin/admin_message_page', ['title' => 'exec', 'message' => 'パラメータ(lang)が不正です。ja / tw / th を指定してください。']);
         }
 
-        $path = AppConfig::ROOT_PATH . 'batch/exec/update_oc_page_cache.php';
-        $arg = escapeshellarg($urlRoot);
+        $this->batchScriptLauncher->launchInBackground(BatchScript::updateOcPageCache, $urlRoot);
 
-        exec(AppConfig::$phpBinary . " {$path} {$arg} >/dev/null 2>&1 &");
-
-        return view('admin/admin_message_page', ['title' => 'exec', 'message' => $path . " ({$lang}) を背景実行しました（全ルームのバックフィル・完了まで時間がかかります）。"]);
+        return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::updateOcPageCache->absolutePath() . " ({$lang}) を背景実行しました（全ルームのバックフィル・完了まで時間がかかります）。"]);
     }
 
     /**
@@ -299,7 +247,6 @@ class AdminPageController
     {
         $commands = [
             'pkill -f cron_crawling.php',
-            'pkill -f cron_half_check.php',
         ];
 
         foreach ($commands as $cmd) {

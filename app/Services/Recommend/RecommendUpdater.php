@@ -76,7 +76,7 @@ class RecommendUpdater
         return $this->recommendUpdaterTags->getSubCategoriesTag();
     }
 
-    function updateRecommendTables(bool $betweenUpdateTime = true, bool $onlyRecommend = false)
+    function updateRecommendTables(bool $betweenUpdateTime = true)
     {
         $this->start = $betweenUpdateTime
             ? $this->fileStorage->getContents('@tagUpdatedAtDatetime')
@@ -95,7 +95,7 @@ class RecommendUpdater
             CronUtility::addCronLog("Mock environment. Recommend Update limit: {$limit}");
         }
 
-        $this->updateRecommendTablesProcess($onlyRecommend);
+        $this->updateRecommendTablesProcess();
 
         if ($isMock) {
             $this->repository->dropTargetIdTable();
@@ -107,7 +107,7 @@ class RecommendUpdater
         );
     }
 
-    protected function updateRecommendTablesProcess(bool $onlyRecommend = false): void
+    protected function updateRecommendTablesProcess(): void
     {
         $this->rows = $this->repository->fetchTargetRows($this->targetIdJoinClause, $this->start, $this->end);
         if (empty($this->rows)) {
@@ -118,14 +118,10 @@ class RecommendUpdater
 
         // ja/th/tw とも同一のフル6キーカスケード（strongest/beforeCategory/nameStrong/
         // subCategoriesTag/descStrong/afterDescStrong + oc_tag2）に統一。
-        $this->matchAllRows($onlyRecommend);
+        $this->matchAllRows();
 
         // recommend テーブルに反映
         $this->repository->bulkInsertViaTemp('recommend', $this->recommendResults);
-
-        if ($onlyRecommend) {
-            return;
-        }
 
         // oc_tag テーブルに反映
         $this->repository->bulkInsertViaTemp('oc_tag', $this->ocTagResults);
@@ -161,7 +157,7 @@ class RecommendUpdater
         if (!empty($this->rows)) {
             $this->modifyTags = $this->repository->fetchModifyRecommendByIds(array_keys($this->rows));
 
-            $this->matchAllRows(false);
+            $this->matchAllRows();
 
             $this->repository->applyViaShadowSwap('recommend', $this->recommendResults);
             $this->repository->applyViaShadowSwap('oc_tag',    $this->ocTagResults);
@@ -207,8 +203,10 @@ class RecommendUpdater
 
     /**
      * 全行に対してタグマッチングを実行（ja/th/tw 共通のフルカスケード）
+     *
+     * recommend / oc_tag / oc_tag2 の3テーブル分の結果を常に生成する。
      */
-    private function matchAllRows(bool $onlyRecommend): void
+    private function matchAllRows(): void
     {
         $this->recommendResults = [];
         $this->ocTagResults = [];
@@ -283,10 +281,6 @@ class RecommendUpdater
             if (isset($this->recommendResults[$id])) {
                 $this->recommendResults[$id] = $tag;
             }
-        }
-
-        if ($onlyRecommend) {
-            return;
         }
 
         // === oc_tag テーブル ===

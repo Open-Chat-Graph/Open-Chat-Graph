@@ -12,9 +12,27 @@ use App\Views\Dto\RankingArgDto;
 
 class StaticDataFile
 {
+    private ?StaticDataGenerator $staticDataGenerator = null;
+
     public function __construct(
         private FileStorageInterface $fileStorage
     ) {}
+
+    /**
+     * 生成器はキャッシュファイル欠損時等のフォールバックでしか使わないため、
+     * Webホットパス（ルームページ等で毎リクエスト生成される本クラス）の構築コストを避けて初回利用時にのみ解決する
+     */
+    private function staticDataGenerator(): StaticDataGenerator
+    {
+        if ($this->staticDataGenerator === null) {
+            /** @var StaticDataGenerator $staticDataGenerator */
+            $staticDataGenerator = app(StaticDataGenerator::class);
+            $this->staticDataGenerator = $staticDataGenerator;
+        }
+
+        return $this->staticDataGenerator;
+    }
+
     private function checkUpdatedAt(string $hourlyUpdatedAt)
     {
         if (!$hourlyUpdatedAt === $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'))
@@ -27,9 +45,7 @@ class StaticDataFile
 
         /** @var StaticTopPageDto $data */
         if (!$data || AppConfig::$disableStaticDataFile) {
-            /** @var StaticDataGenerator $staticDataGenerator */
-            $staticDataGenerator = app(StaticDataGenerator::class);
-            return $staticDataGenerator->getTopPageDataFromDB();
+            return $this->staticDataGenerator()->getTopPageDataFromDB();
         }
 
         $this->checkUpdatedAt($data->hourlyUpdatedAt->format('Y-m-d H:i:s'));
@@ -42,9 +58,7 @@ class StaticDataFile
         $data = $this->fileStorage->getSerializedFile('@rankingArgDto');
         //$data = null;
         if (!$data || AppConfig::$disableStaticDataFile) {
-            /** @var StaticDataGenerator $staticDataGenerator */
-            $staticDataGenerator = app(StaticDataGenerator::class);
-            $data = $staticDataGenerator->getRankingArgDto();
+            $data = $this->staticDataGenerator()->getRankingArgDto();
         }
 
         $this->checkUpdatedAt($data->hourlyUpdatedAt);
@@ -57,9 +71,7 @@ class StaticDataFile
         $data = $this->fileStorage->getSerializedFile('@recommendPageDto');
         //$data = null;
         if (!$data || AppConfig::$disableStaticDataFile) {
-            /** @var StaticDataGenerator $staticDataGenerator */
-            $staticDataGenerator = app(StaticDataGenerator::class);
-            $data = $staticDataGenerator->getRecommendPageDto();
+            $data = $this->staticDataGenerator()->getRecommendPageDto();
         }
 
         $this->checkUpdatedAt($data->hourlyUpdatedAt);
@@ -72,9 +84,7 @@ class StaticDataFile
         /** @var array $data */
         $data = $this->fileStorage->getSerializedFile('@tagList');
         if (!$data || AppConfig::$disableStaticDataFile) {
-            /** @var StaticDataGenerator $staticDataGenerator */
-            $staticDataGenerator = app(StaticDataGenerator::class);
-            $data = $staticDataGenerator->getTagList();
+            $data = $this->staticDataGenerator()->getTagList();
         }
 
         $time = getStorageFileTime($this->fileStorage->getStorageFilePath('tagList'));
@@ -83,5 +93,4 @@ class StaticDataFile
 
         return $data;
     }
-
 }
