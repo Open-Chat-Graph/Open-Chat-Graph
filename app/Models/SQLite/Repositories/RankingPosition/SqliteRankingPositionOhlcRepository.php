@@ -39,7 +39,7 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
             ORDER BY
                 date ASC";
 
-        SQLiteRankingPositionOhlc::connect(['mode' => '?mode=ro']);
+        SQLiteRankingPositionOhlc::connect(SQLiteRankingPositionOhlc::WEB_READER);
         $result = SQLiteRankingPositionOhlc::fetchAll($query, ['open_chat_id' => $open_chat_id, 'category' => $category, 'type' => $typeValue]);
 
         return $result;
@@ -68,7 +68,7 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
 
         $since = '-' . max(1, $days) . ' days';
 
-        SQLiteRankingPositionOhlc::connect(['mode' => '?mode=ro']);
+        SQLiteRankingPositionOhlc::connect(SQLiteRankingPositionOhlc::WEB_READER);
         $row = SQLiteRankingPositionOhlc::fetch($query, [
             'open_chat_id' => $open_chat_id,
             'category' => $category,
@@ -112,7 +112,7 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
                 AND type = :type
                 AND date >= date('now', :since)";
 
-        SQLiteRankingPositionOhlc::connect(['mode' => '?mode=ro']);
+        SQLiteRankingPositionOhlc::connect(SQLiteRankingPositionOhlc::WEB_READER);
         $row = SQLiteRankingPositionOhlc::fetch($query, [
             'open_chat_id' => $open_chat_id,
             'category' => $category,

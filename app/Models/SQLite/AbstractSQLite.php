@@ -25,9 +25,28 @@ abstract class AbstractSQLite extends DB implements DBInterface
      * - 最大待機合計は約2.4秒（+ジッター）に制限。殺到時にワーカーを長時間塞ぐと
      *   fpm プール枯渇で別の障害になるため、無制限には待たない
      */
-    private const MAX_RETRIES = 7;
+    /**
+     * Web リクエスト中の読み取り接続の共通プロファイル。
+     *
+     * - mode=rw: WAL の -shm(wal-index 共有メモリ)を共有し「読みは書きを待たない」を使う。
+     *   mode=ro は -shm に触れないため接続のたびに私的 wal-index 再構築＋DBファイルの
+     *   排他ロックが走り、バッチの書き込み・checkpoint と衝突して読み取り同士まで
+     *   直列化する（2026-06-12 の /oc 間欠20秒ストール障害）
+     * - busyTimeout=20ms: 1回のロック待ちを短く刻む。続きはリトライ側のジッター付き
+     *   待機で互いにずらして再試行する（下記 READER_RETRY_*）。既定の10秒のまま rw 化
+     *   すると競合時に全リクエストが10秒待ちになる（PR #367→#370 差し戻しの事故）
+     */
+    public const WEB_READER = ['mode' => '?mode=rw', 'busyTimeout' => 20];
+
+    protected const MAX_RETRIES = 7;
+    // 書き込み(rwc)接続用: busy_timeout=10秒が主に待つので、間隔はゆっくり長く
     private const RETRY_BASE_WAIT_MICROSECONDS = 50000;   // 初回 0.05 秒
     private const RETRY_MAX_WAIT_MICROSECONDS = 800000;   // 1回あたり上限 0.8 秒
+    // 読み取り(ro/rw)接続用: 最初は細かく刻んでジッターで互いにずらし（典型の競合は
+    // 数十msで抜ける）、続くなら指数的に粘る。10回合計でも最悪2秒程度で諦める
+    protected const READER_MAX_RETRIES = 10;
+    private const READER_RETRY_BASE_WAIT_MICROSECONDS = 5000;   // 初回 5ms
+    private const READER_RETRY_MAX_WAIT_MICROSECONDS = 300000;  // 1回あたり上限 0.3 秒
     private const RETRYABLE_ERRORS = [
         'database disk image is malformed',
         'database is locked',
@@ -36,7 +55,10 @@ abstract class AbstractSQLite extends DB implements DBInterface
     ];
 
     /**
-     * @param ?array{storageFileKey: string, mode?: ?string} $config mode default is '?mode=rwc'
+     * @param ?array{storageFileKey?: string, filePath?: string, mode?: ?string, busyTimeout?: ?int} $config
+     *  mode default is '?mode=rwc' / busyTimeout default is 10000ms。
+     *  Web リクエスト中の読み取りは self::WEB_READER を渡す（rw + 短い busy_timeout）。
+     *  バッチの読み取りは '?mode=rw' のみ指定し busyTimeout は既定の10秒のままにする。
      */
     /** @var array<class-string, string> 接続中のモード（接続使い回し判定用） */
     private static array $connectedMode = [];
@@ -58,21 +80,24 @@ abstract class AbstractSQLite extends DB implements DBInterface
             static::$pdo = null;
         }
 
-        if (empty($config['storageFileKey'])) {
-            throw new \InvalidArgumentException('storageFileKey is required');
+        if (empty($config['storageFileKey']) && empty($config['filePath'])) {
+            throw new \InvalidArgumentException('storageFileKey or filePath is required');
         }
 
-        $sqliteFilePath = app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
+        // filePath は多言語パスを持たない固定パスDB（ocgraph_sqlapi 等）用
+        $sqliteFilePath = $config['filePath']
+            ?? app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
 
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);
         self::$connectedMode[static::class] = $mode;
 
         // Set busy timeout for all modes (including read-only) to handle concurrent access
-        static::$pdo->exec('PRAGMA busy_timeout=10000');
+        static::$pdo->exec('PRAGMA busy_timeout=' . (int)($config['busyTimeout'] ?? 10000));
 
-        // Apply write-related PRAGMA settings only for read-write mode
-        // Read-only mode (mode=ro) cannot execute journal_mode and synchronous
-        if (!str_contains($mode, 'mode=ro')) {
+        // WAL/synchronous の設定は書き込み側(rwc/既定)の接続だけが行う。
+        // mode=ro は実行不可、mode=rw(読み取り用途) は journal_mode の実行自体が
+        // ロックを取り読み書きの競合を増やすため実行しない（WAL化は一度行えば永続する）
+        if (str_contains($mode, 'rwc')) {
             // Enable WAL mode for concurrent read/write performance
             static::$pdo->exec('PRAGMA journal_mode=WAL');
 
@@ -85,10 +110,16 @@ abstract class AbstractSQLite extends DB implements DBInterface
 
     public static function execute(string $query, ?array $params = null): \PDOStatement
     {
+        // 読み取り接続(ro/rw)は busy_timeout が短い前提で、待ちの主体はジッター付きリトライ
+        $isReader = !str_contains(self::$connectedMode[static::class] ?? '?mode=rwc', 'rwc');
+        $maxRetries = $isReader ? static::READER_MAX_RETRIES : static::MAX_RETRIES;
+        $baseWait = $isReader ? self::READER_RETRY_BASE_WAIT_MICROSECONDS : self::RETRY_BASE_WAIT_MICROSECONDS;
+        $maxWait = $isReader ? self::READER_RETRY_MAX_WAIT_MICROSECONDS : self::RETRY_MAX_WAIT_MICROSECONDS;
+
         $attempts = 0;
         $lastException = null;
 
-        while ($attempts < self::MAX_RETRIES) {
+        while ($attempts < $maxRetries) {
             try {
                 return parent::execute($query, $params);
             } catch (\PDOException $e) {
@@ -107,17 +138,14 @@ abstract class AbstractSQLite extends DB implements DBInterface
                 $lastException = $e;
                 $attempts++;
 
-                if ($attempts < self::MAX_RETRIES) {
-                    $wait = min(
-                        self::RETRY_BASE_WAIT_MICROSECONDS * (2 ** ($attempts - 1)),
-                        self::RETRY_MAX_WAIT_MICROSECONDS
-                    );
+                if ($attempts < $maxRetries) {
+                    $wait = min($baseWait * (2 ** ($attempts - 1)), $maxWait);
                     // ±50% ジッター（同時リトライの再衝突を分散）
                     usleep(random_int((int)($wait / 2), (int)($wait * 1.5)));
                 }
             }
         }
 
-        throw $lastException ?? new \RuntimeException("Failed to execute query after " . self::MAX_RETRIES . " attempts.");
+        throw $lastException ?? new \RuntimeException("Failed to execute query after {$maxRetries} attempts.");
     }
 }
