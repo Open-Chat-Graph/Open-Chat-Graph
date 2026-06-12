@@ -14,7 +14,7 @@ import { useIsRightScrollable } from '../hooks/ScrollableHooks'
 const recommendHref = (slug: string) => `${rankingArgDto.urlRoot}/recommend/${slug}`
 
 const fetcher = (url: string): Promise<ThemeTag[]> =>
-  // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
   fetch(url, { headers: { Accept: 'application/json', 'X-Ocg-Client': '1' } }).then((r) =>
     r.ok ? r.json() : []
   )
