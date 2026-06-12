@@ -130,14 +130,16 @@ class OcreviewApiDataImporter
         // ターゲットデータベース（SQLite: ocgraph_sqlapi）に接続
         $this->targetPdo = SQLiteOcgraphSqlapi::connect();
 
-        // 統計データベース（SQLite: statistics）に読み取り専用で接続
+        // 統計データベース（SQLite: statistics）に読み取りで接続
+        // （mode=ro は WAL の -shm に触れず私的 wal-index＋排他ロック化するため rw で開く。
+        //   バッチは busy_timeout 既定10秒のまま長く待つ）
         $this->sqliteStatisticsPdo = SQLiteStatistics::connect([
-            'mode' => '?mode=ro'
+            'mode' => '?mode=rw'
         ]);
 
-        // ランキング履歴データベース（SQLite: ranking_position）に読み取り専用で接続
+        // ランキング履歴データベース（SQLite: ranking_position）に読み取りで接続
         $this->sqliteRankingPositionPdo = SQLiteRankingPosition::connect([
-            'mode' => '?mode=ro'
+            'mode' => '?mode=rw'
         ]);
     }
 

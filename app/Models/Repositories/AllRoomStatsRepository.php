@@ -87,7 +87,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
     {
         $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
 
-        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+        SQLiteOcgraphSqlapi::connect(SQLiteOcgraphSqlapi::WEB_READER);
 
         // 現存ルーム（両方の日付にデータあり）の増減
         $existing = SQLiteOcgraphSqlapi::execute(
@@ -150,7 +150,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
         $pastDate = date('Y-m-d', strtotime($modifier, strtotime($today)));
 
-        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+        SQLiteOcgraphSqlapi::connect(SQLiteOcgraphSqlapi::WEB_READER);
 
         $result = SQLiteOcgraphSqlapi::execute(
             "SELECT
@@ -265,7 +265,7 @@ class AllRoomStatsRepository implements AllRoomStatsRepositoryInterface
         // SQLite: カテゴリー別 1ヶ月増減
         $today = OpenChatServicesUtility::getCronModifiedStatsMemberDate();
 
-        SQLiteOcgraphSqlapi::connect(['mode' => '?mode=ro']);
+        SQLiteOcgraphSqlapi::connect(SQLiteOcgraphSqlapi::WEB_READER);
 
         // SQLiteのnamed parameterは同一名を複数回バインドできないため、today2~4を別名で渡す
         $trendRows = SQLiteOcgraphSqlapi::fetchAll(

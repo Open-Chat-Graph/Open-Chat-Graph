@@ -21,37 +21,19 @@ class SQLiteOcgraphSqlapi extends AbstractSQLite implements DBInterface
      * Note: This database is Japanese-only and does not use multi-language paths.
      * It connects to a fixed path instead of using FileStorageService::getStorageFilePath().
      *
-     * Optimizations applied:
-     * - WAL (Write-Ahead Logging) mode for better concurrent read/write performance
-     * - NORMAL synchronous mode for balanced performance and durability
-     * - 10-second busy timeout to handle concurrent access
+     * 接続の実体は AbstractSQLite::connect に委譲する（busy_timeout・モード追跡付きの
+     * 接続使い回し・WAL等のPRAGMA適用条件を全SQLiteで統一するため。以前の独自実装は
+     * mode=ro だと busy_timeout が未設定・最初に開いたモードを使い回す問題があった）。
      *
-     * @param ?array $config array{mode?: ?string} $config mode default is '?mode=rwc'
+     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int} $config mode default is '?mode=rwc'
      * @return \PDO
      */
     public static function connect(?array $config = null): \PDO
     {
-        if (static::$pdo !== null) {
-            return static::$pdo;
-        }
-
-        $mode = $config['mode'] ?? '?mode=rwc';
-        static::$pdo = new \PDO('sqlite:file:' . AppConfig::SQLITE_OCGRAPH_SQLAPI_DB_PATH . $mode);
-
-        // Apply PRAGMA settings only for read-write mode
-        // Read-only mode (mode=ro) cannot execute PRAGMA statements
-        if (!str_contains($mode, 'mode=ro')) {
-            // Apply SQLite optimizations (inherited from AbstractSQLite pattern)
-            // Enable WAL mode for concurrent read/write performance
-            static::$pdo->exec('PRAGMA journal_mode=WAL');
-
-            // Set synchronous mode to NORMAL for balanced performance
-            static::$pdo->exec('PRAGMA synchronous=NORMAL');
-
-            // Set busy timeout to 10 seconds to handle concurrent access
-            static::$pdo->exec('PRAGMA busy_timeout=10000');
-        }
-
-        return static::$pdo;
+        return parent::connect([
+            'filePath' => AppConfig::SQLITE_OCGRAPH_SQLAPI_DB_PATH,
+            'mode' => $config['mode'] ?? null,
+            'busyTimeout' => $config['busyTimeout'] ?? null,
+        ]);
     }
 }

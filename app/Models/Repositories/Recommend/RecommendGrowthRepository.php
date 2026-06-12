@@ -131,7 +131,7 @@ class RecommendGrowthRepository implements RecommendGrowthRepositoryInterface
         $since = (clone $anchorDate)->modify("-{$days} days")->format('Y-m-d');
         $category = self::RANK_CATEGORY_OVERALL;
 
-        SQLiteRankingPosition::connect(['mode' => '?mode=ro']);
+        SQLiteRankingPosition::connect(SQLiteRankingPosition::WEB_READER);
         $rows = SQLiteRankingPosition::fetchAll(
             "SELECT date, MIN(position) AS value
              FROM ranking
@@ -193,7 +193,7 @@ class RecommendGrowthRepository implements RecommendGrowthRepositoryInterface
         // DateTime 由来の Y-m-d 固定書式なのでインライン化(注入リスクなし)。
         $since = (clone $anchorDate)->modify("-{$days} days")->format('Y-m-d');
 
-        SQLiteStatistics::connect(['mode' => '?mode=ro']);
+        SQLiteStatistics::connect(SQLiteStatistics::WEB_READER);
 
         $rows = SQLiteStatistics::fetchAll(
             "WITH bounds AS (
