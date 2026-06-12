@@ -10,7 +10,7 @@ export default async function fetcher<T>(url: string) {
     return cache.data[cacheIndex] as T
   }
 
-  // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
   const response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
 
   const data: T | ErrorResponse = await response.json()

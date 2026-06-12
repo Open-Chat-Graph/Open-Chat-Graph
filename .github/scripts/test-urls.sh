@@ -437,20 +437,6 @@ main() {
     fi
     echo ""
 
-    # 独自ヘッダー検証のテスト（ヘッダー無しのAPI直叩きは404が期待される結果）
-    log "API独自ヘッダー検証のテスト"
-    TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    echo -n "Testing: ${BASE_URL}/oclist (without ${API_CLIENT_HEADER}) ... " | tee -a "$LOG_FILE"
-    status_code=$(curl -k -s -o /dev/null -w "%{http_code}" --max-time 30 "${BASE_URL}/oclist?page=0&limit=20&category=0&sub_category=&keyword=&list=all&sort=member&order=desc")
-    if [ "$status_code" = "404" ]; then
-        echo -e "${GREEN}OK (Status: ${status_code})${NC}" | tee -a "$LOG_FILE"
-        PASSED_TESTS=$((PASSED_TESTS + 1))
-    else
-        echo -e "${RED}FAILED (Status: ${status_code}, expected 404)${NC}" | tee -a "$LOG_FILE"
-        FAILED_TESTS=$((FAILED_TESTS + 1))
-    fi
-    echo ""
-
     # レコメンドページ - 日本語
     log "レコメンドページのテスト（日本語）"
     test_url "${BASE_URL}/recommend/%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89" "レコメンド（ポケモン）"

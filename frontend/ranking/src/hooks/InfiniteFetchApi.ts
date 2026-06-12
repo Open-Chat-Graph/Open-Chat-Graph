@@ -29,7 +29,7 @@ export class RateLimitError extends Error {
 export const RATE_LIMIT_RETRY_SECONDS = 10
 
 async function fetchApi<T>(url: string) {
-  // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
   let response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
 
   // 429: スケルトンを出したまま(SWRのisValidatingが続く)10秒待って1回だけ再試行

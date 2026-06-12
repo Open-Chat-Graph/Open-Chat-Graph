@@ -73,7 +73,7 @@ async function fetchComment(url = '/recent-comment-api', openChatId = 0) {
   const query = openChatId ? '?open_chat_id=' + openChatId : ''
 
   try {
-    // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+    // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
     const res = await fetch(url + query, { headers: { 'X-Ocg-Client': '1' } })
     if (res.status !== 200) {
       throw new Error()
