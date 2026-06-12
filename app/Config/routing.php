@@ -727,4 +727,6 @@ Route::path(
     ->match($databaseApiPostAuth);
 
 cache();
-Route::run();
+// 全ルート共通middleware: Accept: text/markdown のGETリクエストでViewの実装を
+// Markdown変換版(AgentMarkdownView)へ差し替える（AIエージェント向けネゴシエーション）
+Route::run(\App\Middleware\AgentMarkdownNegotiation::class);

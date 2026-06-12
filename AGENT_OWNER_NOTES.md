@@ -10,13 +10,13 @@ AI経由の流入を最大化するための実装内容・運用メモ。
 | 診断項目 | 対応内容 |
 | --- | --- |
 | Content Signals in robots.txt | `Content-Signal: search=yes, ai-input=yes, ai-train=yes` を追加（[`RobotsController`](app/Controllers/Pages/RobotsController.php)） |
-| Markdown Negotiation | `Accept: text/markdown` を含むGETリクエストにHTMLページをMarkdown変換して返す（[`AgentMarkdownResponder`](app/Services/Agent/AgentMarkdownResponder.php) / [`HtmlToMarkdownConverter`](app/Services/Agent/HtmlToMarkdownConverter.php)、`shared/bootstrap.php` で登録） |
+| Markdown Negotiation | `Accept: text/markdown` を含むGETリクエストにHTMLページをMarkdown変換して返す。`Route::run()` に渡す全ルート共通middleware（[`AgentMarkdownNegotiation`](app/Middleware/AgentMarkdownNegotiation.php)）が ViewInterface の実装を [`AgentMarkdownView`](app/Services/Agent/AgentMarkdownView.php) へ差し替え、render() 時に [`HtmlToMarkdownConverter`](app/Services/Agent/HtmlToMarkdownConverter.php) で変換する |
 | Link headers (RFC 8288) | トップページに `Link:` ヘッダーで llms.txt と sitemap.xml を案内（`sendAgentDiscoveryLinkHeader()` in [`functions.php`](app/Helpers/functions.php)） |
 | （診断外・推奨） llms.txt | `/llms.txt` でAI向けサイト案内をMarkdown配信（[`LlmsTxtController`](app/Controllers/Pages/LlmsTxtController.php)） |
 
 ### Markdownネゴシエーションの仕様
 
-- 対象: GET かつ `Accept` に `text/markdown` を含むリクエスト。`/admin` 配下・非HTMLレスポンス（JSON/text/plain）・非200は対象外
+- 対象: GET かつ `Accept` に `text/markdown` を含むリクエストで、コントローラーが `view()` を返す全ページ。`/admin` 配下・非200（エラーページ）はHTMLのまま。`response()`（JSON API）や echo直書きルート（robots.txt等）はViewを通らないため影響なし
 - レスポンス: `Content-Type: text/markdown; charset=UTF-8`、`X-Markdown-Tokens`（概算）、`Vary: Accept`
 - キャッシュ: Markdownレスポンスは `Cache-Control: no-store` + `Cloudflare-CDN-Cache-Control: no-store`。
   CloudflareのエッジキャッシュはAcceptヘッダーをキャッシュキーに含めないため、HTMLと同一キーで
