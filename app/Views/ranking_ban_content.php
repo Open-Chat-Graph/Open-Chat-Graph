@@ -389,7 +389,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (opts.push) history.pushState(state, '', pageUrl(state));
                 setBusy(true);
                 const s = Object.assign({}, state);
-                fetch(fragmentUrl(s), { signal: aborter.signal })
+                // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとAPI側で404。直叩き収集対策）
+                fetch(fragmentUrl(s), { signal: aborter.signal, headers: { 'X-Ocg-Client': '1' } })
                     .then((res) => {
                         if (res.ok) return res.text();
                         if (res.status === 404) {
