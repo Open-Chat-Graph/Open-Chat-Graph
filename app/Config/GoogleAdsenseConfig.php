@@ -30,7 +30,8 @@ class GoogleAdsenseConfig
         // OC-third-横長
         'ocThirdWide' => ['slotId' => '4386252007', 'cssClass' => 'rectangle2-ads'],
         // OCセパレーター-レスポンシブ
-        'ocSeparatorResponsive' => ['slotId' => '2542775305', 'cssClass' => null],
+        // ロード前から高さ100pxを確保する横長(horizontal-ads)で出す。format=auto だとロードまで高さ0でCLSが出るため
+        'ocSeparatorResponsive' => ['slotId' => '2542775305', 'cssClass' => 'horizontal-ads'],
         // OCセパレーター-rectangle
         'ocSeparatorRectangle' => ['slotId' => '2078443048', 'cssClass' => 'rectangle3-ads'],
         // OC-リスト-bottom-横長
@@ -46,7 +47,8 @@ class GoogleAdsenseConfig
         // サイトトップ2-横長
         'siteTopWide' => ['slotId' => '4015067592', 'cssClass' => 'horizontal-ads'],
         // サイトセパレーター-レスポンシブ
-        'siteSeparatorResponsive' => ['slotId' => '4243068812', 'cssClass' => null],
+        // ロード前から高さ100pxを確保する横長(horizontal-ads)で出す（上と同じ理由）
+        'siteSeparatorResponsive' => ['slotId' => '4243068812', 'cssClass' => 'horizontal-ads'],
         // サイトセパレーター-rectangle
         'siteSeparatorRectangle' => ['slotId' => '9793281538', 'cssClass' => 'rectangle-ads'],
         // サイトセパレーター-横長
@@ -70,7 +72,8 @@ class GoogleAdsenseConfig
         // おすすめ-リスト-bottom-横長
         'recommendListBottomWide' => ['slotId' => '3676170522', 'cssClass' => 'rectangle2-ads'],
         // おすすめセパレーター-レスポンシブ
-        'recommendSeparatorResponsive' => ['slotId' => '7064673271', 'cssClass' => null],
+        // ロード前から高さ100pxを確保する横長(horizontal-ads)で出す（上と同じ理由）
+        'recommendSeparatorResponsive' => ['slotId' => '7064673271', 'cssClass' => 'horizontal-ads'],
         // おすすめセパレーター-Rectangle
         'recommendSeparatorRectangle' => ['slotId' => '8031174545', 'cssClass' => 'rectangle3-ads'],
         // おすすめ-footer-rectangle

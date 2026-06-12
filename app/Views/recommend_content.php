@@ -79,8 +79,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
 
             <?php if (isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
-              <hr class="hr-top" style="margin: 1rem auto;">
-              <a class="top-ranking-readMore unset ranking-url white-btn" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
+              <a class="top-ranking-readMore unset ranking-url white-btn" style="margin-top: 1rem;" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">
                 <span class="ranking-readMore" style="font-size: 11.5px;"><?php echo sprintfT('「%s」をすべて見る', $tag) ?><span class="small" style="font-size: 11.5px;"><?php echo sprintfT('%s件', $_dto->tagRecordCounts[$_tagIndex]) ?></span></span>
               </a>
             <?php endif ?>
@@ -96,6 +95,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php endif ?>
 
     </section>
+
+    <?php if ($enableAdsense && isset($recommend)): ?>
+      <?php // ランキングリスト直下に高さ100px固定の横長1枠（リストは分断しない。高さ確保済みでCLSなし）。
+            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+      <?php GAd::output('recommendSeparatorResponsive') ?>
+    <?php endif ?>
 
     <?php if (isset($_discovery) && !$_discovery->isEmpty()) : ?>
       <?php viewComponent('theme_discovery', ['discovery' => $_discovery]) ?>
