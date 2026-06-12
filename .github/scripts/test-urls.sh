@@ -437,7 +437,7 @@ main() {
     fi
     echo ""
 
-    # 独自ヘッダー検証のテスト（ヘッダー無しのAPI直叩きは404が期待される結果）
+    # 独自ヘッダー検証のテスト（Cloudflare側で検証。ヘッダー無しの直叩きは404が期待される結果）
     log "API独自ヘッダー検証のテスト"
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     echo -n "Testing: ${BASE_URL}/oclist (without ${API_CLIENT_HEADER}) ... " | tee -a "$LOG_FILE"

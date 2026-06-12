@@ -39,7 +39,7 @@ export async function fetchApi<T>(url: string, method: string = 'GET', bodyData:
 
   const response = await fetch(url, {
     method,
-    // X-Ocg-Client: サイト内JSからのfetchであることを示す（無いとGET APIが404。直叩き収集対策）
+    // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
     headers: { 'Content-Type': 'application/json', 'X-Ocg-Client': '1' },
     body,
   })
