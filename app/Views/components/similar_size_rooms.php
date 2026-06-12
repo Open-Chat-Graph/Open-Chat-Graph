@@ -40,6 +40,8 @@ $scope = $isTagMode ? ($tag ?? '') : $categoryName;
 // tag_member / cat_member は「人数が近い」軸の並びなので順位は意味を持たず、付けない。
 $isRanked = $mode === 'tag_top';
 ?>
+<?php // おすすめ枠をGoogle検索スニペットから除外。data-nosnippetはarticleに付けられない(div/section/spanのみ)ため外側をdivで包む ?>
+<div data-nosnippet>
 <article class="top-ranking<?php echo $isRanked ? '' : ' not-rank' ?>" style="margin-top: 24px;" aria-labelledby="similar-size-rooms-title">
     <header style="display: block; margin: 0 0 12px 0;">
         <h2 id="similar-size-rooms-title" style="display: block; margin: 0; padding: 0; font-size: 15px; font-weight: bold; color: var(--c-text-1); line-height: 1.4;">
@@ -71,3 +73,4 @@ $isRanked = $mode === 'tag_top';
         </a>
     <?php endif ?>
 </article>
+</div>

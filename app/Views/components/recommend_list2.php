@@ -21,6 +21,8 @@ if ($recommend->type === RecommendListType::Category) {
 
 ?>
 
+<?php // おすすめ枠をGoogle検索スニペットから除外。data-nosnippetはarticleに付けられない(div/section/spanのみ)ため外側をdivで包む ?>
+<div data-nosnippet>
 <article class="top-ranking not-rank" style="<?php echo $style ?? '' ?>">
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
@@ -48,3 +50,4 @@ if ($recommend->type === RecommendListType::Category) {
     <?php endif ?>
 
 </article>
+</div>

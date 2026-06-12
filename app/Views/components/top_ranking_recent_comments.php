@@ -1,3 +1,5 @@
+<?php // 変動するコメント投稿一覧をGoogle検索スニペットから除外。data-nosnippetはarticleに付けられない(div/section/spanのみ)ため外側をdivで包む ?>
+<div data-nosnippet>
 <article class="recent-comment-list">
     <header class="openchat-list-title-area unset">
         <div class="openchat-list-date unset ranking-url">
@@ -13,3 +15,4 @@
         <span class="ranking-readMore">コメントのタイムラインを見る</span>
     </a>
 </article>
+</div>

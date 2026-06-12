@@ -33,7 +33,8 @@ function greenTag($word)
 ?>
 
 <article class="top-ranking topic-tag">
-    <div>
+    <?php // 毎時変動する急上昇テーマをGoogle検索スニペットから除外 ?>
+    <div data-nosnippet>
         <header class="openchat-list-title-area unset" style="margin-bottom: 0px;">
             <div class="openchat-list-date unset ranking-url">
                 <h2 class="unset">
