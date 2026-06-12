@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Agent;
 
 use App\Config\AppConfig;
+use App\Middleware\AgentMarkdownNegotiation;
 use Shadow\Kernel\View;
 
 /**
@@ -32,10 +33,15 @@ class AgentMarkdownView extends View
         header('Vary: Accept');
         // 概算トークン数（日本語主体のため2文字≒1トークンで概算）
         header('X-Markdown-Tokens: ' . (int)ceil(mb_strlen($markdown) / 2));
-        // Cloudflareのエッジキャッシュは Accept をキャッシュキーに含めないため、
-        // HTMLと同一キーでMarkdownがキャッシュされる事故が起きないよう no-store にする
-        header('Cache-Control: no-store');
-        header('Cloudflare-CDN-Cache-Control: no-store');
+
+        // Acceptヘッダー単独のMarkdownリクエストはHTMLとCDNキャッシュキーが同一になるため、
+        // キャッシュ汚染が起きないよう no-store にする。
+        // ?md=1 はURLでキャッシュキーが分かれるので checkLastModified() が設定した
+        // Last-Modified / CDNキャッシュ制御をそのまま使う（上書きしない）
+        if (!AgentMarkdownNegotiation::isCacheableMarkdownRequest()) {
+            header('Cache-Control: no-store');
+            header('Cloudflare-CDN-Cache-Control: no-store');
+        }
 
         echo $markdown;
     }

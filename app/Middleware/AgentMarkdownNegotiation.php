@@ -10,10 +10,19 @@ use Shadow\Kernel\ViewInterface;
 /**
  * AIエージェント向けMarkdownコンテンツネゴシエーション（全ルート共通のkernel middleware）。
  *
- * Route::run() に渡して全リクエストで実行する。`Accept: text/markdown` を含む
- * GETリクエストのとき、ViewInterface の実装を AgentMarkdownView へ差し替える
- * （サービスプロバイダ的な役割）。各コントローラーが返す view() はそのままで、
- * render() 時にHTMLがMarkdownへ変換されて text/markdown で出力される。
+ * Route::run() に渡して全リクエストで実行する。Markdown対象リクエストのとき、
+ * ViewInterface の実装を AgentMarkdownView へ差し替える（サービスプロバイダ的な役割）。
+ * 各コントローラーが返す view() はそのままで、render() 時にHTMLがMarkdownへ変換されて
+ * text/markdown で出力される。
+ *
+ * Markdown対象になるリクエストは2種類（どちらもGETのみ・/admin配下は除外）:
+ *
+ * 1. `?md=1` クエリパラメータ（推奨・キャッシュ可能）
+ *    HTMLとURL（=CDNのキャッシュキー）が分かれるため、通常ページと同じ
+ *    Last-Modified / 304 / CDNエッジキャッシュがそのまま効く。
+ * 2. `Accept: text/markdown` ヘッダー（Cloudflare診断のMarkdown Negotiation対応）
+ *    HTMLと同一URLになりCloudflareはAcceptをキャッシュキーに含めないため、
+ *    キャッシュ汚染防止に no-store とする（毎回オリジン処理。isCacheable… = false）。
  *
  * response()（JSON API）や echo直書きのルート（robots.txt・llms.txt等）には影響しない。
  */
@@ -37,7 +46,10 @@ class AgentMarkdownNegotiation
             return false;
         }
 
-        if (!str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'text/markdown')) {
+        if (
+            !self::hasMarkdownQueryParam()
+            && !str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'text/markdown')
+        ) {
             return false;
         }
 
@@ -48,5 +60,21 @@ class AgentMarkdownNegotiation
         }
 
         return true;
+    }
+
+    /**
+     * CDNキャッシュ可能なMarkdownリクエストか（= ?md=1 でHTMLとキャッシュキーが分かれている）。
+     *
+     * trueのとき checkLastModified() のLast-Modified/304/CDNキャッシュ制御を通常どおり適用し、
+     * AgentMarkdownView も no-store を付けない。
+     */
+    public static function isCacheableMarkdownRequest(): bool
+    {
+        return self::isAgentMarkdownRequest() && self::hasMarkdownQueryParam();
+    }
+
+    private static function hasMarkdownQueryParam(): bool
+    {
+        return ($_GET['md'] ?? null) === '1';
     }
 }

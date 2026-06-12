@@ -42,7 +42,7 @@ class LlmsTxtController
 
         - 対応地域: 日本 ({$domain}/)、台湾 ({$domain}/tw)、タイ ({$domain}/th)
         - データ更新: 毎時（各ルームのメンバー数とランキング順位を1時間ごとに記録）
-        - AIエージェント向け: 主要ページはリクエストヘッダー `Accept: text/markdown` を付けるとMarkdown版を返す
+        - AIエージェント向け: 各ページはURLに `?md=1` を付ける（推奨・CDNキャッシュで高速）か、リクエストヘッダー `Accept: text/markdown` でMarkdown版を返す
         - 運営・ソースコード: https://github.com/Open-Chat-Graph/Open-Chat-Graph （MITライセンス）
 
         ## 主要ページ
@@ -62,7 +62,7 @@ class LlmsTxtController
         ## データ取得
 
         - [サイトマップ]({$domain}/sitemap.xml): 全ページのURL一覧（ルーム個別ページを含む）
-        - 各ページは `Accept: text/markdown` でMarkdownとして取得可能（HTMLのスクレイピング不要）
+        - 各ページはMarkdownとして取得可能（HTMLのスクレイピング不要）。URLに `?md=1` を付ける方法（例: `{$domain}/oc/123?md=1`）が推奨でCDNキャッシュが効いて高速。`Accept: text/markdown` ヘッダーでも同じ内容を返す
         - [データAPI（申請制）](https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md): 収集データへの読み取り専用SQL API。利用にはX (Twitter) [@openchat_graph](https://x.com/openchat_graph) のDMでの申請が必要
         - 公開API・MCPサーバーは提供していない。データの参照は上記のHTML/Markdownページ経由で行うこと
 

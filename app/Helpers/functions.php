@@ -202,11 +202,16 @@ function checkLastModified(
     // ページレスポンスはAcceptヘッダーで内容が変わることを中間キャッシュへ知らせる
     header('Vary: Accept');
 
-    // Markdownネゴシエーション対象のリクエストはここで終了する。
+    // Acceptヘッダー単独のMarkdownリクエスト（HTMLと同一URL）はここで終了する。
     // Markdown変種は no-store（AgentMarkdownViewが設定）でクライアントはキャッシュを持たないため、
     // If-Modified-Since による304で exit するとMarkdown本文を一度も返せなくなる。
-    // HTML向けの Last-Modified / CDNキャッシュ制御も適用しない
-    if (\App\Middleware\AgentMarkdownNegotiation::isAgentMarkdownRequest()) {
+    // HTML向けの Last-Modified / CDNキャッシュ制御も適用しない。
+    // ※ ?md=1 のMarkdownリクエストはURLでキャッシュキーが分かれるため、
+    //    通常どおりLast-Modified/304/CDNキャッシュを適用する（returnしない）
+    if (
+        \App\Middleware\AgentMarkdownNegotiation::isAgentMarkdownRequest()
+        && !\App\Middleware\AgentMarkdownNegotiation::isCacheableMarkdownRequest()
+    ) {
         return;
     }
 
