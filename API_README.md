@@ -3,8 +3,8 @@
 オプチャグラフ（[openchat-review.me](https://openchat-review.me/)）が収集した LINEオープンチャットのデータ（SQLite）に対する、読み取り専用の SQL API。
 
 - エンドポイント: `POST /database/{username}/query`
-- POSTボディに `stmt`（SQL）と `password` を渡す。結果は JSON。
-- `password` は申請時に渡すパスワードの **SHA256（16進）**。`{username}` はパスに入れる（[認証情報の取得](#認証情報の取得)）。
+- **Basic認証**（`{username}` / `{password}` をそのまま）を付け、POSTボディに `stmt`（SQL）と `password` を渡す。結果は JSON。
+- POSTボディの `password` は申請時に渡すパスワードの **SHA256（16進）**。`{username}` はパスに入れる（[認証情報の取得](#認証情報の取得)）。
 
 ---
 
@@ -14,13 +14,22 @@
 
 X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご相談ください。利用目的を伺ったうえでお渡しします。
 
-以下、受け取った値を `{username}` / `{password}` と表記します。リクエストでは `password` をそのままではなく SHA256（16進）にして送ります。
+以下、受け取った値を `{username}` / `{password}` と表記します。リクエストでは2つの認証を両方付けます。
+
+- Basic認証: `{username}` / `{password}` をそのまま
+- POSTボディの `password`: `{password}` の SHA256（16進）
 
 ---
 
 ## リクエスト
 
-`POST`。ボディに `stmt`（SELECT文）と `password`（パスワードの SHA256・16進）を渡す。レスポンスは下記の形の JSON。
+`POST`。Basic認証（`{username}` / `{password}`）を付け、ボディに `stmt`（SELECT文）と `password`（パスワードの SHA256・16進）を渡す。レスポンスは下記の形の JSON。
+
+```bash
+curl -u "{username}:{password}" -X POST "https://openchat-review.me/database/{username}/query" \
+  --data-urlencode "password={passwordのSHA256}" \
+  --data-urlencode "stmt=SELECT display_name FROM openchat_master LIMIT 5"
+```
 
 ```json
 {
@@ -33,7 +42,7 @@ X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご
 ```
 
 - `data` が結果行の配列。`SELECT` した列名がキー。0件なら `[]`。
-- スキーマ定義（DDL）の取得は `/database/{username}/schema`（同じく `POST` + `password`）。
+- スキーマ定義（DDL）の取得は `/database/{username}/schema`（同じく `POST` + Basic認証 + `password`）。
 
 ---
 
@@ -71,6 +80,7 @@ X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご
 | 状況 | ステータス | `message` |
 | --- | --- | --- |
 | `{username}`（URLパス）が未登録 | 403 | `User not found` |
+| Basic認証が未指定／一致しない | 401 | `Basic authentication is required to access the database API. Sorry, we initially forgot to include this requirement in the docs.` |
 | `password` が一致しない／未指定 | 401 | `Authentication failed.` |
 | `stmt` が未指定 | 400 | `The "stmt" parameter is required and must be a string.` |
 | `SELECT` 以外 | 400 | `UPDATE / DELETE / INSERT statements are not allowed` |
@@ -84,7 +94,7 @@ X（旧Twitter）の [@openchat_graph](https://x.com/openchat_graph) のDMでご
 
 ## スキーマ
 
-カラム定義（DDL）は `POST /database/{username}/schema`（`password` 必須）で取得する。以下は各テーブルの概要のみ。
+カラム定義（DDL）は `POST /database/{username}/schema`（Basic認証 + `password` 必須）で取得する。以下は各テーブルの概要のみ。
 
 | テーブル | 概要 |
 | --- | --- |

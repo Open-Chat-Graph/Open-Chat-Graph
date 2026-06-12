@@ -633,7 +633,6 @@ Route::path(
 //     大文字を含むキーは {username} に直接入れても照合できない。Basic認証は小文字化されない）
 //   - 登録ユーザー: Basic認証（username / 登録パスワード）に加えて、
 //     POSTボディの password（登録パスワードを SHA256 した16進文字列）も必要（二重認証）
-//   - {username} が adminApiKey の場合は従来どおり認証なしで許可（小文字のみのキー用）
 $databaseApiPostAuth = function (string $username, $password = null) {
     if (MimimalCmsConfig::$urlRoot !== '') {
         return false;
@@ -645,7 +644,8 @@ $databaseApiPostAuth = function (string $username, $password = null) {
         header('WWW-Authenticate: Basic realm="Database SQL API"');
         response([
             'status' => 'error',
-            'message' => 'Basic authentication is required to access the database API.',
+            'message' => 'Basic authentication is required to access the database API. '
+                . 'Sorry, we initially forgot to include this requirement in the docs.',
         ], 401)->send();
         exit;
     };
@@ -663,12 +663,7 @@ $databaseApiPostAuth = function (string $username, $password = null) {
         $requireBasicAuth();
     }
 
-    // 2. {username} に adminApiKey（従来方式・小文字のみのキー用）
-    if ($username === SecretsConfig::$adminApiKey) {
-        return true;
-    }
-
-    // 3. 登録ユーザー: Basic認証 + POSTの password（SHA256）の二重認証
+    // 2. 登録ユーザー: Basic認証 + POSTの password（SHA256）の二重認証
     $apiUsers = class_exists(ApiUser::class) ? ApiUser::$apiUser : [];
     foreach ($apiUsers as $apiUser) {
         if ($apiUser['username'] === $username) {
@@ -689,7 +684,7 @@ $databaseApiPostAuth = function (string $username, $password = null) {
         }
     }
 
-    // 4. 未登録ユーザーは 403
+    // 3. 未登録ユーザーは 403
     response([
         'status' => 'error',
         'message' => 'User not found',
