@@ -11,10 +11,8 @@ class GoogleAdsense
      * 広告を出力
      *
      * @param string $slotKey スロット識別子（例: 'ocTopRectangle'）
-     * @param bool $forceShow 強制表示フラグ
      */
-
-    public static function output(string $slotKey, bool $forceShow = false)
+    public static function output(string $slotKey)
     {
         if (AppConfig::$isStaging) return;
 
@@ -71,30 +69,15 @@ class GoogleAdsense
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
+        // 遅延読み込み(IntersectionObserver)はしない。security.js の広告ブロック検出
+        // （window load 時の未処理チェック・10秒間の1px潰し監視）は「広告がページ表示時に
+        // 読み込まれている」前提のため、遅延させると検出が成立しなくなる
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                var ads = Array.prototype.slice.call(document.querySelectorAll('ins.manual'));
-                if (!ads.length) return;
-                var push = function() { (adsbygoogle = window.adsbygoogle || []).push({}); };
-
-                // IntersectionObserver 非対応環境は従来どおり一括読み込み（フォールバック）
-                if (!('IntersectionObserver' in window)) {
-                    ads.forEach(push);
-                    return;
-                }
-
-                // 各広告がビューポート手前 600px に入って初めて読み込む。
-                // 下部広告がユーザー到達前に「表示済み」化するのを防ぎ視認率(viewability)を上げる。
-                // push() は DOM 順で最も先頭の未読み込み ins を埋めるため、上→下のスクロールで順に充填される。
-                var io = new IntersectionObserver(function(entries, obs) {
-                    entries.forEach(function(entry) {
-                        if (!entry.isIntersecting) return;
-                        push();
-                        obs.unobserve(entry.target);
-                    });
-                }, { rootMargin: '600px 0px' });
-                ads.forEach(function(ad) { io.observe(ad); });
+                document.querySelectorAll('ins.manual').forEach(function() {
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                });
             });
         </script>
         EOT;
