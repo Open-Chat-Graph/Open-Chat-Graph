@@ -22,6 +22,9 @@ AI経由の流入を最大化するための実装内容・運用メモ。
   CloudflareのエッジキャッシュはAcceptヘッダーをキャッシュキーに含めないため、HTMLと同一キーで
   Markdownがキャッシュされる事故（キャッシュ汚染）を防ぐ
 - 通常のHTMLレスポンスには `checkLastModified()` 内で `Vary: Accept` を常時付与
+- `checkLastModified()` はMarkdown対象リクエストでは Last-Modified / 304 / CDNキャッシュ制御を適用せず常に200で本文を返す
+  （Markdown変種は no-store でクライアントがキャッシュを持たないため、If-Modified-Since による304で
+  exit するとMarkdown本文を一度も返せなくなる）
 
 ### Content-Signal の判断
 

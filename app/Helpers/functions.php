@@ -198,9 +198,17 @@ function checkLastModified(
     int $maxAge = 0,
     int $sMaxAge = 3600
 ): void {
-    // Accept: text/markdown によるMarkdownネゴシエーション(AgentMarkdownResponder)があるため、
+    // Accept: text/markdown によるMarkdownネゴシエーション(AgentMarkdownNegotiation)があるため、
     // ページレスポンスはAcceptヘッダーで内容が変わることを中間キャッシュへ知らせる
     header('Vary: Accept');
+
+    // Markdownネゴシエーション対象のリクエストはここで終了する。
+    // Markdown変種は no-store（AgentMarkdownViewが設定）でクライアントはキャッシュを持たないため、
+    // If-Modified-Since による304で exit するとMarkdown本文を一度も返せなくなる。
+    // HTML向けの Last-Modified / CDNキャッシュ制御も適用しない
+    if (\App\Middleware\AgentMarkdownNegotiation::isAgentMarkdownRequest()) {
+        return;
+    }
 
     if (!AppConfig::$enableCloudflare) {
         cache();
