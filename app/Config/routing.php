@@ -625,12 +625,13 @@ Route::path(
 
 // データベースAPI（読み取り専用）
 // /database/{username}/query・/schema 用の認証（いずれも POST）:
-//   - Basic認証ではなく、POSTボディの password で認証する
-//   - password は ApiUser の登録パスワードを SHA256 した16進文字列を送る
-//   - 管理者は {username} を admin にして password へ adminApiKey をそのまま送る
-//     （URLパスはフレームワークが小文字化するため、大文字を含むキーは
-//       {username} に直接入れても照合できない。POSTボディは小文字化されない）
-//   - {username} が adminApiKey の場合は従来どおり password 不要（小文字のみのキー用）
+//   - 全ユーザー Basic認証必須
+//   - 管理者: {username}=admin、Basic認証（admin / adminApiKey）のみで許可。
+//     POSTボディの password は不要（URLパスはフレームワークが小文字化するため、
+//     大文字を含むキーは {username} に直接入れても照合できない。Basic認証は小文字化されない）
+//   - 登録ユーザー: Basic認証（username / 登録パスワード）に加えて、
+//     POSTボディの password（登録パスワードを SHA256 した16進文字列）も必要（二重認証）
+//   - {username} が adminApiKey の場合は従来どおり認証なしで許可（小文字のみのキー用）
 $databaseApiPostAuth = function (string $username, $password = null) {
     if (MimimalCmsConfig::$urlRoot !== '') {
         return false;
@@ -638,32 +639,42 @@ $databaseApiPostAuth = function (string $username, $password = null) {
 
     allowCORS(); // OPTIONS プリフライトはここで終了
 
-    // 1. 管理用キー
-    //    a) username=admin + POSTの password に adminApiKey
+    $requireBasicAuth = function (): void {
+        header('WWW-Authenticate: Basic realm="Database SQL API"');
+        response([
+            'status' => 'error',
+            'message' => 'Basic authentication is required to access the database API.',
+        ], 401)->send();
+        exit;
+    };
+
+    // 1. 管理者: Basic認証（admin / adminApiKey）のみで許可（POST password 不要）
     if ($username === 'admin') {
+        $auth = getBasicAuthCredentials();
         if (
             SecretsConfig::$adminApiKey !== ''
-            && is_string($password)
-            && hash_equals(SecretsConfig::$adminApiKey, $password)
+            && $auth['user'] === 'admin'
+            && hash_equals(SecretsConfig::$adminApiKey, $auth['pass'])
         ) {
             return true;
         }
-        response([
-            'status' => 'error',
-            'message' => 'Authentication failed.',
-        ], 401)->send();
-        exit;
+        $requireBasicAuth();
     }
 
-    //    b) {username} に adminApiKey（password 不要）
+    // 2. {username} に adminApiKey（従来方式・小文字のみのキー用）
     if ($username === SecretsConfig::$adminApiKey) {
         return true;
     }
 
-    // 2. 登録済みユーザーは POSTされた password（SHA256）で照合
+    // 3. 登録ユーザー: Basic認証 + POSTの password（SHA256）の二重認証
     $apiUsers = class_exists(ApiUser::class) ? ApiUser::$apiUser : [];
     foreach ($apiUsers as $apiUser) {
         if ($apiUser['username'] === $username) {
+            $auth = getBasicAuthCredentials();
+            if ($auth['user'] !== $apiUser['username'] || $auth['pass'] !== $apiUser['password']) {
+                $requireBasicAuth();
+            }
+
             $expected = hash('sha256', $apiUser['password']);
             if (!is_string($password) || !hash_equals($expected, strtolower($password))) {
                 response([
@@ -676,7 +687,7 @@ $databaseApiPostAuth = function (string $username, $password = null) {
         }
     }
 
-    // 3. 未登録ユーザーは 403
+    // 4. 未登録ユーザーは 403
     response([
         'status' => 'error',
         'message' => 'User not found',
