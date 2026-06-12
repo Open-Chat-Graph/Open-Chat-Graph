@@ -75,7 +75,8 @@ function AppInner() {
   }, [])
 
   return (
-    <div>
+    // data-nosnippet: 変動データ(グラフ・期間ボタン)をGoogle検索スニペットから除外（マウント先sectionの付与に依存しない）
+    <div data-nosnippet>
       <div className="chart-canvas-box" style={{ position: 'absolute', top: 0, left: 0 }}>
         {loading && <LoadingSpinner />}
         <canvas
