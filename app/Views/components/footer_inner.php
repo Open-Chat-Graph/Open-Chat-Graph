@@ -2,6 +2,8 @@
 <?php // 罫線(hr)レス: 区切りは余白のみ。値は tokens.css の --sp-* で一元管理 ?>
 <footer class="footer-elem-outer" style="padding: var(--sp-section-gap) 0 0 0;">
     <nav class="footer-link-box-outer">
+        <?php // フッターの定型文をGoogle検索スニペットに出さない。data-nosnippetはnavに付けられない(div/section/spanのみ)ためdivで包む ?>
+        <div data-nosnippet>
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></li>
@@ -50,5 +52,6 @@
                 <?php endforeach ?>
             </div>
             <div class="copyright">© <?php echo t('オプチャグラフ') ?><span><a class="unset" style="cursor: pointer;" href="https://github.com/Open-Chat-Graph" target="_blank">Project on GitHub @Open-Chat-Graph</a><span class="line-link-icon777"></span></span></div>
+        </div>
     </nav>
 </footer>

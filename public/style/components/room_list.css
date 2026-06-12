@@ -851,6 +851,14 @@
   font-size: 13px;
 }
 
+/* select自体はopacity:0で不可視だが、開いた時のポップアップの配色はselect/optionの色から決まる。
+   未指定だとUA既定の白背景にページ由来の明色文字が乗り、ダークテーマで読めなくなる環境があるため明示する */
+.page-select select,
+.page-select select option {
+  background-color: var(--c-bg);
+  color: var(--c-text-1);
+}
+
 .page-select label {
   margin: auto;
   position: relative;
