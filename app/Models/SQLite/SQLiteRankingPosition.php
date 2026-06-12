@@ -11,13 +11,14 @@ class SQLiteRankingPosition extends AbstractSQLite implements DBInterface
     public static ?\PDO $pdo = null;
 
     /**
-     * @param ?array $config array{mode?: ?string} $config mode default is '?mode=rwc'
+     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int} $config mode default is '?mode=rwc'
      */
     public static function connect(?array $config = null): \PDO
     {
         return parent::connect([
             'storageFileKey' => 'sqliteRankingPositionDb',
-            'mode' => $config['mode'] ?? null
+            'mode' => $config['mode'] ?? null,
+            'busyTimeout' => $config['busyTimeout'] ?? null,
         ]);
     }
 }
