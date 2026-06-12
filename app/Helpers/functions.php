@@ -198,6 +198,10 @@ function checkLastModified(
     int $maxAge = 0,
     int $sMaxAge = 3600
 ): void {
+    // Accept: text/markdown によるMarkdownネゴシエーション(AgentMarkdownResponder)があるため、
+    // ページレスポンスはAcceptヘッダーで内容が変わることを中間キャッシュへ知らせる
+    header('Vary: Accept');
+
     if (!AppConfig::$enableCloudflare) {
         cache();
         return;
@@ -250,6 +254,22 @@ function checkLastModified(
 
     // Last-Modifiedヘッダーを設定
     header("Last-Modified: {$lastModifiedHeader}");
+}
+
+/**
+ * AIエージェント向けディスカバリー用のLinkレスポンスヘッダー (RFC 8288) を送出する
+ *
+ * routing.phpのトップページのmatchクロージャで使用する。
+ * llms.txt（AI向けサイト案内）とsitemap.xmlの場所をエージェントへ知らせる。
+ * llms.txt・sitemap.xmlはルートドメインのみで配信しているため、URLは常にルートを指す。
+ */
+function sendAgentDiscoveryLinkHeader(): void
+{
+    $domain = AppConfig::$siteDomain;
+    header(
+        'Link: <' . $domain . '/llms.txt>; rel="llms-txt describedby"; type="text/markdown", '
+            . '<' . $domain . '/sitemap.xml>; rel="sitemap"; type="application/xml"'
+    );
 }
 
 /**

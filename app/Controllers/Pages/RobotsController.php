@@ -66,7 +66,10 @@ Allow: /th/oc/*/jump
 Allow: /tw/oc/*/jump
 
 # その他すべてのクローラー
+# Content-Signal: AIコンテンツ利用ポリシー (https://contentsignals.org/)
+#   search: 検索インデックス化 / ai-input: AI回答への利用(RAG等) / ai-train: AI学習への利用
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Disallow: /admin/log
 Disallow: /tw/recently-registered
 Disallow: /th/recently-registered
@@ -76,6 +79,9 @@ Disallow: /th/oc/*/jump
 Disallow: /tw/oc/*/jump
 
 Sitemap: https://openchat-review.me/sitemap.xml
+
+# AIエージェント向けサイト案内
+# https://openchat-review.me/llms.txt
 TXT;
     }
 }

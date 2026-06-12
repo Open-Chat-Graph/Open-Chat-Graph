@@ -81,6 +81,15 @@ Route::path('robots.txt', [RobotsController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
+// AIエージェント・LLM向けサイト案内（https://llmstxt.org/ 形式）。robots.txt同様ルートドメインのみ
+Route::path('llms.txt', [\App\Controllers\Pages\LlmsTxtController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        if (MimimalCmsConfig::$urlRoot !== '')
+            return false;
+
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
 Route::path('ads.txt', [AdsTxtController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
@@ -103,6 +112,7 @@ Route::path('favicon.ico', [StagingIconController::class, 'favicon'])
 
 Route::path('/', [IndexPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
+        sendAgentDiscoveryLinkHeader();
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
