@@ -27,6 +27,11 @@ AI経由の流入を最大化するための実装内容・運用メモ。
 
 - レスポンス: `Content-Type: text/markdown; charset=UTF-8`、`X-Markdown-Tokens`（概算）、`Vary: Accept`
 - 通常のHTMLレスポンスには `checkLastModified()` 内で `Vary: Accept` を常時付与
+- **`?md=1` の発見経路**: 独自パラメータなのでエージェントが自発的には知り得ない。
+  (1) 全ページの通常レスポンスに `Link: <同URL?md=1>; rel="alternate"; type="text/markdown"` ヘッダーを付与、
+  (2) llms.txt に取得方法として記載、の2経路で機械的に発見できるようにしている。
+  ただし現実のAIクローラーの標準動作は `Accept: text/markdown` のため、
+  Accept経由のオリジン負荷を消すには下記Transform Rule（案A）の設定が本命
 - Accept単独リクエストで `checkLastModified()` の304を返さないのは、Markdown変種が no-store で
   クライアントがキャッシュを持たないため（304で exit するとMarkdown本文を一度も返せなくなる）
 

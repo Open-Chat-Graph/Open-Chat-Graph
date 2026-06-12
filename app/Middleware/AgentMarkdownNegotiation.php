@@ -31,10 +31,45 @@ class AgentMarkdownNegotiation
     public function handle(): void
     {
         if (!self::isAgentMarkdownRequest()) {
+            self::sendMarkdownAlternateLinkHeader();
             return;
         }
 
         app()->bind(ViewInterface::class, AgentMarkdownView::class);
+    }
+
+    /**
+     * 通常のHTMLレスポンスに、同一ページのMarkdown版（?md=1）の場所を知らせる
+     * Linkヘッダー（RFC 8288 / rel="alternate"）を付ける。
+     *
+     * ?md=1 は独自パラメータでエージェントが自発的には知り得ないため、
+     * llms.txt の案内に加えてレスポンスヘッダーでも機械的に発見可能にする。
+     */
+    private static function sendMarkdownAlternateLinkHeader(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET' || isset($_GET['md'])) {
+            return;
+        }
+
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || preg_match('#^(?:/tw|/th)?/admin(?:/|$)#', $path)) {
+            return;
+        }
+
+        // REQUEST_URIは生のリクエスト行由来のため、RFC 3986の許可文字以外
+        // （生マルチバイト・ヘッダー構文を壊す > " 等）をパーセントエンコードする
+        $uri = preg_replace_callback(
+            '/[^a-zA-Z0-9\-._~:\/?#\[\]@!$&\'()*+,;=%]/',
+            fn(array $m): string => rawurlencode($m[0]),
+            $uri
+        ) ?? $uri;
+
+        $separator = str_contains($uri, '?') ? '&' : '?';
+        header(
+            'Link: <' . \App\Config\AppConfig::$siteDomain . $uri . $separator . 'md=1>; rel="alternate"; type="text/markdown"',
+            false
+        );
     }
 
     /**
