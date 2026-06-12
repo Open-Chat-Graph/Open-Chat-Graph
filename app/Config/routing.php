@@ -307,6 +307,8 @@ Route::path(
     ->match(function (Reception $reception, FileStorageInterface $fileStorage) {
         if (MimimalCmsConfig::$urlRoot !== '')
             return false;
+        if (!verifyApiClientHeader())
+            return false;
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
