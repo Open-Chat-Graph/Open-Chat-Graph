@@ -194,14 +194,15 @@ export default function buildOptions(
   }
 
   // ローソク足モード: CandlestickControllerがautoSkipを極端に効かせるため無効化
-  // 1週間・1ヶ月は全ラベル表示（折れ線と同じ）。全期間のみcallbackで間引く
+  // autoSkipが無いと狭い画面で全ラベルが重なって潰れるため、月・全期間はcallbackで間引く
+  // （折れ線はautoSkipが自動で間引くが、ローソク足では手動間引きが必須）
   if (ocChart.getMode() === 'candlestick') {
     options.scales!.x!.ticks!.autoSkip = false
 
     const dataLen = ocChart.ohlcData.length
 
-    if (limit === 0) {
-      const maxLabels = 20
+    if (!isWeekly) {
+      const maxLabels = limit === 31 ? 15 : 20
       const step = Math.max(1, Math.ceil(dataLen / maxLabels))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       options.scales!.x!.ticks!.callback = function (this: any, _val: any, index: number) {
