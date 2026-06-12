@@ -11,6 +11,8 @@
 ?>
 <?php if (isset($similarSize) && $similarSize) : ?>
   <aside class="recommend-list-aside" id="similar-size-rooms">
+    <?php // おすすめ枠をGoogle検索スニペットから除外。data-nosnippetはasideに付けられない(div/section/spanのみ)ためdivで包む ?>
+    <div data-nosnippet>
     <?php viewComponent('similar_size_rooms', [
       'rooms'         => $similarSize['rooms'],
       'recommend'     => $similarSize['recommend'],
@@ -19,9 +21,12 @@
       'category'      => $oc['category'] ?? null,
       'tag'           => $oc['tag1'] ?? null,
     ]) ?>
+    </div>
   </aside>
 <?php elseif (!empty($recommend[3])) : ?>
   <aside class="recommend-list-aside" id="recommend-list-aside1">
+    <div data-nosnippet>
     <?php viewComponent('recommend_list2', ['recommend' => $recommend[3], 'member' => $oc['member'], 'tag' => '', 'id' => $oc['id']]) ?>
+    </div>
   </aside>
 <?php endif ?>

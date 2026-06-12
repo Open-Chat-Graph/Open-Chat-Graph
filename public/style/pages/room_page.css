@@ -843,9 +843,9 @@ html {
   .title-bar .number-box,
   .openchat-header,
   .graph-title,
-  nav,
+  /* フッター(nav.footer-link-box-outer)は対象外: 拡大すると他ページとフッターの文字サイズが揃わない */
+  nav:not(.footer-link-box-outer),
   #comment-root,
-  .footer-link-box-outer,
   .title-bar-oc-name-wrapper {
     zoom: 110%;
   }

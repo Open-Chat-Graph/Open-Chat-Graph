@@ -199,6 +199,9 @@ export default function SettingButton() {
         }}
         slotProps={{
           paper: {
+            // メニューはbody直下にポータルされ、囲い側のdata-nosnippetが効かないため自前で付ける
+            // （MUIの型はdata-*属性を持たないためスプレッドで渡す）
+            ...({ 'data-nosnippet': '' } as Record<string, string>),
             sx: isDark
               ? {
                   /* 旧試験実装の isDark 調整値（明るい slate-700 紙面 + slate-100 文字） */

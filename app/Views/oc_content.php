@@ -45,12 +45,13 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             </div>
           </div>
 
-          <div class="talkroom_number_of_members">
+          <?php // 毎時変動する人数・増減はGoogle検索スニペットから除外（説明文はスニペットに使われるべきなので付けない） ?>
+          <div class="talkroom_number_of_members" data-nosnippet>
             <span class="number_of_members"><?php echo sprintfT('メンバー %s人', number_format($oc['member'])) ?></span>
           </div>
 
           <?php if (isset($_hourlyRange)) : ?>
-            <div class="talkroom_number_of_stats stats-hourly" style="line-height: 135%; margin-top: 3px;">
+            <div class="talkroom_number_of_stats stats-hourly" data-nosnippet style="line-height: 135%; margin-top: 3px;">
               <div class="number-box ">
                 <span aria-hidden="true" style="margin-right: 1px; font-size: 9px; user-select: none;">🔥</span>
                 <span style="margin-right: 4px;" class="openchat-itme-stats-title"><?php echo $_hourlyRange ?></span>
@@ -61,7 +62,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             </div>
           <?php endif ?>
 
-          <div class="talkroom_number_of_stats stats-daily">
+          <div class="talkroom_number_of_stats stats-daily" data-nosnippet>
 
             <?php if (isset($oc['rh24_diff_member']) && $oc['rh24_diff_member'] >= AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24) : ?>
               <div class="number-box " style="margin-right: 6px;">
@@ -163,7 +164,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if ($_narrative !== null): ?>
         <?php viewComponent('oc_narrative_section', ['narrative' => $_narrative, 'oc' => $oc]) ?>
       <?php endif ?>
-      <section class="openchat-graph-section" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
+      <?php // 変動データ(日付・人数・グラフ)のセクション全体をGoogle検索スニペットから除外 ?>
+      <section class="openchat-graph-section" data-nosnippet style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
