@@ -90,6 +90,13 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
+
+        <?php if ($enableAdsense): ?>
+            <?php // 最近のコメントの上に高さ100px固定の横長1枠（ファーストビューより下のセクション間。高さ確保済みでCLSなし）。
+                  // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
+        <?php endif ?>
+
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
             <?php viewComponent('top_ranking_recent_comments') ?>
         <?php endif ?>

@@ -694,6 +694,11 @@ html.is-ios .site_header_outer.header-hidden {
   box-sizing: border-box;
 }
 
+/* 横長広告は前後のセクション(関連ルーム等)に密着しないよう上下に余白を確保 */
+.horizontal-ads-parent {
+  margin: 1rem 0;
+}
+
 .responsive-google-parent {
   padding: 0;
   box-sizing: border-box;

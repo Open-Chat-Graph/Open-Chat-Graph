@@ -35,9 +35,10 @@
                 </div>
             </div>
 
-            <?php // 手動広告(siteSeparatorResponsive)は撤去済み(impRPM¥45/CTR0.32%, 2026-06実測)。自動広告は維持。
+            <?php // CTA直後に高さ100px固定の横長1枠（旧auto形式はimpRPM¥45と低単価で一度撤去、横長で再設置）。
                   // SEO 流入の初見読者に Offerwall を出さないよう、blog では Offerwall のみタグ側で抑制する ?>
             <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
 
             <?php if (!empty($_faqHtml)): ?>
                 <div class="blog-faq"><?php echo $_faqHtml ?></div>
