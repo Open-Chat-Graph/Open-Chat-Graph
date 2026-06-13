@@ -339,7 +339,7 @@ Posted from: `<hostname>:<作業ディレクトリ>`
   ```
   <コミット本文>
 
-  🤖 Generated with Claude Code (Opus 4.8 / claude-opus-4-8[1m])
+  🤖 Generated with Claude Code (claude-opus-4-8[1m])
   Committed from: user-B550M-Pro4:~/repos/Open-Chat-Graph
   ```
 
