@@ -4,6 +4,7 @@ import SortIcon from '@mui/icons-material/Sort'
 import { isSP } from '../utils/utils'
 import { useSetListParams } from '../hooks/ListParamsHooks'
 import { t } from '../config/translation'
+import { trackEvent } from '../utils/track'
 
 export const rankingOptions2: SortOptions = [
   /* [['ランキング順', t('並び順')], 'asc', 'rank'], */
@@ -44,6 +45,7 @@ export const OCListSortMenu = memo(function OCListSortMenu({
   }
 
   const handleMenuItemClick = (e: ClickEvent, i: number) => {
+    trackEvent('ranking_action', { action: `sort:${options[i][2]}_${options[i][1]}` })
     setParams((params) => ({ ...params, order: options[i][1], sort: options[i][2] }))
     setAnchorEl(null)
   }

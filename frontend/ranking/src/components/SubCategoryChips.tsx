@@ -10,6 +10,7 @@ import { rankingArgDto } from '../config/config'
 import { useAtom } from 'jotai'
 import { subCategoryChipsStackScrollLeft } from '../store/atom'
 import { t } from '../config/translation'
+import { trackEvent } from '../utils/track'
 
 const Chips = memo(function Chips({
   sub_category,
@@ -22,6 +23,9 @@ const Chips = memo(function Chips({
   const existsProp = category && Object.hasOwn(rankingArgDto.subCategories, category)
 
   const handleChange = (newValue: ListParams['sub_category']) => {
+    if (newValue) {
+      trackEvent('ranking_action', { action: `subcategory:${newValue}` })
+    }
     setStackScrollLeft(stackParentRef.current?.scrollLeft || 0)
     setParams((params) => ({ ...params, sub_category: newValue }))
   }

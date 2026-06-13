@@ -2,6 +2,7 @@ import React, { memo } from 'react'
 import { Chip, Stack } from '@mui/material'
 import { useSetListParams } from '../hooks/ListParamsHooks'
 import { t } from '../config/translation'
+import { trackEvent } from '../utils/track'
 
 type ToggleButtons = [ListParams['list'], string][]
 
@@ -22,6 +23,7 @@ const ListToggleChips = memo(function ListToggleButton({
   const setParams = useSetListParams()
   const handleChange = (newList: ListParams['list']) => {
     if (newList) {
+      trackEvent('ranking_action', { action: `period:${newList}` })
       setParams((params) => ({ ...params, list: newList, order: '', sort: '' }))
     }
   }
