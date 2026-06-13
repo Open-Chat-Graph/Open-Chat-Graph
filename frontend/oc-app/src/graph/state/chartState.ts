@@ -262,6 +262,9 @@ export function handleChangeRankingRising(alignment: ToggleChart) {
 
   fetchChart(false)
   setUrlParamsFromChartStates()
+
+  // 順位グラフ種別: ranking=ランキング / rising=急上昇 / none=表示なし
+  trackEvent('chart_rank', { rank_type: alignment })
 }
 
 export function handleChangeEnableZoom(value: boolean) {
@@ -357,4 +360,7 @@ export function handleChangeChartMode(mode: ChartMode) {
 
   fetchChart(true)
   setUrlParamsFromChartStates()
+
+  // グラフ種別: candlestick=ローソク足 / line=折れ線
+  trackEvent('chart_mode', { mode })
 }
