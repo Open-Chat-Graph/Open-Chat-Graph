@@ -334,12 +334,11 @@ Posted from: `<hostname>:<作業ディレクトリ>`
 
 - モデルはその時のセッションの実際のモデルを書く（例: Opus 4.8 → `Generated with Claude Code (Opus 4.8 / `claude-opus-4-8[1m]`)`、Sonnet 4.6 のときは Sonnet 4.6）
 - `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値だが**ホームディレクトリは `~` に短縮**する（例: `/home/user/repos/Open-Chat-Graph` → `user-B550M-Pro4:~/repos/Open-Chat-Graph`）
-- **コミットメッセージにも毎回 同じ環境署名を入れる**（PR/issue/コメント本文だけでなく、全コミット）。コミットは従来の `Co-Authored-By: Claude ...` に加えて、末尾に環境署名行を付ける:
+- **コミットメッセージにも毎回 環境署名を入れる**（PR/issue/コメント本文だけでなく、全コミット）。末尾に署名2行を付ける。`Co-Authored-By: Claude ...` は 🤖 行とモデル情報が重複するので**付けない**（全廃）:
 
   ```
   <コミット本文>
 
-  Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
   🤖 Generated with Claude Code (Opus 4.8 / claude-opus-4-8[1m])
   Committed from: user-B550M-Pro4:~/repos/Open-Chat-Graph
   ```
