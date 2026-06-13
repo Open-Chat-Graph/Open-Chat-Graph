@@ -316,7 +316,7 @@ Posted from: `<hostname>:<作業ディレクトリ>`
 ```
 
 - モデルはその時のセッションの実際のモデルを書く（例: Opus 4.8 → `Generated with Claude Code (Opus 4.8 / `claude-opus-4-8[1m]`)`、Sonnet 4.6 のときは Sonnet 4.6）
-- `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値（例: `user-B550M-Pro4:/home/user/repos/Open-Chat-Graph`）
+- `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値だが**ホームディレクトリは `~` に短縮**する（例: `/home/user/repos/Open-Chat-Graph` → `user-B550M-Pro4:~/repos/Open-Chat-Graph`）
 - これは本文末尾の表示用ブロック。コミットメッセージ末尾の `Co-Authored-By: Claude ...` とは別物（コミットは従来どおり Co-Authored-By を付ける）
 
 ### Writing Clear Titles
