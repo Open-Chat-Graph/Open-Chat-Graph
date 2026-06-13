@@ -20,6 +20,7 @@ import SiteHeader from './SiteHeader'
 import { useInView } from 'react-intersection-observer'
 import { t } from '../config/translation'
 import RecommendThemeShelf from './RecommendThemeShelf'
+import { trackEvent } from '../utils/track'
 
 function LinkTab(props: { label?: string; href?: string }) {
   return (
@@ -75,6 +76,8 @@ function OcListSwiper({
   const onSlideChange = useCallback((swiper: SwiperCore) => {
     const newValue = swiper.activeIndex
     if (currentIndex.current === newValue) return
+
+    trackEvent('ranking_action', { action: `category:${OPEN_CHAT_CATEGORY[newValue][1]}` })
 
     setParams((params) => {
       const category = OPEN_CHAT_CATEGORY[newValue][1]

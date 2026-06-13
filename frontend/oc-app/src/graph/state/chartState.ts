@@ -3,6 +3,7 @@ import { graphStore } from './store'
 import { chartMeta, chatArgDto, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
 import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
+import { trackEvent } from '../../util/track'
 
 export const chart = new OpenChatChart()
 export const loadingAtom = atom(false)
@@ -234,6 +235,22 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   }
 
   setUrlParamsFromChartStates()
+  trackChartChange('period')
+}
+
+// グラフ操作はどれでも chart_change を送り、period/mode/rank_type/category の全状態と、
+// 今回変えた項目(changed)を毎回含める。これで「ローソク足×1ヶ月」等の組み合わせを集計できる。
+// (URLはreplaceStateで書くだけでGA4は遷移後を拾えないため、状態はイベントに載せる)
+function trackChartChange(changed: 'period' | 'mode' | 'rank' | 'category') {
+  const limit = graphStore.get(limitAtom)
+  const period = limit === 25 ? '24h' : limit === 8 ? '1week' : limit === 31 ? '1month' : 'all'
+  trackEvent('chart_change', {
+    changed,
+    period,
+    mode: graphStore.get(chartModeAtom),
+    rank_type: graphStore.get(rankingRisingAtom),
+    category: graphStore.get(categoryAtom),
+  })
 }
 
 export function handleChangeCategory(alignment: urlParamsValue<'category'> | null) {
@@ -241,6 +258,7 @@ export function handleChangeCategory(alignment: urlParamsValue<'category'> | nul
   graphStore.set(categoryAtom, alignment)
   fetchChart(false)
   setUrlParamsFromChartStates()
+  trackChartChange('category')
 }
 
 export function handleChangeRankingRising(alignment: ToggleChart) {
@@ -257,6 +275,7 @@ export function handleChangeRankingRising(alignment: ToggleChart) {
 
   fetchChart(false)
   setUrlParamsFromChartStates()
+  trackChartChange('rank')
 }
 
 export function handleChangeEnableZoom(value: boolean) {
@@ -352,4 +371,5 @@ export function handleChangeChartMode(mode: ChartMode) {
 
   fetchChart(true)
   setUrlParamsFromChartStates()
+  trackChartChange('mode')
 }

@@ -11,6 +11,7 @@ import { inputNameState } from '../state/inputNameState'
 import { appInitTagDto } from '../config/appInitTagDto'
 import { errorDialogState } from '../state/errorDialogState'
 import { imageFilesState } from '../state/imageFilesState'
+import { trackEvent } from '../../util/track'
 
 export default function CommentForm() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -70,6 +71,7 @@ export default function CommentForm() {
         setName('')
         setText('')
         setImageFiles([])
+        trackEvent('comment_submit', { has_image: currentImages.length > 0 })
       } catch (error) {
         console.error(error)
         let message: string

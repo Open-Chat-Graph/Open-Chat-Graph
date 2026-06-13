@@ -17,12 +17,12 @@
 
 .super-icon.official {
   width: 20px;
-  background-image: url(https://openchat-review.me/assets/line_svg_sprite.svg);
+  background-image: url(/../assets/line_svg_sprite.svg);
   background-position: -62px -76px;
 }
 
 .super-icon.sp {
-  background-image: url(https://openchat-review.me/assets/line_svg_sprite.svg);
+  background-image: url(/../assets/line_svg_sprite.svg);
   background-position: -33px -76px;
 }
 

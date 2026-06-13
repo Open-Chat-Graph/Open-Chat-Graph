@@ -7,6 +7,7 @@ import { getValidListParams } from '../hooks/ListParamsHooks'
 import { listParamsState, keywordState } from '../store/atom'
 import { useMediaQuery } from '@mui/material'
 import OcListMainTabsVertical from '../components/OcListMainTabsVertical'
+import KeywordSearchTracker from '../components/KeywordSearchTracker'
 
 export default function OCListPage() {
   const { category } = useParams()
@@ -33,6 +34,7 @@ export default function OCListPage() {
 
   return (
     <Provider store={store}>
+      <KeywordSearchTracker />
       {matches ? (
         <OcListMainTabsVertical cateIndex={cateIndex} />
       ) : (

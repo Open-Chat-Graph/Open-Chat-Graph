@@ -11,6 +11,7 @@ import SiteHeaderVertical from './SiteHeaderVertical'
 import SiteHeaderVerticalSearch from './SiteHeaderVerticalSearch'
 import { t } from '../config/translation'
 import RecommendThemeShelf from './RecommendThemeShelf'
+import { trackEvent } from '../utils/track'
 
 function TabPanel({ children, value, index }: TabPanelProps) {
   return <div hidden={value !== index}>{value === index && children}</div>
@@ -36,6 +37,8 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
 
   const handleChange = (e: React.SyntheticEvent, newValue: number) => {
     if (e.type === 'click' && !samePageLinkNavi(e as LinkEvent)) return
+
+    trackEvent('ranking_action', { action: `category:${OPEN_CHAT_CATEGORY[newValue][1]}` })
 
     const category = OPEN_CHAT_CATEGORY[newValue][1]
     const url = updateURLSearchParams({ ...params, sub_category: '' })
