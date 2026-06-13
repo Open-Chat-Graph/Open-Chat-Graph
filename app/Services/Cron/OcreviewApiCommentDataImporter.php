@@ -605,22 +605,8 @@ class OcreviewApiCommentDataImporter
             return;
         }
 
-        // レコード数を取得（ログ用）
-        $sourceCount = $this->sourceCommentPdo->query("SELECT COUNT(*) FROM {$sourceTable}")->fetchColumn();
-        $targetCount = $this->targetPdo->query("SELECT COUNT(*) FROM {$targetTable}")->fetchColumn();
-
-        AdminTool::sendDiscordNotify(sprintf(
-            '【%s】不足レコード検出: %d 件のソースレコードがターゲットに存在しません (ソース: %d, ターゲット: %d)',
-            $targetTable,
-            count($missingIds),
-            $sourceCount,
-            $targetCount
-        ));
-
         // 不足しているレコードを100件ずつチャンクで取得・挿入
         $this->insertMissingRecords($sourceTable, $targetTable, $sourceIdColumn, $missingIds, $transformCallback);
-
-        AdminTool::sendDiscordNotify(sprintf('【%s】不足レコード挿入完了: %d 件', $targetTable, count($missingIds)));
     }
 
     /**

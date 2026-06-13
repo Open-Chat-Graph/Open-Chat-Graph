@@ -35,10 +35,9 @@
                 </div>
             </div>
 
-            <?php // CTA直後にOC横長1枠（固定）。
-                  // SEO 流入の初見読者に Offerwall を出さないよう、blog では Offerwall のみタグ側で抑制する ?>
+            <?php // SEO 流入の初見読者に Offerwall を出さないよう、blog では Offerwall のみタグ側で抑制する
+                  // （広告枠 ocTopHorizontal はフッター直前に出力する） ?>
             <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
-            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
 
             <?php if (!empty($_faqHtml)): ?>
                 <div class="blog-faq"><?php echo $_faqHtml ?></div>
@@ -57,6 +56,8 @@
             <?php endif ?>
         </article>
     </main>
+    <?php // フッター直前にOC横長1枠（固定）。adblock検出の維持も兼ねる ?>
+    <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <?php viewComponent('footer_inner') ?>
     <?php echo $_breadcrumbsShema ?>

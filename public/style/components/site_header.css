@@ -681,10 +681,30 @@ html.is-ios .site_header_outer.header-hidden {
   aspect-ratio: 1;
 }
 
+/* 横長広告: 画面幅ごとに標準的なバナーサイズへ。
+   モバイル 320x100（大モバイルバナー）/ タブレット 468x60 / PC 728x90（リーダーボード）。
+   固定サイズなので CLS が出ず、配信枠とクリエイティブのサイズが一致して
+   左右の白い余白が出ない（中央寄せ・両脇はページ背景になじむ）。 */
 .horizontal-ads {
-  width: auto;
+  display: block;
+  width: 320px;
   height: 100px;
-  max-height: 100px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+@media screen and (min-width: 500px) {
+  .horizontal-ads {
+    width: 468px;
+    height: 60px;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .horizontal-ads {
+    width: 728px;
+    height: 90px;
+  }
 }
 
 .rectangle-ads-parent,
@@ -725,6 +745,17 @@ html.is-ios .site_header_outer.header-hidden {
   display: block;
   background: var(--c-bg-sub);
 }
+
+/* 自動広告がフィード内に自動挿入する枠の地色をページ背景になじませる
+   （ダークモード時に枠まわりが白く浮くのを防ぐ）。クリエイティブ(iframe)の
+   中身は Google 配信なので変えられないが、枠の余白はこちらで暗色化できる。 */
+.google-auto-placed {
+  background: var(--c-bg);
+}
+
+/* アンカー広告（最下部の固定バー）の暗色化はCSSでは不可・未対応。
+   Google が ins 背景を inライン !important で当てる（外部CSSは負ける）うえ、
+   「∨」閉じタブは closed shadow 内に描画され adoptedStyleSheets も届かないため。 */
 
 .rectangle2-ads {
   width: auto;
