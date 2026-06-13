@@ -27,9 +27,101 @@ const ADBLOCK_NOTICE_MESSAGES = {
   },
 }
 
+// GA4 計測。アドブロック利用者の多くは GA/GTM ドメインごと遮断するため、
+// 「ブロックされた瞬間」の送信はそもそも届かない。そこで送信せずローカルに記録だけ残し、
+// 後日 広告が正常表示された(=ブロッカー解除/許可リスト追加された)訪問で初めて GA に送る。
+// → 「ブロック → 解除」に転じた数(=オーバーレイが効いて広告を見るようになった数)が取れる。
+const GA_MEASUREMENT_ID = 'G-DBS3CW3XH5'
+const BLOCKED_FLAG_KEY = 'ocgab_blocked_at'
+
+// 検出した端末にフラグ(初回ブロック時刻)を残す。送信はしない(この瞬間は届かない前提)。
+function markBlockedLocally() {
+  try {
+    if (!localStorage.getItem(BLOCKED_FLAG_KEY)) {
+      localStorage.setItem(BLOCKED_FLAG_KEY, String(Date.now()))
+    }
+  } catch (e) {}
+}
+
+// GTM とは別に gtag.js を読み込み、カスタムイベントを GA4 へ直送する。
+// send_page_view:false なのでページビューは二重計上しない。本番ホストのみ。
+function sendGaEvent(name, params) {
+  if (location.hostname !== 'openchat-review.me') return
+  try {
+    window.dataLayer = window.dataLayer || []
+    if (!window.gtag) {
+      window.gtag = function () {
+        window.dataLayer.push(arguments)
+      }
+    }
+    if (!window.__ocgabGtagLoaded) {
+      window.__ocgabGtagLoaded = true
+      const s = document.createElement('script')
+      s.async = true
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID
+      document.head.appendChild(s)
+      window.gtag('js', new Date())
+      window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false })
+    }
+    window.gtag('event', name, params || {})
+  } catch (e) {}
+}
+
+// 広告が実際に表示されているか(潰されていない iframe が1枚以上ある)
+function adsAreRendering() {
+  let filled = 0
+  document
+    .querySelectorAll('.adsbygoogle[data-adsbygoogle-status="done"]')
+    .forEach((el) => {
+      if (el.getAttribute('data-ad-status') === 'unfilled') return
+      const iframe = el.querySelector('iframe')
+      if (!iframe) return
+      const style = window.getComputedStyle(iframe)
+      if (parseFloat(style.width) > 1 && parseFloat(style.height) > 1) filled++
+    })
+  return filled > 0
+}
+
+// 前回ブロックされた端末で、今回 広告が正常表示された=解除された とみなし GA に送る。
+function reportRecoveryIfNeeded() {
+  let raw
+  try {
+    raw = localStorage.getItem(BLOCKED_FLAG_KEY)
+  } catch (e) {
+    return
+  }
+  if (!raw) return
+  // まだ広告が出ていない / まだ潰されている間は判定しない
+  if (!adsAreRendering() || detectAdBlock()) return
+
+  // 二重送信を防ぐためフラグ削除に成功してから送る
+  try {
+    localStorage.removeItem(BLOCKED_FLAG_KEY)
+  } catch (e) {
+    return
+  }
+
+  const blockedAt = parseInt(raw, 10)
+  const elapsedMs = Date.now() - blockedAt
+  const THIRTY_DAYS = 30 * 24 * 3600 * 1000
+  // 不正値・古すぎる(30日超)は帰属できないので送らず破棄
+  if (!(blockedAt > 0) || elapsedMs < 0 || elapsedMs > THIRTY_DAYS) return
+
+  const bucket =
+    elapsedMs < 30 * 60 * 1000
+      ? 'within_30min'
+      : elapsedMs < 24 * 3600 * 1000
+      ? 'within_1day'
+      : 'within_30days'
+  sendGaEvent('adblock_recovered', { recovery_elapsed: bucket })
+}
+
 function whiteOut() {
   // 多重表示を防ぐ
   if (document.getElementById('ocgab-overlay')) return
+
+  // この端末は「ブロックされた」とローカルに記録(後日の解除検出に使う)
+  markBlockedLocally()
 
   // 現在の表示言語を <html lang> から判定 (ja / zh-TW → zh / th / その他 → en)
   const rawLang = (document.documentElement.lang || 'ja').toLowerCase()
@@ -291,4 +383,14 @@ if (typeof admin === 'undefined' || !admin) {
   // すでに潰れている場合に備えた初回チェック
   tryDetect()
   console.log('AdBlock検出の監視を開始しました')
+}
+
+if (typeof admin === 'undefined' || !admin) {
+  // 「ブロック → 解除」計測。前回ブロックされた端末で広告が正常表示されたら GA に送る。
+  // 広告は遅延描画されるので load 後に数回リトライ(送信は一度きり: フラグ削除で以後no-op)。
+  window.addEventListener('load', function () {
+    reportRecoveryIfNeeded()
+    setTimeout(reportRecoveryIfNeeded, 2000)
+    setTimeout(reportRecoveryIfNeeded, 5000)
+  })
 }
