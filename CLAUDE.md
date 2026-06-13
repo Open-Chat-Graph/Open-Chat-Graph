@@ -16,6 +16,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ただし禁止対象は「本番DBを壊す mock環境操作」だけ。**phpunit（`docker compose exec app vendor/bin/phpunit <path>`）や curl でローカル環境を叩く類のテストは普通に実行してよい**（「テスト全般がNG」ではない）
 - `DATA_PROTECTION=false` のときはテスト実行も mock環境の操作も自己判断で自由に行ってよい
 
+## インフラ操作（oc-infra スキル・本人のみ）
+
+GA4 / GTM / Search Console / AdSense・Cloudflare・本番/stg の SSH・MySQL など、このリポの外側にある
+インフラを操作する必要が出たら、プライベートリポ `oc-infra` をクローンして Claude Code スキルとして
+登録して使う。1 つのトークン/設定束で各サービスを叩ける（詳細は oc-infra の `SKILL.md`）。
+
+```bash
+git clone https://github.com/mimimiku778/oc-infra.git ~/repos/oc-infra
+ln -sfn ~/repos/oc-infra ~/.claude/skills/oc-infra   # /oc-infra スキルとして登録
+TOK=$(python3 ~/repos/oc-infra/token.py)             # Google API アクセストークン
+```
+
+- 中身: Google OAuth トークン(write/manage 可) / Cloudflare API トークン(prod・stg) / 本番・stg の
+  SSH 接続情報・MySQL 認証・SSH 秘密鍵 / 本番 secrets / `cf_sync.py`(CF 設定 stg⇄prod 同期) 等。
+- `batch/sh/prod-sync` の機密(`secrets/`)もこのリポから取得する（Makefile の `PROD_SYNC_CONFIG_URL`）。
+- **このリポは private で本人(mimimiku778)しかアクセスできない**。他の利用者は使えない（=インフラ操作は本人環境限定）。
+
 ## Development Environment
 
 ### Docker Setup

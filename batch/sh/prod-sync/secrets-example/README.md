@@ -8,12 +8,13 @@
 ## 必要なファイル
 
 ```
-secrets/
+secrets/                          # = oc-infra リポを clone したもの
 ├── prod-sync/
 │   ├── prod-sync.env             # 接続情報 (REMOTE_SERVER, パスワード等)
 │   └── local-secrets.tmpl.php    # PHP 設定テンプレ (envsubst で展開される)
-└── ssh/
-    └── ocgraph.key               # 本番サーバ SSH 秘密鍵 (chmod 600)
+└── servers/
+    └── ssh/
+        └── ocgraph.key           # 本番サーバ SSH 秘密鍵 (chmod 600)
 ```
 
 ## 動作
