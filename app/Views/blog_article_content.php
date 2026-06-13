@@ -35,10 +35,10 @@
                 </div>
             </div>
 
-            <?php // CTA直後に高さ100px固定の横長1枠（旧auto形式はimpRPM¥45と低単価で一度撤去、横長で再設置）。
+            <?php // CTA直後にOC横長1枠（固定）。
                   // SEO 流入の初見読者に Offerwall を出さないよう、blog では Offerwall のみタグ側で抑制する ?>
             <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
-            <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
 
             <?php if (!empty($_faqHtml)): ?>
                 <div class="blog-faq"><?php echo $_faqHtml ?></div>

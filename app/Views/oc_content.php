@@ -212,9 +212,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     <?php viewComponent('oc_recommend_aside', ['similarSize' => $_similarSize, 'recommend' => $_recommend, 'oc' => $oc]) ?>
 
     <?php if ($enableAdsense): ?>
-      <?php // 関連ルームの下に高さ100px固定の横長1枠（高さ確保済みでCLSなし。回遊導線は遮らない）。
+      <?php // 関連ルームの下にOC横長1枠（固定。高さ確保済みでCLSなし。回遊導線は遮らない）。
             // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('ocSeparatorResponsive') ?>
+      <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
 
 
