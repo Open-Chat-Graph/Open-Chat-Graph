@@ -389,6 +389,20 @@ CI Test (`ci.yml`) は Mock環境のクローリング+URLテストのみで、*
 
 Example: `skip-ci: Fix typo in README`
 
+**デフォルト方針（PHPを触らない PR は skip-ci）:**
+CI(`ci.yml`)は Mock環境のクローリング+URLテストなので、その挙動は基本的に PHP 側で決まる。
+そのため **PHP コードを一切変更していない PR は、デフォルトで skip-ci にする**（フロントJS/CSS・
+ドキュメント・翻訳JSON 等だけの変更）。確実に効かせるため **PR タイトルを `skip-ci:` 始まりにする**
+（ラベルだけは PR 作成時にレースして効かないことがある。既存 PR に後付けする場合は、ラベルを
+付けてから次の push をすると `synchronize` で再評価されて効く）。
+
+**例外（PHP を触っていなくても skip-ci を付けない）:**
+PHP 非変更でも CI を通した方がよいと判断したら付けない。例:
+
+- ルーティング・ページ表示に影響しうる View テンプレート/JS の変更（URLテストで表示崩れ・500 を拾える）
+- mock 環境・クローラ設定・依存（composer/npm）・CI 設定(`ci.yml`/`docker-compose.ci.yml`)自体の変更
+- 挙動への影響に少しでも不安がある変更
+
 **Important**: When `skip-ci` is used:
 
 - CI tests (`ci.yml` の Mock クローリング+URLテスト) are skipped
