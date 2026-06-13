@@ -305,6 +305,20 @@ Views go in `/app/Views/`:
 
 ## Pull Request Guidelines
 
+### Signing GitHub Posts（必須）
+
+GitHubに投稿する本文（PR本文・issue・PR/issueコメント等）の**末尾**に、区切り線を入れて以下の署名ブロックを付ける。どのマシン・ディレクトリから、どのモデル・ツールで投稿されたかを残すため。
+
+```markdown
+---
+🤖 Generated with Claude Code (<モデル表示名> / `<モデルID>`)
+Posted from: `<hostname>:<作業ディレクトリ>`
+```
+
+- モデルはその時のセッションの実際のモデルを書く（例: Opus 4.8 → `Generated with Claude Code (Opus 4.8 / `claude-opus-4-8[1m]`)`、Sonnet 4.6 のときは Sonnet 4.6）
+- `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値（例: `user-B550M-Pro4:/home/user/repos/Open-Chat-Graph`）
+- これは本文末尾の表示用ブロック。コミットメッセージ末尾の `Co-Authored-By: Claude ...` とは別物（コミットは従来どおり Co-Authored-By を付ける）
+
 ### Writing Clear Titles
 
 **IMPORTANT**: PR titles appear on social media and should be understandable by the general public.
