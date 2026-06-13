@@ -3,6 +3,7 @@ import { graphStore } from './store'
 import { chartMeta, chatArgDto, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
 import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
+import { trackEvent } from '../../util/track'
 
 export const chart = new OpenChatChart()
 export const loadingAtom = atom(false)
@@ -234,6 +235,10 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   }
 
   setUrlParamsFromChartStates()
+
+  // limit値→期間: 25=最新24時間 / 8=1週間 / 31=1ヶ月 / 0=全期間
+  const period = limit === 25 ? '24h' : limit === 8 ? '1week' : limit === 31 ? '1month' : 'all'
+  trackEvent('chart_period', { period })
 }
 
 export function handleChangeCategory(alignment: urlParamsValue<'category'> | null) {
