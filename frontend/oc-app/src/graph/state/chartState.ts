@@ -235,10 +235,22 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   }
 
   setUrlParamsFromChartStates()
+  trackChartChange('period')
+}
 
-  // limit値→期間: 25=最新24時間 / 8=1週間 / 31=1ヶ月 / 0=全期間
+// グラフ操作はどれでも chart_change を送り、period/mode/rank_type/category の全状態と、
+// 今回変えた項目(changed)を毎回含める。これで「ローソク足×1ヶ月」等の組み合わせを集計できる。
+// (URLはreplaceStateで書くだけでGA4は遷移後を拾えないため、状態はイベントに載せる)
+function trackChartChange(changed: 'period' | 'mode' | 'rank' | 'category') {
+  const limit = graphStore.get(limitAtom)
   const period = limit === 25 ? '24h' : limit === 8 ? '1week' : limit === 31 ? '1month' : 'all'
-  trackEvent('chart_period', { period })
+  trackEvent('chart_change', {
+    changed,
+    period,
+    mode: graphStore.get(chartModeAtom),
+    rank_type: graphStore.get(rankingRisingAtom),
+    category: graphStore.get(categoryAtom),
+  })
 }
 
 export function handleChangeCategory(alignment: urlParamsValue<'category'> | null) {
@@ -246,6 +258,7 @@ export function handleChangeCategory(alignment: urlParamsValue<'category'> | nul
   graphStore.set(categoryAtom, alignment)
   fetchChart(false)
   setUrlParamsFromChartStates()
+  trackChartChange('category')
 }
 
 export function handleChangeRankingRising(alignment: ToggleChart) {
@@ -262,9 +275,7 @@ export function handleChangeRankingRising(alignment: ToggleChart) {
 
   fetchChart(false)
   setUrlParamsFromChartStates()
-
-  // 順位グラフ種別: ranking=ランキング / rising=急上昇 / none=表示なし
-  trackEvent('chart_rank', { rank_type: alignment })
+  trackChartChange('rank')
 }
 
 export function handleChangeEnableZoom(value: boolean) {
@@ -360,7 +371,5 @@ export function handleChangeChartMode(mode: ChartMode) {
 
   fetchChart(true)
   setUrlParamsFromChartStates()
-
-  // グラフ種別: candlestick=ローソク足 / line=折れ線
-  trackEvent('chart_mode', { mode })
+  trackChartChange('mode')
 }
