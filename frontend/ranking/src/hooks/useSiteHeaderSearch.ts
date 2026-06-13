@@ -5,6 +5,7 @@ import { useSetListParams } from './ListParamsHooks'
 import { useAtomValue } from 'jotai'
 import { keywordState } from '../store/atom'
 import { langCode } from '../config/config'
+import { trackEvent } from '../utils/track'
 
 export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => void) | undefined) {
   const [open, setOpen] = useState(false)
@@ -86,6 +87,8 @@ export default function useSiteHeaderSearch(siperSlideTo?: ((index: number) => v
       if (keyword.length > maxLength) {
         keyword = keyword.substring(0, maxLength)
       }
+
+      trackEvent('search', { search_term: keyword })
 
       if (siperSlideTo) {
         setParams((params) => {
