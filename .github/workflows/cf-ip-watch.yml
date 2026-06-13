@@ -1,0 +1,62 @@
+name: Cloudflare IP watch
+
+# Cloudflare の公開IPレンジ変化を検知して Discord に通知する。
+# オリジンの .htaccess は「CFのIPレンジ + 127.0.0.1 のみ許可」しているため、CF が新レンジを
+# 追加すると、その新レンジ経由の正規トラフィックがオリジンで 403 になりサイトが壊れる。
+# 変化を検知したら oc-infra の allowlist (prod-sync/htaccess/{prod,stg}/.htaccess) 更新を促す。
+#
+# スナップショット: .github/cloudflare-ips.txt（変化時に自動更新して再通知を防ぐ）
+# ※ scheduled は default ブランチ(main)からのみ実行される。
+
+on:
+  schedule:
+    - cron: '17 2 * * *' # 毎日 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare IP ranges
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          export LC_ALL=C   # sort/comm/diff のロケール差で誤判定しないよう統一
+          SNAP=.github/cloudflare-ips.txt
+          { curl -fsS --max-time 20 https://www.cloudflare.com/ips-v4; echo; \
+            curl -fsS --max-time 20 https://www.cloudflare.com/ips-v6; } \
+            | grep -vE '^[[:space:]]*$' | sort -u > /tmp/cf_now
+          if [ ! -s /tmp/cf_now ]; then echo "CF IP取得に失敗"; exit 1; fi
+          [ -f "$SNAP" ] || cp /tmp/cf_now "$SNAP"
+
+          if diff -q "$SNAP" /tmp/cf_now >/dev/null; then
+            echo "Cloudflare IP ranges unchanged ($(wc -l < /tmp/cf_now) ranges)."
+            exit 0
+          fi
+
+          ADDED=$(comm -13 "$SNAP" /tmp/cf_now);   [ -n "$ADDED" ]   || ADDED='(なし)'
+          REMOVED=$(comm -23 "$SNAP" /tmp/cf_now); [ -n "$REMOVED" ] || REMOVED='(なし)'
+          MSG=$(printf '%s\n\n%s\n%s\n\n%s\n%s\n\n%s' \
+            "⚠️ Cloudflare のIPレンジが変わりました。オリジンの .htaccess allowlist を更新してください（oc-infra: prod-sync/htaccess/{prod,stg}/.htaccess → 各サーバへ反映）。" \
+            "■ 追加:" "$ADDED" \
+            "■ 削除:" "$REMOVED" \
+            "更新しないと、新レンジ経由の正規アクセスがオリジンで 403 になります。")
+          echo "::warning::Cloudflare IP ranges changed"
+          echo "$MSG"
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            curl -fsS -H "Content-Type: application/json" \
+              -d "$(jq -nc --arg c "$MSG" '{content: $c}')" "$DISCORD_WEBHOOK" || echo "Discord通知失敗"
+          fi
+
+          # スナップショット更新（同じ変化で毎日通知し続けないように）
+          cp /tmp/cf_now "$SNAP"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$SNAP"
+          git commit -m "chore: Cloudflare IP スナップショット更新 [skip ci]" || exit 0
+          git push || true
