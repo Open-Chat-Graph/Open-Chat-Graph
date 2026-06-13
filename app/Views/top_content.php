@@ -91,12 +91,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
-        <?php if ($enableAdsense): ?>
-            <?php // 最近のコメントの上にOC横長1枠（固定。高さ確保済みでCLSなし）。
-                  // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
-        <?php endif ?>
-
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
             <?php viewComponent('top_ranking_recent_comments') ?>
         <?php endif ?>
@@ -107,6 +101,12 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
+
+        <?php if ($enableAdsense): ?>
+            <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
+                  // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
+        <?php endif ?>
 
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">

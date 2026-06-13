@@ -200,6 +200,12 @@ ins.adsbygoogle[data-anchor-status='dismissed'] {
   display: none !important;
 }
 
+/* 自動広告がフィード内に自動挿入する枠の地色をページ背景になじませる
+   （ダークモード時に枠まわりが白く浮くのを防ぐ）。 */
+.google-auto-placed {
+  background: var(--c-bg);
+}
+
 ins.adsbygoogle[data-ad-status='unfilled'] {
   background: var(--c-bg-sub);
   position: relative;

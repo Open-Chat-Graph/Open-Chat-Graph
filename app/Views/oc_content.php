@@ -211,12 +211,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     <?php // 関連ルーム(類似サイズ/おすすめ)は recommend 静的キャッシュ(.dat)から都度組み立て（MySQL不使用） ?>
     <?php viewComponent('oc_recommend_aside', ['similarSize' => $_similarSize, 'recommend' => $_recommend, 'oc' => $oc]) ?>
 
-    <?php if ($enableAdsense): ?>
-      <?php // 関連ルームの下にOC横長1枠（固定。高さ確保済みでCLSなし。回遊導線は遮らない）。
-            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('ocTopHorizontal') ?>
-    <?php endif ?>
-
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
@@ -238,6 +232,12 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         </script>
         <div id="comment-root"></div>
       </section>
+    <?php endif ?>
+
+    <?php if ($enableAdsense): ?>
+      <?php // コメントの下・フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
+            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+      <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
     <?php viewComponent('footer_inner') ?>
 

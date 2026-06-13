@@ -1049,19 +1049,6 @@ class OcreviewApiDataImporter
             return;
         }
 
-        // レコード数を取得（ログ用）
-        $sourceCountQuery = "SELECT COUNT(*) FROM {$sourceTable}" . ($sourceWhereClause ? " WHERE {$sourceWhereClause}" : "");
-        $sourceCount = $sourcePdo->query($sourceCountQuery)->fetchColumn();
-        $targetCount = $targetPdo->query("SELECT COUNT(*) FROM {$targetTable}")->fetchColumn();
-
-        AdminTool::sendDiscordNotify(sprintf(
-            '【%s】不足レコード検出: %d 件のソースレコードがターゲットに存在しません (ソース: %d, ターゲット: %d)',
-            $targetTable,
-            count($missingIds),
-            $sourceCount,
-            $targetCount
-        ));
-
         // 不足しているレコードを100件ずつチャンクで取得・挿入
         $this->insertMissingRecords(
             $sourcePdo,
@@ -1072,8 +1059,6 @@ class OcreviewApiDataImporter
             $missingIds,
             $transformCallback
         );
-
-        AdminTool::sendDiscordNotify(sprintf('【%s】不足レコード挿入完了: %d 件', $targetTable, count($missingIds)));
     }
 
     /**

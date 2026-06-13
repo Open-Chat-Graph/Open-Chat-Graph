@@ -96,14 +96,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     </section>
 
-    <?php if ($enableAdsense && isset($recommend)): ?>
-      <?php // ランキングリスト直下にOC横長1枠（固定。リストは分断しない。高さ確保済みでCLSなし）。
-            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('ocTopHorizontal') ?>
-    <?php endif ?>
-
     <?php if (isset($_discovery) && !$_discovery->isEmpty()) : ?>
       <?php viewComponent('theme_discovery', ['discovery' => $_discovery]) ?>
+    <?php endif ?>
+
+    <?php if ($enableAdsense && isset($recommend)): ?>
+      <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
+            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+      <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
 
     <?php viewComponent('footer_inner') ?>
