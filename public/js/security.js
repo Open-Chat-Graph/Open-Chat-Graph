@@ -27,12 +27,17 @@ const ADBLOCK_NOTICE_MESSAGES = {
   },
 }
 
-// GA4 計測。アドブロック利用者の多くは GA/GTM ドメインごと遮断するため、
+// GA4 計測(GTM経由)。アドブロック利用者の多くは GA/GTM ドメインごと遮断するため、
 // 「ブロックされた瞬間」の送信はそもそも届かない。そこで送信せずローカルに記録だけ残し、
-// 後日 広告が正常表示された(=ブロッカー解除/許可リスト追加された)訪問で初めて GA に送る。
+// 後日 広告が正常表示された(=ブロッカー解除/許可リスト追加された)訪問で初めて送る。
 // → 「ブロック → 解除」に転じた数(=オーバーレイが効いて広告を見るようになった数)が取れる。
-const GA_MEASUREMENT_ID = 'G-DBS3CW3XH5'
+//
+// 送信は GTM の dataLayer 経由。GA4 ID(G-DBS3CW3XH5)はこのサイトでは GTM が所有しており、
+// 自前で gtag.js を読み込んで直送してもイベントが弾かれて GA4 に届かない(検証済み)。そのため
+// window.dataLayer に event を push し、GTM 側の「カスタムイベント トリガー(adblock_recovered)」
+// ＋「GA4 イベントタグ」で GA4 へ転送する。
 const BLOCKED_FLAG_KEY = 'ocgab_blocked_at'
+const RECOVERY_EVENT_NAME = 'adblock_recovered'
 
 // 検出した端末にフラグ(初回ブロック時刻)を残す。送信はしない(この瞬間は届かない前提)。
 function markBlockedLocally() {
@@ -43,27 +48,12 @@ function markBlockedLocally() {
   } catch (e) {}
 }
 
-// GTM とは別に gtag.js を読み込み、カスタムイベントを GA4 へ直送する。
-// send_page_view:false なのでページビューは二重計上しない。本番ホストのみ。
-function sendGaEvent(name, params) {
+// GTM の dataLayer にカスタムイベントを push する(GTM タグが GA4 へ転送)。本番ホストのみ。
+function pushDataLayerEvent(name, params) {
   if (location.hostname !== 'openchat-review.me') return
   try {
     window.dataLayer = window.dataLayer || []
-    if (!window.gtag) {
-      window.gtag = function () {
-        window.dataLayer.push(arguments)
-      }
-    }
-    if (!window.__ocgabGtagLoaded) {
-      window.__ocgabGtagLoaded = true
-      const s = document.createElement('script')
-      s.async = true
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID
-      document.head.appendChild(s)
-      window.gtag('js', new Date())
-      window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false })
-    }
-    window.gtag('event', name, params || {})
+    window.dataLayer.push(Object.assign({ event: name }, params || {}))
   } catch (e) {}
 }
 
@@ -82,7 +72,7 @@ function adsAreRendering() {
   return filled > 0
 }
 
-// 前回ブロックされた端末で、今回 広告が正常表示された=解除された とみなし GA に送る。
+// 前回ブロックされた端末で、今回 広告が正常表示された=解除された とみなし送信する。
 function reportRecoveryIfNeeded() {
   let raw
   try {
@@ -91,29 +81,34 @@ function reportRecoveryIfNeeded() {
     return
   }
   if (!raw) return
-  // まだ広告が出ていない / まだ潰されている間は判定しない
+  // まだ広告が出ていない / まだ潰されている間はフラグを触らず見送る(次の機会に再判定)
   if (!adsAreRendering() || detectAdBlock()) return
-
-  // 二重送信を防ぐためフラグ削除に成功してから送る
-  try {
-    localStorage.removeItem(BLOCKED_FLAG_KEY)
-  } catch (e) {
-    return
-  }
 
   const blockedAt = parseInt(raw, 10)
   const elapsedMs = Date.now() - blockedAt
   const THIRTY_DAYS = 30 * 24 * 3600 * 1000
-  // 不正値・古すぎる(30日超)は帰属できないので送らず破棄
-  if (!(blockedAt > 0) || elapsedMs < 0 || elapsedMs > THIRTY_DAYS) return
 
+  // 不正値・古すぎる(30日超)は帰属できないので送らずフラグだけ掃除する
+  if (!(blockedAt > 0) || elapsedMs > THIRTY_DAYS) {
+    try {
+      localStorage.removeItem(BLOCKED_FLAG_KEY)
+    } catch (e) {}
+    return
+  }
+
+  // 経過時間バケット(端末時計のズレで負になっても最短扱いにして送る)
   const bucket =
     elapsedMs < 30 * 60 * 1000
       ? 'within_30min'
       : elapsedMs < 24 * 3600 * 1000
       ? 'within_1day'
       : 'within_30days'
-  sendGaEvent('adblock_recovered', { recovery_elapsed: bucket })
+
+  // 送信してからフラグを消す(送信前に消すと、未送信のまま消える事故が起きるため)
+  pushDataLayerEvent(RECOVERY_EVENT_NAME, { recovery_elapsed: bucket })
+  try {
+    localStorage.removeItem(BLOCKED_FLAG_KEY)
+  } catch (e) {}
 }
 
 function whiteOut() {
