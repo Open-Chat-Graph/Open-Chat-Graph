@@ -334,7 +334,18 @@ Posted from: `<hostname>:<作業ディレクトリ>`
 
 - モデルはその時のセッションの実際のモデルを書く（例: Opus 4.8 → `Generated with Claude Code (Opus 4.8 / `claude-opus-4-8[1m]`)`、Sonnet 4.6 のときは Sonnet 4.6）
 - `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値だが**ホームディレクトリは `~` に短縮**する（例: `/home/user/repos/Open-Chat-Graph` → `user-B550M-Pro4:~/repos/Open-Chat-Graph`）
-- これは本文末尾の表示用ブロック。コミットメッセージ末尾の `Co-Authored-By: Claude ...` とは別物（コミットは従来どおり Co-Authored-By を付ける）
+- **コミットメッセージにも毎回 同じ環境署名を入れる**（PR/issue/コメント本文だけでなく、全コミット）。コミットは従来の `Co-Authored-By: Claude ...` に加えて、末尾に環境署名行を付ける:
+
+  ```
+  <コミット本文>
+
+  Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+  🤖 Generated with Claude Code (Opus 4.8 / claude-opus-4-8[1m])
+  Committed from: user-B550M-Pro4:~/repos/Open-Chat-Graph
+  ```
+
+  - モデル・hostname・ディレクトリの書き方は上記と同じ（ホームは `~` 短縮、リポごとに実ディレクトリを書く）。
+  - **このルールは infra リポ(oc-infra)など他リポのコミットにも全て適用する**。
 
 ### Writing Clear Titles
 
