@@ -203,11 +203,11 @@ jobs:
 
       # デプロイ直後のスモークテスト（最小限・数秒で完了）
       # 失敗するとjobがfailし、既存の「Notify Discord (deploy failure)」で通知される
-      # GitHub runnerのIPはCloudflareにチャレンジされ全UAで403になるため（2026-06-12実証）、
-      # デプロイ先サーバー自身から公開URL経由で実行する
-      # 本番はサーバー自身からのcurlもCFチャレンジで403になるため（2026-06-13実証）STGのみ実行
+      # デプロイ先サーバー自身から実行する。CFのbotチャレンジを避けるため、smokeスクリプト内で
+      # curlを --resolve <host>:443:<サーバー自身の公開IP> にしてCFを迂回する（オリジン直叩き）。
+      # オリジンIPはサーバー上で hostname -I から動的取得（リポにもCIにも置かない＝漏洩防止）。
+      # これで prod/stg どちらも 200 が返る（2026-06-13実証）。CFはデプロイと無関係なので趣旨は満たす。
       - name: Post-deploy smoke test
-        if: env.IS_STG == 'true'
         run: |
           ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} \
             "cd ${{ steps.config.outputs.ssh_path }} && SITE_URL=${{ steps.config.outputs.tweet_url }} IS_STG=${IS_STG} bash .github/scripts/post-deploy-smoke.sh"
@@ -285,14 +285,19 @@ jobs:
               //  1. 末尾の "🤖 Generated with..." / "Co-Authored-By:" を除外
               //  2. URL を全部除去 (X API は URL 含むツイートで $0.20、無しで $0.015 と
               //     13 倍コスト差。本文中のリンク経由で URL が混入するのを防ぐ)
+              //     スキーム付き(https://…)だけでなく、X が自動リンク化する裸ドメイン
+              //     (google-analytics.com / openchat-review.me 等)も既知TLDで除去する。
+              //     ※ .js / .yml / 4.6 等は TLD ホワイトリスト外なので消えない。
               //  3. markdown ヘッダ (#, ##, ### …) の直下の空行のみ詰める
               //     (段落間の空行は読みやすさのため残す)
+              const bareDomain = /\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:com|net|org|me|io|jp|co|dev|app|ai|info|gg|tv|xyz|site|page)\b(?:\/[^\s)]*)?/gi;
               const prBody = (process.env.PR_BODY || '')
                 .replace(/\n*🤖[\s\S]*$/, '')
                 .replace(/\n*Co-Authored-By:[\s\S]*$/, '')
                 .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
                 .replace(/<https?:\/\/[^>]+>/g, '')
                 .replace(/https?:\/\/\S+/g, '')
+                .replace(bareDomain, '')
                 .replace(/^(#{1,6} .*)\n\n+/gm, '$1\n')
                 .trim();
 

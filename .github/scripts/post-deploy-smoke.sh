@@ -14,6 +14,12 @@ set -u
 
 SITE_URL="${SITE_URL:-https://openchat-review.me}"
 IS_STG="${IS_STG:-false}"
+# サーバー内からループバック経由でオリジンを検証する（curl の --resolve で公開ホスト名を
+# 127.0.0.1 に解決）。オリジンは .htaccess で CF 以外からのアクセスを拒否するが 127.0.0.1 は許可。
+# ループバックは証明書がホスト名と不一致なので -k で検証をスキップ。ORIGIN_IP を渡せば上書き可。
+ORIGIN_IP="${ORIGIN_IP:-127.0.0.1}"
+HOST="${SITE_URL#http://}"; HOST="${HOST#https://}"; HOST="${HOST%%/*}"
+RESOLVE_OPT=(-k --resolve "${HOST}:443:${ORIGIN_IP}")
 UA="Mozilla/5.0 (compatible; ocgraph-deploy-smoke)"
 # JSON API はサイト内JSからのfetchを示す独自ヘッダーが無いと404を返す（直叩き収集対策）。ページにも付与して問題ない
 API_CLIENT_HEADER="X-Ocg-Client: 1"
@@ -23,7 +29,7 @@ FAIL=0
 check() { # 説明 URL [本文に必要なパターン]
     local out status
     out=$(mktemp)
-    status=$(curl -sL -A "$UA" -H "$API_CLIENT_HEADER" -o "$out" -w "%{http_code}" --max-time 15 "$2" || echo 000)
+    status=$(curl -sL -A "$UA" -H "$API_CLIENT_HEADER" "${RESOLVE_OPT[@]}" -o "$out" -w "%{http_code}" --max-time 15 "$2" || echo 000)
     if [ "$status" = "200" ] && { [ -z "${3:-}" ] || grep -q "$3" "$out"; }; then
         echo "OK  $1 ($status)"
     else
@@ -42,7 +48,7 @@ for LOC in "" /tw /th; do
     check "トップ${LOC}" "${SITE_URL}${LOC}"
 
     # ランキングAPIから実在ルームIDを取得（このAPI自体のスモークも兼ねる）
-    OC_ID=$(curl -sL -A "$UA" -H "$API_CLIENT_HEADER" --max-time 15 "${SITE_URL}${LOC}/oclist?${QUERY}" | grep -oE '"id":[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+    OC_ID=$(curl -sL -A "$UA" -H "$API_CLIENT_HEADER" "${RESOLVE_OPT[@]}" --max-time 15 "${SITE_URL}${LOC}/oclist?${QUERY}" | grep -oE '"id":[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
     if [ -z "$OC_ID" ]; then
         echo "::error::スモーク失敗: ランキングAPI${LOC} からルームIDを取得できない"
         FAIL=1
