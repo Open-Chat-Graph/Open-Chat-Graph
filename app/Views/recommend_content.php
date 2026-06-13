@@ -97,9 +97,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     </section>
 
     <?php if ($enableAdsense && isset($recommend)): ?>
-      <?php // ランキングリスト直下に高さ100px固定の横長1枠（リストは分断しない。高さ確保済みでCLSなし）。
+      <?php // ランキングリスト直下にOC横長1枠（固定。リストは分断しない。高さ確保済みでCLSなし）。
             // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('recommendSeparatorResponsive') ?>
+      <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
 
     <?php if (isset($_discovery) && !$_discovery->isEmpty()) : ?>
