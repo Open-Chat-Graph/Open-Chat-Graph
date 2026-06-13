@@ -113,19 +113,22 @@ $_css[] = 'pages/oc-jump';
   <?php GAd::loadAdsTag() ?>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
   <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
-  <?php // 「LINEで開く」クリックを GA4(GTM dataLayer経由)で計測。LINEへ遷移直前でも beacon で飛ぶ。
+  <?php // 参加確認ページを GA4(GTM dataLayer経由)で計測。開いた時点=open_jump、「LINEで開く」押下=oc_jump。
+        // 両者の比でLINE遷移率(コンバージョン)が出せる。LINEへ遷移直前のクリックでも beacon で飛ぶ。
         // カテゴリはIDがロケールごとに別物なので、ロケール解決済みの名称(getCategoryName)で送る。 ?>
   <script>
     (function () {
+      var d = (window.dataLayer = window.dataLayer || [])
+      var info = {
+        oc_id: <?php echo (int)$oc['id'] ?>,
+        oc_name: <?php echo json_encode((string)$oc['name'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>,
+        oc_category: <?php echo json_encode(getCategoryName((int)$oc['category']), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>
+      }
+      d.push(Object.assign({ event: 'open_jump' }, info))
       var b = document.getElementById('line-open-button')
       if (!b) return
       b.addEventListener('click', function () {
-        (window.dataLayer = window.dataLayer || []).push({
-          event: 'oc_jump',
-          oc_id: <?php echo (int)$oc['id'] ?>,
-          oc_name: <?php echo json_encode((string)$oc['name'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>,
-          oc_category: <?php echo json_encode(getCategoryName((int)$oc['category']), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>
-        })
+        d.push(Object.assign({ event: 'oc_jump' }, info))
       })
     })()
   </script>
