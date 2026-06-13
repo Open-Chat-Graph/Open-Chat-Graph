@@ -34,9 +34,9 @@
                 </ul>
             <?php endif ?>
 
-            <?php // 記事カード一覧の下に高さ100px固定の横長1枠。記事ページと同様に Offerwall のみ抑制する ?>
+            <?php // 記事カード一覧の下にOC横長1枠（固定）。記事ページと同様に Offerwall のみ抑制する ?>
             <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
-            <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
+            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
         </div>
     </main>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
