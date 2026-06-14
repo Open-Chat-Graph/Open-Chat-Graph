@@ -42,6 +42,11 @@ export let chartMeta: ChartMeta = embeddedChartMeta as ChartMeta
 
 export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
 
+/** 現在のチャート状態が指す表示ビューの span を判定する（hour は最新24時間タブのみ） */
+function getCurrentSpan(): 'hour' | 'day' {
+  return graphStore.get(chartModeAtom) === 'line' && chart.getIsHour() ? 'hour' : 'day'
+}
+
 /**
  * 現在のチャート状態が指す表示ビューをAPIクエリ文字列にする。
  * 同一ビューは同一URLになるため、fetcher のURLキャッシュがそのまま効く
@@ -49,7 +54,7 @@ export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 't
 export function getChartViewQuery(withMeta = false): string {
   const mode = graphStore.get(chartModeAtom)
   const sort = graphStore.get(rankingRisingAtom)
-  const span = mode === 'line' && chart.getIsHour() ? 'hour' : 'day'
+  const span = getCurrentSpan()
   const scope = sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
 
   const query = new URLSearchParams({
@@ -64,14 +69,156 @@ export function getChartViewQuery(withMeta = false): string {
   return query.toString()
 }
 
-export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
-  const data = await fetcher<ChartResponse>(
-    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
-  )
-  if (data.meta) {
-    chartMeta = data.meta
+/**
+ * 差分フェッチの蓄積。
+ *
+ * 表示ビュー(span=day)毎に「ある開始日から最新日(endDate)まで」の日次系列を累積で持つ。
+ * 期間タブを広げると足りない古い側だけ取得して prepend マージし、loadedFrom を更新する。
+ * 窓は最新日終端固定なので、足りないのは常に「古い側の連続1範囲」だけになる（窓⊂窓）。
+ *
+ * - キー: `${sort}|${scope}|${mode}`（span=day のみ。category は部屋固定なので scope に内包される）
+ * - loadedFrom: 蓄積が保持している最古の日付(Y-m-d)
+ * - data: loadedFrom〜endDate の累積レスポンス（chart.render にそのまま渡す initData）
+ */
+const accumulation = new Map<string, { loadedFrom: string; data: ChartResponse }>()
+
+/** 現在の表示ビュー(span=day)の蓄積キー */
+function currentConfigKey(): string {
+  const mode = graphStore.get(chartModeAtom)
+  const sort = graphStore.get(rankingRisingAtom)
+  const scope = sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
+  return `${sort}|${scope}|${mode}`
+}
+
+/** Y-m-d に日数を加減算した Y-m-d を返す（UTCで計算しタイムゾーンの影響を排除） */
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * 期間タブ(limit)が必要とする窓の開始日を返す。
+ *
+ * 窓は最新日(endDate)終端固定: 週=endDate-7日, 月=endDate-30日, 全=startDate。
+ * いずれも startDate より古くはしない（部屋がタブ幅より若い場合のクランプ）。
+ * 日付軸はバックエンドで毎日(欠損日もnull埋め)の密な配列のため、
+ * 「最新から limit 件」= 「endDate から limit-1 日前まで」が一致する。
+ */
+function windowFromForLimit(limit: ChartLimit): string {
+  const { startDate, endDate } = chartMeta
+  let from: string
+  switch (limit) {
+    case 8:
+      from = addDays(endDate, -7)
+      break
+    case 31:
+      from = addDays(endDate, -30)
+      break
+    case 0:
+      from = startDate
+      break
   }
-  return data
+  return from < startDate ? startDate : from
+}
+
+/** 現在の表示ビューの蓄積が、指定 limit の窓を既に満たしているか（追加取得不要か） */
+export function currentConfigCoversLimit(limit: ChartLimit): boolean {
+  const entry = accumulation.get(currentConfigKey())
+  if (!entry) return false
+  return entry.loadedFrom <= windowFromForLimit(limit)
+}
+
+/** 範囲(from/to)付きで現在ビューの系列を取得する。fetcher のURLキャッシュは範囲ごとに効く */
+async function fetchRange(from: string, to: string): Promise<ChartResponse> {
+  return fetcher<ChartResponse>(
+    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery()}&from=${from}&to=${to}`
+  )
+}
+
+/** 古い差分(older)を既存(existing)の先頭に prepend マージする。窓は重複しないので連結のみ。 */
+function prependMerge(older: ChartResponse, existing: ChartResponse): ChartResponse {
+  const cat = <T>(a: T[] | undefined, b: T[] | undefined): T[] =>
+    (a ?? []).concat(b ?? [])
+  return {
+    date: cat(older.date, existing.date),
+    member: cat(older.member, existing.member),
+    time: cat(older.time, existing.time),
+    position: cat(older.position, existing.position),
+    totalCount: cat(older.totalCount, existing.totalCount),
+    memberOhlc:
+      older.memberOhlc || existing.memberOhlc
+        ? cat(older.memberOhlc, existing.memberOhlc)
+        : undefined,
+    positionOhlc:
+      older.positionOhlc || existing.positionOhlc
+        ? cat(older.positionOhlc, existing.positionOhlc)
+        : undefined,
+  }
+}
+
+/**
+ * 表示中の期間タブの窓だけを取得し、拡大時は足りない古い差分だけ取得して蓄積する。
+ *
+ * - span=hour（最新24時間）: 範囲化対象外。従来どおり全24hを取得し蓄積に入れない。
+ * - 埋め込みメタ無し(withMeta=true)の新規室: 窓計算ができないため全期間を取得し、
+ *   その data.date[0] を loadedFrom として蓄積する（以後は全期間が手元にあり追加取得不要）。
+ * - mode=candlestick: 全期間で取得する。ローソク足のタブ表示判定 updateCandleTabVisibility は
+ *   「長いタブが短いタブより本数が多いか」を表示中 data の日付配列で数えて決めるため、
+ *   窓だけ持つと（例: 週タブ表示中は week 窓ぶんしか日付が無く）月/全タブの本数を
+ *   過小カウントしてタブが誤って消える。可用性メタ(ohlcAvailability)は閾値booleanのみで
+ *   この本数比較を再現できないため、ローソク足は全期間取得で従来の判定を厳密に維持する。
+ * - それ以外(day, line, 埋め込みメタ有): 現在 limit の窓を取得/差分マージし、蓄積 data を返す。
+ *
+ * 返り値は「現在ビューの蓄積 data（= chart.render に渡す initData）」。
+ * chart 側が limit で末尾スライスするため、窓より広い蓄積でも正しく表示される。
+ */
+export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
+  // 最新24時間ビューは範囲化しない（毎時データはMariaDB・全24h固定）
+  if (getCurrentSpan() === 'hour') {
+    const data = await fetcher<ChartResponse>(
+      `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
+    )
+    if (data.meta) chartMeta = data.meta
+    return data
+  }
+
+  // 埋め込みメタが無い新規室: 窓を計算できないので全期間フォールバック（from/to 無し）。
+  // 取得後 chartMeta が埋まり、蓄積は全期間(loadedFrom=最古日)として記録する。
+  // ローソク足モードも全期間で取得する（後述）。
+  if (withMeta || graphStore.get(chartModeAtom) === 'candlestick') {
+    const data = await fetcher<ChartResponse>(
+      `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
+    )
+    if (data.meta) chartMeta = data.meta
+    accumulation.set(currentConfigKey(), {
+      loadedFrom: data.date[0] ?? chartMeta.startDate,
+      data,
+    })
+    return data
+  }
+
+  const key = currentConfigKey()
+  const neededFrom = windowFromForLimit(graphStore.get(limitAtom) as ChartLimit)
+  const entry = accumulation.get(key)
+
+  // 蓄積なし: 現在 limit の窓だけ取得して蓄積を作る
+  if (!entry) {
+    const data = await fetchRange(neededFrom, chartMeta.endDate)
+    accumulation.set(key, { loadedFrom: neededFrom, data })
+    return data
+  }
+
+  // 既に足りる: 取得せず蓄積を使う（chart 側が limit でスライス）
+  if (entry.loadedFrom <= neededFrom) {
+    return entry.data
+  }
+
+  // 拡大: 足りない古い側(neededFrom 〜 loadedFromの前日)だけ取得して prepend マージ
+  const older = await fetchRange(neededFrom, addDays(entry.loadedFrom, -1))
+  const merged = prependMerge(older, entry.data)
+  accumulation.set(key, { loadedFrom: neededFrom, data: merged })
+  return merged
 }
 
 const renderPositionChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {

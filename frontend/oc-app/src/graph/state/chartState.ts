@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { graphStore } from './store'
-import { chartMeta, chatArgDto, fetchChart } from '../util/fetchRenderer'
+import { chartMeta, chatArgDto, currentConfigCoversLimit, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
 import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
 import { trackEvent } from '../../util/track'
@@ -230,8 +230,12 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   } else if (fallbackToLine || selectionChanged) {
     // モードまたは順位表示の選択が変わるため、表示中のデータのままでは再描画できない
     fetchChart(true)
-  } else {
+  } else if (currentConfigCoversLimit(limit)) {
+    // 蓄積が新しい窓を満たしている（縮小 or 既に取得済み）: 取得せずクライアントスライス
     chart.update(limit)
+  } else {
+    // 拡大で蓄積に足りない古い側がある: 差分だけ取得しマージして再描画
+    fetchChart(true)
   }
 
   setUrlParamsFromChartStates()
