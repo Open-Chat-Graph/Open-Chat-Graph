@@ -15,10 +15,10 @@ class CommentListApi
     public string $time;
     public string $userId;
     public int $flag;
-    public int $empathyCount;
-    public int $insightsCount;
-    public int $negativeCount;
-    public string $voted;
+    public int $empathyCount = 0;
+    public int $insightsCount = 0;
+    public int $negativeCount = 0;
+    public string $voted = '';
     public ?string $logIp = null;
     public ?string $logUa = null;
 
