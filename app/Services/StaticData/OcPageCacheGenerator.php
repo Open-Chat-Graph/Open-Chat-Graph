@@ -44,9 +44,12 @@ class OcPageCacheGenerator
      * 指定IDの集合についてキャッシュを生成・保存する。
      *
      * @param int[] $ids
+     * @param array<int, array{member: bool, ranking: int[], rising: int[]}> $hourMap
+     *   呼び出し側が一括取得した「最新24時間集計」（open_chat_id => 集計）。
+     *   該当 id がキーに無い＝直近24hに出現なし（hour 全 false）。
      * @return int 保存した件数
      */
-    public function generateForIds(array $ids): int
+    public function generateForIds(array $ids, array $hourMap = []): int
     {
         $rows = [];
 
@@ -75,7 +78,12 @@ class OcPageCacheGenerator
 
             // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を一緒に事前計算する。
             // /oc 表示時にこれを HTML へ埋め込み、初回 XHR(meta=1) を撃たせない。null は未生成扱い。
-            $meta = $this->chartMetaBuilder->build($id, is_int($oc['category'] ?? null) ? $oc['category'] : null);
+            // 最新24時間集計はループ外で一括取得済みの $hourMap から渡す（per-room クエリを撃たない）。
+            $meta = $this->chartMetaBuilder->build(
+                $id,
+                is_int($oc['category'] ?? null) ? $oc['category'] : null,
+                $hourMap[$id] ?? null,
+            );
 
             $rows[] = [
                 'open_chat_id' => $id,

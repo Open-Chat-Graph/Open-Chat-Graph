@@ -437,6 +437,54 @@ class RankingPositionHourRepository implements RankingPositionHourRepositoryInte
         ];
     }
 
+    public function getHourPositionCountsAll(int $intervalHour, \DateTime $endTime): array
+    {
+        $firstTime = (new \DateTime($endTime->format('Y-m-d H:i:s')))
+            ->modify("- {$intervalHour}hour")
+            ->format('Y-m-d H:i:s');
+
+        $params = ['first_time' => $firstTime];
+
+        /** @var array<int, array{member: bool, ranking: int[], rising: int[]}> $result */
+        $result = [];
+
+        // 1) メンバー数: ウィンドウ内に1件でもあれば member=true
+        $members = RankingPositionDB::fetchAll(
+            "SELECT open_chat_id FROM member WHERE time >= :first_time GROUP BY open_chat_id",
+            $params,
+            [\PDO::FETCH_COLUMN, 0]
+        );
+        foreach ($members as $id) {
+            $id = (int)$id;
+            $result[$id] ??= ['member' => false, 'ranking' => [], 'rising' => []];
+            $result[$id]['member'] = true;
+        }
+
+        // 2) ランキング: 部屋ごとに出現した category の配列（全体は category=0）
+        $rankings = RankingPositionDB::fetchAll(
+            "SELECT open_chat_id, category FROM ranking WHERE time >= :first_time GROUP BY open_chat_id, category",
+            $params
+        );
+        foreach ($rankings as $row) {
+            $id = (int)$row['open_chat_id'];
+            $result[$id] ??= ['member' => false, 'ranking' => [], 'rising' => []];
+            $result[$id]['ranking'][] = (int)$row['category'];
+        }
+
+        // 3) 急上昇: 同上
+        $risings = RankingPositionDB::fetchAll(
+            "SELECT open_chat_id, category FROM rising WHERE time >= :first_time GROUP BY open_chat_id, category",
+            $params
+        );
+        foreach ($risings as $row) {
+            $id = (int)$row['open_chat_id'];
+            $result[$id] ??= ['member' => false, 'ranking' => [], 'rising' => []];
+            $result[$id]['rising'][] = (int)$row['category'];
+        }
+
+        return $result;
+    }
+
     public function getLastHour(int $offset = 0): string|false
     {
         $categories = AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot];

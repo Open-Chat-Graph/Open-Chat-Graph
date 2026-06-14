@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Statistics;
 
-use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
-use App\Services\Storage\FileStorageInterface;
 
 /**
  * グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を1部屋分だけ事前計算するサービス。
@@ -22,25 +20,26 @@ use App\Services\Storage\FileStorageInterface;
  * 違いは表示ウィンドウ（週/月/全）の開始日を、$dto->date でなく統計の MIN/MAX 日付から
  * 出す点だけ（既に等価性を検証済み）。meta=1 のライブ計算はフォールバックとして残る。
  *
+ * 最新24時間タブの集計(hourEntry)は per-room で取らず、呼び出し側(OcPageCacheGenerator)が
+ * 一括 GROUP BY(getHourPositionCountsAll)で全部屋分を1回取得し、その部屋の分を渡す。
+ * バックフィルで部屋数ぶんの毎時クエリが出て MySQL gone away を誘発するのを防ぐため。
+ *
  * 返す配列は OpenChatChartApiService::buildChartResponse の meta ブロックと同形。
  */
 class ChartMetaBuilder
 {
-    /** 最新24時間タブのウィンドウ幅（StatisticsChartArrayServiceと同じ） */
-    private const HOUR_INTERVAL = 24;
-
     public function __construct(
         private StatisticsPageRepositoryInterface $statisticsPageRepository,
         private StatisticsOhlcRepositoryInterface $statisticsOhlcRepository,
         private RankingPositionRepositoryInterface $rankingPositionRepository,
-        private RankingPositionHourRepositoryInterface $rankingPositionHourRepository,
-        private FileStorageInterface $fileStorage,
     ) {}
 
     /**
      * 1部屋分の可用性メタを組み立てる。統計レコードが無ければ null（埋め込まない）。
      *
      * @param int|null $category 部屋のカテゴリID（未掲載・その他はnull/0）
+     * @param null|array{member: bool, ranking: int[], rising: int[]} $hourEntry
+     *   呼び出し側が一括取得した「この部屋の最新24時間集計」。直近24hに出現が無ければ null。
      * @return null|array{
      *   startDate: string,
      *   endDate: string,
@@ -50,7 +49,7 @@ class ChartMetaBuilder
      *   ohlcAvailability: array{week: bool, month: bool, all: bool}
      * }
      */
-    public function build(int $open_chat_id, ?int $category): ?array
+    public function build(int $open_chat_id, ?int $category, ?array $hourEntry): ?array
     {
         $range = $this->statisticsPageRepository->getMemberDateRange($open_chat_id);
         if ($range === null) {
@@ -90,26 +89,22 @@ class ChartMetaBuilder
             $daily = ['week' => $none, 'month' => $none, 'all' => $none];
         }
 
-        // 最新24時間タブ（メンバー数有無＋その中の順位/急上昇 in/all）
-        try {
-            $endTime = new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-            $hourCounts = $this->rankingPositionHourRepository->getHourPositionCounts(
-                $open_chat_id,
-                $inCategory,
-                self::HOUR_INTERVAL,
-                $endTime,
-            );
-            $hourAvailability = $hourCounts['member'] > 0;
-            $hour = [
-                'ranking_in' => $hourCounts['ranking_in'] > 0,
-                'ranking_all' => $hourCounts['ranking_all'] > 0,
-                'rising_in' => $hourCounts['rising_in'] > 0,
-                'rising_all' => $hourCounts['rising_all'] > 0,
-            ];
-        } catch (\Throwable) {
-            // 毎時クロール未実行・DB未作成の環境は「データ無し」として扱う
+        // 最新24時間タブ（メンバー数有無＋その中の順位/急上昇 in/all）。
+        // hourEntry は呼び出し側が一括取得済み（直近24hに出現が無ければ null＝全 false）。
+        // in 判定: $category が未設定(null/0)の部屋は in_category=-1 相当でカテゴリ内に出現しえない
+        // ＝ in は常に false（getHourPositionCounts の category=:in_category と等価）。
+        if ($hourEntry === null) {
             $hourAvailability = false;
             $hour = $none;
+        } else {
+            $inCat = ($category !== null && $category > 0) ? $category : null;
+            $hourAvailability = $hourEntry['member'];
+            $hour = [
+                'ranking_in' => $inCat !== null && in_array($inCat, $hourEntry['ranking'], true),
+                'ranking_all' => in_array(0, $hourEntry['ranking'], true),
+                'rising_in' => $inCat !== null && in_array($inCat, $hourEntry['rising'], true),
+                'rising_all' => in_array(0, $hourEntry['rising'], true),
+            ];
         }
 
         // StatisticsChartDto::$positionAvailability と同じキー順（hour, week, month, all）で組む

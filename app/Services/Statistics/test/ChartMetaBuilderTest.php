@@ -9,16 +9,17 @@
  * グラフ初回ロードの可用性メタを1部屋分だけ事前計算する処理が、
  * StatisticsChartArrayService と同じしきい値・同じ try/catch で組み立てられることを確認する。
  * DB依存（COUNT取得）は createStub で固定し、しきい値判定と例外時フォールバックの分岐だけを検証する。
+ *
+ * 最新24時間タブの集計(hourEntry)は呼び出し側(OcPageCacheGenerator)が一括取得して build に渡す。
+ * 本テストでは hourEntry を直接渡し、in/all 判定と null(出現なし)時の全 false を検証する。
  */
 
 declare(strict_types=1);
 
-use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
 use App\Services\Statistics\ChartMetaBuilder;
-use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
 
 class ChartMetaBuilderTest extends TestCase
@@ -45,17 +46,22 @@ class ChartMetaBuilderTest extends TestCase
         return $stub;
     }
 
+    private function posRepo(): RankingPositionRepositoryInterface
+    {
+        $stub = $this->createStub(RankingPositionRepositoryInterface::class);
+        $stub->method('getPositionCountsByPeriod')->willReturn(self::POSITION_COUNTS);
+        return $stub;
+    }
+
     public function testReturnsNullWhenNoMemberStats(): void
     {
         $builder = new ChartMetaBuilder(
             $this->pageRepo(null),
             $this->createStub(StatisticsOhlcRepositoryInterface::class),
             $this->createStub(RankingPositionRepositoryInterface::class),
-            $this->createStub(RankingPositionHourRepositoryInterface::class),
-            $this->createStub(FileStorageInterface::class),
         );
 
-        $this->assertNull($builder->build(123, 5), '統計レコードが無ければ null');
+        $this->assertNull($builder->build(123, 5, null), '統計レコードが無ければ null');
     }
 
     public function testBuildsFullMetaShapeAndThresholds(): void
@@ -66,19 +72,11 @@ class ChartMetaBuilderTest extends TestCase
         // week_count(8) >= weekWindow(8) → true / month_count(10)*2 >= monthWindow(10) → true / all_count>0 → all true
         $ohlcRepo = $this->ohlcRepo(['all_count' => 10, 'week_count' => 8, 'month_count' => 10]);
 
-        $posRepo = $this->createStub(RankingPositionRepositoryInterface::class);
-        $posRepo->method('getPositionCountsByPeriod')->willReturn(self::POSITION_COUNTS);
+        // hour: member=true、ranking はカテゴリ5に出現（in true）、rising は全体0に出現（all true）
+        $hourEntry = ['member' => true, 'ranking' => [5], 'rising' => [0]];
 
-        $hourRepo = $this->createStub(RankingPositionHourRepositoryInterface::class);
-        $hourRepo->method('getHourPositionCounts')->willReturn([
-            'member' => 3, 'ranking_in' => 1, 'ranking_all' => 0, 'rising_in' => 0, 'rising_all' => 2,
-        ]);
-
-        $fileStorage = $this->createStub(FileStorageInterface::class);
-        $fileStorage->method('getContents')->willReturn('2024-01-10 12:00:00');
-
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $hourRepo, $fileStorage);
-        $meta = $builder->build(123, 5);
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo());
+        $meta = $builder->build(123, 5, $hourEntry);
 
         $this->assertNotNull($meta);
         $this->assertSame('2024-01-01', $meta['startDate']);
@@ -88,7 +86,7 @@ class ChartMetaBuilderTest extends TestCase
         // ohlc しきい値（ChartAvailabilityCalculator::dailyOhlc と同じ）
         $this->assertSame(['week' => true, 'month' => true, 'all' => true], $meta['ohlcAvailability']);
 
-        // hour: member>0 → true、種別フラグは >0 判定
+        // hour: member=true → hourAvailability true、種別フラグは出現カテゴリで判定
         $this->assertTrue($meta['hourAvailability']);
         $this->assertSame(
             ['ranking_in' => true, 'ranking_all' => false, 'rising_in' => false, 'rising_all' => true],
@@ -125,23 +123,15 @@ class ChartMetaBuilderTest extends TestCase
         $pageRepo = $this->pageRepo(['min' => '2024-01-01', 'max' => '2024-01-10']);
         $ohlcRepo = $this->ohlcRepo(['all_count' => 0, 'week_count' => 0, 'month_count' => 0]);
 
-        $posRepo = $this->createStub(RankingPositionRepositoryInterface::class);
-        $posRepo->method('getPositionCountsByPeriod')->willReturn(self::POSITION_COUNTS);
+        // hour: member=false（出現はあったが member レコード無し）→ hourAvailability false
+        $hourEntry = ['member' => false, 'ranking' => [], 'rising' => []];
 
-        $hourRepo = $this->createStub(RankingPositionHourRepositoryInterface::class);
-        $hourRepo->method('getHourPositionCounts')->willReturn([
-            'member' => 0, 'ranking_in' => 0, 'ranking_all' => 0, 'rising_in' => 0, 'rising_all' => 0,
-        ]);
-
-        $fileStorage = $this->createStub(FileStorageInterface::class);
-        $fileStorage->method('getContents')->willReturn('2024-01-10 12:00:00');
-
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $hourRepo, $fileStorage);
-        $meta = $builder->build(123, 5);
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo());
+        $meta = $builder->build(123, 5, $hourEntry);
 
         $this->assertNotNull($meta);
         $this->assertSame(['week' => false, 'month' => false, 'all' => false], $meta['ohlcAvailability']);
-        $this->assertFalse($meta['hourAvailability'], 'member=0 → hour 無し');
+        $this->assertFalse($meta['hourAvailability'], 'member=false → hour 無し');
     }
 
     public function testPositionPdoExceptionMakesWeekMonthAllFalseButHourStillComputed(): void
@@ -153,17 +143,11 @@ class ChartMetaBuilderTest extends TestCase
         $posRepo = $this->createStub(RankingPositionRepositoryInterface::class);
         $posRepo->method('getPositionCountsByPeriod')->willThrowException(new \PDOException('no such table'));
 
-        // 毎時は正常に取得できる（builderは日次例外でも hour を独立して計算する）
-        $hourRepo = $this->createStub(RankingPositionHourRepositoryInterface::class);
-        $hourRepo->method('getHourPositionCounts')->willReturn([
-            'member' => 5, 'ranking_in' => 0, 'ranking_all' => 2, 'rising_in' => 0, 'rising_all' => 0,
-        ]);
+        // 毎時は呼び出し側が用意済み（builderは日次例外でも hour を独立して計算する）
+        $hourEntry = ['member' => true, 'ranking' => [0], 'rising' => []];
 
-        $fileStorage = $this->createStub(FileStorageInterface::class);
-        $fileStorage->method('getContents')->willReturn('2024-01-10 12:00:00');
-
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $hourRepo, $fileStorage);
-        $meta = $builder->build(123, 5);
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo);
+        $meta = $builder->build(123, 5, $hourEntry);
 
         $this->assertNotNull($meta);
         // ohlc は日次順位とは別DBなので影響を受けない
@@ -174,7 +158,7 @@ class ChartMetaBuilderTest extends TestCase
             $this->assertSame($none, $meta['positionAvailability'][$period], "{$period} は順位DB例外で全false");
         }
 
-        // hour は独立して計算され続ける
+        // hour は独立して計算され続ける（ranking 全体0に出現 → ranking_all true）
         $this->assertTrue($meta['hourAvailability']);
         $this->assertSame(
             ['ranking_in' => false, 'ranking_all' => true, 'rising_in' => false, 'rising_all' => false],
@@ -182,25 +166,17 @@ class ChartMetaBuilderTest extends TestCase
         );
     }
 
-    public function testHourExceptionMakesHourFalseButDailyStillComputed(): void
+    public function testHourEntryNullMakesHourFalseButDailyStillComputed(): void
     {
         $pageRepo = $this->pageRepo(['min' => '2024-01-01', 'max' => '2024-01-10']);
         $ohlcRepo = $this->ohlcRepo(['all_count' => 10, 'week_count' => 8, 'month_count' => 10]);
 
-        $posRepo = $this->createStub(RankingPositionRepositoryInterface::class);
-        $posRepo->method('getPositionCountsByPeriod')->willReturn(self::POSITION_COUNTS);
-
-        $hourRepo = $this->createStub(RankingPositionHourRepositoryInterface::class);
-
-        // 毎時クロール時刻ファイルが無い等 → \Throwable
-        $fileStorage = $this->createStub(FileStorageInterface::class);
-        $fileStorage->method('getContents')->willThrowException(new \RuntimeException('no file'));
-
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $hourRepo, $fileStorage);
-        $meta = $builder->build(123, 5);
+        // hourEntry=null（直近24hに出現なし）→ hour 全 false
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo());
+        $meta = $builder->build(123, 5, null);
 
         $this->assertNotNull($meta);
-        // 日次（ohlc・週/月/全順位）は hour 例外の影響を受けない
+        // 日次（ohlc・週/月/全順位）は hour の有無に影響されない
         $this->assertSame(['week' => true, 'month' => true, 'all' => true], $meta['ohlcAvailability']);
         $this->assertSame(
             ['ranking_in' => false, 'ranking_all' => true, 'rising_in' => false, 'rising_all' => false],
@@ -215,30 +191,52 @@ class ChartMetaBuilderTest extends TestCase
         );
     }
 
-    public function testNoCategoryUsesMinusOneInCategory(): void
+    public function testNoCategoryHourInIsAlwaysFalse(): void
     {
-        // category null（その他/未掲載）→ in 判定は -1（不一致値）で呼ばれる
+        // category null（その他/未掲載）→ カテゴリ内(in)には出現しえないので in は常に false。
+        // hourEntry にカテゴリ値が入っていても（=全体掲載のみ）、in は false になること。
         $pageRepo = $this->pageRepo(['min' => '2024-01-01', 'max' => '2024-01-08']);
         $ohlcRepo = $this->ohlcRepo(['all_count' => 8, 'week_count' => 8, 'month_count' => 8]);
 
+        // category=null の部屋は in 判定に使うカテゴリが無い。ranking/rising が全体0に出現していれば all のみ true。
+        $hourEntry = ['member' => true, 'ranking' => [0], 'rising' => [0]];
+
+        // 日次順位もカテゴリ未設定は in=false を返す前提（-1 で呼ばれる）
         $posRepo = $this->createMock(RankingPositionRepositoryInterface::class);
         $posRepo->expects($this->once())
             ->method('getPositionCountsByPeriod')
             ->with(123, -1, $this->isString(), $this->isString())
             ->willReturn(self::POSITION_COUNTS);
 
-        $hourRepo = $this->createMock(RankingPositionHourRepositoryInterface::class);
-        $hourRepo->expects($this->once())
-            ->method('getHourPositionCounts')
-            ->with(123, -1, 24, $this->isInstanceOf(\DateTime::class))
-            ->willReturn(['member' => 0, 'ranking_in' => 0, 'ranking_all' => 0, 'rising_in' => 0, 'rising_all' => 0]);
-
-        $fileStorage = $this->createStub(FileStorageInterface::class);
-        $fileStorage->method('getContents')->willReturn('2024-01-08 12:00:00');
-
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $hourRepo, $fileStorage);
-        $meta = $builder->build(123, null);
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo);
+        $meta = $builder->build(123, null, $hourEntry);
 
         $this->assertNotNull($meta);
+        $this->assertTrue($meta['hourAvailability']);
+        $this->assertSame(
+            ['ranking_in' => false, 'ranking_all' => true, 'rising_in' => false, 'rising_all' => true],
+            $meta['positionAvailability']['hour'],
+            'category null は in 常に false、all は全体0出現で true',
+        );
+    }
+
+    public function testHourInBoundaryCategoryZeroIsNotIn(): void
+    {
+        // しきい値境界: category=0 は「全体(all)」であって「カテゴリ内(in)」ではない。
+        // category>0 の部屋でも ranking に 0 しか無ければ ranking_in=false / ranking_all=true。
+        $pageRepo = $this->pageRepo(['min' => '2024-01-01', 'max' => '2024-01-08']);
+        $ohlcRepo = $this->ohlcRepo(['all_count' => 8, 'week_count' => 8, 'month_count' => 8]);
+
+        $hourEntry = ['member' => true, 'ranking' => [0], 'rising' => [5]];
+
+        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo());
+        $meta = $builder->build(123, 5, $hourEntry);
+
+        $this->assertNotNull($meta);
+        $this->assertSame(
+            // ranking: [0] → all true / in(5) false。rising: [5] → in(5) true / all(0) false
+            ['ranking_in' => false, 'ranking_all' => true, 'rising_in' => true, 'rising_all' => false],
+            $meta['positionAvailability']['hour'],
+        );
     }
 }

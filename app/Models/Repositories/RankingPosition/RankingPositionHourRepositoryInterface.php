@@ -82,4 +82,21 @@ interface RankingPositionHourRepositoryInterface
         int $intervalHour,
         \DateTime $endTime
     ): array;
+
+    /**
+     * 最新 intervalHour 時間ウィンドウ内に出現した全部屋分の毎時データを、種別ごと1本の
+     * GROUP BY で一括取得する（部屋数ぶんのクエリを撃たないバックフィル用）。
+     *
+     * 返り値は open_chat_id をキーにした連想配列:
+     * - member:  その部屋がウィンドウ内に member レコードを1件以上持つか
+     * - ranking: その部屋が ranking に出現した category の配列（全体ランキングは 0 を含む）
+     * - rising:  その部屋が rising に出現した category の配列（同上）
+     *
+     * カテゴリ内(in)判定は呼び出し側で in_array($category, ranking/rising, true) する
+     * （getHourPositionCounts の category=:in_category と等価。未掲載室の in は常に false）。
+     *
+     * @param \DateTime $endTime ウィンドウの終端（最新クロール時刻）
+     * @return array<int, array{member: bool, ranking: int[], rising: int[]}>
+     */
+    public function getHourPositionCountsAll(int $intervalHour, \DateTime $endTime): array;
 }

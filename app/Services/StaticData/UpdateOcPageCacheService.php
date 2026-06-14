@@ -14,6 +14,7 @@ use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
+use App\Services\Storage\FileStorageInterface;
 use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
@@ -44,8 +45,12 @@ class UpdateOcPageCacheService
         private MemberChangeFilterCacheRepositoryInterface $filterRepo,
         private RankingPositionHourRepositoryInterface $hourRepo,
         private OpenChatRepositoryInterface $ocRepo,
+        private FileStorageInterface $fileStorage,
     ) {
     }
+
+    /** 最新24時間タブのウィンドウ幅（ChartMetaBuilder/StatisticsChartArrayServiceと同じ） */
+    private const HOUR_INTERVAL = 24;
 
     /**
      * 実行時のエラー処理・状態フラグ管理・通知はこのメソッド内で完結する。
@@ -101,10 +106,22 @@ class UpdateOcPageCacheService
                 $ids = $this->ocRepo->getOpenChatIdAll();
             }
 
+            // 最新24時間タブの集計は「実行ごとに1回だけ」一括 GROUP BY で全部屋分を取得する。
+            // ここで取らずチャンク毎/部屋毎に取ると部屋数ぶんの毎時クエリが出て
+            // MySQL gone away を誘発するため、必ずチャンクループの外で1回だけ作る。
+            $hourMap = [];
+            try {
+                $endTime = new \DateTime($this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+                $hourMap = $this->hourRepo->getHourPositionCountsAll(self::HOUR_INTERVAL, $endTime);
+            } catch (\Throwable $e) {
+                // 毎時クロール未実行・DB未作成の環境は hour 全 false 扱いで続行（落とさない）
+                CronUtility::addCronLog('ページキャッシュ生成: 最新24時間集計の取得に失敗（hourは全false扱いで続行）: ' . $e->getMessage());
+            }
+
             $total = 0;
             // 1チャンクごとにトランザクションでまとめて書き込む（fsync削減）
             foreach (array_chunk($ids, 300) as $chunk) {
-                $total += $this->generator->generateForIds($chunk);
+                $total += $this->generator->generateForIds($chunk, $hourMap);
             }
 
             CronUtility::addVerboseCronLog("ページキャッシュ生成完了（urlRoot=" . MimimalCmsConfig::$urlRoot . " / {$total}件）");
