@@ -18,8 +18,8 @@ class RecommendGenaratorTest extends TestCase
     {
         $this->inst = app(RecommendGenarator::class);
 
-        $this->inst->getRecomendRanking(2);
+        $result = $this->inst->getRecommend('オプチャ サポート', null, null, null);
 
-        $this->assertTrue(true);
+        $this->assertIsArray($result);
     }
 }

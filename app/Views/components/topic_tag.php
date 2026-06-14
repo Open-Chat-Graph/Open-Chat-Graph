@@ -3,13 +3,12 @@
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $topPageDto */
 
 use App\Config\AppConfig;
-use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\TagDefinition\Ja\RecommendUtility;
 use Shared\MimimalCmsConfig;
 
 $tags = $topPageDto->recommendList;
 $topPageDto->hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
-$tagLimit = $tagLimit ?? RecommendListDto::TAG_LIMIT;
+$tagLimit = $tagLimit ?? AppConfig::LIST_LIMIT_RECOMMEND;
 
 // 空の配列では無効
 if (empty($tags['hour']) && empty($tags['hour24'])) {

@@ -9,10 +9,9 @@ use App\Views\Classes\CollapseKeywordEnumerations;
 /**
  * おすすめリスト行の共通フォーマット。
  *
- * .dat 生成(BulkRecommendRankingBuilder)とライブ生成(RecommendRankingBuilder)の
- * 両経路がここを通り、テンプレート(open_chat_list_recommend)が描画に使う
- * 最小フィールドだけの同一形式の行を出力する。行の形を変えるときはここだけを変える
- * （テンプレートに生成経路別の分岐を作らない）。
+ * .dat 一括生成もページ表示時の即時生成も同じ RecommendRankingBuilder を通り、
+ * テンプレート(open_chat_list_recommend)が描画に使う最小フィールドだけの同一形式の行を
+ * 出力する。行の形を変えるときはここだけを変える。
  */
 final class RecommendRowFormat
 {

@@ -5,73 +5,82 @@ declare(strict_types=1);
 namespace App\Services\Recommend;
 
 use App\Config\AppConfig;
-use App\Models\RecommendRepositories\AbstractRecommendRankingRepository;
+use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
+/**
+ * tag/category/official のランキング DTO を1件ずつ構築する。
+ *
+ * 毎時バッチの .dat 一括生成(全エンティティを foreach)も、ページ表示時の未キャッシュ即時生成も
+ * この同じ経路を通る（旧 bulk/per-tag の二重実装は廃止）。
+ * リポジトリが返す「24h増→member→id」順の全行(最大 POOL 件)をそのまま DTO に渡し、
+ * 表示30件は DTO 側が先頭から切り出す。
+ */
 class RecommendRankingBuilder
 {
-    // 関連タグ取得に関する値（台湾・タイのみ）
-    private const SORT_AND_UNIQUE_TAGS_LIST_LIMIT = null;
     private const SORT_AND_UNIQUE_ARRAY_MIN_COUNT = 5;
 
     public function __construct(
-        private FileStorageInterface $fileStorage
+        private FileStorageInterface $fileStorage,
+        private RecommendRankingRepository $repository,
     ) {}
 
-    function getRanking(
-        RecommendListType $type,
-        string $entity,
-        string $listName,
-        AbstractRecommendRankingRepository $repository
-    ): RecommendListDto {
-        $limit = AppConfig::LIST_LIMIT_RECOMMEND;
+    function buildTag(string $tag): RecommendListDto
+    {
+        return $this->build(
+            RecommendListType::Tag,
+            $tag,
+            $this->repository->getRankingByTag($tag, AppConfig::LIST_LIMIT_RECOMMEND_POOL),
+        );
+    }
 
-        // 24時間の人数増加が大きい順（＝「いま伸びている」部屋）。
-        // 行は .dat 生成(bulk)と同じ最小形式(RecommendRowFormat)に揃える。
-        $growing = array_map(
-            fn(array $row) => RecommendRowFormat::slim($row, $row['table_name'], (int)$row['diff_member_24h']),
-            $repository->getRanking(
-                $entity,
-                AppConfig::RANKING_DAY_TABLE_NAME,
-                AppConfig::RECOMMEND_MIN_MEMBER_DIFF_H24,
-                $limit
-            )
+    function buildCategory(int $category, string $listName): RecommendListDto
+    {
+        return $this->build(
+            RecommendListType::Category,
+            $listName,
+            $this->repository->getRankingByCategory($category, AppConfig::LIST_LIMIT_RECOMMEND_POOL),
+        );
+    }
+
+    function buildOfficial(int $emblem, string $listName): RecommendListDto
+    {
+        return $this->build(
+            RecommendListType::Official,
+            $listName,
+            $this->repository->getRankingByOfficial($emblem, AppConfig::LIST_LIMIT_RECOMMEND_POOL),
+        );
+    }
+
+    /**
+     * @param array<int, array<string,mixed>> $rows リポジトリが返したランキング順の生行
+     */
+    private function build(RecommendListType $type, string $listName, array $rows): RecommendListDto
+    {
+        $list = array_map(
+            fn(array $row) => RecommendRowFormat::slim(
+                $row,
+                $row['table_name'],
+                ((int)$row['diff_member_24h']) ?: null
+            ),
+            $rows
         );
 
-        // 伸びていない部屋は member 降順で裾を埋める（痩せタグ対策・既存の大型部屋）。
-        // 表示は30件のままだが、/oc 関連ルームの人数絞り込み母集団として300件保持する。
-        $member = array_map(
-            fn(array $row) => RecommendRowFormat::slim($row, $row['table_name'], null),
-            $repository->getListOrderByMemberDesc(
-                $entity,
-                array_column($growing, 'id'),
-                AppConfig::LIST_LIMIT_RECOMMEND_POOL
-            )
-        );
-
-        // DTO は先頭(=表示順)に伸び部屋、末尾に裾を渡す（旧 hour/day/week の4段は廃止）。
         $dto = new RecommendListDto(
             $type,
             $listName,
-            $growing,
-            [],
-            [],
-            $member,
+            $list,
             $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
         );
 
-        // 日本以外では関連タグを事前に取得しておく
+        // 日本以外では関連タグ(表示30件のtag1/tag2から共起の多いもの)を事前取得しておく
         if (MimimalCmsConfig::$urlRoot !== '') {
-            $list = array_column(
-                $dto->getList(false, self::SORT_AND_UNIQUE_TAGS_LIST_LIMIT),
-                'id'
-            );
-
+            $ids = array_column($dto->getList(false, null), 'id');
             $dto->sortAndUniqueTags = sortAndUniqueArray(
-                array_merge($repository->getRecommendTags($list), $repository->getOcTags($list)),
+                array_merge($this->repository->getRecommendTags($ids), $this->repository->getOcTags($ids)),
                 self::SORT_AND_UNIQUE_ARRAY_MIN_COUNT
             );
         }

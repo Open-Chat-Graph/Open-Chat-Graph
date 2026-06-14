@@ -5,14 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
-use App\Models\RecommendRepositories\BulkRankingDataRepositoryInterface;
 use App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface;
-use App\Models\RecommendRepositories\CategoryRankingRepository;
-use App\Models\RecommendRepositories\OfficialRoomRankingRepository;
-use App\Models\RecommendRepositories\RecommendRankingRepository;
-use App\Services\Recommend\BulkRecommendRankingBuilderInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
-use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
@@ -22,22 +16,21 @@ use Shared\MimimalCmsConfig;
  * おすすめ/カテゴリ/公式ランキングの静的データ(.dat)の読み書きを担う。
  *
  * - 読み（ページ表示）: get*Ranking() … .dat を読む。未生成（新規タグ等）/無効化時は、
- *   対象1件だけを DB から引く per-tag ビルダー(RecommendRankingBuilder)で即時生成する。
- * - 書き（毎時バッチ）: updateStaticData() … 全件を1回の fetchAll で読み、bulk ビルダーで
- *   一括生成して .dat 保存する（タグ数が多いので per-tag を都度引くより速い）。
+ *   対象1件だけを DB から引く RecommendRankingBuilder で即時生成する。
+ * - 書き（毎時バッチ）: updateStaticData() … 全エンティティを foreach で回し、同じビルダーで
+ *   .dat を生成・保存する（1件ごとに小さな索引クエリ2本。bulk 一括取得は廃止）。
  */
 class RecommendStaticDataGenerator
 {
     function __construct(
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
-        private BulkRankingDataRepositoryInterface $bulkRankingDataRepository,
-        private BulkRecommendRankingBuilderInterface $bulkRecommendRankingBuilder,
+        private RecommendRankingBuilder $recommendRankingBuilder,
         private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
     // ============================================================
-    // 読み（ページ表示）: .dat があれば読む、無ければ per-tag でDBから即時生成
+    // 読み（ページ表示）: .dat があれば読む、無ければDBから即時生成
     // ============================================================
 
     function getRecomendRanking(string $tag): RecommendListDto
@@ -45,12 +38,7 @@ class RecommendStaticDataGenerator
         $dto = $this->fromFileOrDb(
             'recommendStaticDataDir',
             hash('crc32', $tag),
-            fn() => app(RecommendRankingBuilder::class)->getRanking(
-                RecommendListType::Tag,
-                $tag,
-                $tag,
-                app(RecommendRankingRepository::class)
-            )
+            fn() => $this->recommendRankingBuilder->buildTag($tag)
         );
 
         // テーマの勢いは毎時バッチが .dat に同梱する。null（新規タグの即時生成・旧 .dat）の場合も
@@ -69,12 +57,7 @@ class RecommendStaticDataGenerator
         return $this->fromFileOrDb(
             'categoryStaticDataDir',
             (string)$category,
-            fn() => app(RecommendRankingBuilder::class)->getRanking(
-                RecommendListType::Category,
-                (string)$category,
-                getCategoryName($category),
-                app(CategoryRankingRepository::class)
-            )
+            fn() => $this->recommendRankingBuilder->buildCategory($category, getCategoryName($category))
         );
     }
 
@@ -83,11 +66,9 @@ class RecommendStaticDataGenerator
         return $this->fromFileOrDb(
             'officialStaticDataDir',
             (string)$emblem,
-            fn() => app(RecommendRankingBuilder::class)->getRanking(
-                RecommendListType::Official,
-                (string)$emblem,
-                AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][$emblem] ?? '',
-                app(OfficialRoomRankingRepository::class)
+            fn() => $this->recommendRankingBuilder->buildOfficial(
+                $emblem,
+                AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][$emblem] ?? ''
             )
         );
     }
@@ -140,15 +121,12 @@ class RecommendStaticDataGenerator
 
     function updateStaticData(): void
     {
-        $allData = $this->bulkRankingDataRepository->fetchAll();
-        $this->bulkRecommendRankingBuilder->init($allData);
-
-        $this->updateRecommendStaticDataBulk();
-        $this->updateCategoryStaticDataBulk();
-        $this->updateOfficialStaticDataBulk();
+        $this->updateRecommendStaticData();
+        $this->updateCategoryStaticData();
+        $this->updateOfficialStaticData();
     }
 
-    private function updateRecommendStaticDataBulk(): void
+    private function updateRecommendStaticData(): void
     {
         // 関連タグマップは毎時バッチで直前(StaticDataGenerator::updateStaticData)に
         // 再生成済みのものを1回だけ読み、各タグの .dat に自タグ分のスライスを同梱する
@@ -160,7 +138,7 @@ class RecommendStaticDataGenerator
 
         foreach ($this->getAllTagNames() as $tag) {
             $fileName = hash('crc32', $tag);
-            $dto = $this->bulkRecommendRankingBuilder->buildTagRanking($tag, $tag);
+            $dto = $this->recommendRankingBuilder->buildTag($tag);
             $this->setThemeMomentum($dto);
             $dto->relatedTags = $relatedTagsMap[$tag] ?? [];
             $this->fileStorage->saveSerializedFile(
@@ -191,29 +169,24 @@ class RecommendStaticDataGenerator
         );
     }
 
-    private function updateCategoryStaticDataBulk(): void
+    private function updateCategoryStaticData(): void
     {
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $this->fileStorage->saveSerializedFile(
                 $this->fileStorage->getStorageFilePath('categoryStaticDataDir') . "/{$category}.dat",
-                $this->bulkRecommendRankingBuilder->buildCategoryRanking($category, getCategoryName($category))
+                $this->recommendRankingBuilder->buildCategory($category, getCategoryName($category))
             );
         }
     }
 
-    private function updateOfficialStaticDataBulk(): void
+    private function updateOfficialStaticData(): void
     {
         foreach ([1, 2] as $emblem) {
-            $listName = match ($emblem) {
-                1 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1],
-                2 => AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2],
-                default => ''
-            };
-
+            $listName = AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][$emblem] ?? '';
             if ($listName) {
                 $this->fileStorage->saveSerializedFile(
                     $this->fileStorage->getStorageFilePath('officialStaticDataDir') . "/{$emblem}.dat",
-                    $this->bulkRecommendRankingBuilder->buildOfficialRanking($emblem, $listName)
+                    $this->recommendRankingBuilder->buildOfficial($emblem, $listName)
                 );
             }
         }

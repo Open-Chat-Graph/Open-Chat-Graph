@@ -4,153 +4,165 @@ declare(strict_types=1);
 
 namespace App\Models\RecommendRepositories;
 
+use App\Config\AppConfig;
 use App\Models\Repositories\DB;
 
-class RecommendRankingRepository extends AbstractRecommendRankingRepository
+/**
+ * おすすめ/カテゴリ/公式ランキングのデータ取得。
+ *
+ * tag/category/official のいずれも「母集団(24hランキング記録あり or member下限以上)を
+ * 24時間増(記録なし=0扱い) → メンバー数 → id の単一基準で並べる」1クエリに統一している。
+ * 先頭 LIST_LIMIT_RECOMMEND 件が表示、全体(最大 LIST_LIMIT_RECOMMEND_POOL 件)が /oc 関連ルームの母集団。
+ */
+class RecommendRankingRepository
 {
-    function getRanking(
-        string $tag,
-        string $table,
-        int $minDiffMember,
-        int $limit,
-    ): array {
-        $select = self::SelectPage;
-        return DB::fetchAll(
-            "SELECT
-                {$select},
-                '{$table}' AS table_name,
-                ranking.diff_member AS diff_member_24h
-            FROM
-                (
-                    SELECT
-                        t2.id,
-                        t1.diff_member AS diff_member,
-                        t3.tag AS tag1,
-                        t4.tag AS tag2
-                    FROM
-                        recommend AS t2
-                        JOIN (
-                            SELECT
-                                *
-                            FROM
-                                {$table}
-                            WHERE
-                                diff_member >= :minDiffMember
-                        ) AS t1 ON t1.open_chat_id = t2.id
-                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t1.open_chat_id = t3.id
-                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
-                    WHERE
-                        t2.tag = :tag
-                ) AS ranking
-                JOIN open_chat AS oc ON oc.id = ranking.id
-            ORDER BY
-                ranking.diff_member DESC
-            LIMIT
-                :limit",
-            compact('tag', 'limit', 'minDiffMember')
-        );
-    }
+    private const SELECT_PAGE = "
+        oc.id,
+        oc.name,
+        oc.img_url,
+        oc.img_url AS api_img_url,
+        oc.member,
+        oc.description,
+        oc.emblem,
+        oc.category,
+        oc.emid,
+        oc.url,
+        oc.api_created_at,
+        oc.created_at,
+        oc.updated_at,
+        oc.join_method_type,
+        ranking.tag1,
+        ranking.tag2
+    ";
 
-    function getRankingByExceptId(
-        string $tag,
-        string $table,
-        int $minDiffMember,
-        array $idArray,
-        int $limit,
-    ): array {
-        $ids = implode(",", $idArray) ?: 0;
-        $select = self::SelectPage;
-        return DB::fetchAll(
-            "SELECT
-                {$select},
-                '{$table}' AS table_name
-            FROM
-                (
-                    SELECT
-                        t2.id,
-                        t1.diff_member AS diff_member,
-                        t3.tag AS tag1,
-                        t4.tag AS tag2
-                    FROM
-                        recommend AS t2
-                        JOIN (
-                            SELECT
-                                sr1.*
-                            FROM
-                                (
-                                    SELECT
-                                        *
-                                    FROM
-                                        {$table}
-                                    WHERE
-                                        diff_member >= :minDiffMember
-                                ) AS sr1
-                        ) AS t1 ON t1.open_chat_id = t2.id
-                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t1.open_chat_id = t3.id
-                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t1.open_chat_id = t4.id
-                    WHERE
-                        t2.tag = :tag
-                ) AS ranking
-                JOIN open_chat AS oc ON oc.id = ranking.id
-                LEFT JOIN statistics_ranking_hour AS rh ON rh.open_chat_id = oc.id
+    /** 母集団条件・並び順の共通句。各 getRankingBy* で使い回す。 */
+    private static function rankingTail(): string
+    {
+        $minMember = AppConfig::RECOMMEND_MIN_MEMBER_TIER4;
+        $day = AppConfig::RANKING_DAY_TABLE_NAME;
+        return "
+                LEFT JOIN {$day} AS rh24 ON rh24.open_chat_id = oc.id
+                LEFT JOIN statistics_ranking_hour AS rh2 ON rh2.open_chat_id = oc.id
             WHERE
-                oc.id NOT IN ({$ids})
+                {ENTITY_FILTER}
+                AND ((rh24.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= {$minMember})
             ORDER BY
-                rh.diff_member DESC, ranking.diff_member DESC
-            LIMIT
-                :limit",
-            compact('tag', 'limit', 'minDiffMember')
-        );
+                COALESCE(rh24.diff_member, 0) DESC, oc.member DESC, oc.id ASC
+            LIMIT :limit";
     }
 
-    function getListOrderByMemberDesc(
-        string $tag,
-        array $idArray,
-        int $limit,
-    ): array {
-        $ids = implode(",", $idArray) ?: 0;
-        $select = self::SelectPage;
+    private static function selectHead(): string
+    {
+        $select = self::SELECT_PAGE;
+        $day = AppConfig::RANKING_DAY_TABLE_NAME;
+        return "SELECT
+                {$select},
+                CASE WHEN rh24.open_chat_id IS NOT NULL THEN '{$day}' ELSE 'open_chat' END AS table_name,
+                COALESCE(rh24.diff_member, 0) AS diff_member_24h";
+    }
+
+    /**
+     * recommend タグ別。候補は recommend.tag = :tag の部屋。
+     */
+    function getRankingByTag(string $tag, int $limit): array
+    {
+        // タグ絞り込みは派生表 ranking 側(WHERE t2.tag = :tag)で済んでいるため外側フィルタは無し。
+        $head = self::selectHead();
+        $tail = str_replace('{ENTITY_FILTER}', '1 = 1', self::rankingTail());
         return DB::fetchAll(
-            "SELECT
-                t1.*
+            "{$head}
             FROM
                 (
                     SELECT
-                        {$select},
-                        'open_chat' AS table_name
+                        t2.id,
+                        t3.tag AS tag1,
+                        t4.tag AS tag2
                     FROM
-                        (
-                            SELECT
-                                r.*,
-                                t3.tag AS tag1,
-                                t4.tag AS tag2
-                            FROM
-                                (
-                                    SELECT
-                                        *
-                                    FROM
-                                        recommend
-                                    WHERE
-                                        tag = :tag
-                                ) AS r
-                                LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON r.id = t3.id
-                                LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON r.id = t4.id
-                        ) AS ranking
-                        JOIN open_chat AS oc ON oc.id = ranking.id
-                        LEFT JOIN statistics_ranking_hour24 AS rh ON oc.id = rh.open_chat_id
-                        LEFT JOIN statistics_ranking_hour AS rh2 ON oc.id = rh2.open_chat_id
+                        recommend AS t2
+                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t2.id = t3.id
+                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t2.id = t4.id
                     WHERE
-                        oc.id NOT IN ({$ids})
-                        AND ((rh.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= " . \App\Config\AppConfig::RECOMMEND_MIN_MEMBER_TIER4 . ")
-                    ORDER BY
-                        oc.member DESC
-                    LIMIT
-                        :limit
-                ) AS t1
-                LEFT JOIN statistics_ranking_hour AS t2 ON t1.id = t2.open_chat_id
-            ORDER BY
-                t2.diff_member DESC, t1.member DESC",
+                        t2.tag = :tag
+                ) AS ranking
+                JOIN open_chat AS oc ON oc.id = ranking.id
+            {$tail}",
             compact('tag', 'limit')
+        );
+    }
+
+    /**
+     * LINE カテゴリ別。候補は category 一致の全部屋（tag1=recommend, tag2=oc_tag2 を付与）。
+     */
+    function getRankingByCategory(int $category, int $limit): array
+    {
+        $head = self::selectHead();
+        $tail = str_replace('{ENTITY_FILTER}', 'oc.category = :category', self::rankingTail());
+        return DB::fetchAll(
+            "{$head}
+            FROM
+                open_chat AS oc
+                LEFT JOIN (
+                    SELECT r.id, MIN(r.tag) AS tag1, MIN(t4.tag) AS tag2
+                    FROM recommend AS r
+                        LEFT JOIN oc_tag2 AS t4 ON r.id = t4.id
+                    GROUP BY r.id
+                ) AS ranking ON oc.id = ranking.id
+            {$tail}",
+            compact('category', 'limit')
+        );
+    }
+
+    /**
+     * 公式ルーム別。$emblem が 0 のときは公式(1)・認証(2)の両方。
+     */
+    function getRankingByOfficial(int $emblem, int $limit): array
+    {
+        $entityFilter = $emblem ? "oc.emblem = {$emblem}" : "(oc.emblem = 1 OR oc.emblem = 2)";
+        $head = self::selectHead();
+        $tail = str_replace('{ENTITY_FILTER}', $entityFilter, self::rankingTail());
+        return DB::fetchAll(
+            "{$head}
+            FROM
+                open_chat AS oc
+                LEFT JOIN (
+                    SELECT r.id, MIN(r.tag) AS tag1, MIN(t4.tag) AS tag2
+                    FROM recommend AS r
+                        LEFT JOIN oc_tag2 AS t4 ON r.id = t4.id
+                    GROUP BY r.id
+                ) AS ranking ON oc.id = ranking.id
+            {$tail}",
+            compact('limit')
+        );
+    }
+
+    /**
+     * @param int[] $idArray
+     * @return string[]
+     */
+    function getRecommendTags(array $idArray): array
+    {
+        return $this->getTagsFromId($idArray, 'recommend');
+    }
+
+    /**
+     * @param int[] $idArray
+     * @return string[]
+     */
+    function getOcTags(array $idArray): array
+    {
+        return $this->getTagsFromId($idArray, 'oc_tag');
+    }
+
+    /**
+     * @param int[] $idArray
+     * @return string[]
+     */
+    private function getTagsFromId(array $idArray, string $table): array
+    {
+        $ids = implode(",", $idArray) ?: 0;
+        return DB::fetchAll(
+            "SELECT tag FROM {$table} WHERE id IN ({$ids})",
+            args: [\PDO::FETCH_COLUMN]
         );
     }
 
@@ -181,7 +193,7 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
                 LEFT JOIN statistics_ranking_hour AS t2 ON t1.id = t2.open_chat_id
                 LEFT JOIN statistics_ranking_week AS t5 ON t1.id = t5.open_chat_id
             WHERE
-                t3.open_chat_id IS NOT NULL 
+                t3.open_chat_id IS NOT NULL
                 OR t2.open_chat_id IS NOT NULL
             GROUP BY
                 t1.tag";
@@ -230,7 +242,7 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
                                 COUNT(*) AS cnt,
                                 SUM(oc.member) AS total_member
                             FROM
-                                open_chat AS oc 
+                                open_chat AS oc
                                 JOIN recommend AS r ON r.id = oc.id
                                 LEFT JOIN statistics_ranking_hour24 AS d ON d.open_chat_id = oc.id
                                 LEFT JOIN statistics_ranking_hour AS d2 ON d2.open_chat_id = oc.id
@@ -247,20 +259,16 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
 
         $results = DB::fetchAll($query);
 
-        // 結果を整形
         $groupedResults = [];
         foreach ($results as $row) {
-            // categoryをキーとして使用
             $key = $row['category'] ?? 0;
             if (!isset($groupedResults[$key])) {
                 $groupedResults[$key] = [];
             }
-            // 同じカテゴリーのデータを配列に追加
             $groupedResults[$key][] = [...$row, ...$this->getTagDiffMember($row['tag'])];
         }
 
         foreach ($groupedResults as &$row) {
-            // $groupedResultsの要素を要素数が多い順にソート
             uasort($row, function ($a, $b) {
                 return $b['week'] - $a['week'];
             });
@@ -287,8 +295,6 @@ class RecommendRankingRepository extends AbstractRecommendRankingRepository
 
     /**
      * 関連タグ集計用: recommend(1番手タグ) と oc_tag / oc_tag2(2・3番手にマッチしたタグ) の共起ペア。
-     * タグ付けは1部屋1タグを優先順位で確定させるため、「優先順位次第でどちらにも転び得た部屋」の
-     * 本数がそのままタグ間の意味的な近さになる（同一カテゴリより強いシグナル）。
      *
      * @return array{tag:string, related:string, cnt:int|string}[]
      */

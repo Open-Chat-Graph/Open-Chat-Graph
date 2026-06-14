@@ -176,13 +176,10 @@ class RecommendOpenChatPageController
         $growth = $recommend->themeMomentum ?? [];
 
         // ビュー(recommend_content)が使うのは mergedElements(表示30件) とスカラーのみ。
-        // 母集団300件(hour/member等)を空にして、view() の再帰エスケープが
-        // 表示されない数百行(各行に最大1000字のdescription)を毎回走査するのを避ける。
+        // 母集団(最大300件)の $list を空にして、view() の再帰エスケープが
+        // 表示されない数百行を毎回走査するのを避ける。
         // このDTOはリクエスト内メモ共有だが、以降このリクエストで母集団を使う処理は無い。
-        $recommend->hour = [];
-        $recommend->day = [];
-        $recommend->week = [];
-        $recommend->member = [];
+        $recommend->list = [];
         $recommend->shuffledMergedElements = null;
 
         return view('recommend_content', compact(
