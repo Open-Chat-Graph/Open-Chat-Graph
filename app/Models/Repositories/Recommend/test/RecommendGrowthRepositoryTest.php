@@ -7,18 +7,16 @@
  * docker compose exec app vendor/bin/phpunit app/Models/Repositories/Recommend/test/RecommendGrowthRepositoryTest.php
  *
  * テスト方針:
- * - SQLite(ranking_position.db / statistics.db) を読み取り専用で参照(書き込み禁止)。
+ * - SQLite(ranking_position.db) を読み取り専用で参照(書き込み禁止)。
  * - 実数値は日々変わるため exact 値ではなく「不変条件」をアサート。
- * - 空配列 / 無効ID / ID不足 → empty / 空shape が返ること。
- * - themeMomentum の返り値が docブロック通りのキー・型を持つこと。
+ * - 空配列 / 無効ID / 掲載なし → empty が返ること。
+ * - themeMomentum の返り値が docブロック通りのキー・型を持つこと(member フォールバックは廃止)。
  * - rank.points が日付昇順であること。
  * - rank.leaderId が int で、>0 なら入力 ID 集合に含まれること。
- * - member.points の各 value が int であること。
- * - themeGrowth は 3ID 未満で空配列を返すこと。
  *
- * 使用する実在 ID: ranking_position.db / statistics.db(statistics テーブル)双方にデータがある
- * 小さい ID を使う。実データ環境ではこれらは必ず存在する想定。
- * ID がDBに存在しない場合でも、テストは「空配列・shape の不変条件」で壊れない設計にする。
+ * 使用する実在 ID: ranking_position.db にデータがある小さい ID を使う。実データ環境では
+ * これらは必ず存在する想定。ID がDBに存在しない場合でも、テストは「空配列・shape の不変条件」で
+ * 壊れない設計にする。
  */
 
 declare(strict_types=1);
@@ -72,7 +70,7 @@ class RecommendGrowthRepositoryTest extends TestCase
 
     public function test_themeMomentum_returns_empty_array_for_single_id(): void
     {
-        // 1件のみ → rank も member も成立しない可能性が高い → 空
+        // 1件のみ → rank の点が揃わない可能性が高い → 空
         // (空ではない場合も shape チェックだけ行う)
         $result = $this->repo->themeMomentum([3], $this->anchor);
         $this->assertIsArray($result);
@@ -93,9 +91,11 @@ class RecommendGrowthRepositoryTest extends TestCase
             $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
         }
 
-        foreach (['spanDays', 'rank', 'member'] as $key) {
+        foreach (['spanDays', 'rank'] as $key) {
             $this->assertArrayHasKey($key, $result, "トップレベルキー '{$key}' が存在すること");
         }
+        // member フォールバックは廃止: キー自体が無いこと。
+        $this->assertArrayNotHasKey('member', $result, 'member フォールバックは廃止されたこと');
     }
 
     public function test_themeMomentum_rank_has_correct_keys(): void
@@ -108,19 +108,6 @@ class RecommendGrowthRepositoryTest extends TestCase
         $rank = $result['rank'];
         foreach (['points', 'current', 'first', 'leaderId'] as $key) {
             $this->assertArrayHasKey($key, $rank, "rank.{$key} が存在すること");
-        }
-    }
-
-    public function test_themeMomentum_member_has_correct_keys(): void
-    {
-        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
-        if (empty($result)) {
-            $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
-        }
-
-        $member = $result['member'];
-        foreach (['points', 'increase', 'rooms'] as $key) {
-            $this->assertArrayHasKey($key, $member, "member.{$key} が存在すること");
         }
     }
 
@@ -160,18 +147,6 @@ class RecommendGrowthRepositoryTest extends TestCase
         $this->assertIsInt($result['rank']['leaderId']);
     }
 
-    public function test_themeMomentum_member_increase_and_rooms_are_ints(): void
-    {
-        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 7);
-        if (empty($result)) {
-            $this->markTestSkipped('安定IDのデータが取得できなかったためスキップ');
-        }
-
-        $this->assertIsInt($result['member']['increase']);
-        $this->assertIsInt($result['member']['rooms']);
-        $this->assertGreaterThanOrEqual(0, $result['member']['rooms']);
-    }
-
     // ===================================================
     // themeMomentum: points の詳細不変条件
     // ===================================================
@@ -207,36 +182,6 @@ class RecommendGrowthRepositoryTest extends TestCase
             // date は YYYY-MM-DD 形式
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $point['date']);
         }
-    }
-
-    public function test_themeMomentum_member_points_have_correct_shape(): void
-    {
-        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result) || empty($result['member']['points'])) {
-            $this->markTestSkipped('member.points が空のためスキップ');
-        }
-
-        foreach ($result['member']['points'] as $point) {
-            $this->assertArrayHasKey('date', $point);
-            $this->assertArrayHasKey('value', $point);
-            $this->assertIsString($point['date']);
-            $this->assertIsInt($point['value']);
-            $this->assertGreaterThanOrEqual(0, $point['value'], 'member.value は 0 以上のメンバー数であること');
-            $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $point['date']);
-        }
-    }
-
-    public function test_themeMomentum_member_points_are_date_ascending(): void
-    {
-        $result = $this->repo->themeMomentum(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result) || empty($result['member']['points'])) {
-            $this->markTestSkipped('member.points が空のためスキップ');
-        }
-
-        $dates = array_column($result['member']['points'], 'date');
-        $sorted = $dates;
-        sort($sorted);
-        $this->assertSame($sorted, $dates, 'member.points の date が昇順であること');
     }
 
     // ===================================================
@@ -282,118 +227,5 @@ class RecommendGrowthRepositoryTest extends TestCase
         if (count($result['rank']['points']) >= 2) {
             $this->assertGreaterThan(0, $result['spanDays'], 'rank.points が 2 点以上なら spanDays > 0');
         }
-    }
-
-    // ===================================================
-    // themeGrowth: 3ID 未満は空
-    // ===================================================
-
-    public function test_themeGrowth_returns_empty_for_zero_ids(): void
-    {
-        $result = $this->repo->themeGrowth([], $this->anchor);
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('points', $result);
-        $this->assertArrayHasKey('rooms', $result);
-        $this->assertEmpty($result['points']);
-        $this->assertSame(0, $result['rooms']);
-    }
-
-    public function test_themeGrowth_returns_empty_for_one_id(): void
-    {
-        $result = $this->repo->themeGrowth([3], $this->anchor);
-        $this->assertEmpty($result['points']);
-        $this->assertSame(0, $result['rooms']);
-    }
-
-    public function test_themeGrowth_returns_empty_for_two_ids(): void
-    {
-        $result = $this->repo->themeGrowth([3, 17], $this->anchor);
-        $this->assertEmpty($result['points']);
-        $this->assertSame(0, $result['rooms']);
-    }
-
-    public function test_themeGrowth_returns_data_for_five_ids(): void
-    {
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
-        // データがある場合は shape を確認(データがなければ empty shape も正常)
-        $this->assertArrayHasKey('points', $result);
-        $this->assertArrayHasKey('rooms', $result);
-        $this->assertIsArray($result['points']);
-        $this->assertIsInt($result['rooms']);
-        $this->assertGreaterThanOrEqual(0, $result['rooms']);
-    }
-
-    public function test_themeGrowth_rooms_matches_cohort_count(): void
-    {
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result['points'])) {
-            $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
-        }
-
-        // rooms は入力 ID 数以下のコホート
-        $this->assertLessThanOrEqual(count(self::STABLE_IDS), $result['rooms']);
-        // rooms >= 1 (points があれば最低 1 部屋)
-        $this->assertGreaterThanOrEqual(1, $result['rooms']);
-    }
-
-    public function test_themeGrowth_nonexistent_ids_return_empty(): void
-    {
-        $result = $this->repo->themeGrowth([PHP_INT_MAX - 1, PHP_INT_MAX - 2, PHP_INT_MAX - 3], $this->anchor, 21);
-        $this->assertEmpty($result['points']);
-        $this->assertSame(0, $result['rooms']);
-    }
-
-    // ===================================================
-    // themeGrowth: points の不変条件
-    // ===================================================
-
-    public function test_themeGrowth_points_are_date_ascending(): void
-    {
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result['points'])) {
-            $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
-        }
-
-        $dates = array_column($result['points'], 'date');
-        $sorted = $dates;
-        sort($sorted);
-        $this->assertSame($sorted, $dates, 'points の date が昇順であること');
-    }
-
-    public function test_themeGrowth_points_values_are_ints(): void
-    {
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result['points'])) {
-            $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
-        }
-
-        foreach ($result['points'] as $point) {
-            $this->assertIsInt($point['value'], "value は int であること");
-            $this->assertGreaterThanOrEqual(0, $point['value']);
-        }
-    }
-
-    public function test_themeGrowth_points_dates_match_expected_format(): void
-    {
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, 21);
-        if (empty($result['points'])) {
-            $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
-        }
-
-        foreach ($result['points'] as $point) {
-            $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $point['date']);
-        }
-    }
-
-    public function test_themeGrowth_points_count_does_not_exceed_days(): void
-    {
-        $days = 14;
-        $result = $this->repo->themeGrowth(self::STABLE_IDS, $this->anchor, $days);
-        if (empty($result['points'])) {
-            $this->markTestSkipped('themeGrowth のデータが空のためスキップ');
-        }
-
-        // days + 1 日分以下(境界の扱いで ±1 の余裕を持たせる)
-        $this->assertLessThanOrEqual($days + 1, count($result['points']), 'points 数は days 以下であること');
     }
 }

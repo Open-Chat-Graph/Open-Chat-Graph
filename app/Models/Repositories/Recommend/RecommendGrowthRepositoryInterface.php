@@ -13,26 +13,16 @@ namespace App\Models\Repositories\Recommend;
 interface RecommendGrowthRepositoryInterface
 {
     /**
-     * テーマの勢いを 1 つの配列にまとめて返す(ja/tw/th 全ロケール対応)。
+     * テーマの勢い(掲載部屋の全体ランキング最高順位の日次推移)を返す(ja/tw/th 全ロケール対応)。
+     * ランキング掲載が無い(2点未満の)テーマは空配列を返す。
      *
      * @param int[] $openChatIds 掲載部屋の ID 群
      * @param \DateTime $anchorDate 「直近 N 日」の起点(最終 cron 時刻)
      * @param int $days 遡る日数
      * @return array{
      *   spanDays: int,
-     *   rank: array{points: array{date:string, value:int}[], current:int, first:int, leaderId:int},
-     *   member: array{points: array{date:string, value:int}[], increase:int, rooms:int}
+     *   rank: array{points: array{date:string, value:int}[], current:int, first:int, leaderId:int}
      * }|array{} データ不足時は空配列
      */
     public function themeMomentum(array $openChatIds, \DateTime $anchorDate, int $days = 7): array;
-
-    /**
-     * 同一部屋コホートの合計メンバー数を日次で返す。
-     *
-     * @param int[] $openChatIds 掲載部屋の ID 群
-     * @param \DateTime $anchorDate 「直近 N 日」の起点(最終 cron 時刻)
-     * @param int $days 遡る日数
-     * @return array{points: array{date:string, value:int}[], rooms:int}
-     */
-    public function themeGrowth(array $openChatIds, \DateTime $anchorDate, int $days = 21): array;
 }
