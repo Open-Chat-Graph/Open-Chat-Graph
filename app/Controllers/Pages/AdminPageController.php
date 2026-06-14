@@ -98,7 +98,8 @@ class AdminPageController
      */
     function tagupdate()
     {
-        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate);
+        // admin からの手動実行は実行中の前ランを kill して後発で再実行する（--cancel-previous）。
+        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate, '--cancel-previous');
 
         return view('admin/admin_message_page', ['title' => 'exec', 'message' => BatchScript::tagUpdate->absolutePath() . ' を実行しました。']);
     }

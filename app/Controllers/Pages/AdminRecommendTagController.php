@@ -139,7 +139,9 @@ class AdminRecommendTagController
     public function rebuild()
     {
         // urlRoot を渡してロケール別に再構築（'' なら ja）。バックグラウンドで起動。
-        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate, (string)MimimalCmsConfig::$urlRoot);
+        // admin/編集画面からの手動反映は最新の編集を確実に反映したいので、実行中の前ランを
+        // kill して後発で再実行する（--cancel-previous）。
+        $this->batchScriptLauncher->launchInBackground(BatchScript::tagUpdate, (string)MimimalCmsConfig::$urlRoot, '--cancel-previous');
         return response(['ok' => true]);
     }
 

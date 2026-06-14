@@ -17,7 +17,7 @@ use Shared\MimimalCmsConfig;
  * おすすめタグの全レコード再適用ジョブ（batch/exec/tag_update.php のエントリから起動）。
  *
  * GUI からの「全レコードに即時反映」で使われ、タグ再構築から静的データ生成・CDN purge までを
- * 一気通貫で実行する。二重実行時は実行中の前プロセスを kill して後発で再実行する（最新の定義を優先）。
+ * 一気通貫で実行する。二重実行時の挙動は $cancelPrevious で切り替える（既定は待機）。
  */
 class RebuildAllRecommendTagsService
 {
@@ -27,17 +27,33 @@ class RebuildAllRecommendTagsService
         private BatchScriptLauncher $launcher,
     ) {}
 
-    function handle(): void
+    /**
+     * @param bool $cancelPrevious 既に実行中だった場合の挙動。
+     *   false（既定）: 実行中ならスキップして待機する（前のランの完走を優先）。
+     *                  毎時処理など定期トリガでは、反映がトリガ間隔より長くかかっても
+     *                  後発が前を kill し続けて永遠に完走しない事態を避けるためこちらを使う。
+     *   true: 実行中の前プロセスを kill して後発で再実行する（最新の定義を優先）。
+     *         GUI/admin からの手動実行のように、最新の編集を確実に反映したいときに使う。
+     */
+    function handle(bool $cancelPrevious = false): void
     {
         $now = date('Y-m-d H:i:s');
 
         try {
-            // 二重実行時は後発優先: 実行中の前プロセスを kill して引き継ぐ。
-            // タグ反映は時間がかかるため、古い定義のまま走る先行ランをスキップで待つと
-            // 最新の編集が黙って取りこぼされる。最新で上書きするため前ランを止めて再実行する。
-            // shadow-swap の build テーブルは毎回 DROP→作り直し、RENAME は原子的なので、
-            // 先行ランを途中 kill しても live は不整合にならない（本ランが全件作り直す）。
             if ($this->state->getBool(StateType::isRecommendTagRebuildActive)) {
+                if (!$cancelPrevious) {
+                    // 既定（待機）: 実行中なら何もせず終了し、前のランを完走させる。
+                    $message = 'rebuildAllViaShadowSwap: 既に実行中のためスキップ at ' . $now;
+                    CronUtility::addCronLog($message);
+                    AdminTool::sendDiscordNotify($message);
+                    return;
+                }
+
+                // 後発優先: 実行中の前プロセスを kill して引き継ぐ。
+                // タグ反映は時間がかかるため、古い定義のまま走る先行ランをスキップで待つと
+                // 最新の編集が黙って取りこぼされる。最新で上書きするため前ランを止めて再実行する。
+                // shadow-swap の build テーブルは毎回 DROP→作り直し、RENAME は原子的なので、
+                // 先行ランを途中 kill しても live は不整合にならない（本ランが全件作り直す）。
                 $message = 'rebuildAllViaShadowSwap: 既に実行中のため前回の処理をkillして再実行 at ' . $now;
                 CronUtility::addCronLog($message);
                 AdminTool::sendDiscordNotify($message);
