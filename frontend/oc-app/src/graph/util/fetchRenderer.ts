@@ -48,6 +48,12 @@ function getCurrentSpan(): 'hour' | 'day' {
   return graphStore.get(chartModeAtom) === 'line' && chart.getIsHour() ? 'hour' : 'day'
 }
 
+/** 現在のビューの順位集計範囲（in: カテゴリ内 / all: すべて）。category=all 選択時とその他/未掲載室は all。 */
+function currentScope(): 'in' | 'all' {
+  const sort = graphStore.get(rankingRisingAtom)
+  return sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
+}
+
 /**
  * 現在のチャート状態が指す表示ビューをAPIクエリ文字列にする。
  * 同一ビューは同一URLになるため、fetcher のURLキャッシュがそのまま効く
@@ -56,7 +62,7 @@ export function getChartViewQuery(withMeta = false): string {
   const mode = graphStore.get(chartModeAtom)
   const sort = graphStore.get(rankingRisingAtom)
   const span = getCurrentSpan()
-  const scope = sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
+  const scope = currentScope()
 
   const query = new URLSearchParams({
     span,
@@ -70,25 +76,89 @@ export function getChartViewQuery(withMeta = false): string {
   return query.toString()
 }
 
-/**
- * 差分フェッチの蓄積。
+/* ────────────────────────────────────────────────────────────────────────
+ * 層(series)別の差分フェッチ
  *
- * 表示ビュー(span=day)毎に「ある開始日から最新日(endDate)まで」の日次系列を累積で持つ。
- * 期間タブを広げると足りない古い側だけ取得して prepend マージし、loadedFrom を更新する。
- * 窓は最新日終端固定なので、足りないのは常に「古い側の連続1範囲」だけになる（窓⊂窓）。
+ * 表示ビューを「層」に分解し、層ごとに独立して「最新日(endDate)から、ある開始日まで」の
+ * 日次系列を累積で持つ。view設定(sort|scope|mode)を変えても、共有できる層は再取得しない。
+ * 例: 全期間で人数を見たあとに順位ONしても、member は再取得せず position 層だけ取りに行く。
  *
- * - キー: `${sort}|${scope}|${mode}`（span=day のみ。category は部屋固定なので scope に内包される）
- * - loadedFrom: 蓄積が保持している最古の日付(Y-m-d)
- * - data: loadedFrom〜endDate の累積レスポンス（chart.render にそのまま渡す initData）
- */
-const accumulation = new Map<string, { loadedFrom: string; data: ChartResponse }>()
+ * 層キー:
+ *  - member                          … メンバー数（常に必要）
+ *  - position|{sort}|{scope}         … 順位(折れ線)。sort=ranking/rising, scope=in/all
+ *  - memberOhlc                      … メンバー数ローソク足
+ *  - positionOhlc|{sort}|{scope}     … 順位ローソク足
+ *  （category は部屋固定なので scope に内包される）
+ *
+ * 各層キャッシュ: { loadedFrom, byDate }。
+ *  - loadedFrom: その層が保持している最古の日付(Y-m-d)
+ *  - byDate: 日付 → その層の値 の Map（窓は常に endDate 終端固定なので、足りないのは古い側の連続1範囲だけ）
+ *
+ * 窓(windowFrom..endDate)を描画するとき、必要な各層について byDate に未取得の古い範囲があれば、
+ * 同じ範囲を要する層をまとめて1リクエスト(?series=…&from&to)で取得し byDate にマージする。
+ * 描画は窓の密な日付配列に各層を揃えて ChartResponse 相当を組み立てる。
+ * ──────────────────────────────────────────────────────────────────────── */
 
-/** 現在の表示ビュー(span=day)の蓄積キー */
-function currentConfigKey(): string {
+type LayerName = 'member' | 'position' | 'memberOhlc' | 'positionOhlc'
+
+/** position 系列の1日分（折れ線の重ね描き用） */
+type PositionPoint = {
+  time: string | null
+  position: number | null
+  totalCount: number | null
+}
+
+type LayerCache =
+  | { loadedFrom: string; byDate: Map<string, number | null> } // member
+  | { loadedFrom: string; byDate: Map<string, PositionPoint> } // position
+  | { loadedFrom: string; byDate: Map<string, MemberOhlc> } // memberOhlc
+  | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> } // positionOhlc
+
+/** 層キャッシュ本体。キーは `${LayerName}` もしくは `${LayerName}|${sort}|${scope}` */
+const layers = new Map<string, LayerCache>()
+
+/** member 層のキャッシュキー（sort/scope に依らず1つ） */
+const MEMBER_KEY = 'member'
+/** memberOhlc 層のキャッシュキー（sort/scope に依らず1つ） */
+const MEMBER_OHLC_KEY = 'memberOhlc'
+
+/** position / positionOhlc 層のキャッシュキー（sort×scope ごとに別） */
+function positionKey(name: 'position' | 'positionOhlc'): string {
+  return `${name}|${graphStore.get(rankingRisingAtom)}|${currentScope()}`
+}
+
+/** 層名 → 現在ビューでのキャッシュキー */
+function layerKey(name: LayerName): string {
+  switch (name) {
+    case 'member':
+      return MEMBER_KEY
+    case 'memberOhlc':
+      return MEMBER_OHLC_KEY
+    case 'position':
+      return positionKey('position')
+    case 'positionOhlc':
+      return positionKey('positionOhlc')
+  }
+}
+
+/**
+ * 現在の表示ビューで必要な層を返す。
+ *  - member: 常に必要
+ *  - position: 折れ線 かつ 順位ON（sort≠none）
+ *  - memberOhlc: ローソク足
+ *  - positionOhlc: ローソク足 かつ 順位ON
+ */
+function requiredLayers(): LayerName[] {
   const mode = graphStore.get(chartModeAtom)
   const sort = graphStore.get(rankingRisingAtom)
-  const scope = sort !== 'none' && graphStore.get(categoryAtom) !== 'all' ? 'in' : 'all'
-  return `${sort}|${scope}|${mode}`
+  const list: LayerName[] = ['member']
+  if (mode === 'candlestick') {
+    list.push('memberOhlc')
+    if (sort !== 'none') list.push('positionOhlc')
+  } else if (sort !== 'none') {
+    list.push('position')
+  }
+  return list
 }
 
 /** Y-m-d に日数を加減算した Y-m-d を返す（UTCで計算しタイムゾーンの影響を排除） */
@@ -123,59 +193,246 @@ function windowFromForLimit(limit: ChartLimit): string {
   return from < startDate ? startDate : from
 }
 
-/** 現在の表示ビューの蓄積が、指定 limit の窓を既に満たしているか（追加取得不要か） */
-export function currentConfigCoversLimit(limit: ChartLimit): boolean {
-  const entry = accumulation.get(currentConfigKey())
-  if (!entry) return false
-  return entry.loadedFrom <= windowFromForLimit(limit)
+/**
+ * 現在ビューで「描画・取得に使う窓の開始日」を返す。
+ *
+ * ローソク足は全期間で取得する（＝開始日は startDate 固定）。
+ * 理由: ローソク足のタブ表示判定 updateCandleTabVisibility は「長いタブが短いタブより本数が
+ * 多いか」を表示中 data の日付配列で数えて決めるため、窓だけ持つと（週タブ表示中は week 窓ぶんの
+ * 日付しか無く）月/全タブの本数を過小カウントしてタブが誤って消える。可用性メタ(ohlcAvailability)は
+ * 閾値booleanのみでこの本数比較を再現できないため、ローソク足は全期間取得で従来の判定を厳密に維持する。
+ * （member 層は line と共有。candlestick で member 行は描画しないが date 軸を全期間に保つため全期間で持つ）
+ *
+ * 折れ線は従来どおり limit の窓開始日（縮小はクライアントスライス、拡大は古い差分だけ取得）。
+ */
+function neededFromForView(limit: ChartLimit): string {
+  return graphStore.get(chartModeAtom) === 'candlestick'
+    ? chartMeta.startDate
+    : windowFromForLimit(limit)
 }
 
-/** 範囲(from/to)付きで現在ビューの系列を取得する。fetcher のURLキャッシュは範囲ごとに効く */
-async function fetchRange(from: string, to: string): Promise<ChartResponse> {
-  return fetcher<ChartResponse>(
-    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery()}&from=${from}&to=${to}`
-  )
-}
-
-/** 古い差分(older)を既存(existing)の先頭に prepend マージする。窓は重複しないので連結のみ。 */
-function prependMerge(older: ChartResponse, existing: ChartResponse): ChartResponse {
-  const cat = <T>(a: T[] | undefined, b: T[] | undefined): T[] =>
-    (a ?? []).concat(b ?? [])
-  return {
-    date: cat(older.date, existing.date),
-    member: cat(older.member, existing.member),
-    time: cat(older.time, existing.time),
-    position: cat(older.position, existing.position),
-    totalCount: cat(older.totalCount, existing.totalCount),
-    memberOhlc:
-      older.memberOhlc || existing.memberOhlc
-        ? cat(older.memberOhlc, existing.memberOhlc)
-        : undefined,
-    positionOhlc:
-      older.positionOhlc || existing.positionOhlc
-        ? cat(older.positionOhlc, existing.positionOhlc)
-        : undefined,
+/** windowFrom..endDate を1日刻みで埋めた密な日付配列（バックエンドの date 軸と一致する） */
+function buildDateAxis(from: string): string[] {
+  const dates: string[] = []
+  let cur = from
+  const end = chartMeta.endDate
+  while (cur <= end) {
+    dates.push(cur)
+    cur = addDays(cur, 1)
   }
+  return dates
 }
 
 /**
- * 表示中の期間タブの窓だけを取得し、拡大時は足りない古い差分だけ取得して蓄積する。
+ * 現在ビューの必要層すべてが、指定 limit の窓を既に満たしているか（追加取得不要か）。
+ * 1つでも未取得の古い範囲を持つ層があれば false。
+ */
+export function currentConfigCoversLimit(limit: ChartLimit): boolean {
+  const neededFrom = neededFromForView(limit)
+  return requiredLayers().every((name) => {
+    const entry = layers.get(layerKey(name))
+    return entry !== undefined && entry.loadedFrom <= neededFrom
+  })
+}
+
+/** 層名 → series クエリ値 */
+function seriesParam(name: LayerName): string {
+  return name
+}
+
+/**
+ * 指定範囲(from..to)で指定層をまとめて1リクエスト取得する。
+ * 共通 date 軸で返るので、各層を date と zip して byDate にマージする。
+ */
+async function fetchLayers(names: LayerName[], from: string, to: string): Promise<void> {
+  const series = names.map(seriesParam).join(',')
+  const data = await fetcher<ChartResponse>(
+    `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery()}&series=${series}&from=${from}&to=${to}`
+  )
+  mergeLayers(names, data)
+}
+
+/** 取得レスポンス(共通date軸)を、要求した各層の byDate に prepend マージし loadedFrom を更新する */
+function mergeLayers(names: LayerName[], data: ChartResponse): void {
+  const date = data.date ?? []
+  const from = date[0]
+
+  for (const name of names) {
+    const key = layerKey(name)
+    switch (name) {
+      case 'member': {
+        const entry = ensureMemberEntry(key)
+        date.forEach((d, i) => entry.byDate.set(d, data.member?.[i] ?? null))
+        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
+        break
+      }
+      case 'position': {
+        const entry = ensurePositionEntry(key)
+        date.forEach((d, i) =>
+          entry.byDate.set(d, {
+            time: data.time?.[i] ?? null,
+            position: data.position?.[i] ?? null,
+            totalCount: data.totalCount?.[i] ?? null,
+          })
+        )
+        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
+        break
+      }
+      case 'memberOhlc': {
+        const entry = ensureMemberOhlcEntry(key)
+        for (const r of data.memberOhlc ?? []) entry.byDate.set(r.date, r)
+        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
+        break
+      }
+      case 'positionOhlc': {
+        const entry = ensurePositionOhlcEntry(key)
+        for (const r of data.positionOhlc ?? []) entry.byDate.set(r.date, r)
+        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
+        break
+      }
+    }
+  }
+}
+
+// 層キャッシュの取得/生成（型ごとに分けて byDate の値型を保つ）。
+// loadedFrom は生成時に endDate より後の番兵にしておき、最初のマージで実データの from に縮む。
+const SENTINEL_FROM = '9999-12-31'
+
+function ensureMemberEntry(key: string): { loadedFrom: string; byDate: Map<string, number | null> } {
+  let entry = layers.get(key) as { loadedFrom: string; byDate: Map<string, number | null> } | undefined
+  if (!entry) {
+    entry = { loadedFrom: SENTINEL_FROM, byDate: new Map() }
+    layers.set(key, entry)
+  }
+  return entry
+}
+
+function ensurePositionEntry(key: string): { loadedFrom: string; byDate: Map<string, PositionPoint> } {
+  let entry = layers.get(key) as { loadedFrom: string; byDate: Map<string, PositionPoint> } | undefined
+  if (!entry) {
+    entry = { loadedFrom: SENTINEL_FROM, byDate: new Map() }
+    layers.set(key, entry)
+  }
+  return entry
+}
+
+function ensureMemberOhlcEntry(key: string): { loadedFrom: string; byDate: Map<string, MemberOhlc> } {
+  let entry = layers.get(key) as { loadedFrom: string; byDate: Map<string, MemberOhlc> } | undefined
+  if (!entry) {
+    entry = { loadedFrom: SENTINEL_FROM, byDate: new Map() }
+    layers.set(key, entry)
+  }
+  return entry
+}
+
+function ensurePositionOhlcEntry(key: string): { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> } {
+  let entry = layers.get(key) as { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> } | undefined
+  if (!entry) {
+    entry = { loadedFrom: SENTINEL_FROM, byDate: new Map() }
+    layers.set(key, entry)
+  }
+  return entry
+}
+
+/**
+ * 必要な各層について「窓に足りない古い範囲」を求め、同じ範囲を要する層をまとめて取得する。
+ * 窓は endDate 終端固定なので、各層に足りないのは常に [neededFrom .. loadedFrom-1] の連続1範囲。
+ * 同一 from の層は1リクエストにまとめる（fetcher のURLキャッシュも効く）。
+ */
+async function ensureLayersForWindow(neededFrom: string): Promise<void> {
+  // 層ごとに「不足範囲(from..to)」を求め、同一範囲の層を1リクエストにまとめる。
+  //  - 未取得層: 窓全体 [neededFrom .. endDate]
+  //  - 既存層: 既に持つ範囲(loadedFrom..endDate)は再取得せず、不足分 [neededFrom .. loadedFrom-1] だけ
+  // 全期間 member 取得済み→順位ON は position 層だけが未取得なので position だけ取りに行く（member 非再取得）。
+  const requests = new Map<string, LayerName[]>() // key: `${from}|${to}`
+  for (const name of requiredLayers()) {
+    const entry = layers.get(layerKey(name))
+    if (entry && entry.loadedFrom <= neededFrom) continue // 既に窓を満たす層はスキップ
+    const reqTo = entry ? addDays(entry.loadedFrom, -1) : chartMeta.endDate
+    const k = `${neededFrom}|${reqTo}`
+    const list = requests.get(k) ?? []
+    list.push(name)
+    requests.set(k, list)
+  }
+
+  await Promise.all(
+    [...requests.entries()].map(([k, names]) => {
+      const [from, reqTo] = k.split('|')
+      return fetchLayers(names, from, reqTo)
+    })
+  )
+}
+
+/**
+ * 現在ビューの必要層から、窓(neededFrom..endDate)に揃えた ChartResponse を組み立てる。
+ * 折れ線は limit の窓、ローソク足は全期間（neededFromForView 参照）。
+ * chart 側が limit で末尾スライスするため、ここでは窓全体（蓄積が広くてもよい）を渡す。
+ */
+function assembleResponse(limit: ChartLimit): ChartResponse {
+  const from = neededFromForView(limit)
+  const date = buildDateAxis(from)
+  const needs = new Set(requiredLayers())
+
+  const response: ChartResponse = {
+    date,
+    member: [],
+    time: [],
+    position: [],
+    totalCount: [],
+  }
+
+  // member（常に必要）
+  const memberEntry = layers.get(MEMBER_KEY) as
+    | { loadedFrom: string; byDate: Map<string, number | null> }
+    | undefined
+  response.member = date.map((d) => memberEntry?.byDate.get(d) ?? null)
+
+  // position（折れ線・順位ON時のみ。それ以外は空配列で従来同様）
+  if (needs.has('position')) {
+    const entry = layers.get(positionKey('position')) as
+      | { loadedFrom: string; byDate: Map<string, PositionPoint> }
+      | undefined
+    response.time = date.map((d) => entry?.byDate.get(d)?.time ?? null)
+    response.position = date.map((d) => entry?.byDate.get(d)?.position ?? null)
+    response.totalCount = date.map((d) => entry?.byDate.get(d)?.totalCount ?? null)
+  }
+
+  // memberOhlc（ローソク足時のみ。日付昇順の配列で返す）
+  if (needs.has('memberOhlc')) {
+    const entry = layers.get(MEMBER_OHLC_KEY) as
+      | { loadedFrom: string; byDate: Map<string, MemberOhlc> }
+      | undefined
+    response.memberOhlc = date
+      .map((d) => entry?.byDate.get(d))
+      .filter((r): r is MemberOhlc => r !== undefined)
+  }
+
+  // positionOhlc（ローソク足・順位ON時のみ）
+  if (needs.has('positionOhlc')) {
+    const entry = layers.get(positionKey('positionOhlc')) as
+      | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> }
+      | undefined
+    response.positionOhlc = date
+      .map((d) => entry?.byDate.get(d))
+      .filter((r): r is RankingPositionOhlc => r !== undefined)
+  }
+
+  return response
+}
+
+/**
+ * 表示中の期間タブの窓を描画するためのデータを用意する。必要な層のうち足りない古い差分だけ取得する。
  *
- * - span=hour（最新24時間）: 範囲化対象外。従来どおり全24hを取得し蓄積に入れない。
- * - 埋め込みメタ無し(withMeta=true)の新規室: 窓計算ができないため全期間を取得し、
- *   その data.date[0] を loadedFrom として蓄積する（以後は全期間が手元にあり追加取得不要）。
- * - mode=candlestick: 全期間で取得する。ローソク足のタブ表示判定 updateCandleTabVisibility は
- *   「長いタブが短いタブより本数が多いか」を表示中 data の日付配列で数えて決めるため、
- *   窓だけ持つと（例: 週タブ表示中は week 窓ぶんしか日付が無く）月/全タブの本数を
- *   過小カウントしてタブが誤って消える。可用性メタ(ohlcAvailability)は閾値booleanのみで
- *   この本数比較を再現できないため、ローソク足は全期間取得で従来の判定を厳密に維持する。
- * - それ以外(day, line, 埋め込みメタ有): 現在 limit の窓を取得/差分マージし、蓄積 data を返す。
+ * - span=hour（最新24時間）: 範囲化・層キャッシュ対象外。従来どおり series 無しで全24hを取得する。
+ * - 埋め込みメタ無し(withMeta=true)の新規室: 窓計算ができないため series 無しで全期間を取得し、
+ *   取得後 chartMeta を埋めてから全層を byDate へ取り込む（以後は全期間が手元にあり追加取得不要）。
+ * - それ以外(day, 埋め込みメタ有): 現在 limit の窓に必要な層の不足分だけ取得し、窓に揃えて組み立てる。
  *
- * 返り値は「現在ビューの蓄積 data（= chart.render に渡す initData）」。
- * chart 側が limit で末尾スライスするため、窓より広い蓄積でも正しく表示される。
+ * 返り値は「現在ビューの窓ぶんの ChartResponse（= chart.render に渡す initData）」。
+ * chart 側が limit で末尾スライスするため、窓どおりに渡せばよい。
  */
 export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
-  // 最新24時間ビューは範囲化しない（毎時データはMariaDB・全24h固定）
+  // 最新24時間ビューは範囲化しない（毎時データはMariaDB・全24h固定。層キャッシュにも入れない）
   if (getCurrentSpan() === 'hour') {
     const data = await fetcher<ChartResponse>(
       `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
@@ -184,42 +441,43 @@ export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
     return data
   }
 
-  // 埋め込みメタが無い新規室: 窓を計算できないので全期間フォールバック（from/to 無し）。
-  // 取得後 chartMeta が埋まり、蓄積は全期間(loadedFrom=最古日)として記録する。
-  // ローソク足モードも全期間で取得する（後述）。
-  if (withMeta || graphStore.get(chartModeAtom) === 'candlestick') {
+  // 埋め込みメタが無い新規室: 窓を計算できないので全期間フォールバック（series/from/to 無し）。
+  // 取得後 chartMeta が埋まる。全期間ぶんを各層へ取り込み、以後は層キャッシュ経路に合流できる。
+  if (withMeta) {
     const data = await fetcher<ChartResponse>(
       `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery(withMeta)}`
     )
     if (data.meta) chartMeta = data.meta
-    accumulation.set(currentConfigKey(), {
-      loadedFrom: data.date[0] ?? chartMeta.startDate,
-      data,
-    })
+    importFullResponseToLayers(data)
     return data
   }
 
-  const key = currentConfigKey()
-  const neededFrom = windowFromForLimit(graphStore.get(limitAtom) as ChartLimit)
-  const entry = accumulation.get(key)
+  const limit = graphStore.get(limitAtom) as ChartLimit
+  await ensureLayersForWindow(neededFromForView(limit))
+  return assembleResponse(limit)
+}
 
-  // 蓄積なし: 現在 limit の窓だけ取得して蓄積を作る
-  if (!entry) {
-    const data = await fetchRange(neededFrom, chartMeta.endDate)
-    accumulation.set(key, { loadedFrom: neededFrom, data })
-    return data
+/**
+ * series 無し全期間レスポンス（hour 以外のフォールバック経路）を層キャッシュに取り込む。
+ * これにより埋め込みメタ無し室でも、以降の view 切替で層キャッシュ経路に合流できる。
+ * （取り込む層は現在ビューが返した系列ぶん。order は date 昇順前提）
+ */
+function importFullResponseToLayers(data: ChartResponse): void {
+  const from = data.date?.[0]
+  if (from === undefined) return
+
+  // member は常に入っている
+  mergeLayers(['member'], data)
+
+  // 現在ビューに応じて返ってきた層も取り込む（空配列なら実質ノーオペ）
+  const sort = graphStore.get(rankingRisingAtom)
+  const mode = graphStore.get(chartModeAtom)
+  if (mode === 'candlestick') {
+    mergeLayers(['memberOhlc'], data)
+    if (sort !== 'none') mergeLayers(['positionOhlc'], data)
+  } else if (sort !== 'none') {
+    mergeLayers(['position'], data)
   }
-
-  // 既に足りる: 取得せず蓄積を使う（chart 側が limit でスライス）
-  if (entry.loadedFrom <= neededFrom) {
-    return entry.data
-  }
-
-  // 拡大: 足りない古い側(neededFrom 〜 loadedFromの前日)だけ取得して prepend マージ
-  const older = await fetchRange(neededFrom, addDays(entry.loadedFrom, -1))
-  const merged = prependMerge(older, entry.data)
-  accumulation.set(key, { loadedFrom: neededFrom, data: merged })
-  return merged
 }
 
 const renderPositionChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
