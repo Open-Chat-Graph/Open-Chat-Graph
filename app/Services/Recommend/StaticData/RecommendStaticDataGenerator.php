@@ -151,7 +151,7 @@ class RecommendStaticDataGenerator
     /**
      * テーマの勢い(themeMomentum)を事前計算して DTO に同梱する。
      *
-     * /recommend/{tag} がアクセスごとに ranking_position.db / statistics.db を集計していたのを、
+     * /recommend/{tag} がアクセスごとに ranking_position.db を集計していたのを、
      * 毎時の .dat 生成時の1回に寄せる。対象はタグ .dat のみ（勢いを表示するのはタグページだけ）。
      * 集計窓の起点・対象IDはページ側のライブ計算と同一
      * (RecommendOpenChatPageController::index と揃えること)。
