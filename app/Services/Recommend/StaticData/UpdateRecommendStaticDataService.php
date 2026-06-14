@@ -10,6 +10,7 @@ use App\Services\Cron\Enum\BatchScript;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
+use App\Services\Recommend\RecommendTagRebuildLock;
 use App\Services\Recommend\RecommendUpdater;
 use App\Services\Recommend\TagDefinition\TagMetadata;
 use ExceptionHandler\ExceptionHandler;
@@ -28,6 +29,7 @@ class UpdateRecommendStaticDataService
         private RecommendUpdater $recommendUpdater,
         private RecommendStaticDataGenerator $recommendStaticDataGenerator,
         private BatchScriptLauncher $launcher,
+        private RecommendTagRebuildLock $rebuildLock,
     ) {}
 
     function handle(): void
@@ -61,10 +63,10 @@ class UpdateRecommendStaticDataService
                 $currentHash = is_file($tagJsonPath) ? hash('sha256', (string)file_get_contents($tagJsonPath)) : '';
                 $storedHash = $this->state->getString(StateType::recommendTagsJsonHash);
                 if ($currentHash !== '' && $currentHash !== $storedHash) {
-                    if ($this->state->getBool(StateType::isRecommendTagRebuildActive)) {
+                    if ($this->rebuildLock->isHeldByLiveProcess()) {
                         CronUtility::addCronLog('タグ定義変更を検知したが再適用が実行中のためスキップ（次回CRONで再試行）');
                     } else {
-                        $this->state->setTrue(StateType::isRecommendTagRebuildActive);
+                        $this->rebuildLock->acquire();
                         try {
                             CronUtility::addCronLog('タグ定義の変更を検知 → 全レコード再適用開始 (urlRoot=' . MimimalCmsConfig::$urlRoot . ')');
                             if (MimimalCmsConfig::$urlRoot === '') {
@@ -77,7 +79,7 @@ class UpdateRecommendStaticDataService
                             $didRebuild = true;
                             CronUtility::addCronLog('全レコード再適用 完了');
                         } finally {
-                            $this->state->setFalse(StateType::isRecommendTagRebuildActive);
+                            $this->rebuildLock->release();
                         }
                     }
                 }

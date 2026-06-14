@@ -14,6 +14,7 @@ enum SyncOpenChatStateType: string
     case isUpdateRecommendStaticDataActive = 'isUpdateRecommendStaticDataActive';
     case isUpdateOcPageCacheActive = 'isUpdateOcPageCacheActive';
     case isRecommendTagRebuildActive = 'isRecommendTagRebuildActive';
+    case recommendTagRebuildStartedAt = 'recommendTagRebuildStartedAt';
     case recommendTagsJsonHash = 'recommendTagsJsonHash';
     case rankingPersistenceBackground = 'rankingPersistenceBackground';
     case ocreviewApiDataImportBackground = 'ocreviewApiDataImportBackground';

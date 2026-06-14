@@ -47,6 +47,27 @@ class BatchScriptLauncher
         return implode(' ', $output) . " (return code: {$returnCode})";
     }
 
+    /**
+     * 自分以外に同名スクリプトのプロセスが動いているかを返す（プロセス死活判定用）。
+     *
+     * killOtherInstances と同じ条件（同名スクリプト・自PID除外）で対象を数えるだけの読み取り版。
+     * ロックの所有プロセスが本当に生きているかの確認に使う。
+     */
+    public function isAnyInstanceRunning(BatchScript $script): bool
+    {
+        $myPid = getmypid();
+        $cmd = "ps aux | grep {$script->basename()} | grep -v grep | grep -v '{$myPid}' | awk '{print \$2}'";
+        exec($cmd, $output);
+
+        foreach ($output as $line) {
+            if (trim($line) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function buildCommand(BatchScript $script, array $args): string
     {
         $phpBinary = PHP_SAPI === 'cli' ? PHP_BINARY : AppConfig::$phpBinary;

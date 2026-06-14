@@ -25,6 +25,7 @@ class RebuildAllRecommendTagsService
         private SyncOpenChatStateRepositoryInterface $state,
         private RecommendUpdater $recommendUpdater,
         private BatchScriptLauncher $launcher,
+        private RecommendTagRebuildLock $rebuildLock,
     ) {}
 
     /**
@@ -40,7 +41,7 @@ class RebuildAllRecommendTagsService
         $now = date('Y-m-d H:i:s');
 
         try {
-            if ($this->state->getBool(StateType::isRecommendTagRebuildActive)) {
+            if ($this->rebuildLock->isHeldByLiveProcess()) {
                 if (!$cancelPrevious) {
                     // 既定（待機）: 実行中なら何もせず終了し、前のランを完走させる。
                     $message = 'rebuildAllViaShadowSwap: 既に実行中のためスキップ at ' . $now;
@@ -61,11 +62,11 @@ class RebuildAllRecommendTagsService
                 // 自分以外の tag_update.php をkill（killされた側は finally が走らずフラグを
                 // 下ろせないため、この後こちらで立て直して所有する）
                 CronUtility::addCronLog('kill結果: ' . $this->launcher->killOtherInstances(BatchScript::tagUpdate));
-                $this->state->setFalse(StateType::isRecommendTagRebuildActive);
+                $this->rebuildLock->release();
                 sleep(5); // プロセス終了を待つ
             }
 
-            $this->state->setTrue(StateType::isRecommendTagRebuildActive);
+            $this->rebuildLock->acquire();
 
             try {
                 AdminTool::sendDiscordNotify('rebuildAllViaShadowSwap start at ' . $now);
@@ -86,7 +87,7 @@ class RebuildAllRecommendTagsService
                 AdminTool::sendDiscordNotify('rebuildAllViaShadowSwap done at ' . $now);
             } finally {
                 // 成否に関わらず必ずフラグを下ろす
-                $this->state->setFalse(StateType::isRecommendTagRebuildActive);
+                $this->rebuildLock->release();
             }
 
             // ──────────────────────────────────────────────
