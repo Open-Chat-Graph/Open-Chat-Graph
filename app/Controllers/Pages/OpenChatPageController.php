@@ -8,7 +8,6 @@ use App\Config\AppConfig;
 use App\Config\SecretsConfig;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
-use App\Models\SQLite\Repositories\OcPageCacheRepository;
 use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
@@ -37,7 +36,6 @@ class OpenChatPageController
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
-        OcPageCacheRepository $ocPageCacheRepository,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -69,12 +67,12 @@ class OpenChatPageController
 
         }
 
-        // 分析(narrative)は事前計算済み「データ」(JSON)を oc_page_cache(SQLite) からPK一発で読み、
+        // 分析(narrative)は事前計算済み「データ」(JSON)を getOpenChatByIdWithTag の
+        // oc_page_cache JOIN で open_chat と一緒に取得済み（$oc['narrative_data']）。
         // レンダリングはリクエスト時に oc_narrative_section テンプレートが行う。
         // 未生成（バックフィル前/生成不可）は null → 空表示。bot が叩く /oc 本体で重い計算をしない。
-        $ocPageCache = $ocPageCacheRepository->get($open_chat_id);
-        $_narrative = !empty($ocPageCache['narrative_data'])
-            ? (json_decode($ocPageCache['narrative_data'], true) ?: null)
+        $_narrative = !empty($oc['narrative_data'])
+            ? (json_decode($oc['narrative_data'], true) ?: null)
             : null;
 
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。

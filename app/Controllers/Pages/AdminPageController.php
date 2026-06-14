@@ -177,7 +177,7 @@ class AdminPageController
     }
 
     /**
-     * ルーム個別ページの分析文/関連ルームの静的キャッシュ(oc_page_cache)を生成する。
+     * ルーム個別ページの分析文(narrative)の静的キャッシュ(oc_page_cache)を生成する。
      * 指定言語の全ルームをバックフィルする（背景実行・長時間）。
      * 例: /admin/genocpagecache/ja  (tw / th も可)
      */
