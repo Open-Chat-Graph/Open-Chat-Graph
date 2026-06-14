@@ -142,12 +142,7 @@ jobs:
 
       - name: Initialize SQLite databases
         run: |
-          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc oc_page_cache; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
-
-      # 既存DBへの追加カラム反映（MySQLの加算スキーマ同期と同じ思想・冪等。カラムが既にあれば何もしない）
-      - name: Sync SQLite schema (additive, idempotent)
-        run: |
-          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do db="storage/$lang/SQLite/oc_page_cache/oc_page_cache.db"; if [ -f "$db" ]; then sqlite3 "$db" "ALTER TABLE oc_page_cache ADD COLUMN narrative_data TEXT" 2>/dev/null && echo "Added narrative_data: $db" || true; fi; done'
+          ssh -p ${{ steps.config.outputs.ssh_port }} ${{ steps.config.outputs.ssh_user }}@${{ steps.config.outputs.ssh_host }} 'cd ${{ steps.config.outputs.ssh_path }} && for lang in ja tw th; do for name in statistics_ohlc ranking_position_ohlc; do db="storage/$lang/SQLite/$name/$name.db"; if [ ! -f "$db" ]; then sqlite3 "$db" < "setup/schema/sqlite/$name.sql" && echo "Created: $db"; fi; done; done'
 
       # setup/schema/mysql/*.sql を source of truth に、全DBグループ(ocreview/ranking/comment/userlog)へ
       # 不足テーブル・カラム・索引を「加算のみ」で冪等反映する (MySQL/MariaDB 両対応)。
