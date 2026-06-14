@@ -19,10 +19,14 @@ interface RankingPositionOhlcRepositoryInterface
      * - ランキングに一度も掲載されなかった日（完全に圏外）のレコードは含まれない
      * - low_position は、その日の全時間帯でランクインしていた場合は最低順位、
      *   一部の時間帯で圏外だった場合は NULL
+     * - $from と $to を両方与えると `date BETWEEN :from AND :to`（両端含む）で範囲を絞る。
+     *   片方でも null なら従来どおり全期間を返す。
      *
+     * @param ?string $from `Y-m-d` 範囲開始日（$to と併用時のみ有効）
+     * @param ?string $to   `Y-m-d` 範囲終了日（$from と併用時のみ有効）
      * @return array{ date: string, open_position: int, high_position: int, low_position: int|null, close_position: int }[]
      */
-    public function getOhlcDateAsc(int $open_chat_id, int $category, RankingType $type): array;
+    public function getOhlcDateAsc(int $open_chat_id, int $category, RankingType $type, ?string $from = null, ?string $to = null): array;
 
     /**
      * narrative 生成用、直近 N 日のカテゴリ内順位の起点と最新値を取得する。

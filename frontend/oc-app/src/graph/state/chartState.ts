@@ -1,12 +1,15 @@
 import { atom } from 'jotai'
 import { graphStore } from './store'
-import { chartMeta, chatArgDto, fetchChart } from '../util/fetchRenderer'
+import { chartMeta, chatArgDto, currentConfigCoversLimit, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
 import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
 import { trackEvent } from '../../util/track'
 
 export const chart = new OpenChatChart()
 export const loadingAtom = atom(false)
+// 取得が最終的に失敗（5xxをリトライしても取れない・403等）したときの表示フラグ。
+// true の間はチャートの代わりにエラーメッセージ＋再読み込みボタンを出す。取得成功でクリアする。
+export const errorAtom = atom(false)
 export const toggleShowCategoryAtom = atom(true)
 export const rankingRisingAtom = atom<ToggleChart>('none')
 export const categoryAtom = atom<urlParamsValue<'category'>>('in')
@@ -230,8 +233,12 @@ export function handleChangeLimit(limit: ChartLimit | 25) {
   } else if (fallbackToLine || selectionChanged) {
     // モードまたは順位表示の選択が変わるため、表示中のデータのままでは再描画できない
     fetchChart(true)
-  } else {
+  } else if (currentConfigCoversLimit(limit)) {
+    // 蓄積が新しい窓を満たしている（縮小 or 既に取得済み）: 取得せずクライアントスライス
     chart.update(limit)
+  } else {
+    // 拡大で蓄積に足りない古い側がある: 差分だけ取得しマージして再描画
+    fetchChart(true)
   }
 
   setUrlParamsFromChartStates()
@@ -319,8 +326,8 @@ export function updateTabVisibility(dataLength: number) {
  * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
  *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
  */
-export function updateCandleTabVisibility(ohlcData: MemberOhlc[], dates: string[]) {
-  const ohlcDateSet = new Set(ohlcData.map((r) => r.date))
+export function updateCandleTabVisibility(ohlcDate: string[], dates: string[]) {
+  const ohlcDateSet = new Set(ohlcDate)
   const countInWindow = (limit: number) => {
     let count = 0
     for (let i = limit ? Math.max(0, dates.length - limit) : 0; i < dates.length; i++) {

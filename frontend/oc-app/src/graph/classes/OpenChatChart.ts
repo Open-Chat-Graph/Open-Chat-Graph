@@ -38,6 +38,8 @@ export default class OpenChatChart implements ChartFactory {
   onZooming = false
   onPaning = false
   enableZoom = false
+  /** OHLC専用の日付軸（memberOhlcApiData / initData.rankingOhlc と index 整合）。日次 date 軸の部分集合 */
+  ohlcDate: string[] = []
   memberOhlcApiData: MemberOhlc[] = []
   ohlcData: { x: number; o: number; h: number; l: number; c: number }[] = []
   ohlcRankingData: { x: number; o: number; h: number; l: number; c: number }[] = []
@@ -238,52 +240,40 @@ export default class OpenChatChart implements ChartFactory {
 
   private buildCandlestickData() {
     const limit = this.limit
-    const dates = this.initData.date
-    const len = dates.length
+    const dailyDates = this.initData.date // 日次 date 軸（期間タブの窓計算に使う）
+    const ohlcDate = this.ohlcDate // OHLC日付軸（dailyDates の部分集合・昇順）
+    const member = this.memberOhlcApiData // ohlcDate と index 整合
+    const rankingOhlc = this.initData.rankingOhlc // ohlcDate と index 整合（null=圏外）
+    const hasRanking = !!rankingOhlc?.length
 
-    const startIdx = limit ? Math.max(0, len - limit) : 0
+    // 期間タブの窓は従来どおり「日次 date 軸の末尾 limit 日」。その開始日以降の OHLC だけ描く。
+    // （OHLC本数ではなく日次日数で窓を決めることで updateCandleTabVisibility のタブ表示判定と一致させる）
+    const startIdx = limit ? Math.max(0, dailyDates.length - limit) : 0
+    const windowStart = dailyDates[startIdx] ?? ''
 
     const ohlcData: { x: number; o: number; h: number; l: number; c: number }[] = []
     const allValues: number[] = []
     const ohlcDates: string[] = []
-    const apiOhlcMap = new Map(this.memberOhlcApiData.map((r) => [r.date, r]))
-
-    for (let i = startIdx; i < len; i++) {
-      const record = apiOhlcMap.get(dates[i])
-      if (record) {
-        ohlcDates.push(dates[i])
-        ohlcData.push({
-          x: ohlcData.length,
-          o: record.open_member,
-          h: record.high_member,
-          l: record.low_member,
-          c: record.close_member,
-        })
-        allValues.push(
-          record.open_member,
-          record.high_member,
-          record.low_member,
-          record.close_member
-        )
-      }
-    }
-
-    const labels = formatDates(ohlcDates, limit)
-
-    // ランキング順位OHLCを基準日付に合わせて構築
+    // ランキング順位OHLCも同じ index 軸（ohlcData の並び）で構築する
     const ohlcRankingData: { x: number; o: number; h: number; l: number; c: number }[] = []
     const ohlcRankingNullLow = new Set<number>()
-    const rankingOhlc = this.initData.rankingOhlc
-    if (rankingOhlc?.length) {
-      const rankingMap = new Map(rankingOhlc.map((r) => [r.date, r]))
-      for (let i = 0; i < ohlcDates.length; i++) {
-        const r = rankingMap.get(ohlcDates[i])
+
+    for (let k = 0; k < ohlcDate.length; k++) {
+      if (ohlcDate[k] < windowStart) continue // 窓より前の OHLC は描かない
+      const m = member[k]
+      if (!m) continue // member OHLC は ohlcDate と1:1（防御的にスキップ）
+
+      const x = ohlcData.length
+      ohlcDates.push(ohlcDate[k])
+      ohlcData.push({ x, o: m.open_member, h: m.high_member, l: m.low_member, c: m.close_member })
+      allValues.push(m.open_member, m.high_member, m.low_member, m.close_member)
+
+      if (hasRanking) {
+        const r = rankingOhlc![k]
         if (r) {
-          if (r.low_position === null) {
-            ohlcRankingNullLow.add(i)
-          }
+          if (r.low_position === null) ohlcRankingNullLow.add(x)
           ohlcRankingData.push({
-            x: i,
+            x,
             o: r.open_position,
             h: r.high_position,
             l: r.low_position ?? 0,
@@ -291,10 +281,12 @@ export default class OpenChatChart implements ChartFactory {
           })
         } else {
           // ランキングOHLCがない日は圏外（position=0）で埋める
-          ohlcRankingData.push({ x: i, o: 0, h: 0, l: 0, c: 0 })
+          ohlcRankingData.push({ x, o: 0, h: 0, l: 0, c: 0 })
         }
       }
     }
+
+    const labels = formatDates(ohlcDates, limit)
 
     this.data = {
       date: labels,

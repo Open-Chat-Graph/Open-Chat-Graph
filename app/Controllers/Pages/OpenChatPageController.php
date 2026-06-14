@@ -75,6 +75,13 @@ class OpenChatPageController
             ? (json_decode($oc['narrative_data'], true) ?: null)
             : null;
 
+        // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」も事前計算済み（oc_page_cache.chart_meta JOIN）。
+        // これを HTML に埋め込むとフロントは初回 XHR(meta=1) を撃たずに済む。
+        // 未生成（バックフィル前/生成不可）は null → フロントは従来通り meta=1 でライブ計算にフォールバック。
+        $_chartMeta = !empty($oc['chart_meta'])
+            ? (json_decode($oc['chart_meta'], true) ?: null)
+            : null;
+
         // 関連ルームは recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる。
         // ファイル読み＋unserialize のみで部屋ごとの MySQL クエリは発生しない。
         // キャッシュ未生成の部屋でも関連ルーム枠は常に表示される。
@@ -153,6 +160,7 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             '_narrative',
+            '_chartMeta',
             '_recommend',
             '_similarSize',
             '_hourlyRange',

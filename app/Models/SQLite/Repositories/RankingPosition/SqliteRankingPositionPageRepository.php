@@ -15,8 +15,15 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
         RankingType $type,
         int $open_chat_id,
         int $category,
+        ?string $from = null,
+        ?string $to = null,
     ): RankingPositionPageRepoDto {
         $tableName = $type->value;
+
+        // from/to が両方揃ったときだけ範囲で絞る（time は 'Y-m-d H:i:s' なので date() で日付に丸めて両端含む）
+        $useRange = $from !== null && $to !== null;
+        $rangeClause = $useRange ? "\n                        AND date(time) BETWEEN :from AND :to" : '';
+
         $query =
             "SELECT
                 t1.time AS time,
@@ -30,7 +37,7 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
                         {$tableName}
                     WHERE
                         open_chat_id = :open_chat_id
-                        AND category = :category
+                        AND category = :category{$rangeClause}
                 ) AS t1
                 JOIN total_count AS t2 ON t1.time = t2.time
                 AND t1.category = t2.category
@@ -39,9 +46,15 @@ class SqliteRankingPositionPageRepository implements RankingPositionPageReposito
 
         $dto = new RankingPositionPageRepoDto;
 
+        $params = compact('open_chat_id', 'category');
+        if ($useRange) {
+            $params['from'] = $from;
+            $params['to'] = $to;
+        }
+
         SQLiteRankingPosition::connect(SQLiteRankingPosition::WEB_READER);
 
-        $result = SQLiteRankingPosition::fetchAll($query, compact('open_chat_id', 'category'));
+        $result = SQLiteRankingPosition::fetchAll($query, $params);
 
 
         if (!$result) {

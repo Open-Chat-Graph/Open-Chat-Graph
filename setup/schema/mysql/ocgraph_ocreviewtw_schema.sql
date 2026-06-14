@@ -160,10 +160,12 @@ CREATE TABLE `user_log` (
 DROP TABLE IF EXISTS `oc_page_cache`;
 -- ルーム個別ページの「分析文(narrative)」事前計算データ（部屋単位・再生成可能なキャッシュ）。
 -- narrative_data は JSON {summary,detail,meta_description,pattern}（空=データ無し）。
+-- chart_meta はグラフ初回ロードのタブ/ボタン出し分け「可用性メタ」の JSON（NULL=未計算→meta=1でライブ計算）。
 -- /oc 表示時は open_chat への LEFT JOIN(getOpenChatByIdWithTag)で1クエリ取得する。
 CREATE TABLE `oc_page_cache` (
   `open_chat_id` int(11) NOT NULL,
   `narrative_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `chart_meta` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`open_chat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
