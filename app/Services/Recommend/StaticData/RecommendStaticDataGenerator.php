@@ -17,11 +17,18 @@ use Shared\MimimalCmsConfig;
  *
  * - 読み（ページ表示）: get*Ranking() … .dat を読む。未生成（新規タグ等）/無効化時は、
  *   対象1件だけを DB から引く RecommendRankingBuilder で即時生成する。
- * - 書き（毎時バッチ）: updateStaticData() … 全エンティティを foreach で回し、同じビルダーで
- *   .dat を生成・保存する（1件ごとに小さな索引クエリ2本。bulk 一括取得は廃止）。
+ * - 書き（毎時バッチ）: updateStaticData() … タグを TAG_BULK_CHUNK_SIZE 件ずつ束ね、
+ *   ウィンドウ関数の1クエリ(buildTagsBulk)で「タグごと上位POOL件」を一括取得して .dat を生成する。
+ *   ページ表示時の未生成タグだけは従来どおり1件単位の buildTag() で即時生成する。
  */
 class RecommendStaticDataGenerator
 {
+    /**
+     * 毎時バッチでタグをまとめて取得する単位（1クエリあたりのタグ数）。
+     * 大きいほどクエリ本数は減るが1クエリの結果セット(最大 POOL×CHUNK 行)とメモリが増える。
+     */
+    private const TAG_BULK_CHUNK_SIZE = 50;
+
     function __construct(
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
@@ -136,15 +143,25 @@ class RecommendStaticDataGenerator
             $relatedTagsMap = [];
         }
 
-        foreach ($this->getAllTagNames() as $tag) {
-            $fileName = hash('crc32', $tag);
-            $dto = $this->recommendRankingBuilder->buildTag($tag);
-            $this->setThemeMomentum($dto);
-            $dto->relatedTags = $relatedTagsMap[$tag] ?? [];
-            $this->fileStorage->saveSerializedFile(
-                $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
-                $dto
-            );
+        // タグを CHUNK 件ずつまとめて1クエリ(ウィンドウ関数)で取得する。
+        // 旧実装は全タグ × buildTag() の N+1（重い JOIN をタグ数ぶん直列）で、本番(ja=650タグ)では
+        // 毎時1時間以内に終わらず次回 cron に kill され続け一度も完走しなかった。チャンクバルク化で
+        // クエリ本数を タグ数 → ceil(タグ数 / CHUNK) に圧縮する。
+        foreach (array_chunk($this->getAllTagNames(), self::TAG_BULK_CHUNK_SIZE) as $tagChunk) {
+            $dtoByTag = $this->recommendRankingBuilder->buildTagsBulk($tagChunk);
+
+            foreach ($tagChunk as $tag) {
+                // 念のためのフォールバック（バルクは全タグ分の DTO を返すため通常は通らない）。
+                $dto = $dtoByTag[$tag] ?? $this->recommendRankingBuilder->buildTag($tag);
+                $this->setThemeMomentum($dto);
+                $dto->relatedTags = $relatedTagsMap[$tag] ?? [];
+
+                $fileName = hash('crc32', $tag);
+                $this->fileStorage->saveSerializedFile(
+                    $this->fileStorage->getStorageFilePath('recommendStaticDataDir') . "/{$fileName}.dat",
+                    $dto
+                );
+            }
         }
     }
 

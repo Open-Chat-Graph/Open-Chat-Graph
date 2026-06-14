@@ -9,20 +9,18 @@ use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\Enum\RecommendListType;
 use App\Services\Storage\FileStorageInterface;
-use Shared\MimimalCmsConfig;
 
 /**
- * tag/category/official のランキング DTO を1件ずつ構築する。
+ * tag/category/official のランキング DTO を構築する。
  *
- * 毎時バッチの .dat 一括生成(全エンティティを foreach)も、ページ表示時の未キャッシュ即時生成も
- * この同じ経路を通る（旧 bulk/per-tag の二重実装は廃止）。
- * リポジトリが返す「24h増→member→id」順の全行(最大 POOL 件)をそのまま DTO に渡し、
+ * - 単発（buildTag/buildCategory/buildOfficial）: ページ表示時の未キャッシュ即時生成（1件）。
+ * - バルク（buildTagsBulk）: 毎時バッチの .dat 一括生成。タグ N 件を1クエリでまとめて構築する。
+ *
+ * いずれもリポジトリが返す「24h増→member→id」順の全行(最大 POOL 件)をそのまま DTO に渡し、
  * 表示30件は DTO 側が先頭から切り出す。
  */
 class RecommendRankingBuilder
 {
-    private const SORT_AND_UNIQUE_ARRAY_MIN_COUNT = 5;
-
     public function __construct(
         private FileStorageInterface $fileStorage,
         private RecommendRankingRepository $repository,
@@ -35,6 +33,31 @@ class RecommendRankingBuilder
             $tag,
             $this->repository->getRankingByTag($tag, AppConfig::LIST_LIMIT_RECOMMEND_POOL),
         );
+    }
+
+    /**
+     * 複数タグの DTO を「タグごとに1クエリ」ではなくバルク取得でまとめて構築する（毎時バッチ用）。
+     * 返す DTO は単発 buildTag() と同一形式。呼び出し側（生成バッチ）はタグをチャンクで渡す。
+     *
+     * @param string[] $tags
+     * @return array<string, RecommendListDto>
+     */
+    function buildTagsBulk(array $tags): array
+    {
+        $rowsByTag = $this->repository->getRankingByTagsBulk($tags, AppConfig::LIST_LIMIT_RECOMMEND_POOL);
+        $hourlyUpdatedAt = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
+
+        $result = [];
+        foreach ($tags as $tag) {
+            $result[$tag] = new RecommendListDto(
+                RecommendListType::Tag,
+                $tag,
+                $this->slimRows($rowsByTag[$tag] ?? []),
+                $hourlyUpdatedAt
+            );
+        }
+
+        return $result;
     }
 
     function buildCategory(int $category, string $listName): RecommendListDto
@@ -60,7 +83,21 @@ class RecommendRankingBuilder
      */
     private function build(RecommendListType $type, string $listName, array $rows): RecommendListDto
     {
-        $list = array_map(
+        return new RecommendListDto(
+            $type,
+            $listName,
+            $this->slimRows($rows),
+            $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
+        );
+    }
+
+    /**
+     * @param array<int, array<string,mixed>> $rows
+     * @return array<int, array<string,mixed>>
+     */
+    private function slimRows(array $rows): array
+    {
+        return array_map(
             fn(array $row) => RecommendRowFormat::slim(
                 $row,
                 $row['table_name'],
@@ -68,23 +105,5 @@ class RecommendRankingBuilder
             ),
             $rows
         );
-
-        $dto = new RecommendListDto(
-            $type,
-            $listName,
-            $list,
-            $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime')
-        );
-
-        // 日本以外では関連タグ(表示30件のtag1/tag2から共起の多いもの)を事前取得しておく
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            $ids = array_column($dto->getList(false, null), 'id');
-            $dto->sortAndUniqueTags = sortAndUniqueArray(
-                array_merge($this->repository->getRecommendTags($ids), $this->repository->getOcTags($ids)),
-                self::SORT_AND_UNIQUE_ARRAY_MIN_COUNT
-            );
-        }
-
-        return $dto;
     }
 }
