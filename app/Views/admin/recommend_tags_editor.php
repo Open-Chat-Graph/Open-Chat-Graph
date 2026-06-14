@@ -360,6 +360,9 @@ $categoryNameJson = json_encode(
         .row.sortable-chosen { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(194,65,12,.18), var(--shadow-card); }
         /* ドラッグ追従クローンは transition を完全に切る（カーソルにピタリ追従させる） */
         .row.sortable-drag, .row.sortable-fallback { box-shadow: 0 14px 30px -12px rgba(28,26,23,.55); transition: none !important; }
+        /* 保存時に未入力タグとして検出された行を一時的に強調する */
+        .row.row--invalid { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.22); }
+        .row.row--invalid .tag-input { border-color: #dc2626; }
 
         .row__rank {
             grid-row: 1 / -1;
@@ -1840,11 +1843,85 @@ $categoryNameJson = json_encode(
             return null;
         }
 
+        // entry に tag 以外の中身（キーワード等）があるか
+        function entryHasContent(e) {
+            return (Array.isArray(e.keywords) && e.keywords.length > 0)
+                || (Array.isArray(e.nameKeywords) && e.nameKeywords.length > 0);
+        }
+        // グループの日本語名（エラーメッセージ用）
+        var GROUP_LABELS = {
+            strongest: '最優先キーワード', nameStrong: '名前キーワード',
+            descStrong: '説明キーワード', afterDescStrong: '説明補足キーワード',
+            beforeCategory: 'カテゴリ前タグ', subCategoriesTag: 'サブカテゴリタグ'
+        };
+        function categoryLabel(cat) {
+            var nm = CATEGORY_NAMES[String(cat)];
+            return nm ? ('カテゴリ「' + nm + '」') : ('カテゴリ ' + cat);
+        }
+        // 未入力行を整理し、内容はあるがタグ名だけ空の行を検出する。
+        //  - 完全に空の行（タグ空＋キーワード無し＝誤って追加された行）は黙って除去する
+        //  - タグだけ空でキーワード等がある行は本当の入力漏れなので、場所を示してエラーにする
+        function pruneEmptyEntriesAndLocate() {
+            var bad = null; // {entry, where}
+            function clean(list, where) {
+                if (!Array.isArray(list)) return list;
+                var kept = [];
+                list.forEach(function (e) {
+                    if (e && typeof e.tag === 'string') e.tag = e.tag.trim();
+                    var emptyTag = !e || !e.tag;
+                    if (emptyTag && !entryHasContent(e)) return; // 空行は捨てる
+                    if (emptyTag && !bad) bad = { entry: e, where: where };
+                    kept.push(e);
+                });
+                return kept;
+            }
+            model.strongest = clean(model.strongest, GROUP_LABELS.strongest);
+            model.nameStrong = clean(model.nameStrong, GROUP_LABELS.nameStrong);
+            model.descStrong = clean(model.descStrong, GROUP_LABELS.descStrong);
+            model.afterDescStrong = clean(model.afterDescStrong, GROUP_LABELS.afterDescStrong);
+            CATEGORY_MAP_GROUPS.forEach(function (g) {
+                var bc = model[g] || {};
+                Object.keys(bc).forEach(function (c) {
+                    bc[c] = clean(bc[c], GROUP_LABELS[g] + ' / ' + categoryLabel(c));
+                });
+            });
+            // 行を作り直したので再描画＆件数更新
+            renderAllKeywordGroups();
+            refreshTabCounts();
+            return bad;
+        }
+        // 該当 entry の行へスクロールし強調表示・フォーカスする
+        function highlightEntryRow(entry) {
+            // キーワード群タブを表示しておく（他タブ表示中は行が隠れているため）
+            var kwTab = document.querySelector('.tab[data-tab="keywords"]');
+            if (kwTab && !kwTab.classList.contains('active')) kwTab.click();
+            var rows = document.querySelectorAll('.row');
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i]._entry === entry) {
+                    var row = rows[i];
+                    row.classList.add('row--invalid');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    var input = row.querySelector('.tag-input');
+                    if (input) { try { input.focus(); } catch (e) {} }
+                    setTimeout(function () { row.classList.remove('row--invalid'); }, 4000);
+                    return;
+                }
+            }
+        }
+
         var saveBtn = document.getElementById('btn-save');
         function doSave() {
             // 1) フィルタ textarea を反映
             var ferr = commitFilterAreas();
             if (ferr) { toast(ferr, 'err'); return; }
+            // 1.5) 空行を整理し、タグ名だけ未入力の行を検出
+            var bad = pruneEmptyEntriesAndLocate();
+            if (bad) {
+                highlightEntryRow(bad.entry);
+                toast(bad.where + ' にタグ名が未入力の行があります。タグ名を入力するか、この行を削除してください。', 'err');
+                markDirty();
+                return;
+            }
             // 2) 重複チェック
             var derr = preflightDuplicateCheck();
             if (derr) { toast(derr, 'err'); return; }
