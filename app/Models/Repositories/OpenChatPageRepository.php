@@ -70,7 +70,8 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 rw.percent_increase AS rw_percent_increase,
                 tg.tag AS tag1,
                 tg2.tag AS tag2,
-                tg3.tag AS tag3
+                tg3.tag AS tag3,
+                pc.narrative_data AS narrative_data
             FROM
                 open_chat AS oc
                 LEFT JOIN statistics_ranking_hour AS rh ON oc.id = rh.open_chat_id
@@ -79,6 +80,7 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 LEFT JOIN recommend AS tg ON oc.id = tg.id
                 LEFT JOIN oc_tag AS tg2 ON oc.id = tg2.id
                 LEFT JOIN oc_tag2 AS tg3 ON oc.id = tg3.id
+                LEFT JOIN oc_page_cache AS pc ON oc.id = pc.open_chat_id
             WHERE
                 oc.id = :id";
 

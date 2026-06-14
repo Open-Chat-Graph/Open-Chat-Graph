@@ -18,7 +18,8 @@ use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 /**
- * ルーム個別ページの「分析文/関連ルーム」事前計算キャッシュ(oc_page_cache)を生成する。
+ * ルーム個別ページの「分析文(narrative)」事前計算キャッシュ(oc_page_cache)を生成する。
+ * 関連ルーム(recommend/similarSize)はここには含まれない（/oc 表示時に都度組み立てる）。
  *
  * エントリスクリプト(batch/exec/update_oc_page_cache.php)から起動される:
  *   php batch/exec/update_oc_page_cache.php <urlRoot> [hourly|daily|idCsv]

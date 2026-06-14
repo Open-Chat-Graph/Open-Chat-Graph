@@ -45,6 +45,7 @@ class MimimalCmsConfig
         \App\Models\Repositories\OpenChatPageRepositoryInterface::class => \App\Models\Repositories\OpenChatPageRepository::class,
         \App\Models\Repositories\OcNarrativeRepositoryInterface::class => \App\Models\Repositories\OcNarrativeRepository::class,
         \App\Models\Repositories\OcSitemapLastmodRepositoryInterface::class => \App\Models\Repositories\OcSitemapLastmodRepository::class,
+        \App\Models\Repositories\OcPageCacheRepositoryInterface::class => \App\Models\Repositories\OcPageCacheRepository::class,
 
         \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface::class => \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository::class,
         \App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface::class => \App\Models\Repositories\Recommend\RecommendGrowthRepository::class,

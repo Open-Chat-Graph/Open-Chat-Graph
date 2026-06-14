@@ -233,6 +233,16 @@ Note: Database configuration is loaded from `local-secrets.php`
 - Service providers in `/app/ServiceProvider/` for dynamic binding
 - Example: `OpenChatCrawlerConfigServiceProvider` switches between production and mock configs based on `AppConfig::$isMockEnvironment`
 
+### Repository は必ず Interface とセットで作る（重要）
+
+Repository を新規作成するときは**必ず `XxxRepositoryInterface` を作り、`/shared/MimimalCmsConfig.php`
+で DI バインドする**。具象クラスを直接 `use`／type-hint しない（依存側は Interface を type-hint する）。
+
+理由: ストレージ実装（SQLite ↔ MySQL、ファイル ↔ DB 等）の差し替え・テスト用モック化を容易にするため。
+具象直結だと差し替え時に呼び出し側を総当たりで直すことになり影響が広がる（`OcPageCacheRepository` を
+SQLite から MySQL へ移す際に実際にこの問題が起きた）。読み取り経路を別所（例: 既存クエリへの JOIN）に
+寄せて Repository を書き込み専用に縮められる場合もあるが、その判断とは無関係に Interface は最初から作る。
+
 ### Autoloading
 
 ```php
