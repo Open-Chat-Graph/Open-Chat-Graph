@@ -147,6 +147,13 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/Recommend/StaticData/UpdateRecommendStaticDataService.php', 33) ?>
             </li>
             <li>
+                ページキャッシュ生成（個別ルームの分析文＋グラフ可用性メタ chart_meta）を毎時更新（直近1時間で変動した室＋新規ランク入り）をバックグラウンドで開始
+                <?php echo githubLink('app/Services/StaticData/OcPageCacheGenerator.php', 52) ?>
+            </li>
+            <li class="sub">グラフのタブ・ボタン出し分け（可用性メタ chart_meta）を事前計算。毎時順位は一括集計で取得（部屋ごとに撃たず gone away を回避）。/oc 表示時は oc_page_cache を1クエリで読みHTMLに埋め込み、未生成室は meta=1 でライブ計算にフォールバック（詳細は README「ページ系キャッシュの生成アーキテクチャ」）
+                <?php echo githubLink('app/Services/Statistics/ChartMeta/ChartMetaBuilder.php', 73) ?>
+            </li>
+            <li>
                 参加URLの一括取得
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 126) ?>
             </li>
@@ -211,6 +218,10 @@ $logDisplayNames = [
             <li>
                 CDNキャッシュ削除
                 <?php echo githubLink('app/Services/Cron/SyncOpenChat.php', 185) ?>
+            </li>
+            <li>
+                ページキャッシュを日次更新（getForDaily＝変動・新規・週次更新の室。ランキング外クローリング完走後に実行。週次更新枠で最長でも約1週間で全室が一巡）をバックグラウンドで開始
+                <?php echo githubLink('app/Services/StaticData/UpdateOcPageCacheService.php', 55) ?>
             </li>
             <li class="highlight">
                 <strong>処理完了</strong>

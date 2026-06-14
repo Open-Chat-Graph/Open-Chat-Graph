@@ -272,6 +272,18 @@ SQLite から MySQL へ移す際に実際にこの問題が起きた）。読み
 （oc_page_cache）は毎時/日次で増分生成しつつ、genetop が `UpdateOcPageCacheService::handle('')`
 （mode=''＝全ルーム）で全件再生成する。
 
+### ページ系キャッシュを変えたら README と管理画面フロー(log_index.php) も対で更新する（必須）
+
+`oc_page_cache`（個別ルームの分析文・`chart_meta`）／おすすめ `.dat`／毎時・日次の cron フロー
+（`SyncOpenChat`・`OcPageCacheGenerator`・`ChartMetaBuilder`・`RecommendStaticDataGenerator` 等）の
+コードを変えたら、必ず次の2つも**同時に・対で**更新して齟齬を残さない:
+
+- `README.md` の「ページ系キャッシュの生成アーキテクチャ」（Mermaid 図）
+- 管理画面の処理フロー説明 `app/Views/admin/log_index.php`（毎時・日次の各ステップと GitHub リンク）
+
+理由: これらは実装と対になる「正本ドキュメント」で、片方だけ更新すると現状を読み違える原因になる
+（実際にこの周りはドキュメントが実装から取り残されやすい）。
+
 ## Crawling System
 
 ### Configuration Classes
