@@ -279,14 +279,23 @@ function mergeLayers(names: LayerName[], data: ChartResponse): void {
         break
       }
       case 'memberOhlc': {
+        // OHLC は共通 ohlcDate 軸と index 整合。ohlcDate と zip して日付キーの byDate に積む。
         const entry = ensureMemberOhlcEntry(key)
-        for (const r of data.memberOhlc ?? []) entry.byDate.set(r.date, r)
+        const ohlcDate = data.ohlcDate ?? []
+        ohlcDate.forEach((d, i) => {
+          const v = data.memberOhlc?.[i]
+          if (v) entry.byDate.set(d, v)
+        })
         if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
       case 'positionOhlc': {
         const entry = ensurePositionOhlcEntry(key)
-        for (const r of data.positionOhlc ?? []) entry.byDate.set(r.date, r)
+        const ohlcDate = data.ohlcDate ?? []
+        ohlcDate.forEach((d, i) => {
+          const v = data.positionOhlc?.[i]
+          if (v) entry.byDate.set(d, v) // null（圏外）は積まない＝assemble 時に欠落=圏外として復元
+        })
         if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
@@ -376,7 +385,6 @@ function assembleResponse(limit: ChartLimit): ChartResponse {
   const response: ChartResponse = {
     date,
     member: [],
-    time: [],
     position: [],
     totalCount: [],
   }
@@ -392,29 +400,30 @@ function assembleResponse(limit: ChartLimit): ChartResponse {
     const entry = layers.get(positionKey('position')) as
       | { loadedFrom: string; byDate: Map<string, PositionPoint> }
       | undefined
-    response.time = date.map((d) => entry?.byDate.get(d)?.time ?? null)
     response.position = date.map((d) => entry?.byDate.get(d)?.position ?? null)
     response.totalCount = date.map((d) => entry?.byDate.get(d)?.totalCount ?? null)
+    // time は急上昇(rising)のみ。ランキングは時刻を持たないので time キー自体を付けない。
+    if (graphStore.get(rankingRisingAtom) === 'rising') {
+      response.time = date.map((d) => entry?.byDate.get(d)?.time ?? null)
+    }
   }
 
-  // memberOhlc（ローソク足時のみ。日付昇順の配列で返す）
+  // memberOhlc（ローソク足時のみ）: window 内で OHLC を持つ日を ohlcDate にし、値配列を index 整合させる
   if (needs.has('memberOhlc')) {
     const entry = layers.get(MEMBER_OHLC_KEY) as
       | { loadedFrom: string; byDate: Map<string, MemberOhlc> }
       | undefined
-    response.memberOhlc = date
-      .map((d) => entry?.byDate.get(d))
-      .filter((r): r is MemberOhlc => r !== undefined)
-  }
+    const ohlcDate = date.filter((d) => entry?.byDate.has(d))
+    response.ohlcDate = ohlcDate
+    response.memberOhlc = ohlcDate.map((d) => entry!.byDate.get(d)!)
 
-  // positionOhlc（ローソク足・順位ON時のみ）
-  if (needs.has('positionOhlc')) {
-    const entry = layers.get(positionKey('positionOhlc')) as
-      | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> }
-      | undefined
-    response.positionOhlc = date
-      .map((d) => entry?.byDate.get(d))
-      .filter((r): r is RankingPositionOhlc => r !== undefined)
+    // positionOhlc（順位ON時のみ）も同じ ohlcDate に整合（順位OHLCの無い日は null＝圏外）
+    if (needs.has('positionOhlc')) {
+      const pentry = layers.get(positionKey('positionOhlc')) as
+        | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> }
+        | undefined
+      response.positionOhlc = ohlcDate.map((d) => pentry?.byDate.get(d) ?? null)
+    }
   }
 
   return response
@@ -487,9 +496,10 @@ const renderPositionChart = (data: ChartResponse, animation: boolean, limit: Cha
     {
       date: data.date,
       graph1: data.member,
-      graph2: data.position,
-      time: data.time,
-      totalCount: data.totalCount,
+      graph2: data.position ?? [],
+      // time は rising のみ。ランキング等で無い場合は空配列として扱う（時刻tooltip非表示）
+      time: data.time ?? [],
+      totalCount: data.totalCount ?? [],
     },
     {
       label1: t('メンバー数'),
@@ -555,10 +565,12 @@ export function renderChartData(data: ChartResponse, animation: boolean) {
   const sort = graphStore.get(rankingRisingAtom)
 
   if (graphStore.get(chartModeAtom) === 'candlestick') {
+    // OHLC は ohlcDate（OHLC専用の日付軸）＋ index 整合の値配列で受け取る
+    chart.ohlcDate = data.ohlcDate ?? []
     chart.memberOhlcApiData = data.memberOhlc ?? []
 
-    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新
-    updateCandleTabVisibility(chart.memberOhlcApiData, data.date)
+    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新（OHLCのある日付集合＝ohlcDate）
+    updateCandleTabVisibility(chart.ohlcDate, data.date)
 
     if (sort === 'none') {
       renderMemberChart(data, animation, limit)

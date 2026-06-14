@@ -326,8 +326,8 @@ export function updateTabVisibility(dataLength: number) {
  * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
  *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
  */
-export function updateCandleTabVisibility(ohlcData: MemberOhlc[], dates: string[]) {
-  const ohlcDateSet = new Set(ohlcData.map((r) => r.date))
+export function updateCandleTabVisibility(ohlcDate: string[], dates: string[]) {
+  const ohlcDateSet = new Set(ohlcDate)
   const countInWindow = (limit: number) => {
     let count = 0
     for (let i = limit ? Math.max(0, dates.length - limit) : 0; i < dates.length; i++) {

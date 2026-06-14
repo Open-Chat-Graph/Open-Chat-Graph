@@ -33,8 +33,11 @@ type ChartMeta = {
   }
 }
 
+/**
+ * メンバー数OHLC（ローソク足1本）の値。日付は持たず、共通の ohlcDate 配列と index で整合する。
+ * （各要素に date を持たせると ChartResponse.ohlcDate と重複するため）
+ */
 interface MemberOhlc {
-  date: string
   open_member: number
   high_member: number
   low_member: number
@@ -51,23 +54,29 @@ interface ErrorResponse {
 /**
  * /oc/{id}/chart のレスポンス。表示ビュー（span×sort×scope×mode）の描画に必要な系列を一括返却する
  *
- * - date/member: hour は時刻ラベル+毎時メンバー数、day は日付+日次メンバー数
- * - time/position/totalCount: sort が none 以外のときの順位系列（無い場合は空配列）
- * - memberOhlc/positionOhlc: mode=candlestick のときのみ
+ * - date/member: hour は時刻ラベル+毎時メンバー数、day は日付+日次メンバー数（date は全系列共通の軸）
+ * - position/totalCount: sort が none 以外のときの順位系列。time は急上昇(rising)のときだけ付く
+ *   （ランキングは終日時刻を持たないため省略。フロントは time が無い＝時刻表示なしとして扱う）
+ * - ohlcDate/memberOhlc/positionOhlc: mode=candlestick のときのみ。ohlcDate は OHLC 専用の日付軸で、
+ *   memberOhlc・positionOhlc はこれと同順・同長（positionOhlc の null はその日が圏外＝順位OHLCなし）
  */
 interface ChartResponse {
   date: string[]
   member: (number | null)[]
-  time: (string | null)[]
-  position: (number | null)[]
-  totalCount: (number | null)[]
+  time?: (string | null)[]
+  position?: (number | null)[]
+  totalCount?: (number | null)[]
+  ohlcDate?: string[]
   memberOhlc?: MemberOhlc[]
-  positionOhlc?: RankingPositionOhlc[]
+  positionOhlc?: (RankingPositionOhlc | null)[]
   meta?: ChartMeta
 }
 
+/**
+ * 順位OHLC（ローソク足1本）の値。日付は持たず、共通の ohlcDate 配列と index で整合する。
+ * low_position が null の日はその日に圏内記録が無い（圏外）。
+ */
 interface RankingPositionOhlc {
-  date: string
   open_position: number
   high_position: number
   low_position: number | null

@@ -126,7 +126,7 @@ class OpenChatChartApiService
      * 要求された層だけを載せて返す。メタは付けない。
      *
      * @param array<string, true> $layers resolveSeries の結果（要求された層の集合）
-     * @return array{date: string[], member?: (int|null)[], time?: array, position?: array, totalCount?: array, memberOhlc?: array, positionOhlc?: array}
+     * @return array{date: string[], member?: (int|null)[], time?: array, position?: array, totalCount?: array, ohlcDate?: string[], memberOhlc?: array, positionOhlc?: array}
      */
     private function buildSeriesResponse(
         int $open_chat_id,
@@ -152,18 +152,24 @@ class OpenChatChartApiService
                 $response['member'] = [];
             }
             if (isset($layers[self::SERIES_POSITION])) {
-                $response['time'] = [];
+                // time は急上昇(rising)のみ。ランキングは終日時刻を持たない（null配列）ので配列ごと省く。
+                if ($type === RankingType::Rising) {
+                    $response['time'] = [];
+                }
                 $response['position'] = [];
                 $response['totalCount'] = [];
             }
-            if (isset($layers[self::SERIES_MEMBER_OHLC])) {
-                $response['memberOhlc'] = $this->statisticsOhlcRepository->getOhlcDateAsc($open_chat_id, $from, $to);
-            }
-            if (isset($layers[self::SERIES_POSITION_OHLC])) {
-                $response['positionOhlc'] = $sort !== 'none'
-                    ? $this->rankingPositionOhlcRepository->getOhlcDateAsc($open_chat_id, $positionCategory, $type, $from, $to)
-                    : [];
-            }
+            $this->appendOhlcLayers(
+                $response,
+                $open_chat_id,
+                $positionCategory,
+                $sort,
+                $type,
+                isset($layers[self::SERIES_MEMBER_OHLC]),
+                isset($layers[self::SERIES_POSITION_OHLC]),
+                $from,
+                $to,
+            );
             return $response;
         }
 
@@ -176,20 +182,25 @@ class OpenChatChartApiService
         if (isset($layers[self::SERIES_POSITION])) {
             // 順位層は member と同じ date 軸（statsDto.start/end）で生成し、from/to を DB 絞り込みに渡す。
             $position = $this->buildPositionLayer($open_chat_id, $positionCategory, $sort, $type, $statsDto, $from, $to);
-            $response['time'] = $position['time'];
+            // time は急上昇(rising)のみ返す（ランキングは終日時刻なし＝null配列になるので省く）。
+            if ($type === RankingType::Rising) {
+                $response['time'] = $position['time'];
+            }
             $response['position'] = $position['position'];
             $response['totalCount'] = $position['totalCount'];
         }
 
-        if (isset($layers[self::SERIES_MEMBER_OHLC])) {
-            $response['memberOhlc'] = $this->statisticsOhlcRepository->getOhlcDateAsc($open_chat_id, $from, $to);
-        }
-
-        if (isset($layers[self::SERIES_POSITION_OHLC])) {
-            $response['positionOhlc'] = $sort !== 'none'
-                ? $this->rankingPositionOhlcRepository->getOhlcDateAsc($open_chat_id, $positionCategory, $type, $from, $to)
-                : [];
-        }
+        $this->appendOhlcLayers(
+            $response,
+            $open_chat_id,
+            $positionCategory,
+            $sort,
+            $type,
+            isset($layers[self::SERIES_MEMBER_OHLC]),
+            isset($layers[self::SERIES_POSITION_OHLC]),
+            $from,
+            $to,
+        );
 
         return $response;
     }
@@ -245,10 +256,10 @@ class OpenChatChartApiService
             $positionCategory
         );
 
+        // hour ビューは x 軸自体が時刻（最新24時間）なので、順位の時刻ラベル time は持たない。
         return [
             'date' => $dto->date,
             'member' => $dto->member,
-            'time' => [],
             'position' => $sort !== 'none' ? $dto->position : [],
             'totalCount' => $sort !== 'none' ? $dto->totalCount : [],
         ];
@@ -266,7 +277,6 @@ class OpenChatChartApiService
         $response = [
             'date' => $statsDto->date,
             'member' => $statsDto->member,
-            'time' => [],
             'position' => [],
             'totalCount' => [],
         ];
@@ -290,7 +300,10 @@ class OpenChatChartApiService
                 $to
             );
 
-            $response['time'] = $positionDto->time;
+            // time は急上昇(rising)のみ（ランキングは終日時刻なし＝null配列のため省く）
+            if ($type === RankingType::Rising) {
+                $response['time'] = $positionDto->time;
+            }
             $response['position'] = $positionDto->position;
             $response['totalCount'] = $positionDto->totalCount;
         }
@@ -307,26 +320,92 @@ class OpenChatChartApiService
         ?string $from = null,
         ?string $to = null,
     ): array {
+        // ローソク足は時刻ラベル付き折れ線tooltipを使わないので time を持たない。
+        // 折れ線用の position/totalCount もローソク足では描画しないため省く
+        // （member は折れ線と層キャッシュを共有するため返す）。
         $response = [
             'date' => $statsDto->date,
             'member' => $statsDto->member,
-            'time' => [],
-            'position' => [],
-            'totalCount' => [],
-            'memberOhlc' => $this->statisticsOhlcRepository->getOhlcDateAsc($open_chat_id, $from, $to),
         ];
 
-        if ($sort !== 'none') {
-            $response['positionOhlc'] = $this->rankingPositionOhlcRepository->getOhlcDateAsc(
-                $open_chat_id,
-                $positionCategory,
-                $type,
-                $from,
-                $to
-            );
-        }
+        $this->appendOhlcLayers($response, $open_chat_id, $positionCategory, $sort, $type, true, $sort !== 'none', $from, $to);
 
         return $response;
+    }
+
+    /**
+     * member / position の OHLC を「共通の ohlcDate 軸」に整合させて $response に載せる。
+     *
+     * OHLC は member 統計の日次 date 軸とは別系列（記録開始が後発で件数が少ない）なので、各要素に
+     * date を持たせると date が二重・三重になる。そこで OHLC 専用の日付配列 ohlcDate を1本だけ返し、
+     * memberOhlc / positionOhlc は ohlcDate と同順・同長の「date 抜き」値配列にする。
+     *
+     * - ohlcDate    … member OHLC の日付昇順（＝マスター軸）。member 未要求で position のみのときは position の日付。
+     * - memberOhlc  … ohlcDate と 1:1（open/high/low/close_member）。
+     * - positionOhlc… ohlcDate と 1:1。その日に順位OHLCが無ければ null（フロントは圏外0で描画）。
+     *                 sort=none（順位を重ねない）のときは空配列。
+     *
+     * member / position いずれの OHLC も要求されていなければキーを足さない。
+     */
+    private function appendOhlcLayers(
+        array &$response,
+        int $open_chat_id,
+        int $positionCategory,
+        string $sort,
+        RankingType $type,
+        bool $wantMember,
+        bool $wantPosition,
+        ?string $from,
+        ?string $to,
+    ): void {
+        $ohlcDate = null;
+
+        if ($wantMember) {
+            $rows = $this->statisticsOhlcRepository->getOhlcDateAsc($open_chat_id, $from, $to);
+            $ohlcDate = array_column($rows, 'date');
+            $response['memberOhlc'] = array_map(fn(array $r): array => [
+                'open_member' => $r['open_member'],
+                'high_member' => $r['high_member'],
+                'low_member' => $r['low_member'],
+                'close_member' => $r['close_member'],
+            ], $rows);
+        }
+
+        if ($wantPosition) {
+            if ($sort === 'none') {
+                // 順位を重ねないビュー（メンバー数ローソク足のみ）
+                $response['positionOhlc'] = [];
+            } else {
+                $prows = $this->rankingPositionOhlcRepository->getOhlcDateAsc($open_chat_id, $positionCategory, $type, $from, $to);
+
+                if ($ohlcDate !== null) {
+                    // member OHLC の ohlcDate に整合させる（順位OHLCの無い日は null＝圏外）
+                    $pmap = [];
+                    foreach ($prows as $r) {
+                        $pmap[$r['date']] = [
+                            'open_position' => $r['open_position'],
+                            'high_position' => $r['high_position'],
+                            'low_position' => $r['low_position'],
+                            'close_position' => $r['close_position'],
+                        ];
+                    }
+                    $response['positionOhlc'] = array_map(fn(string $d) => $pmap[$d] ?? null, $ohlcDate);
+                } else {
+                    // member OHLC 未要求（防御経路）。position の日付を ohlcDate にする。
+                    $ohlcDate = array_column($prows, 'date');
+                    $response['positionOhlc'] = array_map(fn(array $r): array => [
+                        'open_position' => $r['open_position'],
+                        'high_position' => $r['high_position'],
+                        'low_position' => $r['low_position'],
+                        'close_position' => $r['close_position'],
+                    ], $prows);
+                }
+            }
+        }
+
+        if ($ohlcDate !== null) {
+            $response['ohlcDate'] = $ohlcDate;
+        }
     }
 
     /**

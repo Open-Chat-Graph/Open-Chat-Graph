@@ -17,7 +17,8 @@ export default function getTooltipLabelCallback(ocChart: OpenChatChart) {
         ocChart.data.totalCount[tooltipItem.dataIndex] ?? 0
       )
 
-      if (ocChart.data.time[tooltipItem.dataIndex])
+      // time は急上昇(rising)のみ存在する。無い（ランキング等）場合は時刻を出さない。
+      if (ocChart.data.time?.[tooltipItem.dataIndex])
         return `${tip}・${sprintfT('%s 時点', ocChart.data.time[tooltipItem.dataIndex] as string)}`
 
       return tip
