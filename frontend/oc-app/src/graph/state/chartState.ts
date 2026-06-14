@@ -7,6 +7,9 @@ import { trackEvent } from '../../util/track'
 
 export const chart = new OpenChatChart()
 export const loadingAtom = atom(false)
+// 取得が最終的に失敗（5xxをリトライしても取れない・403等）したときの表示フラグ。
+// true の間はチャートの代わりにエラーメッセージ＋再読み込みボタンを出す。取得成功でクリアする。
+export const errorAtom = atom(false)
 export const toggleShowCategoryAtom = atom(true)
 export const rankingRisingAtom = atom<ToggleChart>('none')
 export const categoryAtom = atom<urlParamsValue<'category'>>('in')

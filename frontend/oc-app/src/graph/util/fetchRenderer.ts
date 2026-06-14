@@ -3,6 +3,7 @@ import {
   categoryAtom,
   chart,
   chartModeAtom,
+  errorAtom,
   limitAtom,
   loadingAtom,
   rankingRisingAtom,
@@ -288,6 +289,8 @@ const renderCandlestickChart = (data: ChartResponse, animation: boolean, limit: 
 /** 取得済みのレスポンスを現在のチャート状態に従って描画する */
 export function renderChartData(data: ChartResponse, animation: boolean) {
   graphStore.set(loadingAtom, false)
+  // 取得に成功して描画できたので、もしエラー表示中だったらクリアする（エラー後の再操作で復帰）
+  graphStore.set(errorAtom, false)
 
   const currentLimit = graphStore.get(limitAtom)
   const limit: ChartLimit = currentLimit === 25 ? 31 : currentLimit
@@ -319,5 +322,13 @@ export function renderChartData(data: ChartResponse, animation: boolean) {
 
 export async function fetchChart(animation: boolean) {
   graphStore.set(loadingAtom, true)
-  renderChartData(await fetchChartData(), animation)
+  try {
+    renderChartData(await fetchChartData(), animation)
+  } catch (e) {
+    // 5xxをリトライしても取れない・403等で最終的に失敗。壊れた/空のグラフを出さず
+    // エラー表示（再読み込み案内）に切り替える。
+    console.error(e)
+    graphStore.set(loadingAtom, false)
+    graphStore.set(errorAtom, true)
+  }
 }
