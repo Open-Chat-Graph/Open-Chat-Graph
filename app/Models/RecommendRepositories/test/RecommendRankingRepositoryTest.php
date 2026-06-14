@@ -53,4 +53,33 @@ class RecommendRankingRepositoryTest extends TestCase
         $this->assertIsArray($rows);
         $this->assertSorted($rows);
     }
+
+    /**
+     * バルク取得(getRankingByTagsBulk)が、タグごとの getRankingByTag を1クエリにまとめても
+     * 各タグの結果(件数・並び順・id列)が単発と一致すること。毎時バッチの N+1 解消の安全網。
+     */
+    public function testBulkMatchesPerTag(): void
+    {
+        $tags = ['オプチャ サポート', '雑談', 'ゲーム', '英語', '存在しないはずのタグ_zzz'];
+        $bulk = $this->inst->getRankingByTagsBulk($tags, 300);
+        $this->assertIsArray($bulk);
+
+        foreach ($tags as $tag) {
+            $single = $this->inst->getRankingByTag($tag, 300);
+            $bulkRows = $bulk[$tag] ?? [];
+
+            $this->assertSame(
+                array_map(fn($r) => (int)$r['id'], $single),
+                array_map(fn($r) => (int)$r['id'], $bulkRows),
+                "タグ[{$tag}]の id 列が単発とバルクで一致すること"
+            );
+
+            foreach ($bulkRows as $r) {
+                $this->assertArrayHasKey('table_name', $r);
+                $this->assertArrayHasKey('diff_member_24h', $r);
+                $this->assertArrayNotHasKey('_bulk_tag', $r);
+                $this->assertArrayNotHasKey('_rn', $r);
+            }
+        }
+    }
 }
