@@ -2685,7 +2685,9 @@
             },
             {
                 "tag": "DISH／／",
-                "keywords": ["DISH//"]
+                "keywords": [
+                    "DISH//"
+                ]
             },
             {
                 "tag": "HIPHOP"
@@ -3038,6 +3040,12 @@
         ]
     },
     "nameStrong": [
+        {
+            "tag": "声劇",
+            "keywords": [
+                "声劇"
+            ]
+        },
         {
             "tag": "ガチャガチャ",
             "keywords": [
