@@ -332,6 +332,14 @@ Views go in `/app/Views/`:
 
 ## Pull Request Guidelines
 
+### 報告は本番デプロイ完了まで待つ（必須）
+
+PR をマージして終わりにしない。**本番デプロイ（`deploy.yml` の Deploy job）が success になるまで見届けてから「完了」と報告する**。マージ＝デプロイ成功ではない（別 PR が `deploy.yml` 等に残した不整合で本番デプロイだけが落ちることがある）。
+
+- main マージ後、`gh run list --workflow=deploy.yml --limit 4` で該当 Deploy run（`[PROD]` 付き・env `IS_STG: false` が本番）を特定し、`gh run view <id> --json status,conclusion` を completed/success までポーリングする。
+- 失敗したら原因を直して再デプロイし、success を確認してから報告する。
+- 本番 SSH はしない（確認は Actions の結果まで）。
+
 ### Signing GitHub Posts（必須）
 
 GitHubに投稿する本文（PR本文・issue・PR/issueコメント等）の**末尾**に、区切り線を入れて以下の署名ブロックを付ける。どのマシン・ディレクトリから、どのモデル・ツールで投稿されたかを残すため。
