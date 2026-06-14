@@ -17,7 +17,7 @@ use Shared\MimimalCmsConfig;
  * おすすめタグの全レコード再適用ジョブ（batch/exec/tag_update.php のエントリから起動）。
  *
  * GUI からの「全レコードに即時反映」で使われ、タグ再構築から静的データ生成・CDN purge までを
- * 一気通貫で実行する。実行中フラグによる二重実行防止と通知を含む。
+ * 一気通貫で実行する。二重実行時は実行中の前プロセスを kill して後発で再実行する（最新の定義を優先）。
  */
 class RebuildAllRecommendTagsService
 {
@@ -32,12 +32,21 @@ class RebuildAllRecommendTagsService
         $now = date('Y-m-d H:i:s');
 
         try {
-            // 二重実行防止: 既に実行中なら何もせず終了
+            // 二重実行時は後発優先: 実行中の前プロセスを kill して引き継ぐ。
+            // タグ反映は時間がかかるため、古い定義のまま走る先行ランをスキップで待つと
+            // 最新の編集が黙って取りこぼされる。最新で上書きするため前ランを止めて再実行する。
+            // shadow-swap の build テーブルは毎回 DROP→作り直し、RENAME は原子的なので、
+            // 先行ランを途中 kill しても live は不整合にならない（本ランが全件作り直す）。
             if ($this->state->getBool(StateType::isRecommendTagRebuildActive)) {
-                $message = 'rebuildAllViaShadowSwap: 既に実行中のためスキップ at ' . $now;
+                $message = 'rebuildAllViaShadowSwap: 既に実行中のため前回の処理をkillして再実行 at ' . $now;
                 CronUtility::addCronLog($message);
                 AdminTool::sendDiscordNotify($message);
-                return;
+
+                // 自分以外の tag_update.php をkill（killされた側は finally が走らずフラグを
+                // 下ろせないため、この後こちらで立て直して所有する）
+                CronUtility::addCronLog('kill結果: ' . $this->launcher->killOtherInstances(BatchScript::tagUpdate));
+                $this->state->setFalse(StateType::isRecommendTagRebuildActive);
+                sleep(5); // プロセス終了を待つ
             }
 
             $this->state->setTrue(StateType::isRecommendTagRebuildActive);
