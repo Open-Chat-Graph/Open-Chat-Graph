@@ -16,23 +16,16 @@ use App\Models\Repositories\DB;
  */
 class RecommendRankingRepository
 {
+    // RecommendRowFormat::slim() が実際に読む列だけを取得する（rows の唯一の消費者は build()→slim）。
     private const SELECT_PAGE = "
         oc.id,
         oc.name,
         oc.img_url,
-        oc.img_url AS api_img_url,
         oc.member,
         oc.description,
         oc.emblem,
-        oc.category,
-        oc.emid,
-        oc.url,
         oc.api_created_at,
-        oc.created_at,
-        oc.updated_at,
-        oc.join_method_type,
-        ranking.tag1,
-        ranking.tag2
+        oc.join_method_type
     ";
 
     /** 母集団条件・並び順の共通句。各 getRankingBy* で使い回す。 */
@@ -66,24 +59,13 @@ class RecommendRankingRepository
      */
     function getRankingByTag(string $tag, int $limit): array
     {
-        // タグ絞り込みは派生表 ranking 側(WHERE t2.tag = :tag)で済んでいるため外側フィルタは無し。
+        // 候補は recommend.tag = :tag の部屋（ENTITY_FILTER でタグ条件を注入）。
         $head = self::selectHead();
-        $tail = str_replace('{ENTITY_FILTER}', '1 = 1', self::rankingTail());
+        $tail = str_replace('{ENTITY_FILTER}', 'ranking.tag = :tag', self::rankingTail());
         return DB::fetchAll(
             "{$head}
             FROM
-                (
-                    SELECT
-                        t2.id,
-                        t3.tag AS tag1,
-                        t4.tag AS tag2
-                    FROM
-                        recommend AS t2
-                        LEFT JOIN (SELECT * FROM oc_tag GROUP BY id LIMIT 1) AS t3 ON t2.id = t3.id
-                        LEFT JOIN (SELECT * FROM oc_tag2 GROUP BY id LIMIT 1) AS t4 ON t2.id = t4.id
-                    WHERE
-                        t2.tag = :tag
-                ) AS ranking
+                recommend AS ranking
                 JOIN open_chat AS oc ON oc.id = ranking.id
             {$tail}",
             compact('tag', 'limit')
@@ -91,7 +73,80 @@ class RecommendRankingRepository
     }
 
     /**
-     * LINE カテゴリ別。候補は category 一致の全部屋（tag1=recommend, tag2=oc_tag2 を付与）。
+     * 複数タグのおすすめランキングを1クエリでまとめて取得する（毎時バッチの .dat 一括生成用）。
+     *
+     * 並び順・母集団条件は getRankingByTag と完全一致。違いは「タグごとに別クエリ」を
+     * ウィンドウ関数 ROW_NUMBER() OVER (PARTITION BY tag ...) に置き換え、タグ N 件ぶんを
+     * 1回の SELECT で取り切る点。これで per-tag の N+1（重い JOIN をタグ数ぶん直列）を解消する。
+     *
+     * tag1/tag2 は呼び出し側（RecommendRowFormat::slim）が使わない死に列だったため取得しない。
+     * 行は tag 昇順 → ランキング順で返るので、呼び出し側は tag でグルーピングするだけでよい。
+     *
+     * @param string[] $tags 取得するタグ名（チャンク）
+     * @param int $limit タグごとの最大件数（LIST_LIMIT_RECOMMEND_POOL）
+     * @return array<string, array<int, array<string,mixed>>> tag => ランキング順の生行
+     */
+    function getRankingByTagsBulk(array $tags, int $limit): array
+    {
+        $tags = array_values($tags);
+        if (!$tags) {
+            return [];
+        }
+
+        $minMember = AppConfig::RECOMMEND_MIN_MEMBER_TIER4;
+        $day = AppConfig::RANKING_DAY_TABLE_NAME;
+        $limit = max(1, (int)$limit);
+
+        $placeholders = [];
+        $params = [];
+        foreach ($tags as $i => $tag) {
+            $placeholders[] = ":t{$i}";
+            $params["t{$i}"] = $tag;
+        }
+        $in = implode(',', $placeholders);
+
+        $rows = DB::fetchAll(
+            "SELECT
+                sub.id, sub.name, sub.img_url, sub.member, sub.emblem,
+                sub.api_created_at, sub.join_method_type, sub.description,
+                sub.table_name, sub.diff_member_24h, sub._bulk_tag
+            FROM (
+                SELECT
+                    oc.id, oc.name, oc.img_url, oc.member, oc.emblem,
+                    oc.api_created_at, oc.join_method_type, oc.description,
+                    r.tag AS _bulk_tag,
+                    CASE WHEN rh24.open_chat_id IS NOT NULL THEN '{$day}' ELSE 'open_chat' END AS table_name,
+                    COALESCE(rh24.diff_member, 0) AS diff_member_24h,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY r.tag
+                        ORDER BY COALESCE(rh24.diff_member, 0) DESC, oc.member DESC, oc.id ASC
+                    ) AS _rn
+                FROM
+                    recommend AS r
+                    JOIN open_chat AS oc ON oc.id = r.id
+                    LEFT JOIN {$day} AS rh24 ON rh24.open_chat_id = oc.id
+                    LEFT JOIN statistics_ranking_hour AS rh2 ON rh2.open_chat_id = oc.id
+                WHERE
+                    r.tag IN ({$in})
+                    AND ((rh24.open_chat_id IS NOT NULL OR rh2.open_chat_id IS NOT NULL) OR oc.member >= {$minMember})
+            ) AS sub
+            WHERE sub._rn <= {$limit}
+            ORDER BY sub._bulk_tag, sub._rn",
+            $params
+        );
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $tag = $row['_bulk_tag'];
+            unset($row['_bulk_tag']);
+            $grouped[$tag][] = $row;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * LINE カテゴリ別。候補は category 一致の全部屋。
      */
     function getRankingByCategory(int $category, int $limit): array
     {
@@ -101,12 +156,6 @@ class RecommendRankingRepository
             "{$head}
             FROM
                 open_chat AS oc
-                LEFT JOIN (
-                    SELECT r.id, MIN(r.tag) AS tag1, MIN(t4.tag) AS tag2
-                    FROM recommend AS r
-                        LEFT JOIN oc_tag2 AS t4 ON r.id = t4.id
-                    GROUP BY r.id
-                ) AS ranking ON oc.id = ranking.id
             {$tail}",
             compact('category', 'limit')
         );
@@ -124,45 +173,8 @@ class RecommendRankingRepository
             "{$head}
             FROM
                 open_chat AS oc
-                LEFT JOIN (
-                    SELECT r.id, MIN(r.tag) AS tag1, MIN(t4.tag) AS tag2
-                    FROM recommend AS r
-                        LEFT JOIN oc_tag2 AS t4 ON r.id = t4.id
-                    GROUP BY r.id
-                ) AS ranking ON oc.id = ranking.id
             {$tail}",
             compact('limit')
-        );
-    }
-
-    /**
-     * @param int[] $idArray
-     * @return string[]
-     */
-    function getRecommendTags(array $idArray): array
-    {
-        return $this->getTagsFromId($idArray, 'recommend');
-    }
-
-    /**
-     * @param int[] $idArray
-     * @return string[]
-     */
-    function getOcTags(array $idArray): array
-    {
-        return $this->getTagsFromId($idArray, 'oc_tag');
-    }
-
-    /**
-     * @param int[] $idArray
-     * @return string[]
-     */
-    private function getTagsFromId(array $idArray, string $table): array
-    {
-        $ids = implode(",", $idArray) ?: 0;
-        return DB::fetchAll(
-            "SELECT tag FROM {$table} WHERE id IN ({$ids})",
-            args: [\PDO::FETCH_COLUMN]
         );
     }
 

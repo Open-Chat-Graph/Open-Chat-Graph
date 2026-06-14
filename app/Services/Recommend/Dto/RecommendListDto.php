@@ -23,7 +23,6 @@ class RecommendListDto
     public int $maxMemberCount;
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
-    public array $sortAndUniqueTags = [];
 
     /**
      * テーマの勢い(RecommendGrowthRepository::themeMomentum の結果)。毎時バッチの .dat 生成時に
@@ -110,12 +109,6 @@ class RecommendListDto
                 ?: ((int)$b['member'] <=> (int)$a['member']));
 
         return array_slice($result, 0, $limit);
-    }
-
-    /** @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[] */
-    function getPreviewList(int $len): array
-    {
-        return array_slice($this->mergedElements, 0, $len);
     }
 
     function getCount(): int
