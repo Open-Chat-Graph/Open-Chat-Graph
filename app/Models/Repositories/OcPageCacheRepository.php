@@ -38,10 +38,11 @@ class OcPageCacheRepository implements OcPageCacheRepositoryInterface
         $now = $this->generatedAt();
 
         $stmt = $pdo->prepare(
-            'INSERT INTO oc_page_cache (open_chat_id, narrative_data, updated_at)
-             VALUES (?, ?, ?)
+            'INSERT INTO oc_page_cache (open_chat_id, narrative_data, chart_meta, updated_at)
+             VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                  narrative_data = VALUES(narrative_data),
+                 chart_meta     = VALUES(chart_meta),
                  updated_at     = VALUES(updated_at)'
         );
 
@@ -51,6 +52,7 @@ class OcPageCacheRepository implements OcPageCacheRepositoryInterface
                 $stmt->execute([
                     $r['open_chat_id'],
                     $r['narrative_data'],
+                    $r['chart_meta'] ?? null,
                     $now,
                 ]);
             }

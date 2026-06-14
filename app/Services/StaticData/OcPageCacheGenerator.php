@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\Repositories\OcPageCacheRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
+use App\Services\Statistics\ChartMetaBuilder;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use Shared\MimimalCmsConfig;
 
@@ -35,6 +36,7 @@ class OcPageCacheGenerator
         private OcNarrativeService $narrativeService,
         private CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         private OcPageCacheRepositoryInterface $cacheRepo,
+        private ChartMetaBuilder $chartMetaBuilder,
     ) {
     }
 
@@ -71,11 +73,18 @@ class OcPageCacheGenerator
                 $categoryLabel
             );
 
+            // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を一緒に事前計算する。
+            // /oc 表示時にこれを HTML へ埋め込み、初回 XHR(meta=1) を撃たせない。null は未生成扱い。
+            $meta = $this->chartMetaBuilder->build($id, is_int($oc['category'] ?? null) ? $oc['category'] : null);
+
             $rows[] = [
                 'open_chat_id' => $id,
                 'narrative_data' => $narrative === null
                     ? ''
                     : json_encode($narrative, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'chart_meta' => $meta === null
+                    ? null
+                    : json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             ];
         }
 

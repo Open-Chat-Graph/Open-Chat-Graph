@@ -15,7 +15,9 @@ interface OcPageCacheRepositoryInterface
     /**
      * 部屋単位の分析データを一括 upsert する（背景バッチ専用・単一プロセス直列書き込み）。
      *
-     * @param array<array{open_chat_id: int, narrative_data: string}> $rows
+     * chart_meta はグラフ初回ロードの可用性メタ JSON（生成不可なら null = 列も NULL）。
+     *
+     * @param array<array{open_chat_id: int, narrative_data: string, chart_meta?: string|null}> $rows
      */
     public function upsertMany(array $rows): void;
 }

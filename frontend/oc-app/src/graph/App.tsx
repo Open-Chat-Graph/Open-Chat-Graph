@@ -15,7 +15,13 @@ import {
   setChartStatesFromUrlParams,
   setUrlParamsFromChartStates,
 } from './state/chartState'
-import { fetchChart, fetchChartData, getChartViewQuery, renderChartData } from './util/fetchRenderer'
+import {
+  fetchChart,
+  fetchChartData,
+  getChartViewQuery,
+  hasEmbeddedChartMeta,
+  renderChartData,
+} from './util/fetchRenderer'
 import { Box, CircularProgress } from '@mui/material'
 import { OcThemeProvider } from '../themeMui'
 import { onThemeChange } from './util/theme'
@@ -29,7 +35,9 @@ const init = async () => {
 
   graphStore.set(loadingAtom, true)
   const viewQuery = getChartViewQuery()
-  const data = await fetchChartData(true)
+  // 可用性メタがHTMLに埋め込まれていれば meta=1 を撃たず系列だけ取得する（4DBへのCOUNTを表示経路から外す）。
+  // 埋め込みが無い（未生成/生成不可）部屋だけ従来通り meta=1 でライブ計算する。
+  const data = await fetchChartData(!hasEmbeddedChartMeta)
 
   // メタデータ判定でデータが無いビューだった場合のみ、フォールバック先を補正フェッチする
   applyAvailabilityFallbacks()

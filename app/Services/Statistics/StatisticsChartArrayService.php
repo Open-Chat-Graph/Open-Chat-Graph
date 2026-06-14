@@ -81,13 +81,8 @@ class StatisticsChartArrayService
             return;
         }
 
-        foreach (['week', 'month', 'all'] as $period) {
-            $dto->positionAvailability[$period] = [
-                'ranking_in' => $counts['ranking_in'][$period] > 0,
-                'ranking_all' => $counts['ranking_all'][$period] > 0,
-                'rising_in' => $counts['rising_in'][$period] > 0,
-                'rising_all' => $counts['rising_all'][$period] > 0,
-            ];
+        foreach (ChartAvailabilityCalculator::dailyPosition($counts) as $period => $flags) {
+            $dto->positionAvailability[$period] = $flags;
         }
 
         try {
@@ -133,15 +128,7 @@ class StatisticsChartArrayService
             $dto->date[$len - $monthWindow],
         );
 
-        if ($counts['all_count'] === 0) {
-            return;
-        }
-
-        $dto->ohlcAvailability = [
-            'week' => $counts['week_count'] >= $weekWindow,
-            'month' => $counts['month_count'] * 2 >= $monthWindow,
-            'all' => true,
-        ];
+        $dto->ohlcAvailability = ChartAvailabilityCalculator::dailyOhlc($counts, $weekWindow, $monthWindow);
     }
 
     /**  

@@ -16,8 +16,29 @@ export const chatArgDto: RankingPositionChartArgDto = JSON.parse(
   (document.getElementById('chart-arg') as HTMLScriptElement).textContent!
 )
 
-// タブ・ボタン出し分け用の可用性メタデータ。初回ロードの meta=1 レスポンスで設定される
-export let chartMeta: ChartMeta
+/**
+ * ページHTMLに埋め込まれた可用性メタ(#chart-meta)を読む。
+ * 事前計算済みなら ChartMeta、未生成(null/空)なら null（→初回ロードで meta=1 のライブ計算にフォールバック）。
+ */
+function readEmbeddedChartMeta(): ChartMeta | null {
+  const text = document.getElementById('chart-meta')?.textContent?.trim()
+  if (!text) return null
+  try {
+    const parsed = JSON.parse(text)
+    return parsed && typeof parsed === 'object' ? (parsed as ChartMeta) : null
+  } catch {
+    return null
+  }
+}
+
+// タブ・ボタン出し分け用の可用性メタデータ。ページ埋め込み(#chart-meta)があればそれを採用し、
+// 無ければ初回ロードの meta=1 レスポンスで設定される
+const embeddedChartMeta = readEmbeddedChartMeta()
+
+/** 初回ロードで meta=1 を撃たずに済むか（埋め込みメタがあるか） */
+export const hasEmbeddedChartMeta = embeddedChartMeta !== null
+
+export let chartMeta: ChartMeta = embeddedChartMeta as ChartMeta
 
 export const langCode = chatArgDto.urlRoot.replace(/^\/+/, '') as '' | 'tw' | 'th'
 
