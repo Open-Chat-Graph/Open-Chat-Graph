@@ -120,7 +120,7 @@ class SyncOpenChat
             [fn() => $this->rankingBanUpdater->updateRankingBanTable(), 'ランキングBAN情報更新'],
         );
 
-        // ルーム個別ページの分析文/関連ルームキャッシュ(oc_page_cache)を毎時更新する。
+        // ルーム個別ページの分析文キャッシュ(oc_page_cache)を毎時更新する。
         // 直近1時間でメンバー数が変動したルームだけを対象にバックグラウンドで再生成
         // （実行中のバックフィルがあればバッチ側でスキップされる）。
         $this->batchScriptLauncher->launchInBackground(BatchScript::updateOcPageCache, MimimalCmsConfig::$urlRoot, 'hourly');

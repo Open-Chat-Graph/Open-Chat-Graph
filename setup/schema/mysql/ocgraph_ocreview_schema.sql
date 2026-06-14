@@ -157,3 +157,13 @@ CREATE TABLE `user_log` (
   `ua` varchar(512) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS `oc_page_cache`;
+-- ルーム個別ページの「分析文(narrative)」事前計算データ（部屋単位・再生成可能なキャッシュ）。
+-- narrative_data は JSON {summary,detail,meta_description,pattern}（空=データ無し）。
+-- /oc 表示時は open_chat への LEFT JOIN(getOpenChatByIdWithTag)で1クエリ取得する。
+CREATE TABLE `oc_page_cache` (
+  `open_chat_id` int(11) NOT NULL,
+  `narrative_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`open_chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

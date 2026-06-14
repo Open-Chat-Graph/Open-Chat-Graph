@@ -6,26 +6,26 @@ namespace App\Services\StaticData;
 
 use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
-use App\Models\SQLite\Repositories\OcPageCacheRepository;
+use App\Models\Repositories\OcPageCacheRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use Shared\MimimalCmsConfig;
 
 /**
  * ルーム個別ページの「分析(narrative)」データを事前計算し、
- * JSON({summary,detail,meta_description,pattern}) として oc_page_cache(SQLite) に保存する。
+ * JSON({summary,detail,meta_description,pattern}) として oc_page_cache(MySQL) に保存する。
  *
  * キャッシュに入れるのは「データ」のみ。HTMLは保存しない——レンダリング
  * (oc_narrative_section テンプレート・url() 等のURLヘルパー)はリクエスト時に行う。
  * CLIでHTMLを生成すると HTTP_HOST 不在で url() が壊れる事故(#400)の再発を構造的に防ぐ。
  *
- * /oc 表示時はこのキャッシュをPK一発SELECTで読むだけにし、bot クロール時に
- * narrative の重い統計読み取りを発生させない。
+ * /oc 表示時はこのキャッシュを open_chat への JOIN(getOpenChatByIdWithTag)で一緒に読むだけにし、
+ * bot クロール時に narrative の重い統計読み取りを発生させない。
  *
  * 関連ルーム(recommend/similarSize)はここでは生成しない。/oc 表示時に
  * recommend 静的キャッシュ(.dat / 母集団300件)から都度組み立てる（SimilarSizeRoomService）。
  *
- * 注: 言語別 cron 文脈（urlRoot 設定済み）から呼ぶこと。分類ラベルと保存先 SQLite が
+ * 注: 言語別 cron 文脈（urlRoot 設定済み）から呼ぶこと。分類ラベルと保存先 DB が
  * urlRoot に依存するため。
  */
 class OcPageCacheGenerator
@@ -34,7 +34,7 @@ class OcPageCacheGenerator
         private OpenChatPageRepositoryInterface $ocRepo,
         private OcNarrativeService $narrativeService,
         private CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
-        private OcPageCacheRepository $cacheRepo,
+        private OcPageCacheRepositoryInterface $cacheRepo,
     ) {
     }
 

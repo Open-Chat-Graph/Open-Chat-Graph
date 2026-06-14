@@ -110,7 +110,6 @@ rm -f "$STORAGE_DIR"/*/ranking_position/*/*.dat
 rm -f "$STORAGE_DIR"/*/ranking_position/*.dat
 rm -f "$STORAGE_DIR"/*/SQLite/statistics/*.db*
 rm -f "$STORAGE_DIR"/*/SQLite/ranking_position/*.db*
-rm -f "$STORAGE_DIR"/*/SQLite/oc_page_cache/*.db*
 rm -f "$STORAGE_DIR"/*/SQLite/ocgraph_sqlapi/*.db*
 rm -f "$STORAGE_DIR"/*.log
 rm -f "$STORAGE_DIR"/*/*/*.log
@@ -276,7 +275,6 @@ for lang in ja tw th; do
     mkdir -p "$STORAGE_DIR/${lang}/SQLite/statistics_ohlc"
     mkdir -p "$STORAGE_DIR/${lang}/SQLite/ranking_position_ohlc"
     mkdir -p "$STORAGE_DIR/${lang}/SQLite/ranking_position"
-    mkdir -p "$STORAGE_DIR/${lang}/SQLite/oc_page_cache"
 
     # statistics.db を生成
     if [ -f "$SQLITE_SCHEMA_DIR/statistics.sql" ]; then
@@ -302,11 +300,6 @@ for lang in ja tw th; do
         echo "    ✓ ranking_position.db"
     fi
 
-    # oc_page_cache.db を生成（ルーム個別ページの分析文/関連ルーム事前計算キャッシュ）
-    if [ -f "$SQLITE_SCHEMA_DIR/oc_page_cache.sql" ]; then
-        sqlite3 "$STORAGE_DIR/${lang}/SQLite/oc_page_cache/oc_page_cache.db" < "$SQLITE_SCHEMA_DIR/oc_page_cache.sql"
-        echo "    ✓ oc_page_cache.db"
-    fi
 
     # sqlapi.db を生成（jaのみ）
     if [ "$lang" == "ja" ] && [ -f "$SQLITE_SCHEMA_DIR/sqlapi.sql" ]; then
