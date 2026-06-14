@@ -52,7 +52,11 @@ class OpenChatChartApiServiceTest extends TestCase
     {
         $result = $this->instance->buildChartResponse(192, 8, 'day', 'ranking', 'all', 'candlestick', false);
 
-        $this->assertSame(count($result['date']), count($result['member']));
+        // ローソク足は OHLC 専用軸(ohlcDate)だけで返す。日次の date / member 折れ線は持たない
+        // （member を引くための統計DBアクセスと、date と ohlcDate の二重を避ける）
+        $this->assertArrayNotHasKey('date', $result);
+        $this->assertArrayNotHasKey('member', $result);
+        $this->assertArrayNotHasKey('time', $result);
 
         // OHLC は共通の ohlcDate 軸＋date抜きの値配列で返る（memberOhlc/positionOhlc は ohlcDate と同長）
         $this->assertArrayHasKey('ohlcDate', $result);
@@ -60,9 +64,6 @@ class OpenChatChartApiServiceTest extends TestCase
         $this->assertArrayHasKey('positionOhlc', $result);
         $this->assertSame(count($result['ohlcDate']), count($result['memberOhlc']));
         $this->assertSame(count($result['ohlcDate']), count($result['positionOhlc']));
-
-        // ローソク足は時刻ラベル折れ線tooltipを使わないので time は持たない
-        $this->assertArrayNotHasKey('time', $result);
 
         // 各 OHLC 要素は date を持たない（ohlcDate と重複させない）
         if ($result['memberOhlc']) {
@@ -144,7 +145,8 @@ class OpenChatChartApiServiceTest extends TestCase
     {
         $result = $this->instance->buildChartResponse(192, 8, 'day', 'ranking', 'all', 'candlestick', false, null, null, 'memberOhlc');
 
-        $this->assertArrayHasKey('date', $result);
+        // OHLC だけの要求は ohlcDate 軸のみ。日次 date は付けない（統計DBも引かない・date二重も無し）
+        $this->assertArrayNotHasKey('date', $result);
         $this->assertArrayHasKey('ohlcDate', $result);
         $this->assertArrayHasKey('memberOhlc', $result);
         $this->assertSame(count($result['ohlcDate']), count($result['memberOhlc']));
@@ -158,7 +160,7 @@ class OpenChatChartApiServiceTest extends TestCase
     {
         $result = $this->instance->buildChartResponse(192, 8, 'day', 'ranking', 'all', 'candlestick', false, null, null, 'positionOhlc');
 
-        $this->assertArrayHasKey('date', $result);
+        $this->assertArrayNotHasKey('date', $result);
         $this->assertArrayHasKey('ohlcDate', $result);
         $this->assertArrayHasKey('positionOhlc', $result);
         $this->assertSame(count($result['ohlcDate']), count($result['positionOhlc']));

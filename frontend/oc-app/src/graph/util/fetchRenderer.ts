@@ -143,21 +143,20 @@ function layerKey(name: LayerName): string {
 
 /**
  * 現在の表示ビューで必要な層を返す。
- *  - member: 常に必要
- *  - position: 折れ線 かつ 順位ON（sort≠none）
- *  - memberOhlc: ローソク足
- *  - positionOhlc: ローソク足 かつ 順位ON
+ *  - 折れ線: member（常に）＋ position（順位ON時）
+ *  - ローソク足: memberOhlc（常に）＋ positionOhlc（順位ON時）。日次 member 折れ線は描かないので取得しない
+ *    （member 層＝統計DBアクセスを発生させない。OHLC は ohlcDate 軸で独立して持つ）
  */
 function requiredLayers(): LayerName[] {
   const mode = graphStore.get(chartModeAtom)
   const sort = graphStore.get(rankingRisingAtom)
-  const list: LayerName[] = ['member']
   if (mode === 'candlestick') {
-    list.push('memberOhlc')
+    const list: LayerName[] = ['memberOhlc']
     if (sort !== 'none') list.push('positionOhlc')
-  } else if (sort !== 'none') {
-    list.push('position')
+    return list
   }
+  const list: LayerName[] = ['member']
+  if (sort !== 'none') list.push('position')
   return list
 }
 
@@ -196,13 +195,8 @@ function windowFromForLimit(limit: ChartLimit): string {
 /**
  * 現在ビューで「描画・取得に使う窓の開始日」を返す。
  *
- * ローソク足は全期間で取得する（＝開始日は startDate 固定）。
- * 理由: ローソク足のタブ表示判定 updateCandleTabVisibility は「長いタブが短いタブより本数が
- * 多いか」を表示中 data の日付配列で数えて決めるため、窓だけ持つと（週タブ表示中は week 窓ぶんの
- * 日付しか無く）月/全タブの本数を過小カウントしてタブが誤って消える。可用性メタ(ohlcAvailability)は
- * 閾値booleanのみでこの本数比較を再現できないため、ローソク足は全期間取得で従来の判定を厳密に維持する。
- * （member 層は line と共有。candlestick で member 行は描画しないが date 軸を全期間に保つため全期間で持つ）
- *
+ * ローソク足は全期間で取得する（＝開始日は startDate 固定）。タブ表示判定・本数スライスとも
+ * OHLC全件が手元にある前提で行うため（窓だけ持つと長いタブの本数を過小カウントする）。
  * 折れ線は従来どおり limit の窓開始日（縮小はクライアントスライス、拡大は古い差分だけ取得）。
  */
 function neededFromForView(limit: ChartLimit): string {
@@ -249,13 +243,17 @@ async function fetchLayers(names: LayerName[], from: string, to: string): Promis
   const data = await fetcher<ChartResponse>(
     `${chatArgDto.baseUrl}/oc/${chatArgDto.id}/chart?${getChartViewQuery()}&series=${series}&from=${from}&to=${to}`
   )
-  mergeLayers(names, data)
+  mergeLayers(names, data, from)
 }
 
-/** 取得レスポンス(共通date軸)を、要求した各層の byDate に prepend マージし loadedFrom を更新する */
-function mergeLayers(names: LayerName[], data: ChartResponse): void {
+/**
+ * 取得レスポンスを、要求した各層の byDate にマージし loadedFrom を更新する。
+ * 折れ線層(member/position)は date 軸、ローソク足層(OHLC)は ohlcDate 軸と zip する。
+ * loadedFrom は「取得した窓の開始日(from)」で更新する（OHLC応答に date が無くても遡れた範囲を記録できる）。
+ */
+function mergeLayers(names: LayerName[], data: ChartResponse, from: string): void {
   const date = data.date ?? []
-  const from = date[0]
+  const ohlcDate = data.ohlcDate ?? []
 
   for (const name of names) {
     const key = layerKey(name)
@@ -263,7 +261,6 @@ function mergeLayers(names: LayerName[], data: ChartResponse): void {
       case 'member': {
         const entry = ensureMemberEntry(key)
         date.forEach((d, i) => entry.byDate.set(d, data.member?.[i] ?? null))
-        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
       case 'position': {
@@ -275,31 +272,27 @@ function mergeLayers(names: LayerName[], data: ChartResponse): void {
             totalCount: data.totalCount?.[i] ?? null,
           })
         )
-        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
       case 'memberOhlc': {
-        // OHLC は共通 ohlcDate 軸と index 整合。ohlcDate と zip して日付キーの byDate に積む。
         const entry = ensureMemberOhlcEntry(key)
-        const ohlcDate = data.ohlcDate ?? []
         ohlcDate.forEach((d, i) => {
           const v = data.memberOhlc?.[i]
           if (v) entry.byDate.set(d, v)
         })
-        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
       case 'positionOhlc': {
         const entry = ensurePositionOhlcEntry(key)
-        const ohlcDate = data.ohlcDate ?? []
         ohlcDate.forEach((d, i) => {
           const v = data.positionOhlc?.[i]
           if (v) entry.byDate.set(d, v) // null（圏外）は積まない＝assemble 時に欠落=圏外として復元
         })
-        if (from !== undefined && from < entry.loadedFrom) entry.loadedFrom = from
         break
       }
     }
+    const entry = layers.get(key)!
+    if (from < entry.loadedFrom) entry.loadedFrom = from
   }
 }
 
@@ -378,16 +371,32 @@ async function ensureLayersForWindow(neededFrom: string): Promise<void> {
  * chart 側が limit で末尾スライスするため、ここでは窓全体（蓄積が広くてもよい）を渡す。
  */
 function assembleResponse(limit: ChartLimit): ChartResponse {
-  const from = neededFromForView(limit)
-  const date = buildDateAxis(from)
   const needs = new Set(requiredLayers())
 
-  const response: ChartResponse = {
-    date,
-    member: [],
-    position: [],
-    totalCount: [],
+  // ローソク足: OHLC 専用軸(ohlcDate)だけで組み立てる（日次 date / member は使わない）。
+  // ローソク足は全期間取得なので、キャッシュ済み OHLC の日付を昇順に並べたものが ohlcDate になる。
+  if (needs.has('memberOhlc')) {
+    const entry = layers.get(MEMBER_OHLC_KEY) as
+      | { loadedFrom: string; byDate: Map<string, MemberOhlc> }
+      | undefined
+    const ohlcDate = entry ? [...entry.byDate.keys()].sort() : []
+    const response: ChartResponse = {
+      ohlcDate,
+      memberOhlc: ohlcDate.map((d) => entry!.byDate.get(d)!),
+    }
+    // positionOhlc（順位ON時のみ）も同じ ohlcDate に整合（順位OHLCの無い日は null＝圏外）
+    if (needs.has('positionOhlc')) {
+      const pentry = layers.get(positionKey('positionOhlc')) as
+        | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> }
+        | undefined
+      response.positionOhlc = ohlcDate.map((d) => pentry?.byDate.get(d) ?? null)
+    }
+    return response
   }
+
+  // 折れ線: 日次 date 軸で組み立てる
+  const date = buildDateAxis(neededFromForView(limit))
+  const response: ChartResponse = { date, member: [], position: [], totalCount: [] }
 
   // member（常に必要）
   const memberEntry = layers.get(MEMBER_KEY) as
@@ -395,7 +404,7 @@ function assembleResponse(limit: ChartLimit): ChartResponse {
     | undefined
   response.member = date.map((d) => memberEntry?.byDate.get(d) ?? null)
 
-  // position（折れ線・順位ON時のみ。それ以外は空配列で従来同様）
+  // position（順位ON時のみ。それ以外は空配列で従来同様）
   if (needs.has('position')) {
     const entry = layers.get(positionKey('position')) as
       | { loadedFrom: string; byDate: Map<string, PositionPoint> }
@@ -405,24 +414,6 @@ function assembleResponse(limit: ChartLimit): ChartResponse {
     // time は急上昇(rising)のみ。ランキングは時刻を持たないので time キー自体を付けない。
     if (graphStore.get(rankingRisingAtom) === 'rising') {
       response.time = date.map((d) => entry?.byDate.get(d)?.time ?? null)
-    }
-  }
-
-  // memberOhlc（ローソク足時のみ）: window 内で OHLC を持つ日を ohlcDate にし、値配列を index 整合させる
-  if (needs.has('memberOhlc')) {
-    const entry = layers.get(MEMBER_OHLC_KEY) as
-      | { loadedFrom: string; byDate: Map<string, MemberOhlc> }
-      | undefined
-    const ohlcDate = date.filter((d) => entry?.byDate.has(d))
-    response.ohlcDate = ohlcDate
-    response.memberOhlc = ohlcDate.map((d) => entry!.byDate.get(d)!)
-
-    // positionOhlc（順位ON時のみ）も同じ ohlcDate に整合（順位OHLCの無い日は null＝圏外）
-    if (needs.has('positionOhlc')) {
-      const pentry = layers.get(positionKey('positionOhlc')) as
-        | { loadedFrom: string; byDate: Map<string, RankingPositionOhlc> }
-        | undefined
-      response.positionOhlc = ohlcDate.map((d) => pentry?.byDate.get(d) ?? null)
     }
   }
 
@@ -472,20 +463,18 @@ export async function fetchChartData(withMeta = false): Promise<ChartResponse> {
  * （取り込む層は現在ビューが返した系列ぶん。order は date 昇順前提）
  */
 function importFullResponseToLayers(data: ChartResponse): void {
-  const from = data.date?.[0]
-  if (from === undefined) return
+  // meta=1 は全期間取得なので、窓開始日＝startDate（ローソク足は date を持たないため chartMeta から取る）。
+  const from = chartMeta?.startDate
+  if (!from) return
 
-  // member は常に入っている
-  mergeLayers(['member'], data)
-
-  // 現在ビューに応じて返ってきた層も取り込む（空配列なら実質ノーオペ）
   const sort = graphStore.get(rankingRisingAtom)
   const mode = graphStore.get(chartModeAtom)
   if (mode === 'candlestick') {
-    mergeLayers(['memberOhlc'], data)
-    if (sort !== 'none') mergeLayers(['positionOhlc'], data)
-  } else if (sort !== 'none') {
-    mergeLayers(['position'], data)
+    mergeLayers(['memberOhlc'], data, from)
+    if (sort !== 'none') mergeLayers(['positionOhlc'], data, from)
+  } else {
+    mergeLayers(['member'], data, from)
+    if (sort !== 'none') mergeLayers(['position'], data, from)
   }
 }
 
@@ -494,8 +483,8 @@ const renderPositionChart = (data: ChartResponse, animation: boolean, limit: Cha
 
   chart.render(
     {
-      date: data.date,
-      graph1: data.member,
+      date: data.date ?? [],
+      graph1: data.member ?? [],
       graph2: data.position ?? [],
       // time は rising のみ。ランキング等で無い場合は空配列として扱う（時刻tooltip非表示）
       time: data.time ?? [],
@@ -515,8 +504,8 @@ const renderPositionChart = (data: ChartResponse, animation: boolean, limit: Cha
 const renderMemberChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
   chart.render(
     {
-      date: data.date,
-      graph1: data.member,
+      date: data.date ?? [],
+      graph1: data.member ?? [],
       graph2: [],
       time: [],
       totalCount: [],
@@ -531,21 +520,17 @@ const renderMemberChart = (data: ChartResponse, animation: boolean, limit: Chart
   )
 }
 
-const renderCandlestickChart = (data: ChartResponse, animation: boolean, limit: ChartLimit) => {
-  const isRising = graphStore.get(rankingRisingAtom) === 'rising'
+const renderCandlestickChart = (animation: boolean, limit: ChartLimit) => {
+  const sort = graphStore.get(rankingRisingAtom)
+  const isRising = sort === 'rising'
 
+  // ローソク足は OHLC をチャートのプロパティ(ohlcDate/memberOhlcApiData/positionOhlcApiData)で持つので、
+  // 折れ線用の ChartArgs(date/graph1/...) は空でよい。
   chart.render(
-    {
-      date: data.date,
-      graph1: data.member,
-      graph2: [],
-      time: [],
-      totalCount: [],
-      rankingOhlc: data.positionOhlc,
-    },
+    { date: [], graph1: [], graph2: [], time: [], totalCount: [] },
     {
       label1: t('メンバー数'),
-      label2: isRising ? t('急上昇') : t('ランキング'),
+      label2: sort === 'none' ? '' : isRising ? t('急上昇') : t('ランキング'),
       category: graphStore.get(categoryAtom) === 'all' ? t('すべて') : chatArgDto.categoryName,
       isRising,
     },
@@ -565,18 +550,14 @@ export function renderChartData(data: ChartResponse, animation: boolean) {
   const sort = graphStore.get(rankingRisingAtom)
 
   if (graphStore.get(chartModeAtom) === 'candlestick') {
-    // OHLC は ohlcDate（OHLC専用の日付軸）＋ index 整合の値配列で受け取る
+    // OHLC は ohlcDate（OHLC専用の日付軸）＋ index 整合の値配列で受け取る（日次 date/member は持たない）
     chart.ohlcDate = data.ohlcDate ?? []
     chart.memberOhlcApiData = data.memberOhlc ?? []
+    chart.positionOhlcApiData = data.positionOhlc ?? []
 
-    // 期間タブ毎のローソク足本数に基づいてタブ表示を更新（OHLCのある日付集合＝ohlcDate）
-    updateCandleTabVisibility(chart.ohlcDate, data.date)
-
-    if (sort === 'none') {
-      renderMemberChart(data, animation, limit)
-    } else {
-      renderCandlestickChart(data, animation, limit)
-    }
+    // 期間タブ表示は OHLC 本数で判定（順位ON/OFFどちらも renderCandlestickChart が描く）
+    updateCandleTabVisibility(chart.ohlcDate)
+    renderCandlestickChart(animation, limit)
     return
   }
 

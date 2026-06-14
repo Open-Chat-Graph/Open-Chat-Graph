@@ -52,17 +52,19 @@ interface ErrorResponse {
 }
 
 /**
- * /oc/{id}/chart のレスポンス。表示ビュー（span×sort×scope×mode）の描画に必要な系列を一括返却する
+ * /oc/{id}/chart のレスポンス。表示ビュー（span×sort×scope×mode）の描画に必要な系列だけを返す。
  *
- * - date/member: hour は時刻ラベル+毎時メンバー数、day は日付+日次メンバー数（date は全系列共通の軸）
- * - position/totalCount: sort が none 以外のときの順位系列。time は急上昇(rising)のときだけ付く
- *   （ランキングは終日時刻を持たないため省略。フロントは time が無い＝時刻表示なしとして扱う）
- * - ohlcDate/memberOhlc/positionOhlc: mode=candlestick のときのみ。ohlcDate は OHLC 専用の日付軸で、
- *   memberOhlc・positionOhlc はこれと同順・同長（positionOhlc の null はその日が圏外＝順位OHLCなし）
+ * - 折れ線(line): date（hourは時刻ラベル）＋ member。順位ON時は position/totalCount。
+ *   time は急上昇(rising)のときだけ付く（ランキングは終日時刻を持たないため省略。無い＝時刻表示なし）。
+ * - ローソク足(candlestick): ohlcDate ＋ memberOhlc（順位ON時は positionOhlc）だけを返す。
+ *   日次の date / member 折れ線は使わないので付かない（ohlcDate が OHLC 専用の日付軸）。
+ *   memberOhlc・positionOhlc は ohlcDate と同順・同長（positionOhlc の null はその日が圏外＝順位OHLCなし）。
+ *
+ * 各フィールドは要求した層のときだけ付く（layer別の差分フェッチと共通形）。
  */
 interface ChartResponse {
-  date: string[]
-  member: (number | null)[]
+  date?: string[]
+  member?: (number | null)[]
   time?: (string | null)[]
   position?: (number | null)[]
   totalCount?: (number | null)[]

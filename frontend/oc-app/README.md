@@ -58,11 +58,14 @@
 | 折れ線・人数のみ | `member` | `?span=day&sort=none&scope=all&category={cat}&mode=line&series=member&from={from}&to={to}` |
 | 折れ線・ランキング | `member,position` | `?span=day&sort=ranking&scope=in&category={cat}&mode=line&series=member,position&from={from}&to={to}` |
 | 折れ線・急上昇 | `member,position` | `?span=day&sort=rising&scope=all&category={cat}&mode=line&series=member,position&from={from}&to={to}` |
-| ローソク・人数のみ | `member,memberOhlc` | `?span=day&sort=none&scope=all&category={cat}&mode=candlestick&series=member,memberOhlc&from={from}&to={to}` |
-| ローソク・ランキング | `member,memberOhlc,positionOhlc` | `?span=day&sort=ranking&scope=in&category={cat}&mode=candlestick&series=member,memberOhlc,positionOhlc&from={from}&to={to}` |
-| ローソク・急上昇 | `member,memberOhlc,positionOhlc` | `?span=day&sort=rising&scope=all&category={cat}&mode=candlestick&series=member,memberOhlc,positionOhlc&from={from}&to={to}` |
+| ローソク・人数のみ | `memberOhlc` | `?span=day&sort=none&scope=all&category={cat}&mode=candlestick&series=memberOhlc&from={from}&to={to}` |
+| ローソク・ランキング | `memberOhlc,positionOhlc` | `?span=day&sort=ranking&scope=in&category={cat}&mode=candlestick&series=memberOhlc,positionOhlc&from={from}&to={to}` |
+| ローソク・急上昇 | `memberOhlc,positionOhlc` | `?span=day&sort=rising&scope=all&category={cat}&mode=candlestick&series=memberOhlc,positionOhlc&from={from}&to={to}` |
 | 最新24時間（折れ線） | （series無し・全24h） | `?span=hour&sort=ranking&scope=in&category={cat}&mode=line` |
 | 初回ロード（埋め込みメタ無し） | （series無し・全期間） | `?span=day&sort=ranking&scope=in&category={cat}&mode=line&meta=1` |
+
+ローソク足は OHLC 層だけを取る（`member` 折れ線は引かない＝統計DBアクセスを発生させない）。
+ローソク足は常に全期間取得し、期間タブの本数はクライアント側でスライスする。
 
 ---
 
@@ -70,16 +73,17 @@
 
 ```ts
 interface ChartResponse {
-  date: string[]                 // 全系列共通の日付（hour は時刻ラベル）軸
-  member: (number | null)[]      // date と同順・同長のメンバー数
+  // 折れ線(line)用。ローソク足では付かない
+  date?: string[]                // 日次の日付（hour は時刻ラベル）軸
+  member?: (number | null)[]     // date と同順・同長のメンバー数
 
   // 順位（折れ線の重ね描き。sort≠none のときだけ付く）
   position?: (number | null)[]   // date と同順・同長（圏外は0、未取得日は null）
   totalCount?: (number | null)[] // 同上（その日の総件数）
   time?: (string | null)[]       // 急上昇(rising)のときだけ。順位を記録した時刻(HH:MM)
 
-  // ローソク足（mode=candlestick のときだけ付く）
-  ohlcDate?: string[]            // OHLC専用の日付軸（date の部分集合）。下2つはこれと index 整合
+  // ローソク足(candlestick)用。ohlcDate が OHLC 専用の日付軸（折れ線の date とは別系列）
+  ohlcDate?: string[]            // OHLC のある日付（昇順）。下2つはこれと index 整合
   memberOhlc?: MemberOhlc[]      // ohlcDate と同順・同長
   positionOhlc?: (RankingPositionOhlc | null)[] // ohlcDate と同順・同長。null=その日は圏外
 
@@ -108,21 +112,23 @@ interface RankingPositionOhlc {
 
 | フィールド | 付く条件 |
 | --- | --- |
-| `date` / `member` | 常に |
-| `position` / `totalCount` | sort≠none（折れ線の順位） |
-| `time` | sort=rising のときだけ |
-| `ohlcDate` / `memberOhlc` | mode=candlestick |
-| `positionOhlc` | mode=candlestick かつ sort≠none |
+| `date` / `member` | 折れ線(line)のみ（ローソク足では付かない） |
+| `position` / `totalCount` | 折れ線 かつ sort≠none |
+| `time` | 折れ線 かつ sort=rising のときだけ |
+| `ohlcDate` / `memberOhlc` | ローソク足(candlestick) |
+| `positionOhlc` | ローソク足 かつ sort≠none |
 | `meta` | 初回ロード（meta=1）のときだけ |
 
 ---
 
 ## 約束ごと（壊さないこと）
 
-- `date` は全系列で共通の1本の軸。`member`・`position`・`totalCount`・`time` はこれと index 整合。
+- 折れ線は `date` が共通軸で、`member`・`position`・`totalCount`・`time` はこれと index 整合。
+- ローソク足は `ohlcDate` が唯一の軸で、`memberOhlc`・`positionOhlc` はこれと同順・同長
+  （各要素に date を持たせない＝二重・三重にしない）。`positionOhlc` の `null` はその日が圏外
+  （順位OHLCなし）で、描画では0（圏外）として埋める。
+- ローソク足は折れ線の `date` / `member` を返さない・取得しない（OHLC は別系列で、日次 member 折れ線は
+  描かないため。統計DBへの無駄なアクセスと date/ohlcDate の二重を避ける）。
 - `time` は急上昇(rising)のときだけ返す。ランキング・人数のみ・24時間・ローソク足では付かない
   （時刻を持たない／x軸が時刻のため）。フロントは「`time` が無い＝時刻表示なし」として扱う。
-- OHLC は `ohlcDate` という別の日付軸を1本だけ持ち、`memberOhlc` と `positionOhlc` はどちらも
-  これと同順・同長で揃える（各要素に date を持たせて二重・三重にしない）。`positionOhlc` の `null`
-  はその日が圏外（順位OHLCなし）で、描画では0（圏外）として埋める。
 - `meta` は初回ロード時のみ。操作後の層別フェッチには含めない。

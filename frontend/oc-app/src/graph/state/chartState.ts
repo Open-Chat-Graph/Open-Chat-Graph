@@ -326,15 +326,11 @@ export function updateTabVisibility(dataLength: number) {
  * - OHLCデータは記録期間が限られるため（例: 過去のみに存在する部屋）、
  *   より短いタブで全て表示しきれる冗長な長いタブも非表示にする
  */
-export function updateCandleTabVisibility(ohlcDate: string[], dates: string[]) {
-  const ohlcDateSet = new Set(ohlcDate)
-  const countInWindow = (limit: number) => {
-    let count = 0
-    for (let i = limit ? Math.max(0, dates.length - limit) : 0; i < dates.length; i++) {
-      if (ohlcDateSet.has(dates[i])) count++
-    }
-    return count
-  }
+export function updateCandleTabVisibility(ohlcDate: string[]) {
+  // OHLCは日次連続なので「直近 limit 本」を各タブの表示本数とみなす（0=全期間）。
+  // 過去で記録が途切れた部屋など recency は ohlcAvailability(hasOhlcDataForLimit) 側でゲートする。
+  const total = ohlcDate.length
+  const countInWindow = (limit: number) => (limit ? Math.min(limit, total) : total)
 
   const weekCount = countInWindow(8)
   const monthCount = countInWindow(31)

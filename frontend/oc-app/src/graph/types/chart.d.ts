@@ -8,8 +8,6 @@ type ChartArgs = {
   graph2: (number | null)[]
   time: (string | null)[]
   totalCount: (number | null)[]
-  /** 順位OHLC。ohlcDate と index 整合（null=その日は圏外） */
-  rankingOhlc?: (RankingPositionOhlc | null)[]
 }
 
 type ChartData = {

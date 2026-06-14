@@ -38,9 +38,11 @@ export default class OpenChatChart implements ChartFactory {
   onZooming = false
   onPaning = false
   enableZoom = false
-  /** OHLC専用の日付軸（memberOhlcApiData / initData.rankingOhlc と index 整合）。日次 date 軸の部分集合 */
+  /** OHLC専用の日付軸（memberOhlcApiData / positionOhlcApiData と index 整合・昇順） */
   ohlcDate: string[] = []
   memberOhlcApiData: MemberOhlc[] = []
+  /** 順位OHLC（ohlcDate と index 整合。null=その日は圏外）。順位OFF時は空配列 */
+  positionOhlcApiData: (RankingPositionOhlc | null)[] = []
   ohlcData: { x: number; o: number; h: number; l: number; c: number }[] = []
   ohlcRankingData: { x: number; o: number; h: number; l: number; c: number }[] = []
   ohlcRankingNullLow: Set<number> = new Set()
@@ -240,16 +242,14 @@ export default class OpenChatChart implements ChartFactory {
 
   private buildCandlestickData() {
     const limit = this.limit
-    const dailyDates = this.initData.date // 日次 date 軸（期間タブの窓計算に使う）
-    const ohlcDate = this.ohlcDate // OHLC日付軸（dailyDates の部分集合・昇順）
+    const ohlcDate = this.ohlcDate // OHLC日付軸（昇順）
     const member = this.memberOhlcApiData // ohlcDate と index 整合
-    const rankingOhlc = this.initData.rankingOhlc // ohlcDate と index 整合（null=圏外）
-    const hasRanking = !!rankingOhlc?.length
+    const ranking = this.positionOhlcApiData // ohlcDate と index 整合（null=圏外）。順位OFF時は空
+    const hasRanking = !!ranking.length
+    const len = ohlcDate.length
 
-    // 期間タブの窓は従来どおり「日次 date 軸の末尾 limit 日」。その開始日以降の OHLC だけ描く。
-    // （OHLC本数ではなく日次日数で窓を決めることで updateCandleTabVisibility のタブ表示判定と一致させる）
-    const startIdx = limit ? Math.max(0, dailyDates.length - limit) : 0
-    const windowStart = dailyDates[startIdx] ?? ''
+    // 期間タブは末尾 limit 本のローソクを表示する（OHLCは日次なので「直近 limit 日」と一致）。0=全期間。
+    const startIdx = limit ? Math.max(0, len - limit) : 0
 
     const ohlcData: { x: number; o: number; h: number; l: number; c: number }[] = []
     const allValues: number[] = []
@@ -258,18 +258,17 @@ export default class OpenChatChart implements ChartFactory {
     const ohlcRankingData: { x: number; o: number; h: number; l: number; c: number }[] = []
     const ohlcRankingNullLow = new Set<number>()
 
-    for (let k = 0; k < ohlcDate.length; k++) {
-      if (ohlcDate[k] < windowStart) continue // 窓より前の OHLC は描かない
-      const m = member[k]
+    for (let i = startIdx; i < len; i++) {
+      const m = member[i]
       if (!m) continue // member OHLC は ohlcDate と1:1（防御的にスキップ）
 
       const x = ohlcData.length
-      ohlcDates.push(ohlcDate[k])
+      ohlcDates.push(ohlcDate[i])
       ohlcData.push({ x, o: m.open_member, h: m.high_member, l: m.low_member, c: m.close_member })
       allValues.push(m.open_member, m.high_member, m.low_member, m.close_member)
 
       if (hasRanking) {
-        const r = rankingOhlc![k]
+        const r = ranking[i]
         if (r) {
           if (r.low_position === null) ohlcRankingNullLow.add(x)
           ohlcRankingData.push({

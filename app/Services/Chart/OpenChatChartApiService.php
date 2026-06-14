@@ -86,10 +86,11 @@ class OpenChatChartApiService
         // withMeta が要求されたら従来の全期間+メタ動作を優先し、範囲は無視する。
         $useRange = !$withMeta && $from !== null && $to !== null;
 
-        // 日次系列はローソク足・日次ビューの描画に必要（純粋なhourビューでは取得しない）。
+        // 日次統計は日次ビュー(折れ線)の描画とメタの空フォールバックに使う。
+        // ローソク足は OHLC 専用軸(ohlcDate)だけで描くので日次統計は引かない（無駄な統計DBアクセスを避ける）。
         // メタは ChartMetaBuilder（ライブ）で別途組むため、ここでは可用性を計算しない。
         $statsDto = null;
-        if ($mode === 'candlestick' || $span === 'day' || $withMeta) {
+        if ($mode !== 'candlestick' && ($span === 'day' || $withMeta)) {
             $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray(
                 $open_chat_id,
                 $category > 0 ? $category : null,
@@ -102,7 +103,7 @@ class OpenChatChartApiService
         }
 
         if ($mode === 'candlestick') {
-            $response = $this->buildCandlestickSeries($open_chat_id, $positionCategory, $sort, $type, $statsDto, $useRange ? $from : null, $useRange ? $to : null);
+            $response = $this->buildCandlestickSeries($open_chat_id, $positionCategory, $sort, $type, $useRange ? $from : null, $useRange ? $to : null);
         } elseif ($span === 'hour') {
             // hour系列(最新24時間固定・MariaDB)は範囲化対象外。from/to は無視する。
             $response = $this->buildHourSeries($open_chat_id, $positionCategory, $sort, $type);
@@ -120,13 +121,15 @@ class OpenChatChartApiService
     }
 
     /**
-     * series 指定時の層単位レスポンスを組み立てる。
+     * series 指定時の層単位レスポンスを組み立てる。要求された層だけを載せて返す（メタは付けない）。
      *
-     * 共通の date 軸（member 統計の from/to もしくは全期間から生成。順位層もこの軸に整合させる）に、
-     * 要求された層だけを載せて返す。メタは付けない。
+     * - member / position（折れ線）は共通の日次 date 軸に揃える。どちらかを要求されたときだけ
+     *   `date` を1本載せ、統計(buildStatisticsChartArray)も取得する。
+     * - OHLC（ローソク足）は OHLC 専用の `ohlcDate` 軸で返す（appendOhlcLayers）。日次 date とは別系列。
+     *   OHLC だけの要求なら統計取得も `date` も無し（無駄な統計DBアクセスと date/ohlcDate の二重を避ける）。
      *
      * @param array<string, true> $layers resolveSeries の結果（要求された層の集合）
-     * @return array{date: string[], member?: (int|null)[], time?: array, position?: array, totalCount?: array, ohlcDate?: string[], memberOhlc?: array, positionOhlc?: array}
+     * @return array{date?: string[], member?: (int|null)[], time?: array, position?: array, totalCount?: array, ohlcDate?: string[], memberOhlc?: array, positionOhlc?: array}
      */
     private function buildSeriesResponse(
         int $open_chat_id,
@@ -137,59 +140,35 @@ class OpenChatChartApiService
         ?string $from,
         ?string $to,
     ): array {
-        // date 軸は全層で共通。member 統計の範囲（from/to もしくは実データ全期間）から生成する。
-        // 統計レコードが無ければ空（date 空・各層空）で返す。
-        $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray(
-            $open_chat_id,
-            null,
-            $from,
-            $to,
-        );
+        $response = [];
 
-        if ($statsDto === false) {
-            $response = ['date' => []];
-            if (isset($layers[self::SERIES_MEMBER])) {
-                $response['member'] = [];
+        // member / position（折れ線）を要求されたときだけ、共通の日次 date 軸＋統計を取得する。
+        $wantMember = isset($layers[self::SERIES_MEMBER]);
+        $wantPosition = isset($layers[self::SERIES_POSITION]);
+        if ($wantMember || $wantPosition) {
+            $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray($open_chat_id, null, $from, $to);
+
+            $response['date'] = $statsDto === false ? [] : $statsDto->date;
+
+            if ($wantMember) {
+                $response['member'] = $statsDto === false ? [] : $statsDto->member;
             }
-            if (isset($layers[self::SERIES_POSITION])) {
-                // time は急上昇(rising)のみ。ランキングは終日時刻を持たない（null配列）ので配列ごと省く。
+
+            if ($wantPosition) {
+                // 順位層は member と同じ date 軸（statsDto.start/end）で生成し、from/to を DB 絞り込みに渡す。
+                $position = $statsDto === false
+                    ? ['time' => [], 'position' => [], 'totalCount' => []]
+                    : $this->buildPositionLayer($open_chat_id, $positionCategory, $sort, $type, $statsDto, $from, $to);
+                // time は急上昇(rising)のみ返す（ランキングは終日時刻なし＝null配列になるので省く）。
                 if ($type === RankingType::Rising) {
-                    $response['time'] = [];
+                    $response['time'] = $position['time'];
                 }
-                $response['position'] = [];
-                $response['totalCount'] = [];
+                $response['position'] = $position['position'];
+                $response['totalCount'] = $position['totalCount'];
             }
-            $this->appendOhlcLayers(
-                $response,
-                $open_chat_id,
-                $positionCategory,
-                $sort,
-                $type,
-                isset($layers[self::SERIES_MEMBER_OHLC]),
-                isset($layers[self::SERIES_POSITION_OHLC]),
-                $from,
-                $to,
-            );
-            return $response;
         }
 
-        $response = ['date' => $statsDto->date];
-
-        if (isset($layers[self::SERIES_MEMBER])) {
-            $response['member'] = $statsDto->member;
-        }
-
-        if (isset($layers[self::SERIES_POSITION])) {
-            // 順位層は member と同じ date 軸（statsDto.start/end）で生成し、from/to を DB 絞り込みに渡す。
-            $position = $this->buildPositionLayer($open_chat_id, $positionCategory, $sort, $type, $statsDto, $from, $to);
-            // time は急上昇(rising)のみ返す（ランキングは終日時刻なし＝null配列になるので省く）。
-            if ($type === RankingType::Rising) {
-                $response['time'] = $position['time'];
-            }
-            $response['position'] = $position['position'];
-            $response['totalCount'] = $position['totalCount'];
-        }
-
+        // OHLC（ローソク足）は ohlcDate 軸で別途載せる（日次 date とは独立）。
         $this->appendOhlcLayers(
             $response,
             $open_chat_id,
@@ -316,20 +295,13 @@ class OpenChatChartApiService
         int $positionCategory,
         string $sort,
         RankingType $type,
-        StatisticsChartDto $statsDto,
         ?string $from = null,
         ?string $to = null,
     ): array {
-        // ローソク足は時刻ラベル付き折れ線tooltipを使わないので time を持たない。
-        // 折れ線用の position/totalCount もローソク足では描画しないため省く
-        // （member は折れ線と層キャッシュを共有するため返す）。
-        $response = [
-            'date' => $statsDto->date,
-            'member' => $statsDto->member,
-        ];
-
+        // ローソク足は OHLC 専用の ohlcDate 軸だけで描く。日次の date / member 折れ線は使わないので返さない
+        // （member を引くための統計DBアクセスと、date と ohlcDate の二重を避ける）。
+        $response = [];
         $this->appendOhlcLayers($response, $open_chat_id, $positionCategory, $sort, $type, true, $sort !== 'none', $from, $to);
-
         return $response;
     }
 
