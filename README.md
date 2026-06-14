@@ -313,6 +313,62 @@ storage/            # SQLite・ログ・キャッシュ
 
 ---
 
+## 🗂️ ページ系キャッシュの生成アーキテクチャ
+
+`/oc` 等の表示を軽くするため、重い計算は cron で事前計算して保存し、表示時はそれを読むだけにしている。
+共通の考え方は「事前計算 → 保存 → 表示は読むだけ／無ければその場で生成（フォールバック）」。2系統ある。
+
+### グラフのメタ・系列（`oc_page_cache.chart_meta`／MySQL）
+
+グラフ初回表示のタブ・ボタン出し分け判定（可用性メタ）を cron で事前計算して `oc_page_cache.chart_meta`
+に持たせ、`/oc` の既存1クエリで一緒に読んでHTMLに埋め込む。系列データ（人数・順位・ローソク足）は
+`?series=` で層別に「見えている期間の不足分だけ」取得する。
+
+```mermaid
+flowchart TD
+  trig["cron 起動<br/>毎時:30（変動・新規 約4,320室）/ 日次（ランキング外クロール完走後・約108,274室）/ genetop（全室 約242,386）"]
+  trig --> ucps["UpdateOcPageCacheService::handle<br/>毎時順位は getHourPositionCountsAll を実行1回だけ（gone away 回避）"]
+  ucps --> ocg["OcPageCacheGenerator::generateForIds（per-room）"]
+  ocg --> cmb["ChartMetaBuilder::build（メタ計算は1箇所）"]
+  cmb --> db[("oc_page_cache.chart_meta（MySQL）")]
+
+  page["/oc 表示<br/>OpenChatPageController"] --> opr["OpenChatPageRepository::getOpenChatByIdWithTag<br/>oc_page_cache を LEFT JOIN（1クエリ）"]
+  db --> opr
+  opr --> emb["HTML に #chart-meta を埋め込み"]
+  emb --> fr["フロント fetchRenderer.ts"]
+  fr -->|"埋め込み有り = primary"| noxhr["初回 meta=1 を撃たない"]
+  fr -->|"埋め込み無し（新規室）= fallback"| live["meta=1 → OpenChatChartApiService<br/>→ ChartMetaBuilder::build（ライブ・同一コード）"]
+  fr --> series["系列取得: GET /oc/{id}/chart に series（層）と from・to（範囲）を付与<br/>層別に不足範囲だけ（人数を持っていれば順位ONで再取得しない）"]
+  series --> capi["OpenChatChartApiService::buildChartResponse"]
+```
+
+- 生成タイミング: 毎時（直近1時間で変動した室＋新規ランク入り）／日次（`getForDaily`＝変動8日＋新規＋週次更新。ランキング外クロール完走後に走る）／genetop（全室）。最長でも約1週間で全室が一巡する。
+- フォールバック: 未生成室（新規室・初回バックフィル前）は埋め込みが無いので `meta=1` で同じ `ChartMetaBuilder` をライブ実行。primary（cron）と同一コードなので結果は一致する。
+
+### おすすめ・ランキング（`.dat` ファイル）
+
+おすすめ／カテゴリ／公式ランキングを事前計算して `.dat` に保存し、表示時は読むだけにする。
+
+```mermaid
+flowchart TD
+  rtrig["cron 起動<br/>毎時（UpdateHourlyMemberRankingService → updateRecommendStaticData）/ genetop"]
+  rtrig --> rgen["RecommendStaticDataGenerator::updateStaticData（全エンティティ foreach）"]
+  rgen --> rb["RecommendRankingBuilder<br/>1件あたり軽い索引クエリ2本（重い N+1 を解消・bulk 一括取得は廃止）"]
+  rb --> dat[(".dat ファイル（タグ／カテゴリ／公式）")]
+
+  rpage["/oc・ランキング表示"] --> rget["RecommendStaticDataGenerator::get*Ranking"]
+  dat --> rget
+  rget -->|".dat あり = primary"| ruse["読むだけ（母集団300件から SimilarSizeRoomService 等が組み立て）"]
+  rget -->|".dat 無し／無効 = fallback"| rlive["RecommendRankingBuilder で DB から即時生成"]
+```
+
+- かつては「タグ1件ごとに重い結合クエリを1本」投げる N+1 構造で、毎時バッチが1時間で完走せず次回に
+  kill され続け、生成中に重いクエリを投げ続けて `/oc` 表示が「MySQL server has gone away」を多発させていた。
+  現在は1件あたり軽い索引クエリ2本に置き換えて解消（bulk 一括取得も試したが廃止）。
+- フォールバック: `.dat` が無い／無効なら DB から即時生成して表示する。
+
+---
+
 ## 📞 連絡先
 
 - Email: support@openchat-review.me
