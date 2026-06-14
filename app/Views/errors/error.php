@@ -237,30 +237,67 @@ try {
 }
 
 $config = MimimalCmsConfig::class;
+
+// サーバーエラー（5xx）画面の文言。ロケール未確定時は英語にフォールバックする。
+$srv = [
+    'title'  => 'A temporary server error occurred',
+    'lead'   => 'The server may be busy or experiencing a temporary problem. Please wait a moment and reload the page.',
+    'reload' => 'Reload',
+    'home'   => 'Back to home',
+    'code'   => 'Error code',
+];
+
 if (class_exists($config) && isset($config::$urlRoot)) {
     switch (MimimalCmsConfig::$urlRoot) {
         case '':
             $message = 'お探しのページは一時的にアクセスができない状況にあるか、移動もしくは削除された可能性があります。';
             $message2 = 'このオープンチャットは登録されていないか、削除されました';
+            $srv = [
+                'title'  => 'サーバーで一時的なエラーが発生しました',
+                'lead'   => 'アクセスが集中しているか、一時的な不具合が起きている可能性があります。少し時間をおいてから、もう一度読み込みしてください。',
+                'reload' => '再読み込み',
+                'home'   => 'トップページへ戻る',
+                'code'   => 'エラーコード',
+            ];
             break;
         case '/th':
             $message = 'หน้าที่คุณกำลังมองหาอยู่อาจไม่สามารถเข้าถึงได้ชั่วคราว หรืออาจถูกย้ายหรือลบไปแล้ว';
             $message2 = 'ห้องสนทนานี้ไม่ได้ลงทะเบียนหรือถูกลบ';
+            $srv = [
+                'title'  => 'เซิร์ฟเวอร์เกิดข้อผิดพลาดชั่วคราว',
+                'lead'   => 'อาจมีผู้เข้าใช้งานจำนวนมาก หรือเกิดปัญหาชั่วคราว กรุณารอสักครู่แล้วโหลดหน้านี้ใหม่อีกครั้ง',
+                'reload' => 'โหลดหน้าใหม่',
+                'home'   => 'กลับสู่หน้าแรก',
+                'code'   => 'รหัสข้อผิดพลาด',
+            ];
             break;
         case '/tw':
             $message = '您正在查找的页面可能暂时无法访问，或者可能已移动或删除';
             $message2 = '此社群未注册或已删除';
+            $srv = [
+                'title'  => '伺服器發生暫時性錯誤',
+                'lead'   => '可能是存取量過大或發生暫時性的問題，請稍候片刻後重新載入此頁面。',
+                'reload' => '重新載入',
+                'home'   => '返回首頁',
+                'code'   => '錯誤代碼',
+            ];
     }
 } else {
     $message = 'The page you are looking for is temporarily inaccessible and may be moved or deleted.';
 }
 
+// 5xx（サーバー側の一時的な障害）は専用の「再読み込み」画面を出す。
+// 404 / 410 など 4xx は従来どおりの表示を維持する。
+$isServerError = $httpCode >= 500;
+
+// 再読み込み先は、今まさにエラーになった URL（クエリ含む）。JS 無効でも href で同じ URL を再試行できる。
+$reloadUrl = htmlspecialchars($_SERVER['REQUEST_URI'] ?? url(''), ENT_QUOTES, 'UTF-8');
 
 // /oc/* の 410 (削除済み確定) のみエラーコードを出さず削除済みメッセージに切り替え。
 // 404 (範囲外 / 未登録 id) は通常の "404 Not Found" + 汎用メッセージで返す。
 $isOcDeletedPage = $httpCode == 410 && strpos(path(), 'oc/');
-$titleText = $isOcDeletedPage ? $message2 : "{$httpCode} {$httpStatusMessage}";
-$descText = $isOcDeletedPage ? $message2 : $message;
+$titleText = $isServerError ? $srv['title'] : ($isOcDeletedPage ? $message2 : "{$httpCode} {$httpStatusMessage}");
+$descText  = $isServerError ? $srv['lead']  : ($isOcDeletedPage ? $message2 : $message);
 
 $_meta = meta()->setTitle($titleText)
     ->setDescription($descText)
@@ -307,6 +344,183 @@ try {
         .main {
             max-width: var(--width);
         }
+
+        /* ===== サーバーエラー（5xx）画面 =====
+           tokens.css のセマンティック層のみ参照（ダーク/ライト両対応）。
+           「公式の確認ゲート」(--ocj-*) と同じ ＝ 紙色カード / 琥珀の警告 / 緑のCTA の語彙。 */
+        .srv-err {
+            max-width: 460px;
+            margin: 0 auto;
+            padding: clamp(28px, 8vh, 72px) 6px 56px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .srv-err-badge {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--ocj-amber);
+            background: var(--ocj-amber-bg);
+            animation: srvErrPulse 2.6s ease-out infinite, srvErrRise .5s both;
+        }
+
+        .srv-err-badge svg {
+            width: 40px;
+            height: 40px;
+            display: block;
+        }
+
+        /* h1 の font-size:5rem を上書き（class セレクタが要素セレクタに勝つ） */
+        .srv-err-title {
+            font-size: 1.5rem;
+            line-height: 1.5;
+            font-weight: 800;
+            letter-spacing: .01em;
+            color: var(--ocj-ink-strong);
+            margin: 22px 0 0;
+            animation: srvErrRise .5s both .06s;
+        }
+
+        .srv-err-lead {
+            font-size: .95rem;
+            line-height: 1.85;
+            color: var(--ocj-ink-soft);
+            margin: 14px 0 0;
+            max-width: 30em;
+            animation: srvErrRise .5s both .12s;
+        }
+
+        a.srv-err-reload {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 320px;
+            min-height: 56px;
+            box-sizing: border-box;
+            padding: 0 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border-radius: 14px;
+            background: var(--c-btn-brand-bg);
+            color: var(--c-text-inverse);
+            font-size: 1.0625rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+            text-decoration: none;
+            word-break: normal;
+            box-shadow: var(--ocj-shadow-btn);
+            transition: background .15s ease, box-shadow .2s ease, transform .08s ease;
+            animation: srvErrRise .5s both .18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        a.srv-err-reload:hover {
+            background: var(--c-btn-brand-bg-hover);
+            box-shadow: var(--ocj-shadow-btn-hover);
+        }
+
+        a.srv-err-reload:active {
+            transform: translateY(1px) scale(.99);
+            box-shadow: var(--ocj-shadow-btn-press);
+        }
+
+        a.srv-err-reload:focus-visible {
+            outline: 3px solid var(--c-brand-ring);
+            outline-offset: 2px;
+        }
+
+        .srv-err-reload svg {
+            width: 22px;
+            height: 22px;
+            flex: none;
+        }
+
+        a.srv-err-reload:hover svg {
+            animation: srvErrSpin .6s ease;
+        }
+
+        a.srv-err-home {
+            margin-top: 18px;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--c-text-link);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            word-break: normal;
+            animation: srvErrRise .5s both .24s;
+        }
+
+        a.srv-err-home:hover {
+            text-decoration: underline;
+        }
+
+        .srv-err-code {
+            margin-top: 26px;
+            font-size: .75rem;
+            letter-spacing: .06em;
+            color: var(--ocj-ink-mute);
+            font-variant-numeric: tabular-nums;
+            animation: srvErrRise .5s both .3s;
+        }
+
+        @keyframes srvErrRise {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes srvErrPulse {
+            0% {
+                box-shadow: 0 0 0 0 var(--ocj-amber-line);
+            }
+
+            70% {
+                box-shadow: 0 0 0 18px transparent;
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 transparent;
+            }
+        }
+
+        @keyframes srvErrSpin {
+            from {
+                transform: rotate(0);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .srv-err-badge,
+            .srv-err-title,
+            .srv-err-lead,
+            a.srv-err-reload,
+            a.srv-err-home,
+            .srv-err-code {
+                animation: none;
+            }
+
+            a.srv-err-reload:hover svg {
+                animation: none;
+            }
+        }
     </style>
 
     <!-- 固定ヘッダー -->
@@ -316,7 +530,30 @@ try {
         </div>
         <?php // mvp.css は素の header を装飾しなくなったため、中央寄せはここで指定 ?>
         <header style="padding: 0; text-align: center;">
-            <?php if ($httpCode != 410 || !strpos(path(), 'oc/')) : ?>
+            <?php if ($isServerError) : ?>
+                <?php // 5xx: サーバー側の一時的な障害。再読み込みを促す専用画面。 ?>
+                <div class="srv-err">
+                    <div class="srv-err-badge" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <h1 class="srv-err-title"><?php echo $srv['title'] ?></h1>
+                    <p class="srv-err-lead"><?php echo $srv['lead'] ?></p>
+                    <a class="srv-err-reload" href="<?php echo $reloadUrl ?>" onclick="location.reload(); return false;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="23 4 23 10 17 10" />
+                            <polyline points="1 20 1 14 7 14" />
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        <span><?php echo $srv['reload'] ?></span>
+                    </a>
+                    <a class="srv-err-home" href="<?php echo url('') ?>"><?php echo $srv['home'] ?></a>
+                    <p class="srv-err-code"><?php echo $srv['code'] ?>: <?php echo (int) $httpCode ?></p>
+                </div>
+            <?php elseif ($httpCode != 410 || !strpos(path(), 'oc/')) : ?>
                 <h1><?php echo $httpCode ?? '' ?></h1>
                 <h2><?php echo $httpStatusMessage ?? '' ?></h2>
                 <br>
