@@ -27,19 +27,42 @@ class StatisticsChartArrayService
     /**
      * 日毎のメンバー数の統計を取得する
      *
+     * $from と $to を両方与えると「範囲モード」になり、メンバー取得と日付軸を
+     * from〜to に限定する（フロントが見えている窓だけ取得するための土台）。
+     * 範囲モードでは可用性メタは計算しない前提（$withAvailability は false で呼ばれる想定）。
+     * 範囲モードでない（片方でも null）ときは従来どおり全期間を返す。
+     *
      * @param int|null $category 部屋のカテゴリID（未掲載・その他はnull/0）
      * @param bool $withAvailability タブ・ボタン出し分け用の可用性メタデータを計算するか
+     * @param ?string $from `Y-m-d` 範囲開始日（$to と併用時のみ有効）
+     * @param ?string $to   `Y-m-d` 範囲終了日（$from と併用時のみ有効）
      * @return array{ date: string, member: int }[] date: Y-m-d
      */
-    function buildStatisticsChartArray(int $open_chat_id, int|null $category = null, bool $withAvailability = true): StatisticsChartDto|false
-    {
-        $memberStats = $this->statisticsPageRepository->getDailyMemberStatsDateAsc($open_chat_id);
+    function buildStatisticsChartArray(
+        int $open_chat_id,
+        int|null $category = null,
+        bool $withAvailability = true,
+        ?string $from = null,
+        ?string $to = null,
+    ): StatisticsChartDto|false {
+        $useRange = $from !== null && $to !== null;
+
+        $memberStats = $this->statisticsPageRepository->getDailyMemberStatsDateAsc(
+            $open_chat_id,
+            $useRange ? $from : null,
+            $useRange ? $to : null,
+        );
 
         if (!$memberStats) {
             return false;
         }
 
-        $dto = new StatisticsChartDto($memberStats[0]['date'], $memberStats[count($memberStats) - 1]['date']);
+        // 範囲モードは渡された from/to をそのまま日付軸の境界にする（フロントが from を
+        // 実データ開始日にクランプして送る前提）。全期間モードは実データの最古〜最新を使う。
+        $startDate = $useRange ? $from : $memberStats[0]['date'];
+        $endDate = $useRange ? $to : $memberStats[count($memberStats) - 1]['date'];
+
+        $dto = new StatisticsChartDto($startDate, $endDate);
 
         $this->generateChartArray(
             $dto,

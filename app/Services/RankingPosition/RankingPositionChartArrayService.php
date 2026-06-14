@@ -22,17 +22,23 @@ class RankingPositionChartArrayService
         private RankingPositionPageRepositoryInterface $rankingPositionPageRepository,
     ) {}
 
+    /**
+     * @param ?string $fromDate `Y-m-d` 範囲開始日（$toDate と併用時のみDB取得を範囲化）
+     * @param ?string $toDate   `Y-m-d` 範囲終了日（$fromDate と併用時のみDB取得を範囲化）
+     */
     function getRankingPositionChartArray(
         RankingType $type,
         int $open_chat_id,
         int $category,
         \DateTime $startDate,
-        \DateTime $endDate
+        \DateTime $endDate,
+        ?string $fromDate = null,
+        ?string $toDate = null
     ): RankingPositionChartDto {
         return $this->generateChartArray(
             $this->generateDateArray($startDate, $endDate),
             $startDate,
-            $this->rankingPositionPageRepository->getDailyPosition($type, $open_chat_id, $category),
+            $this->rankingPositionPageRepository->getDailyPosition($type, $open_chat_id, $category, $fromDate, $toDate),
             $type === RankingType::Rising
         );
     }

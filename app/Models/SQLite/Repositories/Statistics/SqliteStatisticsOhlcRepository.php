@@ -18,8 +18,12 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
         return $inserter->import(SQLiteStatisticsOhlc::connect(), 'statistics_ohlc', $data, 500);
     }
 
-    public function getOhlcDateAsc(int $open_chat_id): array
+    public function getOhlcDateAsc(int $open_chat_id, ?string $from = null, ?string $to = null): array
     {
+        // from/to が両方揃ったときだけ範囲で絞る（片方欠けは従来どおり全期間）
+        $useRange = $from !== null && $to !== null;
+        $rangeClause = $useRange ? "\n                AND date BETWEEN :from AND :to" : '';
+
         $query =
             "SELECT
                 date,
@@ -30,12 +34,18 @@ class SqliteStatisticsOhlcRepository implements StatisticsOhlcRepositoryInterfac
             FROM
                 statistics_ohlc
             WHERE
-                open_chat_id = :open_chat_id
+                open_chat_id = :open_chat_id{$rangeClause}
             ORDER BY
                 date ASC";
 
+        $params = compact('open_chat_id');
+        if ($useRange) {
+            $params['from'] = $from;
+            $params['to'] = $to;
+        }
+
         SQLiteStatisticsOhlc::connect(SQLiteStatisticsOhlc::WEB_READER);
-        $result = SQLiteStatisticsOhlc::fetchAll($query, compact('open_chat_id'));
+        $result = SQLiteStatisticsOhlc::fetchAll($query, $params);
 
         return $result;
     }

@@ -9,8 +9,12 @@ use App\Models\SQLite\SQLiteStatistics;
 
 class SqliteStatisticsPageRepository implements StatisticsPageRepositoryInterface
 {
-    public function getDailyMemberStatsDateAsc(int $open_chat_id): array
+    public function getDailyMemberStatsDateAsc(int $open_chat_id, ?string $from = null, ?string $to = null): array
     {
+        // from/to が両方揃ったときだけ範囲で絞る（片方欠けは従来どおり全期間）
+        $useRange = $from !== null && $to !== null;
+        $rangeClause = $useRange ? "\n                AND date BETWEEN :from AND :to" : '';
+
         $query =
             "SELECT
                 date,
@@ -18,12 +22,18 @@ class SqliteStatisticsPageRepository implements StatisticsPageRepositoryInterfac
             FROM
                 statistics
             WHERE
-                open_chat_id = :open_chat_id
+                open_chat_id = :open_chat_id{$rangeClause}
             ORDER BY
                 date ASC";
 
+        $params = compact('open_chat_id');
+        if ($useRange) {
+            $params['from'] = $from;
+            $params['to'] = $to;
+        }
+
         SQLiteStatistics::connect(SQLiteStatistics::WEB_READER);
-        $result = SQLiteStatistics::fetchAll($query, compact('open_chat_id'));
+        $result = SQLiteStatistics::fetchAll($query, $params);
 
         return $result;
     }

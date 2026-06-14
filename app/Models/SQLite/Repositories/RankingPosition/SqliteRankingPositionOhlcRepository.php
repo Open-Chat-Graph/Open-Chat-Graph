@@ -19,9 +19,13 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
         return $inserter->import(SQLiteRankingPositionOhlc::connect(), 'ranking_position_ohlc', $data, 500);
     }
 
-    public function getOhlcDateAsc(int $open_chat_id, int $category, RankingType $type): array
+    public function getOhlcDateAsc(int $open_chat_id, int $category, RankingType $type, ?string $from = null, ?string $to = null): array
     {
         $typeValue = $type->value;
+
+        // from/to が両方揃ったときだけ範囲で絞る（片方欠けは従来どおり全期間）
+        $useRange = $from !== null && $to !== null;
+        $rangeClause = $useRange ? "\n                AND date BETWEEN :from AND :to" : '';
 
         $query =
             "SELECT
@@ -35,12 +39,18 @@ class SqliteRankingPositionOhlcRepository implements RankingPositionOhlcReposito
             WHERE
                 open_chat_id = :open_chat_id
                 AND category = :category
-                AND type = :type
+                AND type = :type{$rangeClause}
             ORDER BY
                 date ASC";
 
+        $params = ['open_chat_id' => $open_chat_id, 'category' => $category, 'type' => $typeValue];
+        if ($useRange) {
+            $params['from'] = $from;
+            $params['to'] = $to;
+        }
+
         SQLiteRankingPositionOhlc::connect(SQLiteRankingPositionOhlc::WEB_READER);
-        $result = SQLiteRankingPositionOhlc::fetchAll($query, ['open_chat_id' => $open_chat_id, 'category' => $category, 'type' => $typeValue]);
+        $result = SQLiteRankingPositionOhlc::fetchAll($query, $params);
 
         return $result;
     }
