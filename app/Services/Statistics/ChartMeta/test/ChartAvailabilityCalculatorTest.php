@@ -4,14 +4,14 @@
  * ChartAvailabilityCalculatorのテスト
  *
  * テスト実行コマンド:
- * docker compose exec app vendor/bin/phpunit app/Services/Statistics/test/ChartAvailabilityCalculatorTest.php
+ * docker compose exec app vendor/bin/phpunit app/Services/Statistics/ChartMeta/test/ChartAvailabilityCalculatorTest.php
  *
- * 可用性メタのしきい値判定（StatisticsChartArrayServiceから移植）が境界で正しいことを確認する。
+ * 可用性メタのしきい値判定が境界で正しいことを確認する。
  */
 
 declare(strict_types=1);
 
-use App\Services\Statistics\ChartAvailabilityCalculator;
+use App\Services\Statistics\ChartMeta\ChartAvailabilityCalculator;
 use PHPUnit\Framework\TestCase;
 
 class ChartAvailabilityCalculatorTest extends TestCase

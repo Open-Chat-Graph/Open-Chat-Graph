@@ -8,7 +8,7 @@ use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\Repositories\OcPageCacheRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
-use App\Services\Statistics\ChartMetaBuilder;
+use App\Services\Statistics\ChartMeta\ChartMetaBuilder;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use Shared\MimimalCmsConfig;
 
@@ -79,10 +79,12 @@ class OcPageCacheGenerator
             // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を一緒に事前計算する。
             // /oc 表示時にこれを HTML へ埋め込み、初回 XHR(meta=1) を撃たせない。null は未生成扱い。
             // 最新24時間集計はループ外で一括取得済みの $hourMap から渡す（per-room クエリを撃たない）。
+            // 直近24hに出現が無い部屋（マップに居ない）は空の集計を渡す。build() に null を渡すと
+            // 「ライブ＝per-room 取得」を意味してしまい、バックフィルで毎時クエリが出てしまうため。
             $meta = $this->chartMetaBuilder->build(
                 $id,
                 is_int($oc['category'] ?? null) ? $oc['category'] : null,
-                $hourMap[$id] ?? null,
+                $hourMap[$id] ?? ChartMetaBuilder::hourEntryNone(),
             );
 
             $rows[] = [

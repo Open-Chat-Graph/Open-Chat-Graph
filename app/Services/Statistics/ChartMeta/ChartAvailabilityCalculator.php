@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Statistics;
+namespace App\Services\Statistics\ChartMeta;
 
 /**
  * グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」のしきい値判定（純粋ロジック）。
  *
- * ライブ計算（meta=1 フォールバックの StatisticsChartArrayService）と、ページ埋め込み用の
- * 事前計算（ChartMetaBuilder）でしきい値が二重定義になるのを避けるため、判定だけを
- * ここに集約する。COUNT 結果（DB依存）の取得は呼び出し側に残し、本クラスはDIも状態も持たない。
+ * 可用性メタの組み立ては ChartMetaBuilder 1本に集約されており（ページ埋め込みの事前計算も
+ * meta=1 のライブ計算も同じ Builder を通す）、本クラスはそのしきい値判定だけを担う。
+ * COUNT 結果（DB依存）の取得は呼び出し側に残し、本クラスはDIも状態も持たない。
  */
 class ChartAvailabilityCalculator
 {
