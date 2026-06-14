@@ -8,7 +8,6 @@ type ChartArgs = {
   graph2: (number | null)[]
   time: (string | null)[]
   totalCount: (number | null)[]
-  rankingOhlc?: RankingPositionOhlc[]
 }
 
 type ChartData = {

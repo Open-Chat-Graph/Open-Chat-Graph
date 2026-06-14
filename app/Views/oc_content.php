@@ -198,6 +198,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <script type="application/json" id="chart-arg">
           <?php echo json_encode($_chartArgDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
         </script>
+        <?php // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を事前計算済みなら埋め込む（null=未生成→フロントは meta=1 でライブ計算） ?>
+        <script type="application/json" id="chart-meta"><?php echo json_encode($_chartMeta ?? null, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?></script>
         <?php // 統計データ(#stats-dto)はサーバー注入をやめ、graph(React)が /oc/{id}/stats から初回も非同期取得する ?>
         <script async type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'graph-*.js') ?>"></script>
       </section>

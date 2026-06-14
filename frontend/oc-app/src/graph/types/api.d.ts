@@ -33,8 +33,11 @@ type ChartMeta = {
   }
 }
 
+/**
+ * メンバー数OHLC（ローソク足1本）の値。日付は持たず、共通の ohlcDate 配列と index で整合する。
+ * （各要素に date を持たせると ChartResponse.ohlcDate と重複するため）
+ */
 interface MemberOhlc {
-  date: string
   open_member: number
   high_member: number
   low_member: number
@@ -49,25 +52,33 @@ interface ErrorResponse {
 }
 
 /**
- * /oc/{id}/chart のレスポンス。表示ビュー（span×sort×scope×mode）の描画に必要な系列を一括返却する
+ * /oc/{id}/chart のレスポンス。表示ビュー（span×sort×scope×mode）の描画に必要な系列だけを返す。
  *
- * - date/member: hour は時刻ラベル+毎時メンバー数、day は日付+日次メンバー数
- * - time/position/totalCount: sort が none 以外のときの順位系列（無い場合は空配列）
- * - memberOhlc/positionOhlc: mode=candlestick のときのみ
+ * - 折れ線(line): date（hourは時刻ラベル）＋ member。順位ON時は position/totalCount。
+ *   time は急上昇(rising)のときだけ付く（ランキングは終日時刻を持たないため省略。無い＝時刻表示なし）。
+ * - ローソク足(candlestick): ohlcDate ＋ memberOhlc（順位ON時は positionOhlc）だけを返す。
+ *   日次の date / member 折れ線は使わないので付かない（ohlcDate が OHLC 専用の日付軸）。
+ *   memberOhlc・positionOhlc は ohlcDate と同順・同長（positionOhlc の null はその日が圏外＝順位OHLCなし）。
+ *
+ * 各フィールドは要求した層のときだけ付く（layer別の差分フェッチと共通形）。
  */
 interface ChartResponse {
-  date: string[]
-  member: (number | null)[]
-  time: (string | null)[]
-  position: (number | null)[]
-  totalCount: (number | null)[]
+  date?: string[]
+  member?: (number | null)[]
+  time?: (string | null)[]
+  position?: (number | null)[]
+  totalCount?: (number | null)[]
+  ohlcDate?: string[]
   memberOhlc?: MemberOhlc[]
-  positionOhlc?: RankingPositionOhlc[]
+  positionOhlc?: (RankingPositionOhlc | null)[]
   meta?: ChartMeta
 }
 
+/**
+ * 順位OHLC（ローソク足1本）の値。日付は持たず、共通の ohlcDate 配列と index で整合する。
+ * low_position が null の日はその日に圏内記録が無い（圏外）。
+ */
 interface RankingPositionOhlc {
-  date: string
   open_position: number
   high_position: number
   low_position: number | null

@@ -71,7 +71,8 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 tg.tag AS tag1,
                 tg2.tag AS tag2,
                 tg3.tag AS tag3,
-                pc.narrative_data AS narrative_data
+                pc.narrative_data AS narrative_data,
+                pc.chart_meta AS chart_meta
             FROM
                 open_chat AS oc
                 LEFT JOIN statistics_ranking_hour AS rh ON oc.id = rh.open_chat_id
