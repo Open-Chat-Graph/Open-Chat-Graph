@@ -19,12 +19,12 @@ class CommentListRepositoryTest extends TestCase
     {
         $this->inst = app(CommentListRepository::class);
 
-        $args = new CommentListApiArgs;
-
-        $args->open_chat_id = 1234;
-        $args->user_id = 'test';
-        $args->limit = 2;
-        $args->page = 1;
+        $args = new CommentListApiArgs(
+            page: 1,
+            limit: 2,
+            open_chat_id: 1234,
+            user_id: 'test',
+        );
 
         $r = $this->inst->findComments($args);
         debug($r);
