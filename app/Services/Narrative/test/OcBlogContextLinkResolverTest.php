@@ -21,14 +21,9 @@ class OcBlogContextLinkResolverTest extends TestCase
         $this->resolver = new OcBlogContextLinkResolver();
     }
 
-    public function test_急成長は急上昇ランキングの記事(): void
+    public function test_急成長系は伸びる特徴の記事(): void
     {
-        $this->assertSame('openchat-kyujosho-ranking', $this->resolver->resolve('surge_up')['slug']);
-    }
-
-    public function test_強い成長と復活は伸びる特徴の記事(): void
-    {
-        foreach (['strong_growth', 'recovering'] as $pattern) {
+        foreach (['surge_up', 'strong_growth', 'recovering'] as $pattern) {
             $this->assertSame('growing-openchat-features', $this->resolver->resolve($pattern)['slug'], $pattern);
         }
     }
