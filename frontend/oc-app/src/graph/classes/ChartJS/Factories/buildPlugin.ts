@@ -83,6 +83,30 @@ export default function buildPlugin(ocChart: OpenChatChart): any {
       enabled: true,
       displayColors: false,
       callbacks: {
+        title:
+          ocChart.getMode() === 'candlestick'
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (items: any[]) => {
+                if (!items || items.length === 0) return ''
+                const label = items[0].label
+                const dateStr = Array.isArray(label) ? label.join('') : (label ?? '')
+                // 会員数データセット(datasetIndex 0)の 始→終 の差を増減として表示
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const member = items.find((it: any) => it.datasetIndex === 0)
+                const raw = member?.raw
+                if (!raw) return dateStr
+                const delta = raw.c - raw.o
+                const unit = t('人')
+                const abs = Math.abs(delta).toLocaleString()
+                const deltaStr =
+                  delta > 0
+                    ? `${t('増')}${abs}${unit}`
+                    : delta < 0
+                      ? `${t('減')}${abs}${unit}`
+                      : `±0${unit}`
+                return `${dateStr}  ${deltaStr}`
+              }
+            : undefined,
         label:
           ocChart.getMode() === 'candlestick'
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
