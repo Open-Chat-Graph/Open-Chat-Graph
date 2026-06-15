@@ -11,6 +11,9 @@ use Shadow\Kernel\ViewInterface;
 
 class RankingBanLabsPageController
 {
+    /** 「ルームの変更内容」で絞り込めるキー（正準順）。update_items の JSON キーと一致させる */
+    private const UPDATE_ITEM_KEYS = ['name', 'description', 'img_url', 'join_method_type', 'category', 'emblem'];
+
     /**
      * シェル（外枠）を即時返却する。重い一覧データは fragment() が後追いで返す。
      */
@@ -24,13 +27,15 @@ class RankingBanLabsPageController
         int $page,
         string $keyword,
         string $since,
-        string $until
+        string $until,
+        string $items
     ): ViewInterface {
         $since = $this->validDate($since);
         $until = $this->validDate($until);
         [$dmin, $dmax] = $this->normalizeDuration($dmin, $dmax);
+        $selectedItems = $this->normalizeItems($items);
 
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax);
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax, $selectedItems);
 
         $_meta = meta()
             ->setTitle('オプチャ公式ランキング掲載の分析 ' . ($page > 1 ? "({$page}ページ目) " : '') . $titleValue)
@@ -57,6 +62,7 @@ class RankingBanLabsPageController
                 'until',
                 'dmin',
                 'dmax',
+                'selectedItems',
             )
         );
     }
@@ -77,19 +83,22 @@ class RankingBanLabsPageController
         int $page,
         string $keyword,
         string $since,
-        string $until
+        string $until,
+        string $items
     ): ViewInterface|false {
         header('X-Robots-Tag: noindex');
 
         $since = $this->validDate($since);
         $until = $this->validDate($until);
         [$dmin, $dmax] = $this->normalizeDuration($dmin, $dmax);
+        $itemsArr = $this->normalizeItems($items);
+        $items = implode(',', $itemsArr); // 正準化した文字列（ページャのリンク・CDNキャッシュキー用）
 
-        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax);
+        $titleValue = $this->buildTitleValue($publish, $change, $percent, $keyword, $since, $until, $dmin, $dmax, $itemsArr);
 
         $_now = $fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
-        $limit = 50;
+        $limit = 200;
 
         $rankingBanData = $rakingBanPageService->getAllOrderByDateTime(
             $change,
@@ -102,7 +111,8 @@ class RankingBanLabsPageController
             $until,
             $dmin,
             $dmax,
-            $_now
+            $_now,
+            $itemsArr
         );
 
         if ($rankingBanData === null && $page > 1) return false;
@@ -128,7 +138,7 @@ class RankingBanLabsPageController
         $maxPageNumber = $rankingBanData->maxPageNumber;
         $path = 'labs/publication-analytics';
         // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
-        $params = compact('change', 'publish', 'percent', 'keyword', 'since', 'until', 'dmin', 'dmax');
+        $params = compact('change', 'items', 'publish', 'percent', 'keyword', 'since', 'until', 'dmin', 'dmax');
 
         [$title, $_select, $_label] = $rankingBanSelectElementPagination->geneSelectElementPagerAsc(
             $path,
@@ -167,11 +177,12 @@ class RankingBanLabsPageController
     /**
      * meta title・フラグメントの data-title 用ラベル（既存仕様のままパリティ維持）
      */
-    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0): string
+    private function buildTitleValue(int $publish, int $change, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, array $items = []): string
     {
         return implode(' ', array_filter([
             'p' => $publish === 1 ? '💡現在未掲載' : ($publish === 0 ? '💡再掲載済み' : '💡全て'),
             'c' => $change === 1 ? '📝ルーム内容変更なし' : ($change === 0 ? '📝ルーム内容変更あり' : '📝全て'),
+            'ci' => $items ? '🏷️' . implode('・', array_map([$this, 'itemLabel'], $items)) : false,
             'per' => $percent < 100 ? "📊ランク上位{$percent}%" : '📊全て',
             'dur' => ($dmin > 0 || $dmax > 0) ? '⏳消えていた期間：' . $this->durationLabel($dmin, $dmax) : false,
             'd' => ($since !== '' || $until !== '') ? "📅{$since}〜{$until}" : false,
@@ -186,6 +197,37 @@ class RankingBanLabsPageController
     {
         if ($dmin > 0 && $dmax > 0 && $dmin >= $dmax) return [$dmin, 0];
         return [$dmin, $dmax];
+    }
+
+    /**
+     * 「ルームの変更内容」フィルタの正規化。カンマ区切り入力を許可キーのみ・正準順に整える。
+     * 値は LIKE パターン（"key":true）の組み立てに使うため、ホワイトリスト外のキーは捨てる。
+     *
+     * @return list<string> 許可キー（name/description/img_url/join_method_type/category/emblem）
+     */
+    private function normalizeItems(string $items): array
+    {
+        if ($items === '') return [];
+        $selected = explode(',', $items);
+        return array_values(array_filter(
+            self::UPDATE_ITEM_KEYS,
+            fn (string $key) => in_array($key, $selected, true)
+        ));
+    }
+
+    /**
+     * 変更内容キーの表示ラベル（meta title 用）。一覧カード(open_chat_list_ranking_ban)と同じ対応。
+     */
+    private function itemLabel(string $key): string
+    {
+        return [
+            'name' => 'ルーム名',
+            'description' => '説明文',
+            'img_url' => '画像',
+            'join_method_type' => '公開設定',
+            'category' => 'カテゴリー',
+            'emblem' => 'バッジ',
+        ][$key] ?? $key;
     }
 
     /**

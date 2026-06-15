@@ -58,7 +58,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
         </section>
 
         <?php // 詳細設定の中の条件（掲載状況・変更・消えた時期）がプリセットの組み合わせ外なら、開いた状態で出す（効いている条件を隠さない） ?>
-        <?php $rbAdvancedOpen = $since !== '' || $until !== ''
+        <?php $rbAdvancedOpen = $since !== '' || $until !== '' || !empty($selectedItems)
             || !in_array([R::input('publish'), R::input('change')], [[1, 0], [1, 1], [0, 0], [0, 1]], true); ?>
         <!-- 詳細設定（プロ向け・普段は閉じる） -->
         <details class="rb-advanced" id="rb-advanced"<?php if ($rbAdvancedOpen) echo ' open' ?>>
@@ -101,6 +101,18 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         </label>
                     </div>
                     <p class="rb-field-hint">消える直前に名前・説明文・画像などを変えていたか（変更なし判定は2025年8月11日以降の記録が対象）</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-items">変更した内容で絞り込む</div>
+                <div class="rb-field-control">
+                    <div class="rb-presets rb-items" role="group" aria-labelledby="rb-label-items">
+                        <?php foreach ([['name', 'ルーム名'], ['description', '説明文'], ['img_url', '画像'], ['join_method_type', '公開設定'], ['category', 'カテゴリー'], ['emblem', 'バッジ']] as [$rbItemKey, $rbItemLabel]) :
+                            $rbItemActive = in_array($rbItemKey, $selectedItems, true); ?>
+                            <button type="button" class="rb-preset rb-item<?php if ($rbItemActive) echo ' is-active' ?>" aria-pressed="<?php echo $rbItemActive ? 'true' : 'false' ?>" data-item="<?php echo $rbItemKey ?>"><?php echo $rbItemLabel ?></button>
+                        <?php endforeach ?>
+                    </div>
+                    <p class="rb-field-hint">選んだ内容を「すべて変更した」部屋だけに絞ります（複数選択でAND）。選ぶと自動で「変更あり」になります</p>
                 </div>
             </div>
             <div class="rb-field">
@@ -249,6 +261,11 @@ viewComponent('head', compact('_css', '_meta')) ?>
             </noscript>
         </div>
     </main>
+    <!-- ページ内移動（右下フローティング） -->
+    <div class="rb-scroll-fab" role="group" aria-label="ページ内移動">
+        <button type="button" class="rb-fab" id="rb-scroll-top" aria-label="一番上へ移動"><span aria-hidden="true">↑</span></button>
+        <button type="button" class="rb-fab" id="rb-scroll-bottom" aria-label="一番下へ移動"><span aria-hidden="true">↓</span></button>
+    </div>
     <?php viewComponent('footer_inner') ?>
     <?php \App\Views\Ads\GoogleAdsense::loadAdsTag() ?>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
@@ -269,6 +286,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const untilInput = document.getElementById('rb-until');
 
             const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+            // 「ルームの変更内容」で絞り込めるキー（正準順）。PHP の UPDATE_ITEM_KEYS と一致させる
+            const ITEM_KEYS = ['name', 'description', 'img_url', 'join_method_type', 'category', 'emblem'];
 
             const parseState = (search) => {
                 const q = new URLSearchParams(search);
@@ -280,6 +299,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     const v = q.get(k) || '';
                     return DATE_RE.test(v) ? v : '';
                 };
+                const itemList = (q.get('items') || '').split(',');
                 const s = {
                     publish: num('publish', 1),
                     change: num('change', 1),
@@ -289,7 +309,9 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     page: num('page', 1),
                     keyword: q.get('keyword') || '',
                     since: date('since'),
-                    until: date('until')
+                    until: date('until'),
+                    // 許可キーのみ・正準順（PHP normalizeItems と同一）
+                    items: ITEM_KEYS.filter((k) => itemList.includes(k))
                 };
                 // 矛盾した範囲は下限を優先して上限を捨てる（PHP normalizeDuration() と同一）
                 if (s.dmin < 0) s.dmin = 0;
@@ -300,11 +322,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
 
             let state = parseState(location.search);
 
-            // クエリ順は pagerUrl() (PHP) と同一: change → publish → percent → keyword → since → until → dmin → dmax (→ page>1)
+            // クエリ順は pagerUrl() (PHP) と同一: change → items → publish → percent → keyword → since → until → dmin → dmax (→ page>1)
             // CDNキャッシュキーの分裂を防ぐため固定
             const buildQuery = (s) => {
                 const q = new URLSearchParams();
                 q.set('change', s.change);
+                q.set('items', s.items.join(','));
                 q.set('publish', s.publish);
                 q.set('percent', s.percent);
                 q.set('keyword', s.keyword);
@@ -337,7 +360,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (untilInput.value !== state.until) untilInput.value = state.until;
                 toggleClear();
                 // プリセットは publish/change/percent の選択。「消えていた期間」は直交する軸なので判定に含めない（同時選択できる）
-                document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
+                document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter):not(.rb-item)').forEach((b) => {
                     const active =
                         state.since === '' && state.until === '' &&
                         Number(b.dataset.publish) === state.publish &&
@@ -357,8 +380,14 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     b.classList.toggle('is-active', active);
                     b.setAttribute('aria-pressed', String(active));
                 });
-                // 詳細設定の中の条件（掲載状況・変更・消えた時期）が隠れて効いているときは開いて隠さない（自動では閉じない）
-                const hiddenPlain = state.since === '' && state.until === '' &&
+                // 変更内容チップ（複数選択・AND）
+                document.querySelectorAll('.rb-item').forEach((b) => {
+                    const active = state.items.includes(b.dataset.item);
+                    b.classList.toggle('is-active', active);
+                    b.setAttribute('aria-pressed', String(active));
+                });
+                // 詳細設定の中の条件（掲載状況・変更・変更内容・消えた時期）が隠れて効いているときは開いて隠さない（自動では閉じない）
+                const hiddenPlain = state.items.length === 0 && state.since === '' && state.until === '' &&
                     PRESET_PAIRS.some((c) => c[0] === state.publish && c[1] === state.change);
                 if (!hiddenPlain) document.getElementById('rb-advanced').open = true;
             };
@@ -445,6 +474,8 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 r.addEventListener('change', () => {
                     if (!r.checked) return;
                     state[r.name] = Number(r.value);
+                    // 「変更なし」は変更内容の指定と矛盾するのでクリア
+                    if (r.name === 'change' && state.change === 1) state.items = [];
                     state.page = 1;
                     syncControls();
                     load({ push: true });
@@ -465,13 +496,14 @@ viewComponent('head', compact('_css', '_meta')) ?>
             });
 
             // プリセットチップ。「消えていた期間」は直交する軸なのでリセットしない（プリセット×期間を同時選択できる）
-            document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter)').forEach((b) => {
+            document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter):not(.rb-item)').forEach((b) => {
                 b.addEventListener('click', () => {
                     state.publish = Number(b.dataset.publish);
                     state.change = Number(b.dataset.change);
                     state.percent = Number(b.dataset.percent);
                     state.since = '';
                     state.until = '';
+                    state.items = [];
                     state.page = 1;
                     syncControls();
                     load({ push: true });
@@ -483,6 +515,22 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 b.addEventListener('click', () => {
                     state.dmin = Number(b.dataset.dmin);
                     state.dmax = Number(b.dataset.dmax);
+                    state.page = 1;
+                    syncControls();
+                    load({ push: true });
+                });
+            });
+
+            // 変更内容チップ（複数選択・AND・トグル）。選ぶと「変更なし」と矛盾するので「変更あり」へ自動切替
+            document.querySelectorAll('.rb-item').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const key = b.dataset.item;
+                    if (state.items.includes(key)) {
+                        state.items = state.items.filter((k) => k !== key);
+                    } else {
+                        state.items = ITEM_KEYS.filter((k) => k === key || state.items.includes(k)); // 追加（正準順を維持）
+                        if (state.change !== 0) state.change = 0; // 変更あり
+                    }
                     state.page = 1;
                     syncControls();
                     load({ push: true });
@@ -589,6 +637,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 load({ push: false });
             });
 
+
+            // ページ内移動（右下フローティング・スムーススクロール）
+            const scrollTopBtn = document.getElementById('rb-scroll-top');
+            const scrollBottomBtn = document.getElementById('rb-scroll-bottom');
+            if (scrollTopBtn) scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            if (scrollBottomBtn) scrollBottomBtn.addEventListener('click', () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
 
             // 初回ロード
             syncControls();
