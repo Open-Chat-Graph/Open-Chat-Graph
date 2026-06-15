@@ -757,6 +757,17 @@ body > .google-auto-placed {
   font-size: 13px;
 }
 
+/* 変更内容チップ（詳細設定内・複数選択AND）。期間/除外チップと同じ二次サイズに揃える */
+.rb-items {
+  gap: 6px;
+}
+
+.rb-items .rb-preset {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 13px;
+}
+
 /* 詳細設定内の説明リスト */
 .rb-legend {
   all: unset;
@@ -781,4 +792,52 @@ body > .google-auto-placed {
 .rb-filter-hint {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* ---------- ページ内移動フローティングボタン（右下・一番上/一番下へ） ---------- */
+.rb-scroll-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rb-fab {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--c-bg);
+  border: 1px solid var(--c-border-muted);
+  color: var(--c-text-neutral);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.rb-fab:hover {
+  background-color: var(--c-brand-tint);
+  color: var(--c-brand);
+  border-color: var(--c-brand);
+}
+
+.rb-fab:focus-visible {
+  outline: 2px solid var(--c-brand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .rb-scroll-fab {
+    right: 10px;
+    bottom: 10px;
+  }
 }

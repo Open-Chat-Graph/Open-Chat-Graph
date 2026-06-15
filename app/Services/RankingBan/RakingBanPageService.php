@@ -25,11 +25,12 @@ class RakingBanPageService
      * @param int $dmin 消えていた期間の下限（時間・0なら条件なし）
      * @param int $dmax 消えていた期間の上限（時間・0なら条件なし）
      * @param string $now 未掲載中の経過時間を数える基準時刻（毎時クロールの最新時刻）
+     * @param list<string> $items 変更内容で絞り込むキー（空配列なら条件なし・AND 条件）
      * @return RankingBanPageDto|null ページ範囲外なら null
      */
-    public function getAllOrderByDateTime(int $change, int $publish, int $percent, string $keyword, int $pageNumber, int $limit, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = ''): ?RankingBanPageDto
+    public function getAllOrderByDateTime(int $change, int $publish, int $percent, string $keyword, int $pageNumber, int $limit, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): ?RankingBanPageDto
     {
-        $labelArray = $this->rankingBanPageRepository->findAllDatetimeColumn($change, $publish, $percent, $keyword, $since, $until, $dmin, $dmax, $now);
+        $labelArray = $this->rankingBanPageRepository->findAllDatetimeColumn($change, $publish, $percent, $keyword, $since, $until, $dmin, $dmax, $now, $items);
 
         // ページの最大数を取得する
         $totalRecords = count($labelArray);
@@ -51,7 +52,8 @@ class RakingBanPageService
             $until,
             $dmin,
             $dmax,
-            $now
+            $now,
+            $items
         );
 
         $openChatList = array_map(function ($oc) {

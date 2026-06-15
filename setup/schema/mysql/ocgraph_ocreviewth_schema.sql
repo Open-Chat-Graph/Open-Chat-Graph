@@ -82,7 +82,8 @@ CREATE TABLE `ranking_ban` (
   `update_items` text DEFAULT NULL,
   `end_datetime` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_ranking_ban_open_chat_datetime` (`open_chat_id`,`datetime`)
+  UNIQUE KEY `uk_ranking_ban_open_chat_datetime` (`open_chat_id`,`datetime`),
+  KEY `idx_ranking_ban_end_percentage_datetime` (`end_datetime`,`percentage`,`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
