@@ -24,10 +24,12 @@ class RankingBanPageRepository
         int $dmin = 0,
         int $dmax = 0,
         string $now = '',
+        array $items = [],
     ): array {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
             . $this->buildDateClause($since, $until, $dateParams)
-            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams);
+            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
+            . $this->buildItemsClause($items, $itemsParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -62,11 +64,11 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                compact('offset', 'limit') + $dateParams + $durationParams,
+                compact('offset', 'limit') + $dateParams + $durationParams + $itemsParams,
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), compact('offset', 'limit') + $dateParams + $durationParams);
+            return DB::fetchAll($query(''), compact('offset', 'limit') + $dateParams + $durationParams + $itemsParams);
         }
     }
 
@@ -74,11 +76,12 @@ class RankingBanPageRepository
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
      */
-    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = ''): array
+    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): array
     {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
             . $this->buildDateClause($since, $until, $dateParams)
-            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams);
+            . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
+            . $this->buildItemsClause($items, $itemsParams);
 
         $query = fn ($like) =>
         "SELECT
@@ -98,12 +101,12 @@ class RankingBanPageRepository
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                ($dateParams + $durationParams) ?: null,
+                ($dateParams + $durationParams + $itemsParams) ?: null,
                 fetchAllArgs: [\PDO::FETCH_COLUMN, 0],
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), ($dateParams + $durationParams) ?: null, args: [\PDO::FETCH_COLUMN, 0]);
+            return DB::fetchAll($query(''), ($dateParams + $durationParams + $itemsParams) ?: null, args: [\PDO::FETCH_COLUMN, 0]);
         }
     }
 
@@ -155,6 +158,31 @@ class RankingBanPageRepository
         if ($dmax > 0) {
             $clause .= ' AND TIMESTAMPDIFF(HOUR, rb.datetime, COALESCE(rb.end_datetime, :dmaxNow)) <= :dmax';
             $durationParams += ['dmaxNow' => $now, 'dmax' => $dmax];
+        }
+        return $clause;
+    }
+
+    /**
+     * 「ルームの変更内容」の絞り込み。選んだキーを「すべて変更した」部屋だけに絞る（AND）。
+     * update_items は {"name":false,...,"emblem":true} 形式の JSON 文字列なので、
+     * 該当キーが `"key":true` を含むかで判定する。キーは呼び出し側で検証済みだが、念のため二重にホワイトリストする。
+     * 値はバインドパラメータで渡す（連結しない）。
+     *
+     * @param list<string> $items 変更内容キー（空配列なら条件なし）
+     * @param array|null $itemsParams バインド用パラメータの出力先
+     */
+    private function buildItemsClause(array $items, ?array &$itemsParams): string
+    {
+        $itemsParams = [];
+        $allowed = ['name', 'description', 'img_url', 'join_method_type', 'category', 'emblem'];
+
+        $clause = '';
+        $i = 0;
+        foreach ($items as $key) {
+            if (!in_array($key, $allowed, true)) continue;
+            $clause .= " AND rb.update_items LIKE :item{$i}";
+            $itemsParams["item{$i}"] = '%"' . $key . '":true%';
+            $i++;
         }
         return $clause;
     }
