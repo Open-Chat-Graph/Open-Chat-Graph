@@ -7,7 +7,7 @@ namespace App\Services\Statistics\ChartMeta;
 /**
  * グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」のしきい値判定（純粋ロジック）。
  *
- * 可用性メタの組み立ては ChartMetaBuilder 1本に集約されており（ページ埋め込みの事前計算も
+ * 可用性メタの組み立ては OcPageCacheDataBuilder 1本に集約されており（ページ埋め込みの事前計算も
  * meta=1 のライブ計算も同じ Builder を通す）、本クラスはそのしきい値判定だけを担う。
  * COUNT 結果（DB依存）の取得は呼び出し側に残し、本クラスはDIも状態も持たない。
  */

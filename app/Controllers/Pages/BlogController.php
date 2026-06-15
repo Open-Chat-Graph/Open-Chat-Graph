@@ -7,7 +7,6 @@ namespace App\Controllers\Pages;
 use App\Config\AppConfig;
 use App\Services\Blog\BlogService;
 use App\Services\Blog\Dto\BlogSummaryDto;
-use App\Services\Blog\Dto\FaqItemDto;
 use App\Views\Schema\PageBreadcrumbsListSchema;
 use Shadow\Kernel\ViewInterface;
 use Spatie\SchemaOrg\Organization;
@@ -73,16 +72,6 @@ class BlogController
             ->mainEntityOfPage(url('blog/' . $slug))
             ->toScript();
 
-        // 本文に「よくある質問」があれば FAQPage（リッチリザルト）。
-        if (!empty($article->faq)) {
-            $_schema .= "\n" . Schema::fAQPage()->mainEntity(array_map(
-                fn(FaqItemDto $f) => Schema::question()
-                    ->name($f->q)
-                    ->acceptedAnswer(Schema::answer()->text($f->a)),
-                $article->faq
-            ))->toScript();
-        }
-
         $related = $blog->related($slug, $article->category);
 
         // 本文 HTML は commonmark 済みの信頼ソース。View の自動エスケープ(非 _ 変数)を避けるため
@@ -120,6 +109,7 @@ class BlogController
         return Schema::organization()
             ->name(t('オプチャグラフ'))
             ->url(url())
-            ->logo(url(['urlRoot' => '', 'paths' => [AppConfig::SITE_ICON_FILE_PATH]]));
+            ->logo(url(['urlRoot' => '', 'paths' => [AppConfig::SITE_ICON_FILE_PATH]]))
+            ->sameAs(AppConfig::BRAND_SAME_AS);
     }
 }

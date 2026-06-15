@@ -81,6 +81,25 @@ html {
   color: var(--c-text-3);
 }
 
+/* 分析直下のブログ導線。「押せそう」は下線で示す（リンク青はダーク基調から浮くため、文字は本文格・下線だけ薄める） */
+.oc-narrative__article {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--c-text-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-text-3);
+  font-family: var(--font-family);
+}
+
+.oc-narrative__article:hover {
+  color: var(--c-brand);
+  text-decoration-color: var(--c-brand);
+}
+
 @media screen and (min-width: 512px) {
   .oc-narrative__text {
     font-size: 15px;

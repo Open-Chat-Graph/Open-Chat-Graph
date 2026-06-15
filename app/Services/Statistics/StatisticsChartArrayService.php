@@ -10,7 +10,7 @@ use App\Services\Statistics\Dto\StatisticsChartDto;
 /**
  * 日毎のメンバー数系列（date/member）を組み立てる専用サービス。
  *
- * タブ・ボタン出し分け用の「可用性メタ」はここでは計算しない（ChartMetaBuilder に集約済み）。
+ * タブ・ボタン出し分け用の「可用性メタ」はここでは計算しない（OcPageCacheDataBuilder に集約済み）。
  * 本サービスは折れ線/ローソク足/日次ビューが共通で必要とするメンバー数の日付軸つき系列だけを返す。
  */
 class StatisticsChartArrayService

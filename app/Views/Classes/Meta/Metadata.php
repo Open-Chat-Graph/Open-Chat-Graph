@@ -113,6 +113,13 @@ class Metadata
             ->inLanguage($this->locale)
             ->url(url())
             ->image($this->image_url)
+            ->publisher(
+                Schema::organization()
+                    ->name(t('オプチャグラフ'))
+                    ->url(url())
+                    ->logo(url(['urlRoot' => '', 'paths' => [AppConfig::SITE_ICON_FILE_PATH]]))
+                    ->sameAs(AppConfig::BRAND_SAME_AS)
+            )
             ->toScript();
     }
 

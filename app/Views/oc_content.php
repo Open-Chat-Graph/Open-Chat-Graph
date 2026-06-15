@@ -162,7 +162,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php endif ?>
       <?php // 分析はキャッシュ済み「データ」からリクエスト時にレンダリング（url()等はここで解決される）。未生成は空 ?>
       <?php if ($_narrative !== null): ?>
-        <?php viewComponent('oc_narrative_section', ['narrative' => $_narrative, 'oc' => $oc]) ?>
+        <?php viewComponent('oc_narrative_section', ['narrative' => $_narrative]) ?>
       <?php endif ?>
       <?php // 変動データ(日付・人数・グラフ)のセクション全体をGoogle検索スニペットから除外 ?>
       <section class="openchat-graph-section" data-nosnippet style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
