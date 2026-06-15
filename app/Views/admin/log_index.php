@@ -151,7 +151,7 @@ $logDisplayNames = [
                 <?php echo githubLink('app/Services/StaticData/OcPageCacheGenerator.php', 52) ?>
             </li>
             <li class="sub">グラフのタブ・ボタン出し分け（可用性メタ chart_meta）を事前計算。毎時順位は一括集計で取得（部屋ごとに撃たず gone away を回避）。/oc 表示時は oc_page_cache を1クエリで読みHTMLに埋め込み、未生成室は meta=1 でライブ計算にフォールバック（詳細は README「ページ系キャッシュの生成アーキテクチャ」）
-                <?php echo githubLink('app/Services/Statistics/ChartMeta/ChartMetaBuilder.php', 73) ?>
+                <?php echo githubLink('app/Services/StaticData/OcPageCacheDataBuilder.php', 73) ?>
             </li>
             <li>
                 参加URLの一括取得

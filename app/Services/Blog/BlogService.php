@@ -7,7 +7,6 @@ namespace App\Services\Blog;
 use App\Config\AppConfig;
 use App\Services\Blog\Dto\BlogArticleDto;
 use App\Services\Blog\Dto\BlogSummaryDto;
-use App\Services\Blog\Dto\FaqItemDto;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\TaskList\TaskListExtension;
@@ -19,7 +18,7 @@ use League\CommonMark\MarkdownConverter;
  */
 class BlogService
 {
-    /** FAQ セクションの見出し（H2）。get() と extractFaq() で境界判定を共有する。 */
+    /** FAQ セクションの見出し（H2）。splitFaq() で本文と FAQ セクションの境界判定に使う。 */
     private const FAQ_HEADING = '/^##[ \t]+(?:よくある質問|FAQ|Q&A).*$/mu';
 
     /** 任意の H2 見出し（"## " 直後にスペース必須なので ### 以降は除外）。FAQ セクションの終端検出に使う。 */
@@ -85,7 +84,6 @@ class BlogService
             category: $fm['category'] ?? '',
             wordCount: mb_strlen($plain),
             readingMinutes: max(1, (int)ceil(mb_strlen($plain) / 500)),
-            faq: $faqBody !== '' ? $this->extractFaq($faqBody) : [],
             html: $html,
             faqHtml: $faqHtml,
         );
@@ -109,7 +107,7 @@ class BlogService
     /**
      * 本文を [本文(FAQ除く), FAQセクション(見出し含む)] に分割。FAQ が無ければ [body, '']。
      * FAQ セクションは「## よくある質問」から「次の H2」直前まで。FAQ の後ろに別セクションが
-     * 続く場合はそれを本文側へ戻す（extractFaq() と同じ境界判定にして表示と構造化データを一致させる）。
+     * 続く場合はそれを本文側へ戻す。
      * @return array{0:string,1:string}
      */
     private function splitFaq(string $body): array
@@ -133,24 +131,6 @@ class BlogService
         if ($tail !== '') $mainBody .= "\n\n" . $tail;
 
         return [$mainBody, $faqBody];
-    }
-
-    /**
-     * FAQ セクション本文から Q&A を抽出（FAQPage 構造化データ用）。
-     * ### を質問、続くテキストを回答（プレーン化）とする。無ければ空配列。
-     * @return FaqItemDto[]
-     */
-    private function extractFaq(string $faqBody): array
-    {
-        $faq = [];
-        if (preg_match_all('/^###[ \t]+(.+?)[ \t]*$([\s\S]*?)(?=^###[ \t]+|\z)/mu', $faqBody, $sets, PREG_SET_ORDER)) {
-            foreach ($sets as $s) {
-                $q = trim($s[1]);
-                $a = trim((string)(preg_replace('/\s+/u', ' ', strip_tags($this->render($s[2]))) ?? ''));
-                if ($q !== '' && $a !== '') $faq[] = new FaqItemDto(q: $q, a: $a);
-            }
-        }
-        return $faq;
     }
 
     /**

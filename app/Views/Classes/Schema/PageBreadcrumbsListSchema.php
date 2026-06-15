@@ -2,6 +2,7 @@
 
 namespace App\Views\Schema;
 
+use App\Config\AppConfig;
 use App\Views\Meta\Metadata;
 use Spatie\SchemaOrg\Schema;
 
@@ -68,7 +69,9 @@ class PageBreadcrumbsListSchema
     {
         return Schema::organization()
             ->name($this->publisherName)
-            ->logo($this->publisherLogo);
+            ->url(url())
+            ->logo($this->publisherLogo)
+            ->sameAs(AppConfig::BRAND_SAME_AS);
     }
 
 

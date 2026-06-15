@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Config\SecretsConfig;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
+use App\Services\Narrative\OcBlogContextLinkResolver;
 use App\Services\OpenChatAdmin\AdminOpenChat;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
@@ -35,6 +36,7 @@ class OpenChatPageController
         SimilarSizeRoomService $similarSizeRoomService,
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
+        OcBlogContextLinkResolver $blogLinkResolver,
         FileStorageInterface $fileStorage,
         int $open_chat_id,
         ?string $isAdminPage,
@@ -74,6 +76,15 @@ class OpenChatPageController
         $_narrative = !empty($oc['narrative_data'])
             ? (json_decode($oc['narrative_data'], true) ?: null)
             : null;
+
+        // 分析の状態(pattern)に合うブログ導線を解決して付与する（ja のみ・該当なしは null）。
+        // マッピングはサービス(OcBlogContextLinkResolver)が持ち、テンプレートは描画だけを行う。
+        if ($_narrative !== null && MimimalCmsConfig::$urlRoot === '') {
+            $_narrative['blog_link'] = $blogLinkResolver->resolve(
+                (string)($_narrative['pattern'] ?? ''),
+                is_array($_narrative['rising'] ?? null) ? $_narrative['rising'] : null,
+            );
+        }
 
         // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」も事前計算済み（oc_page_cache.chart_meta JOIN）。
         // これを HTML に埋め込むとフロントは初回 XHR(meta=1) を撃たずに済む。

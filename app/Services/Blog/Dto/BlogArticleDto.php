@@ -13,9 +13,6 @@ namespace App\Services\Blog\Dto;
  */
 class BlogArticleDto
 {
-    /**
-     * @param FaqItemDto[] $faq
-     */
     function __construct(
         public string $slug,
         public string $title,
@@ -25,7 +22,6 @@ class BlogArticleDto
         public string $category,
         public int $wordCount,
         public int $readingMinutes,
-        public array $faq,
         public string $html,
         public string $faqHtml,
     ) {}

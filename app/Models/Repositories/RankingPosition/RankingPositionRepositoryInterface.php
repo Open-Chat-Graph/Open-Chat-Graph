@@ -37,7 +37,11 @@ interface RankingPositionRepositoryInterface
      * @param int $inCategory カテゴリ内判定に使うカテゴリID（カテゴリ無しの部屋は -1 等の不一致値を渡す）
      * @param string $weekStartDate `Y-m-d` 週ウィンドウの開始日
      * @param string $monthStartDate `Y-m-d` 月ウィンドウの開始日
-     * @return array<'ranking_in'|'ranking_all'|'rising_in'|'rising_all', array{ week: int, month: int, all: int }>
+     * @return array{
+     *   ranking_in: array{week:int,month:int,all:int}, ranking_all: array{week:int,month:int,all:int},
+     *   rising_in: array{week:int,month:int,all:int}, rising_all: array{week:int,month:int,all:int},
+     *   rising_all_week_best_pos: int|null
+     * } rising_all_week_best_pos は「すべて」急上昇で週内に到達した最良順位（同一クエリに相乗り・top5判定用、無掲載は null）
      */
     public function getPositionCountsByPeriod(
         int $open_chat_id,

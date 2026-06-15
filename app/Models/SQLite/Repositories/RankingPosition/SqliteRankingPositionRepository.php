@@ -74,7 +74,8 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
                     COUNT(CASE WHEN category = :in_category AND date >= :week_start_date THEN 1 END) AS in_week,
                     COUNT(CASE WHEN category = 0 THEN 1 END) AS all_all,
                     COUNT(CASE WHEN category = 0 AND date >= :month_start_date THEN 1 END) AS all_month,
-                    COUNT(CASE WHEN category = 0 AND date >= :week_start_date THEN 1 END) AS all_week
+                    COUNT(CASE WHEN category = 0 AND date >= :week_start_date THEN 1 END) AS all_week,
+                    MIN(CASE WHEN category = 0 AND date >= :week_start_date THEN position END) AS all_week_best_pos
                 FROM
                     {$tableName}
                 WHERE
@@ -97,6 +98,13 @@ class SqliteRankingPositionRepository implements RankingPositionRepositoryInterf
                 'month' => (int)($row['all_month'] ?? 0),
                 'all' => (int)($row['all_all'] ?? 0),
             ];
+
+            // rising「すべて」の週内 最良順位（top5判定用・同一の per-room クエリに相乗り。ranking側は未使用）
+            if ($tableName === 'rising') {
+                $result['rising_all_week_best_pos'] = ($row['all_week_best_pos'] ?? null) !== null
+                    ? (int)$row['all_week_best_pos']
+                    : null;
+            }
         }
 
 
