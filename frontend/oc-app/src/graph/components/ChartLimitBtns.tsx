@@ -23,9 +23,12 @@ function CandlestickToggle() {
   const isCandlestick = chartMode === 'candlestick'
   // 表示中の期間タブにOHLCデータが無い場合はグレーアウト
   const disabled = !isCandlestick && !hasOhlcDataForLimit(limit)
+  // 最新24時間(limit=25)はローソク足非対応。ボタンは隠すが、他タブと高さを揃えて
+  // 下の「ランキングの順位を表示」がずれないよう、枠は残して visibility:hidden で消す
+  const hidden = limit === 25
 
   const handleToggle = () => {
-    if (disabled) return
+    if (disabled || hidden) return
     handleChangeChartMode(isCandlestick ? 'line' : 'candlestick')
   }
 
@@ -37,6 +40,7 @@ function CandlestickToggle() {
       onClick={handleToggle}
       size="small"
       sx={{
+        visibility: hidden ? 'hidden' : 'visible',
         opacity: disabled ? 0.4 : 1,
         cursor: disabled ? 'default' : 'pointer',
         '& .MuiChip-icon': {
@@ -75,8 +79,7 @@ export default function ChartLimitBtns() {
           {displayAll && <Tab value={0} label={t('全期間')} />}
         </Tabs>
       </Box>
-      {/* 最新24時間タブ(limit=25)はローソク足非対応なので切替ボタンごと非表示 */}
-      {hasOhlcData() && limit !== 25 && (
+      {hasOhlcData() && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: '1rem' }}>
           <CandlestickToggle />
         </Box>
