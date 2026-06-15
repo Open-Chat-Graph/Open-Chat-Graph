@@ -28,7 +28,7 @@ export class RateLimitError extends Error {
 
 export const RATE_LIMIT_RETRY_SECONDS = 10
 
-async function fetchApi<T>(url: string) {
+export async function fetchApi<T>(url: string) {
   // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
   let response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
 

@@ -15,6 +15,10 @@ export const basePath = `${
   rankingArgDto.urlRoot ? rankingArgDto.urlRoot.replace(/^\/+/, '') + '/' : ''
 }ranking`
 
+export const analysisPath = `${
+  rankingArgDto.urlRoot ? rankingArgDto.urlRoot.replace(/^\/+/, '') + '/' : ''
+}analysis`
+
 const parsedUrl = new URL(rankingArgDto.baseUrl, window.location.origin)
 export const siteUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}${
   parsedUrl.port ? ':' + parsedUrl.port : ''

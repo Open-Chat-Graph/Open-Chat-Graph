@@ -32,6 +32,9 @@ class MimimalCmsConfig
         \App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsPageRepository::class,
         \App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface::class => \App\Models\SQLite\Repositories\Statistics\SqliteStatisticsOhlcRepository::class,
 
+        \App\Models\Repositories\Analysis\AnalysisStatsRepositoryInterface::class => \App\Models\SQLite\Repositories\Analysis\SqliteAnalysisStatsRepository::class,
+        \App\Models\Repositories\Analysis\AnalysisRoomRepositoryInterface::class => \App\Models\Repositories\Analysis\AnalysisRoomRepository::class,
+
         \App\Services\Crawler\Config\OpenChatCrawlerConfigInterface::class => \App\Services\Crawler\Config\OpenChatCrawlerConfig::class,
         \App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionRepository::class,
         \App\Models\Repositories\RankingPosition\RankingPositionPageRepositoryInterface::class => \App\Models\SQLite\Repositories\RankingPosition\SqliteRankingPositionPageRepository::class,

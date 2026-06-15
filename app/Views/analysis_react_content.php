@@ -1,0 +1,38 @@
+<?php
+/**
+ * 詳細成長分析ページ（/analysis）。ランキングと同一の React バンドルを配信し、
+ * React Router が /analysis を見て AnalysisPage を描画する。
+ * 専門ユーザー向け・重いクエリ・検索結果のため noindex。
+ */
+?>
+<!DOCTYPE html>
+<html lang="<?php echo t('ja') ?>">
+
+<head prefix="og: http://ogp.me/ns#">
+    <?php echo gTag(\App\Config\AppConfig::$gtmId) ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <?php echo $_meta ?>
+    <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
+    <?php /* テーマ確定はCSSより先（FOUC防止のため同期読み込み） */ ?>
+    <script src="<?php echo fileUrl('/js/theme.js', urlRoot: '') ?>"></script>
+    <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
+    <?php foreach ($_css as $css) : ?>
+        <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
+    <?php endforeach ?>
+    <script type="module" crossorigin src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
+</head>
+
+<body style="margin: 0;">
+    <script type="application/json" id="arg-dto">
+        <?php echo json_encode($_argDto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
+    </script>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+</body>
+
+</html>
