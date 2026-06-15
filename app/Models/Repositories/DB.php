@@ -111,6 +111,55 @@ class DB extends \Shadow\DB implements DBInterface
     }
 
     /**
+     * 一時的なMySQL接続障害（サーバの瞬断・再起動・接続数スパイク）かどうかを判定する。
+     *
+     * 個別クエリ単位の再接続（execute()/connect() の内部リトライ）では救えない、
+     * 「サーバ自体が数十秒〜分単位で消える」ケースを判定するための広めの分類器。
+     * 毎時処理のような冪等な一括処理を、丸ごと少し待って再試行してよいかの判断に使う。
+     *
+     * - 2006: server has gone away / 2013: Lost connection（動作中クエリ）
+     * - 2002: サーバ未起動・ソケット無し / Connection refused（新規接続が張れない）
+     * - 1226/1040: 接続数上限（max_user_connections / too many connections）
+     *
+     * 例外チェーン（getPrevious）を辿り、別プロセスのDBエラー文字列を包んだ
+     * RuntimeException（例: バックグラウンドDB反映失敗の通知）も拾えるよう、
+     * 型とメッセージの両面で判定する。
+     */
+    public static function isConnectionException(\Throwable $e): bool
+    {
+        for ($current = $e; $current !== null; $current = $current->getPrevious()) {
+            if ($current instanceof \PDOException) {
+                if (static::isConnectionLost($current) || static::isTooManyConnections($current)) {
+                    return true;
+                }
+
+                // 2002: Can't connect / No such file or directory
+                // （PDO::__construct で発生し errorInfo が未設定のことが多い）
+                $driverCode = $current->errorInfo[1] ?? null;
+                if ($driverCode !== null && (int) $driverCode === 2002) {
+                    return true;
+                }
+            }
+
+            $message = $current->getMessage();
+            if (
+                str_contains($message, 'server has gone away')
+                || str_contains($message, 'Lost connection')
+                || str_contains($message, '[2002]')
+                || str_contains($message, "Can't connect to")
+                || str_contains($message, 'Connection refused')
+                || str_contains($message, 'Too many connections')
+                || str_contains($message, 'max_user_connections')
+                || str_contains($message, 'max_connections')
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * MySQL接続をリセットして再接続する
      */
     private static function reconnect(): void
