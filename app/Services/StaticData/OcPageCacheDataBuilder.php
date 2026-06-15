@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Statistics\ChartMeta;
+namespace App\Services\StaticData;
 
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
+use App\Services\Statistics\ChartMeta\ChartAvailabilityCalculator;
 use App\Services\Storage\FileStorageInterface;
 
 /**
@@ -30,7 +31,7 @@ use App\Services\Storage\FileStorageInterface;
  *
  * 返す配列は OpenChatChartApiService::buildChartResponse の meta ブロックと同形。
  */
-class ChartMetaBuilder
+class OcPageCacheDataBuilder
 {
     /** 最新24時間タブのウィンドウ幅（StatisticsChartArrayService/UpdateOcPageCacheServiceと同じ） */
     private const HOUR_INTERVAL = 24;

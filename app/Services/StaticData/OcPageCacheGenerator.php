@@ -8,7 +8,6 @@ use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Models\Repositories\OcPageCacheRepositoryInterface;
 use App\Services\Narrative\OcNarrativeService;
-use App\Services\Statistics\ChartMeta\ChartMetaBuilder;
 use App\Views\Classes\CollapseKeywordEnumerationsInterface;
 use Shared\MimimalCmsConfig;
 
@@ -36,7 +35,7 @@ class OcPageCacheGenerator
         private OcNarrativeService $narrativeService,
         private CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         private OcPageCacheRepositoryInterface $cacheRepo,
-        private ChartMetaBuilder $chartMetaBuilder,
+        private OcPageCacheDataBuilder $cacheDataBuilder,
     ) {
     }
 
@@ -81,10 +80,10 @@ class OcPageCacheGenerator
             // 最新24時間集計はループ外で一括取得済みの $hourMap から渡す（per-room クエリを撃たない）。
             // 直近24hに出現が無い部屋（マップに居ない）は空の集計を渡す。build() に null を渡すと
             // 「ライブ＝per-room 取得」を意味してしまい、バックフィルで毎時クエリが出てしまうため。
-            $meta = $this->chartMetaBuilder->build(
+            $meta = $this->cacheDataBuilder->build(
                 $id,
                 is_int($oc['category'] ?? null) ? $oc['category'] : null,
-                $hourMap[$id] ?? ChartMetaBuilder::hourEntryNone(),
+                $hourMap[$id] ?? OcPageCacheDataBuilder::hourEntryNone(),
             );
 
             // 分析(narrative)に rising(急上昇/ランキング)掲載状態を相乗りさせる（ブログ導線の状態駆動用）。

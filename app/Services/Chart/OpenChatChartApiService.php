@@ -9,7 +9,7 @@ use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Services\OpenChat\Enum\RankingType;
 use App\Services\RankingPosition\RankingPositionChartArrayService;
 use App\Services\RankingPosition\RankingPositionHourChartArrayService;
-use App\Services\Statistics\ChartMeta\ChartMetaBuilder;
+use App\Services\StaticData\OcPageCacheDataBuilder;
 use App\Services\Statistics\Dto\StatisticsChartDto;
 use App\Services\Statistics\StatisticsChartArrayService;
 use App\Services\Storage\FileStorageInterface;
@@ -39,7 +39,7 @@ class OpenChatChartApiService
         private RankingPositionHourChartArrayService $rankingPositionHourChartArrayService,
         private StatisticsOhlcRepositoryInterface $statisticsOhlcRepository,
         private RankingPositionOhlcRepositoryInterface $rankingPositionOhlcRepository,
-        private ChartMetaBuilder $chartMetaBuilder,
+        private OcPageCacheDataBuilder $cacheDataBuilder,
         private FileStorageInterface $fileStorage,
     ) {}
 
@@ -88,7 +88,7 @@ class OpenChatChartApiService
 
         // 日次統計は日次ビュー(折れ線)の描画とメタの空フォールバックに使う。
         // ローソク足は OHLC 専用軸(ohlcDate)だけで描くので日次統計は引かない（無駄な統計DBアクセスを避ける）。
-        // メタは ChartMetaBuilder（ライブ）で別途組むため、ここでは可用性を計算しない。
+        // メタは OcPageCacheDataBuilder（ライブ）で別途組むため、ここでは可用性を計算しない。
         $statsDto = null;
         if ($mode !== 'candlestick' && ($span === 'day' || $withMeta)) {
             $statsDto = $this->statisticsChartArrayService->buildStatisticsChartArray(
@@ -112,8 +112,8 @@ class OpenChatChartApiService
         }
 
         if ($withMeta) {
-            // 埋め込み(cron, ChartMetaBuilder の一括取得)と同一の Builder でライブ計算し、乖離させない。
-            $response['meta'] = $this->chartMetaBuilder->build($open_chat_id, $category > 0 ? $category : null)
+            // 埋め込み(cron, OcPageCacheDataBuilder の一括取得)と同一の Builder でライブ計算し、乖離させない。
+            $response['meta'] = $this->cacheDataBuilder->build($open_chat_id, $category > 0 ? $category : null)
                 ?? $this->emptyMeta($statsDto);
         }
 
@@ -414,7 +414,7 @@ class OpenChatChartApiService
     }
 
     /**
-     * 統計レコードが無い等で ChartMetaBuilder が null を返したときの空メタ。
+     * 統計レコードが無い等で OcPageCacheDataBuilder が null を返したときの空メタ。
      * 従来は statsDto（フォールバックの空 DTO）の既定値がそのまま meta に出ていたため、
      * その形（全 false・空日付）を維持する。
      *

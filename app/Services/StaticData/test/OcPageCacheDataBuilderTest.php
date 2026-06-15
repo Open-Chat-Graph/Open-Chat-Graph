@@ -1,10 +1,10 @@
 <?php
 
 /**
- * ChartMetaBuilderのテスト
+ * OcPageCacheDataBuilderのテスト
  *
  * テスト実行コマンド:
- * docker compose exec app vendor/bin/phpunit app/Services/Statistics/ChartMeta/test/ChartMetaBuilderTest.php
+ * docker compose exec app vendor/bin/phpunit app/Services/StaticData/test/OcPageCacheDataBuilderTest.php
  *
  * グラフ初回ロードの可用性メタを1部屋分だけ組み立てる処理（埋め込みもライブも同じ Builder）が、
  * しきい値・例外時フォールバックの分岐どおりに動くことを確認する。
@@ -21,11 +21,11 @@ use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterfa
 use App\Models\Repositories\RankingPosition\RankingPositionRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsOhlcRepositoryInterface;
 use App\Models\Repositories\Statistics\StatisticsPageRepositoryInterface;
-use App\Services\Statistics\ChartMeta\ChartMetaBuilder;
+use App\Services\StaticData\OcPageCacheDataBuilder;
 use App\Services\Storage\FileStorageInterface;
 use PHPUnit\Framework\TestCase;
 
-class ChartMetaBuilderTest extends TestCase
+class OcPageCacheDataBuilderTest extends TestCase
 {
     /** 全種別の順位カウント（in/all × week/month/all） */
     private const POSITION_COUNTS = [
@@ -94,8 +94,8 @@ class ChartMetaBuilderTest extends TestCase
         StatisticsPageRepositoryInterface $pageRepo,
         StatisticsOhlcRepositoryInterface $ohlcRepo,
         RankingPositionRepositoryInterface $posRepo,
-    ): ChartMetaBuilder {
-        return new ChartMetaBuilder($pageRepo, $ohlcRepo, $posRepo, $this->unusedHourRepo(), $this->unusedFileStorage());
+    ): OcPageCacheDataBuilder {
+        return new OcPageCacheDataBuilder($pageRepo, $ohlcRepo, $posRepo, $this->unusedHourRepo(), $this->unusedFileStorage());
     }
 
     public function testReturnsNullWhenNoMemberStats(): void
@@ -224,7 +224,7 @@ class ChartMetaBuilderTest extends TestCase
         // cron 経路で「直近24hに出現なし」の部屋は空集計(hourEntryNone)を渡す → hour 全 false。
         // （per-room の getHourPositionCounts は撃たない＝unusedHourRepo で検出）
         $builder = $this->builder($pageRepo, $ohlcRepo, $this->posRepo());
-        $meta = $builder->build(123, 5, ChartMetaBuilder::hourEntryNone());
+        $meta = $builder->build(123, 5, OcPageCacheDataBuilder::hourEntryNone());
 
         $this->assertNotNull($meta);
         // 日次（ohlc・週/月/全順位）は hour の有無に影響されない
@@ -258,7 +258,7 @@ class ChartMetaBuilderTest extends TestCase
             'rising_all' => 3,
         ]);
 
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo(), $hourRepo, $this->fileStorage());
+        $builder = new OcPageCacheDataBuilder($pageRepo, $ohlcRepo, $this->posRepo(), $hourRepo, $this->fileStorage());
         $meta = $builder->build(123, 5); // hourEntry 省略＝ライブ
 
         $this->assertNotNull($meta);
@@ -279,7 +279,7 @@ class ChartMetaBuilderTest extends TestCase
         $hourRepo = $this->createStub(RankingPositionHourRepositoryInterface::class);
         $hourRepo->method('getHourPositionCounts')->willThrowException(new \PDOException('no such table'));
 
-        $builder = new ChartMetaBuilder($pageRepo, $ohlcRepo, $this->posRepo(), $hourRepo, $this->fileStorage());
+        $builder = new OcPageCacheDataBuilder($pageRepo, $ohlcRepo, $this->posRepo(), $hourRepo, $this->fileStorage());
         $meta = $builder->build(123, 5); // ライブ
 
         $this->assertNotNull($meta);

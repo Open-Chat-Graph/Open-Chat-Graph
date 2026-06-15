@@ -49,7 +49,7 @@ class UpdateOcPageCacheService
     ) {
     }
 
-    /** 最新24時間タブのウィンドウ幅（ChartMetaBuilder/StatisticsChartArrayServiceと同じ） */
+    /** 最新24時間タブのウィンドウ幅（OcPageCacheDataBuilder/StatisticsChartArrayServiceと同じ） */
     private const HOUR_INTERVAL = 24;
 
     /**
