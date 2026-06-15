@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Cron;
 
+use App\Models\Repositories\DB;
 use App\Models\Repositories\OcSitemapLastmodRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Cron\Enum\BatchScript;
@@ -23,6 +24,12 @@ use Shared\MimimalCmsConfig;
 
 class SyncOpenChat
 {
+    /** 毎時処理がDB接続障害で落ちた場合の再試行回数（初回実行を除く） */
+    private const HOURLY_RETRY_LIMIT = 3;
+
+    /** 毎時処理を再試行する前の待機秒数 */
+    private const HOURLY_RETRY_INTERVAL_SEC = 60;
+
     function __construct(
         private OpenChatApiDbMerger $merger,
         private SitemapGenerator $sitemap,
@@ -50,7 +57,7 @@ class SyncOpenChat
             $this->retryDailyTask();
         } else {
             // 23:30を除く毎時30分に実行
-            $this->hourlyTask();
+            $this->hourlyTaskWithRetry();
         }
 
         $this->sitemap->generate();
@@ -95,6 +102,47 @@ class SyncOpenChat
         $this->hourlyTaskAfterDbMerge();
 
         CronUtility::addCronLog('【毎時処理】完了');
+    }
+
+    /**
+     * 毎時処理を実行する。MySQLの瞬断（サーバ再起動・接続断・接続数スパイク）で落ちた場合は、
+     * 次の毎時cron（約1時間後）を待たずに、同一プロセス内で少し待って毎時処理を丸ごと再試行する。
+     * これにより、DBが短時間だけ落ちても、その時間帯のデータ欠損を防ぐ。
+     *
+     * 再試行のたびに init() を通すことで、中断した前回分の残骸（isHourlyTaskActive フラグ・
+     * 残存バックグラウンドDB反映プロセス）を掃除してからやり直す。これは次の毎時cronが行う
+     * 復帰処理（init → hourlyTask）と同一であり、実績のある経路にそのまま乗せている。
+     * 毎時処理は冪等で、再実行するとその時間帯のスナップショットを取り直す。
+     *
+     * 接続障害以外の例外は再試行せず即座に投げ直す（恒久的な不具合を握りつぶさないため）。
+     */
+    private function hourlyTaskWithRetry()
+    {
+        for ($attempt = 0; ; $attempt++) {
+            try {
+                // 2回目以降は前回の残骸を掃除してからやり直す（初回は handle() で init 済み）
+                if ($attempt > 0) {
+                    $this->init();
+                }
+
+                $this->hourlyTask();
+                return;
+            } catch (\Throwable $e) {
+                if ($attempt >= self::HOURLY_RETRY_LIMIT || !DB::isConnectionException($e)) {
+                    throw $e;
+                }
+
+                CronUtility::addCronLog(sprintf(
+                    '[警告] 毎時処理がDB接続障害で中断。%d秒後に再試行します（%d/%d回目）: %s',
+                    self::HOURLY_RETRY_INTERVAL_SEC,
+                    $attempt + 1,
+                    self::HOURLY_RETRY_LIMIT,
+                    $e->getMessage(),
+                ));
+
+                sleep(self::HOURLY_RETRY_INTERVAL_SEC);
+            }
+        }
     }
 
     private function hourlyTaskAfterDbMerge()
