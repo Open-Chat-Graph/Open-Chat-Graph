@@ -14,7 +14,7 @@ class LabsPageController
     function index(
         PageBreadcrumbsListSchema $breadcrumbsShema,
     ) {
-        $_css = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/terms'];
+        $_css = ['components/site_header', 'components/site_footer', 'pages/terms', 'pages/labs'];
         $_meta = meta()->setTitle(self::Title);
         $_meta->setDescription(self::Desc)->setOgpDescription(self::Desc);
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(self::Title);
