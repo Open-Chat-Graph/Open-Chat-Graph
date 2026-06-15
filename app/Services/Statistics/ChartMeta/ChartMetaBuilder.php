@@ -67,7 +67,8 @@ class ChartMetaBuilder
      *   dateCount: int,
      *   hourAvailability: bool,
      *   positionAvailability: array<'hour'|'week'|'month'|'all', array{ranking_in: bool, ranking_all: bool, rising_in: bool, rising_all: bool}>,
-     *   ohlcAvailability: array{week: bool, month: bool, all: bool}
+     *   ohlcAvailability: array{week: bool, month: bool, all: bool},
+     *   risingStatus: array{on_ranking_week: bool, on_rising_week: bool, top5_all_week: bool}
      * }
      */
     public function build(int $open_chat_id, ?int $category, ?array $hourEntry = null): ?array
@@ -97,6 +98,7 @@ class ChartMetaBuilder
         $none = ['ranking_in' => false, 'ranking_all' => false, 'rising_in' => false, 'rising_all' => false];
 
         // 順位(ranking/rising × in/all)の週/月/全タブ可用性
+        $risingBestPosAllWeek = null;
         try {
             $posCounts = $this->rankingPositionRepository->getPositionCountsByPeriod(
                 $open_chat_id,
@@ -105,6 +107,8 @@ class ChartMetaBuilder
                 $monthStart,
             );
             $daily = ChartAvailabilityCalculator::dailyPosition($posCounts);
+            // 「すべて」急上昇で週内に到達した最良順位（top5判定用・同一クエリに相乗り）
+            $risingBestPosAllWeek = $posCounts['rising_all_week_best_pos'] ?? null;
         } catch (\PDOException) {
             // DBファイル未作成の環境は「データ無し」として扱う
             $daily = ['week' => $none, 'month' => $none, 'all' => $none];
@@ -114,6 +118,14 @@ class ChartMetaBuilder
         [$hourAvailability, $hour] = $hourEntry === null
             ? $this->buildHourAvailabilityLive($open_chat_id, $inCategory, $none)
             : $this->buildHourAvailabilityFromEntry($category, $hourEntry);
+
+        // 急上昇/ランキングの掲載状態（週窓）。ブログ導線(OcBlogContextLinkResolver)の状態駆動に使う。
+        // 同種の派生データの相乗りが今後増える想定（perf都合で per-room 取得に密結合する）。
+        $risingStatus = [
+            'on_ranking_week' => $daily['week']['ranking_all'] || $daily['week']['ranking_in'],
+            'on_rising_week' => $daily['week']['rising_all'] || $daily['week']['rising_in'],
+            'top5_all_week' => $risingBestPosAllWeek !== null && $risingBestPosAllWeek <= 5,
+        ];
 
         // StatisticsChartDto::$positionAvailability と同じキー順（hour, week, month, all）で組む
         return [
@@ -128,6 +140,7 @@ class ChartMetaBuilder
                 'all' => $daily['all'],
             ],
             'ohlcAvailability' => $ohlcAvailability,
+            'risingStatus' => $risingStatus,
         ];
     }
 

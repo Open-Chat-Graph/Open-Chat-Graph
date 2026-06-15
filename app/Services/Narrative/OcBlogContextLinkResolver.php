@@ -20,12 +20,24 @@ final class OcBlogContextLinkResolver
      * @param string $pattern OcNarrativeService の状態分類
      * @return array{slug: string, label: string}|null 該当記事。無ければ null
      */
-    public function resolve(string $pattern): ?array
+    public function resolve(string $pattern, ?array $rising = null): ?array
     {
+        // rising(急上昇/ランキング)の実掲載状態を pattern より優先する（narrative に相乗り済み）。
+        // surge_up 等の「人数の伸び」指標と違い、実際の急上昇ランキング掲載に基づく導線。
+        if ($rising !== null) {
+            // 「すべて」急上昇の上位(=top5=アプリTOP露出)に週内到達 → 露出を活かす
+            if (!empty($rising['top5_all_week'])) {
+                return ['slug' => 'openchat-kyujosho-ranking', 'label' => '急上昇ランキングの上位に入っています。さらに伸ばすには？'];
+            }
+            // ランキングには載る(=基準内)が急上昇は未掲載 → 急上昇を狙う本命。
+            // ランキング非掲載(=基準外の可能性)には出さない＝この条件を満たさない。
+            if (!empty($rising['on_ranking_week']) && empty($rising['on_rising_week'])) {
+                return ['slug' => 'openchat-kyujosho-ranking', 'label' => '急上昇ランキングに載るには？アプリTOP露出を狙う'];
+            }
+        }
+
         return match (true) {
-            // 急成長・復活 →「なんで伸びてる？」(続けて伸びる部屋の特徴)
-            // 注: surge_up は人数の伸び指標であって rising(急上昇ランキング)掲載とは無関係。
-            //     急上昇記事への導線は ranking_position の実掲載データで別途駆動する（暫定で従来どおり）。
+            // 急成長・復活 →「なんで伸びてる？」(rising 状態が非該当/未取得のときのフォールバック)
             in_array($pattern, ['surge_up', 'strong_growth', 'recovering'], true)
             => ['slug' => 'growing-openchat-features', 'label' => '伸びるオープンチャットに共通する特徴とは？'],
 

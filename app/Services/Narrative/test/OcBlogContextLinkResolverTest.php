@@ -67,4 +67,33 @@ class OcBlogContextLinkResolverTest extends TestCase
             $this->assertNotSame('', $result['label']);
         }
     }
+
+    public function test_rising状態_top5入りは急上昇記事を最優先(): void
+    {
+        $r = $this->resolver->resolve('declining', ['top5_all_week' => true, 'on_ranking_week' => true, 'on_rising_week' => true]);
+        $this->assertSame('openchat-kyujosho-ranking', $r['slug']);
+    }
+
+    public function test_rising状態_ランキング有り急上昇無しは急上昇記事(): void
+    {
+        $r = $this->resolver->resolve('stable', ['top5_all_week' => false, 'on_ranking_week' => true, 'on_rising_week' => false]);
+        $this->assertSame('openchat-kyujosho-ranking', $r['slug']);
+    }
+
+    public function test_rising状態_既に急上昇掲載中はpatternへフォールバック(): void
+    {
+        $r = $this->resolver->resolve('surge_up', ['top5_all_week' => false, 'on_ranking_week' => true, 'on_rising_week' => true]);
+        $this->assertSame('growing-openchat-features', $r['slug']);
+    }
+
+    public function test_rising状態_ランキング非掲載には急上昇記事を出さない(): void
+    {
+        $r = $this->resolver->resolve('tiny', ['top5_all_week' => false, 'on_ranking_week' => false, 'on_rising_week' => false]);
+        $this->assertSame('openchat-sagashikata', $r['slug']);
+    }
+
+    public function test_rising未指定なら従来どおりpatternで決まる(): void
+    {
+        $this->assertSame('growing-openchat-features', $this->resolver->resolve('surge_up')['slug']);
+    }
 }

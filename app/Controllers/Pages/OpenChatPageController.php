@@ -80,7 +80,10 @@ class OpenChatPageController
         // 分析の状態(pattern)に合うブログ導線を解決して付与する（ja のみ・該当なしは null）。
         // マッピングはサービス(OcBlogContextLinkResolver)が持ち、テンプレートは描画だけを行う。
         if ($_narrative !== null && MimimalCmsConfig::$urlRoot === '') {
-            $_narrative['blog_link'] = $blogLinkResolver->resolve((string)($_narrative['pattern'] ?? ''));
+            $_narrative['blog_link'] = $blogLinkResolver->resolve(
+                (string)($_narrative['pattern'] ?? ''),
+                is_array($_narrative['rising'] ?? null) ? $_narrative['rising'] : null,
+            );
         }
 
         // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」も事前計算済み（oc_page_cache.chart_meta JOIN）。

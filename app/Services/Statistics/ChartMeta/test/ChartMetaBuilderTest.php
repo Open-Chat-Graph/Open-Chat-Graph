@@ -152,10 +152,15 @@ class ChartMetaBuilderTest extends TestCase
             $meta['positionAvailability']['all'],
         );
 
-        // meta ブロックのキー集合が OpenChatChartApiService::buildChartResponse と一致する
+        // meta ブロックのキー集合（risingStatus はブログ導線の状態駆動用にキャッシュへ相乗りさせた派生データ）
         $this->assertSame(
-            ['startDate', 'endDate', 'dateCount', 'hourAvailability', 'positionAvailability', 'ohlcAvailability'],
+            ['startDate', 'endDate', 'dateCount', 'hourAvailability', 'positionAvailability', 'ohlcAvailability', 'risingStatus'],
             array_keys($meta),
+        );
+        // risingStatus: 週窓の掲載状態（このfixtureでは week.ranking_all=true / rising無し / top5無し）
+        $this->assertSame(
+            ['on_ranking_week' => true, 'on_rising_week' => false, 'top5_all_week' => false],
+            $meta['risingStatus'],
         );
         $this->assertSame(
             ['hour', 'week', 'month', 'all'],

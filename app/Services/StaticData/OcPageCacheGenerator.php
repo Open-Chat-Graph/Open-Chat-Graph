@@ -87,6 +87,12 @@ class OcPageCacheGenerator
                 $hourMap[$id] ?? ChartMetaBuilder::hourEntryNone(),
             );
 
+            // 分析(narrative)に rising(急上昇/ランキング)掲載状態を相乗りさせる（ブログ導線の状態駆動用）。
+            // narrative が null（生成不可）の部屋は分析セクション自体が出ないため付与不要。
+            if ($narrative !== null && $meta !== null && isset($meta['risingStatus'])) {
+                $narrative['rising'] = $meta['risingStatus'];
+            }
+
             $rows[] = [
                 'open_chat_id' => $id,
                 'narrative_data' => $narrative === null
