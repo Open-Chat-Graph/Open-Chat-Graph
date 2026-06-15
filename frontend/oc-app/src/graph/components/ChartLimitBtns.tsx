@@ -21,7 +21,7 @@ function CandlestickToggle() {
   const limit = useAtomValue(limitAtom)
   if (!hasOhlcData()) return null
   const isCandlestick = chartMode === 'candlestick'
-  // 表示中の期間タブにOHLCデータが無い場合はグレーアウト（24時間タブも常に該当）
+  // 表示中の期間タブにOHLCデータが無い場合はグレーアウト
   const disabled = !isCandlestick && !hasOhlcDataForLimit(limit)
 
   const handleToggle = () => {
@@ -75,7 +75,8 @@ export default function ChartLimitBtns() {
           {displayAll && <Tab value={0} label={t('全期間')} />}
         </Tabs>
       </Box>
-      {hasOhlcData() && (
+      {/* 最新24時間タブ(limit=25)はローソク足非対応なので切替ボタンごと非表示 */}
+      {hasOhlcData() && limit !== 25 && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: '1rem' }}>
           <CandlestickToggle />
         </Box>
