@@ -120,6 +120,7 @@ class BlogController
         return Schema::organization()
             ->name(t('オプチャグラフ'))
             ->url(url())
-            ->logo(url(['urlRoot' => '', 'paths' => [AppConfig::SITE_ICON_FILE_PATH]]));
+            ->logo(url(['urlRoot' => '', 'paths' => [AppConfig::SITE_ICON_FILE_PATH]]))
+            ->sameAs(AppConfig::BRAND_SAME_AS);
     }
 }

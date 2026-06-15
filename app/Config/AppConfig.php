@@ -12,6 +12,12 @@ class AppConfig
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
     const DEFAULT_OGP_IMAGE_FILE_PATH = 'assets/ogp.png';
 
+    /** Organization 構造化データの sameAs（公式ブランドの外部プロフィール。エンティティ連携・知識パネル用）。 */
+    const BRAND_SAME_AS = [
+        'https://x.com/openchat_graph',
+        'https://qiita.com/pikachu0203',
+    ];
+
     // Google Tag Manager ID
     static string $gtmId = 'GTM-NTK2GPTF';
 
