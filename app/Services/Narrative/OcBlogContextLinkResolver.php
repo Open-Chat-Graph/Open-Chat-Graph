@@ -23,8 +23,12 @@ final class OcBlogContextLinkResolver
     public function resolve(string $pattern): ?array
     {
         return match (true) {
-            // 急成長・復活 →「なんで伸びてる？」
-            in_array($pattern, ['surge_up', 'strong_growth', 'recovering'], true)
+            // 急成長(急上昇中) → この勢いで急上昇ランキング(=アプリTOP露出)を狙う記事
+            $pattern === 'surge_up'
+            => ['slug' => 'openchat-kyujosho-ranking', 'label' => 'この勢いで急上昇ランキングに載るには？'],
+
+            // 強い成長・復活 →「なんで伸びてる？」(続けて伸びる部屋の特徴)
+            in_array($pattern, ['strong_growth', 'recovering'], true)
             => ['slug' => 'growing-openchat-features', 'label' => '伸びるオープンチャットに共通する特徴とは？'],
 
             // 急減・減少・更新停止・ピークから縮小 →「何があった？」（検索落ち・圏外の実データ）
