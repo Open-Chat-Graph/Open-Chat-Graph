@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import {
   Box,
@@ -6,11 +7,14 @@ import {
   LinearProgress,
   MenuItem,
   Select,
+  Slide,
   Stack,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
+  useScrollTrigger,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
@@ -135,6 +139,23 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const isIncrease = params.metric === 'increase'
   const isCustom = params.period === 'custom'
 
+  // ランキングの CategoryListAppBar と同じ挙動: PC は固定で常時表示、スマホは下スクロールで
+  // 隠れて上スクロールで降りてくる（MUI Slide + useScrollTrigger）。スマホで固定にすると
+  // 高さ分の隙間が要るので、内容の実寸を測ってスペーサーに反映する（行数が条件で変わるため）。
+  const isPC = useMediaQuery('(min-width:600px)')
+  const trigger = useScrollTrigger()
+  const barRef = useRef<HTMLDivElement>(null)
+  const [barHeight, setBarHeight] = useState(0)
+  useLayoutEffect(() => {
+    const el = barRef.current
+    if (!el) return
+    const update = () => setBarHeight(el.offsetHeight)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const periodOptions = PERIODS.map((v) => ({ value: v, label: PERIOD_LABEL[v] }))
 
   const dateError = isCustom
@@ -153,15 +174,17 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
     job.search(params)
   }
 
-  return (
+  const barEl = (
     <Box
+      ref={barRef}
       sx={{
-        position: 'sticky',
+        position: isPC ? 'sticky' : 'fixed',
         top: `${ANALYSIS_HEADER_H}px`,
+        left: 0,
+        right: 0,
         zIndex: 1200,
         background: 'var(--c-bg)',
         borderBottom: '1px solid var(--c-border)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         // キーワード入力以外は選択・ドラッグ不可
         userSelect: 'none',
         WebkitUserSelect: 'none',
@@ -295,6 +318,18 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
           </Box>
         )}
       </Stack>
+    </Box>
+  )
+
+  // PC: 固定（sticky）で常時表示。スマホ: 固定＋Slide で下スクロール時に隠れ、上スクロールで降りる。
+  // スマホは固定で flow から外れるので、同じ高さのスペーサーで隙間を確保する。
+  return isPC ? (
+    barEl
+  ) : (
+    <Box sx={{ height: `${barHeight}px` }}>
+      <Slide appear={false} direction="down" in={!trigger}>
+        {barEl}
+      </Slide>
     </Box>
   )
 }
