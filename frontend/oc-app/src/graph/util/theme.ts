@@ -91,7 +91,7 @@ export const colors: { light: ChartColors; dark: ChartColors } = {
         { offset: 0, color: 'rgba(22, 194, 193, 0.45)' },
       ],
     },
-    grid: '#efefef',
+    grid: '#f4f4f4',
     border: '#efefef',
     borderWeekly: 'rgba(0,0,0,0)',
     text: {
