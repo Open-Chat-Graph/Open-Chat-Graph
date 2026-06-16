@@ -176,7 +176,10 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
           </>
         )}
 
-        <Seg value={params.sort} options={sortOptions} onChange={(v) => setParams((c) => ({ ...c, sort: v }))} />
+        {/* 並び替えは「期間の増加」のみ（増加数/増加率＝意味が明確）。じわじわ成長は単一スコア順なので出さない */}
+        {params.metric === 'increase' && (
+          <Seg value={params.sort} options={sortOptions} onChange={(v) => setParams((c) => ({ ...c, sort: v }))} />
+        )}
         <Seg
           value={params.order}
           options={[
