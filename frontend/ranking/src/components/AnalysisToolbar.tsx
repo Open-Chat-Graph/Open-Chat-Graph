@@ -1,26 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import {
+  Autocomplete,
   Box,
   Button,
-  Chip,
   LinearProgress,
-  Menu,
-  MenuItem,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useScrollTrigger,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { OPEN_CHAT_CATEGORY } from '../config/config'
 import { analysisParamsState } from '../store/atom'
 import { useSetAnalysisParams } from '../hooks/AnalysisHooks'
 import type { AnalysisJob } from '../hooks/AnalysisHooks'
 import { scrollToTop } from '../utils/utils'
 import AnalysisMetricHelp from './AnalysisMetricHelp'
+import { ANALYSIS_HEADER_H } from './AnalysisHeader'
 
 const METRICS: { value: AnalysisMetric; label: string }[] = [
   { value: 'increase', label: '期間の増加' },
@@ -29,7 +29,7 @@ const METRICS: { value: AnalysisMetric; label: string }[] = [
 const PERIODS: { value: AnalysisPeriod; label: string }[] = [
   { value: 'month', label: '1ヶ月' },
   { value: 'year', label: '1年' },
-  { value: 'custom', label: '任意期間' },
+  { value: 'custom', label: '任意' },
 ]
 const SORTS: Record<AnalysisMetric, { value: AnalysisSort; label: string }[]> = {
   increase: [
@@ -38,55 +38,73 @@ const SORTS: Record<AnalysisMetric, { value: AnalysisSort; label: string }[]> = 
   ],
   steady: [
     { value: 'score', label: 'じわじわ度' },
-    { value: 'cagr', label: '年の伸び率' },
-    { value: 'slope', label: '1日の増加数' },
+    { value: 'cagr', label: '年の伸び' },
+    { value: 'slope', label: '日の伸び' },
   ],
 }
 
-/** ランキングと同じピル型トグル（.openchat-item-header-chip / .selected） */
-function Pill({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string
-  selected: boolean
-  onClick: () => void
-}) {
-  return (
-    <Chip
-      label={label}
-      onClick={selected ? undefined : onClick}
-      className={`openchat-item-header-chip${selected ? ' selected' : ''}`}
-      sx={{ cursor: selected ? 'default' : 'pointer' }}
-    />
-  )
-}
+const CATEGORY_OPTIONS = OPEN_CHAT_CATEGORY.map(([label, value]) => ({ label, value }))
 
-/** ラベル＋コントロールの1行 */
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Stack direction="row" alignItems="center" useFlexGap flexWrap="wrap" sx={{ gap: 1, rowGap: 1 }}>
-      <Typography
-        sx={{ fontSize: 12, color: 'var(--c-text-3)', width: 34, flexShrink: 0, fontWeight: 600 }}
-      >
-        {label}
-      </Typography>
-      {children}
-    </Stack>
-  )
-}
-
-// ピル型入力（キーワード・日付）。font-size 16px で iOS の自動ズームを防ぐ
-const pillInputSx = {
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '99px',
-    height: 36,
-    background: 'var(--c-surface)',
+// 角丸セグメンテッドコントロール（iOS風・選択時ダーク塗り、ranking のチップ色に揃える）
+const segSx = {
+  bgcolor: 'var(--c-surface)',
+  borderRadius: '99px',
+  p: '3px',
+  gap: '2px',
+  '& .MuiToggleButtonGroup-grouped': {
+    m: 0,
+    border: 'none',
+    borderRadius: '99px !important',
   },
+  '& .MuiToggleButton-root': {
+    textTransform: 'none',
+    color: 'var(--c-text-1)',
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1.3,
+    px: 1.5,
+    py: 0.4,
+    '&:hover': { bgcolor: 'transparent' },
+    '&.Mui-selected': {
+      bgcolor: 'var(--c-chip-dark)',
+      color: 'var(--c-text-inverse)',
+      '&:hover': { bgcolor: 'var(--c-chip-dark)' },
+    },
+  },
+} as const
+
+// ピル型入力（font-size 16px で iOS 自動ズーム防止）
+const pillInputSx = {
+  '& .MuiOutlinedInput-root': { borderRadius: '99px', height: 38, background: 'var(--c-surface)', pl: 1 },
   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
   '& .MuiOutlinedInput-input': { fontSize: 16, py: 0 },
 } as const
+
+function Seg<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+}) {
+  return (
+    <ToggleButtonGroup
+      size="small"
+      exclusive
+      value={value}
+      onChange={(_, v) => v && onChange(v as T)}
+      sx={segSx}
+    >
+      {options.map((o) => (
+        <ToggleButton key={o.value} value={o.value}>
+          {o.label}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
+  )
+}
 
 export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const params = useAtomValue(analysisParamsState)
@@ -106,170 +124,123 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
     return () => clearInterval(tmr)
   }, [running])
 
-  const [catAnchor, setCatAnchor] = useState<null | HTMLElement>(null)
-  const catName = OPEN_CHAT_CATEGORY.find((c) => c[1] === params.category)?.[0] ?? 'すべて'
-
   const sortOptions = SORTS[params.metric]
+  const categoryValue = CATEGORY_OPTIONS.find((o) => o.value === params.category) ?? CATEGORY_OPTIONS[0]
 
   return (
     <Box
       sx={{
         position: 'sticky',
-        top: 0,
-        zIndex: 1100,
+        top: `${ANALYSIS_HEADER_H}px`,
+        zIndex: 1200,
         background: 'var(--c-bg)',
         borderBottom: '1px solid var(--c-border)',
-        boxShadow: hidden ? 'none' : '0 1px 6px rgba(0,0,0,0.06)',
+        boxShadow: hidden ? 'none' : '0 2px 8px rgba(0,0,0,0.08)',
         transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
         transition: 'transform .25s ease',
-        px: { xs: 1.75, sm: 2.5 },
-        pt: 1.5,
-        pb: running ? 0.75 : 1.5,
+        px: { xs: 1.5, sm: 2.5 },
+        py: 1,
       }}
     >
-      <Stack sx={{ gap: 1.25 }}>
-        {/* 指標 */}
-        <Row label="指標">
-          {METRICS.map((m) => (
-            <Pill
-              key={m.value}
-              label={m.label}
-              selected={params.metric === m.value}
-              onClick={() => setParams((c) => ({ ...c, metric: m.value }))}
-            />
-          ))}
-          <AnalysisMetricHelp metric={params.metric} />
-        </Row>
+      <Stack
+        direction="row"
+        useFlexGap
+        flexWrap="wrap"
+        alignItems="center"
+        sx={{ gap: 1, rowGap: 1 }}
+      >
+        <Seg value={params.metric} options={METRICS} onChange={(v) => setParams((c) => ({ ...c, metric: v }))} />
+        <AnalysisMetricHelp metric={params.metric} />
 
-        {/* 期間（期間の増加のみ） */}
         {params.metric === 'increase' && (
-          <Row label="期間">
-            {PERIODS.map((p) => (
-              <Pill
-                key={p.value}
-                label={p.label}
-                selected={params.period === p.value}
-                onClick={() => setParams((c) => ({ ...c, period: p.value }))}
-              />
-            ))}
-            {params.period === 'custom' && (
-              <>
-                <TextField
-                  size="small"
-                  type="date"
-                  value={params.from}
-                  onChange={(e) => setParams((c) => ({ ...c, from: e.target.value }))}
-                  sx={{ ...pillInputSx, width: 150 }}
-                />
-                <Typography sx={{ fontSize: 13, color: 'var(--c-text-3)' }}>〜</Typography>
-                <TextField
-                  size="small"
-                  type="date"
-                  value={params.to}
-                  onChange={(e) => setParams((c) => ({ ...c, to: e.target.value }))}
-                  sx={{ ...pillInputSx, width: 150 }}
-                />
-              </>
-            )}
-          </Row>
+          <Seg value={params.period} options={PERIODS} onChange={(v) => setParams((c) => ({ ...c, period: v }))} />
         )}
 
-        {/* 並び替え＋順序 */}
-        <Row label="並び">
-          {sortOptions.map((s) => (
-            <Pill
-              key={s.value}
-              label={s.label}
-              selected={params.sort === s.value}
-              onClick={() => setParams((c) => ({ ...c, sort: s.value }))}
+        {params.metric === 'increase' && params.period === 'custom' && (
+          <>
+            <TextField
+              size="small"
+              type="date"
+              value={params.from}
+              onChange={(e) => setParams((c) => ({ ...c, from: e.target.value }))}
+              sx={{ ...pillInputSx, width: 148 }}
             />
-          ))}
-          <Box sx={{ width: 4 }} />
-          <Pill
-            label="多い順"
-            selected={params.order === 'desc'}
-            onClick={() => setParams((c) => ({ ...c, order: 'desc' }))}
-          />
-          <Pill
-            label="少ない順"
-            selected={params.order === 'asc'}
-            onClick={() => setParams((c) => ({ ...c, order: 'asc' }))}
-          />
-        </Row>
+            <Typography sx={{ fontSize: 13, color: 'var(--c-text-3)' }}>〜</Typography>
+            <TextField
+              size="small"
+              type="date"
+              value={params.to}
+              onChange={(e) => setParams((c) => ({ ...c, to: e.target.value }))}
+              sx={{ ...pillInputSx, width: 148 }}
+            />
+          </>
+        )}
 
-        {/* 絞り込み（カテゴリ・キーワード） */}
-        <Row label="絞込">
-          <Chip
-            label={catName}
-            icon={<ArrowDropDownIcon />}
-            onClick={(e) => setCatAnchor(e.currentTarget)}
-            className="openchat-item-header-chip"
-            sx={{ cursor: 'pointer', flexDirection: 'row-reverse', pl: 0.5 }}
-          />
-          <Menu
-            anchorEl={catAnchor}
-            open={Boolean(catAnchor)}
-            onClose={() => setCatAnchor(null)}
-            disableScrollLock
-            slotProps={{ paper: { sx: { maxHeight: 360 } } }}
-          >
-            {OPEN_CHAT_CATEGORY.map((c) => (
-              <MenuItem
-                key={c[1]}
-                selected={c[1] === params.category}
-                onClick={() => {
-                  setParams((p) => ({ ...p, category: c[1] }))
-                  setCatAnchor(null)
-                }}
-              >
-                {c[0]}
-              </MenuItem>
-            ))}
-          </Menu>
-          <TextField
-            size="small"
-            placeholder="キーワード"
-            value={params.keyword}
-            onChange={(e) => setParams((c) => ({ ...c, keyword: e.target.value }))}
-            sx={{ ...pillInputSx, width: 170 }}
-          />
-        </Row>
+        <Seg value={params.sort} options={sortOptions} onChange={(v) => setParams((c) => ({ ...c, sort: v }))} />
+        <Seg
+          value={params.order}
+          options={[
+            { value: 'desc', label: '多い順' },
+            { value: 'asc', label: '少ない順' },
+          ]}
+          onChange={(v) => setParams((c) => ({ ...c, order: v }))}
+        />
 
-        {/* アクション or 進捗 */}
+        <Autocomplete
+          size="small"
+          disableClearable
+          options={CATEGORY_OPTIONS}
+          value={categoryValue}
+          onChange={(_, v) => setParams((c) => ({ ...c, category: v?.value ?? 0 }))}
+          isOptionEqualToValue={(o, v) => o.value === v.value}
+          renderInput={(p) => <TextField {...p} placeholder="カテゴリ" />}
+          slotProps={{ paper: { sx: { fontSize: 14 } } }}
+          sx={{ width: 150, ...pillInputSx }}
+        />
+
+        <TextField
+          size="small"
+          placeholder="キーワード"
+          value={params.keyword}
+          onChange={(e) => setParams((c) => ({ ...c, keyword: e.target.value }))}
+          sx={{ ...pillInputSx, width: 150 }}
+        />
+
+        <Box sx={{ flexGrow: 1 }} />
+
         {running ? (
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)' }}>
-                分析中 {job.percent}%
-              </Typography>
-              <Typography sx={{ fontSize: 12, opacity: 0.75 }}>
-                {job.computed.toLocaleString()} 件を計算 ・ {elapsed} 秒
-              </Typography>
-              <Box sx={{ flexGrow: 1 }} />
-              <Button size="small" variant="outlined" color="inherit" startIcon={<CloseIcon />} onClick={job.cancel}>
-                キャンセル
-              </Button>
-            </Stack>
-            <LinearProgress variant="determinate" value={job.percent} sx={{ height: 6, borderRadius: 3 }} />
-          </Box>
+          <Button variant="outlined" color="inherit" startIcon={<CloseIcon />} onClick={job.cancel} sx={{ borderRadius: '99px' }}>
+            キャンセル
+          </Button>
         ) : (
-          <Stack direction="row">
-            <Box sx={{ flexGrow: 1 }} />
-            <Button
-              variant="contained"
-              startIcon={<SearchIcon />}
-              onClick={() => {
-                scrollToTop()
-                window.scrollTo(0, 0)
-                job.search(params)
-              }}
-              sx={{ fontWeight: 700, px: 3, borderRadius: '99px' }}
-            >
-              分析する
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={() => {
+              scrollToTop()
+              window.scrollTo(0, 0)
+              job.search(params)
+            }}
+            sx={{ fontWeight: 700, px: 2.5, borderRadius: '99px' }}
+          >
+            分析
+          </Button>
         )}
       </Stack>
+
+      {running && (
+        <Box sx={{ mt: 0.75 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+            <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)' }}>
+              分析中 {job.percent}%
+            </Typography>
+            <Typography sx={{ fontSize: 12, opacity: 0.75 }}>
+              {job.computed.toLocaleString()} 件を計算 ・ {elapsed} 秒
+            </Typography>
+          </Stack>
+          <LinearProgress variant="determinate" value={job.percent} sx={{ height: 6, borderRadius: 3 }} />
+        </Box>
+      )}
     </Box>
   )
 }

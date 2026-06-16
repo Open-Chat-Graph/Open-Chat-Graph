@@ -25,6 +25,15 @@
         <link rel="stylesheet" href="<?php echo fileUrl($css, urlRoot: '') ?>">
     <?php endforeach ?>
     <script type="module" crossorigin src="<?php echo fileUrl($_js, urlRoot: '') ?>"></script>
+    <?php /* MUI の Menu/Autocomplete/Popover は body 直下へ portal され、コンポーネント既定の
+             Roboto/Helvetica が残って本文(system-ui→iOSではSF)とフォントがズレる。ページ全体を
+             本文と同じスタックに統一する（ranking のリストと同じ system-ui 系）。 */ ?>
+    <style>
+        body,
+        body * {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        }
+    </style>
 </head>
 
 <body style="margin: 0;">
