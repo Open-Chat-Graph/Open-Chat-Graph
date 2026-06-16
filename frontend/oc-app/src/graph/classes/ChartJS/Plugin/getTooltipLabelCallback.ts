@@ -5,11 +5,13 @@ import { sprintfT, t } from '../../../util/translation'
 export default function getTooltipLabelCallback(ocChart: OpenChatChart) {
   return (tooltipItem: TooltipItem<'bar' | 'line'>) => {
     if (tooltipItem.datasetIndex === 1) {
-      if (tooltipItem.raw === null) return ''
+      // 生順位(data.graph2)で圏外判定する。非線形スケールでは外れ値より深い順位がバー値0へ
+      // 圧縮され0(圏外)と衝突するため、バー値(raw)では圏外と順位内を区別できない。
+      const rank = ocChart.data.graph2[tooltipItem.dataIndex] ?? null
+      if (rank === null) return ''
+      if (!rank) return t('圏外')
 
-      if (tooltipItem.raw === 0) return t('圏外')
-
-      const value = ocChart.graph2Max - (tooltipItem.raw as number) + 1
+      const value = Math.round(rank)
 
       const tip = sprintfT(
         '%s 位 / %s 件',

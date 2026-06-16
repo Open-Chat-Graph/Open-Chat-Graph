@@ -1,7 +1,7 @@
 import { ChartConfiguration, Chart as ChartJS } from 'chart.js/auto'
 import OpenChatChart from '../../OpenChatChart'
 import getVerticalLabelRange from '../Util/getVerticalLabelRange'
-import getRankingBarLabelRange from '../Util/getRankingBarLabelRange'
+import getRankBarScale from '../Util/getRankBarScale'
 import getHorizontalLabelFontColor from '../Callback/getHorizontalLabelFontColor'
 import { getHourTicksFormatterCallback } from '../Callback/getHourTicksFormatterCallback'
 import { sprintfT } from '../../../util/translation'
@@ -9,7 +9,9 @@ import { getColors } from '../../../util/theme'
 
 const aspectRatio = (ocChart: OpenChatChart) => {
   ocChart.setSize()
-  return ocChart.isMiniMobile ? 1.2 / 1 : ocChart.isPC ? 1.8 / 1 : 1.4 / 1
+  // スマホ幅のグラフ高さ（CSS の .chart-canvas-box / #chart-preact-canvas の aspect-ratio と必ず一致
+  // させること。ズレるとロード時にレイアウトシフト）。元値より少しだけ高い程度に調整。
+  return ocChart.isMiniMobile ? 1.15 / 1 : ocChart.isPC ? 1.8 / 1 : 1.34 / 1
 }
 
 export default function buildOptions(
@@ -43,7 +45,9 @@ export default function buildOptions(
 
   const paddingX = 20
   const paddingY = isWeekly ? 0 : 5
-  const displayY = ocChart.getMode() === 'candlestick' ? true : !isWeekly
+  // 1週間表示は通常 y軸・グリッドを隠してコンパクトにするが、順位(ランキング/急上昇)表示時は
+  // 他の期間と同じく縦横グリッド＋順位軸を出す（順位の基準が無いと読みにくいため）
+  const displayY = ocChart.getMode() === 'candlestick' ? true : !isWeekly || hasPosition
 
   const labelRangeLine = getVerticalLabelRange(ocChart, ocChart.data.graph1)
 
@@ -85,6 +89,12 @@ export default function buildOptions(
         min: labelRangeLine.dataMin,
         max: labelRangeLine.dataMax,
         display: displayY,
+        // 順位(ランキング/急上昇)表示時は水平グリッドを順位軸(temperatureChart)側に合わせるため、
+        // メンバー軸側のグリッドは消す。順位非表示時は従来どおりメンバー軸にグリッドを引く
+        grid: {
+          display: !hasPosition,
+          color: getColors().grid,
+        },
         ticks: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           callback: (v: any) => {
@@ -133,8 +143,11 @@ export default function buildOptions(
       max: axisMax,
       reverse: true,
       display: displayY,
+      // 順位表示中は水平グリッドを順位軸側に引く（メンバー軸側はオフ）。
+      // 色は控えめな grid トークンにして順位バーと明度がかぶらないようにする
       grid: {
-        display: false,
+        display: displayY,
+        color: getColors().grid,
       },
       ticks: {
         display: displayY,
@@ -154,36 +167,29 @@ export default function buildOptions(
       },
     }
   } else if (ocChart.data.graph2.length) {
-    const labelRangeBar = getRankingBarLabelRange(
-      ocChart,
-      ocChart.getReverseGraph2(ocChart.data.graph2)
-    )
+    const scale = getRankBarScale(ocChart, ocChart.getReverseGraph2(ocChart.data.graph2))
     const show = displayY && ocChart.data.graph2.some((v) => v !== 0 && v !== null)
-
-    let lastTick = 0
 
     options.scales!.temperatureChart! = {
       position: 'right',
-      min: labelRangeBar.dataMin,
-      max: labelRangeBar.dataMax,
+      min: scale.min,
+      max: scale.max,
       display: show,
+      // 非線形時は最良/最悪順位を上下端のグリッド線に必ず合わせるため目盛りを明示配置する
+      afterBuildTicks: scale.afterBuildTicks,
+      // 順位表示中は水平グリッドを順位軸側に引く（メンバー軸側はオフ）。
+      // 色は控えめな grid トークンにして順位バーと明度がかぶらないようにする
       grid: {
-        display: false,
+        display: show,
+        color: getColors().grid,
       },
       ticks: {
         display: show,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        callback: (v: any) => {
-          const value = ocChart.graph2Max - v + 1
-          const tick = Math.ceil(value)
-
-          if (!tick || tick === lastTick) return ''
-          lastTick = tick
-
-          return sprintfT('%s 位', tick)
-        },
-        stepSize: labelRangeBar.stepSize,
-        autoSkip: true,
+        callback: scale.makeTickCallback() as any,
+        stepSize: scale.stepSize,
+        // 明示配置(afterBuildTicks)の時は端の目盛りが間引かれないよう autoSkip を切る
+        autoSkip: !scale.afterBuildTicks,
         maxTicksLimit: 14,
         font: {
           size: ticksFontSize,

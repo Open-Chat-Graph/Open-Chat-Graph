@@ -1,7 +1,7 @@
 import { Chart as ChartJS } from 'chart.js/auto'
 import OpenChatChart from '../../OpenChatChart'
 import getVerticalLabelRange from '../Util/getVerticalLabelRange'
-import getRankingBarLabelRange from '../Util/getRankingBarLabelRange'
+import getRankBarScale from '../Util/getRankBarScale'
 import { getColors } from '../../../util/theme'
 
 const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
@@ -69,14 +69,14 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
     ocChart.setGraph2Max(graph2)
 
     const graph2Reverse = ocChart.getReverseGraph2(graph2)
-    const { dataMin, dataMax, stepSize } = getRankingBarLabelRange(ocChart, graph2Reverse)
+    const scale = getRankBarScale(ocChart, graph2Reverse)
 
     chart.data.datasets[1].data = ocChart.getReverseGraph2(ocChart.data.graph2)
 
-    chart.options!.scales!.temperatureChart!.min = dataMin
-    chart.options!.scales!.temperatureChart!.max = dataMax
+    chart.options!.scales!.temperatureChart!.min = scale.min
+    chart.options!.scales!.temperatureChart!.max = scale.max
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(chart.options!.scales!.temperatureChart!.ticks as any).stepSize = stepSize
+    ;(chart.options!.scales!.temperatureChart!.ticks as any).stepSize = scale.stepSize
   }
 
   return [min, max]
@@ -85,6 +85,17 @@ const onZoomLabelRange = (chart: ChartJS, ocChart: OpenChatChart) => {
 const toggleIsZooming = (ocChart: OpenChatChart, range: number) => {
   ocChart.isZooming = ocChart.data.date.length !== range
   ocChart.chart.options.plugins!.zoom!.pan!.enabled = ocChart.isZooming
+}
+
+/**
+ * 自前ピンチハンドラ用: 1ジェスチャ終了後にプラグインの onZoomComplete と同じ後処理
+ * （Y軸レンジ再計算・ラベル間引き・pan有効化・チャート更新）を実行する。
+ * 公開API chart.zoom() は onZoomComplete を呼ばないため、外から明示的に走らせる。
+ */
+export function applyZoomComplete(ocChart: OpenChatChart, mode?: 'none') {
+  getOnZoomComplete(ocChart)
+  // mode='none' で再描画アニメ無し（順位種別切替で窓を復元する時に線がアニメしないように）
+  ocChart.chart.update(mode)
 }
 
 const getOnZoomComplete = (ocChart: OpenChatChart) => {
@@ -122,8 +133,11 @@ export default function getZoomOption(ocChart: OpenChatChart) {
       },
     },
     zoom: {
+      // プラグインのピンチは指の広がり比率を1:1で軸ズームに渡すため感度が固定で強すぎる。
+      // モバイルでは無効化し、OpenChatChart 側の減衰付き自前ハンドラ(attachTouchPinch)で処理する。
+      // ホイール(PC)はそのままプラグインに任せる。
       pinch: {
-        enabled: enable,
+        enabled: false,
       },
       wheel: {
         enabled: enable,

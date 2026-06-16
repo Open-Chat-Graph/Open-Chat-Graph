@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAtomValue } from 'jotai'
 import {
   Divider,
   IconButton,
@@ -18,6 +19,7 @@ import {
   setStoregeChartSetting,
   setStoregeFixedLimitSetting,
 } from '../util/urlParam'
+import { handleChangeRankEmphasis, rankEmphasisAtom } from '../state/chartState'
 import { t } from '../util/translation'
 import { useIsDark } from '../../themeMui'
 
@@ -75,6 +77,8 @@ function DenseMenu({
   handleSelectChartMode,
   fixedLimit,
   handleSelectFixedLimit,
+  rankEmphasis,
+  handleSelectRankEmphasis,
 }: {
   handleSelectBar: (bar: ToggleChart) => void
   bar: ToggleChart
@@ -82,6 +86,8 @@ function DenseMenu({
   handleSelectChartMode: (mode: urlParamsValue<'chart'>) => void
   fixedLimit: urlParamsValue<'limit'> | ''
   handleSelectFixedLimit: (limit: urlParamsValue<'limit'> | '') => void
+  rankEmphasis: boolean
+  handleSelectRankEmphasis: (on: boolean) => void
 }) {
   return (
     <MenuList>
@@ -96,6 +102,21 @@ function DenseMenu({
           onSelect={handleSelectBar}
         />
       ))}
+      <Divider />
+      <MenuItem disabled>{t('順位バーの目盛り')}</MenuItem>
+      <Divider />
+      <CheckableMenuItem
+        label={t('上位を強調')}
+        value="on"
+        selected={rankEmphasis}
+        onSelect={() => handleSelectRankEmphasis(true)}
+      />
+      <CheckableMenuItem
+        label={t('等間隔')}
+        value="off"
+        selected={!rankEmphasis}
+        onSelect={() => handleSelectRankEmphasis(false)}
+      />
       <Divider />
       <MenuItem disabled>{t('チャートの種類')}</MenuItem>
       <Divider />
@@ -132,6 +153,7 @@ export default function SettingButton() {
   const [fixedLimit, setFixedLimit] = useState<urlParamsValue<'limit'> | ''>(
     getStoregeFixedLimitSetting() ?? ''
   )
+  const rankEmphasis = useAtomValue(rankEmphasisAtom)
 
   const open = Boolean(anchorEl)
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -161,6 +183,11 @@ export default function SettingButton() {
   const handleSelectFixedLimit = (limit: urlParamsValue<'limit'> | '') => {
     setStoregeFixedLimitSetting(limit)
     setFixedLimit(limit)
+    handleClose()
+  }
+
+  const handleSelectRankEmphasis = (on: boolean) => {
+    handleChangeRankEmphasis(on)
     handleClose()
   }
 
@@ -225,6 +252,8 @@ export default function SettingButton() {
           handleSelectChartMode={handleSelectChartMode}
           fixedLimit={fixedLimit}
           handleSelectFixedLimit={handleSelectFixedLimit}
+          rankEmphasis={rankEmphasis}
+          handleSelectRankEmphasis={handleSelectRankEmphasis}
         />
       </Menu>
     </div>

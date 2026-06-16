@@ -579,6 +579,9 @@ export async function fetchChart(animation: boolean) {
     // 5xxをリトライしても取れない・403等で最終的に失敗。壊れた/空のグラフを出さず
     // エラー表示（再読み込み案内）に切り替える。
     console.error(e)
+    // 作り直しに至らなかったので、切替前に保存した拡大窓を破棄する（後続の無関係な
+    // 再構築が古い窓を誤って復元しないように）。
+    chart.clearPendingZoomWindow()
     graphStore.set(loadingAtom, false)
     graphStore.set(errorAtom, true)
   }
