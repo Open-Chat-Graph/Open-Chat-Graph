@@ -40,7 +40,16 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 </div>
             </div>
             <p class="oc-home-hero__tagline"><?php echo t('LINEオープンチャットの人数推移とランキングを毎時間記録') ?></p>
-            <div class="oc-home-hero__meta"><span class="oc-home-hero__dot" aria-hidden="true"></span><?php echo t('1時間ごとに更新') ?><span class="oc-home-hero__time">・<?php echo $_updatedAt->format('G:i') ?></span></div>
+            <div class="oc-home-hero__metarow">
+                <div class="oc-home-hero__meta"><span class="oc-home-hero__dot" aria-hidden="true"></span><?php echo t('1時間ごとに更新') ?><span class="oc-home-hero__time">・<?php echo $_updatedAt->format('G:i') ?></span></div>
+                <?php // 上級者向けの分析ツール（分析Labs）への控えめな導線。悪目立ちさせない小さなテキストリンク。ja のみ。 ?>
+                <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
+                    <a class="oc-home-hero__labs unset" href="<?php echo url('labs') ?>" aria-label="分析Labs（上級者向けの分析ツール）を開く">
+                        <svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M209-120q-42 0-70.5-28.5T110-217q0-14 3-25.5t9-21.5l228-341q10-14 15-31t5-34v-110h-20q-13 0-21.5-8.5T320-810q0-13 8.5-21.5T350-840h260q13 0 21.5 8.5T640-810q0 13-8.5 21.5T610-780h-20v110q0 17 5 34t15 31l227 341q6 9 9.5 20.5T850-217q0 41-28 69t-69 28H209Zm271-340Z"/></svg>
+                        <span>分析Labs</span>
+                    </a>
+                <?php endif ?>
+            </div>
 
             <?php // 公式LINEオープンチャットのトップに倣い「オープンチャットを検索」。送信先はヘッダー検索と同じ /ranking。 ?>
             <form method="GET" action="<?php echo url('ranking') ?>" role="search" class="oc-hero-search">

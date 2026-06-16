@@ -36,6 +36,7 @@ export default function OCListDescPopover({ children }: { children: React.ReactN
       <Popover
         id="mouse-over-popover"
         open={open}
+        disableScrollLock
         anchorEl={anchorEl}
         anchorOrigin={{
           vertical: 'bottom',
