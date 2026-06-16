@@ -44,7 +44,7 @@ const SORTS: { value: AnalysisSort; label: string }[] = [
   { value: 'rate', label: '増加率' },
 ]
 
-const DATA_START = '2023-10-16'
+const DATA_START = '2023-10-30'
 const TODAY = new Date().toISOString().slice(0, 10)
 
 // 角丸セグメンテッドコントロール（選択時ダーク塗り。ranking のチップ色に合わせる）
