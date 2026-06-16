@@ -35,6 +35,7 @@ type GradientStop = { offset: number; color: string }
 export interface ChartColors {
   lineGradient: { stops: GradientStop[] }
   barGradient: { stops: GradientStop[] }
+  /** グリッド線（縦＝日付・横＝順位/メンバー共通）。控えめな中立色 */
   grid: string
   border: string
   borderWeekly: string
@@ -153,14 +154,14 @@ export const colors: { light: ChartColors; dark: ChartColors } = {
     },
     barGradient: {
       stops: [
-        { offset: 1, color: 'rgba(0, 183, 96, 0.3)' },
-        { offset: 0.7, color: 'rgba(17, 216, 113, 0.3)' },
-        { offset: 0.5, color: 'rgba(17, 213, 147, 0.3)' },
-        { offset: 0.3, color: 'rgba(18, 207, 205, 0.3)' },
-        { offset: 0, color: 'rgba(22, 194, 193, 0.3)' },
+        { offset: 1, color: 'rgba(0, 183, 96, 0.5)' },
+        { offset: 0.7, color: 'rgba(17, 216, 113, 0.5)' },
+        { offset: 0.5, color: 'rgba(17, 213, 147, 0.5)' },
+        { offset: 0.3, color: 'rgba(18, 207, 205, 0.5)' },
+        { offset: 0, color: 'rgba(22, 194, 193, 0.5)' },
       ],
     },
-    grid: '#334155' /* slate-700: データラベルと区別しやすく */,
+    grid: '#1e2127' /* 縦横共通の控えめなグリッド: 青みを抑えた中立色で薄く */,
     border: '#475569' /* slate-600 */,
     borderWeekly: '#334155',
     text: {

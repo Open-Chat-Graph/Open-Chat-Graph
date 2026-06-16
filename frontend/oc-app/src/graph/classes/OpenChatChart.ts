@@ -14,9 +14,33 @@ import openChatChartJSFactory from './ChartJS/Factories/openChatChartJSFactory.t
 import afterOpenChatChartJSFactory from './ChartJS/Factories/afterOpenChatChartJSFactory.ts'
 import getIncreaseLegendSpacingPlugin from './ChartJS/Plugin/getIncreaseLegendSpacingPlugin.ts'
 import getEventCatcherPlugin from './ChartJS/Plugin/getEventCatcherPlugin.ts'
+import { applyZoomComplete } from './ChartJS/Plugin/zoomOptions.ts'
 import paddingArray from './ChartJS/Util/paddingArray.ts'
 import { t } from '../util/translation'
 import { getColors } from '../util/theme'
+
+// ピンチズームの減衰指数。1.0=指の広がり比率をそのまま軸ズームに反映（プラグイン既定＝強すぎる）。
+// <1 にするほど緩やかになる。例: 0.5 なら指を2倍に広げてもズームは約1.4倍に留まる。
+const PINCH_DAMPING = 0.5
+// 可視件数が少ないほどピンチを緩める（ギアを下げる）。件数が PINCH_GEAR_FULL 以上なら通常の効き、
+// 少なくなるほど下限 PINCH_GEAR_MIN まで弱める。少件数での過敏さを抑える（下げすぎない程度に）。
+const PINCH_GEAR_FULL = 20
+const PINCH_GEAR_MIN = 0.5
+// PC: Alt + ホイールで通常(プラグイン既定0.1)の3倍速ズーム。1ノッチあたり拡大1.3倍/縮小0.7倍。
+const ALT_WHEEL_SPEED = 0.3
+
+// 順位バーの縦スケール強度（Box-Cox 変換のべき指数 k）。上位（小さい順位）ほど縦に拡大して
+// 1位と10位の差を見せる。値が小さいほど上位を強く拡大する:
+//   k=1   … 従来どおり等間隔（linear）
+//   k=0.5 … 平方根（緩め）
+//   k=0   … 対数（log・比率スケール）
+//   k=-0.2… logより少し強い上位強調（既定）。1↔2 は広げすぎず（最大レンジでも縦の約16%）滑らか
+//   k=-0.5… さらに強いが1位と2位の差が広がりすぎ下位が潰れる
+const RANK_SCALE_POWER = -0.2
+// 順位スケールの下端を決めるときの外れ値除外。Q3 + k×IQR を超える深い順位は「まれな外れ値」として
+// スケールから外し下端に圧縮する（例: 初日だけ1567位→以後77〜150位の部屋で、いつもいる帯を広く表示）。
+// 外れ値が無い部屋ではフェンス≧最悪となり、最悪がそのまま下端になる（従来どおり）。
+const RANK_OUTLIER_MULT = 1.5
 
 export default class OpenChatChart implements ChartFactory {
   chart: ChartJS = null!
@@ -34,10 +58,14 @@ export default class OpenChatChart implements ChartFactory {
   isMiddleMobile = false
   graph2Max = 0
   graph2Min = 0
+  /** 外れ値を除いた「実質的な最悪順位」(順位スケールの下端)。非線形(上位強調)時のみ使用 */
+  graph2ScaleWorst = 0
   isZooming = false
   onZooming = false
   onPaning = false
   enableZoom = false
+  /** 順位バー「上位を強調」(非線形スケール)。OFFで従来の等間隔。起動時に保存設定から chartState が設定 */
+  rankEmphasis = true
   /** OHLC専用の日付軸（memberOhlcApiData / positionOhlcApiData と index 整合・昇順） */
   ohlcDate: string[] = []
   memberOhlcApiData: MemberOhlc[] = []
@@ -49,6 +77,12 @@ export default class OpenChatChart implements ChartFactory {
   ohlcDates: string[] = []
   private isHour: boolean = false
   private mode: ChartMode = 'line'
+  private pinching = false
+  private pinchLastDist = 0
+  private touchPinchAttached = false
+  private zoomCompleteTimer: ReturnType<typeof setTimeout> | null = null
+  /** 順位種別/カテゴリ切替で作り直すとき、拡大中の表示窓(x.min/max)を引き継ぐための一時保存 */
+  private pendingZoomWindow: { min: number; max: number } | null = null
 
   constructor() {
     ChartJS.register(ChartDataLabels)
@@ -61,7 +95,111 @@ export default class OpenChatChart implements ChartFactory {
   init(canvas: HTMLCanvasElement) {
     this.setSize()
     this.canvas = canvas
+    this.attachTouchPinch()
     !this.isPC && this.visibilitychange()
+  }
+
+  /** ズーム有効時(全期間＋スイッチON)だけ canvas の touch-action を切り、ピンチを横取りできるようにする */
+  private applyTouchAction() {
+    if (this.canvas) {
+      this.canvas.style.touchAction = this.limit === 0 && this.enableZoom ? 'none' : ''
+    }
+  }
+
+  /**
+   * モバイルのピンチズームを減衰付きで自前処理する（canvas に一度だけ付与）。
+   * プラグインのピンチ(1:1で強すぎる)は無効化済み。2本指の広がり比率を PINCH_DAMPING で
+   * 緩めてから chart.zoom() に渡す。1本指パン(Hammer)は pointers=1 必須なので衝突しない。
+   */
+  private attachTouchPinch() {
+    if (this.touchPinchAttached || !this.canvas) return
+    this.touchPinchAttached = true
+    const canvas = this.canvas
+
+    const dist = (a: Touch, b: Touch) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    // ズーム経路が組まれているのは「全期間＋スイッチON」のときだけ（buildPlugin）
+    const zoomActive = () =>
+      this.chart && this.enableZoom && this.limit === 0 && this.chart.options?.plugins?.zoom
+
+    canvas.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        if (!zoomActive() || e.touches.length !== 2) return
+        e.preventDefault()
+        this.pinching = true
+        this.onZooming = true
+        this.pinchLastDist = dist(e.touches[0], e.touches[1])
+      },
+      { passive: false }
+    )
+
+    canvas.addEventListener(
+      'touchmove',
+      (e: TouchEvent) => {
+        if (!this.pinching || !zoomActive() || e.touches.length !== 2) return
+        e.preventDefault()
+        const d = dist(e.touches[0], e.touches[1])
+        if (this.pinchLastDist <= 0) {
+          this.pinchLastDist = d
+          return
+        }
+
+        // 指の広がり比率を減衰させて軸ズーム倍率にする（>1=拡大, <1=縮小）
+        // 可視件数が少ないほどギアを下げる（拡大が進むほど1ピンチの変化を小さくして過敏さを抑える）
+        const visible = this.chart.scales.x.max - this.chart.scales.x.min + 1
+        const gear = Math.min(1, Math.max(PINCH_GEAR_MIN, visible / PINCH_GEAR_FULL))
+        const factor = Math.pow(d / this.pinchLastDist, PINCH_DAMPING * gear)
+        if (!isFinite(factor) || factor <= 0) return
+
+        // カテゴリ軸は1辺あたり最低±1カテゴリ削る(integerChange)ため、微小ズームを毎フレーム適用すると
+        // 件数が少ないとき過剰に動く。1カテゴリ未満の変化は溜め、十分たまってからまとめて適用する
+        // （pinchLastDist は据え置き＝次フレームで累積）。これで少件数でもギア通りに緩やかに効く。
+        if (Math.abs(visible - visible / factor) < 1) return
+        this.pinchLastDist = d
+
+        // 焦点 = 2本指の中点（チャート領域内にクランプ）。x のみズーム
+        const rect = canvas.getBoundingClientRect()
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left
+        const area = this.chart.chartArea
+        const fx = Math.min(Math.max(midX, area.left), area.right)
+        const fy = (area.top + area.bottom) / 2
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(this.chart as any).zoom({ x: factor, focalPoint: { x: fx, y: fy } }, 'none')
+      },
+      { passive: false }
+    )
+
+    const onEnd = (e: TouchEvent) => {
+      if (!this.pinching) return
+      if (e.touches.length >= 2) return
+      this.pinching = false
+      this.pinchLastDist = 0
+      this.onZooming = false
+      // 公開API chart.zoom は onZoomComplete を呼ばないので、Y軸再計算等の後処理を明示実行
+      if (this.chart && this.enableZoom && this.limit === 0) applyZoomComplete(this)
+    }
+    canvas.addEventListener('touchend', onEnd)
+    canvas.addEventListener('touchcancel', onEnd)
+
+    // PC: Alt+ホイールは3倍速ズーム。capture段階で横取りし、プラグインの通常ホイールは止める
+    // （Altなしの通常ホイールはそのままプラグインに任せる）
+    canvas.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        if (!e.altKey || !zoomActive()) return
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        const rect = canvas.getBoundingClientRect()
+        const area = this.chart.chartArea
+        const fx = Math.min(Math.max(e.clientX - rect.left, area.left), area.right)
+        const fy = Math.min(Math.max(e.clientY - rect.top, area.top), area.bottom)
+        const factor = e.deltaY < 0 ? 1 + ALT_WHEEL_SPEED : 1 - ALT_WHEEL_SPEED
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(this.chart as any).zoom({ x: factor, focalPoint: { x: fx, y: fy } }, 'none')
+        this.debouncedZoomComplete()
+      },
+      { capture: true, passive: false }
+    )
   }
 
   private visibilitychange() {
@@ -129,6 +267,51 @@ export default class OpenChatChart implements ChartFactory {
     this.enableZoom = value
     this.chart.destroy()
     this.createChart(false)
+  }
+
+  /** 「上位を強調」(順位スケール)の切替。現在のデータのままチャートを作り直す */
+  updateRankEmphasis(value: boolean) {
+    this.rankEmphasis = value
+    if (!this.chart) return
+    this.chart.destroy()
+    this.createChart(false)
+  }
+
+  /**
+   * 縮小・拡大ボタン用。可視件数を rangeFactor 倍にして中央基準でズームする
+   * （拡大=0.5で表示を半分／縮小=2で倍に。カテゴリ軸の chart.zoom 倍率は直感に反するので範囲を直接指定）。
+   */
+  zoomStep(rangeFactor: number) {
+    if (!this.chart || !this.enableZoom || this.limit !== 0) return
+    const x = this.chart.scales.x
+    const count = this.chart.data.labels?.length ?? 0
+    if (count < 2) return
+    const center = (x.min + x.max) / 2
+    const range = x.max - x.min + 1
+    let newRange = Math.round(range * rangeFactor)
+    newRange = Math.max(7, Math.min(count, newRange)) // minRange=7（zoomOptions の limits と一致）
+    let min = Math.round(center - (newRange - 1) / 2)
+    let max = min + newRange - 1
+    if (min < 0) {
+      min = 0
+      max = newRange - 1
+    }
+    if (max > count - 1) {
+      max = count - 1
+      min = max - newRange + 1
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(this.chart as any).zoomScale('x', { min, max }, 'default')
+    applyZoomComplete(this)
+  }
+
+  /** Alt+ホイール用: Y軸再計算等の後処理を間引いて実行（高速スクロール中の負荷を抑える） */
+  private debouncedZoomComplete() {
+    if (this.zoomCompleteTimer) clearTimeout(this.zoomCompleteTimer)
+    this.zoomCompleteTimer = setTimeout(() => {
+      this.zoomCompleteTimer = null
+      if (this.chart && this.enableZoom && this.limit === 0) applyZoomComplete(this)
+    }, 200)
   }
 
   /** テーマ（ライト/ダーク）切替時にチャートを現在のデータのまま作り直す */
@@ -199,6 +382,53 @@ export default class OpenChatChart implements ChartFactory {
     {
       afterOpenChatChartJSFactory(this)
     }
+
+    this.applyTouchAction()
+    this.restoreZoomWindow()
+  }
+
+  /**
+   * 順位種別/カテゴリ切替で作り直す直前に、拡大中の表示窓を保存する。
+   * 折れ線は期間(x軸の日付)が変わらないので窓をそのまま引き継げる。ローソク足は期間が変わりうるので対象外。
+   */
+  captureZoomWindowForReload() {
+    this.pendingZoomWindow = null
+    if (!this.chart || !this.enableZoom || this.limit !== 0 || this.mode !== 'line') return
+    // isZooming フラグは復元(zoomScale)経由で拡大した直後に落ちていることがあり、当てにできない。
+    // 実際のx軸の窓が全期間より狭ければ「拡大中」とみなして保存する（連続切替でも確実に維持）。
+    const x = this.chart.scales.x
+    const total = this.chart.data.labels?.length ?? 0
+    const min = Math.round(x.min)
+    const max = Math.round(x.max)
+    if (total >= 2 && max - min + 1 < total) {
+      this.pendingZoomWindow = { min, max }
+    }
+  }
+
+  /** 切替フェッチが失敗して作り直しに至らなかったときに、保存窓を破棄する。
+   * 残すと後続の無関係な再構築(テーマ切替・タブ復帰など)が古い窓を誤って復元してしまう。 */
+  clearPendingZoomWindow() {
+    this.pendingZoomWindow = null
+  }
+
+  /** createChart 末尾: 保存した表示窓があれば復元する（スクロール位置・拡大状態を維持） */
+  private restoreZoomWindow() {
+    const w = this.pendingZoomWindow
+    this.pendingZoomWindow = null
+    if (!w || !this.chart || !this.enableZoom || this.limit !== 0 || this.mode !== 'line') return
+    const count = this.chart.data.labels?.length ?? 0
+    if (count < 2) return
+    const min = Math.max(0, Math.min(w.min, count - 1))
+    const max = Math.max(min, Math.min(w.max, count - 1))
+    if (max - min + 1 >= count) return // 全期間なら復元不要
+    // createChart が予約した全期間レイアウトへのアニメーションを止める。止めないと、この後の
+    // 'none' 更新で正しい窓に配置した線が、次フレームで全期間の座標へ巻き戻され左へ潰れる
+    // （拡大中に種別/カテゴリを切り替えると人数の線が途切れて見えるバグの原因）。
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(this.chart as any).stop()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(this.chart as any).zoomScale('x', { min, max }, 'none')
+    applyZoomComplete(this, 'none') // 切替時の窓復元では線・棒をアニメーションさせない
   }
 
   private enableAnimationOption() {
@@ -305,17 +535,61 @@ export default class OpenChatChart implements ChartFactory {
       (a, b) => Math.max(a === null ? 0 : a, b === null ? 0 : b),
       -Infinity
     ) as number
-    this.graph2Min = (graph2.filter((v) => v !== null && v !== 0) as number[]).reduce(
-      (a, b) => Math.min(a, b),
-      Infinity
-    ) as number
+    const nz = graph2.filter((v) => v !== null && v !== 0) as number[]
+    this.graph2Min = nz.reduce((a, b) => Math.min(a, b), Infinity)
+
+    // 外れ値に強い「実質的な最悪順位」= Q3 + k×IQR（最悪値で上限）。深い外れ値はここを超え、
+    // スケールから外れて下端に圧縮される。外れ値が無ければフェンス≧最悪→graph2Max のまま。
+    if (nz.length >= 4) {
+      const sorted = [...nz].sort((a, b) => a - b)
+      const q = (p: number) => sorted[Math.max(0, Math.round(p * (sorted.length - 1)))]
+      const fence = q(0.75) + RANK_OUTLIER_MULT * (q(0.75) - q(0.25))
+      this.graph2ScaleWorst = Math.min(this.graph2Max, Math.max(this.graph2Min, Math.ceil(fence)))
+    } else {
+      this.graph2ScaleWorst = this.graph2Max
+    }
+  }
+
+  /** 順位スケールの基準となる最悪順位（軸下端）。非線形は外れ値除外、linearは従来どおり実最悪 */
+  private rankScaleN(): number {
+    return this.isLinearRankScale() ? this.graph2Max : this.graph2ScaleWorst
+  }
+
+  getRankScalePower(): number {
+    return this.rankEmphasis ? RANK_SCALE_POWER : 1 // 強調OFF=従来の等間隔(linear)
+  }
+
+  /** 順位スケールが従来の等間隔（linear, k=1）かどうか */
+  isLinearRankScale(): boolean {
+    return this.getRankScalePower() === 1
+  }
+
+  // φ: Box-Cox 変換 (k=0 は log)。順位→軸値は value = φ(N+1) - φ(rank) とし、上位ほど大きな軸値
+  // （＝チャート上方）にする。k<1 ほど上位の目盛り間隔が広がり、k=1 は従来どおり等間隔。
+  private rankScalePhi(r: number): number {
+    const k = this.getRankScalePower()
+    return k === 0 ? Math.log(r) : (Math.pow(r, k) - 1) / k
+  }
+
+  private rankScalePhiInv(y: number): number {
+    const k = this.getRankScalePower()
+    return k === 0 ? Math.exp(y) : Math.pow(k * y + 1, 1 / k)
+  }
+
+  /** 順位 → 軸値。0(圏外)/外れ値より深い順位は下端(0)に圧縮。小さい順位ほど大きな値（上方）になる */
+  rankToValue(rank: number): number {
+    if (rank <= 0) return 0
+    const v = this.rankScalePhi(this.rankScaleN() + 1) - this.rankScalePhi(rank)
+    return v < 0 ? 0 : v
+  }
+
+  /** 軸値 → 順位（目盛り・ツールチップ・データラベルの逆変換）。linear では graph2Max+1-value と一致 */
+  valueToRank(value: number): number {
+    return this.rankScalePhiInv(this.rankScalePhi(this.rankScaleN() + 1) - value)
   }
 
   getReverseGraph2(graph2: (number | null)[]) {
-    return graph2.map((v) => {
-      if (v === null) return v
-      return v ? this.graph2Max + 1 - v : 0
-    })
+    return graph2.map((v) => (v === null ? v : this.rankToValue(v)))
   }
 
   getDate(limit: ChartLimit): (string | string[])[] {

@@ -16,7 +16,12 @@ import {
   renderTabAtom,
   setChartStatesFromUrlParams,
   setUrlParamsFromChartStates,
+  zoomHintAtom,
 } from './state/chartState'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
+import PinchIcon from '@mui/icons-material/Pinch'
+import MouseIcon from '@mui/icons-material/Mouse'
+import { useMediaQuery } from '@mui/material'
 import {
   fetchChart,
   fetchChartData,
@@ -62,6 +67,25 @@ const init = async () => {
   setUrlParamsFromChartStates()
 }
 
+// ズームON直後に一瞬表示する操作ヒント。PC=ドラッグ/ホイール、スマホ=ドラッグ/ピンチで出し分け。数秒で消える
+function ZoomHint() {
+  const show = useAtomValue(zoomHintAtom)
+  const isPc = useMediaQuery('(min-width:512px)')
+  useEffect(() => {
+    if (!show) return
+    const t = setTimeout(() => graphStore.set(zoomHintAtom, false), 2600)
+    return () => clearTimeout(t)
+  }, [show])
+  if (!show) return null
+  return (
+    <div className="zoom-hint" aria-hidden="true">
+      <SwapHorizIcon fontSize="small" />
+      {isPc ? <MouseIcon fontSize="small" /> : <PinchIcon fontSize="small" />}
+      <span>{isPc ? t('ドラッグで移動・ホイールで拡大縮小') : t('ドラッグで移動・ピンチで拡大')}</span>
+    </div>
+  )
+}
+
 function LoadingSpinner() {
   return (
     <Box
@@ -104,8 +128,10 @@ function AppInner() {
           aria-label={t('メンバー数・ランキング履歴の統計グラフ')}
           role="img"
         ></canvas>
+        <ZoomHint />
       </div>
-      <div style={{ minHeight: '49px' }}>{renderTab && <ChartLimitBtns />}</div>
+      {/* タブ(約48px)＋常設の操作行(約54px)ぶんを確保し、描画前後・期間切替でレイアウトシフトさせない */}
+      <div style={{ minHeight: '102px' }}>{renderTab && <ChartLimitBtns />}</div>
       {renderPositionBtns && (
         <div style={{ minHeight: '84px' }}>
           <ToggleButtons />

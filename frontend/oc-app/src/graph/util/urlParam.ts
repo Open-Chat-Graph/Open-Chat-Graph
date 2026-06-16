@@ -25,6 +25,7 @@ const defaultBarLocalStorageName = 'chartDefaultBar'
 const defaultCategoryLocalStorageName = 'chartDefaultCategory'
 const defaultChartLocalStorageName = 'chartDefaultChart'
 const fixedLimitLocalStorageName = 'chartFixedLimit'
+const rankEmphasisLocalStorageName = 'chartRankEmphasis'
 
 export function setStoregeBarSetting(bar: ToggleChart) {
   localStorage.setItem(defaultBarLocalStorageName, bar)
@@ -65,11 +66,21 @@ export function getStoregeFixedLimitSetting(): urlParamsValue<'limit'> | null {
   return v ? validParamString<'limit'>(limitParam, v) : null
 }
 
+/** 順位バー「上位を強調」設定（非線形スケール）。未設定は既定でON */
+export function setStoregeRankEmphasis(on: boolean) {
+  localStorage.setItem(rankEmphasisLocalStorageName, on ? '1' : '0')
+}
+
+function getStoregeRankEmphasis(): boolean {
+  return localStorage.getItem(rankEmphasisLocalStorageName) !== '0'
+}
+
 export const defaultCategory: urlParamsValue<'category'> = getStoregeCategorySetting('in')
 export const defaultBar: urlParamsValue<'bar'> = getStoregeBarSetting('none')
 export const defaultLimit: urlParamsValue<'limit'> = 'week'
 export const defaultLimitNum: ChartLimit | 25 = 8
 export const defaultChart: urlParamsValue<'chart'> = getStoregeChartSetting()
+export const defaultRankEmphasis: boolean = getStoregeRankEmphasis()
 
 export function getCurrentUrlParams(): urlParams {
   const url = new URL(window.location.href)
