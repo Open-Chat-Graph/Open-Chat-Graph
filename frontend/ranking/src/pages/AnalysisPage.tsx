@@ -3,6 +3,7 @@ import { Provider, createStore } from 'jotai'
 import { Box } from '@mui/material'
 import { analysisParamsState } from '../store/atom'
 import { getValidAnalysisParams, useAnalysisJob } from '../hooks/AnalysisHooks'
+import AnalysisHeader from '../components/AnalysisHeader'
 import AnalysisToolbar from '../components/AnalysisToolbar'
 import FetchAnalysisList from '../components/FetchAnalysisList'
 
@@ -19,8 +20,10 @@ function AnalysisPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // div-fetchOpenChatRankingList: サイトのフォント(system-ui系)を配下全体に適用する既存クラス
   return (
-    <>
+    <div className="div-fetchOpenChatRankingList">
+      <AnalysisHeader />
       <AnalysisToolbar job={job} />
       <Box
         component="main"
@@ -28,7 +31,7 @@ function AnalysisPageInner() {
       >
         <FetchAnalysisList job={job} />
       </Box>
-    </>
+    </div>
   )
 }
 

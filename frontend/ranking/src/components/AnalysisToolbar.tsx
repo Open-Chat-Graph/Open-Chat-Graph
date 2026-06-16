@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAtomValue } from 'jotai'
 import {
   Box,
@@ -56,18 +56,6 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const trigger = useScrollTrigger()
   const hidden = trigger && !running
 
-  // 可変高（折返し）に追従して下のコンテンツ位置を確保する
-  const innerRef = useRef<HTMLDivElement>(null)
-  const [barHeight, setBarHeight] = useState(0)
-  useLayoutEffect(() => {
-    const el = innerRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight))
-    ro.observe(el)
-    setBarHeight(el.offsetHeight)
-    return () => ro.disconnect()
-  }, [])
-
   // 計算中の経過秒（数秒に1度しか%が動かなくても「生きている」感を出す）
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
@@ -82,25 +70,21 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const sortOptions = SORTS[params.metric]
 
   return (
-    <Box sx={{ height: barHeight }}>
-      <Box
-        ref={innerRef}
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          zIndex: 1100,
-          background: 'var(--c-bg)',
-          borderBottom: '1px solid var(--c-border)',
-          boxShadow: hidden ? 'none' : '0 1px 6px rgba(0,0,0,0.06)',
-          transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
-          transition: 'transform .25s ease',
-          px: { xs: 1, sm: 2 },
-          pt: 1,
-          pb: running ? 0 : 1,
-        }}
-      >
+    <Box
+      sx={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1100,
+        background: 'var(--c-bg)',
+        borderBottom: '1px solid var(--c-border)',
+        boxShadow: hidden ? 'none' : '0 1px 6px rgba(0,0,0,0.06)',
+        transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
+        transition: 'transform .25s ease',
+        px: { xs: 1, sm: 2 },
+        pt: 1,
+        pb: running ? 0 : 1,
+      }}
+    >
         <Stack
           direction="row"
           spacing={1}
@@ -264,7 +248,6 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
             />
           </Box>
         )}
-      </Box>
     </Box>
   )
 }
