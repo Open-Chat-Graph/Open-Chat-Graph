@@ -26,8 +26,8 @@ class AdvancedGrowthAnalysisService
     /** チャンク分割数（status のポーリング回数 ≒ これ） */
     private const CHUNK_COUNT = 30;
 
-    /** 統計データの開始日（これ以前は from に指定できない） */
-    private const DATA_START_DATE = '2023-10-16';
+    /** 統計データの開始日（これ以前は from に指定できない。最初の数日はノイズが多いので 10-30 から） */
+    private const DATA_START_DATE = '2023-10-30';
 
     /** ジョブファイルの寿命（秒）。CDN がレスポンスを持つので短命でよい */
     private const JOB_TTL_SECONDS = 600;
