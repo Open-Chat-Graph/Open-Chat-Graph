@@ -2,8 +2,8 @@
 
 type AnalysisMetric = 'increase' | 'steady'
 type AnalysisPeriod = 'month' | '3month' | '6month' | 'year' | 'all' | 'custom'
-// increase: count(増加数) / rate(増加率) ・ steady: score(じわじわ度) / cagr(年率) / slope(勢い)
-type AnalysisSort = 'count' | 'rate' | 'score' | 'cagr' | 'slope'
+// increase: count(増加数) / rate(増加率) ・ steady: score(じわじわ度・並び替え固定)
+type AnalysisSort = 'count' | 'rate' | 'score'
 type AnalysisOrder = 'asc' | 'desc'
 
 type AnalysisParams = {
@@ -35,11 +35,4 @@ interface AnalysisItem {
   totalCount?: number
 }
 
-type AnalysisJobPhase = 'idle' | 'running' | 'done' | 'error' | 'canceled'
-
-interface AnalysisStatusResponse {
-  done: boolean
-  percent: number
-  computed: number
-  total: number | null
-}
+type AnalysisJobPhase = 'idle' | 'loading' | 'done' | 'error'

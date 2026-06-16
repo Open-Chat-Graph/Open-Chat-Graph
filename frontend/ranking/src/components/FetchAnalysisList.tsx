@@ -46,7 +46,7 @@ export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
     )
   }
 
-  if (phase === 'running') {
+  if (phase === 'loading') {
     return (
       <ol className="openchat-item-container" style={dummyContainerStyle}>
         <DummyOpenChatListItem />

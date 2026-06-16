@@ -1,29 +1,23 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSetAtom } from 'jotai'
 import { rankingArgDto } from '../config/config'
 import { updateURLSearchParams } from '../utils/utils'
 import { analysisParamsState } from '../store/atom'
-import { fetchApi, LIMIT_ITEMS } from './InfiniteFetchApi'
+import { LIMIT_ITEMS } from './InfiniteFetchApi'
 
 const base = rankingArgDto.baseUrl
 
-// 1回のジョブで取得する最大件数（全件計算済みの結果から大量を一括取得し、以降はメモリ内描画）。
-// これを超えて読む場合のみ次バッチを取得する（その時だけ再待機）。
+// 1リクエストで取得する件数。サーバは保存しないので、これを超える分は再取得（再計算）になる。
 const BATCH = 3000
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const SORTS_BY_METRIC: Record<AnalysisMetric, AnalysisSort[]> = {
   increase: ['count', 'rate'],
-  steady: ['score', 'cagr', 'slope'],
+  steady: ['score'],
 }
 const DEFAULT_SORT: Record<AnalysisMetric, AnalysisSort> = { increase: 'count', steady: 'score' }
 
-// 指標ごとに選べる期間（じわじわ成長も期間窓で公平比較する）
-export const PERIODS_BY_METRIC: Record<AnalysisMetric, AnalysisPeriod[]> = {
-  increase: ['month', 'year', 'custom'],
-  steady: ['3month', '6month', 'year', 'all', 'custom'],
-}
+// 期間タブは両指標で共通（同じ窓で比較）。既定だけ指標ごとに変える。
+export const PERIODS: AnalysisPeriod[] = ['3month', '6month', 'year', 'all', 'custom']
 const DEFAULT_PERIOD: Record<AnalysisMetric, AnalysisPeriod> = { increase: 'year', steady: '3month' }
 
 const pick = <T extends string>(v: string | null, allowed: T[], def: T): T =>
@@ -34,13 +28,13 @@ const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v)
 /** URLSearchParams → 妥当な AnalysisParams */
 export function getValidAnalysisParams(p: URLSearchParams): AnalysisParams {
   const metric = pick<AnalysisMetric>(p.get('metric'), ['increase', 'steady'], 'increase')
-  const period = pick<AnalysisPeriod>(p.get('period'), PERIODS_BY_METRIC[metric], DEFAULT_PERIOD[metric])
+  const period = pick<AnalysisPeriod>(p.get('period'), PERIODS, DEFAULT_PERIOD[metric])
   const from = isDate(p.get('from') ?? '') ? (p.get('from') as string) : ''
   const to = isDate(p.get('to') ?? '') ? (p.get('to') as string) : ''
   const category = Number(p.get('category')) || 0
   const keyword = (p.get('keyword') ?? '').slice(0, 100)
   const sort = pick<AnalysisSort>(p.get('sort'), SORTS_BY_METRIC[metric], DEFAULT_SORT[metric])
-  // じわじわ成長はスコア降順のみ（少ない順は不要）
+  // じわじわ成長はスコア降順のみ
   const order: AnalysisOrder = metric === 'steady' ? 'desc' : pick<AnalysisOrder>(p.get('order'), ['asc', 'desc'], 'desc')
   return { metric, period, from, to, category, keyword, sort, order }
 }
@@ -52,19 +46,13 @@ export function useSetAnalysisParams(): (next: (cur: AnalysisParams) => Analysis
     (next) => {
       setParams((cur) => {
         const np = next(cur)
-        const metricChanged = np.metric !== cur.metric
-        // metric を変えたら period/sort をその指標の既定へ。値が無効なときも既定へ補正
-        const period =
-          metricChanged || !PERIODS_BY_METRIC[np.metric].includes(np.period)
-            ? DEFAULT_PERIOD[np.metric]
-            : np.period
+        // metric を変えたら sort をその指標の既定へ補正（period は共通なので維持）
         const sort =
-          metricChanged || !SORTS_BY_METRIC[np.metric].includes(np.sort)
+          np.metric !== cur.metric || !SORTS_BY_METRIC[np.metric].includes(np.sort)
             ? DEFAULT_SORT[np.metric]
             : np.sort
-        // じわじわ成長は常に降順（少ない順は出さない）
         const order: AnalysisOrder = np.metric === 'steady' ? 'desc' : np.order
-        const fixed: AnalysisParams = { ...np, period, sort, order }
+        const fixed: AnalysisParams = { ...np, sort, order }
         const q: { [k: string]: string } = {
           metric: fixed.metric,
           period: fixed.period,
@@ -85,146 +73,114 @@ export function useSetAnalysisParams(): (next: (cur: AnalysisParams) => Analysis
   )
 }
 
-function statusQuery(p: AnalysisParams): string {
-  // 増加・じわじわ成長とも period 窓で計算する
-  const q = new URLSearchParams({ metric: p.metric, period: p.period })
+function resultUrl(p: AnalysisParams, page: number): string {
+  const q = new URLSearchParams({ metric: p.metric, period: p.period, sort: p.sort, order: p.order })
   if (p.period === 'custom') {
     if (p.from) q.set('from', p.from)
     if (p.to) q.set('to', p.to)
   }
-  return q.toString()
-}
-
-function resultQuery(p: AnalysisParams, page: number): string {
-  const q = new URLSearchParams(statusQuery(p))
-  q.set('sort', p.sort)
-  q.set('order', p.order)
   if (p.category) q.set('category', String(p.category))
   if (p.keyword) q.set('keyword', p.keyword)
   q.set('page', String(page))
   q.set('limit', String(BATCH))
-  return q.toString()
+  return `${base}/analysis-result?${q.toString()}`
+}
+
+async function fetchResult(p: AnalysisParams, page: number, signal: AbortSignal): Promise<AnalysisItem[]> {
+  const res = await fetch(resultUrl(p, page), { headers: { 'X-Ocg-Client': '1' }, signal })
+  if (!res.ok) {
+    throw new Error('http ' + res.status)
+  }
+  return res.json()
 }
 
 export interface AnalysisJob {
   phase: AnalysisJobPhase
-  percent: number
-  computed: number
-  error: string | null
+  elapsed: number
   items: AnalysisItem[] // 描画対象（renderCount でスライス済み）
   totalCount: number
   isLastPage: boolean
-  /** 結果として表示中の指標（検索実行時に確定。フォームの metric とは別） */
   resultMetric: AnalysisMetric
   /** 検索時に指定したカテゴリ（0=全カテゴリ）。各行のカテゴリ表示の出し分けに使う */
   resultCategory: number
   search: (params: AnalysisParams) => void
   cancel: () => void
   loadMore: () => void
-  reset: () => void
 }
 
 /**
- * 重いジョブを逐次ポーリングして本物の%進捗を出し、完了後に大量バッチを取得して
- * クライアント側で無限スクロール描画する。検索のたびにトークンを更新し、古いループを無効化。
+ * その場計算の結果を 1 リクエストで取得し、クライアント側で無限スクロール描画する。
+ * サーバに状態は持たない。進捗は経過秒＋不確定バーで「動いている」感を出す（本物の%ではない）。
+ * キャンセルは AbortController で fetch を中断。
  */
 export function useAnalysisJob(): AnalysisJob {
   const [phase, setPhase] = useState<AnalysisJobPhase>('idle')
-  const [percent, setPercent] = useState(0)
-  const [computed, setComputed] = useState(0)
-  const [error, setError] = useState<string | null>(null)
+  const [elapsed, setElapsed] = useState(0)
   const [fetched, setFetched] = useState<AnalysisItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [renderCount, setRenderCount] = useState(LIMIT_ITEMS)
   const [resultMetric, setResultMetric] = useState<AnalysisMetric>('increase')
   const [resultCategory, setResultCategory] = useState<number>(0)
 
-  const tokenRef = useRef(0)
+  const abortRef = useRef<AbortController | null>(null)
   const paramsRef = useRef<AnalysisParams | null>(null)
   const loadingMoreRef = useRef(false)
 
+  // 計算中の経過秒
+  useEffect(() => {
+    if (phase !== 'loading') {
+      return
+    }
+    const tmr = setInterval(() => setElapsed((s) => s + 1), 1000)
+    return () => clearInterval(tmr)
+  }, [phase])
+
   const search = useCallback((params: AnalysisParams) => {
-    const token = ++tokenRef.current
+    abortRef.current?.abort()
+    const ac = new AbortController()
+    abortRef.current = ac
     paramsRef.current = params
     setResultMetric(params.metric)
     setResultCategory(params.category)
-    setPhase('running')
-    setPercent(0)
-    setComputed(0)
-    setError(null)
+    setPhase('loading')
+    setElapsed(0)
     setFetched([])
     setTotalCount(0)
     setRenderCount(LIMIT_ITEMS)
 
-    ;(async () => {
-      try {
-        // 1) 重い計算を1チャンクずつ進め、本物の%を表示
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          if (token !== tokenRef.current) return
-          const st = await fetchApi<AnalysisStatusResponse>(
-            `${base}/analysis-status?${statusQuery(params)}`
-          )
-          if (token !== tokenRef.current) return
-          setPercent(st.percent)
-          setComputed(st.computed)
-          if (st.done) break
-          await sleep(250)
-        }
-        // 2) 完成結果から先頭バッチを一括取得
-        const batch = await fetchApi<AnalysisItem[]>(`${base}/analysis-result?${resultQuery(params, 0)}`)
-        if (token !== tokenRef.current) return
-        const tc = batch.length ? batch[0].totalCount ?? batch.length : 0
+    fetchResult(params, 0, ac.signal)
+      .then((batch) => {
+        if (ac.signal.aborted) return
         setFetched(batch)
-        setTotalCount(tc)
+        setTotalCount(batch.length ? batch[0].totalCount ?? batch.length : 0)
         setRenderCount(LIMIT_ITEMS)
         setPhase('done')
-      } catch (e) {
-        if (token !== tokenRef.current) return
-        setError(e instanceof Error ? e.message : 'error')
+      })
+      .catch(() => {
+        if (ac.signal.aborted) return
         setPhase('error')
-      }
-    })()
+      })
   }, [])
 
   const cancel = useCallback(() => {
-    tokenRef.current++ // 走行中ループを無効化
-    if (paramsRef.current) {
-      // サーバ側の中間ファイルを掃除（失敗は無視）
-      fetch(`${base}/analysis-cancel?${statusQuery(paramsRef.current)}`, {
-        headers: { 'X-Ocg-Client': '1' },
-      }).catch(() => {})
-    }
+    abortRef.current?.abort()
     setPhase('idle')
-    setPercent(0)
-    setComputed(0)
-  }, [])
-
-  const reset = useCallback(() => {
-    tokenRef.current++
-    setPhase('idle')
-    setPercent(0)
-    setComputed(0)
-    setError(null)
-    setFetched([])
-    setTotalCount(0)
   }, [])
 
   const loadMore = useCallback(() => {
     if (phase !== 'done') return
-    // 取得済みの範囲内ならメモリ内でレンダリング窓を広げるだけ（再fetchしない）
+    // 取得済みの範囲内ならメモリ内でレンダリング窓を広げるだけ
     if (renderCount < fetched.length) {
       setRenderCount((c) => Math.min(c + LIMIT_ITEMS, fetched.length))
       return
     }
-    // バッチを使い切り、まだ続きがあるなら次バッチを取得（このときだけ待機）
+    // バッチを使い切り、まだ続きがあるなら次バッチを取得（その場再計算）
     if (fetched.length < totalCount && paramsRef.current && !loadingMoreRef.current) {
       loadingMoreRef.current = true
-      const token = tokenRef.current
+      const ac = new AbortController()
       const page = Math.floor(fetched.length / BATCH)
-      fetchApi<AnalysisItem[]>(`${base}/analysis-result?${resultQuery(paramsRef.current, page)}`)
+      fetchResult(paramsRef.current, page, ac.signal)
         .then((next) => {
-          if (token !== tokenRef.current) return
           setFetched((prev) => [...prev, ...next])
           setRenderCount((c) => c + LIMIT_ITEMS)
         })
@@ -238,19 +194,5 @@ export function useAnalysisJob(): AnalysisJob {
   const items = fetched.slice(0, renderCount)
   const isLastPage = renderCount >= fetched.length && fetched.length >= totalCount
 
-  return {
-    phase,
-    percent,
-    computed,
-    error,
-    items,
-    totalCount,
-    isLastPage,
-    resultMetric,
-    resultCategory,
-    search,
-    cancel,
-    loadMore,
-    reset,
-  }
+  return { phase, elapsed, items, totalCount, isLastPage, resultMetric, resultCategory, search, cancel, loadMore }
 }

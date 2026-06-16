@@ -33,6 +33,9 @@ final class GrowthMath
      */
     public const WINDOW_COVERAGE = 0.6;
 
+    /** じわじわ成長スコアの対象とする最低の増加率(%)。横ばい・微増・縮小を除外する */
+    public const MIN_GROWTH_PCT = 10.0;
+
     /**
      * 増加率（%）。base<=0 のときは未定義(null)。
      */
@@ -166,12 +169,17 @@ final class GrowthMath
             $drawdownFactor = 0.0;
         }
 
-        // スコア = 安定性(R²²) × 年率換算の増加量(対数) × 下落減点。
-        // slope×365.25 は「1年あたりの増加」＝窓の長さ・部屋の年齢に依らない指標なので、
-        // 3ヶ月窓でも全期間でも、また新しい部屋でも古い部屋でも公平に比較できる。
-        $annualGrowth = $slope * 365.25;
-        $growthTerm = $annualGrowth > 0 ? log(1 + $annualGrowth) : 0.0;
-        $score = ($r2 ** 2) * $growthTerm * $drawdownFactor;
+        // 最低限の成長は要求（じわじわ"成長"。微増・横ばい・縮小は対象外）
+        $growthPct = $first > 0 ? ($currentMember - $first) / $first * 100.0 : 0.0;
+        if ($growthPct < self::MIN_GROWTH_PCT) {
+            return null;
+        }
+
+        // スコア = 安定性(R²⁴) × 期間(sqrt) × 下落減点。成長“量”では順位づけしない。
+        //  「じわじわ成長」の本質は“ブレずに(R² 高く)長く伸び続けた”こと。速さや規模ではないので、
+        //  増加量・増加率の大小は順位に入れない（巨大室や極小ベース暴騰室の独占を避ける）。
+        //  → /oc/63267 のような「遅いが極めて安定して数年伸びた」中規模室が上位に出る。
+        $score = ($r2 ** 4) * sqrt(max($years, 0.01)) * $drawdownFactor;
 
         return [
             'score' => $score,

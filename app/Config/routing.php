@@ -152,11 +152,8 @@ Route::path('analysis', [ReactAnalysisPageController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-// 重いジョブの逐次ポーリング(status)・結果取得(result, CDNキャッシュ)・キャンセル(cancel)。
-// キャッシュ制御は各メソッド内（status/cancel=no-store, result=checkLastModified）。
-Route::path('analysis-status', [AdvancedGrowthAnalysisApiController::class, 'status']);
+// 詳細成長分析の結果。その場で計算して返すだけ（サーバ非保存）。checkLastModified で CDN キャッシュ。
 Route::path('analysis-result', [AdvancedGrowthAnalysisApiController::class, 'result']);
-Route::path('analysis-cancel', [AdvancedGrowthAnalysisApiController::class, 'cancel']);
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
     ->match(function () {

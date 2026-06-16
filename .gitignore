@@ -86,4 +86,3 @@ test-logs/
 !*.gitkeep
 local-secrets.php.bak
 app/Config/ApiUser.php
-storage/*/analysis_jobs/**
