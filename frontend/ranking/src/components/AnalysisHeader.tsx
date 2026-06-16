@@ -13,8 +13,8 @@ export default function AnalysisHeader() {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        px: { xs: 1.5, sm: 2 },
-        py: 0.75,
+        px: { xs: 1.75, sm: 2.5 },
+        py: 1.25,
         borderBottom: '1px solid var(--c-border)',
         background: 'var(--c-bg)',
       }}
