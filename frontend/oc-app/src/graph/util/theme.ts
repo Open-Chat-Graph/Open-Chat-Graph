@@ -84,11 +84,11 @@ export const colors: { light: ChartColors; dark: ChartColors } = {
     },
     barGradient: {
       stops: [
-        { offset: 1, color: 'rgba(0, 183, 96, 0.2)' },
-        { offset: 0.7, color: 'rgba(17, 216, 113, 0.2)' },
-        { offset: 0.5, color: 'rgba(17, 213, 147, 0.2)' },
-        { offset: 0.3, color: 'rgba(18, 207, 205, 0.2)' },
-        { offset: 0, color: 'rgba(22, 194, 193, 0.2)' },
+        { offset: 1, color: 'rgba(0, 183, 96, 0.45)' },
+        { offset: 0.7, color: 'rgba(17, 216, 113, 0.45)' },
+        { offset: 0.5, color: 'rgba(17, 213, 147, 0.45)' },
+        { offset: 0.3, color: 'rgba(18, 207, 205, 0.45)' },
+        { offset: 0, color: 'rgba(22, 194, 193, 0.45)' },
       ],
     },
     grid: '#efefef',
