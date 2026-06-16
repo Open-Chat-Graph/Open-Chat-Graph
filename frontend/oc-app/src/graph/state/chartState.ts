@@ -2,10 +2,17 @@ import { atom } from 'jotai'
 import { graphStore } from './store'
 import { chartMeta, chatArgDto, currentConfigCoversLimit, fetchChart } from '../util/fetchRenderer'
 import OpenChatChart from '../classes/OpenChatChart'
-import { getCurrentUrlParams, getStoregeFixedLimitSetting, setUrlParams } from '../util/urlParam'
+import {
+  defaultRankEmphasis,
+  getCurrentUrlParams,
+  getStoregeFixedLimitSetting,
+  setStoregeRankEmphasis,
+  setUrlParams,
+} from '../util/urlParam'
 import { trackEvent } from '../../util/track'
 
 export const chart = new OpenChatChart()
+chart.rankEmphasis = defaultRankEmphasis
 export const loadingAtom = atom(false)
 // 取得が最終的に失敗（5xxをリトライしても取れない・403等）したときの表示フラグ。
 // true の間はチャートの代わりにエラーメッセージ＋再読み込みボタンを出す。取得成功でクリアする。
@@ -16,6 +23,9 @@ export const categoryAtom = atom<urlParamsValue<'category'>>('in')
 export const limitAtom = atom<ChartLimit | 25>(8)
 export const zoomEnableAtom = atom(false)
 export const chartModeAtom = atom<ChartMode>('line')
+export const rankEmphasisAtom = atom(defaultRankEmphasis)
+// スマホでズームをONにした直後に「ドラッグ/ピンチ操作できる」ヒントを一瞬出すためのフラグ
+export const zoomHintAtom = atom(false)
 
 // Atoms moved from components to resolve circular dependencies
 export const renderTabAtom = atom(false)
@@ -263,6 +273,7 @@ function trackChartChange(changed: 'period' | 'mode' | 'rank' | 'category') {
 export function handleChangeCategory(alignment: urlParamsValue<'category'> | null) {
   if (!alignment) return
   graphStore.set(categoryAtom, alignment)
+  chart.captureZoomWindowForReload() // 拡大中の表示窓を維持して再描画
   fetchChart(false)
   setUrlParamsFromChartStates()
   trackChartChange('category')
@@ -280,6 +291,7 @@ export function handleChangeRankingRising(alignment: ToggleChart) {
     }
   }
 
+  chart.captureZoomWindowForReload() // 拡大中の表示窓(スクロール位置・拡大状態)を維持して再描画
   fetchChart(false)
   setUrlParamsFromChartStates()
   trackChartChange('rank')
@@ -288,6 +300,21 @@ export function handleChangeRankingRising(alignment: ToggleChart) {
 export function handleChangeEnableZoom(value: boolean) {
   graphStore.set(zoomEnableAtom, value)
   chart.updateEnableZoom(value)
+  // ONにしたら操作ヒントを一瞬表示（PC=ドラッグ/ホイール, スマホ=ドラッグ/ピンチ。文言は表示側で出し分け）
+  graphStore.set(zoomHintAtom, value)
+}
+
+/** 縮小・拡大ボタン用。ズーム有効(全期間＋スイッチON)のときだけ効く */
+export function handleZoomStep(factor: number) {
+  chart.zoomStep(factor)
+}
+
+/** 「上位を強調」(順位の非線形スケール)の切替。設定を保存し、現在のデータのまま即再描画する */
+export function handleChangeRankEmphasis(value: boolean) {
+  graphStore.set(rankEmphasisAtom, value)
+  setStoregeRankEmphasis(value)
+  chart.updateRankEmphasis(value)
+  trackChartChange('rank')
 }
 
 export function hasOhlcData(): boolean {

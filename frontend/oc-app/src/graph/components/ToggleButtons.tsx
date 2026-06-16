@@ -1,10 +1,7 @@
 import {
   Box,
   Chip,
-  FormControlLabel,
-  FormGroup,
   Stack,
-  Switch,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -18,8 +15,6 @@ import {
   handleChangeRankingRising,
   toggleShowCategoryAtom,
   limitAtom,
-  handleChangeEnableZoom,
-  zoomEnableAtom,
   getPositionAvailabilityForLimit,
 } from '../state/chartState'
 import SettingButton from './SettingButton'
@@ -107,23 +102,6 @@ function CategoryToggle() {
   )
 }
 
-function SwitchLabels() {
-  const zoomEnable = useAtomValue(zoomEnableAtom)
-
-  return (
-    <FormGroup>
-      <FormControlLabel
-        control={<Switch size="small" checked={zoomEnable} />}
-        label={t('グラフの移動・拡大')}
-        sx={{ '.MuiFormControlLabel-label': { fontSize: '11.5px', textWrap: 'nowrap' } }}
-        onChange={(_e: React.SyntheticEvent, checked: boolean) =>
-          handleChangeEnableZoom(checked)
-        }
-      />
-    </FormGroup>
-  )
-}
-
 export default function ToggleButtons() {
   const isMiniMobile = useMediaQuery('(max-width:359px)')
   const isPc = useMediaQuery('(min-width:512px)')
@@ -158,12 +136,6 @@ export default function ToggleButtons() {
         >
           {t('ランキングの順位を表示')}
         </Typography>
-        {limit === 0 && !isPc && <SwitchLabels />}
-        {limit === 0 && isPc && (
-          <Box sx={{ position: 'absolute', ml: '6rem' }}>
-            <SwitchLabels />
-          </Box>
-        )}
         <SettingButton />
       </Stack>
       <Stack

@@ -44,6 +44,7 @@ public/sitemap*.xml
 storage/exception.log
 storage/furigana/**
 storage/*/api_rate_limit/**
+storage/*/analysis_jobs/*
 storage/*/logs/*
 storage/*/SQLite/*/*.db
 storage/*/SQLite/*/*.db*

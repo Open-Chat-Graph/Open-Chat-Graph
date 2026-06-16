@@ -119,9 +119,12 @@ export default function buildData(ocChart: OpenChatChart) {
       datalabels: {
         align: 'start',
         anchor: 'start',
-        formatter: (v) => {
+        // ラベルは元の生順位(data.graph2)で判定する。非線形スケールでは外れ値より深い順位が
+        // バー値0に圧縮され、0が圏外センチネルと衝突してバー値から順位を復元できないため。
+        formatter: (v, ctx) => {
           if (v === null) return ''
-          return v ? ocChart.graph2Max - v + 1 : t('圏外')
+          const rank = ocChart.data.graph2[ctx.dataIndex]
+          return rank ? Math.round(rank) : t('圏外')
         },
         display: getDataLabelBarCallback(ocChart),
       },
