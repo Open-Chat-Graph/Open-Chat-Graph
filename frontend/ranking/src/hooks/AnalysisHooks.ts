@@ -116,6 +116,8 @@ export interface AnalysisJob {
   isLastPage: boolean
   /** 結果として表示中の指標（検索実行時に確定。フォームの metric とは別） */
   resultMetric: AnalysisMetric
+  /** 検索時に指定したカテゴリ（0=全カテゴリ）。各行のカテゴリ表示の出し分けに使う */
+  resultCategory: number
   search: (params: AnalysisParams) => void
   cancel: () => void
   loadMore: () => void
@@ -135,6 +137,7 @@ export function useAnalysisJob(): AnalysisJob {
   const [totalCount, setTotalCount] = useState(0)
   const [renderCount, setRenderCount] = useState(LIMIT_ITEMS)
   const [resultMetric, setResultMetric] = useState<AnalysisMetric>('increase')
+  const [resultCategory, setResultCategory] = useState<number>(0)
 
   const tokenRef = useRef(0)
   const paramsRef = useRef<AnalysisParams | null>(null)
@@ -144,6 +147,7 @@ export function useAnalysisJob(): AnalysisJob {
     const token = ++tokenRef.current
     paramsRef.current = params
     setResultMetric(params.metric)
+    setResultCategory(params.category)
     setPhase('running')
     setPercent(0)
     setComputed(0)
@@ -243,6 +247,7 @@ export function useAnalysisJob(): AnalysisJob {
     totalCount,
     isLastPage,
     resultMetric,
+    resultCategory,
     search,
     cancel,
     loadMore,

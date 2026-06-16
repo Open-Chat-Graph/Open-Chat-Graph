@@ -57,9 +57,11 @@ function SteadyStats({ item }: { item: AnalysisItem }) {
 export default function AnalysisListItem({
   item,
   metric,
+  showCategory,
 }: {
   item: AnalysisItem
   metric: AnalysisMetric
+  showCategory: boolean
 }) {
   const { id, name, desc, member, img, emblem, joinMethodType, category } = item
   // 長期分析からの遷移は全期間グラフ(?limit=all)を開く
@@ -87,10 +89,14 @@ export default function AnalysisListItem({
       <footer className="item-lower">
         <div className="item-lower-stats">
           <span>{sprintfT('メンバー %s人', formatMember(member))}</span>
+        </div>
+        {/* 増減の数値は専用の1行に（はみ出し防止・青/赤の数字を見やすく） */}
+        <div className="analysis-delta" style={{ fontSize: 13, lineHeight: '1.15rem' }}>
           {metric === 'increase' ? <IncreaseStats item={item} /> : <SteadyStats item={item} />}
         </div>
-        <div className="item-lower-category">
-          {category >= 0 && (
+        {/* カテゴリで絞り込み中は各行のカテゴリ表示は冗長なので出さない */}
+        {showCategory && category >= 0 && (
+          <div className="item-lower-category">
             <Chip
               sx={{
                 height: 'fit-content',
@@ -102,8 +108,8 @@ export default function AnalysisListItem({
               label={category > 0 ? OPEN_CHAT_CATEGORY_OBJ[category] : t('その他')}
               size="small"
             />
-          )}
-        </div>
+          </div>
+        )}
       </footer>
     </div>
   )

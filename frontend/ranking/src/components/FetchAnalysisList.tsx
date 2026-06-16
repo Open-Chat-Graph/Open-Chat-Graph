@@ -11,7 +11,7 @@ const ROOT_MARGIN = isSP() ? '200px' : '600px'
 const dummyContainerStyle = { opacity: 0.6 } as const
 
 export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
-  const { phase, items, totalCount, isLastPage, loadMore, resultMetric } = job
+  const { phase, items, totalCount, isLastPage, loadMore, resultMetric, resultCategory } = job
 
   const { ref: sentinelRef, inView } = useInView({ rootMargin: ROOT_MARGIN, threshold: 0 })
 
@@ -77,7 +77,7 @@ export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
       <ol className="openchat-item-container">
         {items.map((item, i) => (
           <li key={`${resultMetric}/${item.id}`} className="OpenChatListItem-outer">
-            <AnalysisListItem item={item} metric={resultMetric} />
+            <AnalysisListItem item={item} metric={resultMetric} showCategory={resultCategory === 0} />
             {(i + 1) % 10 === 0 && i + 1 < totalCount && (
               <div style={{ marginBottom: '2rem' }}>
                 <div className="record-count middle">
