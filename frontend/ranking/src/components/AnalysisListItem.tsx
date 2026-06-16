@@ -30,15 +30,22 @@ function IncreaseStats({ item }: { item: AnalysisItem }) {
   )
 }
 
-/** じわじわ成長 metric の統計（年率・安定度R²・継続年数） */
+/** じわじわ成長 metric の統計（合計増加・年率・継続年数。専門語は i ボタンの説明に逃がす） */
 function SteadyStats({ item }: { item: AnalysisItem }) {
   const years = item.historyDays != null ? (item.historyDays / 365.25).toFixed(1) : null
-  const stability = item.r2 != null ? Math.round(item.r2 * 100) : null
+  // 期間中の合計増加 ≒ 回帰の傾き × 日数（「何人増えたか」を直感的に示す）
+  const grown =
+    item.slope != null && item.historyDays != null ? Math.round(item.slope * item.historyDays) : null
   return (
     <span className="stats-wrapper all positive">
-      {item.cagr != null && <span>年率{signedPct(item.cagr)}</span>}
-      {stability != null && <span> ・ 安定度{stability}%</span>}
-      {years != null && <span className="api-created-at">{years}年で {signed((item.member - (item.base ?? item.member)))}</span>}
+      {grown != null && <span>{signed(grown)}人</span>}
+      {(item.cagr != null || years != null) && (
+        <span className="api-created-at">
+          {item.cagr != null ? `年${signedPct(item.cagr)}` : ''}
+          {item.cagr != null && years != null ? ' ・ ' : ''}
+          {years != null ? `${years}年` : ''}
+        </span>
+      )}
     </span>
   )
 }
@@ -51,7 +58,8 @@ export default function AnalysisListItem({
   metric: AnalysisMetric
 }) {
   const { id, name, desc, member, img, emblem, joinMethodType, category } = item
-  const ocUrl = `${rankingArgDto.baseUrl}/oc/${id}`
+  // 長期分析からの遷移は全期間グラフ(?limit=all)を開く
+  const ocUrl = `${rankingArgDto.baseUrl}/oc/${id}?limit=all`
 
   return (
     <div className="openchat-item">

@@ -27,7 +27,7 @@ function AnalysisPageInner() {
       <AnalysisToolbar job={job} />
       <Box
         component="main"
-        sx={{ maxWidth: 1040, mx: 'auto', px: { xs: 1, sm: 2 }, pt: 1, pb: 8 }}
+        sx={{ maxWidth: 1040, mx: 'auto', px: { xs: 1.75, sm: 2.5 }, pt: 1.5, pb: 8 }}
       >
         <FetchAnalysisList job={job} />
       </Box>

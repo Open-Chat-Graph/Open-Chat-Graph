@@ -23,6 +23,8 @@ import { OPEN_CHAT_CATEGORY } from '../config/config'
 import { analysisParamsState } from '../store/atom'
 import { useSetAnalysisParams } from '../hooks/AnalysisHooks'
 import type { AnalysisJob } from '../hooks/AnalysisHooks'
+import { scrollToTop } from '../utils/utils'
+import AnalysisMetricHelp from './AnalysisMetricHelp'
 
 const METRICS: { value: AnalysisMetric; label: string }[] = [
   { value: 'increase', label: '期間の増加' },
@@ -75,14 +77,16 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         position: 'sticky',
         top: 0,
         zIndex: 1100,
+        mt: 1.25, // 最上部ヘッダーとの間に余白（sticky で上に貼り付いたときは詰まる）
         background: 'var(--c-bg)',
+        borderTop: '1px solid var(--c-border)',
         borderBottom: '1px solid var(--c-border)',
         boxShadow: hidden ? 'none' : '0 1px 6px rgba(0,0,0,0.06)',
         transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
         transition: 'transform .25s ease',
-        px: { xs: 1, sm: 2 },
-        pt: 1,
-        pb: running ? 0 : 1,
+        px: { xs: 1.75, sm: 2.5 },
+        pt: 1.25,
+        pb: running ? 0.25 : 1.25,
       }}
     >
         <Stack
@@ -109,6 +113,8 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
               ))}
             </Select>
           </FormControl>
+
+          <AnalysisMetricHelp metric={params.metric} />
 
           {params.metric === 'increase' && (
             <FormControl size="small" sx={fieldSx}>
@@ -223,7 +229,11 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
             <Button
               variant="contained"
               startIcon={<SearchIcon />}
-              onClick={() => job.search(params)}
+              onClick={() => {
+                scrollToTop()
+                window.scrollTo(0, 0)
+                job.search(params)
+              }}
               sx={{ fontWeight: 700, px: 2.5 }}
             >
               分析する
