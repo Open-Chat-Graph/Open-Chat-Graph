@@ -77,7 +77,7 @@ export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
       <ol className="openchat-item-container">
         {items.map((item, i) => (
           <li key={`${resultMetric}/${item.id}`} className="OpenChatListItem-outer">
-            <AnalysisListItem item={item} metric={resultMetric} showCategory={resultCategory === 0} />
+            <AnalysisListItem item={item} showCategory={resultCategory === 0} />
             {(i + 1) % 10 === 0 && i + 1 < totalCount && (
               <div style={{ marginBottom: '2rem' }}>
                 <div className="record-count middle">

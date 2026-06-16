@@ -27,16 +27,10 @@ interface AnalysisItem {
   emblem: 0 | 1 | 2
   joinMethodType: 0 | 1 | 2
   category: number
-  // 期間増加 metric
+  // 増加・じわじわ成長とも共通: 期間内の増加数・増加率・期間開始時点のメンバー数
   diff?: number
   pct?: number | null
   base?: number
-  // じわじわ成長 metric
-  score?: number
-  cagr?: number | null
-  r2?: number
-  slope?: number
-  historyDays?: number
   // 先頭要素のみ（page 0）
   totalCount?: number
 }

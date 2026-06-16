@@ -114,7 +114,7 @@ final class GrowthMath
      * @param array{n:int, jmin:float, jmax:float, sx:float, sy:float, sxy:float, sxx:float, syy:float, peak:int, first:int} $agg
      * @param int $currentMember 現在のメンバー数（open_chat 由来）
      * @param int $windowDays 選択した期間窓の日数
-     * @return array{score:float, slope:float, slopeNorm:float, r2:float, cagr:?float, historyDays:int, points:int}|null
+     * @return array{score:float, slope:float, r2:float, cagr:?float, base:int, historyDays:int, points:int}|null
      *   足切り（在籍期間・メンバー・サンプル・分散）に掛かった場合は null
      */
     public static function steady(array $agg, int $currentMember, int $windowDays): ?array
@@ -149,7 +149,6 @@ final class GrowthMath
         }
 
         $slope = $reg['slope'];           // 1日あたりのメンバー増加
-        $slopeNorm = $slope / $avg;       // 平均規模に対する1日あたりの相対成長
         $r2 = $reg['r2'];
         $years = $spanDays / 365.25;
 
@@ -177,7 +176,6 @@ final class GrowthMath
         return [
             'score' => $score,
             'slope' => $slope,
-            'slopeNorm' => $slopeNorm,
             'r2' => $r2,
             'cagr' => $cagr,
             'base' => $first,        // 窓開始時点のメンバー数（表示用 +N人(+X%) の基準）

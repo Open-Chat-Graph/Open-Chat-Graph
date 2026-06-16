@@ -13,38 +13,14 @@ function LockIcon() {
 const signed = (n: number) => (n >= 0 ? '+' : '') + n.toLocaleString()
 const signedPct = (p: number) => (p >= 0 ? '+' : '') + p.toFixed(1) + '%'
 
-/** 期間増加 metric の統計（増加数＋増加率＋始点→現在） */
-function IncreaseStats({ item }: { item: AnalysisItem }) {
+/** 増加の統計（増加数＋増加率＋始点→現在）。増加・じわじわ成長とも同じ表示。 */
+function DeltaStats({ item }: { item: AnalysisItem }) {
   const diff = item.diff ?? 0
   const symbol = diff > 0 ? 'positive' : diff < 0 ? 'negative' : ''
   return (
     <span className={`stats-wrapper all ${symbol}`}>
-      <span>{signed(diff)}</span>
+      <span>{signed(diff)}人</span>
       {item.pct != null && <span> ({signedPct(item.pct)})</span>}
-      {item.base != null && (
-        <span className="api-created-at">
-          {item.base.toLocaleString()} → {item.member.toLocaleString()}
-        </span>
-      )}
-    </span>
-  )
-}
-
-/** じわじわ成長 metric の統計（選んだ期間での増加＋増加率。期間自体はツールバーに表示） */
-function SteadyStats({ item }: { item: AnalysisItem }) {
-  // 窓開始(base)→現在の実増加。base が無い場合は回帰の傾き×日数で近似
-  const grown =
-    item.base != null
-      ? item.member - item.base
-      : item.slope != null && item.historyDays != null
-        ? Math.round(item.slope * item.historyDays)
-        : null
-  const pct = item.base != null && item.base > 0 ? ((item.member - item.base) / item.base) * 100 : null
-  const symbol = grown == null ? '' : grown > 0 ? 'positive' : grown < 0 ? 'negative' : ''
-  return (
-    <span className={`stats-wrapper all ${symbol}`}>
-      {grown != null && <span>{signed(grown)}人</span>}
-      {pct != null && <span> ({signedPct(pct)})</span>}
       {item.base != null && (
         <span className="api-created-at">
           {item.base.toLocaleString()} → {item.member.toLocaleString()}
@@ -56,11 +32,9 @@ function SteadyStats({ item }: { item: AnalysisItem }) {
 
 export default function AnalysisListItem({
   item,
-  metric,
   showCategory,
 }: {
   item: AnalysisItem
-  metric: AnalysisMetric
   showCategory: boolean
 }) {
   const { id, name, desc, member, img, emblem, joinMethodType, category } = item
@@ -92,7 +66,7 @@ export default function AnalysisListItem({
         </div>
         {/* 増減の数値は専用の1行に（はみ出し防止・青/赤の数字を見やすく） */}
         <div className="analysis-delta" style={{ fontSize: 13, lineHeight: '1.15rem' }}>
-          {metric === 'increase' ? <IncreaseStats item={item} /> : <SteadyStats item={item} />}
+          <DeltaStats item={item} />
         </div>
         {/* カテゴリで絞り込み中は各行のカテゴリ表示は冗長なので出さない */}
         {showCategory && category >= 0 && (
