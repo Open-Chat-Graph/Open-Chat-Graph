@@ -42,7 +42,7 @@ class SqliteAnalysisStatsRepository implements AnalysisStatsRepositoryInterface
         return $result;
     }
 
-    public function getSteadyAggregates(int $lo, int $hi): array
+    public function getSteadyAggregates(int $lo, int $hi, string $fromDate, string $toDate): array
     {
         // member は (open_chat_id, date) インデックスに含まれず行参照が発生し、全日次だと
         // 1チャンク約28秒と重い。長期トレンドの回帰には日次の精度は不要なので、各月の
@@ -63,16 +63,23 @@ class SqliteAnalysisStatsRepository implements AnalysisStatsRepositoryInterface
                 SUM(CAST(member AS REAL) * member) AS syy,
                 (
                     SELECT s2.member FROM statistics s2
-                    WHERE s2.open_chat_id = statistics.open_chat_id
+                    WHERE s2.open_chat_id = statistics.open_chat_id AND s2.date >= :first_from
                     ORDER BY s2.date ASC LIMIT 1
                 ) AS first_m
             FROM statistics
             WHERE open_chat_id >= :lo AND open_chat_id < :hi
+                AND date >= :from AND date <= :to
                 AND substr(date, 9, 2) IN ('01', '11', '21')
             GROUP BY open_chat_id";
 
         SQLiteStatistics::connect(SQLiteStatistics::WEB_READER);
-        $rows = SQLiteStatistics::fetchAll($query, ['lo' => $lo, 'hi' => $hi]);
+        $rows = SQLiteStatistics::fetchAll($query, [
+            'lo' => $lo,
+            'hi' => $hi,
+            'from' => $fromDate,
+            'to' => $toDate,
+            'first_from' => $fromDate,
+        ]);
 
         $result = [];
         foreach ($rows as $r) {

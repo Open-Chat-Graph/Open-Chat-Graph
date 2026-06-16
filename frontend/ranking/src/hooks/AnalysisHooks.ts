@@ -17,6 +17,14 @@ const SORTS_BY_METRIC: Record<AnalysisMetric, AnalysisSort[]> = {
   increase: ['count', 'rate'],
   steady: ['score', 'cagr', 'slope'],
 }
+const DEFAULT_SORT: Record<AnalysisMetric, AnalysisSort> = { increase: 'count', steady: 'score' }
+
+// 指標ごとに選べる期間（じわじわ成長も期間窓で公平比較する）
+export const PERIODS_BY_METRIC: Record<AnalysisMetric, AnalysisPeriod[]> = {
+  increase: ['month', 'year', 'custom'],
+  steady: ['3month', '6month', 'year', 'all', 'custom'],
+}
+const DEFAULT_PERIOD: Record<AnalysisMetric, AnalysisPeriod> = { increase: 'year', steady: '3month' }
 
 const pick = <T extends string>(v: string | null, allowed: T[], def: T): T =>
   allowed.includes(v as T) ? (v as T) : def
@@ -26,14 +34,14 @@ const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v)
 /** URLSearchParams → 妥当な AnalysisParams */
 export function getValidAnalysisParams(p: URLSearchParams): AnalysisParams {
   const metric = pick<AnalysisMetric>(p.get('metric'), ['increase', 'steady'], 'increase')
-  const period = pick<AnalysisPeriod>(p.get('period'), ['month', 'year', 'custom'], 'year')
+  const period = pick<AnalysisPeriod>(p.get('period'), PERIODS_BY_METRIC[metric], DEFAULT_PERIOD[metric])
   const from = isDate(p.get('from') ?? '') ? (p.get('from') as string) : ''
   const to = isDate(p.get('to') ?? '') ? (p.get('to') as string) : ''
   const category = Number(p.get('category')) || 0
   const keyword = (p.get('keyword') ?? '').slice(0, 100)
-  const defaultSort = metric === 'steady' ? 'score' : 'count'
-  const sort = pick<AnalysisSort>(p.get('sort'), SORTS_BY_METRIC[metric], defaultSort)
-  const order = pick<AnalysisOrder>(p.get('order'), ['asc', 'desc'], 'desc')
+  const sort = pick<AnalysisSort>(p.get('sort'), SORTS_BY_METRIC[metric], DEFAULT_SORT[metric])
+  // じわじわ成長はスコア降順のみ（少ない順は不要）
+  const order: AnalysisOrder = metric === 'steady' ? 'desc' : pick<AnalysisOrder>(p.get('order'), ['asc', 'desc'], 'desc')
   return { metric, period, from, to, category, keyword, sort, order }
 }
 
@@ -44,22 +52,28 @@ export function useSetAnalysisParams(): (next: (cur: AnalysisParams) => Analysis
     (next) => {
       setParams((cur) => {
         const np = next(cur)
-        // metric を変えたら、その metric で無効な sort を既定へ補正
-        const sort = SORTS_BY_METRIC[np.metric].includes(np.sort)
-          ? np.sort
-          : np.metric === 'steady'
-          ? 'score'
-          : 'count'
-        const fixed: AnalysisParams = { ...np, sort }
+        const metricChanged = np.metric !== cur.metric
+        // metric を変えたら period/sort をその指標の既定へ。値が無効なときも既定へ補正
+        const period =
+          metricChanged || !PERIODS_BY_METRIC[np.metric].includes(np.period)
+            ? DEFAULT_PERIOD[np.metric]
+            : np.period
+        const sort =
+          metricChanged || !SORTS_BY_METRIC[np.metric].includes(np.sort)
+            ? DEFAULT_SORT[np.metric]
+            : np.sort
+        // じわじわ成長は常に降順（少ない順は出さない）
+        const order: AnalysisOrder = np.metric === 'steady' ? 'desc' : np.order
+        const fixed: AnalysisParams = { ...np, period, sort, order }
         const q: { [k: string]: string } = {
           metric: fixed.metric,
+          period: fixed.period,
           sort: fixed.sort,
           order: fixed.order,
         }
-        if (fixed.metric === 'increase') q.period = fixed.period
-        if (fixed.metric === 'increase' && fixed.period === 'custom') {
-          q.from = fixed.from
-          q.to = fixed.to
+        if (fixed.period === 'custom') {
+          if (fixed.from) q.from = fixed.from
+          if (fixed.to) q.to = fixed.to
         }
         if (fixed.category) q.category = String(fixed.category)
         if (fixed.keyword) q.keyword = fixed.keyword
@@ -72,13 +86,11 @@ export function useSetAnalysisParams(): (next: (cur: AnalysisParams) => Analysis
 }
 
 function statusQuery(p: AnalysisParams): string {
-  const q = new URLSearchParams({ metric: p.metric })
-  if (p.metric === 'increase') {
-    q.set('period', p.period)
-    if (p.period === 'custom') {
-      if (p.from) q.set('from', p.from)
-      if (p.to) q.set('to', p.to)
-    }
+  // 増加・じわじわ成長とも period 窓で計算する
+  const q = new URLSearchParams({ metric: p.metric, period: p.period })
+  if (p.period === 'custom') {
+    if (p.from) q.set('from', p.from)
+    if (p.to) q.set('to', p.to)
   }
   return q.toString()
 }

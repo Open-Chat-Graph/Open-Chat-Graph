@@ -109,7 +109,7 @@ class GrowthMathTest extends TestCase
         $agg = $this->sumsFromSeries($members);
         $current = $members[399]; // 2095
 
-        $res = GrowthMath::steady($agg, $current);
+        $res = GrowthMath::steady($agg, $current, 400);
         $this->assertNotNull($res, '足切りを通過するはず');
         $this->assertGreaterThan(0.0, $res['score']);
         $this->assertEqualsWithDelta(1.0, $res['r2'], 1e-6, '直線なので当てはまり完全');
@@ -126,7 +126,8 @@ class GrowthMathTest extends TestCase
             $members[$d] = 100 + 5 * $d;
         }
         $agg = $this->sumsFromSeries($members);
-        $this->assertNull(GrowthMath::steady($agg, $members[100]));
+        // 101日しかデータが無い部屋を 365日窓 で見ると、窓の6割(219日)に満たず対象外
+        $this->assertNull(GrowthMath::steady($agg, $members[100], 365));
     }
 
     public function test_steady_tinyMember_returnsNull(): void
@@ -136,7 +137,7 @@ class GrowthMathTest extends TestCase
             $members[$d] = 10 + (int)($d / 100); // 常に < 50
         }
         $agg = $this->sumsFromSeries($members);
-        $this->assertNull(GrowthMath::steady($agg, $members[399]));
+        $this->assertNull(GrowthMath::steady($agg, $members[399], 400));
     }
 
     public function test_steady_drawdownPenalizesPumpAndDump(): void
@@ -148,8 +149,8 @@ class GrowthMathTest extends TestCase
             $steady[$d] = 100 + 5 * $d;                  // 維持して成長
             $dumped[$d] = $d <= 200 ? 100 + 10 * $d : 2100 - 10 * ($d - 200); // 吹き上げて崩落
         }
-        $sSteady = GrowthMath::steady($this->sumsFromSeries($steady), $steady[399]);
-        $sDumped = GrowthMath::steady($this->sumsFromSeries($dumped), $dumped[399]);
+        $sSteady = GrowthMath::steady($this->sumsFromSeries($steady), $steady[399], 400);
+        $sDumped = GrowthMath::steady($this->sumsFromSeries($dumped), $dumped[399], 400);
 
         $this->assertNotNull($sSteady);
         if ($sDumped !== null) {

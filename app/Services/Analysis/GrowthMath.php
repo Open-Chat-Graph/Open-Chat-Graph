@@ -17,18 +17,21 @@ namespace App\Services\Analysis;
  */
 final class GrowthMath
 {
-    /** じわじわ成長スコアの対象とする最小履歴日数 */
-    public const MIN_HISTORY_DAYS = 365;
-
     /** 対象とする最小の現在メンバー数（新規・極小部屋がノイズで上位を占めるのを防ぐ） */
     public const MIN_MEMBER = 50;
 
     /**
      * じわじわ成長スコアに必要な最小サンプル点数。
-     * 重い全 member 走査を避けるため SQLite 側で月3日(01/11/21)に間引くので、
-     * 1年(=約36点)で足切りされないよう低めに設定する。
+     * SQLite 側で月3日(01/11/21)に間引くため、3ヶ月窓(=約9点)でも足切りされない低めの値。
      */
-    public const MIN_POINTS = 24;
+    public const MIN_POINTS = 6;
+
+    /**
+     * 選択した期間窓のうち、部屋が在籍していなければならない割合。
+     * これ未満（窓の途中で登録された部屋）は除外し、同じ期間で公平に比較する
+     * （特に「全期間」での登録タイミングによる有利不利をケアする）。
+     */
+    public const WINDOW_COVERAGE = 0.6;
 
     /**
      * 増加率（%）。base<=0 のときは未定義(null)。
@@ -100,25 +103,30 @@ final class GrowthMath
     }
 
     /**
-     * じわじわ成長スコアと表示用メトリクスを計算する。
+     * 選択した期間窓 [from,to] における「じわじわ成長スコア」と表示用メトリクスを計算する。
      *
-     * 規模に依存しないよう傾きを平均メンバー数で正規化（slopeNorm＝1日あたりの相対成長）、
-     * 当てはまりの良さ R² と履歴の長さ sqrt(years) で重みづけ、ピークからの下落で減点する。
+     * 公平性のため:
+     *  - 全部屋を同じ窓で評価し、窓の WINDOW_COVERAGE 割以上を在籍した部屋だけを対象にする
+     *    （窓の途中で登録された部屋＝登録タイミングの有利不利を排除。特に「全期間」のケア）。
+     *  - スコアは「年率換算の増加量(slope×365)」を使うので、窓の長さや部屋の年齢に依らず比較できる
+     *    （古い＝有利、にならない）。安定性 R² を強く効かせ、ピーク下落で減点する。
      *
      * @param array{n:int, jmin:float, jmax:float, sx:float, sy:float, sxy:float, sxx:float, syy:float, peak:int, first:int} $agg
      * @param int $currentMember 現在のメンバー数（open_chat 由来）
+     * @param int $windowDays 選択した期間窓の日数
      * @return array{score:float, slope:float, slopeNorm:float, r2:float, cagr:?float, historyDays:int, points:int}|null
-     *   足切り（履歴・メンバー・サンプル・分散）に掛かった場合は null
+     *   足切り（在籍期間・メンバー・サンプル・分散）に掛かった場合は null
      */
-    public static function steady(array $agg, int $currentMember): ?array
+    public static function steady(array $agg, int $currentMember, int $windowDays): ?array
     {
         $n = $agg['n'];
-        $historyDays = (int) round($agg['jmax'] - $agg['jmin']);
+        $spanDays = (int) round($agg['jmax'] - $agg['jmin']); // 窓内で実際にデータがある期間
+        $minSpan = (int) round($windowDays * self::WINDOW_COVERAGE);
 
         if (
             $n < self::MIN_POINTS
-            || $historyDays < self::MIN_HISTORY_DAYS
             || $currentMember < self::MIN_MEMBER
+            || $spanDays < $minSpan
         ) {
             return null;
         }
@@ -143,10 +151,9 @@ final class GrowthMath
         $slope = $reg['slope'];           // 1日あたりのメンバー増加
         $slopeNorm = $slope / $avg;       // 平均規模に対する1日あたりの相対成長
         $r2 = $reg['r2'];
-        $years = $historyDays / 365.25;
+        $years = $spanDays / 365.25;
 
         // CAGR は実測の初回メンバー→現在メンバーで算出（年平均成長率%）。
-        // 当てはめ直線の端点だと加速成長の部屋で始点が負になり未定義化するため、実測値を使う。
         $first = (int)($agg['first'] ?? 0);
         $cagr = ($first > 0 && $currentMember > 0 && $years > 0)
             ? (pow($currentMember / $first, 1 / $years) - 1) * 100.0
@@ -154,21 +161,18 @@ final class GrowthMath
 
         // ピークからの下落で減点（吹き上げて崩落した部屋を除外気味に）
         $peak = max(1, $agg['peak']);
-        $drawdown = ($peak - $currentMember) / $peak;          // 0=ピーク維持, 1=ほぼ消失
-        $drawdownFactor = 1.0 - max(0.0, $drawdown - 0.10) / 0.90; // 10%以内は無罰、90%下落で0
+        $drawdown = ($peak - $currentMember) / $peak;
+        $drawdownFactor = 1.0 - max(0.0, $drawdown - 0.10) / 0.90;
         if ($drawdownFactor < 0.0) {
             $drawdownFactor = 0.0;
         }
 
-        // 「数年かけてじわじわ」= 安定性(R²)と継続年数を重視し、規模の暴発は対数で抑える。
-        //  - R²²: 直線的な一貫成長（=じわじわ）を強く評価。ガタつく急成長を相対的に下げる
-        //  - years: 長期ほど高評価（線形）
-        //  - log(1+|増加|)×符号: 実増加量。小規模ゼロ近傍からの急騰が相対比で上位を独占するのを防ぐ
-        //    （増加が負＝縮小はスコアも負になり、昇順ソートで縮小室を出せる）
-        //  - drawdownFactor: 吹き上げ→崩落を減点
-        $growth = $currentMember - $first;
-        $growthTerm = ($growth >= 0 ? 1.0 : -1.0) * log(1 + abs($growth));
-        $score = ($r2 ** 2) * $years * $growthTerm * $drawdownFactor;
+        // スコア = 安定性(R²²) × 年率換算の増加量(対数) × 下落減点。
+        // slope×365.25 は「1年あたりの増加」＝窓の長さ・部屋の年齢に依らない指標なので、
+        // 3ヶ月窓でも全期間でも、また新しい部屋でも古い部屋でも公平に比較できる。
+        $annualGrowth = $slope * 365.25;
+        $growthTerm = $annualGrowth > 0 ? log(1 + $annualGrowth) : 0.0;
+        $score = ($r2 ** 2) * $growthTerm * $drawdownFactor;
 
         return [
             'score' => $score,
@@ -176,7 +180,8 @@ final class GrowthMath
             'slopeNorm' => $slopeNorm,
             'r2' => $r2,
             'cagr' => $cagr,
-            'historyDays' => $historyDays,
+            'base' => $first,        // 窓開始時点のメンバー数（表示用 +N人(+X%) の基準）
+            'historyDays' => $spanDays,
             'points' => $n,
         ];
     }

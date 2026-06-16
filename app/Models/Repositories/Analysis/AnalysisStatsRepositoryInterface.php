@@ -25,9 +25,10 @@ interface AnalysisStatsRepositoryInterface
      * 全履歴の線形回帰に必要な総和（Σx,Σy,Σxy,Σx²,Σy², n, julianday の min/max, peak）を
      * open_chat_id ∈ [lo, hi) のルームごとに集約して返す。x は julianday(date)。
      *
-     * first は実測の初回メンバー数（CAGR 用、サンプリングの影響を受けない最古の値）。
+     * 集計は期間窓 [fromDate, toDate] に限定する（全部屋を同じ窓で比較＝公平にするため）。
+     * first は窓内で最古のメンバー数（CAGR 用）。
      *
      * @return array<int, array{n:int, jmin:float, jmax:float, peak:int, sx:float, sy:float, sxy:float, sxx:float, syy:float, first:int}>
      */
-    public function getSteadyAggregates(int $lo, int $hi): array;
+    public function getSteadyAggregates(int $lo, int $hi, string $fromDate, string $toDate): array;
 }

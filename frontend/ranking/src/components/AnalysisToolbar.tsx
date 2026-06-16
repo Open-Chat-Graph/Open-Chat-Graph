@@ -10,7 +10,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useScrollTrigger,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
@@ -26,11 +25,20 @@ const METRICS: { value: AnalysisMetric; label: string }[] = [
   { value: 'increase', label: '期間の増加' },
   { value: 'steady', label: 'じわじわ成長' },
 ]
-const PERIODS: { value: AnalysisPeriod; label: string }[] = [
-  { value: 'month', label: '1ヶ月' },
-  { value: 'year', label: '1年' },
-  { value: 'custom', label: '任意' },
-]
+const PERIODS: Record<AnalysisMetric, { value: AnalysisPeriod; label: string }[]> = {
+  increase: [
+    { value: 'month', label: '1ヶ月' },
+    { value: 'year', label: '1年' },
+    { value: 'custom', label: '任意' },
+  ],
+  steady: [
+    { value: '3month', label: '3ヶ月' },
+    { value: '6month', label: '半年' },
+    { value: 'year', label: '1年' },
+    { value: 'all', label: '全期間' },
+    { value: 'custom', label: '任意' },
+  ],
+}
 const SORTS: Record<AnalysisMetric, { value: AnalysisSort; label: string }[]> = {
   increase: [
     { value: 'count', label: '増加数' },
@@ -115,9 +123,6 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const setParams = useSetAnalysisParams()
   const running = job.phase === 'running'
 
-  const trigger = useScrollTrigger()
-  const hidden = trigger && !running
-
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
     if (!running) {
@@ -132,7 +137,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const categoryValue = CATEGORY_OPTIONS.find((o) => o.value === params.category) ?? CATEGORY_OPTIONS[0]
 
   // 任意期間の入力チェック: 開始日が空 / 開始≧終了 は分析不可
-  const isCustom = params.metric === 'increase' && params.period === 'custom'
+  const isCustom = params.period === 'custom'
   const dateError = isCustom
     ? !params.from
       ? '開始日を入力してください'
@@ -150,9 +155,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         zIndex: 1200,
         background: 'var(--c-bg)',
         borderBottom: '1px solid var(--c-border)',
-        boxShadow: hidden ? 'none' : '0 2px 8px rgba(0,0,0,0.08)',
-        transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
-        transition: 'transform .25s ease',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         px: { xs: 1.5, sm: 2.5 },
         py: 1,
       }}
@@ -167,9 +170,11 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         <Seg value={params.metric} options={METRICS} onChange={(v) => setParams((c) => ({ ...c, metric: v }))} />
         <AnalysisMetricHelp metric={params.metric} />
 
-        {params.metric === 'increase' && (
-          <Seg value={params.period} options={PERIODS} onChange={(v) => setParams((c) => ({ ...c, period: v }))} />
-        )}
+        <Seg
+          value={params.period}
+          options={PERIODS[params.metric]}
+          onChange={(v) => setParams((c) => ({ ...c, period: v }))}
+        />
 
         {isCustom && (
           <>
@@ -199,14 +204,17 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         {params.metric === 'increase' && (
           <Seg value={params.sort} options={sortOptions} onChange={(v) => setParams((c) => ({ ...c, sort: v }))} />
         )}
-        <Seg
-          value={params.order}
-          options={[
-            { value: 'desc', label: '多い順' },
-            { value: 'asc', label: '少ない順' },
-          ]}
-          onChange={(v) => setParams((c) => ({ ...c, order: v }))}
-        />
+        {/* じわじわ成長はスコア降順固定なので順序トグルは出さない */}
+        {params.metric === 'increase' && (
+          <Seg
+            value={params.order}
+            options={[
+              { value: 'desc', label: '多い順' },
+              { value: 'asc', label: '少ない順' },
+            ]}
+            onChange={(v) => setParams((c) => ({ ...c, order: v }))}
+          />
+        )}
 
         <Autocomplete
           size="small"

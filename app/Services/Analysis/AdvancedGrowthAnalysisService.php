@@ -50,6 +50,7 @@ class AdvancedGrowthAnalysisService
     private const I_R2 = 4;
     private const I_SLOPE = 5;
     private const I_HIST = 6;
+    private const I_STEADY_BASE = 7; // 窓開始時点のメンバー数（表示用）
 
     public function __construct(
         private AnalysisStatsRepositoryInterface $stats,
@@ -200,6 +201,7 @@ class AdvancedGrowthAnalysisService
                 $item['r2'] = (float)$r[self::I_R2];
                 $item['slope'] = (float)$r[self::I_SLOPE];
                 $item['historyDays'] = (int)$r[self::I_HIST];
+                $item['base'] = isset($r[self::I_STEADY_BASE]) ? (int)$r[self::I_STEADY_BASE] : null;
             }
 
             if ($page === 0 && $idx === 0) {
@@ -238,15 +240,15 @@ class AdvancedGrowthAnalysisService
         $baseDate = substr($hourly, 0, 10);
         $hour = preg_replace('/[^0-9]/', '', $hourly); // 例: 20260611223000
 
-        if ($metric === 'steady') {
-            // period は無関係（全履歴対象）
-            $fromDate = '';
-            $toDate = '';
-        } elseif ($period === 'custom') {
+        // period → 期間の窓 [from, to]（増加・じわじわ成長とも同じ窓で公平に比較する）。to は基本 baseDate=最新。
+        if ($period === 'custom') {
             $fromDate = $this->validDate($from);
             $toDate = ($to !== null && $to !== '') ? $this->validDate($to) : $baseDate;
             if ($fromDate === null) {
                 throw new BadRequestException('from は YYYY-MM-DD で指定してください');
+            }
+            if ($toDate === null) {
+                throw new BadRequestException('to は YYYY-MM-DD で指定してください');
             }
             if ($fromDate < self::DATA_START_DATE) {
                 $fromDate = self::DATA_START_DATE;
@@ -257,22 +259,33 @@ class AdvancedGrowthAnalysisService
             if ($fromDate >= $toDate) {
                 throw new BadRequestException('from は to より前の日付にしてください');
             }
-        } else { // month / year
-            $modifier = $period === 'year' ? '-1 year' : '-1 month';
-            $fromDate = date('Y-m-d', strtotime($baseDate . ' ' . $modifier));
+        } else {
+            $modifier = match ($period) {
+                'month' => '-1 month',
+                '3month' => '-3 months',
+                '6month' => '-6 months',
+                'year' => '-1 year',
+                'all' => null,        // 全期間（データ開始から）
+                default => '-3 months',
+            };
+            $fromDate = $modifier === null
+                ? self::DATA_START_DATE
+                : date('Y-m-d', strtotime($baseDate . ' ' . $modifier));
             if ($fromDate < self::DATA_START_DATE) {
                 $fromDate = self::DATA_START_DATE;
             }
             $toDate = $baseDate;
         }
 
+        $windowDays = (int) round((strtotime($toDate) - strtotime($fromDate)) / 86400);
         $key = substr(hash('sha256', \Shared\MimimalCmsConfig::$urlRoot . '|' . $metric . '|' . $fromDate . '|' . $toDate), 0, 24);
 
         return [
             'metric' => $metric,
             'from' => $fromDate,
             'to' => $toDate,
-            'curIsLatest' => ($toDate === '' || $toDate === $baseDate),
+            'windowDays' => $windowDays,
+            'curIsLatest' => ($toDate === $baseDate),
             'key' => $key,
             'hour' => $hour,
         ];
@@ -319,17 +332,17 @@ class AdvancedGrowthAnalysisService
                 $inc = GrowthMath::periodIncrease($bm, $cur);
                 $out[] = [$id, $rooms[$id]['category'], $inc['diff'], $inc['pct'], $bm];
             }
-        } else { // steady
-            $aggs = $this->stats->getSteadyAggregates($lo, $hi);
+        } else { // steady（選択した窓 [from, to] で回帰＝同じ期間で公平に比較）
+            $aggs = $this->stats->getSteadyAggregates($lo, $hi, $spec['from'], $spec['to']);
             foreach ($aggs as $id => $agg) {
                 if (!isset($rooms[$id])) {
                     continue;
                 }
-                $s = GrowthMath::steady($agg, $rooms[$id]['member']);
+                $s = GrowthMath::steady($agg, $rooms[$id]['member'], $spec['windowDays']);
                 if ($s === null) {
                     continue;
                 }
-                $out[] = [$id, $rooms[$id]['category'], $s['score'], $s['cagr'], $s['r2'], $s['slope'], $s['historyDays']];
+                $out[] = [$id, $rooms[$id]['category'], $s['score'], $s['cagr'], $s['r2'], $s['slope'], $s['historyDays'], $s['base']];
             }
         }
 

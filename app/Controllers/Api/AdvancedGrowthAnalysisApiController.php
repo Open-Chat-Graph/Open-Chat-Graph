@@ -74,7 +74,7 @@ class AdvancedGrowthAnalysisApiController
     {
         $error = HTTP400::class;
         $metric = Valid::str(Recp::input('metric', 'increase'), regex: ['increase', 'steady'], e: $error);
-        $period = Valid::str(Recp::input('period', 'year'), regex: ['month', 'year', 'custom'], e: $error);
+        $period = Valid::str(Recp::input('period', 'year'), regex: ['month', '3month', '6month', 'year', 'all', 'custom'], e: $error);
 
         $from = Recp::input('from');
         $to = Recp::input('to');

@@ -1,7 +1,7 @@
 // 詳細成長分析（/analysis）の型。グローバル宣言（ApiTypes.d.ts と同様）。
 
 type AnalysisMetric = 'increase' | 'steady'
-type AnalysisPeriod = 'month' | 'year' | 'custom'
+type AnalysisPeriod = 'month' | '3month' | '6month' | 'year' | 'all' | 'custom'
 // increase: count(増加数) / rate(増加率) ・ steady: score(じわじわ度) / cagr(年率) / slope(勢い)
 type AnalysisSort = 'count' | 'rate' | 'score' | 'cagr' | 'slope'
 type AnalysisOrder = 'asc' | 'desc'
