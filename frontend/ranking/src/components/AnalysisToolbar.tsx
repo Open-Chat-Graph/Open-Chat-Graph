@@ -45,6 +45,10 @@ const SORTS: Record<AnalysisMetric, { value: AnalysisSort; label: string }[]> = 
 
 const CATEGORY_OPTIONS = OPEN_CHAT_CATEGORY.map(([label, value]) => ({ label, value }))
 
+// 任意期間で選べる日付の範囲（統計データの開始日〜今日）
+const DATA_START = '2023-10-16'
+const TODAY = new Date().toISOString().slice(0, 10)
+
 // 角丸セグメンテッドコントロール（iOS風・選択時ダーク塗り、ranking のチップ色に揃える）
 const segSx = {
   bgcolor: 'var(--c-surface)',
@@ -127,6 +131,17 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
   const sortOptions = SORTS[params.metric]
   const categoryValue = CATEGORY_OPTIONS.find((o) => o.value === params.category) ?? CATEGORY_OPTIONS[0]
 
+  // 任意期間の入力チェック: 開始日が空 / 開始≧終了 は分析不可
+  const isCustom = params.metric === 'increase' && params.period === 'custom'
+  const dateError = isCustom
+    ? !params.from
+      ? '開始日を入力してください'
+      : params.to && params.from >= params.to
+        ? '開始日は終了日より前にしてください'
+        : ''
+    : ''
+  const canSearch = !dateError
+
   return (
     <Box
       sx={{
@@ -156,14 +171,16 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
           <Seg value={params.period} options={PERIODS} onChange={(v) => setParams((c) => ({ ...c, period: v }))} />
         )}
 
-        {params.metric === 'increase' && params.period === 'custom' && (
+        {isCustom && (
           <>
             <TextField
               size="small"
               type="date"
               value={params.from}
               onChange={(e) => setParams((c) => ({ ...c, from: e.target.value }))}
-              sx={{ ...pillInputSx, width: 148 }}
+              error={!params.from}
+              slotProps={{ htmlInput: { min: DATA_START, max: TODAY } }}
+              sx={{ ...pillInputSx, width: 150 }}
             />
             <Typography sx={{ fontSize: 13, color: 'var(--c-text-3)' }}>〜</Typography>
             <TextField
@@ -171,7 +188,9 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
               type="date"
               value={params.to}
               onChange={(e) => setParams((c) => ({ ...c, to: e.target.value }))}
-              sx={{ ...pillInputSx, width: 148 }}
+              error={!!params.to && !!params.from && params.from >= params.to}
+              slotProps={{ htmlInput: { min: DATA_START, max: TODAY } }}
+              sx={{ ...pillInputSx, width: 150 }}
             />
           </>
         )}
@@ -216,18 +235,27 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
             キャンセル
           </Button>
         ) : (
-          <Button
-            variant="contained"
-            startIcon={<SearchIcon />}
-            onClick={() => {
-              scrollToTop()
-              window.scrollTo(0, 0)
-              job.search(params)
-            }}
-            sx={{ fontWeight: 700, px: 2.5, borderRadius: '99px' }}
-          >
-            分析
-          </Button>
+          <>
+            {dateError && (
+              <Typography sx={{ fontSize: 12, color: 'var(--c-down, #d32f2f)', alignSelf: 'center' }}>
+                {dateError}
+              </Typography>
+            )}
+            <Button
+              variant="contained"
+              startIcon={<SearchIcon />}
+              disabled={!canSearch}
+              onClick={() => {
+                if (!canSearch) return
+                scrollToTop()
+                window.scrollTo(0, 0)
+                job.search(params)
+              }}
+              sx={{ fontWeight: 700, px: 2.5, borderRadius: '99px' }}
+            >
+              分析
+            </Button>
+          </>
         )}
       </Stack>
 

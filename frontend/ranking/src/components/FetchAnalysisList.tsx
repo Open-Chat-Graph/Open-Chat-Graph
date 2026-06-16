@@ -11,7 +11,7 @@ const ROOT_MARGIN = isSP() ? '200px' : '600px'
 const dummyContainerStyle = { opacity: 0.6 } as const
 
 export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
-  const { phase, items, totalCount, isLastPage, loadMore, resultMetric, error } = job
+  const { phase, items, totalCount, isLastPage, loadMore, resultMetric } = job
 
   const { ref: sentinelRef, inView } = useInView({ rootMargin: ROOT_MARGIN, threshold: 0 })
 
@@ -39,9 +39,9 @@ export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
     return (
       <Box sx={{ textAlign: 'center', py: 6 }}>
         <Typography sx={{ fontSize: 14 }}>通信エラー😥 もう一度お試しください</Typography>
-        {error && (
-          <Typography sx={{ fontSize: 12, mt: 1, opacity: 0.7 }}>{error}</Typography>
-        )}
+        <Typography sx={{ fontSize: 12, mt: 1, opacity: 0.7 }}>
+          条件を変えて再検索してください
+        </Typography>
       </Box>
     )
   }
