@@ -66,12 +66,20 @@
   color: var(--c-text-3);
 }
 
+/* 更新インジケータ＋分析Labs導線を同じ行に並べる */
+.oc-home-hero__metarow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
 /* 更新インジケータ: 「生きている統計」の鼓動。ブランド緑の小さなピル */
 .oc-home-hero__meta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 10px 0 0;
   padding: 3px 10px;
   font-size: 11px;
   font-weight: 700;
@@ -79,6 +87,32 @@
   color: var(--c-brand);
   background: var(--c-brand-tint);
   border-radius: 999px;
+}
+
+/* 上級者向け分析ツール（分析Labs）への控えめな導線。普段は地味な灰色、ホバーでブランド色 */
+.oc-home-hero__labs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--c-text-3);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.oc-home-hero__labs svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  opacity: 0.85;
+}
+
+.oc-home-hero__labs:hover,
+.oc-home-hero__labs:focus-visible {
+  color: var(--c-brand);
+  text-decoration: underline;
 }
 
 .oc-home-hero__dot {

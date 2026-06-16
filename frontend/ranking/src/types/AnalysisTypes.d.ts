@@ -1,0 +1,38 @@
+// 詳細成長分析（/analysis）の型。グローバル宣言（ApiTypes.d.ts と同様）。
+
+type AnalysisMetric = 'increase' | 'steady'
+type AnalysisPeriod = 'month' | '3month' | '6month' | 'year' | 'all' | 'custom'
+// increase: count(増加数) / rate(増加率) ・ steady: score(じわじわ度・並び替え固定)
+type AnalysisSort = 'count' | 'rate' | 'score'
+type AnalysisOrder = 'asc' | 'desc'
+
+type AnalysisParams = {
+  metric: AnalysisMetric
+  period: AnalysisPeriod
+  from: string
+  to: string
+  category: number
+  keyword: string
+  sort: AnalysisSort
+  order: AnalysisOrder
+}
+
+// API(/analysis-result)が返す1部屋。OpenChat の表示フィールド＋指標の生数値。
+interface AnalysisItem {
+  id: number
+  name: string
+  desc: string
+  member: number
+  img: string
+  emblem: 0 | 1 | 2
+  joinMethodType: 0 | 1 | 2
+  category: number
+  // 増加・じわじわ成長とも共通: 期間内の増加数・増加率・期間開始時点のメンバー数
+  diff?: number
+  pct?: number | null
+  base?: number
+  // 先頭要素のみ（page 0）
+  totalCount?: number
+}
+
+type AnalysisJobPhase = 'idle' | 'loading' | 'done' | 'error'

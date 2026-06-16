@@ -11,3 +11,15 @@ export const listParamsState = atom<ListParams>({
 export const keywordState = atom<string>('')
 
 export const subCategoryChipsStackScrollLeft = atom<number>(0)
+
+// 詳細成長分析（/analysis）のツールバー入力状態（検索条件のフォーム値）
+export const analysisParamsState = atom<AnalysisParams>({
+  metric: 'increase',
+  period: 'year',
+  from: '',
+  to: '',
+  category: 0,
+  keyword: '',
+  sort: 'count',
+  order: 'desc',
+})

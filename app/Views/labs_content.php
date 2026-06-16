@@ -15,6 +15,15 @@
                 <p class="labs-intro">試験運用版の分析機能をお試しいただけます。</p>
 
                 <div class="labs-list">
+                    <a class="labs-card" href="<?php echo url('labs/growth') ?>" aria-label="詳細成長分析を開く">
+                        <img src="/labs-img/growth.webp" alt="詳細成長分析" width="1200" height="750">
+                        <div class="labs-card-body">
+                            <h2>詳細成長分析</h2>
+                            <p>月間・年間・任意期間の増加数や増加率、さらに数年かけて“じわじわ”伸び続けている部屋を、カテゴリ・キーワードで絞り込んで探せます。公認メンターやデータ分析者向けの本格機能です。</p>
+                            <span class="labs-card-open">開く</span>
+                        </div>
+                    </a>
+
                     <a class="labs-card" href="<?php echo url('labs/live') ?>" aria-label="ライブトーク利用時間分析ツールを開く">
                         <img src="/labs-img/livegraph.webp" alt="ライブトーク利用時間分析ツール" width="643" height="610">
                         <div class="labs-card-body">

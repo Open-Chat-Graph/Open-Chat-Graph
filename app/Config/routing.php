@@ -13,6 +13,7 @@ use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
 use App\Controllers\Api\OpenChatChartApiController;
+use App\Controllers\Api\AdvancedGrowthAnalysisApiController;
 use App\Controllers\Api\OpenChatRegistrationApiController;
 use App\Controllers\Api\MyListApiController;
 use App\Controllers\Api\RecentCommentApiController;
@@ -30,6 +31,7 @@ use App\Controllers\Pages\BlogController;
 use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
+use App\Controllers\Pages\ReactAnalysisPageController;
 use App\Controllers\Pages\RecentCommentPageController;
 use App\Controllers\Pages\RecentOpenChatPageController;
 use App\Controllers\Pages\RecommendOpenChatPageController;
@@ -142,6 +144,17 @@ Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
+
+// 詳細成長分析（/labs/growth）。専門ユーザー向け・重いクエリ。React は /ranking と同一バンドル
+// （React Router が URL で AnalysisPage を出し分け）。ページ HTML は毎時更新基準でCDNキャッシュ。
+Route::path('labs/growth', [ReactAnalysisPageController::class, 'index'])
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+    });
+
+// 進捗ポーリング(status, no-store) と 結果取得(result, checkLastModified で CDN キャッシュ)。
+Route::path('analysis-status', [AdvancedGrowthAnalysisApiController::class, 'status']);
+Route::path('analysis-result', [AdvancedGrowthAnalysisApiController::class, 'result']);
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])
     ->match(function () {
