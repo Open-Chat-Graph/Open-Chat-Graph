@@ -16,7 +16,7 @@
 
                 <div class="labs-list">
                     <a class="labs-card" href="<?php echo url('labs/growth') ?>" aria-label="詳細成長分析を開く">
-                        <img src="/labs-img/all_room_stats.webp" alt="詳細成長分析" width="2400" height="2505">
+                        <img src="/labs-img/growth.webp" alt="詳細成長分析" width="1200" height="750">
                         <div class="labs-card-body">
                             <h2>詳細成長分析</h2>
                             <p>月間・年間・任意期間の増加数や増加率、さらに数年かけて“じわじわ”伸び続けている部屋を、カテゴリ・キーワードで絞り込んで探せます。公認メンターやデータ分析者向けの本格機能です。</p>

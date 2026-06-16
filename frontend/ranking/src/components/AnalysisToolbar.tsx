@@ -21,7 +21,7 @@ import { PERIODS, useSetAnalysisParams } from '../hooks/AnalysisHooks'
 import type { AnalysisJob } from '../hooks/AnalysisHooks'
 import { scrollToTop } from '../utils/utils'
 import AnalysisMetricHelp from './AnalysisMetricHelp'
-import { ANALYSIS_HEADER_H } from './AnalysisHeader'
+import { ANALYSIS_HEADER_H, innerColumnSx } from './AnalysisHeader'
 
 const METRICS: { value: AnalysisMetric; label: string }[] = [
   { value: 'increase', label: '期間の増加' },
@@ -162,14 +162,12 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         background: 'var(--c-bg)',
         borderBottom: '1px solid var(--c-border)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        px: { xs: 1.5, sm: 2.5 },
-        py: 1,
         // キーワード入力以外は選択・ドラッグ不可
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
     >
-      <Stack sx={{ gap: 1 }}>
+      <Stack sx={{ ...innerColumnSx, gap: 1, py: 1 }}>
         {/* 指標 */}
         <Stack direction="row" alignItems="center" useFlexGap flexWrap="wrap" sx={{ gap: 1 }}>
           <Seg value={params.metric} options={METRICS} onChange={(v) => setParams((c) => ({ ...c, metric: v }))} />
@@ -277,14 +275,20 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
         {loading && (
           <Box>
             <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
-              <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)' }}>
-                分析中… {job.percent}％
-                {job.computed > 0 && <>（{job.computed.toLocaleString()} 件 集計済み）</>}
-              </Typography>
+              {job.stalled ? (
+                <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-down, #d32f2f)' }}>
+                  接続が不安定です。続きから自動で再開します…
+                </Typography>
+              ) : (
+                <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)' }}>
+                  分析中… {job.percent}％
+                  {job.computed > 0 && <>（{job.computed.toLocaleString()} 件 集計済み）</>}
+                </Typography>
+              )}
               <Typography sx={{ fontSize: 11.5, color: 'var(--c-text-3)' }}>{job.elapsed} 秒</Typography>
             </Stack>
             <LinearProgress
-              variant={job.percent > 0 ? 'determinate' : 'indeterminate'}
+              variant={job.stalled || job.percent === 0 ? 'indeterminate' : 'determinate'}
               value={job.percent}
               sx={{ height: 6, borderRadius: 3 }}
             />
