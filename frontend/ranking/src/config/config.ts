@@ -17,7 +17,7 @@ export const basePath = `${
 
 export const analysisPath = `${
   rankingArgDto.urlRoot ? rankingArgDto.urlRoot.replace(/^\/+/, '') + '/' : ''
-}analysis`
+}labs/growth`
 
 const parsedUrl = new URL(rankingArgDto.baseUrl, window.location.origin)
 export const siteUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}${

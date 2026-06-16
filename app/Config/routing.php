@@ -145,14 +145,15 @@ Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-// 詳細成長分析（/analysis）。専門ユーザー向け・重いクエリ。React は /ranking と同一バンドル
+// 詳細成長分析（/labs/growth）。専門ユーザー向け・重いクエリ。React は /ranking と同一バンドル
 // （React Router が URL で AnalysisPage を出し分け）。ページ HTML は毎時更新基準でCDNキャッシュ。
-Route::path('analysis', [ReactAnalysisPageController::class, 'index'])
+Route::path('labs/growth', [ReactAnalysisPageController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-// 詳細成長分析の結果。その場で計算して返すだけ（サーバ非保存）。checkLastModified で CDN キャッシュ。
+// 進捗ポーリング(status, no-store) と 結果取得(result, checkLastModified で CDN キャッシュ)。
+Route::path('analysis-status', [AdvancedGrowthAnalysisApiController::class, 'status']);
 Route::path('analysis-result', [AdvancedGrowthAnalysisApiController::class, 'result']);
 
 Route::path('mylist-api', [MyListApiController::class, 'index'])

@@ -10,21 +10,27 @@ use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\BadRequestException;
 
 /**
- * 詳細成長分析（/analysis）。重いが、その場で計算して返すだけ（サーバに一切保存しない）。
+ * 詳細成長分析（/labs/growth）。重い集計を「シンプルなポーリング」で進め、進捗(%)を返す。
  *
- * - 1 リクエストで全部屋を集計→絞り込み→並び替え→ページ切り出し→表示用に整形して返す。
- * - 毎時更新なので同一 URL クエリは CDN がキャッシュする（コントローラの checkLastModified）。
- *   つまり「計算するのは (条件×時間帯) ごとに 1 回」で、以降は CDN が返す。中間ファイル・ジョブ状態は持たない。
+ * - status: open_chat_id レンジを CHUNK_COUNT 分割。1 回叩くごとに 1 チャンク集計して 1 つの
+ *   ジョブファイルに積み増し、進捗% を返す。最終チャンクでソートして finished に。
+ *   （1 リクエストでは進捗を出せないので、待ち時間の目安を見せるために分割ポーリングする）
+ * - result: その finished ジョブを読み、絞り込み・並び替え・ページ切り出し・整形して返す。
+ *   毎時更新なので同一 URL は CDN がキャッシュする（コントローラの checkLastModified）。
+ * - ジョブファイルは短命（JOB_TTL_SECONDS）。結果は CDN が持つのでサーバには残し続けない。
  *
  * 行は省メモリのため数値配列で持つ（列順は I_* 定数）。
  */
 class AdvancedGrowthAnalysisService
 {
-    /** 集計を分割実行する単位（1 クエリの IN レンジを小さく保つ。進捗用ではない） */
+    /** チャンク分割数（status のポーリング回数 ≒ これ） */
     private const CHUNK_COUNT = 30;
 
     /** 統計データの開始日（これ以前は from に指定できない） */
     private const DATA_START_DATE = '2023-10-16';
+
+    /** ジョブファイルの寿命（秒）。CDN がレスポンスを持つので短命でよい */
+    private const JOB_TTL_SECONDS = 600;
 
     /** 増加率ソート時の最低 base メンバー数（極小規模からの暴騰%ノイズを除外） */
     private const RATE_MIN_BASE = 50;
@@ -53,11 +59,69 @@ class AdvancedGrowthAnalysisService
     }
 
     /**
-     * その場で全件計算し、絞り込み・並び替え・ページ切り出し・整形して返す。
+     * status: 1 チャンク進めて進捗を返す。完了済みなら即 done。
+     *
+     * @return array{done:bool, percent:int, computed:int, total:?int}
+     */
+    public function advance(string $metric, string $period, ?string $from, ?string $to): array
+    {
+        $spec = $this->resolveSpec($metric, $period, $from, $to);
+        $this->sweepStale();
+        $jobPath = $this->jobPath($spec);
+
+        $job = $this->fileStorage->getSerializedFile($jobPath);
+        if (is_array($job) && !empty($job['finished'])) {
+            return $this->doneResponse($job);
+        }
+
+        $lockFp = fopen($this->jobDir() . '/' . $spec['key'] . '.lock', 'c');
+        $gotLock = $lockFp !== false && flock($lockFp, LOCK_EX | LOCK_NB);
+        if (!$gotLock) {
+            if ($lockFp !== false) {
+                fclose($lockFp);
+            }
+            return $this->progressResponse(is_array($job) ? $job : null);
+        }
+
+        try {
+            $job = $this->fileStorage->getSerializedFile($jobPath);
+            if (is_array($job) && !empty($job['finished'])) {
+                return $this->doneResponse($job);
+            }
+            if (!is_array($job)) {
+                $maxId = $this->rooms->getMaxOpenChatId();
+                $job = ['step' => intdiv(max($maxId, 1), self::CHUNK_COUNT) + 1, 'done' => 0, 'rows' => [], 'finished' => false];
+            }
+
+            $i = (int)$job['done'];
+            $lo = $i * (int)$job['step'];
+            $hi = $lo + (int)$job['step'];
+            foreach ($this->computeChunk($spec, $lo, $hi) as $row) {
+                $job['rows'][] = $row;
+            }
+            $job['done'] = $i + 1;
+
+            if ($job['done'] >= self::CHUNK_COUNT) {
+                $primary = $spec['metric'] === 'increase' ? self::I_DIFF : self::I_SCORE;
+                usort($job['rows'], static fn($a, $b) => ($b[$primary] <=> $a[$primary]));
+                $job['finished'] = true;
+            }
+
+            $this->fileStorage->saveSerializedFile($jobPath, $job);
+            return $job['finished'] ? $this->doneResponse($job) : $this->progressResponse($job);
+        } finally {
+            flock($lockFp, LOCK_UN);
+            fclose($lockFp);
+        }
+    }
+
+    /**
+     * result: 完成済みジョブをフィルタ・ソート・スライスして整形して返す。
+     * 未完成（TTL 経過・時間帯ロールオーバー等）なら空（クライアントは status を再実行）。
      *
      * @return array<int, array<string, mixed>> 先頭要素に totalCount を載せる（page 0 のとき）
      */
-    public function search(
+    public function result(
         string $metric,
         string $period,
         ?string $from,
@@ -70,9 +134,14 @@ class AdvancedGrowthAnalysisService
         int $limit,
     ): array {
         $spec = $this->resolveSpec($metric, $period, $from, $to);
-        $isIncrease = $spec['metric'] === 'increase';
+        $job = $this->fileStorage->getSerializedFile($this->jobPath($spec));
+        if (!is_array($job) || empty($job['finished'])) {
+            return $page === 0 ? [['totalCount' => 0]] : [];
+        }
 
-        $rows = $this->computeAll($spec);
+        /** @var array<int, array<int, int|float|null>> $rows */
+        $rows = $job['rows'];
+        $isIncrease = $spec['metric'] === 'increase';
 
         if ($category > 0) {
             $rows = array_values(array_filter($rows, static fn($r) => $r[self::I_CAT] === $category));
@@ -81,7 +150,6 @@ class AdvancedGrowthAnalysisService
             $ids = array_flip($this->rooms->findIdsByKeyword($keyword));
             $rows = array_values(array_filter($rows, static fn($r) => isset($ids[$r[self::I_ID]])));
         }
-        // 増加率ソートは極小規模からの暴騰%に支配されるため base 下限で間引く
         if ($isIncrease && $sort === 'rate') {
             $rows = array_values(array_filter($rows, static fn($r) => (int)$r[self::I_BASE] >= self::RATE_MIN_BASE));
         }
@@ -138,37 +206,29 @@ class AdvancedGrowthAnalysisService
 
     // ───────────────────────── 内部 ─────────────────────────
 
-    /**
-     * 全部屋を期間窓で集計し、主指標の降順でソートした行配列を返す（その場限り・非保存）。
-     *
-     * @return array<int, array<int, int|float|null>>
-     */
-    private function computeAll(array $spec): array
+    /** @return array{done:bool, percent:int, computed:int, total:int} */
+    private function doneResponse(array $job): array
     {
-        $maxId = $this->rooms->getMaxOpenChatId();
-        $step = intdiv(max($maxId, 1), self::CHUNK_COUNT) + 1;
+        $n = count($job['rows'] ?? []);
+        return ['done' => true, 'percent' => 100, 'computed' => $n, 'total' => $n];
+    }
 
-        $rows = [];
-        for ($i = 0; $i < self::CHUNK_COUNT; $i++) {
-            $lo = $i * $step;
-            $hi = $lo + $step;
-            foreach ($this->computeChunk($spec, $lo, $hi) as $row) {
-                $rows[] = $row;
-            }
-        }
-
-        $primary = $spec['metric'] === 'increase' ? self::I_DIFF : self::I_SCORE;
-        usort($rows, static fn($a, $b) => ($b[$primary] <=> $a[$primary]));
-
-        return $rows;
+    /** @return array{done:bool, percent:int, computed:int, total:null} */
+    private function progressResponse(?array $job): array
+    {
+        $done = is_array($job) ? (int)($job['done'] ?? 0) : 0;
+        $computed = is_array($job) ? count($job['rows'] ?? []) : 0;
+        return ['done' => false, 'percent' => min((int)floor($done / self::CHUNK_COUNT * 100), 99), 'computed' => $computed, 'total' => null];
     }
 
     /**
-     * @return array{metric:string, from:string, to:string, windowDays:int, curIsLatest:bool}
+     * @return array{metric:string, from:string, to:string, windowDays:int, curIsLatest:bool, key:string, hour:string}
      */
     private function resolveSpec(string $metric, string $period, ?string $from, ?string $to): array
     {
-        $baseDate = substr($this->hourlyUpdatedAt(), 0, 10);
+        $hourly = $this->hourlyUpdatedAt();
+        $baseDate = substr($hourly, 0, 10);
+        $hour = preg_replace('/[^0-9]/', '', $hourly);
 
         if ($period === 'custom') {
             $fromDate = $this->validDate($from);
@@ -205,6 +265,8 @@ class AdvancedGrowthAnalysisService
             'to' => $toDate,
             'windowDays' => (int) round((strtotime($toDate) - strtotime($fromDate)) / 86400),
             'curIsLatest' => ($toDate === $baseDate),
+            'key' => substr(hash('sha256', \Shared\MimimalCmsConfig::$urlRoot . '|' . $metric . '|' . $fromDate . '|' . $toDate), 0, 24),
+            'hour' => $hour,
         ];
     }
 
@@ -233,7 +295,6 @@ class AdvancedGrowthAnalysisService
 
         if ($spec['metric'] === 'increase') {
             $base = $this->stats->getMemberAsOf($lo, $hi, $spec['from']);
-            // 終点が最新日なら現在値=open_chat.member を使い as-of クエリを 1 本省く（性能）
             $curMap = $spec['curIsLatest'] ? null : $this->stats->getMemberAsOf($lo, $hi, $spec['to']);
             foreach ($base as $id => $bm) {
                 if (!isset($rooms[$id])) {
@@ -271,16 +332,44 @@ class AdvancedGrowthAnalysisService
     {
         $col = $isIncrease ? ($sort === 'rate' ? self::I_PCT : self::I_DIFF) : self::I_SCORE;
         $primary = $isIncrease ? self::I_DIFF : self::I_SCORE;
-
-        // computeAll が主指標 desc で返すので、既定（主指標・降順）ならそのまま
         if ($col === $primary && $order === 'desc') {
             return $rows;
         }
-
         usort($rows, $order === 'asc'
             ? static fn($a, $b) => ($a[$col] <=> $b[$col])
             : static fn($a, $b) => ($b[$col] <=> $a[$col]));
-
         return $rows;
+    }
+
+    private function jobDir(): string
+    {
+        $dir = $this->fileStorage->getStorageFilePath('analysisJobsDir');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        return $dir;
+    }
+
+    private function jobPath(array $spec): string
+    {
+        return $this->jobDir() . '/' . $spec['key'] . '.' . $spec['hour'] . '.job';
+    }
+
+    /** TTL を過ぎた job/lock を掃除（@抑制警告も例外化される環境なので is_file 確認してから） */
+    private function sweepStale(): void
+    {
+        $now = time();
+        foreach (glob($this->jobDir() . '/*') ?: [] as $file) {
+            if (is_file($file) && ($now - filemtime($file)) > self::JOB_TTL_SECONDS) {
+                $this->safeUnlink($file);
+            }
+        }
+    }
+
+    private function safeUnlink(string $path): void
+    {
+        if (is_file($path)) {
+            unlink($path);
+        }
     }
 }

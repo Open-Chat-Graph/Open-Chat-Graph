@@ -66,11 +66,16 @@ export default function FetchAnalysisList({ job }: { job: AnalysisJob }) {
     )
   }
 
+  const metricLabel = resultMetric === 'steady' ? 'じわじわ成長' : '期間の増加'
+
   return (
     <>
-      <Box sx={{ px: 0.5, py: 1 }}>
-        <Typography component="span" sx={{ fontSize: 13, fontWeight: 600 }}>
-          {totalCount.toLocaleString()} 件
+      <Box sx={{ px: 0.5, pt: 1, pb: 1.5 }}>
+        <Typography component="h1" sx={{ fontSize: 17, fontWeight: 800, lineHeight: 1.3 }}>
+          詳細成長分析
+        </Typography>
+        <Typography component="p" sx={{ fontSize: 12.5, color: 'var(--c-text-3, #888)', mt: 0.25 }}>
+          {metricLabel}・該当 <b style={{ fontWeight: 700 }}>{totalCount.toLocaleString()}</b> 件
         </Typography>
       </Box>
 

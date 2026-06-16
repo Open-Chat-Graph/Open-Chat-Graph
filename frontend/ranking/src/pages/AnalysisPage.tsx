@@ -6,6 +6,7 @@ import { getValidAnalysisParams, useAnalysisJob } from '../hooks/AnalysisHooks'
 import AnalysisHeader, { ANALYSIS_HEADER_H } from '../components/AnalysisHeader'
 import AnalysisToolbar from '../components/AnalysisToolbar'
 import FetchAnalysisList from '../components/FetchAnalysisList'
+import AnalysisAbout from '../components/AnalysisAbout'
 
 function AnalysisPageInner() {
   const job = useAnalysisJob()
@@ -28,6 +29,7 @@ function AnalysisPageInner() {
       <AnalysisToolbar job={job} />
       <Box component="main" sx={{ maxWidth: 1040, mx: 'auto', px: { xs: 1.5, sm: 2.5 }, pt: 1.5, pb: 8 }}>
         <FetchAnalysisList job={job} />
+        <AnalysisAbout />
       </Box>
     </div>
   )

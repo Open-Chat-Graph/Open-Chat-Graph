@@ -86,16 +86,35 @@ function resultUrl(p: AnalysisParams, page: number): string {
   return `${base}/analysis-result?${q.toString()}`
 }
 
-async function fetchResult(p: AnalysisParams, page: number, signal: AbortSignal): Promise<AnalysisItem[]> {
-  const res = await fetch(resultUrl(p, page), { headers: { 'X-Ocg-Client': '1' }, signal })
+function statusUrl(p: AnalysisParams): string {
+  const q = new URLSearchParams({ metric: p.metric, period: p.period })
+  if (p.period === 'custom') {
+    if (p.from) q.set('from', p.from)
+    if (p.to) q.set('to', p.to)
+  }
+  return `${base}/analysis-status?${q.toString()}`
+}
+
+async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
+  const res = await fetch(url, { headers: { 'X-Ocg-Client': '1' }, signal })
   if (!res.ok) {
     throw new Error('http ' + res.status)
   }
   return res.json()
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+interface StatusResponse {
+  done: boolean
+  percent: number
+  computed: number
+}
+
 export interface AnalysisJob {
   phase: AnalysisJobPhase
+  percent: number
+  computed: number
   elapsed: number
   items: AnalysisItem[] // 描画対象（renderCount でスライス済み）
   totalCount: number
@@ -109,12 +128,13 @@ export interface AnalysisJob {
 }
 
 /**
- * その場計算の結果を 1 リクエストで取得し、クライアント側で無限スクロール描画する。
- * サーバに状態は持たない。進捗は経過秒＋不確定バーで「動いている」感を出す（本物の%ではない）。
- * キャンセルは AbortController で fetch を中断。
+ * シンプルなポーリングで重い集計の進捗(%)を出しつつ、完了後に結果バッチを取得して
+ * クライアント側で無限スクロール描画する。キャンセルは AbortController で中断。
  */
 export function useAnalysisJob(): AnalysisJob {
   const [phase, setPhase] = useState<AnalysisJobPhase>('idle')
+  const [percent, setPercent] = useState(0)
+  const [computed, setComputed] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [fetched, setFetched] = useState<AnalysisItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -143,23 +163,38 @@ export function useAnalysisJob(): AnalysisJob {
     setResultMetric(params.metric)
     setResultCategory(params.category)
     setPhase('loading')
+    setPercent(0)
+    setComputed(0)
     setElapsed(0)
     setFetched([])
     setTotalCount(0)
     setRenderCount(LIMIT_ITEMS)
 
-    fetchResult(params, 0, ac.signal)
-      .then((batch) => {
+    ;(async () => {
+      try {
+        // 1) 進捗ポーリング（1回1チャンク）。待ち時間の目安を % で表示
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          if (ac.signal.aborted) return
+          const st = await fetchJson<StatusResponse>(statusUrl(params), ac.signal)
+          if (ac.signal.aborted) return
+          setPercent(st.percent)
+          setComputed(st.computed)
+          if (st.done) break
+          await sleep(300)
+        }
+        // 2) 完成結果から先頭バッチを取得
+        const batch = await fetchJson<AnalysisItem[]>(resultUrl(params, 0), ac.signal)
         if (ac.signal.aborted) return
         setFetched(batch)
         setTotalCount(batch.length ? batch[0].totalCount ?? batch.length : 0)
         setRenderCount(LIMIT_ITEMS)
         setPhase('done')
-      })
-      .catch(() => {
+      } catch {
         if (ac.signal.aborted) return
         setPhase('error')
-      })
+      }
+    })()
   }, [])
 
   const cancel = useCallback(() => {
@@ -179,7 +214,7 @@ export function useAnalysisJob(): AnalysisJob {
       loadingMoreRef.current = true
       const ac = new AbortController()
       const page = Math.floor(fetched.length / BATCH)
-      fetchResult(paramsRef.current, page, ac.signal)
+      fetchJson<AnalysisItem[]>(resultUrl(paramsRef.current, page), ac.signal)
         .then((next) => {
           setFetched((prev) => [...prev, ...next])
           setRenderCount((c) => c + LIMIT_ITEMS)
@@ -194,5 +229,5 @@ export function useAnalysisJob(): AnalysisJob {
   const items = fetched.slice(0, renderCount)
   const isLastPage = renderCount >= fetched.length && fetched.length >= totalCount
 
-  return { phase, elapsed, items, totalCount, isLastPage, resultMetric, resultCategory, search, cancel, loadMore }
+  return { phase, percent, computed, elapsed, items, totalCount, isLastPage, resultMetric, resultCategory, search, cancel, loadMore }
 }

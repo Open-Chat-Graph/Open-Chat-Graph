@@ -66,15 +66,40 @@ const segSx = {
   },
 } as const
 
-// ピル型の Select / 入力（font-size 16px で iOS 自動ズーム防止）
-const pillSx = {
+// ピル型の Select（sx は Select 本体＝OutlinedInput root に当たる）
+const pillSelectSx = {
   bgcolor: 'var(--c-surface)',
   borderRadius: '99px',
   height: 38,
-  fontSize: 16,
   '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-  '& .MuiOutlinedInput-input': { fontSize: 16, py: 0 },
-  '& .MuiSelect-select': { py: 0, pl: 1.5, fontSize: 14 },
+  // 表示値を縦中央に
+  '& .MuiSelect-select': {
+    py: 0,
+    pl: 1.5,
+    fontSize: 14,
+    height: 38,
+    minHeight: 'unset',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+  },
+} as const
+
+// ピル型の TextField（sx は FormControl に当たるので、見た目は内側の input root に当てる）
+// font-size 16px で iOS 自動ズーム防止。input を 38px に伸ばしブラウザ標準でテキスト/placeholder を縦中央化。
+const pillFieldSx = {
+  '& .MuiOutlinedInput-root': {
+    bgcolor: 'var(--c-surface)',
+    borderRadius: '99px',
+    height: 38,
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+  '& .MuiOutlinedInput-input': {
+    fontSize: 16,
+    py: 0,
+    height: '100%',
+    boxSizing: 'border-box',
+  },
 } as const
 
 function Seg<T extends string>({
@@ -163,7 +188,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
                 onChange={(e) => setParams((c) => ({ ...c, from: e.target.value }))}
                 error={!params.from}
                 slotProps={{ htmlInput: { min: DATA_START, max: TODAY } }}
-                sx={{ ...pillSx, width: 150 }}
+                sx={{ ...pillFieldSx, width: 150 }}
               />
               <Typography sx={{ fontSize: 13, color: 'var(--c-text-3)' }}>〜</Typography>
               <TextField
@@ -172,7 +197,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
                 value={params.to}
                 onChange={(e) => setParams((c) => ({ ...c, to: e.target.value }))}
                 slotProps={{ htmlInput: { min: DATA_START, max: TODAY } }}
-                sx={{ ...pillSx, width: 150 }}
+                sx={{ ...pillFieldSx, width: 150 }}
               />
             </>
           )}
@@ -185,7 +210,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
             value={String(params.category)}
             onChange={(e) => setParams((c) => ({ ...c, category: Number(e.target.value) }))}
             MenuProps={{ disableScrollLock: true, slotProps: { paper: { sx: { maxHeight: 360 } } } }}
-            sx={{ ...pillSx, minWidth: 124 }}
+            sx={{ ...pillSelectSx, minWidth: 124 }}
           >
             {OPEN_CHAT_CATEGORY.map((c) => (
               <MenuItem key={c[1]} value={String(c[1])}>
@@ -217,7 +242,7 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
             value={params.keyword}
             onChange={(e) => setParams((c) => ({ ...c, keyword: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-            sx={{ ...pillSx, flexGrow: 1, userSelect: 'text', WebkitUserSelect: 'text' }}
+            sx={{ ...pillFieldSx, flexGrow: 1, userSelect: 'text', WebkitUserSelect: 'text' }}
             slotProps={{
               input: {
                 endAdornment: params.keyword ? (
@@ -251,10 +276,18 @@ export default function AnalysisToolbar({ job }: { job: AnalysisJob }) {
 
         {loading && (
           <Box>
-            <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)', mb: 0.5 }}>
-              分析中… {job.elapsed} 秒（数万件を集計しています）
-            </Typography>
-            <LinearProgress sx={{ height: 6, borderRadius: 3 }} />
+            <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
+              <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-up, #1976d2)' }}>
+                分析中… {job.percent}％
+                {job.computed > 0 && <>（{job.computed.toLocaleString()} 件 集計済み）</>}
+              </Typography>
+              <Typography sx={{ fontSize: 11.5, color: 'var(--c-text-3)' }}>{job.elapsed} 秒</Typography>
+            </Stack>
+            <LinearProgress
+              variant={job.percent > 0 ? 'determinate' : 'indeterminate'}
+              value={job.percent}
+              sx={{ height: 6, borderRadius: 3 }}
+            />
           </Box>
         )}
       </Stack>
