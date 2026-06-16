@@ -19,7 +19,7 @@ const DEFAULT_SORT: Record<AnalysisMetric, AnalysisSort> = { increase: 'count', 
 // 期間タブは両指標で共通。既定だけ指標ごとに変える。
 // じわじわ成長は「全期間だと登録時期で優劣がつく」ため、最新データまでの固定窓
 // （2023-10-30〜最新）を任意期間の既定にして、長期の右肩上がりを公平に比較する。
-export const PERIODS: AnalysisPeriod[] = ['3month', '6month', 'year', 'all', 'custom']
+export const PERIODS: AnalysisPeriod[] = ['3month', '6month', 'year', 'custom']
 const DEFAULT_PERIOD: Record<AnalysisMetric, AnalysisPeriod> = { increase: 'year', steady: 'custom' }
 /** じわじわ成長を任意期間で開いたときの既定の開始日（統計開始直後の安定した日付） */
 export const DEFAULT_STEADY_FROM = '2023-10-30'
