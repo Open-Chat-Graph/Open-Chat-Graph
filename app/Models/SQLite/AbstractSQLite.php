@@ -35,8 +35,15 @@ abstract class AbstractSQLite extends DB implements DBInterface
      * - busyTimeout=20ms: 1回のロック待ちを短く刻む。続きはリトライ側のジッター付き
      *   待機で互いにずらして再試行する（下記 READER_RETRY_*）。既定の10秒のまま rw 化
      *   すると競合時に全リクエストが10秒待ちになる（PR #367→#370 差し戻しの事故）
+     * - persistent=true: FPM ワーカー内で接続(と -shm/wal-index のマップ・読みマークスロット)を
+     *   リクエストをまたいで使い回す。クエリ毎に接続を開き直す churn こそが wal-index ロック競合
+     *   （SQLITE_PROTOCOL "locking protocol" / SQLITE_BUSY "database is locked"）の主因のため、
+     *   読み取り接続を永続化して churn 自体を断つ。SQLite 3.26 では busy_timeout が wal-index
+     *   ロックに効かない（blocking locks は 3.30+）ので「待つ」より「開き直さない」方が効く。
+     *   書き込み(rwc)接続は cron 単一プロセスで churn が無く、トランザクション持ち越しリスクも
+     *   あるため persistent にしない（読み取り専用の rw/ro 接続にのみ付ける）。
      */
-    public const WEB_READER = ['mode' => '?mode=rw', 'busyTimeout' => 20];
+    public const WEB_READER = ['mode' => '?mode=rw', 'busyTimeout' => 20, 'persistent' => true];
 
     protected const MAX_RETRIES = 7;
     // 書き込み(rwc)接続用: busy_timeout=10秒が主に待つので、間隔はゆっくり長く
@@ -55,10 +62,11 @@ abstract class AbstractSQLite extends DB implements DBInterface
     ];
 
     /**
-     * @param ?array{storageFileKey?: string, filePath?: string, mode?: ?string, busyTimeout?: ?int} $config
+     * @param ?array{storageFileKey?: string, filePath?: string, mode?: ?string, busyTimeout?: ?int, persistent?: ?bool} $config
      *  mode default is '?mode=rwc' / busyTimeout default is 10000ms。
-     *  Web リクエスト中の読み取りは self::WEB_READER を渡す（rw + 短い busy_timeout）。
+     *  Web リクエスト中の読み取りは self::WEB_READER を渡す（rw + 短い busy_timeout + persistent）。
      *  バッチの読み取りは '?mode=rw' のみ指定し busyTimeout は既定の10秒のままにする。
+     *  persistent=true で PDO 永続接続にする（FPM ワーカーで接続/-shm を使い回し churn を断つ）。
      */
     /** @var array<class-string, string> 接続中のモード（接続使い回し判定用） */
     private static array $connectedMode = [];
@@ -88,7 +96,12 @@ abstract class AbstractSQLite extends DB implements DBInterface
         $sqliteFilePath = $config['filePath']
             ?? app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
 
-        static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode);
+        // 読み取り(rw/ro)接続のみ persistent にして churn を断つ（WEB_READER 経由）。
+        // 書き込み(rwc)はトランザクション持ち越し事故を避けるため非 persistent のまま。
+        $options = (!empty($config['persistent']) && !str_contains($mode, 'rwc'))
+            ? [\PDO::ATTR_PERSISTENT => true]
+            : [];
+        static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode, null, null, $options);
         self::$connectedMode[static::class] = $mode;
 
         // Set busy timeout for all modes (including read-only) to handle concurrent access
