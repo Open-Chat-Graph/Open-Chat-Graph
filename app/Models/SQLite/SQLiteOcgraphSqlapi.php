@@ -25,7 +25,7 @@ class SQLiteOcgraphSqlapi extends AbstractSQLite implements DBInterface
      * 接続使い回し・WAL等のPRAGMA適用条件を全SQLiteで統一するため。以前の独自実装は
      * mode=ro だと busy_timeout が未設定・最初に開いたモードを使い回す問題があった）。
      *
-     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int} $config mode default is '?mode=rwc'
+     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int, persistent?: ?bool} $config mode default is '?mode=rwc'
      * @return \PDO
      */
     public static function connect(?array $config = null): \PDO
@@ -34,6 +34,7 @@ class SQLiteOcgraphSqlapi extends AbstractSQLite implements DBInterface
             'filePath' => AppConfig::SQLITE_OCGRAPH_SQLAPI_DB_PATH,
             'mode' => $config['mode'] ?? null,
             'busyTimeout' => $config['busyTimeout'] ?? null,
+            'persistent' => $config['persistent'] ?? null,
         ]);
     }
 }

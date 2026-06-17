@@ -11,7 +11,7 @@ class SQLiteRankingPositionOhlc extends AbstractSQLite implements DBInterface
     public static ?\PDO $pdo = null;
 
     /**
-     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int} $config mode default is '?mode=rwc'
+     * @param ?array $config array{mode?: ?string, busyTimeout?: ?int, persistent?: ?bool} $config mode default is '?mode=rwc'
      */
     public static function connect(?array $config = null): \PDO
     {
@@ -19,6 +19,7 @@ class SQLiteRankingPositionOhlc extends AbstractSQLite implements DBInterface
             'storageFileKey' => 'sqliteRankingPositionOhlcDb',
             'mode' => $config['mode'] ?? null,
             'busyTimeout' => $config['busyTimeout'] ?? null,
+            'persistent' => $config['persistent'] ?? null,
         ]);
     }
 }
