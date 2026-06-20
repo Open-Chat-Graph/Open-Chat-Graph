@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
+use App\Exceptions\TransientDatabaseException;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\DBInterface;
 use Shadow\DB;
@@ -159,6 +160,28 @@ abstract class AbstractSQLite extends DB implements DBInterface
             }
         }
 
+        // リトライを尽くした一過性ロック競合は、接続枯渇(MySQL)と同じドメイン例外に統一する。
+        // これにより Web では 503 + 10件バッチ通知、CLI(cron)では即時通知へ上位で出し分けられる。
+        // malformed(corrupt)/readonly はほぼ恒久障害なので含めず、生 PDOException のまま即通知させる。
+        if ($lastException !== null && static::isTransientLockError($lastException)) {
+            throw new TransientDatabaseException('Transient database failure: sqlite lock', 0, $lastException);
+        }
+
         throw $lastException ?? new \RuntimeException("Failed to execute query after {$maxRetries} attempts.");
+    }
+
+    /**
+     * SQLite の一過性ロック競合（リトライで抜けられる類）かどうか。
+     *
+     * - database is locked (SQLITE_BUSY): テーブル/トランザクションのロック待ち
+     * - locking protocol  (SQLITE_PROTOCOL): WAL の読み取りマークスロット枯渇（churn が主因）
+     *
+     * malformed(corrupt) や readonly はほぼ恒久障害なので一過性に含めない。
+     */
+    protected static function isTransientLockError(\PDOException $e): bool
+    {
+        $message = $e->getMessage();
+        return str_contains($message, 'database is locked')
+            || str_contains($message, 'locking protocol');
     }
 }

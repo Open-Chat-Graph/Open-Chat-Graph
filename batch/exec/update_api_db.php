@@ -2,20 +2,14 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Services\Admin\AdminTool;
-use App\Services\Cron\Utility\CronUtility;
-use ExceptionHandler\ExceptionHandler;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 
 set_time_limit(3600 * 10);
 
-try {
+(new BatchScriptLauncher)->run(function () {
     // Create an instance of OcreviewApiDataImporter
     $importer = app(\App\Services\Cron\OcreviewApiDataImporter::class);
 
     // Execute the import process
     $importer->execute();
-} catch (\Throwable $e) {
-    CronUtility::addCronLog($e->__toString());
-    AdminTool::sendDiscordNotify($e->__toString());
-    ExceptionHandler::errorLog($e);
-}
+});

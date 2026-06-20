@@ -73,6 +73,8 @@ class MimimalCmsConfig
         
         \App\Views\Classes\Dto\RankingPositionChartArgDtoFactoryInterface::class => \App\Views\Classes\Dto\RankingPositionChartArgDtoFactory::class,
         \App\Views\Classes\CollapseKeywordEnumerationsInterface::class => \App\Views\Classes\CollapseKeywordEnumerations::class,
+
+        \App\Services\Error\DeferredTransientErrorNotifierInterface::class => \App\Services\Error\DeferredTransientErrorNotifier::class,
     ];
 
     // URL root
