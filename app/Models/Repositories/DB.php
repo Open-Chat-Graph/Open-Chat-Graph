@@ -25,10 +25,14 @@ class DB extends \Shadow\DB implements DBInterface
             try {
                 return parent::connect($config);
             } catch (\PDOException $e) {
-                // 接続数上限（max_user_connections / too many connections）の瞬間的なスパイクは
-                // 少し待ってリトライすれば空きが出て捌ける場合がある。
+                // 接続確立時の一時的な障害は、少し待ってリトライすれば張れる場合がある。
+                // - 1226/1040: 接続数上限（max_user_connections / too many connections）の瞬間スパイク
+                // - 2006/2013: server has gone away / lost connection
+                //   （max_user_connections 到達時、接続が受理直後に切られ 2006 として浮上することがある。
+                //     PDO::__construct で発生し errorInfo 未設定のためメッセージでも判定する）
+                // - 2002: Can't connect（ソケットを一瞬受けられない）
                 // 失敗時は static::$pdo は null のまま（new \PDO が例外を投げたため）なので再試行できる。
-                if ($attempt < self::CONNECT_MAX_ATTEMPTS - 1 && static::isTooManyConnections($e)) {
+                if ($attempt < self::CONNECT_MAX_ATTEMPTS - 1 && static::isConnectionException($e)) {
                     // FPMワーカーを長時間占有しないよう待機は短く、軽いジッタで分散させる
                     usleep(random_int(100000, 250000) * ($attempt + 1)); // 約0.1〜0.5秒
                     continue;
