@@ -16,7 +16,9 @@ namespace App\Exceptions;
  * DB::isConnectionException() が getPrevious をたどって接続障害と判定でき、
  * cron 等の既存リトライ判定の挙動を保てる。
  *
- * HTTP マッピングは Shared\MimimalCmsConfig::$httpErrors に登録する。
+ * 検出と本例外への変換は App\Models\Repositories\DB が行い、503 の描画は
+ * app/Exceptions/Handlers/ApplicationExceptionHandler（$exceptionMap 経由）が担う。
+ * フレームワーク本体（shadow/・shared/MimimalCMS_*.php）には手を入れない。
  */
 class ServiceUnavailableException extends \RuntimeException
 {

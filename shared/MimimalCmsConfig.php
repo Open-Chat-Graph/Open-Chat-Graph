@@ -125,7 +125,6 @@ class MimimalCmsConfig
         \Shared\Exceptions\SessionTimeoutException::class =>   ['httpCode' => 401, 'log' => true,  'httpStatusMessage' => 'Unauthorized'],
         \Shared\Exceptions\UnauthorizedException::class =>     ['httpCode' => 401, 'log' => true,  'httpStatusMessage' => 'Unauthorized'],
         \Shared\Exceptions\ThrottleRequestsException::class => ['httpCode' => 429, 'log' => true,  'httpStatusMessage' => 'Too Many Requests'],
-        \App\Exceptions\ServiceUnavailableException::class =>  ['httpCode' => 503, 'log' => false, 'httpStatusMessage' => 'Service Unavailable'],
     ];
 
     // Display exceptions

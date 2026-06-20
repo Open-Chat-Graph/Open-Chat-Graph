@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Repositories;
 
 use App\Config\AppConfig;
+use App\Exceptions\ServiceUnavailableException;
 use Shadow\DBInterface;
 use Shared\MimimalCmsConfig;
 
@@ -38,11 +39,30 @@ class DB extends \Shadow\DB implements DBInterface
                     continue;
                 }
 
-                throw $e;
+                static::throwServiceUnavailableIfConnectionError($e);
             }
         }
 
         throw new \LogicException('Unreachable');
+    }
+
+    /**
+     * 接続枯渇に起因する例外を、Webリクエスト中だけ HTTP 503(ServiceUnavailableException)に
+     * 変換して投げ直す。それ以外（非接続エラー、または CLI 実行時）は元の例外をそのまま投げる。
+     *
+     * - Web: 接続上限スパイク・瞬断は一時的な「混雑」なので 500 ではなく 503 で返したい。
+     *   実際の 503 描画は app/Exceptions/Handlers/ApplicationExceptionHandler が行う
+     *   （フレームワーク本体には手を入れない方針）。元の \PDOException は $previous に連結するため、
+     *   getPrevious をたどる isConnectionException() や各所の catch は引き続き接続障害と判定できる。
+     * - CLI(cron/batch): 変換しない＝元の \PDOException のまま。バッチの挙動を一切変えない。
+     */
+    private static function throwServiceUnavailableIfConnectionError(\PDOException $e): never
+    {
+        if (PHP_SAPI !== 'cli' && static::isConnectionException($e)) {
+            throw new ServiceUnavailableException('Service temporarily unavailable: database connection', 0, $e);
+        }
+
+        throw $e;
     }
 
     /**
@@ -82,7 +102,7 @@ class DB extends \Shadow\DB implements DBInterface
                     continue;
                 }
 
-                throw $e;
+                static::throwServiceUnavailableIfConnectionError($e);
             }
         }
 

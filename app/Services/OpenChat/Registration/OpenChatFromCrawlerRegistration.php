@@ -76,7 +76,7 @@ class OpenChatFromCrawlerRegistration
     {
         try {
             $open_chat_id = $this->openChatRepository->addOpenChatFromDto($ocDto);
-        } catch (\PDOException $e) {
+        } catch (\PDOException | \App\Exceptions\ServiceUnavailableException $e) {
             $this->logAddOpenChatError($e->getMessage());
             $time = new \DateTime();
             $time->modify('+30minutes');
