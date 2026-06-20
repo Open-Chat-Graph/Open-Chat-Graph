@@ -227,6 +227,15 @@ Note: Database configuration is loaded from `local-secrets.php`
 
 ## Development Patterns
 
+### MimimalCMS フレームワーク本体は改造しない（最重要・原則）
+
+アプリ都合で **MimimalCMS 本体を書き換えてはいけない**。本体はアプリと別管理で、改変すると本体アップデートと衝突し、アプリ固有の改変が埋もれて保守不能になる。
+
+- **改造禁止（本体）**: `shadow/` 配下すべて、`shared/MimimalCMS_ExceptionHandler.php` / `shared/MimimalCMS_HelperFunctions.php` / `shared/MimimalCMS_Settings.php` / `shared/MimimalCMS_Enums.php`。
+- **編集してよい**: `shared/MimimalCmsConfig.php`（設定・DIバインド・`$httpErrors` 等の拡張点）、`shared/bootstrap.php`、`app/` 配下すべて。
+- 横断的な振る舞いは本体ではなくアプリ側の拡張点で実現する: 例外→HTTPコード対応は `MimimalCmsConfig::$httpErrors` ＋ `app/Exceptions/`、アプリ固有の例外ハンドリングは `app/Exceptions/Handlers/ApplicationExceptionHandler`（`$exceptionMap`）、DI差し替えは `app/ServiceProvider/`、DB接続の解放などは app のリポジトリにメソッドを生やしてコントローラから呼ぶ。
+- **本体に手を入れないと解決できない／本体側の問題だと判断したら、勝手に直さず必ずユーザーに提案する。**
+
 ### Dependency Injection
 
 - Interface-based DI configured in `/shared/MimimalCmsConfig.php`

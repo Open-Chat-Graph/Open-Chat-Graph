@@ -62,25 +62,6 @@ class ExceptionHandler
      */
     public static function handleException(\Throwable $e)
     {
-        // 接続枯渇（MySQL の max_user_connections 到達・サーバ瞬断など）で未捕捉のまま
-        // ここへ来た例外は、500 ではなく 503(Service Unavailable) として扱う。
-        // ServiceUnavailableException に包み直すと、以降の $httpErrors マッピングに乗り、
-        // Retry-After + 5xx「再読み込み」画面(error.php)で返る。元例外は $previous に連結する。
-        // ※ ここはグローバルハンドラ＝「未捕捉でここまで来た例外」のみが対象。個別に
-        //   catch 済みの箇所（登録フォーム等の独自ハンドリング）には到達しないため影響しない。
-        $dbClass = \App\Models\Repositories\DB::class;
-        if (
-            !($e instanceof \App\Exceptions\ServiceUnavailableException)
-            && class_exists($dbClass)
-            && $dbClass::isConnectionException($e)
-        ) {
-            $e = new \App\Exceptions\ServiceUnavailableException(
-                'Service temporarily unavailable: database connection',
-                0,
-                $e
-            );
-        }
-
         $appHandlerClass = ApplicationExceptionHandler::class;
         if (class_exists($appHandlerClass) && isset($appHandlerClass::$exceptionMap)) {
             $className = get_class($e);
