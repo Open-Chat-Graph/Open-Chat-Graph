@@ -26,11 +26,23 @@ export class RateLimitError extends Error {
   name = 'RateLimitError'
 }
 
+// サーバー一時障害(5xx)・ネットワーク到達不可など、時間をおいて再試行すれば回復しうるエラー。
+// 表示側で「再読み込み」ボタンを出すために通常の通信エラー(4xx等)と区別する
+export class ServerBusyError extends Error {
+  name = 'ServerBusyError'
+}
+
 export const RATE_LIMIT_RETRY_SECONDS = 10
 
 export async function fetchApi<T>(url: string) {
-  // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
-  let response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
+  let response: Response
+  try {
+    // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
+    response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
+  } catch (e) {
+    // ネットワーク到達不可・接続断などfetch自体がrejectしたケースは再試行可能扱い
+    throw new ServerBusyError(e instanceof Error ? e.message : 'network error')
+  }
 
   // 429: スケルトンを出したまま(SWRのisValidatingが続く)10秒待って1回だけ再試行
   if (response.status === 429) {
@@ -38,6 +50,8 @@ export async function fetchApi<T>(url: string) {
     try {
       await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_SECONDS * 1000))
       response = await fetch(url, { headers: { 'X-Ocg-Client': '1' } })
+    } catch (e) {
+      throw new ServerBusyError(e instanceof Error ? e.message : 'network error')
     } finally {
       setRateLimitWaiting(false)
     }
@@ -45,6 +59,12 @@ export async function fetchApi<T>(url: string) {
     if (response.status === 429) {
       throw new RateLimitError()
     }
+  }
+
+  // 5xx(例: MySQLの接続上限で発生する503)はサーバー一時障害。再読み込みで回復しうるので専用エラーにする。
+  // bodyがJSONでない可能性もあるためparseせずに投げる
+  if (response.status >= 500) {
+    throw new ServerBusyError(`server error ${response.status}`)
   }
 
   const data: T | ErrorResponse = await response.json()
@@ -69,7 +89,11 @@ const ROOT_MARGIN = isSP() ? '100px' : '500px'
 export default function useInfiniteFetchApi<T>(query: string) {
   const getKey = (i: number) =>
     `${rankingArgDto.baseUrl}/oclist?page=${i}&limit=${LIMIT_ITEMS}${query ? '&' + query : ''}`
-  const { data, setSize, isValidating, error } = useSWRInfinite(getKey, fetchApi<T[]>, swrOptions)
+  const { data, setSize, isValidating, error, mutate } = useSWRInfinite(
+    getKey,
+    fetchApi<T[]>,
+    swrOptions
+  )
 
   const [page, setPage] = useState(1)
 
@@ -107,5 +131,9 @@ export default function useInfiniteFetchApi<T>(query: string) {
     dataRef.current[2] = data?.slice(0, queryRef.current !== query ? 1 : page).flat()
   }
 
-  return { data: dataRef.current[2], useInViewRef, isValidating, isLastPage, error }
+  // mutate(): このリスト分のSWRキャッシュを再検証（エラー状態をリセットして同じURLを再取得）。
+  // ページ全体のreloadはせず、このコンポーネントのデータだけ取り直す
+  const reload = () => mutate()
+
+  return { data: dataRef.current[2], useInViewRef, isValidating, isLastPage, error, reload }
 }

@@ -1,5 +1,6 @@
 import React, { memo, useRef } from 'react'
 import useInfiniteFetchApi, { useRateLimitWaiting } from '../hooks/InfiniteFetchApi'
+import ReloadErrorBlock from './ReloadErrorBlock'
 import { useAtomValue } from 'jotai'
 import { listParamsState } from '../store/atom'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
@@ -16,15 +17,19 @@ const DummyList = memo(function DummyList({
   isValidating,
   isLastPage,
   useInViewRef,
+  reload,
 }: {
   data: boolean
   error: Error | undefined
   isValidating: boolean
   isLastPage: boolean
   useInViewRef: (node?: Element | null | undefined) => void
+  reload: () => void
 }) {
   // 429の再試行待機中はスケルトン(isValidatingで表示が続く)に重ねて案内文を出す
   const rateLimitWaiting = useRateLimitWaiting()
+  // 5xx・ネットワークエラーは再読み込みで回復しうるので、専用の再読み込みUIを出す
+  const isServerBusy = error?.name === 'ServerBusyError'
 
   return (
     <>
@@ -43,7 +48,8 @@ const DummyList = memo(function DummyList({
           <DummyOpenChatListItem />
         </ol>
       )}
-      {error && !rateLimitWaiting && (
+      {error && !rateLimitWaiting && isServerBusy && <ReloadErrorBlock onReload={reload} />}
+      {error && !rateLimitWaiting && !isServerBusy && (
         <div style={{ textAlign: 'center' }}>
           {error.name === 'RateLimitError'
             ? t('アクセスが集中しています。しばらくしてから再度お試しください') + '🙏'
@@ -188,7 +194,7 @@ export function FetchOpenChatRankingList({
   query: string
   cateIndex: number
 }) {
-  const { data, useInViewRef, isValidating, isLastPage, error } =
+  const { data, useInViewRef, isValidating, isLastPage, error, reload } =
     useInfiniteFetchApi<OpenChat>(query)
   const params = useAtomValue(listParamsState)
   const totalCount = data?.length === 0 ? 0 : data ? data[0].totalCount : undefined
@@ -219,6 +225,7 @@ export function FetchOpenChatRankingList({
           isValidating={isValidating}
           isLastPage={isLastPage}
           useInViewRef={useInViewRef}
+          reload={reload}
         />
       </div>
     </div>
