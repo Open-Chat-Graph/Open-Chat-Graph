@@ -3,17 +3,16 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\OcreviewApiDataImporter;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\ClassPreloader;
 use App\Services\Cron\Utility\CronUtility;
-use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600 * 2);
 
-try {
+(new BatchScriptLauncher)->run(function () {
     MimimalCmsConfig::$urlRoot = '';
 
     // 実行中にデプロイが重なっても新旧クラスが混在しないよう、開始時に全クラスを先読み
@@ -59,8 +58,4 @@ try {
     $state->setArray(StateType::ocreviewApiDataImportBackground, []);
 
     CronUtility::addVerboseCronLog('アーカイブ用DBインポートプロセスが正常終了しました');
-} catch (\Throwable $e) {
-    CronUtility::addCronLog($e->__toString());
-    AdminTool::sendDiscordNotify($e->__toString());
-    ExceptionHandler::errorLog($e);
-}
+});

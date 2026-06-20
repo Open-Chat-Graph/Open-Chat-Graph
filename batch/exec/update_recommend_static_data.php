@@ -2,8 +2,7 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use App\Services\Admin\AdminTool;
-use App\Services\Cron\Utility\CronUtility;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Recommend\StaticData\UpdateRecommendStaticDataService;
 use Shared\MimimalCmsConfig;
 
@@ -13,14 +12,10 @@ if (isset($argv[1]) && $argv[1]) {
     MimimalCmsConfig::$urlRoot = $argv[1];
 }
 
-try {
+(new BatchScriptLauncher)->run(function () {
     /**
      * @var UpdateRecommendStaticDataService $service
      */
     $service = app(UpdateRecommendStaticDataService::class);
     $service->handle();
-} catch (\Throwable $e) {
-    // サービス解決自体の失敗（デプロイ中のクラス入れ替わり等）に備えた最終防衛のみ
-    CronUtility::addCronLog($e->__toString());
-    AdminTool::sendDiscordNotify($e->__toString());
-}
+});
