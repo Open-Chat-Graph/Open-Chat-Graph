@@ -8,14 +8,12 @@ use App\Models\Repositories\MemberChangeFilterCacheRepositoryInterface;
 use App\Models\Repositories\OpenChatRepositoryInterface;
 use App\Models\Repositories\RankingPosition\RankingPositionHourRepositoryInterface;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\BatchScript;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
 use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\Storage\FileStorageInterface;
-use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 /**
@@ -59,26 +57,30 @@ class UpdateOcPageCacheService
      */
     public function handle(string $mode = ''): void
     {
-        try {
-            if ($this->state->getBool(StateType::isUpdateOcPageCacheActive)) {
-                if ($mode === 'hourly' || $mode === 'daily') {
-                    // 毎時/日次モードは実行中（フルバックフィル等）をkillせず今回をスキップする。
-                    // フラグも下ろしておく＝プロセス異常終了でフラグだけ残った場合に次回から自走再開できる
-                    // （実行中プロセスが本当に居れば完走時/エラー時に自分でフラグを下ろすため矛盾しない）。
-                    CronUtility::addCronLog("ページキャッシュ更新({$mode}): 実行中のためスキップ");
-                    $this->state->setFalse(StateType::isUpdateOcPageCacheActive);
-                    return;
-                }
-
-                // バックフィル時は前回プロセスをkill（多重生成防止）
-                $this->launcher->killOtherInstances(BatchScript::updateOcPageCache);
-                CronUtility::addCronLog('ページキャッシュ生成: 前回プロセスをkillして再開');
+        if ($this->state->getBool(StateType::isUpdateOcPageCacheActive)) {
+            if ($mode === 'hourly' || $mode === 'daily') {
+                // 毎時/日次モードは実行中（フルバックフィル等）をkillせず今回をスキップする。
+                // フラグも下ろしておく＝プロセス異常終了でフラグだけ残った場合に次回から自走再開できる
+                // （実行中プロセスが本当に居れば完走時/エラー時に自分でフラグを下ろすため矛盾しない）。
+                CronUtility::addCronLog("ページキャッシュ更新({$mode}): 実行中のためスキップ");
                 $this->state->setFalse(StateType::isUpdateOcPageCacheActive);
-                sleep(3);
+                return;
             }
 
-            $this->state->setTrue(StateType::isUpdateOcPageCacheActive);
+            // バックフィル時は前回プロセスをkill（多重生成防止）
+            $this->launcher->killOtherInstances(BatchScript::updateOcPageCache);
+            CronUtility::addCronLog('ページキャッシュ生成: 前回プロセスをkillして再開');
+            $this->state->setFalse(StateType::isUpdateOcPageCacheActive);
+            sleep(3);
+        }
 
+        $this->state->setTrue(StateType::isUpdateOcPageCacheActive);
+
+        // 例外は握り潰さず、エントリスクリプトの BatchScriptLauncher::run() へ伝播させる。
+        // 一過性DB障害（SQLiteロック等）なら run() がプロセス全体を再試行し、救えなければログ＋通知する。
+        // chunk 毎の upsert は冪等なので、全体再試行で重複生成にならず整合性も壊れない。
+        // 状態フラグだけは成功/失敗どちらでも必ず下ろす（finally）。
+        try {
             // 対象ID: hourly=直近1時間の変動ルーム / daily=日次クロール対象 / idCsv=指定ルーム / 省略=全ルーム
             if ($mode === 'daily') {
                 // 日次クロールが使ったフィルター（変動・新規・週次更新）と同じ対象を再生成する。
@@ -125,13 +127,8 @@ class UpdateOcPageCacheService
             }
 
             CronUtility::addVerboseCronLog("ページキャッシュ生成完了（urlRoot=" . MimimalCmsConfig::$urlRoot . " / {$total}件）");
-
+        } finally {
             $this->state->setFalse(StateType::isUpdateOcPageCacheActive);
-        } catch (\Throwable $e) {
-            $this->state->setFalse(StateType::isUpdateOcPageCacheActive);
-            CronUtility::addCronLog($e->__toString());
-            AdminTool::sendDiscordNotify($e->__toString());
-            ExceptionHandler::errorLog($e);
         }
     }
 }
