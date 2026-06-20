@@ -70,6 +70,11 @@ make up-shared / shared-setup / down-shared
 
 ### Environment Details
 
+> **接続先ポート(URL)は必ず `.env` を見て判断する**。`HTTPS_PORT` / `WEB_PORT` 等。下記の `8443` は
+> 基本/Mock環境のデフォルト値にすぎず、**shared mode や複数インスタンスでは別ポートになる**（実際の
+> 共有環境では `HTTPS_PORT=10443` 等）。ハードコードされたポートを信用してローカルを叩くと、別リポの
+> インスタンスを見て「コードが効かない」等と誤判断する（実際に起きた）。curl・ブラウザ確認の前に `.env` を見る。
+
 **Basic Environment:**
 
 - HTTPS: https://localhost:8443
@@ -365,6 +370,19 @@ Views go in `/app/Views/`:
 - Helper functions: `url()`, `t()`, `fileUrl()`
 
 ## Pull Request Guidelines
+
+### 画面(UI)を変えた PR はスクリーンショットを本文に必ず添付する（必須）
+
+画面に機能を追加・改修した PR は、**実装後の各画面のスクリーンショットを PR 本文に貼る**。文章だけだと
+レビュー側がどんな見た目になるか判断できないため。
+
+- 撮り方: 実環境（`.env` の `HTTPS_PORT`）を headless Chrome（`google-chrome --headless=new
+  --ignore-certificate-errors --screenshot=...`）かブラウザで開いて撮る。エラー画面・5xx・空状態など特殊な
+  状態は、対象エンドポイントに一時的に例外を throw する等で再現してから撮り、**撮影後に必ず元へ戻す**。
+- 添付方法（CLI から GitHub の画像CDNへ直接アップロードはできない）: 画像をホスティング用ブランチ
+  （例 `assets/pr-screenshots`・**main にはマージしない**）にコミットして push し、PR 本文に
+  `![説明](https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>.png)` の raw URL を貼る
+  （public リポなので raw URL がそのまま描画される）。または GitHub web UI にドラッグ&ドロップ。
 
 ### 報告は本番デプロイ完了まで待つ（必須）
 
