@@ -9,6 +9,7 @@ import { useAtomValue } from 'jotai'
 import { postedItemState } from '../state/postedItemState'
 import ReportDialog from './Dialog/ReportDialog'
 import ImageReportDialog from './Dialog/ImageReportDialog'
+import ReloadErrorBlock from './ReloadErrorBlock'
 import { appInitTagDto } from '../config/appInitTagDto'
 
 function PostedItem({ postedItem, lastId }: { postedItem: CommentItem[]; lastId: number }) {
@@ -28,7 +29,7 @@ const swrOptions = {
 }
 
 export default function CommentList({ limit }: { limit: number }) {
-  const { data, setSize, size, isValidating } = useSWRInfinite<CommentItem[]>(
+  const { data, setSize, size, isValidating, error, mutate } = useSWRInfinite<CommentItem[]>(
     (i: number) =>
       `${window.location.origin}/comment/${appInitTagDto.openChatId}?page=${i}&limit=${limit}`,
     fetchApi<CommentItem[]>,
@@ -37,6 +38,18 @@ export default function CommentList({ limit }: { limit: number }) {
 
   const postedItem = useAtomValue(postedItemState)
   const myUserId = (() => { try { return localStorage.getItem('oc-my-user-id') } catch { return null } })()
+
+  // 5xx・ネットワークエラーは再読み込みで回復しうるので、専用の再読み込みUIを出す。
+  // mutate()でこのコメント一覧分のSWRキャッシュだけ再取得する(ページ全体のreloadはしない)
+  if (error?.name === 'ServerBusyError') {
+    return (
+      <>
+        <ReportDialog />
+        <ImageReportDialog />
+        <ReloadErrorBlock onReload={() => mutate()} />
+      </>
+    )
+  }
 
   return (
     <>
