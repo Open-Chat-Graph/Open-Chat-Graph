@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
+use App\Exceptions\TransientDatabaseException;
 use App\Services\Storage\FileStorageInterface;
 use Shadow\DBInterface;
 use Shadow\DB;
@@ -54,6 +55,12 @@ abstract class AbstractSQLite extends DB implements DBInterface
     protected const READER_MAX_RETRIES = 10;
     private const READER_RETRY_BASE_WAIT_MICROSECONDS = 5000;   // 初回 5ms
     private const READER_RETRY_MAX_WAIT_MICROSECONDS = 300000;  // 1回あたり上限 0.3 秒
+    // CLI(バッチ)はFPMのpersistentが効かず、日次の並行writerと重なる。読み取りは busy_timeout を
+    // 数秒へ底上げして writer のロック解放を待ち（connect）、リトライ回数も上乗せして粘る。
+    // CLI読み取りの1クエリ最悪滞留 ≒ busy_timeout(3s)×reader試行回数(15) + ジッター待ち累計（数百ms〜2s弱）。
+    // 10秒にすると同じ回数で最悪150秒に膨らむため数秒に留める。
+    private const CLI_MIN_BUSY_TIMEOUT_MS = 3000;
+    private const CLI_EXTRA_RETRIES = 5;
     private const RETRYABLE_ERRORS = [
         'database disk image is malformed',
         'database is locked',
@@ -96,16 +103,26 @@ abstract class AbstractSQLite extends DB implements DBInterface
         $sqliteFilePath = $config['filePath']
             ?? app(FileStorageInterface::class)->getStorageFilePath($config['storageFileKey']);
 
-        // 読み取り(rw/ro)接続のみ persistent にして churn を断つ（WEB_READER 経由）。
+        // CLI(バッチ)では FPM 前提の WEB_READER チューニング（busy_timeout=20ms + persistent）が
+        // 機能しない。persistent はプロセス毎に新規接続で churn 抑制の意味が無く、busy_timeout=20ms は
+        // 日次の並行writer下で待ちきれず「database is locked」を出す。よってCLIでは無効化＋底上げする。
+        $isCli = PHP_SAPI === 'cli';
+
+        // 読み取り(rw/ro)接続のみ persistent にして churn を断つ（WEB_READER 経由・FPM限定）。
         // 書き込み(rwc)はトランザクション持ち越し事故を避けるため非 persistent のまま。
-        $options = (!empty($config['persistent']) && !str_contains($mode, 'rwc'))
+        $options = (!empty($config['persistent']) && !str_contains($mode, 'rwc') && !$isCli)
             ? [\PDO::ATTR_PERSISTENT => true]
             : [];
         static::$pdo = new \PDO('sqlite:file:' . $sqliteFilePath . $mode, null, null, $options);
         self::$connectedMode[static::class] = $mode;
 
-        // Set busy timeout for all modes (including read-only) to handle concurrent access
-        static::$pdo->exec('PRAGMA busy_timeout=' . (int)($config['busyTimeout'] ?? 10000));
+        // busy_timeout は全モード共通で設定。CLIバッチは短い指定(WEB_READERの20ms)を数秒へ底上げし、
+        // 並行writerのロック解放を待ってから諦める（10秒だとリトライ積で最悪滞留が伸びるため数秒に留める）。
+        $busyTimeout = (int)($config['busyTimeout'] ?? 10000);
+        if ($isCli && $busyTimeout < self::CLI_MIN_BUSY_TIMEOUT_MS) {
+            $busyTimeout = self::CLI_MIN_BUSY_TIMEOUT_MS;
+        }
+        static::$pdo->exec('PRAGMA busy_timeout=' . $busyTimeout);
 
         // WAL/synchronous の設定は書き込み側(rwc/既定)の接続だけが行う。
         // mode=ro は実行不可、mode=rw(読み取り用途) は journal_mode の実行自体が
@@ -128,6 +145,12 @@ abstract class AbstractSQLite extends DB implements DBInterface
         $maxRetries = $isReader ? static::READER_MAX_RETRIES : static::MAX_RETRIES;
         $baseWait = $isReader ? self::READER_RETRY_BASE_WAIT_MICROSECONDS : self::RETRY_BASE_WAIT_MICROSECONDS;
         $maxWait = $isReader ? self::READER_RETRY_MAX_WAIT_MICROSECONDS : self::RETRY_MAX_WAIT_MICROSECONDS;
+
+        // CLI(バッチ)の読み取りは busy_timeout を延長済み（connect）。並行writer下で粘れるよう回数も上乗せ。
+        // writer(rwc)は単一プロセスで競合が稀、かつ busy_timeout=既定10s のままなので上乗せ対象外（最悪滞留を抑える）。
+        if (PHP_SAPI === 'cli' && $isReader) {
+            $maxRetries += self::CLI_EXTRA_RETRIES;
+        }
 
         $attempts = 0;
         $lastException = null;
@@ -159,6 +182,28 @@ abstract class AbstractSQLite extends DB implements DBInterface
             }
         }
 
+        // リトライを尽くした一過性ロック競合は、接続枯渇(MySQL)と同じドメイン例外に統一する。
+        // これにより Web では 503 + 10件バッチ通知、CLI(cron)では即時通知へ上位で出し分けられる。
+        // malformed(corrupt)/readonly はほぼ恒久障害なので含めず、生 PDOException のまま即通知させる。
+        if ($lastException !== null && static::isTransientLockError($lastException)) {
+            throw new TransientDatabaseException('Transient database failure: sqlite lock', 0, $lastException);
+        }
+
         throw $lastException ?? new \RuntimeException("Failed to execute query after {$maxRetries} attempts.");
+    }
+
+    /**
+     * SQLite の一過性ロック競合（リトライで抜けられる類）かどうか。
+     *
+     * - database is locked (SQLITE_BUSY): テーブル/トランザクションのロック待ち
+     * - locking protocol  (SQLITE_PROTOCOL): WAL の読み取りマークスロット枯渇（churn が主因）
+     *
+     * malformed(corrupt) や readonly はほぼ恒久障害なので一過性に含めない。
+     */
+    protected static function isTransientLockError(\PDOException $e): bool
+    {
+        $message = $e->getMessage();
+        return str_contains($message, 'database is locked')
+            || str_contains($message, 'locking protocol');
     }
 }

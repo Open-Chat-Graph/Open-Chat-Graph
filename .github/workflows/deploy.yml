@@ -131,6 +131,10 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           echo "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          # 共有ホストへのSSHが一瞬不通になり deploy が「connect timeout」で落ちるのを防ぐ。
+          # 接続を短いタイムアウトで複数回張り直す（以降の ssh/scp 全ステップに自動適用）。
+          printf 'Host *\n  ConnectTimeout 30\n  ConnectionAttempts 6\n  ServerAliveInterval 15\n  ServerAliveCountMax 4\n' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Deploy code
         run: |

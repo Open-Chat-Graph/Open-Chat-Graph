@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\SQLite;
 
+use App\Exceptions\TransientDatabaseException;
 use App\Models\Importer\AbstractSqlImporter;
 
 class SQLiteInsertImporter extends AbstractSqlImporter
@@ -69,6 +70,11 @@ class SQLiteInsertImporter extends AbstractSqlImporter
         }
 
         if (!$result) {
+            // リトライを尽くした一過性ロック競合は接続枯渇と同じドメイン例外に統一する
+            // （malformed はほぼ恒久障害なので含めず生 PDOException のまま投げる）。
+            if ($lastException !== null && str_contains($lastException->getMessage(), 'database is locked')) {
+                throw new TransientDatabaseException('Transient database failure: sqlite lock', 0, $lastException);
+            }
             throw $lastException ?? new \RuntimeException('Failed to execute import due to unknown error');
         }
 

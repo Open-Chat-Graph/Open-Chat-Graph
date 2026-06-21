@@ -86,7 +86,11 @@ class AdminTool
                 CURLOPT_RETURNTRANSFER  => true,
                 CURLOPT_POST            => true,
                 CURLOPT_HTTPHEADER      => $header,
-                CURLOPT_POSTFIELDS      => $payload
+                CURLOPT_POSTFIELDS      => $payload,
+                // タイムアウト未設定だと curl は接続に最大約300秒待つ。エラー通知の curl が
+                // リクエスト/バッチ処理を長時間ブロックして二次障害を招かないよう上限を付ける。
+                CURLOPT_CONNECTTIMEOUT  => 3,
+                CURLOPT_TIMEOUT         => 10,
             ];
 
             curl_setopt_array($ch, $options);

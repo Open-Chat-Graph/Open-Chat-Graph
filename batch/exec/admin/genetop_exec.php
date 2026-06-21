@@ -3,16 +3,16 @@
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
 use App\Services\Admin\AdminTool;
-use App\Services\Cron\Utility\CronUtility;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Recommend\StaticData\RecommendStaticDataGenerator;
 use App\Services\StaticData\StaticDataGenerator;
 use App\Services\StaticData\UpdateOcPageCacheService;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
-try {
-    set_time_limit(3600);
+set_time_limit(3600);
 
+(new BatchScriptLauncher)->run(function () use ($argv) {
     if (isset($argv[1]) && $argv[1]) {
         MimimalCmsConfig::$urlRoot = $argv[1];
     }
@@ -40,7 +40,4 @@ try {
     AdminTool::sendDiscordNotify('ocPageCache (全件) done');
 
     touch(app(FileStorageInterface::class)->getStorageFilePath('hourlyCronUpdatedAtDatetime'));
-} catch (\Throwable $e) {
-    AdminTool::sendDiscordNotify($e->__toString());
-    CronUtility::addCronLog($e->__toString());
-}
+});

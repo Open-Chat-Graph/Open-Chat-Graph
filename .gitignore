@@ -42,6 +42,8 @@ public/sitemap*.xml
 
 # ストレージ
 storage/exception.log
+storage/transient_errors.queue
+storage/transient_errors.queue.lock
 storage/furigana/**
 storage/*/api_rate_limit/**
 storage/*/analysis_jobs/*

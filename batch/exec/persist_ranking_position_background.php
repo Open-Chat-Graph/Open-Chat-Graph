@@ -4,97 +4,99 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Exceptions\ApplicationException;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
-use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\SyncOpenChatStateType as StateType;
+use App\Services\Cron\Utility\BatchScriptLauncher;
 use App\Services\Cron\Utility\ClassPreloader;
 use App\Services\Cron\Utility\CronUtility;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use App\Services\RankingPosition\Persistence\RankingPositionHourPersistence;
-use ExceptionHandler\ExceptionHandler;
 use Shared\MimimalCmsConfig;
 
 set_time_limit(3600);
 
-try {
-    if (isset($argv[1]) && $argv[1]) {
-        MimimalCmsConfig::$urlRoot = $argv[1];
-    }
+// $suppressNotify からも参照するため外側スコープに置き、両クロージャで参照渡しする
+$state = null;
+$startTime = null;
 
-    $parentPid = isset($argv[2]) && $argv[2] ? (int)$argv[2] : null;
-
-    $startTime = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i');
-
-    /**
-     * @var SyncOpenChatStateRepositoryInterface $state
-     */
-    $state = app(SyncOpenChatStateRepositoryInterface::class);
-
-    // 二重実行チェック
-    $bgState = $state->getArray(StateType::rankingPersistenceBackground);
-    $existingPid = $bgState['pid'] ?? null;
-
-    if ($existingPid) {
-        // 既存のプロセスが生きているか確認
-        if (posix_getpgid((int)$existingPid) !== false) {
-            CronUtility::addCronLog("既存のバックグラウンドDB反映プロセス (PID: {$existingPid}) を強制終了します");
-            CronUtility::killProcess($existingPid);
-            CronUtility::addVerboseCronLog("新しいバックグラウンドプロセスを開始します");
-        } else {
-            // プロセスが死んでいる場合は古い状態をクリア
-            CronUtility::addVerboseCronLog("古いバックグラウンドプロセス (PID: {$existingPid}) の状態をクリア");
+(new BatchScriptLauncher)->run(
+    function () use ($argv, &$state, &$startTime) {
+        if (isset($argv[1]) && $argv[1]) {
+            MimimalCmsConfig::$urlRoot = $argv[1];
         }
-    }
 
-    // PID、親PID、開始時刻を記録（親が書いた起動マーカー launching はここで上書きされる）。
-    // クラス先読みより前に登録し、親の waitForBackgroundCompletion() が
-    // PID登録前のstateを読んで誤判定する時間窓を最小化する
-    $state->setArray(StateType::rankingPersistenceBackground, [
-        'pid' => getmypid(),
-        'parentPid' => $parentPid,
-        'startTime' => time(),
-    ]);
+        $parentPid = isset($argv[2]) && $argv[2] ? (int)$argv[2] : null;
 
-    // 実行中にデプロイが重なっても新旧クラスが混在しないよう、全クラスを先読み
-    ClassPreloader::preload();
+        $startTime = OpenChatServicesUtility::getModifiedCronTime('now')->format('Y-m-d H:i');
 
-    /**
-     * @var RankingPositionHourPersistence $persistence
-     */
-    $persistence = app(RankingPositionHourPersistence::class);
+        /**
+         * @var SyncOpenChatStateRepositoryInterface $state
+         */
+        $state = app(SyncOpenChatStateRepositoryInterface::class);
 
-    // 全カテゴリのDB反映処理を実行
-    $persistence->persistAllCategoriesBackground();
+        // 二重実行チェック
+        $bgState = $state->getArray(StateType::rankingPersistenceBackground);
+        $existingPid = $bgState['pid'] ?? null;
 
-    // 正常終了：状態をクリア
-    $state->setArray(StateType::rankingPersistenceBackground, []);
-
-    CronUtility::addVerboseCronLog('バックグラウンドDB反映プロセスが正常終了しました');
-} catch (\Throwable $e) {
-    // stateに自分のPIDが残っている場合のみ失敗マーカーに置き換える
-    // （新しいプロセスが既にstateを上書きしている場合は触らない）。
-    // 死んだPIDがstateに残り続けると、以降の毎時処理が過去の残骸PIDを
-    // 今回のバックグラウンドと誤認してエラーが自己再生するのを防ぐ
-    try {
-        if (isset($state) && (int)($state->getArray(StateType::rankingPersistenceBackground)['pid'] ?? 0) === getmypid()) {
-            $state->setArray(StateType::rankingPersistenceBackground, [
-                'failed' => time(),
-                'message' => mb_strimwidth($e->getMessage(), 0, 1000, '…'),
-            ]);
+        if ($existingPid) {
+            // 既存のプロセスが生きているか確認
+            if (posix_getpgid((int)$existingPid) !== false) {
+                CronUtility::addCronLog("既存のバックグラウンドDB反映プロセス (PID: {$existingPid}) を強制終了します");
+                CronUtility::killProcess($existingPid);
+                CronUtility::addVerboseCronLog("新しいバックグラウンドプロセスを開始します");
+            } else {
+                // プロセスが死んでいる場合は古い状態をクリア
+                CronUtility::addVerboseCronLog("古いバックグラウンドプロセス (PID: {$existingPid}) の状態をクリア");
+            }
         }
-    } catch (\Throwable) {
-        // stateの更新に失敗しても通知処理は継続する
-    }
 
-    // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
-    $shouldNotify = true;
-    if ($e instanceof ApplicationException && $e->getCode() === ApplicationException::RANKING_PERSISTENCE_TIMEOUT) {
-        $shouldNotify = false;
-        CronUtility::addCronLog("【毎時処理】親プロセスがタイムアウト指示を受け取り終了しました。時間帯: {$startTime}");
-    }
+        // PID、親PID、開始時刻を記録（親が書いた起動マーカー launching はここで上書きされる）。
+        // クラス先読みより前に登録し、親の waitForBackgroundCompletion() が
+        // PID登録前のstateを読んで誤判定する時間窓を最小化する
+        $state->setArray(StateType::rankingPersistenceBackground, [
+            'pid' => getmypid(),
+            'parentPid' => $parentPid,
+            'startTime' => time(),
+        ]);
 
-    if ($shouldNotify) {
-        ExceptionHandler::errorLog($e);
-        $message = CronUtility::addCronLog($e->getMessage());
-        AdminTool::sendDiscordNotify($message);
-    }
-}
+        // 実行中にデプロイが重なっても新旧クラスが混在しないよう、全クラスを先読み
+        ClassPreloader::preload();
+
+        /**
+         * @var RankingPositionHourPersistence $persistence
+         */
+        $persistence = app(RankingPositionHourPersistence::class);
+
+        // 全カテゴリのDB反映処理を実行
+        $persistence->persistAllCategoriesBackground();
+
+        // 正常終了：状態をクリア
+        $state->setArray(StateType::rankingPersistenceBackground, []);
+
+        CronUtility::addVerboseCronLog('バックグラウンドDB反映プロセスが正常終了しました');
+    },
+    // 例外時のスクリプト固有処理（状態の失敗マーカー化）と、killフラグ強制終了時の通知抑制
+    function (\Throwable $e) use (&$state, &$startTime): bool {
+        // stateに自分のPIDが残っている場合のみ失敗マーカーに置き換える
+        // （新しいプロセスが既にstateを上書きしている場合は触らない）。
+        // 死んだPIDがstateに残り続けると、以降の毎時処理が過去の残骸PIDを
+        // 今回のバックグラウンドと誤認してエラーが自己再生するのを防ぐ
+        try {
+            if (isset($state) && (int)($state->getArray(StateType::rankingPersistenceBackground)['pid'] ?? 0) === getmypid()) {
+                $state->setArray(StateType::rankingPersistenceBackground, [
+                    'failed' => time(),
+                    'message' => mb_strimwidth($e->getMessage(), 0, 1000, '…'),
+                ]);
+            }
+        } catch (\Throwable) {
+            // stateの更新に失敗しても通知処理は継続する
+        }
+
+        // killフラグによる強制終了の場合、開始から20時間以内ならDiscord通知しない
+        if ($e instanceof ApplicationException && $e->getCode() === ApplicationException::RANKING_PERSISTENCE_TIMEOUT) {
+            CronUtility::addCronLog("【毎時処理】親プロセスがタイムアウト指示を受け取り終了しました。時間帯: {$startTime}");
+            return true;
+        }
+
+        return false;
+    },
+);
