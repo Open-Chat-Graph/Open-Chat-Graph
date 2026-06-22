@@ -269,10 +269,6 @@ function purgeCacheCloudFlare(
         return 'Cloudflareは無効化されています';
     }
 
-    if (AppConfig::$isStaging || AppConfig::$isDevlopment) {
-        return 'Cloudflareキャッシュ削除はステージング・開発環境では実行されません';
-    }
-
     // cURLセッションを初期化
     $ch = curl_init();
 
