@@ -7,9 +7,7 @@ use App\Config\AppConfig;
 use App\Services\OpenChat\Utility\OpenChatServicesUtility;
 use Shadow\Kernel\Dispatcher\ReceptionInitializer;
 use Shadow\Kernel\Utility\KernelUtility;
-use Shared\Exceptions\NotFoundException;
 use Shared\MimimalCmsConfig;
-use Symfony\Component\HttpClient\RetryableHttpClient;
 
 /**
  * Inserts HTML line breaks before all newlines in a string.
@@ -265,7 +263,7 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (!AppConfig::$enableCloudflare) {
+    if (!AppConfig::$enableCloudflare || !$zoneID || !$apiKey || !AppConfig::$isDevlopment) {
         return 'Cloudflareは無効化されています';
     }
 
