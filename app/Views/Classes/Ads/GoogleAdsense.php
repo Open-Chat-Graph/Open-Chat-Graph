@@ -135,13 +135,29 @@ class GoogleAdsense
                         var host = '';
                         try { host = new URL(document.referrer).hostname; } catch (e) {}
                         var fromSearch = /(^|\.)(google|bing|yahoo|duckduckgo|baidu|naver|daum|ecosia|brave|sogou)\./i.test(host);
-                        var firstVisit = false;
-                        try {
-                            firstVisit = !window.localStorage.getItem('ocReturning');
-                            if (firstVisit) window.localStorage.setItem('ocReturning', '1');
-                        } catch (e) {}
+                        var firstVisit = true;
+                        try { firstVisit = !window.localStorage.getItem('ocReturning'); } catch (e) {}
                         // 初回訪問 かつ 検索エンジンからの流入のときだけ Offerwall を抑制する
                         suppress = firstVisit && fromSearch;
+                        // 「再訪」フラグは“ページを開いた瞬間”では立てない。即バック（無反応で離脱）した人は
+                        // 次回も初見扱いのまま壁を猶予する。簡単なエンゲージメント（スクロール / 操作 / 約10秒滞在）が
+                        // 起きたときだけ ocReturning を立て、以降の訪問は通常表示にする。
+                        if (firstVisit) {
+                            var marked = false, dwellTimer = 0;
+                            var mark = function () {
+                                if (marked) return;
+                                marked = true;
+                                try { window.localStorage.setItem('ocReturning', '1'); } catch (e) {}
+                                window.removeEventListener('scroll', mark);
+                                window.removeEventListener('pointerdown', mark);
+                                window.removeEventListener('keydown', mark);
+                                if (dwellTimer) { clearTimeout(dwellTimer); }
+                            };
+                            window.addEventListener('scroll', mark, { passive: true });
+                            window.addEventListener('pointerdown', mark, { passive: true });
+                            window.addEventListener('keydown', mark, { passive: true });
+                            try { dwellTimer = window.setTimeout(mark, 10000); } catch (e) {}
+                        }
                     } catch (e) { suppress = false; }
                     googlefc.controlledMessagingFunction = function (message) {
                         if (suppress) {
