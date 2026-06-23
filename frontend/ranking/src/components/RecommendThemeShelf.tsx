@@ -133,7 +133,7 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf({
                 />
               ))}
         </div>
-        {isRightScrollable && (
+        {!loading && isRightScrollable && (
           <div
             aria-hidden="true"
             style={{
