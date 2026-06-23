@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 export function useIsRightScrollable(
   useEffectTrigerValue: unknown
@@ -16,7 +16,10 @@ export function useIsRightScrollable(
     }
   }
 
-  useEffect(() => {
+  // useLayoutEffect: 初回描画(ペイント)前に計測して右端フェードの有無を確定させる。
+  // useEffect だとペイント後に false→true へ更新されるため、スライド切替で棚が再マウント
+  // するたびフェードが一瞬消えて戻る「ちらつき」が出る。
+  useLayoutEffect(() => {
     checkScrollButtons()
     const currentRef = ref.current
     currentRef?.addEventListener('scroll', checkScrollButtons)
@@ -47,7 +50,10 @@ export function useIsLeftRightScrollable(
     }
   }
 
-  useEffect(() => {
+  // useLayoutEffect: 初回描画(ペイント)前に計測して右端フェードの有無を確定させる。
+  // useEffect だとペイント後に false→true へ更新されるため、スライド切替で棚が再マウント
+  // するたびフェードが一瞬消えて戻る「ちらつき」が出る。
+  useLayoutEffect(() => {
     checkScrollButtons()
     const currentRef = ref.current
     currentRef?.addEventListener('scroll', checkScrollButtons)

@@ -134,21 +134,36 @@ function OcListSwiper({
                 : {}),
             }}
           >
-            {i === cateIndex && <RecommendThemeShelf />}
             {(() => {
-              if (i === cateIndex) {
-                return <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-              } else if (tIndex && i === tIndex[0]) {
-                return <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
-              } else if (!tIndex && prevInView && i === cateIndex - 1) {
-                return (
-                  <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-                )
-              } else if (!tIndex && nextInView && i === cateIndex + 1) {
-                return (
-                  <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-                )
-              }
+              const isActive = i === cateIndex
+              const isTransition = !!tIndex && i === tIndex[0]
+              const isPrev = !tIndex && prevInView && i === cateIndex - 1
+              const isNext = !tIndex && nextInView && i === cateIndex + 1
+              if (!(isActive || isTransition || isPrev || isNext)) return null
+
+              // 関連テーマ棚はリストと同じスライド集合（現在/遷移/隣接）で描画する。隣接スライドにも
+              // 先出しして取得を始めることで、スワイプ後に棚が遅れて現れて下のリストが押し下げられる
+              // 「ガタッ」を防ぐ（取得前は棚側がスケルトンで高さを確保する）。
+              const shelf = (
+                <RecommendThemeShelf
+                  category={OPEN_CHAT_CATEGORY[i][1]}
+                  subCategory={isActive ? params.sub_category : ''}
+                />
+              )
+              const list = isActive ? (
+                <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
+              ) : isTransition && tIndex ? (
+                <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
+              ) : (
+                <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
+              )
+
+              return (
+                <>
+                  {shelf}
+                  {list}
+                </>
+              )
             })()}
             {i === cateIndex && (
               <div
