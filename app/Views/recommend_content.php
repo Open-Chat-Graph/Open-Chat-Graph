@@ -61,8 +61,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>
         <?php if ($enableAdsense): ?>
-          <?php // Offerwall switchback 実験(oc-pdca): 奇数ISO週のみ Offerwall を抑制。広告自体は常に通常表示 ?>
-          <?php GAd::gTag(suppressOfferwall: GAd::isOfferwallSuppressionWeek()) ?>
+          <?php
+          // Offerwall 出し分け(oc-pdca): 初回×検索流入の初見だけ壁を抑制して SEO ランディングの第一印象を守り、
+          // 再訪・Direct/SNS・2ページ目以降は通常表示（判定はクライアント JS）。広告自体は常に通常表示。
+          // ただしアダルト/大人系の高収益タグ（GoogleAdsenseConfig::$offerwallAlwaysOnTags）は出し分けの例外＝常時表示。
+          // 判定はタグ（= 正規タグ = URLパス = CF キャッシュキー）単位なのでエッジキャッシュと無衝突。/oc と同じ判定を共用。
+          $_offerwallAlwaysOn = GAd::isOfferwallAlwaysOn($tag);
+          ?>
+          <?php GAd::gTag(smartOfferwall: !$_offerwallAlwaysOn) ?>
         <?php endif ?>
         <?php // 手動広告(recommendSeparatorResponsive)は撤去済み: impRPM¥20=自動広告(¥220)の1/11なのに
               // リストを分断していた(2026-06実測)。広告挿入のためだけだったチャンク分割も廃止し30件を一本のリストで表示 ?>
