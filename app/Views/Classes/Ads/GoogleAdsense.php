@@ -84,21 +84,17 @@ class GoogleAdsense
     }
 
     /**
-     * Offerwall switchback 実験（oc-pdca 2026-06開始）: ISO週番号の偶奇で自動 ON/OFF を交代する。
-     * 奇数週 = 抑制ON（壁を出さない）/ 偶数週 = OFF（通常表示）。週の境界は月曜 0時 JST。
-     * 人手での切り替えは不要。分析時は GA4/AdSense の日次データを ISO 週の偶奇で分けて集計する。
-     * 実験終了時は呼び出し箇所（recommend_content.php）を固定値 true/false に置き換えること。
-     */
-    public static function isOfferwallSuppressionWeek(): bool
-    {
-        return ((int)date('W')) % 2 === 1;
-    }
-
-    /**
-     * @param bool $suppressOfferwall true でこのページの Offerwall（プライバシーとメッセージ）のみ抑制する。
+     * @param bool $suppressOfferwall true でこのページの Offerwall（全画面メッセージ）のみ常時抑制する。
      *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
+     *                                （blog 記事など「初見読者に絶対 Offerwall を出さない」ページ用）
+     * @param bool $smartOfferwall    true で Offerwall を訪問者ごとに出し分ける（oc-pdca 2026-06）。
+     *                                「初回訪問 × 検索エンジンからの流入」のときだけ Offerwall を抑制して
+     *                                SEO ランディングの第一印象を守り、再訪・Direct/SNS・2ページ目以降は通常表示。
+     *                                判定はブラウザ JS（document.referrer + localStorage）で行うため、
+     *                                サーバが返す HTML は全訪問者で同一＝Cloudflare のエッジキャッシュと無衝突。
+     *                                $suppressOfferwall が true の場合はそちらが優先（常時抑制）。
      */
-    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
+    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false, bool $smartOfferwall = false)
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
@@ -111,6 +107,37 @@ class GoogleAdsense
                 googlefc.controlledMessagingFunction = function (message) {
                     message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
                 };
+            </script>
+            EOT;
+        } elseif ($smartOfferwall) {
+            // 訪問者ごとの出し分け。判定（初回×検索流入）はクライアント JS の実行時に行うので、
+            // キャッシュされる HTML 自体は全訪問者で同一。adsbygoogle.js より前に定義する必要があるため
+            // 文字列補間を避けて nowdoc で出力する。https://developers.google.com/funding-choices/fc-api-docs
+            echo <<<'EOT'
+            <script>
+                (function () {
+                    window.googlefc = window.googlefc || {};
+                    var suppress = false;
+                    try {
+                        var host = '';
+                        try { host = new URL(document.referrer).hostname; } catch (e) {}
+                        var fromSearch = /(^|\.)(google|bing|yahoo|duckduckgo|baidu|naver|daum|ecosia|brave|sogou)\./i.test(host);
+                        var firstVisit = false;
+                        try {
+                            firstVisit = !window.localStorage.getItem('ocReturning');
+                            if (firstVisit) window.localStorage.setItem('ocReturning', '1');
+                        } catch (e) {}
+                        // 初回訪問 かつ 検索エンジンからの流入のときだけ Offerwall を抑制する
+                        suppress = firstVisit && fromSearch;
+                    } catch (e) { suppress = false; }
+                    googlefc.controlledMessagingFunction = function (message) {
+                        if (suppress) {
+                            message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
+                        } else {
+                            message.proceed(true);
+                        }
+                    };
+                })();
             </script>
             EOT;
         }
