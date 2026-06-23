@@ -137,31 +137,36 @@ function OcListSwiper({
             {(() => {
               const isActive = i === cateIndex
               const isTransition = !!tIndex && i === tIndex[0]
+
+              // 棚は inView に関係なく隣接スライド(±1)にも常時マウントして先に取得・計測まで済ませる。
+              // こうするとスワイプで入った瞬間に再マウントせず、チップも右端フェードもそのまま見える。
+              // （inView ゲートのままだと隣スライドの棚が未マウント→スワイプ時に新規取得でスケルトンに
+              //   なり、右端フェードが一瞬消えて戻る／一覧がガタつく原因になる）。
+              const showShelf = isActive || isTransition || i === cateIndex - 1 || i === cateIndex + 1
+
+              // リストは従来どおり inView のときだけ（全カテゴリ分を同時描画しない）。
               const isPrev = !tIndex && prevInView && i === cateIndex - 1
               const isNext = !tIndex && nextInView && i === cateIndex + 1
-              if (!(isActive || isTransition || isPrev || isNext)) return null
+              const showList = isActive || isTransition || isPrev || isNext
 
-              // 関連テーマ棚はリストと同じスライド集合（現在/遷移/隣接）で描画する。隣接スライドにも
-              // 先出しして取得を始めることで、スワイプ後に棚が遅れて現れて下のリストが押し下げられる
-              // 「ガタッ」を防ぐ（取得前は棚側がスケルトンで高さを確保する）。
-              const shelf = (
-                <RecommendThemeShelf
-                  category={OPEN_CHAT_CATEGORY[i][1]}
-                  subCategory={isActive ? params.sub_category : ''}
-                />
-              )
-              const list = isActive ? (
-                <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-              ) : isTransition && tIndex ? (
-                <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
-              ) : (
-                <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-              )
+              if (!showShelf && !showList) return null
 
               return (
                 <>
-                  {shelf}
-                  {list}
+                  {showShelf && (
+                    <RecommendThemeShelf
+                      category={OPEN_CHAT_CATEGORY[i][1]}
+                      subCategory={isActive ? params.sub_category : ''}
+                    />
+                  )}
+                  {showList &&
+                    (isActive ? (
+                      <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
+                    ) : isTransition && tIndex ? (
+                      <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
+                    ) : (
+                      <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
+                    ))}
                 </>
               )
             })()}
