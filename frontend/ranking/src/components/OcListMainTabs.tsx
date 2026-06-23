@@ -1,40 +1,20 @@
 import { basePath, OPEN_CHAT_CATEGORY } from '../config/config'
 import React, { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Tabs, Tab } from '@mui/material'
+import { Box } from '@mui/material'
 import { type Swiper as SwiperCore } from 'swiper'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import FetchOpenChatRankingList, { DummyOpenChatRankingList } from './FetchOpenChatRankingList'
-import {
-  isSP,
-  samePageLinkNavi,
-  scrollToTop,
-  setTitle,
-  updateURLSearchParams,
-} from '../utils/utils'
+import { scrollToTop, setTitle, updateURLSearchParams } from '../utils/utils'
 import { CategoryListAppBar } from './CategoryListAppBar'
 import { listParamsState } from '../store/atom'
 import { useAtom } from 'jotai'
 import SiteHeader from './SiteHeader'
 import { useInView } from 'react-intersection-observer'
-import { t } from '../config/translation'
 import RecommendThemeShelf from './RecommendThemeShelf'
+import CategoryTabsBar from './CategoryTabsBar'
 import { trackEvent } from '../utils/track'
-
-function LinkTab(props: { label?: string; href?: string }) {
-  return (
-    <Tab
-      component="a"
-      onClick={(e: LinkEvent) => {
-        if (samePageLinkNavi(e)) {
-          e.preventDefault()
-        }
-      }}
-      {...props}
-    />
-  )
-}
 
 const OpenChatRankingList = memo(FetchOpenChatRankingList)
 
@@ -120,7 +100,7 @@ function OcListSwiper({
       onSwiper={onSwiper}
       speed={260}
     >
-      {OPEN_CHAT_CATEGORY.map((el, i) => (
+      {OPEN_CHAT_CATEGORY.map((_el, i) => (
         <SwiperSlide key={i}>
           <div
             style={{
@@ -138,36 +118,51 @@ function OcListSwiper({
               const isActive = i === cateIndex
               const isTransition = !!tIndex && i === tIndex[0]
 
-              // 棚は inView に関係なく隣接スライド(±1)にも常時マウントして先に取得・計測まで済ませる。
-              // こうするとスワイプで入った瞬間に再マウントせず、チップも右端フェードもそのまま見える。
-              // （inView ゲートのままだと隣スライドの棚が未マウント→スワイプ時に新規取得でスケルトンに
-              //   なり、右端フェードが一瞬消えて戻る／一覧がガタつく原因になる）。
-              const showShelf = isActive || isTransition || i === cateIndex - 1 || i === cateIndex + 1
-
-              // リストは従来どおり inView のときだけ（全カテゴリ分を同時描画しない）。
-              const isPrev = !tIndex && prevInView && i === cateIndex - 1
-              const isNext = !tIndex && nextInView && i === cateIndex + 1
+              // リストは inView の隣接スライドだけ描画（全カテゴリ同時描画は避ける）。
+              // ここで tIndex(遷移中)をゲートに入れない: 入れると、スワイプ開始(transitionStart)で
+              // tIndex がセットされた瞬間に「入ってくる側スライド」のダミーが消える一方、まだ cateIndex は
+              // 更新されておらず active にもならないため、可視スライドが1フレーム“リスト無し”になって
+              // チラつく。遷移中もダミーを保持して空フレームを無くす。
+              const isPrev = prevInView && i === cateIndex - 1
+              const isNext = nextInView && i === cateIndex + 1
               const showList = isActive || isTransition || isPrev || isNext
+              if (!showList) return null
 
-              if (!showShelf && !showList) return null
+              // 関連テーマ棚はリストと一緒に出す。
+              // - active / 遷移中: 通常フロー（リストの上）。リストごと縦スクロールする。
+              // - ダミー（隣接スライド）: ダミーリストは絶対配置(top:scrollY)なので、棚を通常フローに
+              //   置くと棚の高さ分だけダミーリストを押し下げてマージン過多になり、棚自身もスクロールで
+              //   画面外へ消える（スクロール中スワイプの不具合）。棚をダミーの絶対配置コンテナ内に入れ、
+              //   リストと一緒に正しい位置へ置く。
+              const shelf = (
+                <RecommendThemeShelf
+                  category={OPEN_CHAT_CATEGORY[i][1]}
+                  subCategory={isActive ? params.sub_category : ''}
+                />
+              )
 
+              if (isActive) {
+                return (
+                  <>
+                    {shelf}
+                    <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
+                  </>
+                )
+              }
+              if (isTransition && tIndex) {
+                return (
+                  <>
+                    {shelf}
+                    <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
+                  </>
+                )
+              }
               return (
-                <>
-                  {showShelf && (
-                    <RecommendThemeShelf
-                      category={OPEN_CHAT_CATEGORY[i][1]}
-                      subCategory={isActive ? params.sub_category : ''}
-                    />
-                  )}
-                  {showList &&
-                    (isActive ? (
-                      <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-                    ) : isTransition && tIndex ? (
-                      <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
-                    ) : (
-                      <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-                    ))}
-                </>
+                <DummyOpenChatRankingList
+                  query={getQuery(i, cateIndex, params)}
+                  cateIndex={i}
+                  shelf={shelf}
+                />
               )
             })()}
             {i === cateIndex && (
@@ -198,9 +193,8 @@ function OcListSwiper({
 export default function OcListMainTabs({ cateIndex }: { cateIndex: number }) {
   const swiperRef = useRef<SwiperCore | null>(null)
 
-  const handleChange = useCallback((e: React.SyntheticEvent, newValue: number) => {
-    if (e.type === 'click' && !samePageLinkNavi(e as LinkEvent)) return
-    swiperRef.current?.slideTo(newValue)
+  const handleSelectCategory = useCallback((index: number) => {
+    swiperRef.current?.slideTo(index)
   }, [])
 
   const siperSlideTo = (index: number): void => {
@@ -210,20 +204,7 @@ export default function OcListMainTabs({ cateIndex }: { cateIndex: number }) {
   return (
     <Box>
       <SiteHeader siperSlideTo={siperSlideTo} height="78px">
-        <Tabs
-          className="fix-min-width category-tab"
-          value={cateIndex}
-          onChange={handleChange}
-          variant="scrollable"
-          scrollButtons={true}
-          allowScrollButtonsMobile={!isSP()}
-          aria-label={t('オープンチャットのカテゴリータブ')}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
-        >
-          {OPEN_CHAT_CATEGORY.map((el, i) => (
-            <LinkTab label={el[0]} href={`/${basePath}${el[1] ? '/' + el[1] : ''}`} key={i} />
-          ))}
-        </Tabs>
+        <CategoryTabsBar cateIndex={cateIndex} onSelect={handleSelectCategory} />
       </SiteHeader>
       <CategoryListAppBar />
       <OcListSwiper cateIndex={cateIndex} swiperRef={swiperRef} />

@@ -163,9 +163,13 @@ const ListTitleDesc = memo(OCListTitleDesc)
 export function DummyOpenChatRankingList({
   query,
   cateIndex,
+  shelf,
 }: {
   query: string
   cateIndex: number
+  // 関連テーマ棚。絶対配置コンテナの中（リストの上）に入れて、スクロール中スワイプでも棚の高さ分
+  // リストを押し下げず、棚もリストと一緒に正しい位置へ来るようにする。
+  shelf?: React.ReactNode
 }) {
   const params = useAtomValue(listParamsState)
 
@@ -175,6 +179,7 @@ export function DummyOpenChatRankingList({
         className="div-fetchOpenChatRankingList"
         style={{ position: 'absolute', top: `${window.scrollY}px`, width: '100%' }}
       >
+        {shelf}
         <ListTitleDesc
           cateIndex={cateIndex}
           isSearch={!!params.keyword}
