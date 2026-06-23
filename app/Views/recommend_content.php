@@ -65,8 +65,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
           // Offerwall 出し分け(oc-pdca): 初回×検索流入の初見だけ壁を抑制して SEO ランディングの第一印象を守り、
           // 再訪・Direct/SNS・2ページ目以降は通常表示（判定はクライアント JS）。広告自体は常に通常表示。
           // ただしアダルト/大人系の高収益タグ（GoogleAdsenseConfig::$offerwallAlwaysOnTags）は出し分けの例外＝常時表示。
-          // 判定は $_tagIndex（= 正規タグ = URLパス = CF キャッシュキー）単位なのでエッジキャッシュと無衝突。
-          $_offerwallAlwaysOn = in_array($_tagIndex, \App\Config\GoogleAdsenseConfig::$offerwallAlwaysOnTags, true);
+          // 判定はタグ（= 正規タグ = URLパス = CF キャッシュキー）単位なのでエッジキャッシュと無衝突。/oc と同じ判定を共用。
+          $_offerwallAlwaysOn = GAd::isOfferwallAlwaysOn($tag);
           ?>
           <?php GAd::gTag(smartOfferwall: !$_offerwallAlwaysOn) ?>
         <?php endif ?>

@@ -84,6 +84,19 @@ class GoogleAdsense
     }
 
     /**
+     * このタグ（/recommend の正規タグ、または /oc の部屋タグ $oc['tag1']）が
+     * 「Offerwall 常時表示」対象か。GoogleAdsenseConfig::$offerwallAlwaysOnTags と照合する。
+     * tag1 等は DB から HTML エスケープされた形で来る場合があるので、内部で
+     * htmlspecialchars_decode してから厳密一致する（recommend_content.php と同じ正規化）。
+     * /recommend と /oc がこの1メソッドを共用し、判定がドリフトしないようにする。
+     */
+    public static function isOfferwallAlwaysOn(?string $tag): bool
+    {
+        if ($tag === null || $tag === '') return false;
+        return in_array(htmlspecialchars_decode($tag), GoogleAdsenseConfig::$offerwallAlwaysOnTags, true);
+    }
+
+    /**
      * @param bool $suppressOfferwall true でこのページの Offerwall（全画面メッセージ）のみ常時抑制する。
      *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
      *                                （blog 記事など「初見読者に絶対 Offerwall を出さない」ページ用）
