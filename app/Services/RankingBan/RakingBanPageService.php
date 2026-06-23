@@ -12,6 +12,16 @@ class RakingBanPageService
 {
     use TraitPaginationRecordsCalculator;
 
+    /**
+     * ページ番号の上限。深い OFFSET は ranking_ban(open_chat との JOIN＋計算式 ORDER BY による
+     * 全件 filesort)を数十秒に膨らませ、本番 DB を飽和させた(2026-06-24 障害。クローラが
+     * page=962〜2372 を深掘り巡回し MySQL が gone away を多発)。実利用で必要な範囲を十分に
+     * 超えるこのページ数で頭打ちにし、超過は範囲外(null→コントローラが404→フロントが1ページ目へ
+     * 復帰)として重いクエリ自体を実行しない。CF ヘッダゲート(一次対策)に対する多層防御で、
+     * cf.client.bot(Googlebot 等)はゲートを通れるためコード側でも最悪値を bound する。
+     */
+    private const MAX_PAGE_NUMBER = 100;
+
     public function __construct(
         private RankingBanPageRepository $rankingBanPageRepository
     ) {
@@ -30,11 +40,16 @@ class RakingBanPageService
      */
     public function getAllOrderByDateTime(int $change, int $publish, int $percent, string $keyword, int $pageNumber, int $limit, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): ?RankingBanPageDto
     {
+        // 上限を超える深いページは件数取得すら走らせず範囲外として返す（重い OFFSET から DB を守る）
+        if ($pageNumber > self::MAX_PAGE_NUMBER) {
+            return null;
+        }
+
         $labelArray = $this->rankingBanPageRepository->findAllDatetimeColumn($change, $publish, $percent, $keyword, $since, $until, $dmin, $dmax, $now, $items);
 
-        // ページの最大数を取得する
+        // ページの最大数を取得する（実データの最大ページと上限の小さい方で頭打ち）
         $totalRecords = count($labelArray);
-        $maxPageNumber = $this->calcMaxPages($totalRecords, $limit);
+        $maxPageNumber = min($this->calcMaxPages($totalRecords, $limit), self::MAX_PAGE_NUMBER);
         if ($pageNumber > $maxPageNumber) {
             // 現在のページ番号が最大ページ番号を超えている場合
             return null;
