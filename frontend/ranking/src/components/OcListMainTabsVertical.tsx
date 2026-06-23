@@ -118,7 +118,10 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
           <SiteHeaderVerticalSearch />
         </Box>
         <Box sx={{ p: '1.5rem', pt: '1rem' }}>
-          <RecommendThemeShelf />
+          <RecommendThemeShelf
+            category={OPEN_CHAT_CATEGORY[cateIndex][1]}
+            subCategory={params.sub_category}
+          />
           {OPEN_CHAT_CATEGORY.map((el, i) => (
             <TabPanel value={cateIndex} index={i} key={i}>
               <FetchOpenChatRankingList query={query} cateIndex={cateIndex} />
