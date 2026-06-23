@@ -86,7 +86,9 @@ class RankingBanLabsPageController
         string $until,
         string $items
     ): ViewInterface|false {
-        header('X-Robots-Tag: noindex');
+        // noindex: フラグメント自体は検索結果に出さない。nofollow: ページャの深いページリンクを
+        // クローラに辿らせない（cf.client.bot はCFヘッダゲートを通れるため、深いOFFSETの巡回を抑止）
+        header('X-Robots-Tag: noindex, nofollow');
 
         $since = $this->validDate($since);
         $until = $this->validDate($until);
