@@ -320,13 +320,17 @@ jobs:
                 }
               }
 
+              // X は "$WORD" を cashtag ($SYMBOL) と解釈し「1投稿につき1つまで」の制限で 403 になる。
+              // PR 本文/タイトルに PHP 変数名 ($foo, $_bar) 等が複数あると弾かれるため、
+              // "$" + 英字/アンダースコア を全角 "＄" に置換して cashtag を無効化する (文字数は不変)。
+              const neutralizeCashtags = (s) => s.replace(/\$(?=[A-Za-z_])/g, '＄');
               const message = head + bodySection + urlSuffix;
 
               // X Premium 前提でフル本文を送信。文字数超過で X に拒否された場合のみ
               // head + 区切り + 切り詰め本文 で再送する。
               let tweet;
               try {
-                tweet = await client.v2.tweet(message);
+                tweet = await client.v2.tweet(neutralizeCashtags(message));
               } catch (err) {
                 const errCodes = (err && err.data && err.data.errors) ? err.data.errors.map(e => e.code) : [];
                 const tooLong = errCodes.includes(186) || /too long|character limit/i.test((err && err.message) || '');
@@ -338,7 +342,7 @@ jobs:
                 const limit = 280; // X 拒否時のフォールバック上限
                 const truncatedBody = prBody.slice(0, Math.max(0, limit - baseLen - 1)) + '…';
                 const fallback = head + (truncatedBody.length > 1 ? '\n---\n' + truncatedBody : '') + urlSuffix;
-                tweet = await client.v2.tweet(fallback);
+                tweet = await client.v2.tweet(neutralizeCashtags(fallback));
               }
               console.log('Tweet posted: ' + tweet.data.id);
 
