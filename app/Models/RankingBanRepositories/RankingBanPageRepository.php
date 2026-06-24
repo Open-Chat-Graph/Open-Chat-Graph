@@ -8,6 +8,50 @@ use App\Models\Repositories\DB;
 
 class RankingBanPageRepository
 {
+    /** ソートキー生成列 sort_datetime の索引が存在するか（ワーカー単位で1度だけ確認しキャッシュ） */
+    private static ?bool $hasSortIndex = null;
+
+    /**
+     * 重い ORDER BY（IFNULL(GREATEST(datetime, end_datetime), datetime)）を索引で満たすための
+     * 生成列＋索引 idx_rb_sortdt が存在するか。存在すれば高速パス（FORCE INDEX で filesort 回避）を、
+     * 無ければ従来の式 ORDER BY（filesort）にフォールバックする。
+     * これによりデプロイ中（列追加済み・索引未構築）や索引構築失敗時でもクエリは壊れない（退行のみ）。
+     */
+    private function hasSortDatetimeIndex(): bool
+    {
+        if (self::$hasSortIndex !== null) return self::$hasSortIndex;
+        try {
+            $stmt = DB::execute(
+                "SELECT 1 FROM information_schema.STATISTICS"
+                    . " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ranking_ban' AND INDEX_NAME = 'idx_rb_sortdt' LIMIT 1"
+            );
+            return self::$hasSortIndex = (bool) $stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            return self::$hasSortIndex = false; // 確認できないときは安全側（従来パス）
+        }
+    }
+
+    /**
+     * 生成列の索引(sort_datetime, member)で並べ替える高速パスを使えるか。
+     *
+     * この索引順の走査＋早期終了（LIMIT で打ち切り）は最悪でも索引を1周（約3.4秒・実測）で頭打ち。
+     * percentage/期間/変更内容などで絞り込んでも、一致が多い限り LIMIT で早く止まり 0.1〜1.6秒に収まる。
+     * よって従来の全件 filesort（順位%や期間指定で 17〜19秒）より常に速い —— ただし1つだけ例外がある。
+     *
+     * 例外＝日付範囲(since/until)。古い狭い窓に一致が少数だけ散在すると、LIMIT に達せず索引末尾まで
+     * 空振り走査してしまい、小さくなった集合を filesort する従来パス(約1.3秒)より遅くなる(約3.4秒)。
+     * そのため日付範囲が指定されたときだけ従来パスに任せる。
+     *
+     * キーワード検索は別経路(LIKE)・publish 1(未掲載のみ＝小集合で既存索引が速い)も対象外。
+     */
+    private function useSortDatetimeFastPath(int $publish, string $keyword, string $since, string $until): bool
+    {
+        return $keyword === ''
+            && $since === '' && $until === ''
+            && ($publish === 0 || $publish === 2)
+            && $this->hasSortDatetimeIndex();
+    }
+
     /**
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
@@ -31,8 +75,17 @@ class RankingBanPageRepository
             . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
             . $this->buildItemsClause($items, $itemsParams);
 
+        // 高速パス: 生成列 sort_datetime の索引で並べ替える（filesort を避け、LIMIT で早期終了）。
+        // rb を先頭駆動にするため STRAIGHT_JOIN、ソート索引を確実に使うため FORCE INDEX を付ける。
+        $fast = $this->useSortDatetimeFastPath($publish, $keyword, $since, $until);
+        $straightJoin = $fast ? 'STRAIGHT_JOIN' : '';
+        $forceIndex = $fast ? 'FORCE INDEX (idx_rb_sortdt)' : '';
+        $orderBy = $fast
+            ? 'rb.sort_datetime DESC, rb.member DESC, rb.id DESC'
+            : 'IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime) DESC, oc.member DESC';
+
         $query = fn ($like) =>
-        "SELECT
+        "SELECT {$straightJoin}
             oc.id,
             oc.name,
             oc.description,
@@ -49,13 +102,12 @@ class RankingBanPageRepository
             rb.updated_at,
             rb.update_items
         FROM
-            ranking_ban AS rb
+            ranking_ban AS rb {$forceIndex}
             JOIN open_chat AS oc ON oc.id = rb.open_chat_id
         WHERE
             {$whereClause} {$like}
         ORDER BY
-            IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime) DESC,
-            oc.member DESC
+            {$orderBy}
         LIMIT
             :offset, :limit";
 
@@ -73,40 +125,51 @@ class RankingBanPageRepository
     }
 
     /**
+     * ページャのラベル用に「消えた日時(sort_datetime)」を新しい順で最大 $limit 件返す。
+     * 表示できるページ数には上限があるため全件は不要で、$limit で頭打ちにして filesort/転送を抑える。
+     *
      * @param int $publish 0:掲載中のみ, 1:未掲載のみ, 2:すべて
      * @param int $change 0:内容変更ありのみ, 1:変更なしのみ, 2:すべて
+     * @param int $limit 取得上限（表示上限ページ×1ページ件数＋1）
      */
-    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): array
+    public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, int $limit, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): array
     {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
             . $this->buildDateClause($since, $until, $dateParams)
             . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
             . $this->buildItemsClause($items, $itemsParams);
 
+        $fast = $this->useSortDatetimeFastPath($publish, $keyword, $since, $until);
+        $straightJoin = $fast ? 'STRAIGHT_JOIN' : '';
+        $forceIndex = $fast ? 'FORCE INDEX (idx_rb_sortdt)' : '';
+        $sortExpr = $fast ? 'rb.sort_datetime' : 'IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime)';
+        $orderBy = $fast
+            ? 'rb.sort_datetime DESC, rb.member DESC, rb.id DESC'
+            : 'IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime) DESC, rb.datetime DESC, percentage ASC';
+
         $query = fn ($like) =>
-        "SELECT
-            IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime) AS `datetime`
+        "SELECT {$straightJoin}
+            {$sortExpr} AS `datetime`
         FROM
-            ranking_ban AS rb
+            ranking_ban AS rb {$forceIndex}
             JOIN open_chat AS oc ON oc.id = rb.open_chat_id
         WHERE
             {$whereClause} {$like}
         ORDER BY
-            IFNULL(GREATEST(rb.datetime, rb.end_datetime), rb.datetime) DESC,
-            rb.datetime DESC,
-            percentage ASC";
+            {$orderBy}
+        LIMIT :limit";
 
         if ($keyword !== '') {
             return DB::executeLikeSearchQuery(
                 $query,
                 fn ($i) => "(oc.name LIKE :keyword{$i} OR oc.description LIKE :keyword{$i})",
                 $keyword,
-                ($dateParams + $durationParams + $itemsParams) ?: null,
+                ['limit' => $limit] + $dateParams + $durationParams + $itemsParams,
                 fetchAllArgs: [\PDO::FETCH_COLUMN, 0],
                 whereClausePrefix: 'AND '
             );
         } else {
-            return DB::fetchAll($query(''), ($dateParams + $durationParams + $itemsParams) ?: null, args: [\PDO::FETCH_COLUMN, 0]);
+            return DB::fetchAll($query(''), ['limit' => $limit] + $dateParams + $durationParams + $itemsParams, args: [\PDO::FETCH_COLUMN, 0]);
         }
     }
 

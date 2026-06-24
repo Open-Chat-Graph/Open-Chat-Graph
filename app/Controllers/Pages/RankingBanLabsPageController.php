@@ -121,12 +121,14 @@ class RankingBanLabsPageController
         if ($rankingBanData === null) {
             $totalRecords = 0;
             $maxPageNumber = 0;
+            $hasMore = false;
             return view(
                 'components/ranking_ban_results',
                 compact(
                     '_now',
                     'totalRecords',
                     'maxPageNumber',
+                    'hasMore',
                     'page',
                     'titleValue',
                     'percent',
@@ -138,18 +140,19 @@ class RankingBanLabsPageController
 
         $totalRecords = $rankingBanData->totalRecords;
         $maxPageNumber = $rankingBanData->maxPageNumber;
+        $hasMore = $rankingBanData->hasMore;
         $path = 'labs/publication-analytics';
         // クエリ順は JS 側 buildQuery と同一に保つ（CDNキャッシュキーの分裂防止）
         $params = compact('change', 'items', 'publish', 'percent', 'keyword', 'since', 'until', 'dmin', 'dmax');
 
+        // labelArray は降順（新しい順）のまま渡す（ページャ側が降順前提でインデックスする）
         [$title, $_select, $_label] = $rankingBanSelectElementPagination->geneSelectElementPagerAsc(
             $path,
             $params,
             $page,
-            $totalRecords,
             $limit,
             $maxPageNumber,
-            array_reverse($rankingBanData->labelArray)
+            $rankingBanData->labelArray
         );
 
         $openChatList = $rankingBanData->openChatList;
@@ -170,6 +173,7 @@ class RankingBanLabsPageController
                 '_pagerNavArg',
                 'totalRecords',
                 'maxPageNumber',
+                'hasMore',
                 'page',
                 'titleValue',
             )

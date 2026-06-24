@@ -36,48 +36,39 @@ class RankingBanSelectElementPagination
     }
 
     /**
-     * 昇順ページネーションのselect要素を生成
-     * 
-     * @return array `[$title, $_selectElement, $_label]`
+     * 各ページ「最新→最古」の境界日付つき select 要素を生成する。
+     *
+     * $labelArray は降順（新しい順）の境界日付配列で、長さは「表示上限ページ×件数」まで。
+     * ページ i の先頭（最新）= $labelArray[(i-1)*件数]、末尾（最古）= $labelArray[min(i*件数, 件数)-1] を参照する。
+     *
+     * @param string[] $labelArray 降順の「消えた日時」一覧（表示上限ページ分まで）
+     * @return array `['', $_selectElement, $_label]`（先頭の title は未使用）
      */
-    function geneSelectElementPagerAsc(string $pagePath, array $params, int $pageNumber, int $totalRecords, int $itemsPerPage, int $maxPage, array $labelArray = []): array
+    function geneSelectElementPagerAsc(string $pagePath, array $params, int $pageNumber, int $itemsPerPage, int $maxPage, array $labelArray = []): array
     {
-        // ページ番号の表示に必要な要素を取得する
-        $getElement = function ($url, $selected, $start, $end, $i) use ($labelArray) {
-            $startLabel = isset($labelArray[$start - 1]) ? $this->formatDateTimeHourly($labelArray[$start - 1]) : '';
-            $endLabel = isset($labelArray[$end - 1]) ? $this->formatDateTimeHourly($labelArray[$end - 1]) : '';
+        $count = count($labelArray);
 
-            return "<option value='{$url}' {$selected}>{$startLabel} → {$endLabel} ({$i}ページ目)</option>";
+        // ページ i の「最新（先頭）→最古（末尾）」の境界日付ラベルを返す
+        $rangeLabel = function (int $i) use ($labelArray, $itemsPerPage, $count): array {
+            $startIdx = ($i - 1) * $itemsPerPage;            // そのページの先頭（最新）
+            $endIdx = min($i * $itemsPerPage, $count) - 1;   // そのページの末尾（最古）
+            $start = isset($labelArray[$startIdx]) ? $this->formatDateTimeHourly($labelArray[$startIdx]) : '';
+            $end = isset($labelArray[$endIdx]) ? $this->formatDateTimeHourly($labelArray[$endIdx]) : '';
+            return [$start, $end];
         };
 
-        // 選択されたページに対して"selected"属性を返す
-        $selected = fn($i) => ($i === $pageNumber) ? "selected='selected'" : '';
-
-        // ページ番号に応じて、そのページの最初のインデックスを計算する
-        $startNum = fn($i) => ($i === 1) ? $totalRecords : $totalRecords - (($i - 1) * $itemsPerPage);
-
-        // ページ番号に応じて、そのページの最後のインデックスを計算する
-        $endNum = fn($i) => ($i === $maxPage) ? 1 : $totalRecords - ($i * $itemsPerPage) + 1;
-
-        // 各ページ番号の要素を生成する
         $_selectElement = '';
         for ($i = 1; $i <= $maxPage; $i++) {
-            $_selectElement .= $getElement($this->pagerUrl($pagePath, $i, $params), $selected($i), $startNum($i), $endNum($i), $i) . "\n";
+            [$start, $end] = $rangeLabel($i);
+            $selected = ($i === $pageNumber) ? "selected='selected'" : '';
+            $url = $this->pagerUrl($pagePath, $i, $params);
+            $_selectElement .= "<option value='{$url}' {$selected}>{$start} → {$end} ({$i}ページ目)</option>\n";
         }
 
-        // ラベルの番号を取得する
-        $labelStartNum = $startNum($pageNumber);
-        $labelEndNum = $endNum($pageNumber);
+        [$curStart, $curEnd] = $rangeLabel($pageNumber);
+        $_label = "{$curStart} → {$curEnd}<br>({$pageNumber}ページ目)";
 
-        $startLabel = isset($labelArray[$labelStartNum - 1]) ? $this->formatDateTimeHourly($labelArray[$labelStartNum - 1]) : '';
-        $endLabel = isset($labelArray[$labelEndNum - 1]) ? $this->formatDateTimeHourly($labelArray[$labelEndNum - 1]) : '';
-
-        // select要素のラベルを生成する
-        $_label = "{$startLabel} → {$endLabel}<br>({$pageNumber}ページ目)";
-
-        // タイトル用の文字列
-        $title = "{$labelEndNum} ~ {$labelStartNum}";
-
-        return [$title, $_selectElement, $_label];
+        // 先頭要素（旧 title）は呼び出し側で未使用
+        return ['', $_selectElement, $_label];
     }
 }
