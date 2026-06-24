@@ -136,18 +136,33 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 </div>
             </div>
             <div class="rb-field">
-                <div class="rb-field-label" id="rb-label-period">消えた時期</div>
+                <div class="rb-field-label" id="rb-label-period"><span id="rb-period-label">未掲載だった時期</span></div>
                 <div class="rb-field-control">
                     <div class="rb-dates" role="group" aria-labelledby="rb-label-period">
-                        <input type="date" id="rb-since" class="rb-date-input" aria-label="消えた日の開始" value="<?php echo $since ?>">
+                        <input type="date" id="rb-since" class="rb-date-input" aria-label="期間の開始" value="<?php echo $since ?>">
                         <span class="rb-dates-sep" aria-hidden="true">〜</span>
-                        <input type="date" id="rb-until" class="rb-date-input" aria-label="消えた日の終了" value="<?php echo $until ?>">
+                        <input type="date" id="rb-until" class="rb-date-input" aria-label="期間の終了" value="<?php echo $until ?>">
                     </div>
-                    <p class="rb-field-hint">ランキングから消えた日で絞り込み（空欄＝全期間）</p>
+                    <p class="rb-field-hint">この期間に未掲載だった部屋で絞り込み（消えた日〜復活/現在が期間と重なるもの・空欄＝全期間）</p>
+                </div>
+            </div>
+            <div class="rb-field">
+                <div class="rb-field-label" id="rb-label-duration"><span id="rb-duration-label">消えていた時間</span>（時間で指定）</div>
+                <div class="rb-field-control">
+                    <div class="rb-dates rb-duration-range" role="group" aria-labelledby="rb-label-duration">
+                        <input type="number" id="rb-dmin" class="rb-num-input" min="0" max="87600" step="1" inputmode="numeric" aria-label="最小（時間）" placeholder="最小" value="<?php echo $dmin > 0 ? $dmin : '' ?>">
+                        <span class="rb-dates-sep" aria-hidden="true">〜</span>
+                        <input type="number" id="rb-dmax" class="rb-num-input" min="0" max="87600" step="1" inputmode="numeric" aria-label="最大（時間）" placeholder="最大" value="<?php echo $dmax > 0 ? $dmax : '' ?>">
+                        <span class="rb-num-unit">時間</span>
+                    </div>
+                    <p class="rb-field-hint" id="rb-duration-hint">上の「消えていた期間」を数値で細かく指定（例: 24=1日、72=3日、168=1週間。空欄＝指定なし）。プリセットと連動します</p>
                 </div>
             </div>
             </div>
         </details>
+        <div class="rb-submit-bar">
+            <button type="button" id="rb-submit" class="rb-submit-btn">この条件で表示</button>
+        </div>
 
         <!-- 詳しい使い方（上級者向け・SEOテキスト） -->
         <aside class="list-aside ranking-desc" style="margin: 1rem 0;">
@@ -284,6 +299,12 @@ viewComponent('head', compact('_css', '_meta')) ?>
             const clearBtn = document.getElementById('rb-keyword-clear');
             const sinceInput = document.getElementById('rb-since');
             const untilInput = document.getElementById('rb-until');
+            const dminInput = document.getElementById('rb-dmin');
+            const dmaxInput = document.getElementById('rb-dmax');
+            const periodLabel = document.getElementById('rb-period-label');
+            const durationLabel = document.getElementById('rb-duration-label');
+            const durationHint = document.getElementById('rb-duration-hint');
+            const submitBtn = document.getElementById('rb-submit');
 
             const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
             // 「ルームの変更内容」で絞り込めるキー（正準順）。PHP の UPDATE_ITEM_KEYS と一致させる
@@ -358,6 +379,28 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (keywordInput.value !== state.keyword) keywordInput.value = state.keyword;
                 if (sinceInput.value !== state.since) sinceInput.value = state.since;
                 if (untilInput.value !== state.until) untilInput.value = state.until;
+                // 数値入力（時間）。0/空＝指定なし。入力中の値と同じなら書き戻さない（カーソル飛び防止）
+                const dminStr = state.dmin > 0 ? String(state.dmin) : '';
+                const dmaxStr = state.dmax > 0 ? String(state.dmax) : '';
+                if (dminInput.value !== dminStr) dminInput.value = dminStr;
+                if (dmaxInput.value !== dmaxStr) dmaxInput.value = dmaxStr;
+                // 期間ラベルも掲載状況で変わる。消えたままは今も未掲載なので「だった（過去）」にしない
+                if (periodLabel) {
+                    periodLabel.textContent = state.publish === 1 ? '未掲載中の時期'
+                        : (state.publish === 0 ? '未掲載だった時期' : '未掲載の時期');
+                }
+                // 「消えていた時間」フォームの文言は掲載状況で変わる（消えている / 復活までの / 消えていた）
+                if (durationLabel) {
+                    durationLabel.textContent = state.publish === 1 ? '消えている時間'
+                        : (state.publish === 0 ? '復活までの時間' : '消えていた時間');
+                }
+                if (durationHint) {
+                    durationHint.textContent = state.publish === 0
+                        ? '消えてから復活までが指定の時間内だった部屋に絞ります（例: 24=1日以内。空欄＝指定なし）'
+                        : (state.publish === 1
+                            ? '指定の時間ぶん「今も消えたまま」の部屋に絞ります（例: 72=3日以上。空欄＝指定なし）'
+                            : '消えていた時間で絞ります（例: 24=1日、168=1週間。空欄＝指定なし）');
+                }
                 toggleClear();
                 // プリセットは publish/change/percent の選択。「消えていた期間」は直交する軸なので判定に含めない（同時選択できる）
                 document.querySelectorAll('.rb-preset:not(.rb-duration):not(.rb-filter):not(.rb-item)').forEach((b) => {
@@ -480,6 +523,44 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     });
             };
 
+            // 数値入力（時間）→ state.dmin/dmax。0/空＝条件なし。矛盾範囲は下限優先（PHP normalizeDuration と同一）
+            const readDuration = () => {
+                const h = (el) => {
+                    const n = parseInt(el.value, 10);
+                    return (isNaN(n) || n < 0) ? 0 : Math.min(n, 87600);
+                };
+                state.dmin = h(dminInput);
+                state.dmax = h(dmaxInput);
+                if (state.dmin > 0 && state.dmax > 0 && state.dmin >= state.dmax) state.dmax = 0;
+            };
+
+            // 自由入力欄（キーワード・期間・時間）を送信時に state へ取り込む（未確定の入力も拾う）
+            const readInputsIntoState = () => {
+                state.keyword = keywordInput.value;
+                state.since = DATE_RE.test(sinceInput.value) ? sinceInput.value : '';
+                state.until = DATE_RE.test(untilInput.value) ? untilInput.value : '';
+                readDuration();
+            };
+
+            // 「この条件で表示」: 選択しただけでは読み込まず、ここで初めて取得する（DBの無駄打ちを防ぐ）
+            const submit = () => {
+                readInputsIntoState();
+                state.page = 1;
+                syncControls();
+                load({ push: true });
+            };
+
+            // クエリ空（URL に絞り込みが無い初回アクセス）は読み込まず、操作を促すだけにする
+            const showInitialEmpty = () => {
+                if (aborter) aborter.abort();
+                ++gen; // 進行中の取得があれば、その遅延描画を無効化する
+                setBusy(false);
+                results.innerHTML = '<div class="rb-empty-initial"><p>条件を選んで「この条件で表示」ボタンを押してください。</p></div>';
+            };
+
+            // 絞り込みの変更は「この条件で表示」を押すまで読み込まない（状態とUIだけ更新する）。
+            // ページ送り・結果内の操作（再試行・除外解除など）は従来どおり即時に取得する。
+
             // セグメント（radio・詳細設定内の掲載状況/ルーム内容の変更）
             document.querySelectorAll('.rb-seg input[type="radio"]').forEach((r) => {
                 r.addEventListener('change', () => {
@@ -487,9 +568,15 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     state[r.name] = Number(r.value);
                     // 「変更なし」は変更内容の指定と矛盾するのでクリア
                     if (r.name === 'change' && state.change === 1) state.items = [];
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
+                });
+            });
+
+            // 消えていた時間の数値入力（時間）。確定（blur）で state へ反映し、プリセットの選択状態を同期
+            [dminInput, dmaxInput].forEach((input) => {
+                input.addEventListener('change', () => {
+                    readDuration();
+                    syncControls();
                 });
             });
 
@@ -500,9 +587,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     const v = Number(b.dataset.value);
                     if (state[key] === v) return;
                     state[key] = v;
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
                 });
             });
 
@@ -515,9 +600,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                     state.since = '';
                     state.until = '';
                     state.items = [];
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
                 });
             });
 
@@ -526,9 +609,7 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 b.addEventListener('click', () => {
                     state.dmin = Number(b.dataset.dmin);
                     state.dmax = Number(b.dataset.dmax);
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
                 });
             });
 
@@ -542,24 +623,23 @@ viewComponent('head', compact('_css', '_meta')) ?>
                         state.items = ITEM_KEYS.filter((k) => k === key || state.items.includes(k)); // 追加（正準順を維持）
                         if (state.change !== 0) state.change = 0; // 変更あり
                     }
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
                 });
             });
 
-            // 期間（消えた時期）
+            // 期間（未掲載だった時期）
             [sinceInput, untilInput].forEach((input) => {
                 input.addEventListener('change', () => {
                     const v = DATE_RE.test(input.value) ? input.value : '';
                     const key = input === sinceInput ? 'since' : 'until';
                     if (state[key] === v) return;
                     state[key] = v;
-                    state.page = 1;
                     syncControls();
-                    load({ push: true });
                 });
             });
+
+            // 「この条件で表示」ボタン
+            submitBtn.addEventListener('click', submit);
 
             // キーワード（Enter確定のみ・IME変換確定は無視。iOS IMEゾンビ対策で変換中は×を隠す）
             let composing = false;
@@ -578,18 +658,13 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 if (e.key !== 'Enter') return;
                 if (e.isComposing || composing) return;
                 e.preventDefault();
-                if (keywordInput.value === state.keyword) return;
-                state.keyword = keywordInput.value;
-                state.page = 1;
-                load({ push: true });
+                // キーワードの確定（Enter）は「この条件で表示」と同じく取得する
+                submit();
             });
             clearBtn.addEventListener('click', () => {
                 keywordInput.value = '';
-                toggleClear();
-                if (state.keyword === '') return;
                 state.keyword = '';
-                state.page = 1;
-                load({ push: true });
+                syncControls();
             });
 
             // 結果コンテナへのイベント委譲（innerHTML差し替えでリスナーが消えるため）
@@ -641,11 +716,15 @@ viewComponent('head', compact('_css', '_meta')) ?>
                 load({ push: true, scroll: true });
             });
 
+            // クエリが空（絞り込み無し）なら読み込まない。あれば（共有リンク・再読込・戻る/進む）取得する
+            const hasQuery = () => location.search !== '' && location.search !== '?';
+
             // ブラウザバック/フォワード
             window.addEventListener('popstate', () => {
                 state = parseState(location.search);
                 syncControls();
-                load({ push: false });
+                if (hasQuery()) load({ push: false });
+                else showInitialEmpty();
             });
 
 
@@ -655,9 +734,10 @@ viewComponent('head', compact('_css', '_meta')) ?>
             if (scrollTopBtn) scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
             if (scrollBottomBtn) scrollBottomBtn.addEventListener('click', () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }));
 
-            // 初回ロード
+            // 初回。クエリが空なら読み込まず操作を促す、あれば取得する（「空でいいのはクエリが空の場合」）
             syncControls();
-            load({ push: false });
+            if (hasQuery()) load({ push: false });
+            else showInitialEmpty();
         })();
     </script>
 </body>

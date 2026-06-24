@@ -71,7 +71,7 @@ class RankingBanPageRepository
         array $items = [],
     ): array {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
-            . $this->buildDateClause($since, $until, $dateParams)
+            . $this->buildDateClause($since, $until, $now, $dateParams)
             . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
             . $this->buildItemsClause($items, $itemsParams);
 
@@ -135,7 +135,7 @@ class RankingBanPageRepository
     public function findAllDatetimeColumn(int $change, int $publish, int $percent, string $keyword, int $limit, string $since = '', string $until = '', int $dmin = 0, int $dmax = 0, string $now = '', array $items = []): array
     {
         $whereClause = $this->buildWhereClause($change, $publish, $percent)
-            . $this->buildDateClause($since, $until, $dateParams)
+            . $this->buildDateClause($since, $until, $now, $dateParams)
             . $this->buildDurationClause($dmin, $dmax, $now, $durationParams)
             . $this->buildItemsClause($items, $itemsParams);
 
@@ -174,20 +174,28 @@ class RankingBanPageRepository
     }
 
     /**
-     * 「消えた日時(rb.datetime)」の期間絞り込み。値はバインドパラメータで渡す（連結しない）。
+     * 「その期間に未掲載だった部屋」の絞り込み。消えた日そのものが期間内、ではなく、
+     * 未掲載の区間 [消えた日 rb.datetime 〜 復活日 rb.end_datetime（未掲載中なら基準時刻 $now）] が
+     * 指定期間 [since, until] と重なるレコードを対象にする。
+     * 例: 6/1〜6/7 を指定すると、5月に消えて今も未掲載／6/3に復活、も含む（区間が窓に掛かるため）。
+     * 値はバインドパラメータで渡す（連結しない）。
      *
      * @param string $since YYYY-MM-DD（検証済み・空文字なら条件なし）
      * @param string $until YYYY-MM-DD（同上）
+     * @param string $now 未掲載中(end_datetime NULL)の区間終端に使う基準時刻 'Y-m-d H:i:s'
      * @param array|null $dateParams バインド用パラメータの出力先
      */
-    private function buildDateClause(string $since, string $until, ?array &$dateParams): string
+    private function buildDateClause(string $since, string $until, string $now, ?array &$dateParams): string
     {
         $clause = '';
         $dateParams = [];
+        // 区間の終端（復活日。未掲載中は now まで継続）が since 以降 ＝ since より前に復活し終えていない
         if ($since !== '') {
-            $clause .= ' AND rb.datetime >= :since';
+            $clause .= ' AND COALESCE(rb.end_datetime, :sinceNow) >= :since';
             $dateParams['since'] = $since . ' 00:00:00';
+            $dateParams['sinceNow'] = $now !== '' ? $now : '9999-12-31 23:59:59';
         }
+        // 区間の始端（消えた日）が until 以前 ＝ until より後に消えたのではない
         if ($until !== '') {
             $clause .= ' AND rb.datetime <= :until';
             $dateParams['until'] = $until . ' 23:59:59';

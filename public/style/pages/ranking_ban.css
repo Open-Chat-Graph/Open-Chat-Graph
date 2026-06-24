@@ -316,6 +316,46 @@ body > .google-auto-placed {
   color: var(--c-text-steel);
 }
 
+/* 消えていた時間の数値レンジ入力（詳細設定内・期間と同じ枠サイズに揃える） */
+.rb-num-input {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--c-border-muted);
+  border-radius: 8px;
+  font-size: 16px; /* iOSズーム回避 */
+  color: var(--c-text-1);
+  background-color: var(--c-bg);
+  font-family: var(--font-family);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rb-num-input::-webkit-outer-spin-button,
+.rb-num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rb-num-input::placeholder {
+  color: var(--c-text-steel);
+  font-size: 13px;
+}
+
+.rb-num-input:focus {
+  border-color: var(--c-brand);
+  outline: none;
+}
+
+.rb-num-unit {
+  flex: none;
+  font-size: 13px;
+  color: var(--c-text-steel);
+}
+
 /* キーワード検索 */
 
 .rb-search {
@@ -376,6 +416,47 @@ body > .google-auto-placed {
 }
 
 /* ライブサマリーバー */
+
+/* ---------- 「この条件で表示」送信ボタン（絞り込みの一番下・押すまで読み込まない） ---------- */
+
+.rb-submit-bar {
+  margin-top: 16px;
+}
+
+.rb-submit-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 50px;
+  border-radius: 10px;
+  background-color: var(--c-brand);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s;
+}
+
+.rb-submit-btn:hover {
+  opacity: 0.88;
+}
+
+.rb-submit-btn:focus-visible {
+  outline: 2px solid var(--c-brand);
+  outline-offset: 2px;
+}
+
+/* 初回（クエリ空）の操作を促すプレースホルダ */
+.rb-empty-initial {
+  text-align: center;
+  color: var(--c-text-neutral);
+  padding: 2.5rem 0;
+  font-size: 14px;
+}
 
 /* ---------- ローディング（初回・2回目以降で共通。常に結果の先頭） ---------- */
 
