@@ -13,7 +13,8 @@ class RankingBanPageDto
 {
     /**
      * @param array     $openChatList 表示用ルーム行（components/open_chat_list_ranking_ban が描画）
-     * @param string[]  $labelArray   ページャ生成用の「消えた日時」一覧（降順）
+     * @param string[]  $labelArray   ページャ生成用の「消えた日時」一覧（降順・表示上限ページ分まで）
+     * @param bool      $hasMore      総数が表示上限を超えている（$totalRecords は上限値＝「N件以上」表示）
      */
     function __construct(
         public int $pageNumber,
@@ -21,5 +22,6 @@ class RankingBanPageDto
         public array $openChatList,
         public int $totalRecords,
         public array $labelArray,
+        public bool $hasMore = false,
     ) {}
 }

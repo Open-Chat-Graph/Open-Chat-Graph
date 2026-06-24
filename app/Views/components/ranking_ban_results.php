@@ -29,7 +29,7 @@
             </form>
         </nav>
     <?php endif ?>
-    <small class="rb-count"><?php echo number_format($totalRecords) ?>件の結果 (<?php echo $maxPageNumber ?>ページ中/<?php echo $page ?>ページ目)</small>
+    <small class="rb-count"><?php echo number_format($totalRecords) ?><?php echo ($hasMore ?? false) ? '件以上' : '件' ?>の結果 (<?php echo $maxPageNumber ?>ページ中/<?php echo $page ?>ページ目)</small>
     <?php if (isset($openChatList)) : ?>
         <?php viewComponent('open_chat_list_ranking_ban', compact('openChatList', '_now')) ?>
     <?php else : ?>

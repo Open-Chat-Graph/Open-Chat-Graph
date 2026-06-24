@@ -45,11 +45,26 @@ class RakingBanPageService
             return null;
         }
 
-        $labelArray = $this->rankingBanPageRepository->findAllDatetimeColumn($change, $publish, $percent, $keyword, $since, $until, $dmin, $dmax, $now, $items);
+        // ページャのラベルは各ページ境界の日付だけ必要。表示できるのは上限ページまでなので、
+        // 全件ではなく「上限ページ分＋1件」だけ取得する。+1 件取れたら総数が上限超え（正確な総数は不要）と分かる。
+        // これで従来の「全マッチ行を取得して件数を数える」重い処理（全件 filesort＋転送）を避ける。
+        $labelLimit = self::MAX_PAGE_NUMBER * $limit + 1;
+        $labelArray = $this->rankingBanPageRepository->findAllDatetimeColumn($change, $publish, $percent, $keyword, $labelLimit, $since, $until, $dmin, $dmax, $now, $items);
 
-        // ページの最大数を取得する（実データの最大ページと上限の小さい方で頭打ち）
-        $totalRecords = count($labelArray);
-        $maxPageNumber = min($this->calcMaxPages($totalRecords, $limit), self::MAX_PAGE_NUMBER);
+        if ($labelArray === []) {
+            // 0件（コントローラが空状態を描画する）
+            return null;
+        }
+
+        $hasMore = count($labelArray) > self::MAX_PAGE_NUMBER * $limit;
+        if ($hasMore) {
+            // 判定用の +1 件目を捨て、境界配列の長さを「上限ページ×件数」ぴったりに揃える
+            array_pop($labelArray);
+        }
+
+        // 上限超えなら総数は表示上限（「N件以上」表示）、上限以下なら取得件数が正確な総数
+        $totalRecords = $hasMore ? self::MAX_PAGE_NUMBER * $limit : count($labelArray);
+        $maxPageNumber = $hasMore ? self::MAX_PAGE_NUMBER : $this->calcMaxPages($totalRecords, $limit);
         if ($pageNumber > $maxPageNumber) {
             // 現在のページ番号が最大ページ番号を超えている場合
             return null;
@@ -85,6 +100,7 @@ class RakingBanPageService
             openChatList: $openChatList,
             totalRecords: $totalRecords,
             labelArray: $labelArray,
+            hasMore: $hasMore,
         );
     }
 }
