@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { memo } from 'react'
 import useSWR from 'swr'
 import { Chip, Skeleton } from '@mui/material'
 import { useAtomValue } from 'jotai'
@@ -7,6 +7,7 @@ import { t } from '../config/translation'
 import { isSP } from '../utils/utils'
 import { listParamsState } from '../store/atom'
 import { useDraggableScroll } from '../hooks/useDraggableScroll'
+import { useRightFadeMask } from '../hooks/ScrollableHooks'
 
 // urlRoot: '' (ja) | '/tw' | '/th'。slug はサーバ側 urlencode 済みなので再エンコードしない。
 const recommendHref = (slug: string) => `${rankingArgDto.urlRoot}/recommend/${slug}`
@@ -17,10 +18,12 @@ const fetcher = (url: string): Promise<ThemeTag[]> =>
     r.ok ? r.json() : []
   )
 
-// 右端フェードは CSS の mask-image で出す（JS状態に紐づけない）。チップが右端まで届いたとき
-// だけ自然にフェードし、収まっていれば右端は空なので見えない。JSの実測 boolean を使うと
-// 「初期 false → 計測後 true」を必ず経由してスライド切替でちらつくため、CSS に寄せている。
-const RIGHT_FADE_MASK = 'linear-gradient(to right, #000 calc(100% - 36px), transparent 100%)'
+// 右端フェードは CSS の mask-image で出す（JS状態＝React再描画には紐づけない）。フェード幅だけ
+// CSS変数 --shelf-right-fade で持ち、useRightFadeMask が ref 経由で残スクロール量に追従させる
+// （再描画なし＝ちらつかない）。デフォルトは FADE_PX でフェードON、右端に達すると 0 になって消える。
+// 実測 boolean(state)を使うと「初期 false→計測後 true」を経由しスライド切替でちらつくため避ける。
+const FADE_PX = 36
+const RIGHT_FADE_MASK = `linear-gradient(to right, #000 calc(100% - var(--shelf-right-fade, ${FADE_PX}px)), transparent 100%)`
 
 // 取得前に高さを確保するチップ用スケルトン（pill 形・高さ32でチップと同寸）。
 const SKELETON_CHIP_WIDTHS = [76, 56, 92, 64, 84]
@@ -65,11 +68,13 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf({
   })
   const themes = data ?? []
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const { events } = useDraggableScroll(scrollRef)
-
   // 取得前はチップをスケルトンで埋める。取得後にタグが無ければ何も出さない（見出しごと畳む）。
   const loading = data === undefined
+
+  // チップ数が変わったら右端フェード幅を測り直す（取得直後・絞り込み変更時）。
+  const scrollRef = useRightFadeMask(loading ? -1 : themes.length, FADE_PX)
+  const { events } = useDraggableScroll(scrollRef)
+
   if (!loading && themes.length === 0) return null
 
   return (
@@ -107,7 +112,7 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf({
           paddingBottom: 2,
           cursor: sp ? 'auto' : 'grab',
           scrollbarWidth: 'none',
-          // 右端フェード（CSSのみ・JS状態に依存しないのでちらつかない）。
+          // 右端フェード（フェード幅は --shelf-right-fade で残スクロール量に追従＝右端で消える）。
           maskImage: RIGHT_FADE_MASK,
           WebkitMaskImage: RIGHT_FADE_MASK,
         }}
