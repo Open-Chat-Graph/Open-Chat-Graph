@@ -46,6 +46,7 @@ storage/transient_errors.queue
 storage/transient_errors.queue.lock
 storage/furigana/**
 storage/*/api_rate_limit/**
+storage/*/inflight_locks/**
 storage/*/analysis_jobs/*
 storage/*/logs/*
 storage/*/SQLite/*/*.db

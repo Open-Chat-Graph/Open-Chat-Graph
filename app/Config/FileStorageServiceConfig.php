@@ -37,6 +37,7 @@ class FileStorageServiceConfig
         'tagList' =>                      '/static_data_top/tag_list.dat',
         'relatedTags' =>                  '/static_data_top/related_tags.dat',
         'apiRateLimitDir' =>              '/api_rate_limit',
+        'inFlightLockDir' =>             '/inflight_locks',
         'analysisJobsDir' =>             '/analysis_jobs',
         'recommendStaticDataDir' =>       '/static_data_recommend/tag',
         'categoryStaticDataDir' =>        '/static_data_recommend/category',

@@ -6,6 +6,8 @@ namespace App\Controllers\Api;
 
 use App\Config\AppConfig;
 use App\Services\Analysis\AdvancedGrowthAnalysisService;
+use App\Services\Security\ConcurrentRequestGuard;
+use App\Services\Storage\FileStorageInterface;
 use Shadow\Kernel\Reception as Recp;
 use Shadow\Kernel\Validator as Valid;
 use Shared\Exceptions\BadRequestException as HTTP400;
@@ -23,12 +25,22 @@ class AdvancedGrowthAnalysisApiController
 {
     public function __construct(
         private AdvancedGrowthAnalysisService $service,
+        private FileStorageInterface $fileStorage,
     ) {}
 
     public function status()
     {
         noStore();
         Recp::$isJson = true;
+
+        // 同一IPの未完了 status が処理中なら 2本目は受け付けない。status は重い集計を1チャンク進めるため、
+        // 同時実行は無駄なDB負荷＋進捗状態の競合になる。正常なポーリングは逐次なので発生しない（フックが既存リトライで吸収）。
+        $guard = new ConcurrentRequestGuard($this->fileStorage);
+        if (!$guard->tryAcquire('analysis-status', getIP())) {
+            header('Retry-After: 1');
+            return response(['error' => 'busy'], 429);
+        }
+
         [$metric, $period, $from, $to] = $this->commonInputs();
 
         return response($this->service->advance($metric, $period, $from, $to));
@@ -39,6 +51,14 @@ class AdvancedGrowthAnalysisApiController
         checkLastModified($this->service->hourlyUpdatedAt());
 
         Recp::$isJson = true;
+
+        // 同一IPの未完了 result が処理中なら 2本目は受け付けない（CDN未ヒット時の重い整形を同時に積み上げない）。
+        $guard = new ConcurrentRequestGuard($this->fileStorage);
+        if (!$guard->tryAcquire('analysis-result', getIP())) {
+            header('Retry-After: 1');
+            return response(['error' => 'busy'], 429);
+        }
+
         $error = HTTP400::class;
         [$metric, $period, $from, $to] = $this->commonInputs();
 

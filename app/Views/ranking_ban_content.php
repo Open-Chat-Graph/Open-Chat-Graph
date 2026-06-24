@@ -441,6 +441,17 @@ viewComponent('head', compact('_css', '_meta')) ?>
                             location.href = pageUrl(s);
                             return null;
                         }
+                        if (res.status === 429) {
+                            // 同一IPの直前の取得がまだ処理中（混雑）。少し待って同じ条件で取り直す。
+                            // 連打・高速フィルタ変更で前リクエストのサーバ側ロックが残るケースを吸収する。
+                            const n = (opts.retry429 || 0) + 1;
+                            if (n <= 4) {
+                                setTimeout(function () {
+                                    if (myGen === gen) load(Object.assign({}, opts, { push: false, retry429: n }));
+                                }, 400 * n);
+                                return null;
+                            }
+                        }
                         // その他のエラーはエラー表示＋再試行（遷移ループ防止）
                         throw new Error('HTTP ' + res.status);
                     })
