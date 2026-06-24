@@ -81,9 +81,11 @@ CREATE TABLE `ranking_ban` (
   `updated_at` int(11) NOT NULL,
   `update_items` text DEFAULT NULL,
   `end_datetime` datetime DEFAULT NULL,
+  `sort_datetime` datetime AS (ifnull(greatest(`datetime`,`end_datetime`),`datetime`)) VIRTUAL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_ranking_ban_open_chat_datetime` (`open_chat_id`,`datetime`),
-  KEY `idx_ranking_ban_end_percentage_datetime` (`end_datetime`,`percentage`,`datetime`)
+  KEY `idx_ranking_ban_end_percentage_datetime` (`end_datetime`,`percentage`,`datetime`),
+  KEY `idx_rb_sortdt` (`sort_datetime`,`member`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 DROP TABLE IF EXISTS `recommend`;
 CREATE TABLE `recommend` (
