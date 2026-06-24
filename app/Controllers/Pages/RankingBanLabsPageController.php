@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Services\RankingBan\RakingBanPageService;
+use App\Services\Security\ConcurrentRequestGuard;
 use App\Services\Storage\FileStorageInterface;
 use App\Views\RankingBanSelectElementPagination;
+use Shadow\Kernel\Response;
 use Shadow\Kernel\ViewInterface;
 
 class RankingBanLabsPageController
@@ -85,10 +87,18 @@ class RankingBanLabsPageController
         string $since,
         string $until,
         string $items
-    ): ViewInterface|false {
+    ): ViewInterface|Response|false {
         // noindex: フラグメント自体は検索結果に出さない。nofollow: ページャの深いページリンクを
         // クローラに辿らせない（cf.client.bot はCFヘッダゲートを通れるため、深いOFFSETの巡回を抑止）
         header('X-Robots-Tag: noindex, nofollow');
+
+        // 同一IPからの未完了 /list が処理中なら 2本目は受け付けない（重い一覧の同時積み上げでDBを飽和させない）。
+        // 正常な利用は1本ずつなので発生せず、連打・高速フィルタ変更時のみ一時的に 429（フロントが少し待って再取得）。
+        $guard = new ConcurrentRequestGuard($fileStorage);
+        if (!$guard->tryAcquire('pubanalytics-list', getIP())) {
+            header('Retry-After: 1');
+            return response('', 429);
+        }
 
         $since = $this->validDate($since);
         $until = $this->validDate($until);
