@@ -74,14 +74,6 @@ function OcListSwiper({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (tIndex && !scrollY.current) {
-    scrollY.current = window.scrollY
-  }
-
-  if (!tIndex && scrollY.current) {
-    scrollY.current = 0
-  }
-
   useLayoutEffect(() => {
     if (tIndex && scrollY.current) {
       scrollToTop()
@@ -92,11 +84,22 @@ function OcListSwiper({
     <Swiper
       initialSlide={initialIndex.current}
       simulateTouch={true}
+      // スワイプ開始時点の縦スクロール量を保持する。これを使い、遷移中に「消えていく側スライド」を
+      // position:absolute + top:-scrollY で補正し、スクロール状態を保ったまま滑らかに退場させる。
+      // ※ transitionStart で window.scrollY を読むと、先に発火する onSlideChange の scrollToTop() で
+      //   すでに 0 にリセットされていて補正値が 0 になり、消えるリストが一瞬トップへ押し戻されてガタつく
+      //   （Swiper のイベント順: onSlideChange → onSlideChangeTransitionStart）。リセット前のここで取る。
+      onTouchStart={() => {
+        scrollY.current = window.scrollY
+      }}
       onSlideChange={onSlideChange}
       onSlideChangeTransitionStart={() =>
         setTIndex([cateIndex, getQuery(cateIndex, cateIndex, params)])
       }
-      onSlideChangeTransitionEnd={() => setTIndex(null)}
+      onSlideChangeTransitionEnd={() => {
+        setTIndex(null)
+        scrollY.current = 0
+      }}
       onSwiper={onSwiper}
       speed={260}
     >
