@@ -140,11 +140,19 @@ class OpenChatPageController
             $oc['tag1'] ?: $category,
         );
 
+        // dateModified は「ページ内容が実際に変わった日」を使う。open_chat.updated_at は
+        // メタ情報(タイトル/説明/ステータス)変更時しか動かず、人数・推移など主役コンテンツの
+        // 変化を反映しないため Google に誤った再クロールヒントを送ってしまう。sitemap と同じ
+        // 内容ベースの lastmod (oc_sitemap_lastmod) を getOpenChatByIdWithTag が
+        // COALESCE(sl.lastmod, oc.updated_at) として返すので、それを使う（未登録 room は
+        // updated_at にフォールバック済み。念のため content_lastmod 欠落時も updated_at へ）。
+        $_dateModified = new \DateTime($oc['content_lastmod'] ?? $oc['updated_at']);
+
         $_schema = $ocPageSchema->generateSchema(
             $_meta->title,
             $_meta->description,
             new \DateTime($oc['created_at']),
-            new \DateTime($oc['updated_at']),
+            $_dateModified,
             $oc,
         );
 
