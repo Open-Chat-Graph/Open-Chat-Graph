@@ -84,30 +84,11 @@ class GoogleAdsense
     }
 
     /**
-     * このタグ（/recommend の正規タグ、または /oc の部屋タグ $oc['tag1']）が
-     * 「Offerwall 常時表示」対象か。GoogleAdsenseConfig::$offerwallAlwaysOnTags と照合する。
-     * tag1 等は DB から HTML エスケープされた形で来る場合があるので、内部で
-     * htmlspecialchars_decode してから厳密一致する（recommend_content.php と同じ正規化）。
-     * /recommend と /oc がこの1メソッドを共用し、判定がドリフトしないようにする。
-     */
-    public static function isOfferwallAlwaysOn(?string $tag): bool
-    {
-        if ($tag === null || $tag === '') return false;
-        return in_array(htmlspecialchars_decode($tag), GoogleAdsenseConfig::$offerwallAlwaysOnTags, true);
-    }
-
-    /**
      * @param bool $suppressOfferwall true でこのページの Offerwall（全画面メッセージ）のみ常時抑制する。
      *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
      *                                （blog 記事など「初見読者に絶対 Offerwall を出さない」ページ用）
-     * @param bool $smartOfferwall    true で Offerwall を訪問者ごとに出し分ける（oc-pdca 2026-06）。
-     *                                「初回訪問 × 検索エンジンからの流入」のときだけ Offerwall を抑制して
-     *                                SEO ランディングの第一印象を守り、再訪・Direct/SNS・2ページ目以降は通常表示。
-     *                                判定はブラウザ JS（document.referrer + localStorage）で行うため、
-     *                                サーバが返す HTML は全訪問者で同一＝Cloudflare のエッジキャッシュと無衝突。
-     *                                $suppressOfferwall が true の場合はそちらが優先（常時抑制）。
      */
-    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false, bool $smartOfferwall = false)
+    public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
@@ -120,53 +101,6 @@ class GoogleAdsense
                 googlefc.controlledMessagingFunction = function (message) {
                     message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
                 };
-            </script>
-            EOT;
-        } elseif ($smartOfferwall) {
-            // 訪問者ごとの出し分け。判定（初回×検索流入）はクライアント JS の実行時に行うので、
-            // キャッシュされる HTML 自体は全訪問者で同一。adsbygoogle.js より前に定義する必要があるため
-            // 文字列補間を避けて nowdoc で出力する。https://developers.google.com/funding-choices/fc-api-docs
-            echo <<<'EOT'
-            <script>
-                (function () {
-                    window.googlefc = window.googlefc || {};
-                    var suppress = false;
-                    try {
-                        var host = '';
-                        try { host = new URL(document.referrer).hostname; } catch (e) {}
-                        var fromSearch = /(^|\.)(google|bing|yahoo|duckduckgo|baidu|naver|daum|ecosia|brave|sogou)\./i.test(host);
-                        var firstVisit = true;
-                        try { firstVisit = !window.localStorage.getItem('ocReturning'); } catch (e) {}
-                        // 初回訪問 かつ 検索エンジンからの流入のときだけ Offerwall を抑制する
-                        suppress = firstVisit && fromSearch;
-                        // 「再訪」フラグは“ページを開いた瞬間”では立てない。即バック（無反応で離脱）した人は
-                        // 次回も初見扱いのまま壁を猶予する。簡単なエンゲージメント（スクロール / 操作 / 約10秒滞在）が
-                        // 起きたときだけ ocReturning を立て、以降の訪問は通常表示にする。
-                        if (firstVisit) {
-                            var marked = false, dwellTimer = 0;
-                            var mark = function () {
-                                if (marked) return;
-                                marked = true;
-                                try { window.localStorage.setItem('ocReturning', '1'); } catch (e) {}
-                                window.removeEventListener('scroll', mark);
-                                window.removeEventListener('pointerdown', mark);
-                                window.removeEventListener('keydown', mark);
-                                if (dwellTimer) { clearTimeout(dwellTimer); }
-                            };
-                            window.addEventListener('scroll', mark, { passive: true });
-                            window.addEventListener('pointerdown', mark, { passive: true });
-                            window.addEventListener('keydown', mark, { passive: true });
-                            try { dwellTimer = window.setTimeout(mark, 10000); } catch (e) {}
-                        }
-                    } catch (e) { suppress = false; }
-                    googlefc.controlledMessagingFunction = function (message) {
-                        if (suppress) {
-                            message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
-                        } else {
-                            message.proceed(true);
-                        }
-                    };
-                })();
             </script>
             EOT;
         }
