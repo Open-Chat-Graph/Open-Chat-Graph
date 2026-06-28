@@ -207,14 +207,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
     <?php if ($enableAdsense): ?>
       <?php // ocTopWide2(手動横長)は撤去済み: impRPM¥14/CTR0.21%で「関連ルーム」棚への回遊を遮るだけだった(2026-06実測)。gTag は自動広告に必要なので維持 ?>
-      <?php
-      // Offerwall 出し分け(oc-pdca): /oc も /recommend と同じ判定。初回×検索流入の初見だけ壁を抑制して
-      // SEO ランディングの第一印象を守り（再訪・Direct/SNS・2ページ目以降は表示）、長尾24万ページの初見体験を守る。
-      // 部屋の recommend タグ($oc['tag1'])が常時ON対象（例: 下ネタ）なら例外として常時表示。
-      // 判定は部屋単位＝全訪問者同一HTMLなので Cloudflare のエッジキャッシュと無衝突。判定ロジックは /recommend と共用。
-      $_ocOfferwallAlwaysOn = GAd::isOfferwallAlwaysOn((string)($oc['tag1'] ?? ''));
-      ?>
-      <?php GAd::gTag(smartOfferwall: !$_ocOfferwallAlwaysOn) ?>
+      <?php GAd::gTag() ?>
     <?php endif ?>
 
     <?php // 関連ルーム(類似サイズ/おすすめ)は recommend 静的キャッシュ(.dat)から都度組み立て（MySQL不使用） ?>

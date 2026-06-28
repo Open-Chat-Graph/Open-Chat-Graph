@@ -72,7 +72,8 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 tg2.tag AS tag2,
                 tg3.tag AS tag3,
                 pc.narrative_data AS narrative_data,
-                pc.chart_meta AS chart_meta
+                pc.chart_meta AS chart_meta,
+                COALESCE(sl.lastmod, oc.updated_at) AS content_lastmod
             FROM
                 open_chat AS oc
                 LEFT JOIN statistics_ranking_hour AS rh ON oc.id = rh.open_chat_id
@@ -82,6 +83,7 @@ class OpenChatPageRepository implements OpenChatPageRepositoryInterface
                 LEFT JOIN oc_tag AS tg2 ON oc.id = tg2.id
                 LEFT JOIN oc_tag2 AS tg3 ON oc.id = tg3.id
                 LEFT JOIN oc_page_cache AS pc ON oc.id = pc.open_chat_id
+                LEFT JOIN oc_sitemap_lastmod AS sl ON oc.id = sl.open_chat_id
             WHERE
                 oc.id = :id";
 
