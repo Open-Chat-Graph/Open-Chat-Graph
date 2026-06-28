@@ -8,28 +8,6 @@ class GoogleAdsenseConfig
     static string $googleAdsenseClient = 'ca-pub-2330982526015125'; // 広告クライアントID
 
     /**
-     * Offerwall（全画面メッセージ）を「常に表示」にする /recommend タグ（ja の正規タグ名で一致判定）。
-     *
-     * 通常の /recommend ページは GoogleAdsense::gTag(smartOfferwall: true) でクライアント側の出し分けを行い、
-     * 「初回 × 検索エンジン流入」の初見訪問にだけ Offerwall を抑制して SEO ランディングの第一印象を守る。
-     * 一方ここに挙げたタグは、アダルト/大人系で（a）Offerwall の違和感が小さく（b）第一印象を守る必要性が低く
-     * （c）高収益なので、出し分けの例外として「初見でも常時表示」する。
-     *
-     * 判定は recommend_content.php で $_tagIndex（= 正規タグ = URLパス = Cloudflare のキャッシュキー）に対して行うため、
-     * 訪問者ごとに HTML が変わらず、エッジキャッシュと無衝突。タグを増減したいときはこの配列を編集するだけ。
-     */
-    static array $offerwallAlwaysOnTags = [
-        '下ネタ',
-        '大人',
-        'その先',
-        '40代',
-        '50代',
-        '60代',
-        '70代',
-        '全国 雑談', // 半角スペース（U+0020）。ja.json の正規タグと完全一致させること
-    ];
-
-    /**
      * Google AdSense広告スロット設定
      *
      * キー: スロット識別子（文字列）
