@@ -207,16 +207,24 @@ function whiteOut() {
 }
 
 async function blockblock() {
-  const agentsJsonUrl =
-    'https://raw.githubusercontent.com/monperrus/crawler-user-agents/master/crawler-user-agents.json'
-
-  const response = await fetch(agentsJsonUrl)
-  const items = await response.json()
-  const patterns = items.map((item) => item.pattern)
-  const REGEX_CRAWLER = patterns.join('|')
-  const ua = window.navigator.userAgent
-  const result = ua.match(REGEX_CRAWLER)
-  if (result !== null) return
+  // クローラ(bot)には案内を出さないための UA 判定。判定用リストの取得が
+  // 失敗・タイムアウトしても、広告ブロック検出本体(下の HEAD fetch)は必ず走らせる。
+  //   ※ 以前はこの取得を素の await で行っていたため、リスト取得が失敗/ハングすると
+  //     関数ごと止まり、ホストブロック(hosts/DNS で googlesyndication を遮断)時に
+  //     whiteOut まで到達しなかった。try/catch + タイムアウトで素通りさせて修正。
+  try {
+    const agentsJsonUrl =
+      'https://raw.githubusercontent.com/monperrus/crawler-user-agents/master/crawler-user-agents.json'
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 4000)
+    const response = await fetch(agentsJsonUrl, { signal: ctrl.signal })
+    clearTimeout(timer)
+    const items = await response.json()
+    const REGEX_CRAWLER = items.map((item) => item.pattern).join('|')
+    if (window.navigator.userAgent.match(REGEX_CRAWLER) !== null) return
+  } catch (e) {
+    // リスト取得失敗時は通常ユーザーとして扱い、検出を継続する
+  }
 
   fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
     method: 'HEAD',
@@ -299,7 +307,21 @@ function detectAdBlock() {
       /(^|[;\s])width:\s*1px\s*!important/.test(styleAttr) &&
       /(^|[;\s])height:\s*1px\s*!important/.test(styleAttr)
 
-    if (collapsedByComputed || collapsedByInline) {
+    // (C) uBlock Origin / uBO Lite が 2026-06-15 のシム刷新(uBOLite 2026.621〜・
+    //     Chromium版。gorhill/uBlock コミット f5be2bbed + 89655c3f8)で導入した
+    //     新サロゲートへの対策。旧来の「iframe を 1px に潰す」手法をやめ、通常サイズの
+    //     空 iframe を作って data-ad-status="filled" を立て「配信済み広告」に偽装する
+    //     ようになった(中身は空の data: URL、iframe には src 属性も inline style も
+    //     付けない)。本物の AdSense は filled なら必ず googleads/doubleclick の src を
+    //     持ち、iframe に inline style(border・サイズ等)も付与する。その両方を欠いた
+    //     「filled を名乗る空 iframe」はこの新サロゲート以外に存在しないので検出する。
+    //     ※ no fill(unfilled)は上で除外済み。誤検知防止のため「filled 明示」を必須にする。
+    const fakeFilledBySurrogate =
+      adElement.getAttribute('data-ad-status') === 'filled' &&
+      (iframe.getAttribute('src') || '') === '' &&
+      styleAttr.trim() === ''
+
+    if (collapsedByComputed || collapsedByInline || fakeFilledBySurrogate) {
       blockedCount++
     }
   })
