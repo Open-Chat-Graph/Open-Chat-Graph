@@ -112,7 +112,7 @@ $_css[] = 'pages/oc-jump';
   </div>
   <?php GAd::loadAdsTag() ?>
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-  <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+  <?php viewComponent('ad_guard') ?>
   <?php // 参加確認ページを GA4(GTM dataLayer経由)で計測。開いた時点=open_jump、「LINEで開く」押下=oc_jump。
         // 両者の比でLINE遷移率(コンバージョン)が出せる。LINEへ遷移直前のクリックでも beacon で飛ぶ。
         // カテゴリはIDがロケールごとに別物なので、ロケール解決済みの名称(getCategoryName)で送る。 ?>

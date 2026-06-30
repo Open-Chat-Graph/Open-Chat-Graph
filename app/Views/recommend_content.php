@@ -101,7 +101,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
 
     <?php if ($enableAdsense && isset($recommend)): ?>
       <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
-            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+            // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
       <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
 
@@ -114,7 +114,7 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
   <script defer src="<?php echo fileurl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php if ($enableAdsense): ?>
-    <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+    <?php viewComponent('ad_guard') ?>
   <?php endif ?>
 
   <?php echo $_breadcrumbsShema ?>

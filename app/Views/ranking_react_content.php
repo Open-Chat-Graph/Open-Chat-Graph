@@ -54,7 +54,7 @@ $enableAdsense = true;
     <div id="root"></div>
     <?php echo $_breadcrumbsShema ?>
     <?php if ($enableAdsense): ?>
-        <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+        <?php viewComponent('ad_guard') ?>
     <?php endif ?>
 </body>
 

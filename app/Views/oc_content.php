@@ -238,7 +238,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
     <?php if ($enableAdsense): ?>
       <?php // コメントの下・フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
-            // security.js の広告ブロック検出はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
+            // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
       <?php GAd::output('ocTopHorizontal') ?>
     <?php endif ?>
     <?php viewComponent('footer_inner') ?>
@@ -293,7 +293,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 
   <?php if ($enableAdsense): ?>
-    <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+    <?php viewComponent('ad_guard') ?>
   <?php endif ?>
 
   <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではマイリストが無効
