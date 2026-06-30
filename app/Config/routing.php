@@ -398,6 +398,20 @@ Route::path('admin/cookie')
         return redirect();
     });
 
+// 管理者かどうかをサーバ側で検証する軽量エンドポイント（広告ブロック検出 ad_guard から呼ぶ）。
+// admin-enable クッキー(JS可視・偽造可)を信用せず、HttpOnly の admin クッキーを auth() で検証する。
+// Cloudflare 側で X-Ocg-Client ヘッダ必須＋レート制限（直叩き・総当たり対策）を併用する。
+Route::path('admin-check')
+    ->match(function (AdminAuthService $adminAuthService) {
+        try {
+            $ok = $adminAuthService->auth();
+        } catch (\Throwable $e) {
+            $ok = false;
+        }
+        noStore();
+        return response($ok ? '1' : '0', $ok ? 200 : 403);
+    });
+
 // Admin Log Viewer
 Route::path('admin/log', [LogController::class, 'index'])
     ->match(function () {
