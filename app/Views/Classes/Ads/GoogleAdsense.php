@@ -69,7 +69,7 @@ class GoogleAdsense
     {
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
-        // 遅延読み込み(IntersectionObserver)はしない。security.js の広告ブロック検出
+        // 遅延読み込み(IntersectionObserver)はしない。広告ブロック検出(ad_guard)
         // （window load 時の未処理チェック・10秒間の1px潰し監視）は「広告がページ表示時に
         // 読み込まれている」前提のため、遅延させると検出が成立しなくなる
         echo <<<EOT

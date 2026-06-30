@@ -143,7 +143,7 @@ viewComponent('head', compact('_css', '_meta') + ['dataOverlays' => 'bottom']) ?
 
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
     <?php if ($enableAdsense): ?>
-        <script defer src="<?php echo fileurl("/js/security.js", urlRoot: '') ?>"></script>
+        <?php viewComponent('ad_guard') ?>
     <?php endif ?>
     <script>
         ;
