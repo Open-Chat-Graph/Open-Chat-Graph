@@ -87,6 +87,24 @@ $messages = [
     ],
 ];
 
+// 案内文の各文字の間に毎リクエストでゼロ幅文字をランダム挿入する（表示は完全に不変）。
+// uBlock のコスメティック :has-text()/:matches-text() は要素の文字列を見て隠すため、
+// 文面を「固定の連続文字列」でなくすことで、案内文そのものを手がかりにした非表示化も成立させない。
+$zwInject = static function (string $s): string {
+    $zw = ["\u{200B}", "\u{200C}", "\u{2060}", "\u{FEFF}"]; // ZWSP / ZWNJ / WORD JOINER / ZWNBSP（全て幅0・不可視）
+    $cps = preg_split('//u', $s, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $last = count($cps) - 1;
+    $out = '';
+    foreach ($cps as $i => $cp) {
+        $out .= $cp;
+        if ($i !== $last) {
+            $out .= $zw[random_int(0, count($zw) - 1)];
+        }
+    }
+    return $out;
+};
+$messages = array_map(static fn(array $m): array => array_map($zwInject, $m), $messages);
+
 // 復号式（エンコード済み）
 $E = [
     'host' => $enc('openchat-review.me'),
@@ -106,6 +124,10 @@ $E = [
 
 // 乱数ノンス（同一コードでもバイト列を変える保険）
 $nonce = bin2hex(random_bytes(8));
+
+// オーバーレイの z-index を毎リクエストで僅かに変える（ほぼ最大値だが固定値にしない）。
+// 2147483647 という典型的なアンチアドブロックの指紋を :matches-css(z-index:...) で狙われないため。
+$zindex = 2147483000 + random_int(0, 647);
 
 ?>
 <script>/* <?php echo $nonce; ?> */(function () {
@@ -213,7 +235,7 @@ $nonce = bin2hex(random_bytes(8));
       style.textContent =
         '@keyframes <?php echo $N['ovId']; ?>-f{from{opacity:0}to{opacity:1}}' +
         '@keyframes <?php echo $N['ovId']; ?>-r{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}' +
-        '#<?php echo $N['ovId']; ?>{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(247,248,250,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:<?php echo $N['ovId']; ?>-f .28s ease both;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans Thai","Yu Gothic",Meiryo,sans-serif}' +
+        '#<?php echo $N['ovId']; ?>{position:fixed;inset:0;z-index:<?php echo $zindex; ?>;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(247,248,250,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:<?php echo $N['ovId']; ?>-f .28s ease both;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans Thai","Yu Gothic",Meiryo,sans-serif}' +
         '.<?php echo $N['cCard']; ?>{position:relative;box-sizing:border-box;width:100%;max-width:380px;background:#fff;border:1px solid rgba(20,20,30,.06);border-radius:20px;padding:34px 28px 26px;text-align:center;box-shadow:0 24px 70px -12px rgba(20,24,40,.22);animation:<?php echo $N['ovId']; ?>-r .42s cubic-bezier(.2,.7,.2,1) .06s both}' +
         '.<?php echo $N['cIcon']; ?>{width:60px;height:60px;margin:0 auto 18px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffa751,#e85d04);box-shadow:0 10px 24px -6px rgba(232,93,4,.5)}' +
         '.<?php echo $N['cTitle']; ?>{margin:0 0 10px;font-size:19px;font-weight:700;letter-spacing:-.01em;color:#1b1d23;line-height:1.45}' +
