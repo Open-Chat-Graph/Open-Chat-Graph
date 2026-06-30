@@ -37,6 +37,7 @@ $names = [
     'dec', 'key', 'host', 'bkey', 'revt', 'cls', 'aAbg', 'aAds', 'vDone', 'vFilled', 'vUnfilled',
     'scriptId', 'adsUrl', 'crawlerUrl', 'msg',
     'findSlots', 'allIns', 'adsRender', 'detect', 'mark', 'pushDL', 'recover', 'whiteOut',
+    'run', 'showGear',
     'fired', 'observers', 'poll', 'stop', 'cleanup', 'tryD', 'attach', 'ro', 'watched',
     'ovId', 'cOverlay', 'cCard', 'cIcon', 'cTitle', 'cBody', 'cNote', 'cBtn',
 ];
@@ -120,6 +121,10 @@ $E = [
     'adsUrl' => $enc('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'),
     'crawlerUrl' => $enc('https://raw.githubusercontent.com/monperrus/crawler-user-agents/master/crawler-user-agents.json'),
     'msg' => $enc(json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
+    'admEnable' => $enc('admin-enable='),
+    'gearId' => $enc('admin-gear-btn'),
+    'checkUrl' => $enc('/admin-check'),
+    'ocgHdr' => $enc('X-Ocg-Client'),
 ];
 
 // 乱数ノンス（同一コードでもバイト列を変える保険）
@@ -151,11 +156,18 @@ $zindex = 2147483000 + random_int(0, 647);
     var <?php echo $N['scriptId']; ?> = <?php echo $E['scriptId']; ?>;
     var <?php echo $N['msg']; ?> = JSON.parse(<?php echo $E['msg']; ?>);
 
-    var adm = (document.cookie.split('; ').filter(function (r) { return r.indexOf('admin-enable=') === 0; })[0] || '').split('=')[1];
-    if (adm) {
-      var g = document.getElementById('admin-gear-btn');
+    function <?php echo $N['showGear']; ?>() {
+      var g = document.getElementById(<?php echo $E['gearId']; ?>);
       if (g) { g.style.display = 'flex'; }
-      return;
+    }
+    var adm = (document.cookie.split('; ').filter(function (r) { return r.indexOf(<?php echo $E['admEnable']; ?>) === 0; })[0] || '').split('=')[1];
+    if (adm) {
+      var hh = {}; hh[<?php echo $E['ocgHdr']; ?>] = '1';
+      fetch(<?php echo $E['checkUrl']; ?>, { headers: hh, cache: 'no-store' })
+        .then(function (r) { if (r.ok) { <?php echo $N['showGear']; ?>(); } else { <?php echo $N['run']; ?>(); } })
+        .catch(function () { <?php echo $N['run']; ?>(); });
+    } else {
+      <?php echo $N['run']; ?>();
     }
 
     function <?php echo $N['allIns']; ?>() {
@@ -268,6 +280,7 @@ $zindex = 2147483000 + random_int(0, 647);
       document.documentElement.style.overflow = 'hidden';
     }
 
+    function <?php echo $N['run']; ?>() {
     (async function () {
       try {
         var ctrl = new AbortController();
@@ -324,5 +337,6 @@ $zindex = 2147483000 + random_int(0, 647);
       setTimeout(<?php echo $N['recover']; ?>, 2000);
       setTimeout(<?php echo $N['recover']; ?>, 5000);
     });
+    }
   } catch (e) {}
 })();</script>
