@@ -156,6 +156,51 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             <?php endif ?>
           </section>
         </div>
+        <?php // シェア導線: モバイルはOSネイティブ共有(Web Share API)、他にLINE/X/リンクコピー。
+              // og:image が統計焼き込みの動的カード(/oc/{id}/card)なので、共有リンクはグラフ付きカードで展開される ?>
+        <div class="oc-share-row">
+          <button type="button" class="oc-share-chip" id="oc-share-native" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2c0 .2-.1.4-.1.6a3 3 0 1 0 3-2.9z"/></svg>
+            <span><?php echo t('共有') ?></span>
+          </button>
+          <a class="oc-share-chip" href="https://social-plugins.line.me/lineit/share?url=<?php echo urlencode(url('oc', $oc['id'])) ?>" target="_blank" rel="noopener">
+            <span>LINE</span>
+          </a>
+          <a class="oc-share-chip" href="https://x.com/intent/post?url=<?php echo urlencode(url('oc', $oc['id'])) ?>&amp;text=<?php echo urlencode(htmlspecialchars_decode((string)$oc['name'])) ?>" target="_blank" rel="noopener">
+            <span>𝕏</span>
+          </a>
+          <button type="button" class="oc-share-chip" id="oc-share-copy" data-done="<?php echo t('コピーしました') ?>">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
+            <span><?php echo t('リンクをコピー') ?></span>
+          </button>
+        </div>
+        <style>
+          .oc-share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+          .oc-share-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--c-border, #ccc); background: transparent; color: inherit; font-size: 13px; text-decoration: none; cursor: pointer; line-height: 1.4; }
+          .oc-share-chip svg { width: 16px; height: 16px; fill: currentColor; }
+        </style>
+        <script>
+          (function () {
+            var url = <?php echo json_encode(url('oc', $oc['id'])) ?>;
+            var nativeBtn = document.getElementById('oc-share-native');
+            if (navigator.share) {
+              nativeBtn.hidden = false;
+              nativeBtn.addEventListener('click', function () {
+                navigator.share({ title: document.title, url: url }).catch(function () {});
+              });
+            }
+            var copyBtn = document.getElementById('oc-share-copy');
+            copyBtn.addEventListener('click', function () {
+              if (!navigator.clipboard) return;
+              navigator.clipboard.writeText(url).then(function () {
+                var span = copyBtn.querySelector('span');
+                var orig = span.textContent;
+                span.textContent = copyBtn.dataset.done;
+                setTimeout(function () { span.textContent = orig; }, 1600);
+              }).catch(function () {});
+            });
+          })();
+        </script>
       </nav>
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>

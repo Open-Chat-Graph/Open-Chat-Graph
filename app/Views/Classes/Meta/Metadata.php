@@ -25,6 +25,9 @@ class Metadata
     public string $og_type;
     public string $thumbnail;
 
+    /** twitter:card の種別。動的OGP画像(1200x630)を持つページは summary_large_image にする */
+    public string $twitterCard = 'summary';
+
     public function __construct()
     {
         // 演算子優先順位の修正: `===` は `??` より強く結合するため、
@@ -81,6 +84,12 @@ class Metadata
         return $this;
     }
 
+    public function setTwitterCard(string $twitterCard): static
+    {
+        $this->twitterCard = h($twitterCard);
+        return $this;
+    }
+
     public function generateTags(bool $query = false): string
     {
         if (!isset($this->thumbnail)) $this->thumbnail = $this->image_url;
@@ -98,7 +107,7 @@ class Metadata
         $tags .= '<meta property="og:description" content="' . $this->ogpDescription . '">' . "\n";
         if ($this->image_url) $tags .= '<meta property="og:image" content="' . $this->image_url . '">' . "\n";
         $tags .= '<meta property="og:site_name" content="' . self::BRAND_LABEL . '">' . "\n";
-        $tags .= '<meta name="twitter:card" content="summary">' . "\n";
+        $tags .= '<meta name="twitter:card" content="' . $this->twitterCard . '">' . "\n";
         $tags .= '<meta name="twitter:site" content="@openchat_graph">' . "\n";
 
         if ($this->thumbnail) $tags .= '<meta name="thumbnail" content="' . $this->thumbnail . '">' . "\n";
