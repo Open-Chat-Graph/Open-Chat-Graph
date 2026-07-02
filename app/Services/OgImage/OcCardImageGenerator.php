@@ -105,18 +105,19 @@ class OcCardImageGenerator
         $rightX = $iconX + $iconSize + 40; // = 302
         $rightEdge = self::WIDTH - 72;      // = 1128
 
-        // --- ヘッダー1行目: メンバー数（muted）＋ 7日増減（緑/赤） ---
+        // --- ヘッダー1行目: メンバー数（muted）＋ 7日増減（緑/赤）。上端をアイコン上端に合わせる ---
         $headHead = 'メンバー ' . number_format($member) . '人';
-        $headY = $iconY + 44;
-        $advance = $this->drawText($im, $headHead, $rightX, $headY, $this->fontMedium, 30, $sub);
+        $headY = $iconY + 2;
+        $advance = $this->drawText($im, $headHead, $rightX, $headY, $this->fontMedium, 28, $sub);
         if ($diffWeek !== null) {
             $isUp = $diffWeek >= 0;
             $growth = ($isUp ? '▲ +' : '▼ ') . number_format($diffWeek) . ' / 7日';
-            $this->drawText($im, $growth, $rightX + $advance + 24, $headY, $this->fontBold, 30, $isUp ? $green : $red);
+            $this->drawText($im, $growth, $rightX + $advance + 22, $headY, $this->fontBold, 28, $isUp ? $green : $red);
         }
 
-        // --- タイトル: 部屋名（最大2行。48pxで収まらなければ自動縮小。テキスト=Noto / 絵文字=カラー / 記号=モノクロ） ---
-        $this->drawTitle($im, $name, $rightX, $headY + 38, $rightEdge - $rightX, 48, 2, $white);
+        // --- タイトル: 部屋名（最大3行。48pxで収まらなければ自動縮小。テキスト=Noto / 絵文字=カラー / 記号=モノクロ） ---
+        // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
+        $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
         // --- ブランドフッター（右下） ---
         $brand = 'openchat-review.me';
@@ -197,23 +198,26 @@ class OcCardImageGenerator
         }
         $flush();
 
-        // 2) フォントサイズを最大から下げ、$maxLines 行に溢れず収まる最大サイズを採用（自動縮小）
+        // 2) フォントサイズを最大から下げ、$maxLines 行に溢れず収まる最大サイズを採用（自動縮小）。
+        //    $size と $lines を常に一致させる（下限まで縮めても溢れる場合はその下限レイアウト＝末尾…）
         $size = $maxSize;
-        $lines = [];
-        for (; $size >= self::TITLE_MIN_SIZE; $size -= 2) {
+        [$lines, $overflow] = $this->layoutTitleLines($segments, $size, $maxWidth, $maxLines);
+        while ($overflow && $size > self::TITLE_MIN_SIZE) {
+            $size -= 2;
             [$lines, $overflow] = $this->layoutTitleLines($segments, $size, $maxWidth, $maxLines);
-            if (!$overflow) {
-                break;
-            }
         }
 
         // 3) 描画（テキストはランごとに一括＝フォント本来の字間を保つ）
-        $lineHeight = (int)round($size * 1.44);
+        //    1行目のベースラインは「上端($topY=ink上端) ＋ 実測アセント」に置く（推定係数だとヘッダーに
+        //    食い込む）。行間(=行送り)は $size に比例させ、ヘッダーとの間隔とは独立させる。
+        $ascent = -imagettfbbox($size, 0, $this->fontBold, '【あA')[7];
+        $lineGap = (int)round($size * 1.62);
+        $baseY0 = $topY + $ascent;
         $emojiDraw = (int)round($size * 0.98);
         $emojiW = (int)round($size * 1.14);
         imagealphablending($im, true);
         foreach ($lines as $lineIdx => $line) {
-            $baseY = $topY + $lineHeight * ($lineIdx + 1);
+            $baseY = $baseY0 + $lineGap * $lineIdx;
             $cx = $x;
             foreach ($line as $op) {
                 if ($op['emoji']) {
