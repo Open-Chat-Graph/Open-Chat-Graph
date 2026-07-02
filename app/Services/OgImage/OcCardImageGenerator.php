@@ -52,8 +52,11 @@ class OcCardImageGenerator
      */
     public function generate(string $savePath, int $member, ?int $diffWeek, array $series, ?string $iconUrl): bool
     {
-        // FreeType 関数(imagettftext)まで含めて存在を確認する。GD が FreeType 無しでビルドされていると
-        // imagettftext が警告→（このアプリのハンドラで）例外になるため、事前に弾いてフォールバックさせる。
+        // 描画能力を事前に control-flow で判定する（例外に頼らない）。
+        // FreeType 関数(imagettftext)まで確認するのは、GD が FreeType 無しビルドだと
+        // imagettftext が警告→（このアプリのハンドラで）例外になるため。
+        // ここを通れば通常運用で render() は例外を投げない設計（外部アイコンの取得/デコードだけは
+        // drawIcon 内で個別に扱う）。想定外の例外は握りつぶさず表に出す（バグを隠さない）。
         if (
             !function_exists('imagecreatetruecolor')
             || !function_exists('imagettftext')
@@ -63,17 +66,6 @@ class OcCardImageGenerator
             return false;
         }
 
-        // 描画中のどの GD 警告（このアプリのエラーハンドラで例外化される）でも、
-        // カードを壊さず呼び出し側のフォールバック（デフォルトOGP画像）へ落とす。
-        try {
-            return $this->render($savePath, $member, $diffWeek, $series, $iconUrl);
-        } catch (\Throwable $e) {
-            return false;
-        }
-    }
-
-    private function render(string $savePath, int $member, ?int $diffWeek, array $series, ?string $iconUrl): bool
-    {
         $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
 
         // --- 背景: 上下方向の濃紺グラデーション ---
@@ -134,23 +126,17 @@ class OcCardImageGenerator
         // mkdir はレース時に警告→例外になるため、try/catch 済みの mkdirIfNotExists を使う。
         mkdirIfNotExists($dir = dirname($savePath));
 
+        // tmp 名は pid で一意なので他プロセスと競合しない。imagepng/rename が失敗したときだけ
+        // 自分の残骸を消す（成功時は rename 済みで tmp は無い）。例外は握りつぶさない。
         $tmp = $savePath . '.' . getmypid() . '.tmp';
         try {
             if (!imagepng($im, $tmp, 6)) {
                 return false;
             }
-            // rename が失敗しても tmp を残さない（GC も *.tmp を掃除するが二重の保険）
-            if (!rename($tmp, $savePath)) {
-                return false;
-            }
-            return true;
+            return rename($tmp, $savePath);
         } finally {
             if (is_file($tmp)) {
-                try {
-                    unlink($tmp);
-                } catch (\Throwable $e) {
-                    // 掃除の失敗は無視（GC が回収する）
-                }
+                unlink($tmp);
             }
         }
     }
@@ -219,23 +205,7 @@ class OcCardImageGenerator
      */
     private function drawIcon(\GdImage $im, ?string $iconUrl, int $x, int $y, int $size, int $fallbackCol): void
     {
-        $src = null;
-        if ($iconUrl) {
-            // curl で「接続＋総転送」に厳密な上限を掛ける。file_get_contents の stream timeout は
-            // アイドル時間しか見ず、遅延ドリップ配信だと PHP ワーカーを不定に拘束してしまう
-            // （本番は php-fcgi が実質2本なので、ここが詰まると全ページが道連れになる）。
-            try {
-                $data = $this->fetchIcon($iconUrl);
-                if ($data !== null && $data !== '') {
-                    $src = imagecreatefromstring($data);
-                    if ($src === false) {
-                        $src = null;
-                    }
-                }
-            } catch (\Throwable $e) {
-                $src = null;
-            }
-        }
+        $src = $iconUrl ? $this->loadIcon($iconUrl) : null;
 
         if (!$src) {
             // プレースホルダ: アクセント色の円
@@ -265,43 +235,71 @@ class OcCardImageGenerator
     }
 
     /**
-     * アイコン画像を取得する。接続・総転送・最大サイズすべてに上限を掛け、
-     * どんな失敗でも null を返す（呼び出し側でプレースホルダに落とす）。
-     * curl が無い環境では stream ラッパにフォールバックする。
+     * 外部（LINE CDN）から部屋アイコンを取得してデコードする。取得できなければ null（→プレースホルダ）。
+     *
+     * ここは「信頼できない外部入力」を扱う唯一の場所。取得失敗は control-flow（curl の戻り値・HTTP
+     * ステータス・画像シグネチャ判定）で捌き、例外を握りつぶさない。デコードだけは、シグネチャが
+     * 画像でも破損データだと imagecreatefromstring が警告→（このアプリのハンドラで）例外を投げうるため、
+     * その一点に限って \ErrorException を受けて「壊れた外部画像＝想定内の入力エラー」として null に落とす。
+     */
+    private function loadIcon(string $url): ?\GdImage
+    {
+        $data = $this->fetchIcon($url);
+        if ($data === null || !$this->looksLikeImage($data)) {
+            return null;
+        }
+        try {
+            $src = imagecreatefromstring($data);
+        } catch (\ErrorException $e) {
+            return null; // 破損した外部画像（想定内）→ プレースホルダ
+        }
+        return $src === false ? null : $src;
+    }
+
+    /** 先頭バイトのシグネチャで画像（JPEG/PNG/GIF/WEBP）かを警告なしに判定する */
+    private function looksLikeImage(string $data): bool
+    {
+        if (strlen($data) < 12) {
+            return false;
+        }
+        return str_starts_with($data, "\xFF\xD8\xFF")                        // JPEG
+            || str_starts_with($data, "\x89PNG\x0D\x0A\x1A\x0A")            // PNG
+            || str_starts_with($data, 'GIF87a') || str_starts_with($data, 'GIF89a') // GIF
+            || (str_starts_with($data, 'RIFF') && substr($data, 8, 4) === 'WEBP');  // WEBP
+    }
+
+    /**
+     * アイコン画像を取得する。接続・総転送・最大サイズすべてに curl の上限を掛け、失敗は戻り値で表す
+     * （どんな失敗でも null）。curl が無い環境では取得しない（→プレースホルダ）。
      */
     private function fetchIcon(string $url): ?string
     {
-        if (function_exists('curl_init')) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => self::ICON_CONNECT_TIMEOUT,
-                CURLOPT_TIMEOUT => self::ICON_FETCH_TIMEOUT,   // 接続後も含めた総時間の上限（ワーカー拘束を厳密に制限）
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 2,
-                CURLOPT_USERAGENT => self::ICON_FETCH_UA,
-                CURLOPT_BUFFERSIZE => 65536,
-                // 受信量が上限を超えたら即中断（巨大レスポンスでメモリを食わせない）
-                CURLOPT_NOPROGRESS => false,
-                CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
-                    return $dlNow > self::ICON_MAX_BYTES ? 1 : 0;
-                },
-            ]);
-            $data = curl_exec($ch);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            // curl_close() は PHP 8.0 以降 no-op で 8.5 で deprecated。このアプリのエラーハンドラは
-            // deprecation も例外化するため、呼ぶと取得成功でも例外になりアイコンが出なくなる（呼ばない）。
-            if ($data === false || $data === '' || ($code !== 0 && $code >= 400)) {
-                return null;
-            }
-            return is_string($data) ? $data : null;
+        if (!function_exists('curl_init')) {
+            return null;
         }
-
-        $ctx = stream_context_create(['http' => [
-            'timeout' => self::ICON_FETCH_TIMEOUT,
-            'header' => 'User-Agent: ' . self::ICON_FETCH_UA . "\r\n",
-        ]]);
-        $data = file_get_contents($url, false, $ctx, 0, self::ICON_MAX_BYTES);
-        return $data === false ? null : $data;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => self::ICON_CONNECT_TIMEOUT,
+            CURLOPT_TIMEOUT => self::ICON_FETCH_TIMEOUT,   // 接続後も含めた総時間の上限（ワーカー拘束を厳密に制限）
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 2,
+            CURLOPT_USERAGENT => self::ICON_FETCH_UA,
+            CURLOPT_BUFFERSIZE => 65536,
+            // 受信量が上限を超えたら即中断（巨大レスポンスでメモリを食わせない）
+            CURLOPT_NOPROGRESS => false,
+            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+                return $dlNow > self::ICON_MAX_BYTES ? 1 : 0;
+            },
+        ]);
+        $data = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // curl_close() は PHP 8.0 以降 no-op、8.5 で deprecated。このアプリのハンドラは deprecation も
+        // 例外化するため呼ばない（呼ぶと取得成功でも例外になりアイコンが消える。実際にこれで全部屋が
+        // プレースホルダになった）。ハンドルはスクリプト終了時に解放される。
+        if ($data === false || $data === '' || !is_string($data) || ($code !== 0 && $code >= 400)) {
+            return null;
+        }
+        return $data;
     }
 }

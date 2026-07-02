@@ -126,13 +126,16 @@ class OcCardImageController
         $pngThreshold = $now - self::GC_MAX_AGE_DAYS * 86400;
         $tmpThreshold = $now - self::GC_TMP_MAX_AGE_SEC;
         foreach (glob($dir . '/*') ?: [] as $file) {
+            $threshold = str_ends_with($file, '.tmp') ? $tmpThreshold : $pngThreshold;
             try {
-                $threshold = str_ends_with($file, '.tmp') ? $tmpThreshold : $pngThreshold;
+                // 別リクエストの GC と競合して glob 後にファイルが消えると filemtime/unlink が
+                // 警告→（このアプリのハンドラで）例外になる。これは想定内の並行削除レースなので
+                // その場合だけ次のファイルへ進む（\ErrorException に限定＝バグは握りつぶさない）。
                 if (filemtime($file) < $threshold) {
                     unlink($file);
                 }
-            } catch (\Throwable $e) {
-                // 競合で既に消えている等は無視
+            } catch (\ErrorException $e) {
+                continue;
             }
         }
     }
