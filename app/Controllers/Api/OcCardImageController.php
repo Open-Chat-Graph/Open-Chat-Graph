@@ -63,12 +63,18 @@ class OcCardImageController
         );
         if ($dto && $dto->member) {
             $series = $dto->member;
-            $n = count($series);
-            if ($n >= 2) {
-                $last = $series[$n - 1];
-                $weekAgo = $series[max(0, $n - 8)];
-                if ($last !== null && $weekAgo !== null) {
-                    $diffWeek = $last - $weekAgo;
+            // 日付軸はリクエスト範囲いっぱいまで null 埋めされるため、末尾の実データ位置から差分を取る
+            $lastIdx = null;
+            for ($i = count($series) - 1; $i >= 0; $i--) {
+                if ($series[$i] !== null) {
+                    $lastIdx = $i;
+                    break;
+                }
+            }
+            if ($lastIdx !== null) {
+                $weekAgo = $series[max(0, $lastIdx - 7)];
+                if ($weekAgo !== null) {
+                    $diffWeek = (int)$series[$lastIdx] - (int)$weekAgo;
                 }
             }
         }
