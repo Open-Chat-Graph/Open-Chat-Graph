@@ -156,54 +156,72 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
             <?php endif ?>
           </section>
         </div>
-        <?php // シェア導線: モバイルはOSネイティブ共有(Web Share API)、他にLINE/X/リンクコピー。
-              // og:image が統計焼き込みの動的カード(/oc/{id}/card)なので、共有リンクはグラフ付きカードで展開される ?>
-        <div class="oc-share-row">
-          <button type="button" class="oc-share-chip" id="oc-share-native" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2c0 .2-.1.4-.1.6a3 3 0 1 0 3-2.9z"/></svg>
-            <span><?php echo t('共有') ?></span>
-          </button>
-          <a class="oc-share-chip" href="https://social-plugins.line.me/lineit/share?url=<?php echo urlencode(url('oc', $oc['id'])) ?>" target="_blank" rel="noopener">
-            <span>LINE</span>
-          </a>
-          <a class="oc-share-chip" href="https://x.com/intent/post?url=<?php echo urlencode(url('oc', $oc['id'])) ?>&amp;text=<?php echo urlencode(htmlspecialchars_decode((string)$oc['name'])) ?>" target="_blank" rel="noopener">
-            <span>𝕏</span>
-          </a>
-          <button type="button" class="oc-share-chip" id="oc-share-copy" data-done="<?php echo t('コピーしました') ?>">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
-            <span><?php echo t('リンクをコピー') ?></span>
-          </button>
-        </div>
-        <style>
-          .oc-share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-          .oc-share-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--c-border, #ccc); background: transparent; color: inherit; font-size: 13px; text-decoration: none; cursor: pointer; line-height: 1.4; }
-          /* hidden 属性（Web Share 非対応時のネイティブ共有ボタン）が display 指定に負けないよう明示的に隠す */
-          .oc-share-chip[hidden] { display: none; }
-          .oc-share-chip svg { width: 16px; height: 16px; fill: currentColor; }
-        </style>
-        <script>
-          (function () {
-            var url = <?php echo json_encode(url('oc', $oc['id'])) ?>;
-            var nativeBtn = document.getElementById('oc-share-native');
-            if (navigator.share) {
-              nativeBtn.hidden = false;
-              nativeBtn.addEventListener('click', function () {
-                navigator.share({ title: document.title, url: url }).catch(function () {});
-              });
-            }
-            var copyBtn = document.getElementById('oc-share-copy');
-            copyBtn.addEventListener('click', function () {
-              if (!navigator.clipboard) return;
-              navigator.clipboard.writeText(url).then(function () {
-                var span = copyBtn.querySelector('span');
-                var orig = span.textContent;
-                span.textContent = copyBtn.dataset.done;
-                setTimeout(function () { span.textContent = orig; }, 1600);
-              }).catch(function () {});
-            });
-          })();
-        </script>
       </nav>
+
+      <?php // シェア導線（nav の外・全幅）。統一サイズの円形アイコンボタンで、LINE/X はブランド色にして
+            // 「どこへ共有するか」が一目で分かるようにする。モバイルは OS ネイティブ共有も出す。
+            // 共有リンクの og:image は統計グラフ入りの動的カード(/oc/{id}/card)で展開される。 ?>
+      <div class="oc-share">
+        <span class="oc-share__label"><?php echo t('共有') ?></span>
+        <button type="button" class="oc-share__btn oc-share__btn--sub" id="oc-share-native" hidden aria-label="<?php echo t('共有') ?>">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2c0 .2-.1.4-.1.6a3 3 0 1 0 3-2.9z"/></svg>
+        </button>
+        <a class="oc-share__btn oc-share__btn--line" href="https://social-plugins.line.me/lineit/share?url=<?php echo urlencode(url('oc', $oc['id'])) ?>" target="_blank" rel="noopener" aria-label="LINE">
+          <img src="<?php echo fileUrl('assets/line.svg', urlRoot: '') ?>" alt="" width="44" height="44">
+        </a>
+        <a class="oc-share__btn oc-share__btn--x" href="https://x.com/intent/post?url=<?php echo urlencode(url('oc', $oc['id'])) ?>&amp;text=<?php echo urlencode(htmlspecialchars_decode((string)$oc['name'])) ?>" target="_blank" rel="noopener" aria-label="X">
+          <svg viewBox="0 0 240 240" aria-hidden="true"><path d="M88.2 60.66L169.46 178.81H151.42L70.16 60.66H88.2ZM92.93 51.66H53.04L146.68 187.81H186.57L92.93 51.66Z"/><path d="M132.54 109.25L182.24 51.66H170.99L127.55 101.99L132.54 109.25Z"/><path d="M105.36 127.72L53.04 188.34H64.3L110.35 134.98L105.36 127.72Z"/></svg>
+        </a>
+        <button type="button" class="oc-share__btn oc-share__btn--sub" id="oc-share-copy" aria-label="<?php echo t('リンクをコピー') ?>">
+          <svg class="oc-share__ico-copy" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
+          <svg class="oc-share__ico-done" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </button>
+      </div>
+      <style>
+        .oc-share { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: var(--sp-section-gap) 1rem 0; }
+        .oc-share__label { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--c-text-4, #8b95a7); }
+        .oc-share__btn { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: none; background: none; cursor: pointer; text-decoration: none; transition: transform .12s ease, filter .12s ease; }
+        .oc-share__btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .oc-share__btn:active { transform: translateY(0); }
+        .oc-share__btn:focus-visible { outline: 2px solid var(--c-grad-blue-btn, #5a8cff); outline-offset: 2px; }
+        .oc-share__btn svg { width: 22px; height: 22px; display: block; }
+        /* hidden 属性が上の display:block に負けないよう明示（コピー完了アイコンの初期非表示用） */
+        .oc-share__btn svg[hidden] { display: none; }
+        .oc-share__btn--line { background: #06C755; }
+        .oc-share__btn--line img { width: 100%; height: 100%; display: block; }
+        /* X は真っ黒なのでダーク背景で溶ける。薄い枠で輪郭を出す */
+        .oc-share__btn--x { background: #000; border: 1px solid rgba(255, 255, 255, .22); }
+        .oc-share__btn--x svg { width: 20px; height: 20px; fill: #fff; }
+        .oc-share__btn--sub { background: var(--c-surface-2, rgba(127, 127, 127, .14)); border: 1px solid var(--c-border, rgba(127, 127, 127, .24)); }
+        .oc-share__btn--sub svg { fill: var(--c-text-3, #c2cad6); }
+        .oc-share__btn[hidden] { display: none; }
+        .oc-share__btn--sub.is-done { background: #06C755; border-color: #06C755; }
+        .oc-share__btn--sub.is-done svg { fill: #fff; }
+      </style>
+      <script>
+        (function () {
+          var url = <?php echo json_encode(url('oc', $oc['id'])) ?>;
+          var nativeBtn = document.getElementById('oc-share-native');
+          if (navigator.share) {
+            nativeBtn.hidden = false;
+            nativeBtn.addEventListener('click', function () { navigator.share({ title: document.title, url: url }).catch(function () {}); });
+          }
+          var copyBtn = document.getElementById('oc-share-copy');
+          copyBtn.addEventListener('click', function () {
+            if (!navigator.clipboard) return;
+            navigator.clipboard.writeText(url).then(function () {
+              copyBtn.classList.add('is-done');
+              copyBtn.querySelector('.oc-share__ico-copy').hidden = true;
+              copyBtn.querySelector('.oc-share__ico-done').hidden = false;
+              setTimeout(function () {
+                copyBtn.classList.remove('is-done');
+                copyBtn.querySelector('.oc-share__ico-copy').hidden = false;
+                copyBtn.querySelector('.oc-share__ico-done').hidden = true;
+              }, 1600);
+            }).catch(function () {});
+          });
+        })();
+      </script>
       <?php if (isset($_adminDto)) : ?>
         <?php viewComponent('oc_content_admin', compact('_adminDto')); ?>
       <?php endif ?>
