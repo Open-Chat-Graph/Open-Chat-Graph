@@ -289,7 +289,8 @@ class OcCardImageGenerator
             ]);
             $data = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            // curl_close() は PHP 8.0 以降 no-op で 8.5 で deprecated。このアプリのエラーハンドラは
+            // deprecation も例外化するため、呼ぶと取得成功でも例外になりアイコンが出なくなる（呼ばない）。
             if ($data === false || $data === '' || ($code !== 0 && $code >= 400)) {
                 return null;
             }
