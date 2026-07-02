@@ -177,6 +177,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <style>
           .oc-share-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
           .oc-share-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--c-border, #ccc); background: transparent; color: inherit; font-size: 13px; text-decoration: none; cursor: pointer; line-height: 1.4; }
+          /* hidden 属性（Web Share 非対応時のネイティブ共有ボタン）が display 指定に負けないよう明示的に隠す */
+          .oc-share-chip[hidden] { display: none; }
           .oc-share-chip svg { width: 16px; height: 16px; fill: currentColor; }
         </style>
         <script>

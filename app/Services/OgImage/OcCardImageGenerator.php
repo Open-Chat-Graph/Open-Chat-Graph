@@ -20,8 +20,14 @@ class OcCardImageGenerator
     private const WIDTH = 1200;
     private const HEIGHT = 630;
 
-    /** 部屋アイコンの取得タイムアウト（秒）。落ちてもプレースホルダで生成を続行する */
-    private const ICON_FETCH_TIMEOUT = 4;
+    /** 部屋アイコンの取得の総時間上限（秒）。落ちてもプレースホルダで生成を続行する */
+    private const ICON_FETCH_TIMEOUT = 3;
+
+    /** 接続確立の上限（秒） */
+    private const ICON_CONNECT_TIMEOUT = 2;
+
+    /** アイコン取得の最大バイト数（これを超えたら中断） */
+    private const ICON_MAX_BYTES = 3145728; // 3MB
 
     /** アイコン取得用UA（クローラーと同一の OpenChatStatsbot 名義） */
     private const ICON_FETCH_UA = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
@@ -46,10 +52,28 @@ class OcCardImageGenerator
      */
     public function generate(string $savePath, int $member, ?int $diffWeek, array $series, ?string $iconUrl): bool
     {
-        if (!function_exists('imagecreatetruecolor') || !is_file($this->fontBold)) {
+        // FreeType 関数(imagettftext)まで含めて存在を確認する。GD が FreeType 無しでビルドされていると
+        // imagettftext が警告→（このアプリのハンドラで）例外になるため、事前に弾いてフォールバックさせる。
+        if (
+            !function_exists('imagecreatetruecolor')
+            || !function_exists('imagettftext')
+            || !is_file($this->fontBold)
+            || !is_file($this->fontRegular)
+        ) {
             return false;
         }
 
+        // 描画中のどの GD 警告（このアプリのエラーハンドラで例外化される）でも、
+        // カードを壊さず呼び出し側のフォールバック（デフォルトOGP画像）へ落とす。
+        try {
+            return $this->render($savePath, $member, $diffWeek, $series, $iconUrl);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function render(string $savePath, int $member, ?int $diffWeek, array $series, ?string $iconUrl): bool
+    {
         $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
 
         // --- 背景: 上下方向の濃紺グラデーション ---
@@ -107,17 +131,28 @@ class OcCardImageGenerator
         imagettftext($im, $bs, 0, self::WIDTH - $bw - 56, self::HEIGHT - 44, $sub, $this->fontRegular, $brand);
 
         // --- 保存（アトミック） ---
-        $dir = dirname($savePath);
-        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
-            return false;
-        }
+        // mkdir はレース時に警告→例外になるため、try/catch 済みの mkdirIfNotExists を使う。
+        mkdirIfNotExists($dir = dirname($savePath));
+
         $tmp = $savePath . '.' . getmypid() . '.tmp';
-        $ok = imagepng($im, $tmp, 6);
-        if (!$ok) {
-            @unlink($tmp);
-            return false;
+        try {
+            if (!imagepng($im, $tmp, 6)) {
+                return false;
+            }
+            // rename が失敗しても tmp を残さない（GC も *.tmp を掃除するが二重の保険）
+            if (!rename($tmp, $savePath)) {
+                return false;
+            }
+            return true;
+        } finally {
+            if (is_file($tmp)) {
+                try {
+                    unlink($tmp);
+                } catch (\Throwable $e) {
+                    // 掃除の失敗は無視（GC が回収する）
+                }
+            }
         }
-        return rename($tmp, $savePath);
     }
 
     /**
@@ -186,13 +221,19 @@ class OcCardImageGenerator
     {
         $src = null;
         if ($iconUrl) {
-            $ctx = stream_context_create(['http' => [
-                'timeout' => self::ICON_FETCH_TIMEOUT,
-                'header' => 'User-Agent: ' . self::ICON_FETCH_UA . "\r\n",
-            ]]);
-            $data = @file_get_contents($iconUrl, false, $ctx);
-            if ($data !== false) {
-                $src = @imagecreatefromstring($data);
+            // curl で「接続＋総転送」に厳密な上限を掛ける。file_get_contents の stream timeout は
+            // アイドル時間しか見ず、遅延ドリップ配信だと PHP ワーカーを不定に拘束してしまう
+            // （本番は php-fcgi が実質2本なので、ここが詰まると全ページが道連れになる）。
+            try {
+                $data = $this->fetchIcon($iconUrl);
+                if ($data !== null && $data !== '') {
+                    $src = imagecreatefromstring($data);
+                    if ($src === false) {
+                        $src = null;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $src = null;
             }
         }
 
@@ -221,5 +262,45 @@ class OcCardImageGenerator
                 imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
             }
         }
+    }
+
+    /**
+     * アイコン画像を取得する。接続・総転送・最大サイズすべてに上限を掛け、
+     * どんな失敗でも null を返す（呼び出し側でプレースホルダに落とす）。
+     * curl が無い環境では stream ラッパにフォールバックする。
+     */
+    private function fetchIcon(string $url): ?string
+    {
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => self::ICON_CONNECT_TIMEOUT,
+                CURLOPT_TIMEOUT => self::ICON_FETCH_TIMEOUT,   // 接続後も含めた総時間の上限（ワーカー拘束を厳密に制限）
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 2,
+                CURLOPT_USERAGENT => self::ICON_FETCH_UA,
+                CURLOPT_BUFFERSIZE => 65536,
+                // 受信量が上限を超えたら即中断（巨大レスポンスでメモリを食わせない）
+                CURLOPT_NOPROGRESS => false,
+                CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
+                    return $dlNow > self::ICON_MAX_BYTES ? 1 : 0;
+                },
+            ]);
+            $data = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($data === false || $data === '' || ($code !== 0 && $code >= 400)) {
+                return null;
+            }
+            return is_string($data) ? $data : null;
+        }
+
+        $ctx = stream_context_create(['http' => [
+            'timeout' => self::ICON_FETCH_TIMEOUT,
+            'header' => 'User-Agent: ' . self::ICON_FETCH_UA . "\r\n",
+        ]]);
+        $data = file_get_contents($url, false, $ctx, 0, self::ICON_MAX_BYTES);
+        return $data === false ? null : $data;
     }
 }

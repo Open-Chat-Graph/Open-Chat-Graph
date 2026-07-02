@@ -871,3 +871,16 @@ function getBasicAuthCredentials(): array
 
     return ['user' => $user, 'pass' => $pass];
 }
+
+/**
+ * JSON-LD（<script type="application/ld+json">）へ埋め込む文字列を安全化する。
+ *
+ * 使っている spatie/schema-org の toScript() は json_encode(JSON_UNESCAPED_SLASHES) で
+ * `<` `>` `/` を素通しするため、ユーザー由来文字列（部屋名など）に "</script>" が含まれると
+ * script 要素が途中で閉じて HTML 注入（格納型XSS）になる。エスケープフラグを付けられないため、
+ * 埋め込み前に `<` `>` を全角へ置換して破断を無効化する（表示上はほぼ同一・注入は成立しない）。
+ */
+function jsonLdText(string $text): string
+{
+    return strtr($text, ['<' => '＜', '>' => '＞']);
+}

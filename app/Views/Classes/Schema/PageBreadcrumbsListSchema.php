@@ -102,7 +102,9 @@ class PageBreadcrumbsListSchema
                 $items[] = Schema::listItem()
                     ->position($i + 1)
                     ->url(url('oc', (string)$room['id']))
-                    ->name(htmlspecialchars_decode((string)$room['name']));
+                    // 部屋名は DB 生値。spatie の toScript() は `<`/`/` を素通しするため
+                    // jsonLdText() で `<`/`>` を無効化してから埋め込む（"</script>" 破断=XSS防止）
+                    ->name(jsonLdText((string)$room['name']));
             }
             $collectionPage->mainEntity(
                 Schema::itemList()
