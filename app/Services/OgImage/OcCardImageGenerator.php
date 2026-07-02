@@ -20,6 +20,9 @@ class OcCardImageGenerator
     private const WIDTH = 1200;
     private const HEIGHT = 630;
 
+    /** タイトルの自動縮小の下限フォントサイズ（これでも収まらなければ … で省略） */
+    private const TITLE_MIN_SIZE = 30;
+
     /** アイコン取得の総時間上限（秒・接続〜受信完了）。落ちてもプレースホルダで生成を続行する */
     private const ICON_MAX_DURATION = 3;
 
@@ -31,6 +34,7 @@ class OcCardImageGenerator
 
     private string $fontBold;
     private string $fontMedium;
+    private string $fontSymbol;
     private NotoColorEmojiReader $emoji;
 
     public function __construct(
@@ -39,6 +43,8 @@ class OcCardImageGenerator
         $dir = __DIR__ . '/../../../storage/font';
         $this->fontBold = $dir . '/NotoSansJP-Bold.ttf';
         $this->fontMedium = $dir . '/NotoSansJP-Regular.ttf';
+        // 絵文字でない記号（❥ 等の Dingbats など）で Noto CJK にも絵文字にも無いものの受け皿（モノクロ）
+        $this->fontSymbol = $dir . '/NotoSansSymbols2.ttf';
         $this->emoji = new NotoColorEmojiReader($dir . '/NotoColorEmoji.ttf');
     }
 
@@ -109,8 +115,8 @@ class OcCardImageGenerator
             $this->drawText($im, $growth, $rightX + $advance + 24, $headY, $this->fontBold, 30, $isUp ? $green : $red);
         }
 
-        // --- タイトル: 部屋名（最大2行・折り返し・省略。テキスト=Noto / 絵文字=カラーPNG合成） ---
-        $this->drawTitle($im, $name, $rightX, $headY + 38, $rightEdge - $rightX, 48, 74, 2, $white);
+        // --- タイトル: 部屋名（最大2行。48pxで収まらなければ自動縮小。テキスト=Noto / 絵文字=カラー / 記号=モノクロ） ---
+        $this->drawTitle($im, $name, $rightX, $headY + 38, $rightEdge - $rightX, 48, 2, $white);
 
         // --- ブランドフッター（右下） ---
         $brand = 'openchat-review.me';
@@ -146,34 +152,92 @@ class OcCardImageGenerator
      * フォント本来の字間(カーニング)が保たれる（1文字ずつ描くと字間が詰まる問題を回避）。絵文字で
      * ランが途切れる。フォントにも絵文字にも無い文字はスキップ（豆腐を出さない）。
      */
-    private function drawTitle(\GdImage $im, string $name, int $x, int $topY, int $maxWidth, int $size, int $lineHeight, int $maxLines, int $color): void
+    private function drawTitle(\GdImage $im, string $name, int $x, int $topY, int $maxWidth, int $maxSize, int $maxLines, int $color): void
     {
-        $ranges = $this->supportedRanges();
-        $emojiW = (int)round($size * 1.05);
-
-        // 1) セグメント化: 連続テキストは1つの文字列に、絵文字は個別に（出せない文字は捨てる）
+        // 1) セグメント化（サイズ非依存）: フォールバック（Noto CJK → カラー絵文字 → 記号フォント）で
+        //    振り分け、連続する「同じフォントのテキスト」を1つのラン(文字列)にまとめる。絵文字はランを切る。
+        $textRanges = $this->supportedRanges();
+        $symRanges = $this->supportedSymbolRanges();
         $segments = [];
         $buf = '';
+        $bufFont = null;
+        $flush = function () use (&$segments, &$buf, &$bufFont) {
+            if ($buf !== '') {
+                $segments[] = ['emoji' => false, 'str' => $buf, 'font' => $bufFont];
+                $buf = '';
+                $bufFont = null;
+            }
+        };
         foreach (preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
             $cp = mb_ord($ch, 'UTF-8');
             if ($cp === false || $cp < 0x20) {
                 continue;
             }
-            if ($ranges === null || $this->cpInRanges($cp, $ranges)) {
-                $buf .= $ch;
+            $font = null;
+            $png = null;
+            if ($textRanges === null || $this->cpInRanges($cp, $textRanges)) {
+                $font = $this->fontBold;
             } elseif (($png = $this->emoji->getPng($cp)) !== null) {
-                if ($buf !== '') {
-                    $segments[] = ['emoji' => false, 'str' => $buf];
-                    $buf = '';
-                }
+                // カラー絵文字
+            } elseif ($symRanges !== null && $this->cpInRanges($cp, $symRanges)) {
+                $font = $this->fontSymbol;
+            } else {
+                continue; // どれでも出せない字はスキップ
+            }
+            if ($png !== null) {
+                $flush();
                 $segments[] = ['emoji' => true, 'png' => $png];
+            } else {
+                if ($bufFont !== null && $bufFont !== $font) {
+                    $flush();
+                }
+                $buf .= $ch;
+                $bufFont = $font;
             }
         }
-        if ($buf !== '') {
-            $segments[] = ['emoji' => false, 'str' => $buf];
+        $flush();
+
+        // 2) フォントサイズを最大から下げ、$maxLines 行に溢れず収まる最大サイズを採用（自動縮小）
+        $size = $maxSize;
+        $lines = [];
+        for (; $size >= self::TITLE_MIN_SIZE; $size -= 2) {
+            [$lines, $overflow] = $this->layoutTitleLines($segments, $size, $maxWidth, $maxLines);
+            if (!$overflow) {
+                break;
+            }
         }
 
-        // 2) 行組み: テキストランは必要に応じて文字単位で分割して折り返す
+        // 3) 描画（テキストはランごとに一括＝フォント本来の字間を保つ）
+        $lineHeight = (int)round($size * 1.44);
+        $emojiDraw = (int)round($size * 0.98);
+        $emojiW = (int)round($size * 1.14);
+        imagealphablending($im, true);
+        foreach ($lines as $lineIdx => $line) {
+            $baseY = $topY + $lineHeight * ($lineIdx + 1);
+            $cx = $x;
+            foreach ($line as $op) {
+                if ($op['emoji']) {
+                    $this->composeEmoji($im, $op['png'], $cx + intdiv($emojiW - $emojiDraw, 2), $baseY - $size, $emojiDraw);
+                } else {
+                    imagettftext($im, $size, 0, $cx, $baseY, $color, $op['font'], $op['str']);
+                }
+                $cx += $op['w'];
+            }
+        }
+    }
+
+    /**
+     * 指定サイズでセグメントを $maxWidth・$maxLines に行組みする。テキストランは必要に応じて
+     * 文字単位で分割して折り返す。溢れたら最終行末尾を … にして [$lines, true] を返す。
+     *
+     * @param array<int,array<string,mixed>> $segments
+     * @return array{0: array<int,array<int,array<string,mixed>>>, 1: bool}
+     */
+    private function layoutTitleLines(array $segments, int $size, int $maxWidth, int $maxLines): array
+    {
+        $emojiW = (int)round($size * 1.14);
+        $gap = (int)round($size * 0.05);
+
         $lines = [[]];
         $lineW = 0;
         $overflow = false;
@@ -199,19 +263,20 @@ class OcCardImageGenerator
                 continue;
             }
             $rest = $seg['str'];
+            $font = $seg['font'];
             while ($rest !== '' && !$overflow) {
-                $prefix = $this->fitPrefix($rest, $size, $maxWidth - $lineW);
+                $prefix = $this->fitPrefix($rest, $font, $size, $maxWidth - $lineW - $gap);
                 if ($prefix === '') {
                     if ($lineW === 0) {
-                        $prefix = mb_substr($rest, 0, 1); // 1文字も入らない幅でも最低1文字は置く
+                        $prefix = mb_substr($rest, 0, 1);
                     } elseif (!$newline()) {
                         break;
                     } else {
                         continue;
                     }
                 }
-                $w = $this->textWidth($prefix, $this->fontBold, $size);
-                $lines[count($lines) - 1][] = ['emoji' => false, 'str' => $prefix, 'w' => $w];
+                $w = $this->advanceWidth($prefix, $font, $size) + $gap;
+                $lines[count($lines) - 1][] = ['emoji' => false, 'str' => $prefix, 'font' => $font, 'w' => $w];
                 $lineW += $w;
                 $rest = mb_substr($rest, mb_strlen($prefix));
                 if ($rest !== '' && !$newline()) {
@@ -220,52 +285,58 @@ class OcCardImageGenerator
             }
         }
 
-        // 3) 溢れたら最終行の末尾を … に置き換える
         if ($overflow) {
-            $ellipsisW = $this->textWidth('…', $this->fontBold, $size);
+            $ellipsisW = $this->advanceWidth('…', $this->fontBold, $size) + $gap;
             $li = count($lines) - 1;
             $w = array_sum(array_column($lines[$li], 'w'));
             while ($lines[$li] && $w + $ellipsisW > $maxWidth) {
                 $w -= array_pop($lines[$li])['w'];
             }
-            $lines[$li][] = ['emoji' => false, 'str' => '…', 'w' => $ellipsisW];
+            $lines[$li][] = ['emoji' => false, 'str' => '…', 'font' => $this->fontBold, 'w' => $ellipsisW];
         }
 
-        // 4) 描画（テキストはランごとに一括＝カーニング保持）
-        imagealphablending($im, true);
-        foreach ($lines as $lineIdx => $line) {
-            $baseY = $topY + $lineHeight * ($lineIdx + 1);
-            $cx = $x;
-            foreach ($line as $op) {
-                if ($op['emoji']) {
-                    $this->composeEmoji($im, $op['png'], $cx, $baseY - $size, $emojiW);
-                } else {
-                    imagettftext($im, $size, 0, $cx, $baseY, $color, $this->fontBold, $op['str']);
-                }
-                $cx += $op['w'];
-            }
-        }
+        return [$lines, $overflow];
     }
 
-    /** $text の先頭から、幅 $maxWidth に収まる最長プレフィックスを返す（入らなければ ''） */
-    private function fitPrefix(string $text, int $size, int $maxWidth): string
+    /** 描画したときの送り幅（ink右端＝おおよそのペン送り）。重なり防止のため ink幅ではなくこれで送る。 */
+    private function advanceWidth(string $text, string $font, int $size): int
+    {
+        if ($text === '') {
+            return 0;
+        }
+        return imagettfbbox($size, 0, $font, $text)[2];
+    }
+
+    /** $text の先頭から、送り幅が $maxWidth に収まる最長プレフィックスを返す（入らなければ ''） */
+    private function fitPrefix(string $text, string $font, int $size, int $maxWidth): string
     {
         if ($maxWidth <= 0) {
             return '';
         }
-        $len = mb_strlen($text);
-        // 二分探索で収まる最大文字数を求める
         $lo = 0;
-        $hi = $len;
+        $hi = mb_strlen($text);
         while ($lo < $hi) {
             $mid = intdiv($lo + $hi + 1, 2);
-            if ($this->textWidth(mb_substr($text, 0, $mid), $this->fontBold, $size) <= $maxWidth) {
+            if ($this->advanceWidth(mb_substr($text, 0, $mid), $font, $size) <= $maxWidth) {
                 $lo = $mid;
             } else {
                 $hi = $mid - 1;
             }
         }
         return $lo === 0 ? '' : mb_substr($text, 0, $lo);
+    }
+
+    /** 記号フォント(NotoSansSymbols2)が持つコードポイント範囲（プロセス内キャッシュ） */
+    private function supportedSymbolRanges(): ?array
+    {
+        static $cache = null;
+        static $loaded = false;
+        if ($loaded) {
+            return $cache;
+        }
+        $loaded = true;
+        $cache = is_file($this->fontSymbol) ? $this->readCmapRanges($this->fontSymbol) : null;
+        return $cache;
     }
 
     /** カラー絵文字PNG(NotoColorEmoji由来)を $size 四方に縮小してアルファ合成する。ベースライン合わせで少し下げる。 */
