@@ -83,8 +83,9 @@ frontend/*/dist/
 test-logs/
 .playwright-mcp
 
-# Claude Code
-.claude/
+# Claude Code（プロジェクトスキル .claude/skills/ だけはコミットする）
+.claude/*
+!.claude/skills/
 
 # 例外: .gitkeepは含める
 !*.gitkeep
