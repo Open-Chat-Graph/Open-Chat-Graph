@@ -24,6 +24,8 @@ class NotoColorEmojiReader
     private array $cmap = [];
     /** @var array<int,array{0:int,1:int}> glyphId => [CBDT内の絶対位置, 長さ] */
     private array $index = [];
+    /** @var array<string,int> "先頭gid:2文字目gid" => 合字glyphId（国旗など2成分の合字） */
+    private array $liga = [];
 
     public function __construct(
         private string $fontPath,
@@ -37,7 +39,33 @@ class NotoColorEmojiReader
             return null;
         }
         $gid = $this->cmap[$codepoint] ?? null;
-        if ($gid === null || !isset($this->index[$gid])) {
+        return $gid === null ? null : $this->pngForGid($gid);
+    }
+
+    /**
+     * 国旗など「地域表示文字2つ」の合字カラーPNGを返す。合字が無ければ null。
+     * 国旗絵文字は単一コードポイントではなく、地域表示文字2つ(例 🇯＋🇵)を GSUB の合字で
+     * 1つの旗グリフにするため、cmap だけでは出せず GSUB を引く必要がある。
+     */
+    public function getFlagPng(int $cp1, int $cp2): ?string
+    {
+        $this->load();
+        if (!$this->available) {
+            return null;
+        }
+        $g1 = $this->cmap[$cp1] ?? null;
+        $g2 = $this->cmap[$cp2] ?? null;
+        if ($g1 === null || $g2 === null) {
+            return null;
+        }
+        $lig = $this->liga[$g1 . ':' . $g2] ?? null;
+        return $lig === null ? null : $this->pngForGid($lig);
+    }
+
+    /** glyphId に対応する CBDT 埋め込み PNG（imageFormat 17）を返す。無ければ null。 */
+    private function pngForGid(int $gid): ?string
+    {
+        if (!isset($this->index[$gid])) {
             return null;
         }
         [$pos, $len] = $this->index[$gid];
@@ -104,7 +132,144 @@ class NotoColorEmojiReader
         if (!$this->buildIndex($tabs['CBLC'][0], $tabs['CBDT'][0])) {
             return;
         }
+        // 国旗など2成分の合字（任意・GSUB が無い/読めなくても絵文字描画自体は続行）
+        if (isset($tabs['GSUB'])) {
+            $this->buildLigatures($tabs['GSUB'][0]);
+        }
         $this->available = true;
+    }
+
+    /**
+     * GSUB の LigatureSubst(LookupType 4、Extension=7 経由も)から「2成分の合字」だけを
+     * $this->liga（"先頭gid:2文字目gid" => 合字glyphId）に積む。国旗（地域表示文字2つ）が対象。
+     * 想定外構造は各所の境界チェックで黙って読み飛ばす（描画は止めない）。
+     */
+    private function buildLigatures(int $gsubOff): void
+    {
+        $len = strlen($this->data);
+        if ($gsubOff + 10 > $len) {
+            return;
+        }
+        // GSUB header(1.0): major(2) minor(2) scriptListOff(2) featureListOff(2) lookupListOff(2)
+        $ll = $gsubOff + $this->u16($gsubOff + 8);
+        if ($ll + 2 > $len) {
+            return;
+        }
+        $lookupCount = $this->u16($ll);
+        for ($i = 0; $i < $lookupCount; $i++) {
+            $lo = $ll + 2 + $i * 2;
+            if ($lo + 2 > $len) {
+                break;
+            }
+            $lookupOff = $ll + $this->u16($lo);
+            if ($lookupOff + 6 > $len) {
+                continue;
+            }
+            $type = $this->u16($lookupOff);
+            $subCount = $this->u16($lookupOff + 4);
+            for ($s = 0; $s < $subCount; $s++) {
+                $so = $lookupOff + 6 + $s * 2;
+                if ($so + 2 > $len) {
+                    break;
+                }
+                $subOff = $lookupOff + $this->u16($so);
+                $realType = $type;
+                $realOff = $subOff;
+                if ($type === 7) { // Extension: format(2) extType(2) extOffset(4)
+                    if ($subOff + 8 > $len) {
+                        continue;
+                    }
+                    $realType = $this->u16($subOff + 2);
+                    $realOff = $subOff + $this->u32($subOff + 4);
+                }
+                if ($realType === 4) {
+                    $this->parseLigatureSubst($realOff);
+                }
+            }
+        }
+    }
+
+    /** LigatureSubstFormat1 を解析し、2成分の合字を $this->liga に積む */
+    private function parseLigatureSubst(int $off): void
+    {
+        $len = strlen($this->data);
+        if ($off + 6 > $len || $this->u16($off) !== 1) {
+            return;
+        }
+        $coverage = $this->parseCoverage($off + $this->u16($off + 2)); // index => 先頭gid
+        $ligSetCount = $this->u16($off + 4);
+        for ($i = 0; $i < $ligSetCount; $i++) {
+            $lso = $off + 6 + $i * 2;
+            if ($lso + 2 > $len || !isset($coverage[$i])) {
+                continue;
+            }
+            $first = $coverage[$i];
+            $ligSetOff = $off + $this->u16($lso);
+            if ($ligSetOff + 2 > $len) {
+                continue;
+            }
+            $ligCount = $this->u16($ligSetOff);
+            for ($j = 0; $j < $ligCount; $j++) {
+                $lo = $ligSetOff + 2 + $j * 2;
+                if ($lo + 2 > $len) {
+                    break;
+                }
+                $ligOff = $ligSetOff + $this->u16($lo);
+                if ($ligOff + 6 > $len) {
+                    continue;
+                }
+                $ligGlyph = $this->u16($ligOff);
+                $compCount = $this->u16($ligOff + 2);
+                if ($compCount !== 2) {
+                    continue; // 旗は2成分（地域表示文字2つ）だけ扱う
+                }
+                $comp2 = $this->u16($ligOff + 4); // components[1]（先頭以外の1つ）
+                $this->liga[$first . ':' . $comp2] = $ligGlyph;
+            }
+        }
+    }
+
+    /**
+     * Coverage テーブル(format 1/2)を「coverage index => glyphId」に展開する。
+     *
+     * @return array<int,int>
+     */
+    private function parseCoverage(int $off): array
+    {
+        $len = strlen($this->data);
+        if ($off + 4 > $len) {
+            return [];
+        }
+        $fmt = $this->u16($off);
+        $out = [];
+        if ($fmt === 1) {
+            $count = $this->u16($off + 2);
+            for ($i = 0; $i < $count; $i++) {
+                $o = $off + 4 + $i * 2;
+                if ($o + 2 > $len) {
+                    break;
+                }
+                $out[$i] = $this->u16($o);
+            }
+        } elseif ($fmt === 2) {
+            $rangeCount = $this->u16($off + 2);
+            for ($r = 0; $r < $rangeCount; $r++) {
+                $o = $off + 4 + $r * 6;
+                if ($o + 6 > $len) {
+                    break;
+                }
+                $start = $this->u16($o);
+                $end = $this->u16($o + 2);
+                $startCovIdx = $this->u16($o + 4);
+                if ($end < $start || $end - $start > 5000) {
+                    continue;
+                }
+                for ($g = $start; $g <= $end; $g++) {
+                    $out[$startCovIdx + ($g - $start)] = $g;
+                }
+            }
+        }
+        return $out;
     }
 
     /** cmap の (3,10) format 12 サブテーブルから cp→gid を構築 */

@@ -211,10 +211,25 @@ class OcCardImageGenerator
                 $bufFont = null;
             }
         };
-        foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $nc = count($chars);
+        for ($ci = 0; $ci < $nc; $ci++) {
+            $ch = $chars[$ci];
             $cp = mb_ord($ch, 'UTF-8');
             if ($cp === false || $cp < 0x20) {
                 continue;
+            }
+            // 国旗: 地域表示文字(U+1F1E6–U+1F1FF)が2つ続いたら合字グリフ(旗)を1枚の絵文字として描く
+            if ($cp >= 0x1F1E6 && $cp <= 0x1F1FF && $ci + 1 < $nc) {
+                $cp2 = mb_ord($chars[$ci + 1], 'UTF-8');
+                if ($cp2 !== false && $cp2 >= 0x1F1E6 && $cp2 <= 0x1F1FF
+                    && ($flag = $this->emoji->getFlagPng($cp, $cp2)) !== null
+                ) {
+                    $flush();
+                    $segments[] = ['emoji' => true, 'png' => $flag];
+                    $ci++; // 地域表示文字2つを消費
+                    continue;
+                }
             }
             $font = $this->resolveFont($cp, $fontList);
             $png = null;
