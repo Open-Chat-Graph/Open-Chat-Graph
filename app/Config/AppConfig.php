@@ -221,9 +221,6 @@ class AppConfig
 
     const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
 
-    /** 動的OGP画像（/oc/{id}/card）のファイルキャッシュ（配下に {lang}/{id}.png） */
-    const OG_CARD_CACHE_DIR = __DIR__ . '/../../storage/og-card';
-
     /** SQLite ocgraph_sqlapi database path (Japanese only, not multi-language) */
     const SQLITE_OCGRAPH_SQLAPI_DB_PATH = __DIR__ . '/../../storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db';
 

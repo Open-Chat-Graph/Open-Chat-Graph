@@ -45,7 +45,6 @@ storage/exception.log
 storage/transient_errors.queue
 storage/transient_errors.queue.lock
 storage/furigana/**
-storage/og-card/**
 storage/*/api_rate_limit/**
 storage/*/inflight_locks/**
 storage/*/analysis_jobs/*

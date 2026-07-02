@@ -9,35 +9,24 @@ use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\OgImage\OcCardImageGenerator;
 use App\Services\Security\ConcurrentRequestGuard;
 use App\Services\Statistics\StatisticsChartArrayService;
-use Shared\MimimalCmsConfig;
 
 /**
  * ルーム個別ページの動的OGP画像（/oc/{id}/card）。
  *
- * 生成はリクエスト時オンデマンド + ファイルキャッシュ（storage/og-card/{lang}/）。
- * 毎時cronには組み込まない（シェアされた部屋だけ生成されれば十分で、全件事前生成は不要）。
- * SNSクローラー向けのエンドポイントなので X-Robots-Tag: noindex を返す。
+ * リクエストのたびに生成して PNG をそのまま返す（オリジンにはファイルキャッシュを持たない）。
+ * 実キャッシュは Cloudflare のエッジに任せる（強い Cache-Control を返す）。SNSクローラー向けなので
+ * X-Robots-Tag: noindex。
  *
- * 過負荷対策（本番は php-fcgi が実質2本・オリジンは Cloudflare 限定）:
- *  - キャッシュヒットは readfile だけ（生成コストゼロ）。
- *  - 生成（キャッシュミス）は 1IP×同時1本に制限（ConcurrentRequestGuard）。並列列挙で
- *    全ワーカーを生成に張り付かせるのを防ぎ、溢れた分は即デフォルト画像で返す。
- *  - アイコン取得は curl の総時間上限つき（OcCardImageGenerator 側）でワーカー拘束を厳密化。
- *  - 生成時に確率的GCで古いPNGと孤児tmpを掃除し、ディスク肥大を抑える。
+ * オリジン保護（本番は php-fcgi が実質2本）:
+ *  - 生成は 1IP×同時1本に制限（ConcurrentRequestGuard）。CFキャッシュをクエリ改変等で
+ *    バイパスして多数idを並列生成させても、1IPが複数ワーカーを同時に食えないようにする。
+ *    溢れた分は即デフォルト画像で返す。
+ *  - アイコン取得は FileDownloader の timeout/max_duration でワーカー拘束を厳密化。
  */
 class OcCardImageController
 {
-    /** キャッシュ有効期間（秒）。毎時クロールなので6時間で十分新鮮 */
-    private const CACHE_TTL = 21600;
-
-    /** GC: この日数を超えた古いカードは掃除対象（再共有されれば再生成される） */
-    private const GC_MAX_AGE_DAYS = 3;
-
-    /** GC: 生成(キャッシュミス)時にこの確率(1/N)でディレクトリ掃除を実行 */
-    private const GC_PROBABILITY = 50;
-
-    /** 孤児 tmp ファイルを掃除する経過秒（生成中断で残った *.tmp を回収） */
-    private const GC_TMP_MAX_AGE_SEC = 600;
+    /** エッジ／ブラウザのキャッシュ秒数。og:image は日付クエリ(?d=Ymd)で日次ローテするので長めでよい */
+    private const CACHE_MAX_AGE = 43200; // 12h
 
     function index(
         int $open_chat_id,
@@ -46,28 +35,14 @@ class OcCardImageController
         OcCardImageGenerator $generator,
         ConcurrentRequestGuard $guard,
     ) {
-        $lang = str_replace('/', '', MimimalCmsConfig::$urlRoot) ?: 'ja';
-        $cachePath = AppConfig::OG_CARD_CACHE_DIR . "/{$lang}/{$open_chat_id}.png";
-
-        if (is_file($cachePath) && (time() - filemtime($cachePath)) < self::CACHE_TTL) {
-            $this->send($cachePath);
-        }
-
-        // 生成は 1IP×同時1本に制限。並列で来た2本目以降は生成せず即デフォルト画像を返す
-        // （SNSクローラーやスクレイパーが多数idを並列列挙してもワーカーを食い潰さない）。
+        // 生成は 1IP×同時1本に制限。並列で来た2本目以降は生成せず即デフォルト画像を返す。
         if (!$guard->tryAcquire('og-card', getIP())) {
-            $this->sendFallback();
+            $this->sendDefault();
         }
 
         $oc = $ocRepo->getOpenChatById($open_chat_id);
         if (!$oc) {
             return false;
-        }
-
-        // 古いキャッシュの確率的GC。クローラーが全部屋分を舐めてもディスクが無限に膨らまないよう、
-        // 生成のたびに 1/GC_PROBABILITY の確率で古いファイルと孤児tmpを削除する
-        if (random_int(1, self::GC_PROBABILITY) === 1) {
-            $this->gcOldCards(dirname($cachePath));
         }
 
         // 直近30日のメンバー数系列（無い部屋は数値のみのカードになる）
@@ -97,66 +72,43 @@ class OcCardImageController
             }
         }
 
-        $ok = $generator->generate(
-            $cachePath,
+        $png = $generator->renderPng(
             (int)$oc['member'],
             $diffWeek,
             $series,
             imgPreviewUrl($oc['img_url']),
         );
 
-        if (!$ok || !is_file($cachePath)) {
-            // 生成失敗時はデフォルトOGP画像で代替（リンク切れカードを出さない）
-            $this->sendFallback();
+        if ($png === null) {
+            // 生成不可の環境ではデフォルトOGP画像で代替（リンク切れカードを出さない）
+            $this->sendDefault();
         }
 
-        $this->send($cachePath);
+        $this->sendPng($png);
     }
 
-    /**
-     * GC_MAX_AGE_DAYS を超えた古いカードPNGと、生成中断で残った孤児tmpを削除する。
-     * 削除系はこのアプリのハンドラで警告→例外になるため個別に握りつぶす（掃除失敗で500にしない）。
-     */
-    private function gcOldCards(string $dir): void
+    /** 生成したPNGバイト列を、エッジがキャッシュできるヘッダー付きで送出して終了する */
+    private function sendPng(string $bytes): void
     {
-        if (!is_dir($dir)) {
-            return;
-        }
-        $now = time();
-        $pngThreshold = $now - self::GC_MAX_AGE_DAYS * 86400;
-        $tmpThreshold = $now - self::GC_TMP_MAX_AGE_SEC;
-        foreach (glob($dir . '/*') ?: [] as $file) {
-            $threshold = str_ends_with($file, '.tmp') ? $tmpThreshold : $pngThreshold;
-            try {
-                // 別リクエストの GC と競合して glob 後にファイルが消えると filemtime/unlink が
-                // 警告→（このアプリのハンドラで）例外になる。これは想定内の並行削除レースなので
-                // その場合だけ次のファイルへ進む（\ErrorException に限定＝バグは握りつぶさない）。
-                if (filemtime($file) < $threshold) {
-                    unlink($file);
-                }
-            } catch (\ErrorException $e) {
-                continue;
-            }
-        }
-    }
-
-    /** デフォルトOGP画像を送って終了する（生成不可・混雑時のフォールバック） */
-    private function sendFallback(): void
-    {
-        $fallback = AppConfig::ROOT_PATH . 'public/' . AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH;
-        if (is_file($fallback)) {
-            $this->send($fallback);
-        }
+        header('Content-Type: image/png');
+        header('Cache-Control: public, max-age=' . self::CACHE_MAX_AGE);
+        header('X-Robots-Tag: noindex');
+        echo $bytes;
         exit;
     }
 
-    /** PNG をキャッシュヘッダー付きで送出して終了する */
-    private function send(string $path): void
+    /** デフォルトOGP画像を送って終了する（生成不可・混雑時のフォールバック） */
+    private function sendDefault(): void
     {
-        header('Content-Type: image/png');
-        header('Cache-Control: public, max-age=21600');
-        header('X-Robots-Tag: noindex');
-        readfile($path);
+        $fallback = AppConfig::ROOT_PATH . 'public/' . AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH;
+        if (is_file($fallback)) {
+            header('Content-Type: image/png');
+            // フォールバックもエッジ(CF)にはキャッシュさせる。ただし混雑・一時失敗で出たものが
+            // 長時間ピンされないよう、本来のカード(12h)より短いTTLにして早めに再生成へ戻す。
+            header('Cache-Control: public, max-age=600');
+            header('X-Robots-Tag: noindex');
+            readfile($fallback);
+        }
         exit;
     }
 }

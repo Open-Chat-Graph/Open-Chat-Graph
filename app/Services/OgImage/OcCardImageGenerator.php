@@ -42,20 +42,20 @@ class OcCardImageGenerator
     }
 
     /**
-     * カード画像を生成してファイルへ保存する。
+     * カード画像を生成し PNG バイト列を返す（ファイルには書かない＝CDN側でキャッシュする方針）。
+     * 生成できない環境（GD/FreeType無し）では null を返す（呼び出し側でデフォルト画像に退避）。
      *
-     * @param string     $savePath   保存先（.png）。親ディレクトリは自動作成。一時ファイル経由でアトミックに置換
      * @param int        $member     現在メンバー数
      * @param int|null   $diffWeek   直近7日のメンバー増減（不明は null＝非表示）
      * @param int[]      $series     スパークライン用のメンバー数系列（日付昇順・30日程度、空なら非表示）
      * @param ?string    $iconUrl    部屋アイコンURL（取得失敗・null はプレースホルダ円）
      */
-    public function generate(string $savePath, int $member, ?int $diffWeek, array $series, ?string $iconUrl): bool
+    public function renderPng(int $member, ?int $diffWeek, array $series, ?string $iconUrl): ?string
     {
         // 描画能力を事前に control-flow で判定する（例外に頼らない）。
         // FreeType 関数(imagettftext)まで確認するのは、GD が FreeType 無しビルドだと
         // imagettftext が警告→（このアプリのハンドラで）例外になるため。
-        // ここを通れば通常運用で render() は例外を投げない設計（外部アイコンの取得/デコードだけは
+        // ここを通れば通常運用で以降は例外を投げない設計（外部アイコンの取得/デコードだけは
         // drawIcon 内で個別に扱う）。想定外の例外は握りつぶさず表に出す（バグを隠さない）。
         if (
             !function_exists('imagecreatetruecolor')
@@ -63,7 +63,7 @@ class OcCardImageGenerator
             || !is_file($this->fontBold)
             || !is_file($this->fontRegular)
         ) {
-            return false;
+            return null;
         }
 
         $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
@@ -122,23 +122,10 @@ class OcCardImageGenerator
         $bw = abs($bbox[4] - $bbox[0]);
         imagettftext($im, $bs, 0, self::WIDTH - $bw - 56, self::HEIGHT - 44, $sub, $this->fontRegular, $brand);
 
-        // --- 保存（アトミック） ---
-        // mkdir はレース時に警告→例外になるため、try/catch 済みの mkdirIfNotExists を使う。
-        mkdirIfNotExists($dir = dirname($savePath));
-
-        // tmp 名は pid で一意なので他プロセスと競合しない。imagepng/rename が失敗したときだけ
-        // 自分の残骸を消す（成功時は rename 済みで tmp は無い）。例外は握りつぶさない。
-        $tmp = $savePath . '.' . getmypid() . '.tmp';
-        try {
-            if (!imagepng($im, $tmp, 6)) {
-                return false;
-            }
-            return rename($tmp, $savePath);
-        } finally {
-            if (is_file($tmp)) {
-                unlink($tmp);
-            }
-        }
+        // --- PNG をバイト列で返す（ファイルには書かない） ---
+        ob_start();
+        imagepng($im, null, 6);
+        return ob_get_clean() ?: null;
     }
 
     /**
