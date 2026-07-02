@@ -22,6 +22,12 @@ class OcCardImageController
     /** キャッシュ有効期間（秒）。毎時クロールなので6時間で十分新鮮 */
     private const CACHE_TTL = 21600;
 
+    /** GC: この日数を超えた古いカードは掃除対象（再共有されれば再生成される） */
+    private const GC_MAX_AGE_DAYS = 7;
+
+    /** GC: 生成(キャッシュミス)時にこの確率(1/N)でディレクトリ掃除を実行 */
+    private const GC_PROBABILITY = 50;
+
     function index(
         int $open_chat_id,
         OpenChatPageRepositoryInterface $ocRepo,
@@ -38,6 +44,12 @@ class OcCardImageController
         $oc = $ocRepo->getOpenChatById($open_chat_id);
         if (!$oc) {
             return false;
+        }
+
+        // 古いキャッシュの確率的GC。クローラーが全部屋分を舐めてもディスクが無限に膨らまないよう、
+        // 生成のたびに 1/GC_PROBABILITY の確率で GC_MAX_AGE_DAYS 超のファイルを削除する
+        if (random_int(1, self::GC_PROBABILITY) === 1) {
+            $this->gcOldCards(dirname($cachePath));
         }
 
         // 直近30日のメンバー数系列（無い部屋は数値のみのカードになる）
@@ -79,6 +91,20 @@ class OcCardImageController
         }
 
         $this->send($cachePath);
+    }
+
+    /** GC_MAX_AGE_DAYS を超えた古いカードPNGを削除する */
+    private function gcOldCards(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        $threshold = time() - self::GC_MAX_AGE_DAYS * 86400;
+        foreach (glob($dir . '/*.png') ?: [] as $file) {
+            if (@filemtime($file) < $threshold) {
+                @unlink($file);
+            }
+        }
     }
 
     /** PNG をキャッシュヘッダー付きで送出して終了する */

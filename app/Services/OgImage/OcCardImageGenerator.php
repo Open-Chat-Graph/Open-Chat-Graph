@@ -109,12 +109,10 @@ class OcCardImageGenerator
         // --- 保存（アトミック） ---
         $dir = dirname($savePath);
         if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
-            imagedestroy($im);
             return false;
         }
         $tmp = $savePath . '.' . getmypid() . '.tmp';
         $ok = imagepng($im, $tmp, 6);
-        imagedestroy($im);
         if (!$ok) {
             @unlink($tmp);
             return false;
@@ -207,7 +205,6 @@ class OcCardImageGenerator
         // 正方形へリサイズ
         $sq = imagecreatetruecolor($size, $size);
         imagecopyresampled($sq, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
-        imagedestroy($src);
 
         // 円形マスク: 円の外側を背景色で塗ってから転写（アンチエイリアスは簡易）
         $mask = imagecreatetruecolor($size, $size);
@@ -224,7 +221,5 @@ class OcCardImageGenerator
                 imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
             }
         }
-        imagedestroy($sq);
-        imagedestroy($mask);
     }
 }
