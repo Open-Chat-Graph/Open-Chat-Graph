@@ -73,6 +73,7 @@ class OcCardImageController
         }
 
         $png = $generator->renderPng(
+            (string)$oc['name'],
             (int)$oc['member'],
             $diffWeek,
             $series,
