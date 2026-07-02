@@ -31,12 +31,15 @@ class OcCardImageGenerator
 
     private string $fontBold;
     private string $fontMedium;
+    private NotoColorEmojiReader $emoji;
 
     public function __construct(
         private FileDownloader $fileDownloader,
     ) {
-        $this->fontBold = __DIR__ . '/../../../storage/font/mgenplus-1c-bold.ttf';
-        $this->fontMedium = __DIR__ . '/../../../storage/font/mgenplus-1p-medium.ttf';
+        $dir = __DIR__ . '/../../../storage/font';
+        $this->fontBold = $dir . '/mgenplus-1c-bold.ttf';
+        $this->fontMedium = $dir . '/mgenplus-1p-medium.ttf';
+        $this->emoji = new NotoColorEmojiReader($dir . '/NotoColorEmoji.ttf');
     }
 
     /**
@@ -106,13 +109,8 @@ class OcCardImageGenerator
             $this->drawText($im, $growth, $rightX + $advance + 24, $headY, $this->fontBold, 30, $isUp ? $green : $red);
         }
 
-        // --- タイトル: 部屋名（最大2行・折り返し・省略） ---
-        $lines = $this->wrapLines($name, $this->fontBold, 50, $rightEdge - $rightX, 2);
-        $titleTop = $headY + 30;
-        $lineHeight = 66;
-        foreach ($lines as $i => $line) {
-            $this->drawText($im, $line, $rightX, $titleTop + $lineHeight * ($i + 1), $this->fontBold, 50, $white);
-        }
+        // --- タイトル: 部屋名（最大2行・折り返し・省略。テキスト=mgenplus / 絵文字=カラーPNG合成） ---
+        $this->drawTitle($im, $name, $rightX, $headY + 30, $rightEdge - $rightX, 50, 66, 2, $white);
 
         // --- ブランドフッター（右下） ---
         $brand = 'openchat-review.me';
@@ -140,6 +138,245 @@ class OcCardImageGenerator
         return $box[2] - $box[0]; // 送り幅（おおよそ）
     }
 
+    /**
+     * 部屋名タイトルを描く。1文字ずつ「テキスト(mgenplus)」か「カラー絵文字(NotoColorEmoji のPNG)」に
+     * 振り分け、$maxWidth で折り返し、$maxLines 行に収める（溢れは末尾を … で省略）。
+     * フォント/絵文字どちらでも出せない文字はスキップ（豆腐を出さない）。
+     */
+    private function drawTitle(\GdImage $im, string $name, int $x, int $topY, int $maxWidth, int $size, int $lineHeight, int $maxLines, int $color): void
+    {
+        $ranges = $this->supportedRanges(); // テキスト用フォントの対応コードポイント
+
+        // 1) トークン化: 各文字を text / emoji に分類し、送り幅を測る（出せない文字は捨てる）
+        $emojiW = (int)round($size * 1.02);
+        $tokens = [];
+        foreach (preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
+            $cp = mb_ord($ch, 'UTF-8');
+            if ($cp === false || $cp < 0x20) {
+                continue;
+            }
+            if ($ranges === null || $this->cpInRanges($cp, $ranges)) {
+                // テキスト文字。左サイドベアリング(box[0])を控えておき、描画時に $cx-x0 で ink を揃える
+                $box = imagettfbbox($size, 0, $this->fontBold, $ch);
+                $tokens[] = ['emoji' => false, 'ch' => $ch, 'w' => $box[2] - $box[0], 'x0' => $box[0]];
+            } elseif (($png = $this->emoji->getPng($cp)) !== null) {
+                $tokens[] = ['emoji' => true, 'png' => $png, 'w' => $emojiW];
+            }
+            // どちらでも出せない文字はスキップ
+        }
+
+        // 2) 折り返し（貪欲）。$maxLines を超えたら最終行を … で省略
+        $lines = [[]];
+        $lineW = 0;
+        $overflow = false;
+        foreach ($tokens as $tk) {
+            if ($lineW > 0 && $lineW + $tk['w'] > $maxWidth) {
+                if (count($lines) >= $maxLines) {
+                    $overflow = true;
+                    break;
+                }
+                $lines[] = [];
+                $lineW = 0;
+            }
+            $lines[count($lines) - 1][] = $tk;
+            $lineW += $tk['w'];
+        }
+        if ($overflow) {
+            $ellipsisW = $this->textWidth('…', $this->fontBold, $size);
+            $last = &$lines[count($lines) - 1];
+            $w = array_sum(array_column($last, 'w'));
+            while ($last && $w + $ellipsisW > $maxWidth) {
+                $w -= array_pop($last)['w'];
+            }
+            $ebox = imagettfbbox($size, 0, $this->fontBold, '…');
+            $last[] = ['emoji' => false, 'ch' => '…', 'w' => $ellipsisW, 'x0' => $ebox[0]];
+            unset($last);
+        }
+
+        // 3) 描画
+        imagealphablending($im, true);
+        foreach ($lines as $li => $line) {
+            $baseY = $topY + $lineHeight * ($li + 1);
+            $cx = $x;
+            foreach ($line as $tk) {
+                if ($tk['emoji']) {
+                    $this->composeEmoji($im, $tk['png'], $cx, $baseY - $size, $emojiW);
+                } else {
+                    // ink の左端が $cx に来るよう左サイドベアリングぶん戻して描く
+                    imagettftext($im, $size, 0, $cx - $tk['x0'], $baseY, $color, $this->fontBold, $tk['ch']);
+                }
+                $cx += $tk['w'];
+            }
+        }
+    }
+
+    /** カラー絵文字PNG(NotoColorEmoji由来)を $size 四方に縮小してアルファ合成する。ベースライン合わせで少し下げる。 */
+    private function composeEmoji(\GdImage $im, string $png, int $x, int $topY, int $size): void
+    {
+        try {
+            $src = imagecreatefromstring($png);
+        } catch (\ErrorException $e) {
+            return; // 想定外の壊れ画像はスキップ（豆腐は出さない）
+        }
+        if ($src === false) {
+            return;
+        }
+        $sw = imagesx($src);
+        $sh = imagesy($src);
+        $dh = (int)round($size * $sh / max(1, $sw)); // アスペクト維持
+        // テキストのベースライン(=topY+size)に対し、少し持ち上げてキャップ高に合わせる
+        $dy = $topY + (int)round($size * 0.12);
+        imagecopyresampled($im, $src, $x, $dy, 0, 0, $size, $dh, $sw, $sh);
+    }
+
+    /** タイトル用フォントの cmap から「対応コードポイントの範囲リスト」を返す（プロセス内キャッシュ） */
+    private function supportedRanges(): ?array
+    {
+        static $cache = null;
+        static $loaded = false;
+        if ($loaded) {
+            return $cache;
+        }
+        $loaded = true;
+        $cache = $this->readCmapRanges($this->fontBold);
+        return $cache;
+    }
+
+    /** @param array<int,array{0:int,1:int}> $ranges 昇順ソート済みの [start,end] 範囲 */
+    private function cpInRanges(int $cp, array $ranges): bool
+    {
+        $lo = 0;
+        $hi = count($ranges) - 1;
+        while ($lo <= $hi) {
+            $mid = intdiv($lo + $hi, 2);
+            if ($cp < $ranges[$mid][0]) {
+                $hi = $mid - 1;
+            } elseif ($cp > $ranges[$mid][1]) {
+                $lo = $mid + 1;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * TTF の cmap テーブルを読み、対応コードポイントの [start,end] 範囲リスト（昇順）を返す。
+     * 必要な部分だけ fseek/fread で読む（5MB 全読みを避ける）。解析できなければ null。
+     * format 4(BMP) / 12(全域) の Unicode サブテーブルに対応。
+     *
+     * @return array<int,array{0:int,1:int}>|null
+     */
+    private function readCmapRanges(string $path): ?array
+    {
+        $fp = @fopen($path, 'rb');
+        if ($fp === false) {
+            return null;
+        }
+        try {
+            $u16 = fn(string $b, int $o) => (ord($b[$o]) << 8) | ord($b[$o + 1]);
+            $u32 = fn(string $b, int $o) => (ord($b[$o]) << 24) | (ord($b[$o + 1]) << 16) | (ord($b[$o + 2]) << 8) | ord($b[$o + 3]);
+
+            $head = fread($fp, 12);
+            if (strlen($head) < 12) {
+                return null;
+            }
+            $numTables = $u16($head, 4);
+            $records = fread($fp, $numTables * 16);
+            $cmapOff = null;
+            for ($i = 0; $i < $numTables; $i++) {
+                $rec = substr($records, $i * 16, 16);
+                if (strlen($rec) < 16) {
+                    break;
+                }
+                if (substr($rec, 0, 4) === 'cmap') {
+                    $cmapOff = $u32($rec, 8);
+                    break;
+                }
+            }
+            if ($cmapOff === null) {
+                return null;
+            }
+
+            fseek($fp, $cmapOff);
+            $ch = fread($fp, 4);
+            if (strlen($ch) < 4) {
+                return null;
+            }
+            $numSub = $u16($ch, 2);
+            $subRecs = fread($fp, $numSub * 8);
+            $bestOff = null;
+            $bestScore = -1;
+            for ($i = 0; $i < $numSub; $i++) {
+                $r = substr($subRecs, $i * 8, 8);
+                if (strlen($r) < 8) {
+                    break;
+                }
+                $pid = $u16($r, 0);
+                $eid = $u16($r, 2);
+                $off = $u32($r, 4);
+                $score = ($pid === 3 && $eid === 10) ? 4
+                    : (($pid === 3 && $eid === 1) ? 3
+                    : (($pid === 0) ? 2
+                    : (($pid === 3 && $eid === 0) ? 1 : 0)));
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $bestOff = $cmapOff + $off;
+                }
+            }
+            if ($bestOff === null) {
+                return null;
+            }
+
+            fseek($fp, $bestOff);
+            $fmtBuf = fread($fp, 2);
+            if (strlen($fmtBuf) < 2) {
+                return null;
+            }
+            $format = $u16($fmtBuf, 0);
+            $ranges = [];
+
+            if ($format === 4) {
+                $hdr = fread($fp, 12); // length,language,segCountX2,searchRange,entrySelector,rangeShift
+                $segX2 = $u16($hdr, 4);
+                $segCount = intdiv($segX2, 2);
+                $endCodes = fread($fp, $segX2);
+                fread($fp, 2); // reservedPad
+                $startCodes = fread($fp, $segX2);
+                for ($s = 0; $s < $segCount; $s++) {
+                    $end = $u16($endCodes, $s * 2);
+                    $start = $u16($startCodes, $s * 2);
+                    if ($start === 0xFFFF || $start > $end) {
+                        continue;
+                    }
+                    $ranges[] = [$start, $end];
+                }
+            } elseif ($format === 12) {
+                $hdr = fread($fp, 14); // reserved,length,language,nGroups
+                $nGroups = $u32($hdr, 10);
+                $nGroups = min($nGroups, 200000); // 安全上限
+                $groups = fread($fp, $nGroups * 12);
+                for ($g = 0; $g < $nGroups; $g++) {
+                    $o = $g * 12;
+                    if ($o + 8 > strlen($groups)) {
+                        break;
+                    }
+                    $ranges[] = [$u32($groups, $o), $u32($groups, $o + 4)];
+                }
+            } else {
+                return null;
+            }
+
+            if (!$ranges) {
+                return null;
+            }
+            usort($ranges, fn($a, $b) => $a[0] <=> $b[0]);
+            return $ranges;
+        } finally {
+            fclose($fp);
+        }
+    }
+
     /** テキストの描画幅（px）を返す */
     private function textWidth(string $text, string $font, int $size): int
     {
@@ -148,46 +385,6 @@ class OcCardImageGenerator
         }
         $box = imagettfbbox($size, 0, $font, $text);
         return $box[2] - $box[0];
-    }
-
-    /**
-     * テキストを幅 $maxWidth で文字単位に折り返し、最大 $maxLines 行に収める。
-     * 収まらない場合は最終行の末尾を「…」で省略する。
-     *
-     * @return string[] 各行の文字列（最大 $maxLines 要素）
-     */
-    private function wrapLines(string $text, string $font, int $size, int $maxWidth, int $maxLines): array
-    {
-        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');
-        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        $lines = [];
-        $cur = '';
-        foreach ($chars as $c) {
-            $cand = $cur . $c;
-            if ($cur !== '' && $this->textWidth($cand, $font, $size) > $maxWidth) {
-                $lines[] = $cur;
-                $cur = $c;
-            } else {
-                $cur = $cand;
-            }
-        }
-        if ($cur !== '') {
-            $lines[] = $cur;
-        }
-
-        if (count($lines) <= $maxLines) {
-            return $lines;
-        }
-
-        // 溢れた: 先頭 maxLines 行だけ残し、最終行を「…」で省略する
-        $kept = array_slice($lines, 0, $maxLines);
-        $last = $kept[$maxLines - 1];
-        while ($last !== '' && $this->textWidth($last . '…', $font, $size) > $maxWidth) {
-            $last = mb_substr($last, 0, mb_strlen($last) - 1);
-        }
-        $kept[$maxLines - 1] = $last . '…';
-        return $kept;
     }
 
     /**
