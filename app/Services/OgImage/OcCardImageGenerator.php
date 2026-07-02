@@ -265,22 +265,26 @@ class OcCardImageGenerator
             $rest = $seg['str'];
             $font = $seg['font'];
             while ($rest !== '' && !$overflow) {
-                $prefix = $this->fitPrefix($rest, $font, $size, $maxWidth - $lineW - $gap);
+                $lead = $lineW > 0 ? $gap : 0; // 行頭は詰め、途中はセグメント間すき間を入れる
+                // 英単語を途中で割らない。入らなければ '' が返るので改行して再挑戦（行頭でも入らない
+                // 超長単語だけは文字分割にフォールバック）
+                $prefix = $this->fitPrefix($rest, $font, $size, $maxWidth - $lineW - $lead, $lineW === 0);
                 if ($prefix === '') {
-                    if ($lineW === 0) {
-                        $prefix = mb_substr($rest, 0, 1);
-                    } elseif (!$newline()) {
+                    if (!$newline()) {
                         break;
-                    } else {
-                        continue;
                     }
+                    $rest = ltrim($rest, ' ');
+                    continue;
                 }
-                $w = $this->advanceWidth($prefix, $font, $size) + $gap;
-                $lines[count($lines) - 1][] = ['emoji' => false, 'str' => $prefix, 'font' => $font, 'w' => $w];
+                $w = $this->advanceWidth($prefix, $font, $size) + $lead;
+                $lines[count($lines) - 1][] = ['emoji' => false, 'str' => rtrim($prefix), 'font' => $font, 'w' => $w];
                 $lineW += $w;
                 $rest = mb_substr($rest, mb_strlen($prefix));
-                if ($rest !== '' && !$newline()) {
-                    break;
+                if ($rest !== '') {
+                    if (!$newline()) {
+                        break;
+                    }
+                    $rest = ltrim($rest, ' ');
                 }
             }
         }
@@ -307,23 +311,60 @@ class OcCardImageGenerator
         return imagettfbbox($size, 0, $font, $text)[2];
     }
 
-    /** $text の先頭から、送り幅が $maxWidth に収まる最長プレフィックスを返す（入らなければ ''） */
-    private function fitPrefix(string $text, string $font, int $size, int $maxWidth): string
+    /**
+     * $text の先頭から、送り幅が $maxWidth に収まる最長プレフィックスを「区切り可能位置」で返す。
+     * 英数字が連続する“単語”の途中では切らない（前の区切りまで戻す）。日本語などは任意位置で切れる。
+     * 区切り位置では1つも入らない場合は '' を返す（呼び出し側が改行）。ただし $allowCharBreak=true
+     * （行頭で、1単語が1行より長い等）のときは文字単位で入るだけ入れる（最低1文字・無限ループ防止）。
+     */
+    private function fitPrefix(string $text, string $font, int $size, int $maxWidth, bool $allowCharBreak): string
     {
         if ($maxWidth <= 0) {
+            return $allowCharBreak ? mb_substr($text, 0, 1) : '';
+        }
+        $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $n = count($chars);
+        if ($n === 0) {
             return '';
         }
-        $lo = 0;
-        $hi = mb_strlen($text);
-        while ($lo < $hi) {
-            $mid = intdiv($lo + $hi + 1, 2);
-            if ($this->advanceWidth(mb_substr($text, 0, $mid), $font, $size) <= $maxWidth) {
-                $lo = $mid;
-            } else {
-                $hi = $mid - 1;
+
+        $best = '';
+        $acc = '';
+        for ($i = 0; $i < $n; $i++) {
+            $acc .= $chars[$i];
+            if ($this->advanceWidth($acc, $font, $size) > $maxWidth) {
+                break;
+            }
+            // 区切り可能: 末尾、または「今の文字と次の文字が両方とも英数字」ではない位置
+            $breakable = ($i === $n - 1)
+                || !($this->isWordChar($chars[$i]) && $this->isWordChar($chars[$i + 1]));
+            if ($breakable) {
+                $best = $acc;
             }
         }
-        return $lo === 0 ? '' : mb_substr($text, 0, $lo);
+        if ($best !== '') {
+            return $best;
+        }
+
+        if (!$allowCharBreak) {
+            return '';
+        }
+        // 超長単語: 文字単位で入るだけ（最低1文字）
+        $acc = '';
+        for ($i = 0; $i < $n; $i++) {
+            $t = $acc . $chars[$i];
+            if ($this->advanceWidth($t, $font, $size) > $maxWidth) {
+                break;
+            }
+            $acc = $t;
+        }
+        return $acc === '' ? $chars[0] : $acc;
+    }
+
+    /** 英数字（半角 A-Z a-z 0-9）＝単語内文字か。連続する単語内文字の間では改行しない。 */
+    private function isWordChar(string $ch): bool
+    {
+        return $ch >= '0' && $ch <= 'z' && preg_match('/[A-Za-z0-9]/', $ch) === 1;
     }
 
     /** 記号フォント(NotoSansSymbols2)が持つコードポイント範囲（プロセス内キャッシュ） */
