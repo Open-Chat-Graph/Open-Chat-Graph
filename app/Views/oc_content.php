@@ -166,17 +166,17 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <button type="button" class="oc-share__btn oc-share__btn--sub" id="oc-share-native" hidden aria-label="<?php echo t('共有') ?>">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2c0 .2-.1.4-.1.6a3 3 0 1 0 3-2.9z"/></svg>
         </button>
-        <a class="oc-share__btn oc-share__btn--line" href="https://social-plugins.line.me/lineit/share?url=<?php echo urlencode(url('oc', $oc['id'])) ?>" target="_blank" rel="noopener" aria-label="LINE">
+        <a class="oc-share__btn oc-share__btn--line" id="oc-share-line" href="https://social-plugins.line.me/lineit/share?url=<?php echo urlencode(url('oc', $oc['id'])) ?>" target="_blank" rel="noopener" aria-label="LINE">
           <img src="<?php echo fileUrl('assets/line.svg', urlRoot: '') ?>" alt="" width="44" height="44">
         </a>
-        <a class="oc-share__btn oc-share__btn--x" href="https://x.com/intent/post?url=<?php echo urlencode(url('oc', $oc['id'])) ?>&amp;text=<?php echo urlencode(htmlspecialchars_decode((string)$oc['name'])) ?>" target="_blank" rel="noopener" aria-label="X">
+        <a class="oc-share__btn oc-share__btn--x" id="oc-share-x" href="https://x.com/intent/post?text=<?php echo urlencode(htmlspecialchars_decode((string)$oc['name']) . "\n" . url('oc', $oc['id']) . "\n") ?>" target="_blank" rel="noopener" aria-label="X">
           <svg viewBox="0 0 240 240" aria-hidden="true"><path d="M88.2 60.66L169.46 178.81H151.42L70.16 60.66H88.2ZM92.93 51.66H53.04L146.68 187.81H186.57L92.93 51.66Z"/><path d="M132.54 109.25L182.24 51.66H170.99L127.55 101.99L132.54 109.25Z"/><path d="M105.36 127.72L53.04 188.34H64.3L110.35 134.98L105.36 127.72Z"/></svg>
         </a>
         <button type="button" class="oc-share__btn oc-share__btn--sub" id="oc-share-copy" aria-label="<?php echo t('リンクをコピー') ?>">
-          <svg class="oc-share__ico-copy" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
-          <svg class="oc-share__ico-done" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg>
         </button>
       </div>
+      <div class="oc-share-toast" id="oc-share-toast" role="status" aria-live="polite"><?php echo t('コピーしました') ?></div>
       <style>
         .oc-share { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: var(--sp-section-gap) 1rem 0; }
         .oc-share__label { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--c-text-4, #8b95a7); }
@@ -185,39 +185,65 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         .oc-share__btn:active { transform: translateY(0); }
         .oc-share__btn:focus-visible { outline: 2px solid var(--c-grad-blue-btn, #5a8cff); outline-offset: 2px; }
         .oc-share__btn svg { width: 22px; height: 22px; display: block; }
-        /* hidden 属性が上の display:block に負けないよう明示（コピー完了アイコンの初期非表示用） */
-        .oc-share__btn svg[hidden] { display: none; }
         .oc-share__btn--line { background: #06C755; }
-        .oc-share__btn--line img { width: 100%; height: 100%; display: block; }
+        /* LINEアイコンは周囲に緑の余白を残す（円いっぱいに敷くと切り抜き感が強いため縮小して中央寄せ） */
+        .oc-share__btn--line img { width: 68%; height: 68%; display: block; }
         /* X は真っ黒なのでダーク背景で溶ける。薄い枠で輪郭を出す */
         .oc-share__btn--x { background: #000; border: 1px solid rgba(255, 255, 255, .22); }
         .oc-share__btn--x svg { width: 20px; height: 20px; fill: #fff; }
         .oc-share__btn--sub { background: var(--c-surface-2, rgba(127, 127, 127, .14)); border: 1px solid var(--c-border, rgba(127, 127, 127, .24)); }
         .oc-share__btn--sub svg { fill: var(--c-text-3, #c2cad6); }
         .oc-share__btn[hidden] { display: none; }
-        .oc-share__btn--sub.is-done { background: #06C755; border-color: #06C755; }
-        .oc-share__btn--sub.is-done svg { fill: #fff; }
+        /* コピー完了の軽いトースト（すぐ消える） */
+        .oc-share-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(10px); z-index: 9999; padding: 10px 18px; border-radius: 10px; background: rgba(22, 26, 42, .96); color: #fff; font-size: 14px; font-weight: 700; box-shadow: 0 8px 28px rgba(0, 0, 0, .38); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+        .oc-share-toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @media (prefers-reduced-motion: reduce) { .oc-share-toast { transition: opacity .18s ease; transform: translateX(-50%); } }
       </style>
       <script>
         (function () {
           var url = <?php echo json_encode(url('oc', $oc['id'])) ?>;
+          var d = (window.dataLayer = window.dataLayer || []);
+          var ocId = <?php echo (int)$oc['id'] ?>;
+          var ocName = <?php echo json_encode((string)$oc['name'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;
+          // 共有ボタン押下を GA4(GTM dataLayer経由)で計測。method で LINE/X/コピー/OS共有 を区別
+          function track(method) {
+            try { d.push({ event: 'share', method: method, oc_id: ocId, oc_name: ocName }); } catch (e) {}
+          }
+          // 共有本文は「ページタイトル(サイト名入り)＋改行＋URL」で統一
+          function shareText() { return document.title + '\n' + url; }
+
+          var xBtn = document.getElementById('oc-share-x');
+          if (xBtn) {
+            // X はページタイトルを使い、URLの後にも改行を入れる（本文だけで組み立てる）
+            xBtn.href = 'https://x.com/intent/post?text=' + encodeURIComponent(shareText() + '\n');
+            xBtn.addEventListener('click', function () { track('x'); });
+          }
+          var lineBtn = document.getElementById('oc-share-line');
+          if (lineBtn) { lineBtn.addEventListener('click', function () { track('line'); }); }
+
           var nativeBtn = document.getElementById('oc-share-native');
           if (navigator.share) {
             nativeBtn.hidden = false;
-            nativeBtn.addEventListener('click', function () { navigator.share({ title: document.title, url: url }).catch(function () {}); });
+            nativeBtn.addEventListener('click', function () {
+              track('native');
+              navigator.share({ title: document.title, url: url }).catch(function () {});
+            });
+          }
+
+          var toast = document.getElementById('oc-share-toast');
+          var toastTimer;
+          function showToast() {
+            if (!toast) return;
+            toast.classList.add('is-visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { toast.classList.remove('is-visible'); }, 1600);
           }
           var copyBtn = document.getElementById('oc-share-copy');
           copyBtn.addEventListener('click', function () {
             if (!navigator.clipboard) return;
-            navigator.clipboard.writeText(url).then(function () {
-              copyBtn.classList.add('is-done');
-              copyBtn.querySelector('.oc-share__ico-copy').hidden = true;
-              copyBtn.querySelector('.oc-share__ico-done').hidden = false;
-              setTimeout(function () {
-                copyBtn.classList.remove('is-done');
-                copyBtn.querySelector('.oc-share__ico-copy').hidden = false;
-                copyBtn.querySelector('.oc-share__ico-done').hidden = true;
-              }, 1600);
+            navigator.clipboard.writeText(shareText()).then(function () {
+              track('copy');
+              showToast();
             }).catch(function () {});
           });
         })();
