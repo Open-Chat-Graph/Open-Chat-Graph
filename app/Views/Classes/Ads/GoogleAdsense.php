@@ -141,9 +141,12 @@ class GoogleAdsense
                 // 既にこのセッションでオファーウォールを見ていれば、最初からアンカーを抑制
                 try { if (sessionStorage.getItem(KEY)) suppress(); } catch (e) {}
 
-                // 画面を覆うサイズの Funding Choices メッセージ（=オファーウォール）が出ているか
+                // 画面を覆うサイズの Funding Choices オファーウォールが出ているか。
+                // 実際のオファーウォールは .fc-monetization-dialog-container / .fc-dialog-overlay を
+                // 全画面で描く（本番の実DOMを確認済み。.fc-message-root ではない）。将来のマークアップ
+                // 変更に備え旧セレクタもフォールバックとして残す。
                 function offerwallShown() {
-                    var els = document.querySelectorAll('.fc-message-root, iframe[src*="fundingchoicesmessages"]');
+                    var els = document.querySelectorAll('.fc-monetization-dialog-container, .fc-dialog-overlay, .fc-message-root, iframe[src*="fundingchoicesmessages"]');
                     for (var i = 0; i < els.length; i++) {
                         var r = els[i].getBoundingClientRect();
                         if (r.width >= window.innerWidth * 0.6 && r.height >= window.innerHeight * 0.6) return true;
