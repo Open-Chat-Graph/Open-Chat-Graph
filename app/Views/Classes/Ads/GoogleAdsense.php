@@ -111,5 +111,57 @@ class GoogleAdsense
         echo <<<EOT
         <script async {$dataOverlaysAttr}id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
         EOT;
+
+        self::anchorGuard();
+    }
+
+    /**
+     * オファーウォール（全画面メッセージ）表示中だけアンカー広告を隠す。
+     *
+     * 全画面のオファーウォールとアンカー広告が同時に出ると重なって操作を阻害するため、
+     * Funding Choices が描画するオファーウォールのコンテナ（.fc-message-root /
+     * fundingchoicesmessages の iframe）が「画面を覆うサイズで存在する間」だけ、
+     * アンカー広告（data-anchor-status 属性を持つ ins）を display:none にする。
+     * 閉じられたら即座に復帰。Vignette・記事内広告など他フォーマットには触れない。
+     *
+     * 判定は全てクライアント JS（MutationObserver + rAF で1フレームに1回に集約）で行うため、
+     * サーバが返す HTML は全訪問者で同一＝Cloudflare のエッジキャッシュと無衝突。
+     * 広告ブロック環境では fc スクリプト自体が動かないので何もしない（無害）。
+     */
+    private static function anchorGuard()
+    {
+        echo <<<'EOT'
+        <style>html.oc-ow-open ins.adsbygoogle[data-anchor-status]{display:none !important;}</style>
+        <script>
+            (function () {
+                var root = document.documentElement;
+                function owOpen() {
+                    var el = document.querySelector('.fc-message-root, iframe[src*="fundingchoicesmessages"]');
+                    if (!el) return false;
+                    var r = el.getBoundingClientRect();
+                    return r.width > 200 && r.height > 200;
+                }
+                var scheduled = false;
+                function update() {
+                    scheduled = false;
+                    root.classList.toggle('oc-ow-open', owOpen());
+                }
+                // 連続する mutation を30msに1回の判定へ集約（rAFはバックグラウンドや
+                // headless で発火しないことがあるため使わない）
+                function schedule() {
+                    if (scheduled) return;
+                    scheduled = true;
+                    window.setTimeout(update, 30);
+                }
+                function start() {
+                    new MutationObserver(schedule)
+                        .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+                    schedule();
+                }
+                if (document.body) start();
+                else document.addEventListener('DOMContentLoaded', start);
+            })();
+        </script>
+        EOT;
     }
 }
