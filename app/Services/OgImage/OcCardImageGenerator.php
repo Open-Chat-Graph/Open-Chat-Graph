@@ -9,11 +9,13 @@ use App\Services\Crawler\FileDownloader;
 /**
  * ルーム個別ページ用の動的OGP画像（1200x630 PNG）を GD で生成する。
  *
- * レイアウト: 左に部屋アイコン、その右に「ヘッダー(メンバー数＋7日増減) 1行」＋「部屋名 最大2行
- * （日本語・比例フォント・はみ出しは … で省略）」。下段に30日メンバー数スパークライン。
+ * レイアウト: 左に部屋アイコン、その右に「ヘッダー(メンバー数＋7日増減) 1行」＋「部屋名 最大3行
+ * （多言語・比例フォント・はみ出しは … で省略）」。下段に30日メンバー数スパークライン（両端に開始/
+ * 終了日）。フッター左にサイト名、右にドメイン。ヘッダー文言・サイト名は表示ロケール(ja/tw/th)で翻訳。
  *
- * 日本語描画には Noto Sans CJK JP を storage/font 同梱で使う（本番/ローカルで同一描画）。
- * ラテン・数字も含むので数値・記号も同じフォントで描く。絵文字だけ NotoColorEmoji から合成する。
+ * フォントは storage/font 同梱（本番/ローカルで同一描画）。1文字ずつ「その字を持つ最初のフォント」を
+ * 選ぶ多言語フォールバック: 日本語/中国語/ラテン/数字=Noto CJK JP、タイ語=Noto Sans Thai、絵文字=
+ * NotoColorEmoji のカラーPNG、その他の記号=NotoSansSymbols2。どれも無い字はスキップ（豆腐を出さない）。
  */
 class OcCardImageGenerator
 {
@@ -32,8 +34,13 @@ class OcCardImageGenerator
     /** アイコン取得用UA（クローラーと同一の OpenChatStatsbot 名義） */
     private const ICON_FETCH_UA = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
 
+    /** 太字テキスト用フォント（1文字ごとに先頭から cmap を持つ最初のフォントを採用＝多言語対応） */
     private string $fontBold;
     private string $fontMedium;
+    /** @var string[] タイトル・増減用（Noto CJK JP → Thai の順で1文字ずつフォールバック） */
+    private array $fontsBold;
+    /** @var string[] ヘッダー・フッター用（同上の Regular） */
+    private array $fontsMedium;
     private string $fontSymbol;
     private NotoColorEmojiReader $emoji;
 
@@ -43,6 +50,12 @@ class OcCardImageGenerator
         $dir = __DIR__ . '/../../../storage/font';
         $this->fontBold = $dir . '/NotoSansJP-Bold.ttf';
         $this->fontMedium = $dir . '/NotoSansJP-Regular.ttf';
+        // 多言語フォールバック順: 日本語/中国語/ラテン/数字は Noto CJK JP、タイ語は Noto Sans Thai。
+        // 1文字ずつ「その字を持つ最初のフォント」を採用するので、タイ語混じりの部屋名も豆腐にならない。
+        $thaiBold = $dir . '/NotoSansThai-Bold.ttf';
+        $thaiMedium = $dir . '/NotoSansThai-Regular.ttf';
+        $this->fontsBold = array_values(array_filter([$this->fontBold, $thaiBold], 'is_file'));
+        $this->fontsMedium = array_values(array_filter([$this->fontMedium, $thaiMedium], 'is_file'));
         // 絵文字でない記号（❥ 等の Dingbats など）で Noto CJK にも絵文字にも無いものの受け皿（モノクロ）
         $this->fontSymbol = $dir . '/NotoSansSymbols2.ttf';
         $this->emoji = new NotoColorEmojiReader($dir . '/NotoColorEmoji.ttf');
@@ -52,13 +65,14 @@ class OcCardImageGenerator
      * カード画像を生成し PNG バイト列を返す（ファイルには書かない＝CDN側でキャッシュする方針）。
      * 生成できない環境（GD/FreeType/フォント無し）では null を返す（呼び出し側でデフォルト画像に退避）。
      *
-     * @param string     $name     部屋名（日本語可・最大2行に折り返し、はみ出しは省略）
+     * @param string     $name     部屋名（多言語可・最大3行に折り返し、はみ出しは省略）
      * @param int        $member   現在メンバー数
      * @param int|null   $diffWeek 直近7日のメンバー増減（不明は null＝非表示）
      * @param int[]      $series   スパークライン用のメンバー数系列（日付昇順・30日程度、空なら非表示）
      * @param ?string    $iconUrl  部屋アイコンURL（取得失敗・null はプレースホルダ円）
+     * @param string[]   $dates    $series と同じ並びの日付(Y-m-d)。グラフ両端に開始/終了日を薄く入れる
      */
-    public function renderPng(string $name, int $member, ?int $diffWeek, array $series, ?string $iconUrl): ?string
+    public function renderPng(string $name, int $member, ?int $diffWeek, array $series, ?string $iconUrl, array $dates = []): ?string
     {
         // 描画能力を事前に control-flow で判定する（例外に頼らない）。FreeType 関数まで確認するのは
         // GD が FreeType 無しビルドだと imagettftext が警告→（このアプリのハンドラで）例外になるため。
@@ -93,8 +107,8 @@ class OcCardImageGenerator
         $red = imagecolorallocate($im, 240, 98, 98);
         $accent = imagecolorallocate($im, 88, 148, 255);
 
-        // --- スパークライン（下段・先に描いて他要素を上に重ねる） ---
-        $this->drawSparkline($im, $series, $accent);
+        // --- スパークライン（下段・先に描いて他要素を上に重ねる。両端に開始/終了日を薄く） ---
+        $this->drawSparkline($im, $series, $dates, $accent, $sub);
 
         // --- 部屋アイコン（左上・円形クロップ） ---
         $iconSize = 190;
@@ -105,24 +119,27 @@ class OcCardImageGenerator
         $rightX = $iconX + $iconSize + 40; // = 302
         $rightEdge = self::WIDTH - 72;      // = 1128
 
-        // --- ヘッダー1行目: メンバー数（muted）＋ 7日増減（緑/赤）。上端をアイコン上端に合わせる ---
-        $headHead = 'メンバー ' . number_format($member) . '人';
+        // --- ヘッダー1行目: メンバー数（muted）＋ 7日増減（緑/赤）。上端をアイコン上端に合わせる。
+        //     文言はロケール依存（ja/tw/th）。sprintfT/t が urlRoot を見て翻訳を返す ---
+        $headHead = sprintfT('メンバー %s人', number_format($member));
         $headY = $iconY + 2;
-        $advance = $this->drawText($im, $headHead, $rightX, $headY, $this->fontMedium, 28, $sub);
+        $advance = $this->drawLine($im, $headHead, $rightX, $headY, 28, $sub, $this->fontsMedium);
         if ($diffWeek !== null) {
             $isUp = $diffWeek >= 0;
-            $growth = ($isUp ? '▲ +' : '▼ ') . number_format($diffWeek) . ' / 7日';
-            $this->drawText($im, $growth, $rightX + $advance + 22, $headY, $this->fontBold, 28, $isUp ? $green : $red);
+            $growth = ($isUp ? '▲ +' : '▼ ') . number_format($diffWeek) . ' / ' . t('7日');
+            $this->drawLine($im, $growth, $rightX + $advance + 22, $headY, 28, $isUp ? $green : $red, $this->fontsBold);
         }
 
-        // --- タイトル: 部屋名（最大3行。48pxで収まらなければ自動縮小。テキスト=Noto / 絵文字=カラー / 記号=モノクロ） ---
+        // --- タイトル: 部屋名（最大3行。38pxで収まらなければ自動縮小。テキスト=Noto CJK/Thai / 絵文字=カラー / 記号=モノクロ） ---
         // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
         $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
-        // --- ブランドフッター（右下） ---
+        // --- フッター: 左にサイト名（ロケール依存）、右にドメイン（左下/右下） ---
+        $siteName = t('オプチャグラフ');
+        $this->drawLine($im, $siteName, 72, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
         $brand = 'openchat-review.me';
-        $bw = $this->textWidth($brand, $this->fontMedium, 28);
-        $this->drawText($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 42, $this->fontMedium, 28, $sub);
+        $bw = $this->measureLine($brand, 26, $this->fontsMedium);
+        $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
         ob_start();
@@ -131,34 +148,59 @@ class OcCardImageGenerator
     }
 
     /**
-     * 左上原点・指定サイズでテキストを1行描画し、次の文字の開始 x までの送り幅を返す。
-     * imagettftext はベースライン基準なので、上端 $top から文字高ぶん下げて描く。
+     * 1行テキストを多言語フォールバックで描画し、送り幅を返す（折り返し無し）。ヘッダー/増減/フッター用。
+     * テキスト=フォントリスト（先頭から cmap を持つ最初）、絵文字=カラー、記号=モノクロ記号フォント。
+     * imagettftext はベースライン基準なので、上端 $top から先頭フォントのアセントぶん下げて描く。
+     *
+     * @param string[] $fontList 1文字ずつ先頭から試すフォント（Noto CJK → Thai 等）
      */
-    private function drawText(\GdImage $im, string $text, int $x, int $top, string $font, int $size, int $color): int
+    private function drawLine(\GdImage $im, string $text, int $x, int $top, int $size, int $color, array $fontList): int
     {
-        if ($text === '') {
+        if ($text === '' || !$fontList) {
             return 0;
         }
-        $box = imagettfbbox($size, 0, $font, $text);
-        $ascent = -$box[7]; // ベースラインから上端までの高さ
-        imagettftext($im, $size, 0, $x, $top + $ascent, $color, $font, $text);
-        return $box[2] - $box[0]; // 送り幅（おおよそ）
+        $segments = $this->segmentText($text, $fontList);
+        $baseY = $top + (int)round(-imagettfbbox($size, 0, $fontList[0], 'あ0A')[7]);
+        $emojiW = (int)round($size * 1.14);
+        $cx = $x;
+        imagealphablending($im, true);
+        foreach ($segments as $seg) {
+            if ($seg['emoji']) {
+                $this->composeEmoji($im, $seg['png'], $cx, $baseY - $size, $size);
+                $cx += $emojiW;
+            } else {
+                imagettftext($im, $size, 0, $cx, $baseY, $color, $seg['font'], $seg['str']);
+                $cx += $this->advanceWidth($seg['str'], $seg['font'], $size);
+            }
+        }
+        return $cx - $x;
+    }
+
+    /** drawLine で描いたときの総送り幅（描画せず計測のみ・右寄せ配置の計算用）。 */
+    private function measureLine(string $text, int $size, array $fontList): int
+    {
+        if ($text === '' || !$fontList) {
+            return 0;
+        }
+        $emojiW = (int)round($size * 1.14);
+        $w = 0;
+        foreach ($this->segmentText($text, $fontList) as $seg) {
+            $w += $seg['emoji'] ? $emojiW : $this->advanceWidth($seg['str'], $seg['font'], $size);
+        }
+        return $w;
     }
 
     /**
-     * 部屋名タイトルを描く。「テキスト(Noto)」と「カラー絵文字(NotoColorEmoji のPNG)」を混在させ、
-     * $maxWidth で折り返して $maxLines 行に収める（溢れは末尾を … で省略）。
+     * 文字列を「テキストのラン(同一フォント連続)／カラー絵文字／記号」に分割する（サイズ非依存）。
+     * 1文字ごとに $fontList を先頭から見て cmap を持つ最初のフォントをテキストに採用。無ければカラー絵文字、
+     * それも無ければ記号フォント、どれも無ければスキップ（豆腐を出さない）。連続する同一フォントは1ラン。
      *
-     * テキストは1文字ずつではなく“連続する文字のかたまり(ラン)”を imagettftext で一括描画するため、
-     * フォント本来の字間(カーニング)が保たれる（1文字ずつ描くと字間が詰まる問題を回避）。絵文字で
-     * ランが途切れる。フォントにも絵文字にも無い文字はスキップ（豆腐を出さない）。
+     * @param string[] $fontList
+     * @return array<int,array<string,mixed>>
      */
-    private function drawTitle(\GdImage $im, string $name, int $x, int $topY, int $maxWidth, int $maxSize, int $maxLines, int $color): void
+    private function segmentText(string $text, array $fontList): array
     {
-        // 1) セグメント化（サイズ非依存）: フォールバック（Noto CJK → カラー絵文字 → 記号フォント）で
-        //    振り分け、連続する「同じフォントのテキスト」を1つのラン(文字列)にまとめる。絵文字はランを切る。
-        $textRanges = $this->supportedRanges();
-        $symRanges = $this->supportedSymbolRanges();
+        $symRanges = $this->fontRanges($this->fontSymbol);
         $segments = [];
         $buf = '';
         $bufFont = null;
@@ -169,21 +211,21 @@ class OcCardImageGenerator
                 $bufFont = null;
             }
         };
-        foreach (preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
+        foreach (preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ch) {
             $cp = mb_ord($ch, 'UTF-8');
             if ($cp === false || $cp < 0x20) {
                 continue;
             }
-            $font = null;
+            $font = $this->resolveFont($cp, $fontList);
             $png = null;
-            if ($textRanges === null || $this->cpInRanges($cp, $textRanges)) {
-                $font = $this->fontBold;
-            } elseif (($png = $this->emoji->getPng($cp)) !== null) {
-                // カラー絵文字
-            } elseif ($symRanges !== null && $this->cpInRanges($cp, $symRanges)) {
-                $font = $this->fontSymbol;
-            } else {
-                continue; // どれでも出せない字はスキップ
+            if ($font === null) {
+                if (($png = $this->emoji->getPng($cp)) !== null) {
+                    // カラー絵文字
+                } elseif ($symRanges !== null && $this->cpInRanges($cp, $symRanges)) {
+                    $font = $this->fontSymbol;
+                } else {
+                    continue; // どれでも出せない字はスキップ
+                }
             }
             if ($png !== null) {
                 $flush();
@@ -197,6 +239,50 @@ class OcCardImageGenerator
             }
         }
         $flush();
+        return $segments;
+    }
+
+    /** $cp を持つ最初のフォント（cmap 照合）。cmap 解析不能な主フォントは「持つ」とみなす（豆腐より安全側）。 */
+    private function resolveFont(int $cp, array $fontList): ?string
+    {
+        foreach ($fontList as $i => $font) {
+            $ranges = $this->fontRanges($font);
+            if ($ranges === null) {
+                if ($i === 0) {
+                    return $font; // 主フォントの cmap が読めない環境では主フォントで描画を試みる
+                }
+                continue;
+            }
+            if ($this->cpInRanges($cp, $ranges)) {
+                return $font;
+            }
+        }
+        return null;
+    }
+
+    /** フォントの cmap 対応範囲（パス単位でプロセス内キャッシュ）。読めなければ null。 */
+    private function fontRanges(string $path): ?array
+    {
+        static $cache = [];
+        if (array_key_exists($path, $cache)) {
+            return $cache[$path];
+        }
+        return $cache[$path] = is_file($path) ? $this->readCmapRanges($path) : null;
+    }
+
+    /**
+     * 部屋名タイトルを描く。「テキスト(Noto)」と「カラー絵文字(NotoColorEmoji のPNG)」を混在させ、
+     * $maxWidth で折り返して $maxLines 行に収める（溢れは末尾を … で省略）。
+     *
+     * テキストは1文字ずつではなく“連続する文字のかたまり(ラン)”を imagettftext で一括描画するため、
+     * フォント本来の字間(カーニング)が保たれる（1文字ずつ描くと字間が詰まる問題を回避）。絵文字で
+     * ランが途切れる。フォントにも絵文字にも無い文字はスキップ（豆腐を出さない）。
+     */
+    private function drawTitle(\GdImage $im, string $name, int $x, int $topY, int $maxWidth, int $maxSize, int $maxLines, int $color): void
+    {
+        // 1) セグメント化（サイズ非依存）: 多言語フォントリスト(Noto CJK→Thai)→カラー絵文字→記号フォントで
+        //    振り分け、連続する「同じフォントのテキスト」を1ランにまとめる（絵文字はランを切る）。
+        $segments = $this->segmentText($name, $this->fontsBold);
 
         // 2) フォントサイズを最大から下げ、$maxLines 行に溢れず収まる最大サイズを採用（自動縮小）。
         //    $size と $lines を常に一致させる（下限まで縮めても溢れる場合はその下限レイアウト＝末尾…）
@@ -371,19 +457,6 @@ class OcCardImageGenerator
         return $ch >= '0' && $ch <= 'z' && preg_match('/[A-Za-z0-9]/', $ch) === 1;
     }
 
-    /** 記号フォント(NotoSansSymbols2)が持つコードポイント範囲（プロセス内キャッシュ） */
-    private function supportedSymbolRanges(): ?array
-    {
-        static $cache = null;
-        static $loaded = false;
-        if ($loaded) {
-            return $cache;
-        }
-        $loaded = true;
-        $cache = is_file($this->fontSymbol) ? $this->readCmapRanges($this->fontSymbol) : null;
-        return $cache;
-    }
-
     /** カラー絵文字PNG(NotoColorEmoji由来)を $size 四方に縮小してアルファ合成する。ベースライン合わせで少し下げる。 */
     private function composeEmoji(\GdImage $im, string $png, int $x, int $topY, int $size): void
     {
@@ -401,19 +474,6 @@ class OcCardImageGenerator
         // テキストのベースライン(=topY+size)に対し、少し持ち上げてキャップ高に合わせる
         $dy = $topY + (int)round($size * 0.12);
         imagecopyresampled($im, $src, $x, $dy, 0, 0, $size, $dh, $sw, $sh);
-    }
-
-    /** タイトル用フォントの cmap から「対応コードポイントの範囲リスト」を返す（プロセス内キャッシュ） */
-    private function supportedRanges(): ?array
-    {
-        static $cache = null;
-        static $loaded = false;
-        if ($loaded) {
-            return $cache;
-        }
-        $loaded = true;
-        $cache = $this->readCmapRanges($this->fontBold);
-        return $cache;
     }
 
     /** @param array<int,array{0:int,1:int}> $ranges 昇順ソート済みの [start,end] 範囲 */
@@ -551,36 +611,36 @@ class OcCardImageGenerator
         }
     }
 
-    /** テキストの描画幅（px）を返す */
-    private function textWidth(string $text, string $font, int $size): int
-    {
-        if ($text === '') {
-            return 0;
-        }
-        $box = imagettfbbox($size, 0, $font, $text);
-        return $box[2] - $box[0];
-    }
-
     /**
      * 30日メンバー数スパークライン（塗りつぶし付き折れ線）を下部に描画する。系列が2点未満なら描かない。
+     * $dates（$series と同じ並び）があれば、グラフ両端の下に開始/終了日(M/D)を薄く添える
+     *（OGPはCDNキャッシュで固定されるので「いつの範囲か」が分かるように）。
      *
      * @param int[] $series
+     * @param string[] $dates
      */
-    private function drawSparkline(\GdImage $im, array $series, int $lineCol): void
+    private function drawSparkline(\GdImage $im, array $series, array $dates, int $lineCol, int $labelCol): void
     {
-        $series = array_values(array_filter($series, fn($v) => $v !== null));
-        $n = count($series);
+        // member が null の点は落とすが、対応する日付も一緒に落として整合を保つ
+        $pairs = [];
+        foreach (array_values($series) as $i => $v) {
+            if ($v !== null) {
+                $pairs[] = [$v, $dates[$i] ?? null];
+            }
+        }
+        $n = count($pairs);
         if ($n < 2) {
             return;
         }
+        $values = array_column($pairs, 0);
 
         $left = 72;
         $right = self::WIDTH - 72;
         $topY = 400;
         $bottomY = self::HEIGHT - 96;
 
-        $min = min($series);
-        $max = max($series);
+        $min = min($values);
+        $max = max($values);
         $range = max(1, $max - $min);
         $pad = (int)($range * 0.15);
         $min -= $pad;
@@ -589,7 +649,7 @@ class OcCardImageGenerator
         $points = [];
         for ($i = 0; $i < $n; $i++) {
             $x = (int)($left + ($right - $left) * $i / ($n - 1));
-            $y = (int)($bottomY - ($bottomY - $topY) * ($series[$i] - $min) / $range);
+            $y = (int)($bottomY - ($bottomY - $topY) * ($values[$i] - $min) / $range);
             $points[] = [$x, $y];
         }
 
@@ -613,6 +673,27 @@ class OcCardImageGenerator
 
         [$ex, $ey] = $points[$n - 1];
         imagefilledellipse($im, $ex, $ey, 16, 16, $lineCol);
+
+        // 両端の日付(M/D)を控えめに（開始=左下、終了=右下）
+        $startLabel = $this->shortDate($pairs[0][1]);
+        $endLabel = $this->shortDate($pairs[$n - 1][1]);
+        $ly = $bottomY + 10;
+        if ($startLabel !== '') {
+            $this->drawLine($im, $startLabel, $left, $ly, 22, $labelCol, $this->fontsMedium);
+        }
+        if ($endLabel !== '') {
+            $ew = $this->measureLine($endLabel, 22, $this->fontsMedium);
+            $this->drawLine($im, $endLabel, $right - $ew, $ly, 22, $labelCol, $this->fontsMedium);
+        }
+    }
+
+    /** 'Y-m-d' を 'n/j'（例 6/3）へ。解釈できなければ空文字。 */
+    private function shortDate(?string $ymd): string
+    {
+        if (!$ymd || !preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $ymd, $m)) {
+            return '';
+        }
+        return (int)$m[2] . '/' . (int)$m[3];
     }
 
     /**

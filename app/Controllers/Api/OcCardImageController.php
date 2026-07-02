@@ -47,6 +47,7 @@ class OcCardImageController
 
         // 直近30日のメンバー数系列（無い部屋は数値のみのカードになる）
         $series = [];
+        $dates = [];
         $diffWeek = null;
         $dto = $chartService->buildStatisticsChartArray(
             $open_chat_id,
@@ -56,6 +57,7 @@ class OcCardImageController
         );
         if ($dto && $dto->member) {
             $series = $dto->member;
+            $dates = $dto->date;
             // 日付軸はリクエスト範囲の末尾まで null 埋めされるため、末尾の実データ位置から差分を取る
             $lastIdx = null;
             for ($i = count($series) - 1; $i >= 0; $i--) {
@@ -78,6 +80,7 @@ class OcCardImageController
             $diffWeek,
             $series,
             imgPreviewUrl($oc['img_url']),
+            $dates,
         );
 
         if ($png === null) {
