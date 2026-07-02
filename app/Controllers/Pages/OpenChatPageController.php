@@ -133,7 +133,11 @@ class OpenChatPageController
 
         // 分析(narrative)データは oc_page_cache から読み済み（$_narrative）。関連ルームは上で組み立て済み。
         // meta への narrative 連携は無し(null)＝#372以降の現行挙動を踏襲（meta description は room description ベース）。
-        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)->setImageUrl(imgUrl($oc['img_url']));
+        // og:image は統計焼き込みの動的カード（/oc/{id}/card）。SNSシェア時のクリック率を上げる。
+        // 日付クエリでSNS側のクロールキャッシュを1日単位で更新させる。thumbnail(検索用)は従来の部屋アイコン
+        $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)
+            ->setImageUrl(url('oc', (string)$open_chat_id, 'card') . '?d=' . date('Ymd'))
+            ->setTwitterCard('summary_large_image');
         $_meta->thumbnail = imgPreviewUrl($oc['img_url']);
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
