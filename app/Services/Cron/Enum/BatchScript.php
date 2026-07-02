@@ -23,6 +23,7 @@ enum BatchScript: string
     case genetopExec = 'batch/exec/admin/genetop_exec.php';
     case retryDailyTask = 'batch/exec/admin/retry_daily_task.php';
     case updateApiDb = 'batch/exec/update_api_db.php';
+    case tiktokVideoDispatch = 'batch/exec/tiktok_video_dispatch.php';
 
     /**
      * リポジトリルートからの絶対パス

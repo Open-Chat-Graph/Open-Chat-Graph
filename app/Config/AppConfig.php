@@ -239,6 +239,12 @@ class AppConfig
     const RANKING_DAY_TABLE_NAME =  'statistics_ranking_hour24';
     const RANKING_WEEK_TABLE_NAME = 'statistics_ranking_week';
 
+    /**
+     * TikTok 動画レンダリング用 repository_dispatch の送出先リポジトリ
+     * （.github/workflows/tiktok-video.yml が受けてレンダリングする）
+     */
+    const TIKTOK_VIDEO_DISPATCH_REPO = 'Open-Chat-Graph/Open-Chat-Graph';
+
     /** @var array<string,string> */
     static array $rankingPositionDbName = [
         '' =>    'ocgraph_ranking',

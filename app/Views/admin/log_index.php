@@ -223,6 +223,10 @@ $logDisplayNames = [
                 ページキャッシュを日次更新（getForDaily＝変動・新規・週次更新の室。ランキング外クローリング完走後に実行。週次更新枠で最長でも約1週間で全室が一巡）をバックグラウンドで開始
                 <?php echo githubLink('app/Services/StaticData/UpdateOcPageCacheService.php', 55) ?>
             </li>
+            <li>
+                TikTok動画用のデイリー急上昇データを GitHub Actions へ送出（日本のみ・レンダリングと Discord 通知は Actions 側。トークン未設定環境では何もしない）
+                <?php echo githubLink('batch/exec/tiktok_video_dispatch.php', 1) ?>
+            </li>
             <li class="highlight">
                 <strong>処理完了</strong>
                 <span class="log-sample">"【日次処理】完了"</span>
