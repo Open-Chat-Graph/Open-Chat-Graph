@@ -30,9 +30,12 @@ class OcPageSchema
             ->dateModified($dateModified);
 
         // aboutフィールドの追加 - OpenChatの情報
+        // 部屋名は DB 生値で `<`/`>` を含みうる。spatie の toScript() は json_encode(JSON_UNESCAPED_SLASHES)
+        // で `<`/`/` を素通しするため、"</script>" を含む名前で JSON-LD が途中終端し格納型XSSになる。
+        // jsonLdText() で `<`/`>` を無効化してから埋め込む（$title は既に h() 済みなので対象外）。
         $webPage->about(
             Schema::discussionForumPosting()
-                ->headline($oc['name'])
+                ->headline(jsonLdText($oc['name']))
                 ->image(imgUrl($oc['img_url']))
                 ->url(AppConfig::LINE_OPEN_URL[MimimalCmsConfig::$urlRoot] . $oc['emid'] . AppConfig::LINE_OPEN_URL_SUFFIX)
                 ->author(
@@ -46,7 +49,7 @@ class OcPageSchema
         // mainEntityの追加 - データセット情報
         $webPage->mainEntity(
             Schema::dataset()
-                ->name(sprintf(t('LINEオープンチャット「%s」統計データ'), $oc['name']))
+                ->name(sprintf(t('LINEオープンチャット「%s」統計データ'), jsonLdText($oc['name'])))
                 ->description(t('このデータセットには、LINEオープンチャットのメンバー数の時系列変化、日別・時間別の成長率、参加者数の推移に関する詳細な統計情報が含まれています。データは1時間ごとに自動収集され、トレンド分析や人気度の測定に活用されます。'))
                 ->temporalCoverage($datePublished->format('Y-m-d') . '/' . (new \DateTime() >= new \DateTime('today 06:00') ? (new \DateTime('today 06:00'))->format('Y-m-d') : (new \DateTime('yesterday 06:00'))->format('Y-m-d')))
                 ->creator(

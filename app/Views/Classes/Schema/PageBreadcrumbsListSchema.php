@@ -76,11 +76,17 @@ class PageBreadcrumbsListSchema
 
 
 
+    /**
+     * @param array<int,array<string,mixed>> $rooms ランキング表示中の部屋（表示順・id/name キーを使用）。
+     *   渡すと mainEntity: ItemList として埋め込み、検索エンジン・AI検索(ChatGPT等)が
+     *   「このテーマの上位の部屋」を機械可読に引用できるようにする
+     */
     function generateRecommend(
         string $title,
         string $description,
         \DateTimeInterface $dateModified,
-        string $tag
+        string $tag,
+        array $rooms = []
     ): string {
         $collectionPage = Schema::collectionPage()
             ->inLanguage($this->metadata->locale)
@@ -89,6 +95,24 @@ class PageBreadcrumbsListSchema
             ->publisher($this->publisher())
             ->dateModified($dateModified)
             ->about(Schema::thing()->name($tag));
+
+        if ($rooms) {
+            $items = [];
+            foreach (array_values($rooms) as $i => $room) {
+                $items[] = Schema::listItem()
+                    ->position($i + 1)
+                    ->url(url('oc', (string)$room['id']))
+                    // 部屋名は DB 生値。spatie の toScript() は `<`/`/` を素通しするため
+                    // jsonLdText() で `<`/`>` を無効化してから埋め込む（"</script>" 破断=XSS防止）
+                    ->name(jsonLdText((string)$room['name']));
+            }
+            $collectionPage->mainEntity(
+                Schema::itemList()
+                    ->numberOfItems(count($items))
+                    ->itemListOrder('https://schema.org/ItemListOrderDescending')
+                    ->itemListElement($items)
+            );
+        }
 
         return $collectionPage->toScript();
     }

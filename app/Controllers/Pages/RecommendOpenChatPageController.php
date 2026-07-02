@@ -163,11 +163,13 @@ class RecommendOpenChatPageController
         $_meta->setImageUrl(imgUrl($recommendList[0]['img_url']));
         $_meta->thumbnail = imgPreviewUrl($recommendList[0]['img_url']);
 
+        // 表示中の上位部屋を ItemList として同梱（AI検索・検索エンジンの機械可読引用向け）
         $_schema = $this->breadcrumbsShema->generateRecommend(
             $headline,
             $_meta->description,
             $hourlyUpdatedAt,
-            $tag
+            $tag,
+            $recommend->mergedElements,
         );
 
         // テーマの勢い: 毎時バッチが .dat 生成時に事前計算して DTO に同梱している。
