@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\OgImage;
 
+use App\Services\Crawler\FileDownloader;
+
 /**
  * ルーム個別ページ用の動的OGP画像（1200x630 PNG）を GD で生成する。
  *
@@ -20,14 +22,11 @@ class OcCardImageGenerator
     private const WIDTH = 1200;
     private const HEIGHT = 630;
 
-    /** 部屋アイコンの取得の総時間上限（秒）。落ちてもプレースホルダで生成を続行する */
-    private const ICON_FETCH_TIMEOUT = 3;
+    /** アイコン取得の総時間上限（秒・接続〜受信完了）。落ちてもプレースホルダで生成を続行する */
+    private const ICON_MAX_DURATION = 3;
 
-    /** 接続確立の上限（秒） */
-    private const ICON_CONNECT_TIMEOUT = 2;
-
-    /** アイコン取得の最大バイト数（これを超えたら中断） */
-    private const ICON_MAX_BYTES = 3145728; // 3MB
+    /** アイコン取得の通信アイドル上限（秒） */
+    private const ICON_IDLE_TIMEOUT = 2;
 
     /** アイコン取得用UA（クローラーと同一の OpenChatStatsbot 名義） */
     private const ICON_FETCH_UA = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
@@ -35,8 +34,9 @@ class OcCardImageGenerator
     private string $fontRegular;
     private string $fontBold;
 
-    public function __construct()
-    {
+    public function __construct(
+        private FileDownloader $fileDownloader,
+    ) {
         $this->fontRegular = __DIR__ . '/fonts/DejaVuSans-subset.ttf';
         $this->fontBold = __DIR__ . '/fonts/DejaVuSans-Bold-subset.ttf';
     }
@@ -237,17 +237,35 @@ class OcCardImageGenerator
     /**
      * 外部（LINE CDN）から部屋アイコンを取得してデコードする。取得できなければ null（→プレースホルダ）。
      *
-     * ここは「信頼できない外部入力」を扱う唯一の場所。取得失敗は control-flow（curl の戻り値・HTTP
-     * ステータス・画像シグネチャ判定）で捌き、例外を握りつぶさない。デコードだけは、シグネチャが
-     * 画像でも破損データだと imagecreatefromstring が警告→（このアプリのハンドラで）例外を投げうるため、
-     * その一点に限って \ErrorException を受けて「壊れた外部画像＝想定内の入力エラー」として null に落とす。
+     * 取得はプロジェクト共通の FileDownloader（Symfony HttpClient）に寄せ、Web リクエスト経路で
+     * ワーカーを長く拘束しないよう timeout/max_duration・retry無し・redirect少で呼ぶ。
+     * ここは「信頼できない外部入力」を扱う唯一の場所:
+     *  - 取得失敗（404=false / サーバ・通信エラー=\RuntimeException）は想定内なので null に落とす
+     *  - デコードは、シグネチャが画像でも破損データだと imagecreatefromstring が警告→（このアプリの
+     *    ハンドラで）例外になりうるため、その一点だけ \ErrorException を受けて null にする
+     * いずれも「想定内の外部入力エラー処理」であって、内部バグの握りつぶしではない。
      */
     private function loadIcon(string $url): ?\GdImage
     {
-        $data = $this->fetchIcon($url);
-        if ($data === null || !$this->looksLikeImage($data)) {
+        try {
+            $data = $this->fileDownloader->downloadFile(
+                $url,
+                self::ICON_FETCH_UA,
+                max_redirects: 2,
+                retryLimit: 1,
+                retryInterval: 0,
+                method: 'GET',
+                timeout: self::ICON_IDLE_TIMEOUT,
+                maxDuration: self::ICON_MAX_DURATION,
+            );
+        } catch (\RuntimeException $e) {
+            return null; // 通信・サーバエラー（想定内）→ プレースホルダ
+        }
+
+        if ($data === false || !$this->looksLikeImage($data)) {
             return null;
         }
+
         try {
             $src = imagecreatefromstring($data);
         } catch (\ErrorException $e) {
@@ -266,40 +284,5 @@ class OcCardImageGenerator
             || str_starts_with($data, "\x89PNG\x0D\x0A\x1A\x0A")            // PNG
             || str_starts_with($data, 'GIF87a') || str_starts_with($data, 'GIF89a') // GIF
             || (str_starts_with($data, 'RIFF') && substr($data, 8, 4) === 'WEBP');  // WEBP
-    }
-
-    /**
-     * アイコン画像を取得する。接続・総転送・最大サイズすべてに curl の上限を掛け、失敗は戻り値で表す
-     * （どんな失敗でも null）。curl が無い環境では取得しない（→プレースホルダ）。
-     */
-    private function fetchIcon(string $url): ?string
-    {
-        if (!function_exists('curl_init')) {
-            return null;
-        }
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => self::ICON_CONNECT_TIMEOUT,
-            CURLOPT_TIMEOUT => self::ICON_FETCH_TIMEOUT,   // 接続後も含めた総時間の上限（ワーカー拘束を厳密に制限）
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 2,
-            CURLOPT_USERAGENT => self::ICON_FETCH_UA,
-            CURLOPT_BUFFERSIZE => 65536,
-            // 受信量が上限を超えたら即中断（巨大レスポンスでメモリを食わせない）
-            CURLOPT_NOPROGRESS => false,
-            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) {
-                return $dlNow > self::ICON_MAX_BYTES ? 1 : 0;
-            },
-        ]);
-        $data = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // curl_close() は PHP 8.0 以降 no-op、8.5 で deprecated。このアプリのハンドラは deprecation も
-        // 例外化するため呼ばない（呼ぶと取得成功でも例外になりアイコンが消える。実際にこれで全部屋が
-        // プレースホルダになった）。ハンドルはスクリプト終了時に解放される。
-        if ($data === false || $data === '' || !is_string($data) || ($code !== 0 && $code >= 400)) {
-            return null;
-        }
-        return $data;
     }
 }
