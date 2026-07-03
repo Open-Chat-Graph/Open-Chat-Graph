@@ -35,9 +35,17 @@ class TikTokRisingVideoService
     private const ROOM_DURATION = 3.2;
     private const OUTRO_DURATION = 2.4;
 
+    /** ナレーション付き時にスライド表示を音声より長く取る余白（xfade 重なり2回分＋間） */
+    private const VOICE_PADDING = 1.1;
+
+    /** VOICEVOX 利用規約で必須のクレジット表記 */
+    private const VOICEVOX_CREDIT = 'VOICEVOX:ずんだもん';
+
     public function __construct(
         private TikTokVideoSlideGenerator $slideGenerator,
         private TikTokVideoRenderer $renderer,
+        private TikTokNarrationBuilder $narrationBuilder,
+        private VoicevoxClient $voicevox,
     ) {}
 
     /**
@@ -61,12 +69,33 @@ class TikTokRisingVideoService
 
         $dateLabel = $this->dateLabel($payload['generatedAt']);
 
+        // --- ナレーション（ずんだもん）: VOICEVOX_URL がある環境かつ日本語のみ ---
+        // スライドと同じ並び（タイトル → 5位..1位 → 締め）の WAV を先に合成し、
+        // 各スライドの表示時間を「読み終わるまで」に合わせる。
+        $useVoice = $this->voicevox->isConfigured() && $payload['urlRoot'] === '';
+        $voiceFiles = [];
+        $voiceDurations = [];
+        if ($useVoice) {
+            $voiceDir = $outDir . '/voice';
+            if (!is_dir($voiceDir) && !mkdir($voiceDir, 0777, true)) {
+                throw new \RuntimeException("音声ディレクトリを作成できません: {$voiceDir}");
+            }
+            foreach ($this->narrationBuilder->build($rooms, (string)$payload['generatedAt']) as $i => $line) {
+                $wav = $this->voicevox->synthesize($line);
+                $path = sprintf('%s/%02d.wav', $voiceDir, $i);
+                file_put_contents($path, $wav);
+                $voiceFiles[$i] = $path;
+                $voiceDurations[$i] = VoicevoxClient::wavDuration($wav);
+            }
+        }
+        $slideDuration = fn(int $i, float $base): float =>
+            isset($voiceDurations[$i]) ? max($base, $voiceDurations[$i] + self::VOICE_PADDING) : $base;
+
         // --- スライド生成（タイトル → 5位..1位のカウントダウン → 締め） ---
-        $slideFiles = [];
         $slides = [];
 
         $png = $this->slideGenerator->renderTitleSlide($dateLabel, count($rooms));
-        $slides[] = ['path' => $this->writeSlide($slidesDir, '00_title', $png), 'duration' => self::TITLE_DURATION];
+        $slides[] = ['path' => $this->writeSlide($slidesDir, '00_title', $png), 'duration' => $slideDuration(0, self::TITLE_DURATION)];
 
         foreach (array_reverse($rooms, true) as $i => $room) {
             $rank = $i + 1;
@@ -83,13 +112,17 @@ class TikTokRisingVideoService
             );
             $slides[] = [
                 'path' => $this->writeSlide($slidesDir, sprintf('%02d_rank%d', count($slides), $rank), $png),
-                'duration' => self::ROOM_DURATION,
+                'duration' => $slideDuration(count($slides), self::ROOM_DURATION),
                 'transition' => 'slideleft',
             ];
         }
 
-        $png = $this->slideGenerator->renderOutroSlide();
-        $slides[] = ['path' => $this->writeSlide($slidesDir, sprintf('%02d_outro', count($slides)), $png), 'duration' => self::OUTRO_DURATION];
+        $png = $this->slideGenerator->renderOutroSlide($useVoice ? self::VOICEVOX_CREDIT : null);
+        $slides[] = ['path' => $this->writeSlide($slidesDir, sprintf('%02d_outro', count($slides)), $png), 'duration' => $slideDuration(count($slides), self::OUTRO_DURATION)];
+
+        foreach ($voiceFiles as $i => $wavPath) {
+            $slides[$i]['audio'] = $wavPath;
+        }
 
         $slideFiles = array_column($slides, 'path');
 
@@ -103,9 +136,13 @@ class TikTokRisingVideoService
 
         // --- キャプション ---
         $captionPath = $outDir . '/caption.txt';
-        file_put_contents($captionPath, $this->buildCaption($rooms, $dateLabel));
+        $caption = $this->buildCaption($rooms, $dateLabel);
+        if ($useVoice) {
+            $caption .= self::VOICEVOX_CREDIT . "\n"; // 利用規約上のクレジット必須
+        }
+        file_put_contents($captionPath, $caption);
 
-        return ['video' => $videoPath, 'caption' => $captionPath, 'slides' => $slideFiles];
+        return ['video' => $videoPath, 'caption' => $captionPath, 'slides' => $slideFiles, 'narrated' => $useVoice];
     }
 
     /**

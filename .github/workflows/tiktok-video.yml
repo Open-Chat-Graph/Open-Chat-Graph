@@ -26,7 +26,15 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    # ずんだもんナレーション用の VOICEVOX エンジン（OSS・CPU版）。
+    # レンダラーは VOICEVOX_URL 経由で音声合成する（日本語ペイロードのみ。クレジット表記は動画とキャプションに自動付与）
+    services:
+      voicevox:
+        image: voicevox/voicevox_engine:cpu-latest
+        ports:
+          - 50021:50021
 
     steps:
       - name: Checkout
@@ -54,7 +62,18 @@ jobs:
             cp docs/tiktok/fixture-payload.json payload.json
           fi
 
+      - name: Wait for VOICEVOX engine
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:50021/version && exit 0
+            sleep 2
+          done
+          echo "VOICEVOX エンジンが起動しませんでした" >&2
+          exit 1
+
       - name: Render video (ffmpeg はランナーにプリインストール済み)
+        env:
+          VOICEVOX_URL: http://localhost:50021
         run: php batch/exec/tiktok_video_render.php payload.json out
 
       - name: Upload artifact

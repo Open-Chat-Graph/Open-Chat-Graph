@@ -124,8 +124,11 @@ class TikTokVideoSlideGenerator extends GdTextRenderer
     /**
      * 締めスライド: サイト名 →「毎日ランキング更新中」→ 検索誘導 → ドメイン。
      * TikTok はリンク導線が弱いため「ブランド名で検索させる」CTA を主にする。
+     *
+     * @param ?string $credit 最下部に小さく入れるクレジット表記（例 'VOICEVOX:ずんだもん'。
+     *                        ナレーション利用時は規約上必須）
      */
-    public function renderOutroSlide(): ?string
+    public function renderOutroSlide(?string $credit = null): ?string
     {
         $im = $this->createCanvas();
         if ($im === null) {
@@ -138,6 +141,9 @@ class TikTokVideoSlideGenerator extends GdTextRenderer
         $this->drawCenteredLine($im, t('毎日ランキング更新中'), 900, 44, $c['sub'], $this->fontsMedium);
         $this->drawCenteredLine($im, '🔍 ' . sprintfT('「%s」で検索', $brand), 1060, 46, $c['accent'], $this->fontsBold);
         $this->drawCenteredLine($im, 'openchat-review.me', 1220, 36, $c['sub'], $this->fontsMedium);
+        if ($credit !== null) {
+            $this->drawCenteredLine($im, $credit, self::HEIGHT - 90, 26, $c['sub'], $this->fontsMedium);
+        }
 
         return $this->toPng($im);
     }
