@@ -111,9 +111,11 @@ class OcCardImageGenerator
         $this->drawSparkline($im, $series, $dates, $member, $accent, $sub);
 
         // --- 部屋アイコン（左上・円形クロップ） ---
+        // 左上に置いたサイト名(y=28)の分、アイコン/ヘッダー/タイトルの上端を少し下げて余白を作る
+        //（headY・タイトル開始は iconY 起点で連動して下がる）。
         $iconSize = 190;
         $iconX = 72;
-        $iconY = 66;
+        $iconY = 96;
         $this->drawIcon($im, $iconUrl, $iconX, $iconY, $iconSize, $accent);
 
         $rightX = $iconX + $iconSize + 40; // = 302
@@ -709,9 +711,10 @@ class OcCardImageGenerator
         $valStr = number_format($member) . t('人');
         $dateSize = 22;
         $valSize = 24;
-        // 下段(人数)を点のすぐ上に、上段(日付)をさらにその上へ積む（$top は各行の ink 上端）
+        // 下段(人数)を点のすぐ上に、上段(日付)をさらにその上へ積む（$top は各行の ink 上端）。
+        // 日付と人数の行間は少し広めに取る。
         $valTop = $py - 16 - $valSize;
-        $dateTop = $valTop - 4 - $dateSize;
+        $dateTop = $valTop - 12 - $dateSize;
 
         $anchor = fn(int $w): int => $rightAlign
             ? min($px + 12, self::WIDTH - 24) - $w   // 右揃え（右端の点）
