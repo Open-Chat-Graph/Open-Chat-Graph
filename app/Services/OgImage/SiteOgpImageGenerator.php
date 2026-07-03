@@ -73,10 +73,7 @@ class SiteOgpImageGenerator extends AbstractCardImageGenerator
         }
         $this->drawLine($im, $tagline, $left, $iconTop + $iconSize + 46, $tsize, $sub, $this->fontsMedium);
 
-        // --- フッター右下: ドメイン（oc カードと同位置） ---
-        $brand = 'openchat-review.me';
-        $bw = $this->measureLine($brand, 26, $this->fontsMedium);
-        $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
+        // ドメイン表記は置かない（oc カードのドメイン廃止と同方針。サイト名はタイトルが兼ねる）
 
         return $this->encodePng($im);
     }
