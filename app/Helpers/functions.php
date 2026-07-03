@@ -263,7 +263,7 @@ function purgeCacheCloudFlare(
     $zoneID = $zoneID ?? SecretsConfig::$cloudFlareZoneId;
     $apiKey = $apiKey ?? SecretsConfig::$cloudFlareApiKey;
 
-    if (!AppConfig::$enableCloudflare || !$zoneID || !$apiKey || !AppConfig::$isDevlopment) {
+    if (!AppConfig::$enableCloudflare || !$zoneID || !$apiKey) {
         return 'Cloudflareは無効化されています';
     }
 
