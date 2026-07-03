@@ -48,9 +48,11 @@ class RecommendCardImageController
             $responder->sendDefault();
         }
 
-        // ページの表示順そのまま、上位をアイコンクラスタに使う
+        // ページの表示順そのまま、上位を背景のミニカードに使う
         $list = $recommend->getList(false, RecommendCardImageGenerator::MAX_ROOMS);
         $rooms = array_map(fn(array $row) => [
+            'name' => (string)$row['name'],
+            'member' => (int)$row['member'],
             'iconUrl' => imgPreviewUrl($row['img_url']),
         ], $list);
 

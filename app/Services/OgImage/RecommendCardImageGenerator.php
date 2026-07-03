@@ -7,34 +7,41 @@ namespace App\Services\OgImage;
 /**
  * /recommend/{tag}（テーマ別ランキングページ）用の動的OGP画像（1200x630 PNG）を GD で生成する。
  *
- * 構図: 左にタイポグラフィ主体の見出しブロック（eyebrow「LINEオープンチャット」→ ヒーロー
- * 「#タグ」→ アクセントバー付き「人気・活発な部屋ランキング」）、右にランキング上位の部屋
- * アイコンを「順位＝大きさ」で非対称に散らしたクラスタ（1位のみアクセント色のリング）。
- * クラスタ背後には淡い光彩を敷いて奥行きを出す。左上サイト名・右下ドメインは oc カードと共通の
- * 控えめスタイル。文言はロケール依存（ja/tw/th）。
+ * 構図（メディア系OGPカードの定番スタイル）:
+ *  - 背景: ライトブルー＋淡い斜めストライプの上に、ランキング上位の部屋を「ミニカード」
+ *    （白い角丸カード・アイコン＋部屋名＋メンバー数）として散らし、ぼかし＋半透明の青い霞で
+ *    沈める（コラージュ感を出しつつ前景の文字を立たせる）
+ *  - 前景: 白いバナー帯に特大のネイビー文字を2行（「タグ」のオープンチャット／人気・活発な
+ *    部屋ランキング）。タグ部分だけブランドブルーの2トーン。下に細いサブ帯（毎時更新＋ドメイン）
+ *  - 左上にサイト名。文言はロケール依存（ja/tw/th）
  *
  * テキスト・絵文字・アイコンの描画機構は AbstractCardImageGenerator（共通基盤）に置いてある。
  */
 class RecommendCardImageGenerator extends AbstractCardImageGenerator
 {
-    /** アイコンクラスタに置く部屋数の上限（= CLUSTER レイアウトのスロット数） */
+    /** 背景コラージュに使う部屋数の上限（= CARD_SLOTS のスロット数） */
     public const MAX_ROOMS = 5;
 
-    /** ヒーロー（#タグ）の最大/最小フォントサイズ。入らなければ縮小→2行→末尾… の順で退避 */
-    private const HERO_MAX_SIZE = 76;
-    private const HERO_MIN_SIZE = 40;
+    /** 見出し行の最大/最小フォントサイズ。入らなければ縮小→タグ末尾… で退避 */
+    private const HEADLINE_MAX_SIZE = 56;
+    private const HEADLINE_MIN_SIZE = 32;
+
+    /** ミニカードの寸法 */
+    private const CARD_W = 360;
+    private const CARD_H = 170;
 
     /**
-     * アイコンクラスタのレイアウト（順位順）。d=直径、c=中心座標。
-     * 大きさの階段で順位を語る（バッジや番号を使わない）。2位は1位に少し重ねて奥行きを出す。
-     * @var array{d:int, c:array{0:int,1:int}}[]
+     * ミニカードの左上座標（順位順）。画面端で見切れる配置にしてコラージュ感を出す。
+     * 中央帯は前景の白バナーが覆うので上下に散らす。掲載部屋が少ないタグでも偏らないよう、
+     * 先頭から「左上→右上→下中央→上中央→左中」の順に埋める。
+     * @var array{0:int,1:int}[]
      */
-    private const CLUSTER = [
-        ['d' => 252, 'c' => [895, 262]],
-        ['d' => 148, 'c' => [772, 408]],
-        ['d' => 118, 'c' => [1028, 432]],
-        ['d' => 88,  'c' => [872, 524]],
-        ['d' => 64,  'c' => [1108, 152]],
+    private const CARD_SLOTS = [
+        [24, 104],
+        [906, 64],
+        [330, 476],
+        [478, -54],
+        [-56, 396],
     ];
 
     /**
@@ -42,7 +49,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
      * 生成できない環境（GD/FreeType/フォント無し）では null を返す（呼び出し側でデフォルト画像に退避）。
      *
      * @param string $tag テーマ名（タグ）
-     * @param array{iconUrl:?string}[] $rooms ランキング上位の部屋（表示順）。先頭 MAX_ROOMS 件を描く
+     * @param array{name:string, member:int, iconUrl:?string}[] $rooms ランキング上位の部屋（表示順）
      */
     public function renderPng(string $tag, array $rooms): ?string
     {
@@ -50,37 +57,39 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             return null;
         }
 
-        // --- 背景: 上下方向の濃紺グラデーション ---
-        $im = $this->createCanvas();
+        // --- 背景: ライトブルー＋淡い斜めストライプ ---
+        $im = $this->createLightCanvas();
 
-        $white = imagecolorallocate($im, 245, 247, 252);
-        $sub = imagecolorallocate($im, 150, 162, 190);
-        $accent = imagecolorallocate($im, 88, 148, 255);
+        // --- 部屋のミニカードを散らし、ぼかし＋青い霞で背景に沈める ---
+        foreach (array_slice($rooms, 0, self::MAX_ROOMS) as $i => $room) {
+            [$x, $y] = self::CARD_SLOTS[$i];
+            $this->drawRoomCard($im, $room, $x, $y);
+        }
+        for ($i = 0; $i < 5; $i++) {
+            imagefilter($im, IMG_FILTER_GAUSSIAN_BLUR);
+        }
+        imagealphablending($im, true);
+        imagefilledrectangle($im, 0, 0, self::WIDTH, self::HEIGHT, imagecolorallocatealpha($im, 214, 229, 250, 58));
 
-        // --- 右: アイコンクラスタ（背後に淡い光彩 → 順位＝大きさの円を非対称に配置） ---
-        $this->drawGlow($im, 910, 300, 330);
-        $this->drawIconCluster($im, array_slice($rooms, 0, self::MAX_ROOMS), $accent);
+        $navy = imagecolorallocate($im, 23, 42, 102);
+        $blue = imagecolorallocate($im, 37, 99, 235);
+        $subNavy = imagecolorallocate($im, 62, 82, 138);
 
-        // --- 左上: サイト名（oc カードと同じ控えめスタイル） ---
-        $this->drawLine($im, t('オプチャグラフ'), 72, 28, 26, $sub, $this->fontsMedium);
+        // --- 左上: サイト名 ---
+        $this->drawLine($im, t('オプチャグラフ'), 56, 34, 30, $navy, $this->fontsBold);
 
-        // --- 左: 見出しブロック（eyebrow → ヒーロー → アクセントバー付きラベル） ---
-        $left = 72;
-        $zoneW = 548; // クラスタ最左の円に食い込まない幅
+        // --- 中央: 白バナー帯の見出し2行＋サブ帯 ---
+        $maxTextW = self::WIDTH - 2 * 56 - 2 * 36; // 両端余白とバナー左右パディングを引いた最大文字幅
 
-        $this->drawLine($im, t('LINEオープンチャット'), $left, 174, 28, $sub, $this->fontsMedium);
+        // 1行目「タグ」のオープンチャット: タグ部分だけブランドブルーの2トーン。
+        // 入らないタグはサイズを下限まで縮め、それでも溢れる場合はタグ末尾を…で省略
+        [$segments, $size] = $this->buildHeadlineSegments($tag, $maxTextW, $navy, $blue);
+        $y = $this->drawBanner($im, $segments, $size, 172, $this->fontsBold);
 
-        $heroBottom = $this->drawHero($im, $tag, $left, 230, $zoneW, $white, $accent);
+        $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 56, $y + 14, $this->fontsBold);
 
-        $labelTop = $heroBottom + 44;
-        // ラベル先頭のアクセントバー（テキストの ink 高に合わせた縦棒）
-        imagefilledrectangle($im, $left, $labelTop + 4, $left + 5, $labelTop + 36, $accent);
-        $this->drawLine($im, t('人気・活発な部屋ランキング'), $left + 24, $labelTop, 31, $white, $this->fontsBold);
-
-        // --- フッター右下: ドメイン（oc カードと同位置） ---
-        $brand = 'openchat-review.me';
-        $bw = $this->measureLine($brand, 26, $this->fontsMedium);
-        $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
+        $sub = t('1時間ごとに更新') . '　openchat-review.me';
+        $this->drawBanner($im, [[$sub, $subNavy]], 30, $y + 14, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
         ob_start();
@@ -89,76 +98,153 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     }
 
     /**
-     * ヒーロー「#タグ」を描く。「#」はアクセント色・タグは白の2トーン（ハッシュタグ＝テーマの記号で、
-     * ロケールを問わず通じる）。1行で入る最大サイズ(76→40)へ自動縮小し、下限でも入らない長いタグは
-     * 「#」を1行目に添えたまま drawTitle で2行に折り返す（それでも溢れたら末尾…）。
+     * 見出し1行目のセグメント（[テキスト, 色] の並び）と、収まるフォントサイズを決める。
+     * 文言はロケールの「「%s」のオープンチャット」書式で、タグ部分だけアクセント色にする。
      *
-     * @return int ヒーロー最終行の ink 下端のおおよその Y 座標
+     * @return array{0: array{0:string,1:int}[], 1:int}
      */
-    private function drawHero(\GdImage $im, string $tag, int $x, int $topY, int $maxWidth, int $white, int $accent): int
+    private function buildHeadlineSegments(string $tag, int $maxTextW, int $navy, int $blue): array
     {
-        $gap = 10; // 「#」とタグの間の空き
-
-        $size = self::HERO_MAX_SIZE;
-        while ($size > self::HERO_MIN_SIZE) {
-            $w = $this->measureLine('#', $size, $this->fontsBold) + $gap
-                + $this->measureLine($tag, $size, $this->fontsBold);
-            if ($w <= $maxWidth) {
-                break;
+        $compose = function (string $t) use ($navy, $blue): array {
+            $formatted = sprintfT('「%s」のオープンチャット', $t);
+            $pos = mb_strpos($formatted, $t);
+            if ($pos === false) {
+                return [[$formatted, $navy]];
             }
+            return array_values(array_filter([
+                [mb_substr($formatted, 0, $pos), $navy],
+                [$t, $blue],
+                [mb_substr($formatted, $pos + mb_strlen($t)), $navy],
+            ], fn(array $seg) => $seg[0] !== ''));
+        };
+        $width = fn(array $segments, int $size): int => array_sum(
+            array_map(fn(array $seg) => $this->measureLine($seg[0], $size, $this->fontsBold), $segments)
+        );
+
+        $segments = $compose($tag);
+        $size = self::HEADLINE_MAX_SIZE;
+        while ($size > self::HEADLINE_MIN_SIZE && $width($segments, $size) > $maxTextW) {
             $size -= 2;
         }
-
-        $hashW = $this->drawLine($im, '#', $x, $topY, $size, $accent, $this->fontsBold);
-        $textX = $x + $hashW + $gap;
-
-        $w = $this->measureLine($tag, $size, $this->fontsBold);
-        if ($w <= $maxWidth - $hashW - $gap) {
-            $this->drawLine($im, $tag, $textX, $topY, $size, $white, $this->fontsBold);
-            return $topY + (int)round($size * 1.12);
+        // 下限サイズでも入らない長いタグは末尾を削って…（書式ごと組み直してロケール差異を保つ）
+        while ($tag !== '' && $width($segments, $size) > $maxTextW) {
+            $tag = mb_substr($tag, 0, -1);
+            $segments = $compose(rtrim($tag) . '…');
         }
-
-        // 下限サイズでも1行に入らない長いタグ: 「#」のぶら下げインデントで2行に折り返す
-        return $this->drawTitle($im, $tag, $textX, $topY, $maxWidth - $hashW - $gap, $size, 2, $white);
+        return [$segments, $size];
     }
 
     /**
-     * ランキング上位の部屋アイコンを CLUSTER のスロットへ順位順に描く。
-     * 円は薄いリングで背景と分離し、1位だけアクセント色のリングで「勝者」を示す。
+     * 中央揃えの白バナー帯を1本描き、その上にセグメント（[テキスト, 色]）を並べる。
+     * 帯の幅はテキスト実幅＋左右パディング。戻り値は帯の下端 Y（次の帯の起点用）。
      *
-     * @param array{iconUrl:?string}[] $rooms 表示順（=順位順）
+     * @param array{0:string,1:int}[] $segments
      */
-    private function drawIconCluster(\GdImage $im, array $rooms, int $accent): void
+    private function drawBanner(\GdImage $im, array $segments, int $size, int $top, array $fontList): int
     {
-        // アイコン取得失敗時のプレースホルダ円は背景に沈む控えめな色（目立つ円の羅列を避ける）
-        $placeholder = imagecolorallocate($im, 40, 52, 84);
-        $ring = imagecolorallocate($im, 58, 74, 112);
+        $padX = 36;
+        $textW = 0;
+        foreach ($segments as [$text]) {
+            $textW += $this->measureLine($text, $size, $fontList);
+        }
+        $h = (int)round($size * 1.72);
+        $x = intdiv(self::WIDTH - $textW, 2) - $padX;
+        $white = imagecolorallocate($im, 255, 255, 255);
+        imagefilledrectangle($im, $x, $top, $x + $textW + $padX * 2, $top + $h, $white);
 
-        foreach ($rooms as $i => $room) {
-            $slot = self::CLUSTER[$i] ?? null;
-            if ($slot === null) {
-                break;
-            }
-            [$cx, $cy] = $slot['c'];
-            $d = $slot['d'];
-            $ringW = $i === 0 ? 5 : 3;
-            imagefilledellipse($im, $cx, $cy, $d + $ringW * 2, $d + $ringW * 2, $i === 0 ? $accent : $ring);
-            $this->drawIcon($im, $room['iconUrl'], $cx - intdiv($d, 2), $cy - intdiv($d, 2), $d, $placeholder);
+        $cx = $x + $padX;
+        $textTop = $top + intdiv($h - (int)round($size * 1.4), 2);
+        foreach ($segments as [$text, $color]) {
+            $cx += $this->drawLine($im, $text, $cx, $textTop, $size, $color, $fontList);
+        }
+        return $top + $h;
+    }
+
+    /**
+     * 部屋のミニカード（白角丸・角丸アイコン＋部屋名2行＋メンバー数）を描く。
+     * ぼかし＋霞の下に沈める背景要素なので、細部より「記事カードの気配」を優先した簡素なレイアウト。
+     *
+     * @param array{name:string, member:int, iconUrl:?string} $room
+     */
+    private function drawRoomCard(\GdImage $im, array $room, int $x, int $y): void
+    {
+        $w = self::CARD_W;
+        $h = self::CARD_H;
+        $white = imagecolorallocate($im, 255, 255, 255);
+        $navy = imagecolorallocate($im, 30, 45, 90);
+        $muted = imagecolorallocate($im, 110, 125, 160);
+
+        $this->fillRoundedRect($im, $x, $y, $w, $h, 18, $white);
+
+        $pad = 22;
+        $iconSize = 72;
+        $this->drawRoundedIcon($im, $room['iconUrl'] ?? null, $x + $pad, $y + $pad, $iconSize, 14, imagecolorallocate($im, 208, 220, 240));
+
+        $textX = $x + $pad + $iconSize + 18;
+        $textW = $w - ($textX - $x) - $pad;
+        $this->drawTitle($im, (string)$room['name'], $textX, $y + $pad + 2, $textW, 22, 2, $navy);
+
+        $memberLabel = sprintfT('メンバー %s人', number_format((int)$room['member']));
+        $this->drawLine($im, $memberLabel, $x + $pad, $y + $h - $pad - 26, 20, $muted, $this->fontsMedium);
+    }
+
+    /** ライトブルー地に淡い斜めストライプを敷いた 1200x630 のキャンバスを作る。 */
+    private function createLightCanvas(): \GdImage
+    {
+        $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
+        imagefilledrectangle($im, 0, 0, self::WIDTH, self::HEIGHT, imagecolorallocate($im, 205, 222, 247));
+
+        // 45°の帯を一定周期で重ねる（ぼかし後はごく淡いテクスチャになる）
+        $band = imagecolorallocate($im, 192, 213, 244);
+        $bandW = 56;
+        $period = 132;
+        for ($x = -self::HEIGHT; $x < self::WIDTH + self::HEIGHT; $x += $period) {
+            imagefilledpolygon($im, [
+                $x, 0,
+                $x + $bandW, 0,
+                $x + $bandW - self::HEIGHT, self::HEIGHT,
+                $x - self::HEIGHT, self::HEIGHT,
+            ], $band);
+        }
+        return $im;
+    }
+
+    /** 角丸長方形を塗る（本体2枚の矩形＋四隅の円） */
+    private function fillRoundedRect(\GdImage $im, int $x, int $y, int $w, int $h, int $r, int $color): void
+    {
+        imagefilledrectangle($im, $x + $r, $y, $x + $w - $r, $y + $h, $color);
+        imagefilledrectangle($im, $x, $y + $r, $x + $w, $y + $h - $r, $color);
+        foreach ([[$x + $r, $y + $r], [$x + $w - $r, $y + $r], [$x + $r, $y + $h - $r], [$x + $w - $r, $y + $h - $r]] as [$cx, $cy]) {
+            imagefilledellipse($im, $cx, $cy, $r * 2, $r * 2, $color);
         }
     }
 
     /**
-     * アイコンクラスタの背後に淡い光彩を敷く（半透明の同心円を重ねて中心ほど明るく）。
-     * フラットなグラデ背景に奥行きを足すための控えめな環境光。
+     * 部屋アイコンを角丸スクエアにクロップして描く。取得失敗時はプレースホルダの角丸を描く。
+     * クロップは円形版（drawIcon）と同じマスク方式（魔法色の外側をスキップして転写）。
      */
-    private function drawGlow(\GdImage $im, int $cx, int $cy, int $r): void
+    private function drawRoundedIcon(\GdImage $im, ?string $iconUrl, int $x, int $y, int $size, int $r, int $fallbackCol): void
     {
-        imagealphablending($im, true);
-        $steps = 18;
-        $col = imagecolorallocatealpha($im, 64, 96, 170, 125);
-        for ($i = $steps; $i >= 1; $i--) {
-            $d = (int)($r * 2 * $i / $steps);
-            imagefilledellipse($im, $cx, $cy, $d, $d, $col);
+        $src = $iconUrl ? $this->loadIcon($iconUrl) : null;
+        if (!$src) {
+            $this->fillRoundedRect($im, $x, $y, $size, $size, $r, $fallbackCol);
+            return;
+        }
+
+        $sq = imagecreatetruecolor($size, $size);
+        imagecopyresampled($sq, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
+
+        $mask = imagecreatetruecolor($size, $size);
+        imagefill($mask, 0, 0, imagecolorallocate($mask, 1, 2, 3));
+        $this->fillRoundedRect($mask, 0, 0, $size, $size, $r, imagecolorallocate($mask, 255, 255, 255));
+
+        for ($iy = 0; $iy < $size; $iy++) {
+            for ($ix = 0; $ix < $size; $ix++) {
+                if ((imagecolorat($mask, $ix, $iy) & 0xFFFFFF) === 0x010203) {
+                    continue;
+                }
+                imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
+            }
         }
     }
 }
