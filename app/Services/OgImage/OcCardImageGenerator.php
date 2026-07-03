@@ -82,13 +82,8 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
-        ob_start();
-        imagepng($im, null, 6);
-        return ob_get_clean() ?: null;
+        return $this->encodePng($im);
     }
-
-    /** 1:1サムネイルの一辺（px）。meta name="thumbnail"（検索用）向けなので OGP より小さくてよい */
-    private const THUMB_SIZE = 640;
 
     /**
      * 検索用 1:1 サムネイル（640x640 PNG）を生成する（meta name="thumbnail" 用）。
@@ -125,9 +120,7 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         $this->drawTitle($im, $name, 36, $s - 186, $s - 72, 34, 2, $white);
         $this->drawLine($im, t('オプチャグラフ'), 36, $s - 52, 20, $sub, $this->fontsMedium);
 
-        ob_start();
-        imagepng($im, null, 6);
-        return ob_get_clean() ?: null;
+        return $this->encodePng($im);
     }
 
     /**
@@ -173,23 +166,7 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
             $points[] = [$x, $y];
         }
 
-        $fill = imagecolorallocate($im, 26, 44, 82);
-        $poly = [];
-        foreach ($points as [$x, $y]) {
-            $poly[] = $x;
-            $poly[] = $y;
-        }
-        $poly[] = $right;
-        $poly[] = $bottomY;
-        $poly[] = $left;
-        $poly[] = $bottomY;
-        imagefilledpolygon($im, $poly, $fill);
-
-        imagesetthickness($im, 4);
-        for ($i = 1; $i < $n; $i++) {
-            imageline($im, $points[$i - 1][0], $points[$i - 1][1], $points[$i][0], $points[$i][1], $lineCol);
-        }
-        imagesetthickness($im, 1);
+        $this->drawFilledPolyline($im, $points, $lineCol, $left, $right, $bottomY);
 
         // --- 両端の点にデータラベル（上段=日付 M/D・下段=人数）。始点と終点の両方を出して
         //     「いつ何人 → いつ何人」の増減が読めるようにする。文字は元の日付ラベルと同じ

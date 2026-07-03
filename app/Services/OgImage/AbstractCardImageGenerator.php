@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\OgImage;
 
+use App\Services\Crawler\Config\OpenChatCrawlerConfig;
 use App\Services\Crawler\FileDownloader;
 
 /**
@@ -31,8 +32,8 @@ abstract class AbstractCardImageGenerator
     /** アイコン取得の通信アイドル上限（秒） */
     protected const ICON_IDLE_TIMEOUT = 2;
 
-    /** アイコン取得用UA（クローラーと同一の OpenChatStatsbot 名義） */
-    protected const ICON_FETCH_UA = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
+    /** 検索用 1:1 サムネイル（meta name="thumbnail"）の一辺（px）。OGP より小さくてよい */
+    protected const THUMB_SIZE = 640;
 
     /** 太字テキスト用フォント（1文字ごとに先頭から cmap を持つ最初のフォントを採用＝多言語対応） */
     protected string $fontBold;
@@ -93,6 +94,41 @@ abstract class AbstractCardImageGenerator
         }
 
         return $im;
+    }
+
+    /** GdImage を PNG バイト列にエンコードして返す（ファイルには書かない）。失敗時は null。 */
+    protected function encodePng(\GdImage $im): ?string
+    {
+        ob_start();
+        imagepng($im, null, 6);
+        return ob_get_clean() ?: null;
+    }
+
+    /**
+     * 塗りつぶし付き折れ線（ブランドの上昇グラフの共通描画コア）。$points は [x,y] の配列（2点以上）。
+     * 折れ線から下端 $bottomY までを濃紺で塗り、太さ4の線を重ねる。マーカー・ラベルは呼び出し側で足す。
+     *
+     * @param array{0:int,1:int}[] $points
+     */
+    protected function drawFilledPolyline(\GdImage $im, array $points, int $lineCol, int $left, int $right, int $bottomY): void
+    {
+        $fill = imagecolorallocate($im, 26, 44, 82);
+        $poly = [];
+        foreach ($points as [$x, $y]) {
+            $poly[] = $x;
+            $poly[] = $y;
+        }
+        $poly[] = $right;
+        $poly[] = $bottomY;
+        $poly[] = $left;
+        $poly[] = $bottomY;
+        imagefilledpolygon($im, $poly, $fill);
+
+        imagesetthickness($im, 4);
+        for ($i = 1; $i < count($points); $i++) {
+            imageline($im, $points[$i - 1][0], $points[$i - 1][1], $points[$i][0], $points[$i][1], $lineCol);
+        }
+        imagesetthickness($im, 1);
     }
 
     /**
@@ -588,6 +624,10 @@ abstract class AbstractCardImageGenerator
             }
             usort($ranges, fn($a, $b) => $a[0] <=> $b[0]);
             return $ranges;
+        } catch (\ErrorException $e) {
+            // 途中で切れたフォント等でバッファ外オフセットを読むと警告→（このアプリのハンドラで）例外になる。
+            // cmap 無し扱いに縮退させ、カード生成全体は止めない（loadIcon と同じ「想定内の外部データ破損」処理）
+            return null;
         } finally {
             fclose($fp);
         }
@@ -614,19 +654,30 @@ abstract class AbstractCardImageGenerator
             return;
         }
 
-        // 正方形へカバークロップ（中央の最大正方形を切り出す。縦長のカバー画像を引き伸ばすと
-        // 円の中身が楕円に潰れるため、リサイズではなくクロップで合わせる）
+        $this->copyMaskedIcon($im, $src, $x, $y, $size, function (\GdImage $mask, int $white) use ($size) {
+            imagefilledellipse($mask, (int)($size / 2), (int)($size / 2), $size, $size, $white);
+        });
+    }
+
+    /**
+     * ソース画像を中央の最大正方形でクロップし、$drawMask が白で塗った形にくり抜いて転写する
+     * （円・角丸など任意マスク形状の共通コア。縦長カバー画像を引き伸ばすと絵が潰れるためクロップ）。
+     * マスクは魔法色(1,2,3)の外側をスキップして転写する（簡易アンチエイリアス無し）。
+     *
+     * @param callable(\GdImage $mask, int $white): void $drawMask マスク形状を白で塗るコールバック
+     */
+    protected function copyMaskedIcon(\GdImage $im, \GdImage $src, int $x, int $y, int $size, callable $drawMask): void
+    {
         $sq = $this->cropSquare($src, $size);
 
-        // 円形マスク: 円の外側を魔法色で塗り、内側だけ転写する（簡易アンチエイリアス無し）
         $mask = imagecreatetruecolor($size, $size);
         imagefill($mask, 0, 0, imagecolorallocate($mask, 1, 2, 3));
-        imagefilledellipse($mask, (int)($size / 2), (int)($size / 2), $size, $size, imagecolorallocate($mask, 255, 255, 255));
+        $drawMask($mask, imagecolorallocate($mask, 255, 255, 255));
 
         for ($iy = 0; $iy < $size; $iy++) {
             for ($ix = 0; $ix < $size; $ix++) {
                 if ((imagecolorat($mask, $ix, $iy) & 0xFFFFFF) === 0x010203) {
-                    continue; // 円の外はスキップ
+                    continue; // マスクの外はスキップ
                 }
                 imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
             }
@@ -663,7 +714,7 @@ abstract class AbstractCardImageGenerator
         try {
             $data = $this->fileDownloader->downloadFile(
                 $url,
-                self::ICON_FETCH_UA,
+                OpenChatCrawlerConfig::USER_AGENT, // クローラーと同一の OpenChatStatsbot 名義（正本を参照）
                 max_redirects: 2,
                 retryLimit: 1,
                 retryInterval: 0,

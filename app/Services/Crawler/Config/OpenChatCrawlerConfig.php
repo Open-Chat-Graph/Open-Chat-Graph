@@ -6,7 +6,8 @@ class OpenChatCrawlerConfig implements OpenChatCrawlerConfigInterface
 {
     protected const LINE_INTERNAL_URL = 'https://line.me/ti/g2/';
 
-    protected const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
+    /** OpenChatStatsbot 名義のUA（正本）。クローラー本体のほか、OGP画像のアイコン取得も同一名義で使う */
+    public const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36 (compatible; OpenChatStatsbot; +https://github.com/Open-Chat-Graph/Open-Chat-Graph)';
 
     public const LINE_URL_MATCH_PATTERN = [
         '' =>    '{(?<=https:\/\/openchat\.line\.me\/jp\/cover\/).+?(?=\?|$)}',

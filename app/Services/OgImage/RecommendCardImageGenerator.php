@@ -26,6 +26,9 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     private const HEADLINE_MAX_SIZE = 56;
     private const HEADLINE_MIN_SIZE = 32;
 
+    /** 背景ミニカードのアイコン取得に使ってよい合計秒数（超過分はプレースホルダで描く） */
+    private const ICON_TOTAL_BUDGET = 6;
+
     /** ミニカードの寸法 */
     private const CARD_W = 360;
     private const CARD_H = 170;
@@ -61,8 +64,14 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $im = $this->createLightCanvas();
 
         // --- 部屋のミニカードを散らし、ぼかし＋青い霞で背景に沈める ---
+        // アイコン取得は1件ずつ直列（最大3秒×5件）なので、合計の時間予算を使い切ったら
+        // 残りはプレースホルダにしてワーカーの長時間拘束を防ぐ（背景要素なので欠けてよい）
+        $iconDeadline = microtime(true) + self::ICON_TOTAL_BUDGET;
         foreach (array_slice($rooms, 0, self::MAX_ROOMS) as $i => $room) {
             [$x, $y] = self::CARD_SLOTS[$i];
+            if (microtime(true) > $iconDeadline) {
+                $room['iconUrl'] = null;
+            }
             $this->drawRoomCard($im, $room, $x, $y);
         }
         for ($i = 0; $i < 5; $i++) {
@@ -103,13 +112,8 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         ], 30, $y + 14, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
-        ob_start();
-        imagepng($im, null, 6);
-        return ob_get_clean() ?: null;
+        return $this->encodePng($im);
     }
-
-    /** 1:1サムネイルの一辺（px）。meta name="thumbnail"（検索用）向けなので OGP より小さくてよい */
-    private const THUMB_SIZE = 640;
 
     /**
      * 検索用 1:1 サムネイル（640x640 PNG）を生成する（meta name="thumbnail" 用）。
@@ -141,9 +145,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 26, $y + $gap, $this->fontsBold, $s);
         $this->drawBanner($im, [[t('オプチャグラフ'), $subNavy]], 22, $y + $gap, $this->fontsMedium, $s);
 
-        ob_start();
-        imagepng($im, null, 6);
-        return ob_get_clean() ?: null;
+        return $this->encodePng($im);
     }
 
     /**
@@ -156,15 +158,18 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     private function buildTagSegments(string $format, string $tag, int $maxTextW, int $maxSize, int $minSize, int $navy, int $blue): array
     {
         $compose = function (string $t) use ($format, $navy, $blue): array {
-            $formatted = sprintfT($format, $t);
-            $pos = mb_strpos($formatted, $t);
+            // 訳文テンプレートの %s の位置で前後を割る。整形後の文字列からタグを検索すると、
+            // テンプレート側のリテラル（例: th の "OpenChat"）にタグが部分一致して2トーンの
+            // 塗り分け位置がずれるため、必ず %s 基準で分割する
+            $tpl = t($format);
+            $pos = mb_strpos($tpl, '%s');
             if ($pos === false) {
-                return [[$formatted, $navy]];
+                return [[sprintf($tpl, $t), $navy]];
             }
             return array_values(array_filter([
-                [mb_substr($formatted, 0, $pos), $navy],
+                [mb_substr($tpl, 0, $pos), $navy],
                 [$t, $blue],
-                [mb_substr($formatted, $pos + mb_strlen($t)), $navy],
+                [mb_substr($tpl, $pos + 2), $navy],
             ], fn(array $seg) => $seg[0] !== ''));
         };
         $width = fn(array $segments, int $size): int => array_sum(
@@ -309,20 +314,8 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             return;
         }
 
-        // 正方形へカバークロップ（縦長のカバー画像を引き伸ばして潰さない）
-        $sq = $this->cropSquare($src, $size);
-
-        $mask = imagecreatetruecolor($size, $size);
-        imagefill($mask, 0, 0, imagecolorallocate($mask, 1, 2, 3));
-        $this->fillRoundedRect($mask, 0, 0, $size, $size, $r, imagecolorallocate($mask, 255, 255, 255));
-
-        for ($iy = 0; $iy < $size; $iy++) {
-            for ($ix = 0; $ix < $size; $ix++) {
-                if ((imagecolorat($mask, $ix, $iy) & 0xFFFFFF) === 0x010203) {
-                    continue;
-                }
-                imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
-            }
-        }
+        $this->copyMaskedIcon($im, $src, $x, $y, $size, function (\GdImage $mask, int $white) use ($size, $r) {
+            $this->fillRoundedRect($mask, 0, 0, $size, $size, $r, $white);
+        });
     }
 }

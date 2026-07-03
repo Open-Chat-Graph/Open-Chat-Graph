@@ -78,8 +78,10 @@ class RecommendCardImageController
         ConcurrentRequestGuard $guard,
         OgCardHttpResponder $responder,
     ) {
-        if (!$guard->tryAcquire('og-card', getIP())) {
-            $responder->sendDefault();
+        // card とはスコープを分ける。クローラーはページの og:image(/card) と thumbnail(/thumb) を
+        // 同一IPから並列に取りに来るため、同一スコープだと片方が常にデフォルト画像へ落ちる
+        if (!$guard->tryAcquire('og-thumb', getIP())) {
+            $responder->sendDefault(square: true);
         }
 
         $tag = $recommendPageList->getValidTag($tag);
@@ -90,9 +92,10 @@ class RecommendCardImageController
         $png = $generator->renderThumbPng($tag);
 
         if ($png === null) {
-            $responder->sendDefault();
+            $responder->sendDefault(square: true);
         }
 
-        $responder->sendPng($png);
+        // 検索サムネイル用なので noindex を付けない（付けると検索側が採用しない恐れ）
+        $responder->sendPng($png, noindex: false);
     }
 }

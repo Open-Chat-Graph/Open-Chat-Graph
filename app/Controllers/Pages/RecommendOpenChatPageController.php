@@ -164,8 +164,8 @@ class RecommendOpenChatPageController
         // （/recommend/{tag}/thumb）。以前はどちらも部屋アイコンの LINE CDN 直リンクで、
         // 見栄え・情報量に欠けた。日付クエリでSNS側のクロールキャッシュを1日単位で更新させる
         $_meta->setImageUrl(url('recommend/' . urlencode($tag) . '/card') . '?d=' . date('Ymd'))
-            ->setTwitterCard('summary_large_image');
-        $_meta->thumbnail = url('recommend/' . urlencode($tag) . '/thumb') . '?d=' . date('Ymd');
+            ->setTwitterCard('summary_large_image')
+            ->setThumbnail(url('recommend/' . urlencode($tag) . '/thumb') . '?d=' . date('Ymd'));
 
         // 表示中の上位部屋を ItemList として同梱（AI検索・検索エンジンの機械可読引用向け）
         $_schema = $this->breadcrumbsShema->generateRecommend(

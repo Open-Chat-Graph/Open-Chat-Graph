@@ -78,9 +78,7 @@ class SiteOgpImageGenerator extends AbstractCardImageGenerator
         $bw = $this->measureLine($brand, 26, $this->fontsMedium);
         $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
 
-        ob_start();
-        imagepng($im, null, 6);
-        return ob_get_clean() ?: null;
+        return $this->encodePng($im);
     }
 
     /**
@@ -124,23 +122,7 @@ class SiteOgpImageGenerator extends AbstractCardImageGenerator
             ];
         }
 
-        $fill = imagecolorallocate($im, 26, 44, 82);
-        $poly = [];
-        foreach ($points as [$x, $y]) {
-            $poly[] = $x;
-            $poly[] = $y;
-        }
-        $poly[] = $right;
-        $poly[] = $bottomY;
-        $poly[] = $left;
-        $poly[] = $bottomY;
-        imagefilledpolygon($im, $poly, $fill);
-
-        imagesetthickness($im, 4);
-        for ($i = 1; $i < count($points); $i++) {
-            imageline($im, $points[$i - 1][0], $points[$i - 1][1], $points[$i][0], $points[$i][1], $lineCol);
-        }
-        imagesetthickness($im, 1);
+        $this->drawFilledPolyline($im, $points, $lineCol, $left, $right, $bottomY);
 
         [$ex, $ey] = $points[count($points) - 1];
         imagefilledellipse($im, $ex, $ey, 16, 16, $lineCol);

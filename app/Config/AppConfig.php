@@ -21,6 +21,16 @@ class AppConfig
         '/th' => 'assets/ogp_th.png',
     ];
 
+    /**
+     * 現在ロケールのデフォルトOGP画像パスを解決する（未知の urlRoot は日本語版へフォールバック）。
+     * og:image メタ（Metadata）とOGカード生成失敗時の送出（OgCardHttpResponder）が同じ解決を共有する。
+     */
+    public static function defaultOgpImagePath(): string
+    {
+        return self::DEFAULT_OGP_IMAGE_FILE_PATHS[\Shared\MimimalCmsConfig::$urlRoot]
+            ?? self::DEFAULT_OGP_IMAGE_FILE_PATHS[''];
+    }
+
     /** Organization 構造化データの sameAs（公式ブランドの外部プロフィール。エンティティ連携・知識パネル用）。 */
     const BRAND_SAME_AS = [
         'https://x.com/openchat_graph',

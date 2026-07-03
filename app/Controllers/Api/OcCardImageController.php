@@ -66,7 +66,11 @@ class OcCardImageController
                 }
             }
             if ($lastIdx !== null) {
-                $weekAgo = $series[max(0, $lastIdx - 7)];
+                // ちょうど1週間前（同じ曜日）の点があるときだけ増減を出す。窓が8点しか無いので、
+                // 旧実装の max(0, ...) の丸めだと「最終データが数日前の部屋」で1週間未満の増減を
+                // 「/ 1週間」と表示してしまう（旧30日窓ではクランプが実質発火しなかった）
+                $weekAgoIdx = $lastIdx - 7;
+                $weekAgo = $weekAgoIdx >= 0 ? $series[$weekAgoIdx] : null;
                 if ($weekAgo !== null) {
                     $diffWeek = (int)$series[$lastIdx] - (int)$weekAgo;
                 }
@@ -102,8 +106,10 @@ class OcCardImageController
         ConcurrentRequestGuard $guard,
         OgCardHttpResponder $responder,
     ) {
-        if (!$guard->tryAcquire('og-card', getIP())) {
-            $responder->sendDefault();
+        // card とはスコープを分ける。クローラーはページの og:image(/card) と thumbnail(/thumb) を
+        // 同一IPから並列に取りに来るため、同一スコープだと片方が常にデフォルト画像へ落ちる
+        if (!$guard->tryAcquire('og-thumb', getIP())) {
+            $responder->sendDefault(square: true);
         }
 
         $oc = $ocRepo->getOpenChatById($open_chat_id);
@@ -114,9 +120,10 @@ class OcCardImageController
         $png = $generator->renderThumbPng((string)$oc['name'], imgPreviewUrl($oc['img_url']));
 
         if ($png === null) {
-            $responder->sendDefault();
+            $responder->sendDefault(square: true);
         }
 
-        $responder->sendPng($png);
+        // 検索サムネイル用なので noindex を付けない（付けると検索側が採用しない恐れ）
+        $responder->sendPng($png, noindex: false);
     }
 }

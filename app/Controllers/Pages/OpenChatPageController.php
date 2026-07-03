@@ -138,8 +138,8 @@ class OpenChatPageController
         // 日付クエリでSNS側のクロールキャッシュを1日単位で更新させる
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)
             ->setImageUrl(url('oc', (string)$open_chat_id, 'card') . '?d=' . date('Ymd'))
-            ->setTwitterCard('summary_large_image');
-        $_meta->thumbnail = url('oc', (string)$open_chat_id, 'thumb') . '?d=' . date('Ymd');
+            ->setTwitterCard('summary_large_image')
+            ->setThumbnail(url('oc', (string)$open_chat_id, 'thumb') . '?d=' . date('Ymd'));
 
         $_breadcrumbsShema = $breadcrumbsShema->generateSchema(
             $oc['tag1'] ?: $category,
