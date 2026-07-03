@@ -107,8 +107,8 @@ class OcCardImageGenerator
         $red = imagecolorallocate($im, 240, 98, 98);
         $accent = imagecolorallocate($im, 88, 148, 255);
 
-        // --- スパークライン（下段・先に描いて他要素を上に重ねる。両端に開始/終了日を薄く） ---
-        $this->drawSparkline($im, $series, $dates, $accent, $sub);
+        // --- スパークライン（下段・先に描いて他要素を上に重ねる。最新ポイントに人数＋日付ラベル） ---
+        $this->drawSparkline($im, $series, $dates, $member, $accent, $sub);
 
         // --- 部屋アイコン（左上・円形クロップ） ---
         $iconSize = 190;
@@ -134,9 +134,13 @@ class OcCardImageGenerator
         // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
         $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
-        // --- フッター: 左にサイト名（ロケール依存）、右にドメイン（左下/右下） ---
+        // --- サイト名: 右上（一番上）。X は下部にキャプション帯を重ねるので、ブランド名は隠れない
+        //     上端へ。ヘッダー(y=68)より上に置くので人数行とも重ならない。 ---
         $siteName = t('オプチャグラフ');
-        $this->drawLine($im, $siteName, 72, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
+        $sw = $this->measureLine($siteName, 26, $this->fontsMedium);
+        $this->drawLine($im, $siteName, $rightEdge - $sw, 34, 26, $sub, $this->fontsMedium);
+
+        // --- フッター右下: ドメイン（原状のまま） ---
         $brand = 'openchat-review.me';
         $bw = $this->measureLine($brand, 26, $this->fontsMedium);
         $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
@@ -628,13 +632,14 @@ class OcCardImageGenerator
 
     /**
      * 30日メンバー数スパークライン（塗りつぶし付き折れ線）を下部に描画する。系列が2点未満なら描かない。
-     * $dates（$series と同じ並び）があれば、グラフ両端の下に開始/終了日(M/D)を薄く添える
-     *（OGPはCDNキャッシュで固定されるので「いつの範囲か」が分かるように）。
+     * 最新ポイント（右端の点）の上に「人数＋日付」をデータラベルとして重ねる（OGPはCDNキャッシュで
+     * 固定されるので「いつ時点の何人か」が点の位置で分かるように）。
      *
-     * @param int[] $series
+     * @param int[]    $series
      * @param string[] $dates
+     * @param int      $member 最新人数（データラベルに出す）
      */
-    private function drawSparkline(\GdImage $im, array $series, array $dates, int $lineCol, int $labelCol): void
+    private function drawSparkline(\GdImage $im, array $series, array $dates, int $member, int $lineCol, int $labelCol): void
     {
         // member が null の点は落とすが、対応する日付も一緒に落として整合を保つ
         $pairs = [];
@@ -689,16 +694,23 @@ class OcCardImageGenerator
         [$ex, $ey] = $points[$n - 1];
         imagefilledellipse($im, $ex, $ey, 16, 16, $lineCol);
 
-        // 両端の日付(M/D)を控えめに（開始=左下、終了=右下）
-        $startLabel = $this->shortDate($pairs[0][1]);
-        $endLabel = $this->shortDate($pairs[$n - 1][1]);
-        $ly = $bottomY + 10;
-        if ($startLabel !== '') {
-            $this->drawLine($im, $startLabel, $left, $ly, 22, $labelCol, $this->fontsMedium);
-        }
-        if ($endLabel !== '') {
-            $ew = $this->measureLine($endLabel, 22, $this->fontsMedium);
-            $this->drawLine($im, $endLabel, $right - $ew, $ly, 22, $labelCol, $this->fontsMedium);
+        // --- 最新ポイントのデータラベル: 点の上に「人数」(太字/白)＋「日付」(muted) を2段で重ねる ---
+        // 右端の点なので右揃えにして枠外へ出さない。点(◯16px)の少し上から上方向へ積む。
+        $white = imagecolorallocate($im, 245, 247, 252);
+        $valStr = number_format($member) . t('人');
+        $dateStr = $this->shortDate($pairs[$n - 1][1]);
+        $valSize = 30;
+        $dateSize = 22;
+        $labelRight = min($ex + 14, self::WIDTH - 24); // ラベル右端（枠外に出さない）
+        $gap = 6;
+        // 下段(日付)ベース位置 → 上段(人数)をその上に積む。$top は各テキストの ink 上端。
+        $dateTop = $ey - 18 - $dateSize;
+        $valTop = $dateTop - $gap - $valSize;
+        $valW = $this->measureLine($valStr, $valSize, $this->fontsBold);
+        $this->drawLine($im, $valStr, $labelRight - $valW, $valTop, $valSize, $white, $this->fontsBold);
+        if ($dateStr !== '') {
+            $dateW = $this->measureLine($dateStr, $dateSize, $this->fontsMedium);
+            $this->drawLine($im, $dateStr, $labelRight - $dateW, $dateTop, $dateSize, $labelCol, $this->fontsMedium);
         }
     }
 
