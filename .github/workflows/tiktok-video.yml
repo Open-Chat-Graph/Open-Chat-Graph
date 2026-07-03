@@ -1,0 +1,111 @@
+# TikTok 用縦型ランキング動画の自動レンダリング
+#
+# 起動経路:
+#   - repository_dispatch (type: tiktok-video)
+#       本番 cron（SyncOpenChat dailyTask → batch/exec/tiktok_video_dispatch.php）が
+#       デイリー急上昇ランキングのデータを client_payload で送ってくる（毎日23:30過ぎ）。
+#   - workflow_dispatch（手動テスト用。docs/tiktok/fixture-payload.json でレンダリング）
+#
+# 本番サーバー（共用ホスティング）では ffmpeg による動画エンコードを行わない設計のため、
+# レンダリングはこのワークフロー（GitHub Actions）で行う。詳細: docs/tiktok/DESIGN.md
+#
+# 生成物: artifact（動画 mp4 + キャプション + スライド PNG）
+# 通知:   Discord（secrets.TIKTOK_VIDEO_DISCORD_WEBHOOK 設定時のみ・動画を添付）
+#         → スマホで受け取り、TikTok アプリから投稿する運用（Phase 1）
+
+name: TikTok Video
+
+on:
+  repository_dispatch:
+    types: [tiktok-video]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # ずんだもんナレーション用の VOICEVOX エンジン（OSS・CPU版）。
+    # レンダラーは VOICEVOX_URL 経由で音声合成する（日本語ペイロードのみ。クレジット表記は動画とキャプションに自動付与）
+    services:
+      voicevox:
+        image: voicevox/voicevox_engine:cpu-latest
+        ports:
+          - 50021:50021
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: gd, curl, mbstring
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-dev --no-interaction --no-progress
+
+      # repository_dispatch: 本番から送られた client_payload をそのまま使う
+      # workflow_dispatch:   コミット済みのサンプルデータでレンダリング（動作確認用）
+      - name: Write payload
+        env:
+          CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            printf '%s' "$CLIENT_PAYLOAD" > payload.json
+          else
+            cp docs/tiktok/fixture-payload.json payload.json
+          fi
+
+      - name: Wait for VOICEVOX engine
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:50021/version && exit 0
+            sleep 2
+          done
+          echo "VOICEVOX エンジンが起動しませんでした" >&2
+          exit 1
+
+      - name: Render video (ffmpeg はランナーにプリインストール済み)
+        env:
+          VOICEVOX_URL: http://localhost:50021
+        run: php batch/exec/tiktok_video_render.php payload.json out
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-video-${{ github.run_number }}
+          path: out/
+          retention-days: 14
+
+      # Discord へ動画付きで通知（webhook 未設定ならスキップ）。
+      # 添付上限(約10MB)を超えた場合は Actions の artifact リンクだけ送る。
+      - name: Notify Discord
+        if: ${{ always() }}
+        env:
+          WEBHOOK: ${{ secrets.TIKTOK_VIDEO_DISCORD_WEBHOOK }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          [ -z "$WEBHOOK" ] && echo "webhook未設定のためスキップ" && exit 0
+          if [ "$JOB_STATUS" != "success" ]; then
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d "{\"content\":\"❌ TikTok動画の生成に失敗しました: $RUN_URL\"}" "$WEBHOOK"
+            exit 0
+          fi
+          VIDEO=$(ls out/*.mp4 | head -1)
+          CAPTION=$(head -c 1500 out/caption.txt)
+          SIZE=$(stat -c%s "$VIDEO")
+          if [ "$SIZE" -le 9500000 ]; then
+            curl -sS -X POST \
+              -F "payload_json={\"content\":\"🎬 今日のTikTok動画ができました（アプリから投稿してください）\n\`\`\`\n${CAPTION}\n\`\`\`\n$RUN_URL\"}" \
+              -F "file1=@${VIDEO}" "$WEBHOOK"
+          else
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d "{\"content\":\"🎬 TikTok動画ができました（添付上限超過のためリンクから取得）: $RUN_URL\"}" "$WEBHOOK"
+          fi

@@ -369,6 +369,34 @@ flowchart TD
 
 ---
 
+## 🎬 TikTok 動画の自動生成（集客）
+
+デイリー急上昇ランキングから縦型動画（1080x1920）を毎日自動生成する。本番サーバー（共用ホスティング）
+では ffmpeg を動かさず、**本番はデータ送出のみ・レンダリングは GitHub Actions** という push 型構成
+（公開 API は Cloudflare WAF が bot 直叩きを block するため、Actions から pull しない）。
+詳細設計・運用手順・TikTok API の調査結果は [`docs/tiktok/DESIGN.md`](docs/tiktok/DESIGN.md)。
+
+```mermaid
+flowchart TD
+  cron["本番 cron 日次処理（23:30 完了後・日本のみ）<br/>SyncOpenChat::dailyTask"]
+  cron --> disp["batch/exec/tiktok_video_dispatch.php<br/>TikTokVideoPayloadBuilder（TOP5＋30日系列）"]
+  disp -->|"repository_dispatch（トークン未設定なら何もしない）"| gha["GitHub Actions tiktok-video.yml<br/>（VOICEVOX エンジンをサービスコンテナで起動）"]
+  gha --> render["batch/exec/tiktok_video_render.php<br/>ずんだもんナレーション合成 → GDスライド（多言語）→ ffmpeg 合成"]
+  render --> out["artifact（mp4＋キャプション＋スライド）"]
+  render --> dc["Discord 通知（動画添付）→ スマホから TikTok アプリで投稿"]
+```
+
+- スライド描画は OGP カードと共通の GD エンジン（`app/Services/OgImage/GdTextRenderer`）。
+  文言は `t()`/`sprintfT()` でロケール翻訳されるため、`urlRoot` を渡すだけで台湾・タイ版も生成できる
+  （現状は日本のみディスパッチ）。
+- ナレーションは VOICEVOX ずんだもん（日本語のみ・`VOICEVOX_URL` 未設定なら無音で生成・
+  クレジット「VOICEVOX:ずんだもん」を動画とキャプションに自動付与）。スライド表示時間は
+  読み上げ長に自動追従する。
+- 手動テスト: Actions の workflow_dispatch（`docs/tiktok/fixture-payload.json` でレンダリング）、
+  ローカルは `php batch/exec/tiktok_video_render.php docs/tiktok/fixture-payload.json out/`（要 ffmpeg）。
+
+---
+
 ## 📞 連絡先
 
 - Email: support@openchat-review.me

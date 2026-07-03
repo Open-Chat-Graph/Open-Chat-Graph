@@ -174,6 +174,13 @@ class SyncOpenChat
         $this->batchScriptLauncher->launchInBackground(BatchScript::updateOcPageCache, MimimalCmsConfig::$urlRoot, 'daily');
         CronUtility::addVerboseCronLog('ページキャッシュ日次更新をバックグラウンドで開始');
 
+        // TikTok 用ランキング動画のデータを GitHub Actions へ送出（レンダリングは Actions 側で行う）。
+        // トークン未設定の環境（ローカル/stg/mock）ではバッチ側が何もしない。多言語展開までは日本のみ。
+        if (!MimimalCmsConfig::$urlRoot) {
+            $this->batchScriptLauncher->launchInBackground(BatchScript::tiktokVideoDispatch, MimimalCmsConfig::$urlRoot);
+            CronUtility::addVerboseCronLog('TikTok動画ディスパッチをバックグラウンドで開始');
+        }
+
         CronUtility::addCronLog('【日次処理】完了');
     }
 
