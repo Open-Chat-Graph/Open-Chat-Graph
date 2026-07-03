@@ -46,11 +46,9 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         $this->drawSparkline($im, $series, $dates, $member, $accent, $sub);
 
         // --- 部屋アイコン（左上・円形クロップ） ---
-        // 左上に置いたサイト名(y=28)の分、アイコン/ヘッダー/タイトルの上端を少し下げて余白を作る
-        //（headY・タイトル開始は iconY 起点で連動して下がる）。
         $iconSize = 190;
         $iconX = 72;
-        $iconY = 96;
+        $iconY = 66;
         $this->drawIcon($im, $iconUrl, $iconX, $iconY, $iconSize, $accent);
 
         $rightX = $iconX + $iconSize + 40; // = 302
@@ -72,14 +70,11 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
         $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
-        // --- サイト名: 左上。X は下部にキャプション帯を重ねるので、ブランド名は隠れない上端へ。 ---
+        // --- フッター右下: サイト名「オプチャグラフ」（ドメイン表記は廃止）。
+        //     X は下部を帯で覆うが、X 側がドメインを別途表示するので実害は小さい。 ---
         $siteName = t('オプチャグラフ');
-        $this->drawLine($im, $siteName, 72, 28, 26, $sub, $this->fontsMedium);
-
-        // --- フッター右下: ドメイン（原状のまま） ---
-        $brand = 'openchat-review.me';
-        $bw = $this->measureLine($brand, 26, $this->fontsMedium);
-        $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
+        $sw = $this->measureLine($siteName, 26, $this->fontsMedium);
+        $this->drawLine($im, $siteName, self::WIDTH - $sw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
         return $this->encodePng($im);
