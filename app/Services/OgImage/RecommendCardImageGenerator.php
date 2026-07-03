@@ -88,8 +88,11 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
 
         $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 56, $y + 14, $this->fontsBold);
 
-        $sub = t('1時間ごとに更新') . '　openchat-review.me';
-        $this->drawBanner($im, [[$sub, $subNavy]], 30, $y + 14, $this->fontsMedium);
+        // サブ帯: 更新頻度（細字）＋ブランド名（太字）。URLは出さない
+        $this->drawBanner($im, [
+            [t('1時間ごとに更新') . '　', $subNavy],
+            [t('オプチャグラフ'), $navy, $this->fontsBold],
+        ], 30, $y + 14, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
         ob_start();
@@ -135,28 +138,56 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     }
 
     /**
-     * 中央揃えの白バナー帯を1本描き、その上にセグメント（[テキスト, 色]）を並べる。
-     * 帯の幅はテキスト実幅＋左右パディング。戻り値は帯の下端 Y（次の帯の起点用）。
+     * 中央揃えの白バナー帯を1本描き、その上にセグメント（[テキスト, 色, ?フォント]）を並べる。
+     * 帯の幅はテキスト実幅＋左右パディング。縦位置は「一度白地のスクラッチに描いて ink の実ピクセル
+     * 範囲を測り、その ink が帯の縦中央に来るようコピーする」方式で合わせる（フォントメトリクスの
+     * 推定だと CJK・タイ文字・絵文字混在で中央からずれるため、描画結果そのものを基準にする）。
+     * 戻り値は帯の下端 Y（次の帯の起点用）。
      *
-     * @param array{0:string,1:int}[] $segments
+     * @param array{0:string, 1:int, 2?:array} $segments セグメントごとにフォントリストを上書き可
+     * @param array $fontList フォント指定の無いセグメントに使うフォントリスト
      */
     private function drawBanner(\GdImage $im, array $segments, int $size, int $top, array $fontList): int
     {
         $padX = 36;
         $textW = 0;
-        foreach ($segments as [$text]) {
-            $textW += $this->measureLine($text, $size, $fontList);
+        foreach ($segments as $seg) {
+            $textW += $this->measureLine($seg[0], $size, $seg[2] ?? $fontList);
         }
         $h = (int)round($size * 1.72);
         $x = intdiv(self::WIDTH - $textW, 2) - $padX;
         $white = imagecolorallocate($im, 255, 255, 255);
         imagefilledrectangle($im, $x, $top, $x + $textW + $padX * 2, $top + $h, $white);
 
-        $cx = $x + $padX;
-        $textTop = $top + intdiv($h - (int)round($size * 1.4), 2);
-        foreach ($segments as [$text, $color]) {
-            $cx += $this->drawLine($im, $text, $cx, $textTop, $size, $color, $fontList);
+        // 白地スクラッチに実際に描いて ink の上下端を実測する（上下に1文字分の余白を確保）
+        $scratchW = max(1, $textW + 4);
+        $scratchH = $size * 3;
+        $scratch = imagecreatetruecolor($scratchW, $scratchH);
+        imagefilledrectangle($scratch, 0, 0, $scratchW, $scratchH, imagecolorallocate($scratch, 255, 255, 255));
+        $cx = 2;
+        foreach ($segments as $seg) {
+            $color = imagecolorallocate($scratch, ($seg[1] >> 16) & 0xFF, ($seg[1] >> 8) & 0xFF, $seg[1] & 0xFF);
+            $cx += $this->drawLine($scratch, $seg[0], $cx, $size, $size, $color, $seg[2] ?? $fontList);
         }
+
+        $inkTop = null;
+        $inkBottom = null;
+        for ($y = 0; $y < $scratchH; $y++) {
+            for ($sx = 0; $sx < $scratchW; $sx += 2) {
+                if ((imagecolorat($scratch, $sx, $y) & 0xFFFFFF) !== 0xFFFFFF) {
+                    $inkTop ??= $y;
+                    $inkBottom = $y;
+                    break;
+                }
+            }
+        }
+        if ($inkTop === null) {
+            return $top + $h; // 描く ink が無い（空文字など）＝帯だけ
+        }
+
+        // ink が帯の縦中央に来る位置へスクラッチを転写（帯もスクラッチも白地なので継ぎ目は出ない）
+        $inkH = $inkBottom - $inkTop + 1;
+        imagecopy($im, $scratch, $x + $padX - 2, $top + intdiv($h - $inkH, 2), 0, $inkTop, $scratchW, $inkH);
         return $top + $h;
     }
 
