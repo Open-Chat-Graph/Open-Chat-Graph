@@ -309,8 +309,8 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             return;
         }
 
-        $sq = imagecreatetruecolor($size, $size);
-        imagecopyresampled($sq, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
+        // 正方形へカバークロップ（縦長のカバー画像を引き伸ばして潰さない）
+        $sq = $this->cropSquare($src, $size);
 
         $mask = imagecreatetruecolor($size, $size);
         imagefill($mask, 0, 0, imagecolorallocate($mask, 1, 2, 3));

@@ -107,7 +107,8 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
 
         $icon = $iconUrl ? $this->loadIcon($iconUrl) : null;
         if ($icon) {
-            imagecopyresampled($im, $icon, 0, 0, 0, 0, $s, $s, imagesx($icon), imagesy($icon));
+            // 全面に敷く（縦長のカバー画像を引き伸ばすと絵が潰れるためカバークロップ）
+            imagecopy($im, $this->cropSquare($icon, $s), 0, 0, 0, 0, $s, $s);
         }
 
         // 下部スクリム: 透明→濃紺のグラデーションを重ね、アイコンの柄に関わらず部屋名を読めるようにする

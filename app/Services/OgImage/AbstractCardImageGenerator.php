@@ -614,9 +614,9 @@ abstract class AbstractCardImageGenerator
             return;
         }
 
-        // 正方形へリサイズ
-        $sq = imagecreatetruecolor($size, $size);
-        imagecopyresampled($sq, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
+        // 正方形へカバークロップ（中央の最大正方形を切り出す。縦長のカバー画像を引き伸ばすと
+        // 円の中身が楕円に潰れるため、リサイズではなくクロップで合わせる）
+        $sq = $this->cropSquare($src, $size);
 
         // 円形マスク: 円の外側を魔法色で塗り、内側だけ転写する（簡易アンチエイリアス無し）
         $mask = imagecreatetruecolor($size, $size);
@@ -631,6 +631,20 @@ abstract class AbstractCardImageGenerator
                 imagesetpixel($im, $x + $ix, $y + $iy, imagecolorat($sq, $ix, $iy));
             }
         }
+    }
+
+    /**
+     * 画像の中央の最大正方形を $size 四方に切り出して返す（カバークロップ）。
+     * LINE の画像は正方形とは限らない（縦長のカバー画像など）ため、正方形リサイズだと絵が潰れる。
+     */
+    protected function cropSquare(\GdImage $src, int $size): \GdImage
+    {
+        $sw = imagesx($src);
+        $sh = imagesy($src);
+        $side = min($sw, $sh);
+        $sq = imagecreatetruecolor($size, $size);
+        imagecopyresampled($sq, $src, 0, 0, intdiv($sw - $side, 2), intdiv($sh - $side, 2), $size, $size, $side, $side);
+        return $sq;
     }
 
     /**

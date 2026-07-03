@@ -12,11 +12,15 @@ namespace App\Services\OgImage;
  * （再生成: `php batch/exec/generate_default_ogp.php`）。文言は t() がロケール（ja/tw/th）で解決する
  * ため、実行時の MimimalCmsConfig::$urlRoot ごとに1枚ずつ書き出す。
  *
- * 構図: /oc カードと同じ濃紺グラデーション地。下部にブランドモチーフの上昇折れ線（装飾・実データ
- * ではない）、中央にサイト名とタグライン、右下にドメイン。
+ * 構図: /oc カードと同じ濃紺グラデーション地。実際のサイトヘッダーと同じロックアップ
+ * （緑のロゴアイコン＋サイト名の横並び・左揃え）を上部に置き、その下にタグライン、
+ * 下部にブランドモチーフの上昇折れ線（装飾・実データではない）、右下にドメイン。
  */
 class SiteOgpImageGenerator extends AbstractCardImageGenerator
 {
+    /** サイトヘッダーで使っている実物のロゴアイコン（緑のグラフ）。リポ同梱＝環境差なし */
+    private const SITE_ICON_FILE = __DIR__ . '/../../../public/assets/icon-192x192.png';
+
     /**
      * 装飾折れ線の正規化座標（x: 0..1, y: 0..1=下端）。緩やかな上下を挟みつつ右肩上がり。
      * 乱数を使わず固定にして、再生成しても同じ画像になる（差分コミットを汚さない）。
@@ -42,24 +46,32 @@ class SiteOgpImageGenerator extends AbstractCardImageGenerator
         // --- 下部: ブランドモチーフの上昇折れ線（装飾） ---
         $this->drawDecorativeChart($im, $accent);
 
-        // --- 中央: サイト名（1行・入る最大サイズへ縮小）＋タグライン ---
+        // --- 上部: サイトヘッダーと同じロックアップ（緑ロゴ＋サイト名の横並び・左揃え） ---
+        $left = 72;
+        $iconSize = 116;
+        $iconTop = 148;
+        $iconDrawn = $this->drawSiteIcon($im, $left, $iconTop, $iconSize);
+
         $title = t('オプチャグラフ');
-        $maxW = self::WIDTH - 2 * 72;
-        $size = 68;
-        while ($size > 36 && $this->measureLine($title, $size, $this->fontsBold) > $maxW) {
+        $textX = $iconDrawn ? $left + $iconSize + 34 : $left;
+        $maxW = self::WIDTH - $textX - 72;
+        $size = 54;
+        while ($size > 30 && $this->measureLine($title, $size, $this->fontsBold) > $maxW) {
             $size -= 2;
         }
-        $tw = $this->measureLine($title, $size, $this->fontsBold);
-        $titleTop = 176;
-        $this->drawLine($im, $title, intdiv(self::WIDTH - $tw, 2), $titleTop, $size, $white, $this->fontsBold);
+        // タイトルの ink をロゴの縦中央に合わせる（GDのサイズはポイント指定＝実インクを実測して置く）
+        $bbox = imagettfbbox($size, 0, $this->fontBold, 'あ0A');
+        $inkH = -$bbox[7] + $bbox[1];
+        $titleTop = $iconTop + intdiv($iconSize - $inkH, 2);
+        $this->drawLine($im, $title, $textX, $titleTop, $size, $white, $this->fontsBold);
 
+        // --- タグライン: ロックアップの下・左揃え ---
         $tagline = t('LINEオープンチャットの人数推移とランキングを毎時間記録');
-        $tsize = 28;
-        while ($tsize > 20 && $this->measureLine($tagline, $tsize, $this->fontsMedium) > $maxW) {
+        $tsize = 27;
+        while ($tsize > 18 && $this->measureLine($tagline, $tsize, $this->fontsMedium) > self::WIDTH - $left - 72) {
             $tsize -= 2;
         }
-        $tlw = $this->measureLine($tagline, $tsize, $this->fontsMedium);
-        $this->drawLine($im, $tagline, intdiv(self::WIDTH - $tlw, 2), $titleTop + (int)round($size * 1.62), $tsize, $sub, $this->fontsMedium);
+        $this->drawLine($im, $tagline, $left, $iconTop + $iconSize + 46, $tsize, $sub, $this->fontsMedium);
 
         // --- フッター右下: ドメイン（oc カードと同位置） ---
         $brand = 'openchat-review.me';
@@ -69,6 +81,28 @@ class SiteOgpImageGenerator extends AbstractCardImageGenerator
         ob_start();
         imagepng($im, null, 6);
         return ob_get_clean() ?: null;
+    }
+
+    /**
+     * サイトロゴ（PNG・角丸と透過はアセット側で済んでいる）をアルファ合成で描く。
+     * アセットが読めない環境では何も描かず false（タイトルを左端へ寄せる）。
+     */
+    private function drawSiteIcon(\GdImage $im, int $x, int $y, int $size): bool
+    {
+        if (!is_file(self::SITE_ICON_FILE)) {
+            return false;
+        }
+        try {
+            $icon = imagecreatefrompng(self::SITE_ICON_FILE);
+        } catch (\ErrorException $e) {
+            return false; // 壊れたアセット（想定外だが画像全体は止めない）
+        }
+        if ($icon === false) {
+            return false;
+        }
+        imagealphablending($im, true);
+        imagecopyresampled($im, $icon, $x, $y, 0, 0, $size, $size, imagesx($icon), imagesy($icon));
+        return true;
     }
 
     /**
