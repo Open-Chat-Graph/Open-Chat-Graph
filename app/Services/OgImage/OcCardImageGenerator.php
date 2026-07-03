@@ -134,11 +134,9 @@ class OcCardImageGenerator
         // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
         $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
-        // --- サイト名: 右上（一番上）。X は下部にキャプション帯を重ねるので、ブランド名は隠れない
-        //     上端へ。ヘッダー(y=68)より上に置くので人数行とも重ならない。 ---
+        // --- サイト名: 左上。X は下部にキャプション帯を重ねるので、ブランド名は隠れない上端へ。 ---
         $siteName = t('オプチャグラフ');
-        $sw = $this->measureLine($siteName, 26, $this->fontsMedium);
-        $this->drawLine($im, $siteName, $rightEdge - $sw, 34, 26, $sub, $this->fontsMedium);
+        $this->drawLine($im, $siteName, 72, 28, 26, $sub, $this->fontsMedium);
 
         // --- フッター右下: ドメイン（原状のまま） ---
         $brand = 'openchat-review.me';
@@ -691,27 +689,37 @@ class OcCardImageGenerator
         }
         imagesetthickness($im, 1);
 
-        [$ex, $ey] = $points[$n - 1];
-        imagefilledellipse($im, $ex, $ey, 16, 16, $lineCol);
+        // --- 両端の点にデータラベル（上段=日付 M/D・下段=人数）。始点と終点の両方を出して
+        //     「いつ何人 → いつ何人」の増減が読めるようにする。文字は元の日付ラベルと同じ
+        //     控えめスタイル(fontsMedium・muted)。点の“上”に積むので X の下部帯にも隠れにくい。 ---
+        $this->drawPointLabel($im, $points[0][0], $points[0][1], $pairs[0][1], (int)$pairs[0][0], false, $lineCol, $labelCol);
+        $this->drawPointLabel($im, $points[$n - 1][0], $points[$n - 1][1], $pairs[$n - 1][1], $member, true, $lineCol, $labelCol);
+    }
 
-        // --- 最新ポイントのデータラベル: 点の上に「人数」(太字/白)＋「日付」(muted) を2段で重ねる ---
-        // 右端の点なので右揃えにして枠外へ出さない。点(◯16px)の少し上から上方向へ積む。
-        $white = imagecolorallocate($im, 245, 247, 252);
+    /**
+     * 折れ線の1点に、点マーカー＋データラベル（上段=日付 M/D、下段=人数）を描く。
+     * 文字は元の日付ラベルと同じ控えめスタイル（fontsMedium・muted）。$rightAlign=true で
+     * 右端の点用にラベル右端を点に合わせる（左端は左揃え）。いずれも枠外へ出ないようクランプ。
+     */
+    private function drawPointLabel(\GdImage $im, int $px, int $py, ?string $ymd, int $member, bool $rightAlign, int $dotCol, int $textCol): void
+    {
+        imagefilledellipse($im, $px, $py, 16, 16, $dotCol);
+
+        $dateStr = $this->shortDate($ymd);
         $valStr = number_format($member) . t('人');
-        $dateStr = $this->shortDate($pairs[$n - 1][1]);
-        $valSize = 30;
         $dateSize = 22;
-        $labelRight = min($ex + 14, self::WIDTH - 24); // ラベル右端（枠外に出さない）
-        $gap = 6;
-        // 下段(日付)ベース位置 → 上段(人数)をその上に積む。$top は各テキストの ink 上端。
-        $dateTop = $ey - 18 - $dateSize;
-        $valTop = $dateTop - $gap - $valSize;
-        $valW = $this->measureLine($valStr, $valSize, $this->fontsBold);
-        $this->drawLine($im, $valStr, $labelRight - $valW, $valTop, $valSize, $white, $this->fontsBold);
+        $valSize = 24;
+        // 下段(人数)を点のすぐ上に、上段(日付)をさらにその上へ積む（$top は各行の ink 上端）
+        $valTop = $py - 16 - $valSize;
+        $dateTop = $valTop - 4 - $dateSize;
+
+        $anchor = fn(int $w): int => $rightAlign
+            ? min($px + 12, self::WIDTH - 24) - $w   // 右揃え（右端の点）
+            : max($px - 12, 24);                     // 左揃え（左端の点）
         if ($dateStr !== '') {
-            $dateW = $this->measureLine($dateStr, $dateSize, $this->fontsMedium);
-            $this->drawLine($im, $dateStr, $labelRight - $dateW, $dateTop, $dateSize, $labelCol, $this->fontsMedium);
+            $this->drawLine($im, $dateStr, $anchor($this->measureLine($dateStr, $dateSize, $this->fontsMedium)), $dateTop, $dateSize, $textCol, $this->fontsMedium);
         }
+        $this->drawLine($im, $valStr, $anchor($this->measureLine($valStr, $valSize, $this->fontsMedium)), $valTop, $valSize, $textCol, $this->fontsMedium);
     }
 
     /** 'Y-m-d' を 'n/j'（例 6/3）へ。解釈できなければ空文字。 */
