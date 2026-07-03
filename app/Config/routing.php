@@ -195,6 +195,13 @@ Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index']
         return ['tag' => urldecode($tag)];
     });
 
+// 動的OGP画像（タグページのSNSシェア用カード）。オンデマンド生成＋エッジキャッシュ。noindex
+Route::path('recommend/{tag}/card', [\App\Controllers\Api\RecommendCardImageController::class, 'index'])
+    ->matchStr('tag', maxLen: 1000)
+    ->match(function (string $tag) {
+        return ['tag' => urldecode($tag)];
+    });
+
 Route::path(
     'oc@post@get',
     [OpenChatRegistrationApiController::class, 'register', 'post'],

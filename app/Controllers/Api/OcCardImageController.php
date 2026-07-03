@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\AppConfig;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\OgImage\OcCardImageGenerator;
+use App\Services\OgImage\OgCardHttpResponder;
 use App\Services\Security\ConcurrentRequestGuard;
 use App\Services\Statistics\StatisticsChartArrayService;
 
@@ -25,19 +25,17 @@ use App\Services\Statistics\StatisticsChartArrayService;
  */
 class OcCardImageController
 {
-    /** エッジ／ブラウザのキャッシュ秒数。og:image は日付クエリ(?d=Ymd)で日次ローテするので長めでよい */
-    private const CACHE_MAX_AGE = 43200; // 12h
-
     function index(
         int $open_chat_id,
         OpenChatPageRepositoryInterface $ocRepo,
         StatisticsChartArrayService $chartService,
         OcCardImageGenerator $generator,
         ConcurrentRequestGuard $guard,
+        OgCardHttpResponder $responder,
     ) {
         // 生成は 1IP×同時1本に制限。並列で来た2本目以降は生成せず即デフォルト画像を返す。
         if (!$guard->tryAcquire('og-card', getIP())) {
-            $this->sendDefault();
+            $responder->sendDefault();
         }
 
         $oc = $ocRepo->getOpenChatById($open_chat_id);
@@ -85,34 +83,9 @@ class OcCardImageController
 
         if ($png === null) {
             // 生成不可の環境ではデフォルトOGP画像で代替（リンク切れカードを出さない）
-            $this->sendDefault();
+            $responder->sendDefault();
         }
 
-        $this->sendPng($png);
-    }
-
-    /** 生成したPNGバイト列を、エッジがキャッシュできるヘッダー付きで送出して終了する */
-    private function sendPng(string $bytes): void
-    {
-        header('Content-Type: image/png');
-        header('Cache-Control: public, max-age=' . self::CACHE_MAX_AGE);
-        header('X-Robots-Tag: noindex');
-        echo $bytes;
-        exit;
-    }
-
-    /** デフォルトOGP画像を送って終了する（生成不可・混雑時のフォールバック） */
-    private function sendDefault(): void
-    {
-        $fallback = AppConfig::ROOT_PATH . 'public/' . AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH;
-        if (is_file($fallback)) {
-            header('Content-Type: image/png');
-            // フォールバックもエッジ(CF)にはキャッシュさせる。ただし混雑・一時失敗で出たものが
-            // 長時間ピンされないよう、本来のカード(12h)より短いTTLにして早めに再生成へ戻す。
-            header('Cache-Control: public, max-age=600');
-            header('X-Robots-Tag: noindex');
-            readfile($fallback);
-        }
-        exit;
+        $responder->sendPng($png);
     }
 }
