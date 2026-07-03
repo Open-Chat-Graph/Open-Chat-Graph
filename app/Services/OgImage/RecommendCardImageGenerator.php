@@ -7,28 +7,44 @@ namespace App\Services\OgImage;
 /**
  * /recommend/{tag}（テーマ別ランキングページ）用の動的OGP画像（1200x630 PNG）を GD で生成する。
  *
- * レイアウト: 左上にサイト名・右上に「1時間ごとに更新」。中央上にタグ見出し（1行・自動縮小）と
- * アクセント色のサブタイトル「人気・活発な部屋ランキング」、その下に掲載部屋数とメンバー合計。
- * 下段にランキング上位の部屋アイコン（円形・順位バッジ付き）を最大5件並べ、各アイコンの下に
- * メンバー数を添える。フッター右下にドメイン。文言はロケール依存（ja/tw/th）。
+ * 構図: 左にタイポグラフィ主体の見出しブロック（eyebrow「LINEオープンチャット」→ ヒーロー
+ * 「#タグ」→ アクセントバー付き「人気・活発な部屋ランキング」）、右にランキング上位の部屋
+ * アイコンを「順位＝大きさ」で非対称に散らしたクラスタ（1位のみアクセント色のリング）。
+ * クラスタ背後には淡い光彩を敷いて奥行きを出す。左上サイト名・右下ドメインは oc カードと共通の
+ * 控えめスタイル。文言はロケール依存（ja/tw/th）。
  *
  * テキスト・絵文字・アイコンの描画機構は AbstractCardImageGenerator（共通基盤）に置いてある。
  */
 class RecommendCardImageGenerator extends AbstractCardImageGenerator
 {
-    /** アイコン列に並べる部屋数の上限 */
+    /** アイコンクラスタに置く部屋数の上限（= CLUSTER レイアウトのスロット数） */
     public const MAX_ROOMS = 5;
+
+    /** ヒーロー（#タグ）の最大/最小フォントサイズ。入らなければ縮小→2行→末尾… の順で退避 */
+    private const HERO_MAX_SIZE = 76;
+    private const HERO_MIN_SIZE = 40;
+
+    /**
+     * アイコンクラスタのレイアウト（順位順）。d=直径、c=中心座標。
+     * 大きさの階段で順位を語る（バッジや番号を使わない）。2位は1位に少し重ねて奥行きを出す。
+     * @var array{d:int, c:array{0:int,1:int}}[]
+     */
+    private const CLUSTER = [
+        ['d' => 252, 'c' => [895, 262]],
+        ['d' => 148, 'c' => [772, 408]],
+        ['d' => 118, 'c' => [1028, 432]],
+        ['d' => 88,  'c' => [872, 524]],
+        ['d' => 64,  'c' => [1108, 152]],
+    ];
 
     /**
      * カード画像を生成し PNG バイト列を返す（ファイルには書かない＝CDN側でキャッシュする方針）。
      * 生成できない環境（GD/FreeType/フォント無し）では null を返す（呼び出し側でデフォルト画像に退避）。
      *
-     * @param string $tag         テーマ名（タグ）
-     * @param int    $roomCount   掲載部屋数（ページの表示件数と同じ基準）
-     * @param int    $totalMember 掲載部屋の合計メンバー数
-     * @param array{member:int, iconUrl:?string}[] $rooms ランキング上位の部屋（表示順）。先頭 MAX_ROOMS 件を描く
+     * @param string $tag テーマ名（タグ）
+     * @param array{iconUrl:?string}[] $rooms ランキング上位の部屋（表示順）。先頭 MAX_ROOMS 件を描く
      */
-    public function renderPng(string $tag, int $roomCount, int $totalMember, array $rooms): ?string
+    public function renderPng(string $tag, array $rooms): ?string
     {
         if (!$this->canRender()) {
             return null;
@@ -41,29 +57,25 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $sub = imagecolorallocate($im, 150, 162, 190);
         $accent = imagecolorallocate($im, 88, 148, 255);
 
-        // --- 左上: サイト名 ／ 右上: 更新頻度（oc カードと同じ控えめスタイル） ---
+        // --- 右: アイコンクラスタ（背後に淡い光彩 → 順位＝大きさの円を非対称に配置） ---
+        $this->drawGlow($im, 910, 300, 330);
+        $this->drawIconCluster($im, array_slice($rooms, 0, self::MAX_ROOMS), $accent);
+
+        // --- 左上: サイト名（oc カードと同じ控えめスタイル） ---
         $this->drawLine($im, t('オプチャグラフ'), 72, 28, 26, $sub, $this->fontsMedium);
-        $updated = t('1時間ごとに更新');
-        $uw = $this->measureLine($updated, 24, $this->fontsMedium);
-        $this->drawLine($im, $updated, self::WIDTH - $uw - 72, 30, 24, $sub, $this->fontsMedium);
 
+        // --- 左: 見出しブロック（eyebrow → ヒーロー → アクセントバー付きラベル） ---
         $left = 72;
-        $rightEdge = self::WIDTH - 72;
+        $zoneW = 548; // クラスタ最左の円に食い込まない幅
 
-        // --- タグ見出し（1行・52pxから自動縮小。超長タグのみ末尾…） ---
-        $title = sprintfT('「%s」のオープンチャット', $tag);
-        $titleBottom = $this->drawTitle($im, $title, $left, 104, $rightEdge - $left, 52, 1, $white);
+        $this->drawLine($im, t('LINEオープンチャット'), $left, 174, 28, $sub, $this->fontsMedium);
 
-        // --- サブタイトル: ランキングであることをアクセント色で明示 ---
-        $subtitleTop = $titleBottom + 22;
-        $this->drawLine($im, t('人気・活発な部屋ランキング'), $left, $subtitleTop, 32, $accent, $this->fontsBold);
+        $heroBottom = $this->drawHero($im, $tag, $left, 230, $zoneW, $white, $accent);
 
-        // --- 統計行: 掲載部屋数・メンバー合計（このテーマの規模感を1行で伝える） ---
-        $stats = sprintfT('%1$s部屋を掲載・メンバー合計 %2$s人', number_format($roomCount), number_format($totalMember));
-        $this->drawLine($im, $stats, $left, $subtitleTop + 58, 28, $sub, $this->fontsMedium);
-
-        // --- ランキング上位の部屋アイコン列（円形＋順位バッジ、下にメンバー数） ---
-        $this->drawRoomRow($im, array_slice($rooms, 0, self::MAX_ROOMS), $left, $rightEdge, $white, $sub, $accent);
+        $labelTop = $heroBottom + 44;
+        // ラベル先頭のアクセントバー（テキストの ink 高に合わせた縦棒）
+        imagefilledrectangle($im, $left, $labelTop + 4, $left + 5, $labelTop + 36, $accent);
+        $this->drawLine($im, t('人気・活発な部屋ランキング'), $left + 24, $labelTop, 31, $white, $this->fontsBold);
 
         // --- フッター右下: ドメイン（oc カードと同位置） ---
         $brand = 'openchat-review.me';
@@ -77,42 +89,76 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     }
 
     /**
-     * ランキング上位の部屋を等間隔スロットに並べる。各スロット: 円形アイコン＋左上に順位バッジ、
-     * 直下にメンバー数。部屋が無ければ何も描かない（見出しだけのカードになる）。
+     * ヒーロー「#タグ」を描く。「#」はアクセント色・タグは白の2トーン（ハッシュタグ＝テーマの記号で、
+     * ロケールを問わず通じる）。1行で入る最大サイズ(76→40)へ自動縮小し、下限でも入らない長いタグは
+     * 「#」を1行目に添えたまま drawTitle で2行に折り返す（それでも溢れたら末尾…）。
      *
-     * @param array{member:int, iconUrl:?string}[] $rooms 表示順（=順位順）
+     * @return int ヒーロー最終行の ink 下端のおおよその Y 座標
      */
-    private function drawRoomRow(\GdImage $im, array $rooms, int $left, int $rightEdge, int $white, int $sub, int $accent): void
+    private function drawHero(\GdImage $im, string $tag, int $x, int $topY, int $maxWidth, int $white, int $accent): int
     {
-        $n = count($rooms);
-        if ($n === 0) {
-            return;
+        $gap = 10; // 「#」とタグの間の空き
+
+        $size = self::HERO_MAX_SIZE;
+        while ($size > self::HERO_MIN_SIZE) {
+            $w = $this->measureLine('#', $size, $this->fontsBold) + $gap
+                + $this->measureLine($tag, $size, $this->fontsBold);
+            if ($w <= $maxWidth) {
+                break;
+            }
+            $size -= 2;
         }
 
-        $iconSize = 136;
-        $iconY = 392;
-        $slotW = intdiv($rightEdge - $left, $n);
-        // アイコン取得失敗時のプレースホルダ円は背景に沈む控えめな色（アクセント円の羅列を避ける）
-        $placeholder = imagecolorallocate($im, 44, 58, 92);
+        $hashW = $this->drawLine($im, '#', $x, $topY, $size, $accent, $this->fontsBold);
+        $textX = $x + $hashW + $gap;
+
+        $w = $this->measureLine($tag, $size, $this->fontsBold);
+        if ($w <= $maxWidth - $hashW - $gap) {
+            $this->drawLine($im, $tag, $textX, $topY, $size, $white, $this->fontsBold);
+            return $topY + (int)round($size * 1.12);
+        }
+
+        // 下限サイズでも1行に入らない長いタグ: 「#」のぶら下げインデントで2行に折り返す
+        return $this->drawTitle($im, $tag, $textX, $topY, $maxWidth - $hashW - $gap, $size, 2, $white);
+    }
+
+    /**
+     * ランキング上位の部屋アイコンを CLUSTER のスロットへ順位順に描く。
+     * 円は薄いリングで背景と分離し、1位だけアクセント色のリングで「勝者」を示す。
+     *
+     * @param array{iconUrl:?string}[] $rooms 表示順（=順位順）
+     */
+    private function drawIconCluster(\GdImage $im, array $rooms, int $accent): void
+    {
+        // アイコン取得失敗時のプレースホルダ円は背景に沈む控えめな色（目立つ円の羅列を避ける）
+        $placeholder = imagecolorallocate($im, 40, 52, 84);
+        $ring = imagecolorallocate($im, 58, 74, 112);
 
         foreach ($rooms as $i => $room) {
-            $cx = $left + $slotW * $i + intdiv($slotW, 2); // スロット中心
-            $iconX = $cx - intdiv($iconSize, 2);
-            $this->drawIcon($im, $room['iconUrl'], $iconX, $iconY, $iconSize, $placeholder);
+            $slot = self::CLUSTER[$i] ?? null;
+            if ($slot === null) {
+                break;
+            }
+            [$cx, $cy] = $slot['c'];
+            $d = $slot['d'];
+            $ringW = $i === 0 ? 5 : 3;
+            imagefilledellipse($im, $cx, $cy, $d + $ringW * 2, $d + $ringW * 2, $i === 0 ? $accent : $ring);
+            $this->drawIcon($im, $room['iconUrl'], $cx - intdiv($d, 2), $cy - intdiv($d, 2), $d, $placeholder);
+        }
+    }
 
-            // 順位バッジ（アイコン左上に重ねる小円＋白抜き数字）
-            $badgeD = 44;
-            $badgeCx = $iconX + 6;
-            $badgeCy = $iconY + 6;
-            imagefilledellipse($im, $badgeCx, $badgeCy, $badgeD, $badgeD, $accent);
-            $rank = (string)($i + 1);
-            $rw = $this->measureLine($rank, 24, $this->fontsBold);
-            $this->drawLine($im, $rank, $badgeCx - intdiv($rw, 2), $badgeCy - 17, 24, $white, $this->fontsBold);
-
-            // メンバー数（アイコン直下・中央揃え）
-            $label = number_format((int)$room['member']) . t('人');
-            $lw = $this->measureLine($label, 24, $this->fontsMedium);
-            $this->drawLine($im, $label, $cx - intdiv($lw, 2), $iconY + $iconSize + 18, 24, $sub, $this->fontsMedium);
+    /**
+     * アイコンクラスタの背後に淡い光彩を敷く（半透明の同心円を重ねて中心ほど明るく）。
+     * フラットなグラデ背景に奥行きを足すための控えめな環境光。
+     */
+    private function drawGlow(\GdImage $im, int $cx, int $cy, int $r): void
+    {
+        imagealphablending($im, true);
+        $steps = 18;
+        $col = imagecolorallocatealpha($im, 64, 96, 170, 125);
+        for ($i = $steps; $i >= 1; $i--) {
+            $d = (int)($r * 2 * $i / $steps);
+            imagefilledellipse($im, $cx, $cy, $d, $d, $col);
         }
     }
 }

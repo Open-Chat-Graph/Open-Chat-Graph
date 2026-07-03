@@ -48,19 +48,13 @@ class RecommendCardImageController
             $responder->sendDefault();
         }
 
-        // 表示件数と同じ母集団（mergedElements）で部屋数・メンバー合計を出し、上位をアイコン列にする
+        // ページの表示順そのまま、上位をアイコンクラスタに使う
         $list = $recommend->getList(false, RecommendCardImageGenerator::MAX_ROOMS);
         $rooms = array_map(fn(array $row) => [
-            'member' => (int)$row['member'],
             'iconUrl' => imgPreviewUrl($row['img_url']),
         ], $list);
 
-        $png = $generator->renderPng(
-            $tag,
-            $recommend->getCount(),
-            (int)array_sum(array_column($recommend->mergedElements, 'member')),
-            $rooms,
-        );
+        $png = $generator->renderPng($tag, $rooms);
 
         if ($png === null) {
             // 生成不可の環境ではデフォルトOGP画像で代替（リンク切れカードを出さない）
