@@ -10,7 +10,16 @@ class AppConfig
     static string $phpBinary = '/usr/bin/php8.5';
 
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
-    const DEFAULT_OGP_IMAGE_FILE_PATH = 'assets/ogp.png';
+
+    /**
+     * 言語別のデフォルトOGP画像（トップ等の og:image・動的OGカード生成失敗時のフォールバック）。
+     * 画像は SiteOgpImageGenerator で生成してコミットする（再生成: batch/exec/generate_default_ogp.php）
+     */
+    const DEFAULT_OGP_IMAGE_FILE_PATHS = [
+        '' => 'assets/ogp.png',
+        '/tw' => 'assets/ogp_tw.png',
+        '/th' => 'assets/ogp_th.png',
+    ];
 
     /** Organization 構造化データの sameAs（公式ブランドの外部プロフィール。エンティティ連携・知識パネル用）。 */
     const BRAND_SAME_AS = [

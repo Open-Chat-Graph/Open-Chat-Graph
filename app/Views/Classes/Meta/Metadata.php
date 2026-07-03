@@ -3,6 +3,7 @@
 namespace App\Views\Meta;
 
 use App\Config\AppConfig;
+use Shared\MimimalCmsConfig;
 use Spatie\SchemaOrg\Schema;
 
 class Metadata
@@ -41,7 +42,10 @@ class Metadata
         }
 
         $this->site_url = url();
-        $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
+        // デフォルトOGPは言語別（日本語版の画像が tw/th のシェアに出るチグハグを避ける）
+        $ogpPath = AppConfig::DEFAULT_OGP_IMAGE_FILE_PATHS[MimimalCmsConfig::$urlRoot]
+            ?? AppConfig::DEFAULT_OGP_IMAGE_FILE_PATHS[''];
+        $this->image_url = url(['urlRoot' => '', 'paths' => [$ogpPath]]);
 
         $siteTitle = t('オプチャグラフ');
         $this->site_name = $siteTitle;

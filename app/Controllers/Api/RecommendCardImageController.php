@@ -10,7 +10,7 @@ use App\Services\Recommend\RecommendPageList;
 use App\Services\Security\ConcurrentRequestGuard;
 
 /**
- * テーマ別ランキングページの動的OGP画像（/recommend/{tag}/card）。
+ * テーマ別ランキングページの動的OGP画像（/recommend/{tag}/card）と検索用1:1サムネイル（/recommend/{tag}/thumb）。
  *
  * リクエストのたびに生成して PNG をそのまま返す（オリジンにはファイルキャッシュを持たない）。
  * 実キャッシュは Cloudflare のエッジに任せる（強い Cache-Control を返す）。SNSクローラー向けなので
@@ -60,6 +60,36 @@ class RecommendCardImageController
 
         if ($png === null) {
             // 生成不可の環境ではデフォルトOGP画像で代替（リンク切れカードを出さない）
+            $responder->sendDefault();
+        }
+
+        $responder->sendPng($png);
+    }
+
+    /**
+     * 検索用 1:1 サムネイル（/recommend/{tag}/thumb・meta name="thumbnail" 用）。
+     * 以前は1位の部屋アイコン（LINE CDN直リンク）だったものを自前生成に置き換える。
+     * キャッシュ・オリジン保護は card と同じ方針（エッジキャッシュ＋1IP同時1本）。
+     */
+    function thumb(
+        string $tag,
+        RecommendPageList $recommendPageList,
+        RecommendCardImageGenerator $generator,
+        ConcurrentRequestGuard $guard,
+        OgCardHttpResponder $responder,
+    ) {
+        if (!$guard->tryAcquire('og-card', getIP())) {
+            $responder->sendDefault();
+        }
+
+        $tag = $recommendPageList->getValidTag($tag);
+        if (!$tag) {
+            return false;
+        }
+
+        $png = $generator->renderThumbPng($tag);
+
+        if ($png === null) {
             $responder->sendDefault();
         }
 

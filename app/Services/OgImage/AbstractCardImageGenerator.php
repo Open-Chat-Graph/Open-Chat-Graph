@@ -74,22 +74,22 @@ abstract class AbstractCardImageGenerator
             && is_file($this->fontMedium);
     }
 
-    /** 1200x630 のキャンバスを作り、上下方向の濃紺グラデーション背景を敷いて返す。 */
-    protected function createCanvas(): \GdImage
+    /** 指定サイズ（省略時 1200x630）のキャンバスを作り、上下方向の濃紺グラデーション背景を敷いて返す。 */
+    protected function createCanvas(int $w = self::WIDTH, int $h = self::HEIGHT): \GdImage
     {
-        $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
+        $im = imagecreatetruecolor($w, $h);
 
         $top = [24, 32, 54];
         $bottom = [10, 14, 26];
-        for ($y = 0; $y < self::HEIGHT; $y++) {
-            $t = $y / self::HEIGHT;
+        for ($y = 0; $y < $h; $y++) {
+            $t = $y / $h;
             $col = imagecolorallocate(
                 $im,
                 (int)($top[0] + ($bottom[0] - $top[0]) * $t),
                 (int)($top[1] + ($bottom[1] - $top[1]) * $t),
                 (int)($top[2] + ($bottom[2] - $top[2]) * $t),
             );
-            imageline($im, 0, $y, self::WIDTH, $y, $col);
+            imageline($im, 0, $y, $w, $y, $col);
         }
 
         return $im;

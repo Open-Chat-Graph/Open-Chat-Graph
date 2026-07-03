@@ -11,7 +11,7 @@ use App\Services\Security\ConcurrentRequestGuard;
 use App\Services\Statistics\StatisticsChartArrayService;
 
 /**
- * ルーム個別ページの動的OGP画像（/oc/{id}/card）。
+ * ルーム個別ページの動的OGP画像（/oc/{id}/card）と検索用1:1サムネイル（/oc/{id}/thumb）。
  *
  * リクエストのたびに生成して PNG をそのまま返す（オリジンにはファイルキャッシュを持たない）。
  * 実キャッシュは Cloudflare のエッジに任せる（強い Cache-Control を返す）。SNSクローラー向けなので
@@ -43,14 +43,15 @@ class OcCardImageController
             return false;
         }
 
-        // 直近30日のメンバー数系列（無い部屋は数値のみのカードになる）
+        // 直近1週間のメンバー数系列（先週の同じ曜日→今日の8点。ページの「1週間」統計と同じ観測窓）。
+        // 無い部屋は数値のみのカードになる
         $series = [];
         $dates = [];
         $diffWeek = null;
         $dto = $chartService->buildStatisticsChartArray(
             $open_chat_id,
             null,
-            date('Y-m-d', time() - 29 * 86400),
+            date('Y-m-d', time() - 7 * 86400),
             date('Y-m-d'),
         );
         if ($dto && $dto->member) {
@@ -83,6 +84,36 @@ class OcCardImageController
 
         if ($png === null) {
             // 生成不可の環境ではデフォルトOGP画像で代替（リンク切れカードを出さない）
+            $responder->sendDefault();
+        }
+
+        $responder->sendPng($png);
+    }
+
+    /**
+     * 検索用 1:1 サムネイル（/oc/{id}/thumb・meta name="thumbnail" 用）。
+     * 以前は LINE CDN の画像URL直リンクだったものを自前生成に置き換える。
+     * キャッシュ・オリジン保護は /oc/{id}/card と同じ方針（エッジキャッシュ＋1IP同時1本）。
+     */
+    function thumb(
+        int $open_chat_id,
+        OpenChatPageRepositoryInterface $ocRepo,
+        OcCardImageGenerator $generator,
+        ConcurrentRequestGuard $guard,
+        OgCardHttpResponder $responder,
+    ) {
+        if (!$guard->tryAcquire('og-card', getIP())) {
+            $responder->sendDefault();
+        }
+
+        $oc = $ocRepo->getOpenChatById($open_chat_id);
+        if (!$oc) {
+            return false;
+        }
+
+        $png = $generator->renderThumbPng((string)$oc['name'], imgPreviewUrl($oc['img_url']));
+
+        if ($png === null) {
             $responder->sendDefault();
         }
 

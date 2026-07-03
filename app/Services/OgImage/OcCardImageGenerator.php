@@ -7,9 +7,10 @@ namespace App\Services\OgImage;
 /**
  * ルーム個別ページ用の動的OGP画像（1200x630 PNG）を GD で生成する。
  *
- * レイアウト: 左に部屋アイコン、その右に「ヘッダー(メンバー数＋7日増減) 1行」＋「部屋名 最大3行
- * （多言語・比例フォント・はみ出しは … で省略）」。下段に30日メンバー数スパークライン（両端に開始/
- * 終了日）。フッター左にサイト名、右にドメイン。ヘッダー文言・サイト名は表示ロケール(ja/tw/th)で翻訳。
+ * レイアウト: 左に部屋アイコン、その右に「ヘッダー(メンバー数＋1週間増減) 1行」＋「部屋名 最大3行
+ * （多言語・比例フォント・はみ出しは … で省略）」。下段に1週間（先週の同じ曜日→今日）のメンバー数
+ * スパークライン（両端に開始/終了日）。フッター左にサイト名、右にドメイン。ヘッダー文言・サイト名は
+ * 表示ロケール(ja/tw/th)で翻訳。
  *
  * テキスト・絵文字・アイコンの描画機構は AbstractCardImageGenerator（共通基盤）に置いてある。
  */
@@ -21,8 +22,8 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
      *
      * @param string     $name     部屋名（多言語可・最大3行に折り返し、はみ出しは省略）
      * @param int        $member   現在メンバー数
-     * @param int|null   $diffWeek 直近7日のメンバー増減（不明は null＝非表示）
-     * @param int[]      $series   スパークライン用のメンバー数系列（日付昇順・30日程度、空なら非表示）
+     * @param int|null   $diffWeek 直近1週間（先週の同じ曜日比）のメンバー増減（不明は null＝非表示）
+     * @param int[]      $series   スパークライン用のメンバー数系列（日付昇順・1週間=8点程度、空なら非表示）
      * @param ?string    $iconUrl  部屋アイコンURL（取得失敗・null はプレースホルダ円）
      * @param string[]   $dates    $series と同じ並びの日付(Y-m-d)。グラフ両端に開始/終了日を薄く入れる
      */
@@ -55,14 +56,15 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         $rightX = $iconX + $iconSize + 40; // = 302
         $rightEdge = self::WIDTH - 72;      // = 1128
 
-        // --- ヘッダー1行目: メンバー数（muted）＋ 7日増減（緑/赤）。上端をアイコン上端に合わせる。
+        // --- ヘッダー1行目: メンバー数（muted）＋ 1週間増減（緑/赤）。上端をアイコン上端に合わせる。
         //     文言はロケール依存（ja/tw/th）。sprintfT/t が urlRoot を見て翻訳を返す ---
         $headHead = sprintfT('メンバー %s人', number_format($member));
         $headY = $iconY + 2;
         $advance = $this->drawLine($im, $headHead, $rightX, $headY, 28, $sub, $this->fontsMedium);
         if ($diffWeek !== null) {
             $isUp = $diffWeek >= 0;
-            $growth = ($isUp ? '▲ +' : '▼ ') . number_format($diffWeek) . ' / ' . t('7日');
+            // ページの統計表示と同じ「1週間」表記（グラフのスパンも同じ観測窓＝矛盾を出さない）
+            $growth = ($isUp ? '▲ +' : '▼ ') . number_format($diffWeek) . ' / ' . t('1週間');
             $this->drawLine($im, $growth, $rightX + $advance + 22, $headY, 28, $isUp ? $green : $red, $this->fontsBold);
         }
 
@@ -85,8 +87,50 @@ class OcCardImageGenerator extends AbstractCardImageGenerator
         return ob_get_clean() ?: null;
     }
 
+    /** 1:1サムネイルの一辺（px）。meta name="thumbnail"（検索用）向けなので OGP より小さくてよい */
+    private const THUMB_SIZE = 640;
+
     /**
-     * 30日メンバー数スパークライン（塗りつぶし付き折れ線）を下部に描画する。系列が2点未満なら描かない。
+     * 検索用 1:1 サムネイル（640x640 PNG）を生成する（meta name="thumbnail" 用）。
+     * 検索結果では小さく表示されるため、部屋アイコンを全面に敷き、下部の暗幕（スクリム）に
+     * 部屋名（最大2行）とサイト名だけを重ねる。アイコンが無い部屋は濃紺グラデーションが背景になる。
+     * 生成できない環境では null（呼び出し側でデフォルト画像に退避）。
+     */
+    public function renderThumbPng(string $name, ?string $iconUrl): ?string
+    {
+        if (!$this->canRender()) {
+            return null;
+        }
+
+        $s = self::THUMB_SIZE;
+        $im = $this->createCanvas($s, $s);
+
+        $icon = $iconUrl ? $this->loadIcon($iconUrl) : null;
+        if ($icon) {
+            imagecopyresampled($im, $icon, 0, 0, 0, 0, $s, $s, imagesx($icon), imagesy($icon));
+        }
+
+        // 下部スクリム: 透明→濃紺のグラデーションを重ね、アイコンの柄に関わらず部屋名を読めるようにする
+        imagealphablending($im, true);
+        $scrimTop = $s - 240;
+        for ($y = $scrimTop; $y < $s; $y++) {
+            $t = ($y - $scrimTop) / ($s - $scrimTop);
+            $alpha = 127 - (int)round(115 * $t);
+            imageline($im, 0, $y, $s, $y, imagecolorallocatealpha($im, 10, 14, 26, $alpha));
+        }
+
+        $white = imagecolorallocate($im, 245, 247, 252);
+        $sub = imagecolorallocate($im, 170, 182, 210);
+        $this->drawTitle($im, $name, 36, $s - 186, $s - 72, 34, 2, $white);
+        $this->drawLine($im, t('オプチャグラフ'), 36, $s - 52, 20, $sub, $this->fontsMedium);
+
+        ob_start();
+        imagepng($im, null, 6);
+        return ob_get_clean() ?: null;
+    }
+
+    /**
+     * 1週間のメンバー数スパークライン（塗りつぶし付き折れ線）を下部に描画する。系列が2点未満なら描かない。
      * 最新ポイント（右端の点）の上に「人数＋日付」をデータラベルとして重ねる（OGPはCDNキャッシュで
      * 固定されるので「いつ時点の何人か」が点の位置で分かるように）。
      *

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OgImage;
 
 use App\Config\AppConfig;
+use Shared\MimimalCmsConfig;
 
 /**
  * 動的OGPカードの HTTP 送出（生成PNG／デフォルト画像フォールバック）。
@@ -26,10 +27,12 @@ class OgCardHttpResponder
         exit;
     }
 
-    /** デフォルトOGP画像を送って終了する（生成不可・混雑時のフォールバック） */
+    /** デフォルトOGP画像（言語別）を送って終了する（生成不可・混雑時のフォールバック） */
     public function sendDefault(): never
     {
-        $fallback = AppConfig::ROOT_PATH . 'public/' . AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH;
+        $path = AppConfig::DEFAULT_OGP_IMAGE_FILE_PATHS[MimimalCmsConfig::$urlRoot]
+            ?? AppConfig::DEFAULT_OGP_IMAGE_FILE_PATHS[''];
+        $fallback = AppConfig::ROOT_PATH . 'public/' . $path;
         if (is_file($fallback)) {
             header('Content-Type: image/png');
             // フォールバックもエッジ(CF)にはキャッシュさせる。ただし混雑・一時失敗で出たものが

@@ -83,7 +83,15 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
 
         // 1行目「タグ」のオープンチャット: タグ部分だけブランドブルーの2トーン。
         // 入らないタグはサイズを下限まで縮め、それでも溢れる場合はタグ末尾を…で省略
-        [$segments, $size] = $this->buildHeadlineSegments($tag, $maxTextW, $navy, $blue);
+        [$segments, $size] = $this->buildTagSegments(
+            '「%s」のオープンチャット',
+            $tag,
+            $maxTextW,
+            self::HEADLINE_MAX_SIZE,
+            self::HEADLINE_MIN_SIZE,
+            $navy,
+            $blue,
+        );
         $y = $this->drawBanner($im, $segments, $size, 172, $this->fontsBold);
 
         $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 56, $y + 14, $this->fontsBold);
@@ -100,16 +108,55 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         return ob_get_clean() ?: null;
     }
 
+    /** 1:1サムネイルの一辺（px）。meta name="thumbnail"（検索用）向けなので OGP より小さくてよい */
+    private const THUMB_SIZE = 640;
+
     /**
-     * 見出し1行目のセグメント（[テキスト, 色] の並び）と、収まるフォントサイズを決める。
-     * 文言はロケールの「「%s」のオープンチャット」書式で、タグ部分だけアクセント色にする。
+     * 検索用 1:1 サムネイル（640x640 PNG）を生成する（meta name="thumbnail" 用）。
+     * 検索結果では小さく表示されるため、部屋カードのコラージュは使わず、OGP と同じライトブルー
+     * ストライプ地に白バナー3段（「タグ」・ランキングラベル・サイト名）だけを縦中央に積む。
+     * 生成できない環境では null（呼び出し側でデフォルト画像に退避）。
+     */
+    public function renderThumbPng(string $tag): ?string
+    {
+        if (!$this->canRender()) {
+            return null;
+        }
+
+        $s = self::THUMB_SIZE;
+        $im = $this->createLightCanvas($s, $s);
+
+        $navy = imagecolorallocate($im, 23, 42, 102);
+        $blue = imagecolorallocate($im, 37, 99, 235);
+        $subNavy = imagecolorallocate($im, 62, 82, 138);
+
+        $maxTextW = $s - 2 * 28 - 2 * 36;
+        [$segments, $size] = $this->buildTagSegments('「%s」', $tag, $maxTextW, 64, 32, $navy, $blue);
+
+        // 3段の帯の合計高さから開始位置を決めて縦中央に置く
+        $gap = 12;
+        $total = (int)round($size * 1.72) + $gap + (int)round(26 * 1.72) + $gap + (int)round(22 * 1.72);
+        $y = intdiv($s - $total, 2);
+        $y = $this->drawBanner($im, $segments, $size, $y, $this->fontsBold, $s);
+        $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 26, $y + $gap, $this->fontsBold, $s);
+        $this->drawBanner($im, [[t('オプチャグラフ'), $subNavy]], 22, $y + $gap, $this->fontsMedium, $s);
+
+        ob_start();
+        imagepng($im, null, 6);
+        return ob_get_clean() ?: null;
+    }
+
+    /**
+     * タグ入り見出しのセグメント（[テキスト, 色] の並び）と、収まるフォントサイズを決める。
+     * ロケールの $format（%s にタグが入る翻訳キー）で整形し、タグ部分だけアクセント色にする。
+     * サイズを下限まで縮めても入らない長いタグは末尾を…で省略する。
      *
      * @return array{0: array{0:string,1:int}[], 1:int}
      */
-    private function buildHeadlineSegments(string $tag, int $maxTextW, int $navy, int $blue): array
+    private function buildTagSegments(string $format, string $tag, int $maxTextW, int $maxSize, int $minSize, int $navy, int $blue): array
     {
-        $compose = function (string $t) use ($navy, $blue): array {
-            $formatted = sprintfT('「%s」のオープンチャット', $t);
+        $compose = function (string $t) use ($format, $navy, $blue): array {
+            $formatted = sprintfT($format, $t);
             $pos = mb_strpos($formatted, $t);
             if ($pos === false) {
                 return [[$formatted, $navy]];
@@ -125,8 +172,8 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         );
 
         $segments = $compose($tag);
-        $size = self::HEADLINE_MAX_SIZE;
-        while ($size > self::HEADLINE_MIN_SIZE && $width($segments, $size) > $maxTextW) {
+        $size = $maxSize;
+        while ($size > $minSize && $width($segments, $size) > $maxTextW) {
             $size -= 2;
         }
         // 下限サイズでも入らない長いタグは末尾を削って…（書式ごと組み直してロケール差異を保つ）
@@ -147,7 +194,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
      * @param array{0:string, 1:int, 2?:array} $segments セグメントごとにフォントリストを上書き可
      * @param array $fontList フォント指定の無いセグメントに使うフォントリスト
      */
-    private function drawBanner(\GdImage $im, array $segments, int $size, int $top, array $fontList): int
+    private function drawBanner(\GdImage $im, array $segments, int $size, int $top, array $fontList, int $canvasW = self::WIDTH): int
     {
         $padX = 36;
         $textW = 0;
@@ -155,7 +202,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             $textW += $this->measureLine($seg[0], $size, $seg[2] ?? $fontList);
         }
         $h = (int)round($size * 1.72);
-        $x = intdiv(self::WIDTH - $textW, 2) - $padX;
+        $x = intdiv($canvasW - $textW, 2) - $padX;
         $white = imagecolorallocate($im, 255, 255, 255);
         imagefilledrectangle($im, $x, $top, $x + $textW + $padX * 2, $top + $h, $white);
 
@@ -219,22 +266,22 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $this->drawLine($im, $memberLabel, $x + $pad, $y + $h - $pad - 26, 20, $muted, $this->fontsMedium);
     }
 
-    /** ライトブルー地に淡い斜めストライプを敷いた 1200x630 のキャンバスを作る。 */
-    private function createLightCanvas(): \GdImage
+    /** ライトブルー地に淡い斜めストライプを敷いたキャンバス（省略時 1200x630）を作る。 */
+    private function createLightCanvas(int $w = self::WIDTH, int $h = self::HEIGHT): \GdImage
     {
-        $im = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
-        imagefilledrectangle($im, 0, 0, self::WIDTH, self::HEIGHT, imagecolorallocate($im, 205, 222, 247));
+        $im = imagecreatetruecolor($w, $h);
+        imagefilledrectangle($im, 0, 0, $w, $h, imagecolorallocate($im, 205, 222, 247));
 
         // 45°の帯を一定周期で重ねる（ぼかし後はごく淡いテクスチャになる）
         $band = imagecolorallocate($im, 192, 213, 244);
         $bandW = 56;
         $period = 132;
-        for ($x = -self::HEIGHT; $x < self::WIDTH + self::HEIGHT; $x += $period) {
+        for ($x = -$h; $x < $w + $h; $x += $period) {
             imagefilledpolygon($im, [
                 $x, 0,
                 $x + $bandW, 0,
-                $x + $bandW - self::HEIGHT, self::HEIGHT,
-                $x - self::HEIGHT, self::HEIGHT,
+                $x + $bandW - $h, $h,
+                $x - $h, $h,
             ], $band);
         }
         return $im;
