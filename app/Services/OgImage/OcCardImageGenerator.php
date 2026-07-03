@@ -107,13 +107,15 @@ class OcCardImageGenerator
         $red = imagecolorallocate($im, 240, 98, 98);
         $accent = imagecolorallocate($im, 88, 148, 255);
 
-        // --- スパークライン（下段・先に描いて他要素を上に重ねる。両端に開始/終了日を薄く） ---
-        $this->drawSparkline($im, $series, $dates, $accent, $sub);
+        // --- スパークライン（下段・先に描いて他要素を上に重ねる。最新ポイントに人数＋日付ラベル） ---
+        $this->drawSparkline($im, $series, $dates, $member, $accent, $sub);
 
         // --- 部屋アイコン（左上・円形クロップ） ---
+        // 左上に置いたサイト名(y=28)の分、アイコン/ヘッダー/タイトルの上端を少し下げて余白を作る
+        //（headY・タイトル開始は iconY 起点で連動して下がる）。
         $iconSize = 190;
         $iconX = 72;
-        $iconY = 66;
+        $iconY = 96;
         $this->drawIcon($im, $iconUrl, $iconX, $iconY, $iconSize, $accent);
 
         $rightX = $iconX + $iconSize + 40; // = 302
@@ -134,9 +136,11 @@ class OcCardImageGenerator
         // ヘッダー(28px・ink下端≈headY+34)の下、少し間隔を空けて開始。$topY はタイトル1行目の ink 上端。
         $this->drawTitle($im, $name, $rightX, $headY + 58, $rightEdge - $rightX, 38, 3, $white);
 
-        // --- フッター: 左にサイト名（ロケール依存）、右にドメイン（左下/右下） ---
+        // --- サイト名: 左上。X は下部にキャプション帯を重ねるので、ブランド名は隠れない上端へ。 ---
         $siteName = t('オプチャグラフ');
-        $this->drawLine($im, $siteName, 72, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
+        $this->drawLine($im, $siteName, 72, 28, 26, $sub, $this->fontsMedium);
+
+        // --- フッター右下: ドメイン（原状のまま） ---
         $brand = 'openchat-review.me';
         $bw = $this->measureLine($brand, 26, $this->fontsMedium);
         $this->drawLine($im, $brand, self::WIDTH - $bw - 56, self::HEIGHT - 44, 26, $sub, $this->fontsMedium);
@@ -628,13 +632,14 @@ class OcCardImageGenerator
 
     /**
      * 30日メンバー数スパークライン（塗りつぶし付き折れ線）を下部に描画する。系列が2点未満なら描かない。
-     * $dates（$series と同じ並び）があれば、グラフ両端の下に開始/終了日(M/D)を薄く添える
-     *（OGPはCDNキャッシュで固定されるので「いつの範囲か」が分かるように）。
+     * 最新ポイント（右端の点）の上に「人数＋日付」をデータラベルとして重ねる（OGPはCDNキャッシュで
+     * 固定されるので「いつ時点の何人か」が点の位置で分かるように）。
      *
-     * @param int[] $series
+     * @param int[]    $series
      * @param string[] $dates
+     * @param int      $member 最新人数（データラベルに出す）
      */
-    private function drawSparkline(\GdImage $im, array $series, array $dates, int $lineCol, int $labelCol): void
+    private function drawSparkline(\GdImage $im, array $series, array $dates, int $member, int $lineCol, int $labelCol): void
     {
         // member が null の点は落とすが、対応する日付も一緒に落として整合を保つ
         $pairs = [];
@@ -686,20 +691,38 @@ class OcCardImageGenerator
         }
         imagesetthickness($im, 1);
 
-        [$ex, $ey] = $points[$n - 1];
-        imagefilledellipse($im, $ex, $ey, 16, 16, $lineCol);
+        // --- 両端の点にデータラベル（上段=日付 M/D・下段=人数）。始点と終点の両方を出して
+        //     「いつ何人 → いつ何人」の増減が読めるようにする。文字は元の日付ラベルと同じ
+        //     控えめスタイル(fontsMedium・muted)。点の“上”に積むので X の下部帯にも隠れにくい。 ---
+        $this->drawPointLabel($im, $points[0][0], $points[0][1], $pairs[0][1], (int)$pairs[0][0], false, $lineCol, $labelCol);
+        $this->drawPointLabel($im, $points[$n - 1][0], $points[$n - 1][1], $pairs[$n - 1][1], $member, true, $lineCol, $labelCol);
+    }
 
-        // 両端の日付(M/D)を控えめに（開始=左下、終了=右下）
-        $startLabel = $this->shortDate($pairs[0][1]);
-        $endLabel = $this->shortDate($pairs[$n - 1][1]);
-        $ly = $bottomY + 10;
-        if ($startLabel !== '') {
-            $this->drawLine($im, $startLabel, $left, $ly, 22, $labelCol, $this->fontsMedium);
+    /**
+     * 折れ線の1点に、点マーカー＋データラベル（上段=日付 M/D、下段=人数）を描く。
+     * 文字は元の日付ラベルと同じ控えめスタイル（fontsMedium・muted）。$rightAlign=true で
+     * 右端の点用にラベル右端を点に合わせる（左端は左揃え）。いずれも枠外へ出ないようクランプ。
+     */
+    private function drawPointLabel(\GdImage $im, int $px, int $py, ?string $ymd, int $member, bool $rightAlign, int $dotCol, int $textCol): void
+    {
+        imagefilledellipse($im, $px, $py, 16, 16, $dotCol);
+
+        $dateStr = $this->shortDate($ymd);
+        $valStr = number_format($member) . t('人');
+        $dateSize = 22;
+        $valSize = 24;
+        // 下段(人数)を点のすぐ上に、上段(日付)をさらにその上へ積む（$top は各行の ink 上端）。
+        // 日付と人数の行間は少し広めに取る。
+        $valTop = $py - 16 - $valSize;
+        $dateTop = $valTop - 12 - $dateSize;
+
+        $anchor = fn(int $w): int => $rightAlign
+            ? min($px + 12, self::WIDTH - 24) - $w   // 右揃え（右端の点）
+            : max($px - 12, 24);                     // 左揃え（左端の点）
+        if ($dateStr !== '') {
+            $this->drawLine($im, $dateStr, $anchor($this->measureLine($dateStr, $dateSize, $this->fontsMedium)), $dateTop, $dateSize, $textCol, $this->fontsMedium);
         }
-        if ($endLabel !== '') {
-            $ew = $this->measureLine($endLabel, 22, $this->fontsMedium);
-            $this->drawLine($im, $endLabel, $right - $ew, $ly, 22, $labelCol, $this->fontsMedium);
-        }
+        $this->drawLine($im, $valStr, $anchor($this->measureLine($valStr, $valSize, $this->fontsMedium)), $valTop, $valSize, $textCol, $this->fontsMedium);
     }
 
     /** 'Y-m-d' を 'n/j'（例 6/3）へ。解釈できなければ空文字。 */
