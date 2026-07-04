@@ -5,8 +5,9 @@
  * oc ページの共有導線を共通コンポーネント化したもの（oc・/recommend・トップで共用）。
  * スタイル・挙動は自己完結（インライン style/script）。1ページ1回だけ設置する想定（id を使うため）。
  *
- * @var string     $_shareUrl 共有する URL（必須。`_`プレフィックスで自動エスケープを通さず、ここで明示エスケープする）
- * @var array|null $_shareGa  GA4 計測(dataLayer)の share イベントに足す追加パラメータ（例 ['oc_id' => 1]）。省略可
+ * @var string      $_shareUrl   共有する URL（必須。`_`プレフィックスで自動エスケープを通さず、ここで明示エスケープする）
+ * @var array|null  $_shareGa    GA4 計測(dataLayer)の share イベントに足す追加パラメータ（例 ['oc_id' => 1]）。省略可
+ * @var string|null $_shareStyle ルート要素の style 上書き（例 'margin-top: 0'。前後ブロックと余白が二重になる場合の調整用）。省略可
  *
  * 共有本文は「ページタイトル(サイト名入り)＋改行＋URL」で統一（JS が document.title から組み立てる）。
  * 共有リンクの og:image は各ページの動的カードで展開される。
@@ -14,7 +15,7 @@
 
 $_shareGa = $_shareGa ?? [];
 ?>
-<div class="share-btns">
+<div class="share-btns"<?php if (!empty($_shareStyle)) : ?> style="<?php echo h($_shareStyle) ?>"<?php endif ?>>
   <span class="share-btns__label"><?php echo t('共有') ?></span>
   <button type="button" class="share-btns__btn share-btns__btn--sub" id="share-btns-native" hidden aria-label="<?php echo t('共有') ?>">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c0-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2c0 .2-.1.4-.1.6a3 3 0 1 0 3-2.9z"/></svg>
