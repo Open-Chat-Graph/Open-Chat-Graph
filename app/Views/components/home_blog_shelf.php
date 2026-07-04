@@ -1,12 +1,26 @@
 <?php
 
 /**
- * ホームの「読み物（ブログ）」棚。最新記事を最大4本、最大の入口（トップ）から回遊させる。
+ * ホームの「読み物（ブログ）」棚。よく読まれている記事を最大2本、最大の入口（トップ）から回遊させる。
  * BlogService->list() は frontmatter のみの軽量読み（BlogSummaryDto[] を返す・本文なし）。ja 用。
  * viewComponent 経由なので自動エスケープは無く、表示値は h() でエスケープする。
  */
 
-$_posts = array_slice(app(\App\Services\Blog\BlogService::class)->list(), 0, 4);
+// トップ棚は GA4 の実測PV上位をハードコードで指名する（2026-07-04 時点・直近28日:
+// growing 161PV / kensaku-ranking-ochi 108PV / kyujosho 90PV / … / ninzu-jogen 33PV）。
+// ブログ全体のPVがまだ小さく上位の偏りも安定しているため自動集計はせず、
+// 順位が入れ替わったらここを手で更新する。指名記事が消えた場合は更新日順で埋める。
+$_pinnedSlugs = ['growing-openchat-features', 'openchat-kensaku-ranking-ochi'];
+$_limit = 2;
+
+$_all = app(\App\Services\Blog\BlogService::class)->list();
+$_bySlug = array_combine(array_map(fn($p) => $p->slug, $_all), $_all);
+$_posts = array_values(array_filter(array_map(fn($slug) => $_bySlug[$slug] ?? null, $_pinnedSlugs)));
+foreach ($_all as $_p) {
+    if (count($_posts) >= $_limit) break;
+    if (!in_array($_p, $_posts, true)) $_posts[] = $_p;
+}
+$_posts = array_slice($_posts, 0, $_limit);
 if (!$_posts) return;
 ?>
 <article class="home-blog-shelf">
