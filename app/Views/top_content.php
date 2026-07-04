@@ -62,13 +62,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
                 <input type="hidden" name="sort" value="member">
                 <input type="hidden" name="order" value="desc">
             </form>
-
-            <?php // シェア導線（oc ページと共通のコンポーネント）。トップの共有はサイト紹介そのものなので
-                  // ヒーロー末尾に置く。og:image は言語別デフォルトOGP ?>
-            <?php viewComponent('share_buttons', [
-                '_shareUrl' => url(),
-                '_shareGa' => ['content_type' => 'top'],
-            ]) ?>
         </section>
         <script>
             /* クリア✕: テーマ検索と同じ挙動。変換(IME)確定前は✕を隠し、iOSで「消去後に入力できない」状態を防ぐ。 */
@@ -117,6 +110,14 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
+
+        <?php // シェア導線（oc ページと共通のコンポーネント）。ヒーロー内だと検索→コンテンツの流れを
+              // 分断するため、コンテンツを見終えた後のページ末尾（フッター手前）に置く。
+              // og:image は言語別デフォルトOGP ?>
+        <?php viewComponent('share_buttons', [
+            '_shareUrl' => url(),
+            '_shareGa' => ['content_type' => 'top'],
+        ]) ?>
 
         <?php if ($enableAdsense): ?>
             <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
