@@ -124,6 +124,10 @@ Route::path('oc/{open_chat_id}/jump', [JumpOpenChatPageController::class, 'index
 Route::path('oc/{open_chat_id}/card', [\App\Controllers\Api\OcCardImageController::class, 'index'])
     ->matchNum('open_chat_id', min: 1);
 
+// 検索用1:1サムネイル（meta name="thumbnail"）。オンデマンド生成＋エッジキャッシュ。noindex
+Route::path('oc/{open_chat_id}/thumb', [\App\Controllers\Api\OcCardImageController::class, 'thumb'])
+    ->matchNum('open_chat_id', min: 1);
+
 // 統計グラフデータ。graph(React)が表示ビュー（期間×順位種別×カテゴリ×モード）を指定して
 // 描画に必要な系列を1リクエストで取得する。初回ロードは meta=1 でタブ可用性メタも同梱
 // （/oc 本体から統計SQLite読み取りを外すため非同期取得）
@@ -192,6 +196,20 @@ Route::path('recommend/{tag}', [RecommendOpenChatPageController::class, 'index']
     ->matchStr('tag', maxLen: 1000)
     ->match(function (string $tag, FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
+        return ['tag' => urldecode($tag)];
+    });
+
+// 動的OGP画像（タグページのSNSシェア用カード）。オンデマンド生成＋エッジキャッシュ。noindex
+Route::path('recommend/{tag}/card', [\App\Controllers\Api\RecommendCardImageController::class, 'index'])
+    ->matchStr('tag', maxLen: 1000)
+    ->match(function (string $tag) {
+        return ['tag' => urldecode($tag)];
+    });
+
+// 検索用1:1サムネイル（meta name="thumbnail"）。オンデマンド生成＋エッジキャッシュ。noindex
+Route::path('recommend/{tag}/thumb', [\App\Controllers\Api\RecommendCardImageController::class, 'thumb'])
+    ->matchStr('tag', maxLen: 1000)
+    ->match(function (string $tag) {
         return ['tag' => urldecode($tag)];
     });
 

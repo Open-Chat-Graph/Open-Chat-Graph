@@ -41,7 +41,8 @@ class Metadata
         }
 
         $this->site_url = url();
-        $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::DEFAULT_OGP_IMAGE_FILE_PATH]]);
+        // デフォルトOGPは言語別（日本語版の画像が tw/th のシェアに出るチグハグを避ける）
+        $this->image_url = url(['urlRoot' => '', 'paths' => [AppConfig::defaultOgpImagePath()]]);
 
         $siteTitle = t('オプチャグラフ');
         $this->site_name = $siteTitle;
@@ -81,6 +82,13 @@ class Metadata
     public function setImageUrl(string $image_url): static
     {
         $this->image_url = h($image_url);
+        return $this;
+    }
+
+    /** 検索用サムネイル(meta name="thumbnail")のURL。setImageUrl と同様にエスケープして格納する */
+    public function setThumbnail(string $thumbnail): static
+    {
+        $this->thumbnail = h($thumbnail);
         return $this;
     }
 
