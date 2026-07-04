@@ -58,10 +58,12 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       ]) ?>
 
       <?php // シェア導線（oc ページと共通のコンポーネント）。共有リンクの og:image は
-            // テーマ専用の動的カード(/recommend/{tag}/card)で展開される ?>
+            // テーマ専用の動的カード(/recommend/{tag}/card)で展開される。
+            // 直前の勢いグラフ(.recommend-growth)が下マージンを持つため、二重にならないよう上マージンは消す ?>
       <?php viewComponent('share_buttons', [
         '_shareUrl' => $canonical,
         '_shareGa' => ['content_type' => 'recommend', 'item_id' => htmlspecialchars_decode($tag)],
+        '_shareStyle' => 'margin-top: 0',
       ]) ?>
 
     </section>
