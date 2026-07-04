@@ -26,6 +26,12 @@
                 <?php echo $_html ?>
             </div>
 
+            <?php // シェア導線（oc ページと共通のコンポーネント）。読み終えた直後・CTAの手前に置く ?>
+            <?php viewComponent('share_buttons', [
+                '_shareUrl' => url('blog/' . $article->slug),
+                '_shareGa' => ['content_type' => 'blog', 'item_id' => $article->slug],
+            ]) ?>
+
             <div class="blog-cta">
                 <div class="blog-cta-h">📈 オプチャグラフで<span class="em">実データ</span>を見る</div>
                 <div class="blog-cta-row">
