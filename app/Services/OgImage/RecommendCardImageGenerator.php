@@ -12,8 +12,8 @@ namespace App\Services\OgImage;
  *    （白い角丸カード・アイコン＋部屋名＋メンバー数）として散らし、ぼかし＋半透明の青い霞で
  *    沈める（コラージュ感を出しつつ前景の文字を立たせる）
  *  - 前景: 白いバナー帯に特大のネイビー文字を2行（「タグ」のオープンチャット／人気・活発な
- *    部屋ランキング）。タグ部分だけブランドブルーの2トーン。下に細いサブ帯（毎時更新＋ドメイン）
- *  - 左上にサイト名。文言はロケール依存（ja/tw/th）
+ *    部屋ランキング）。タグ部分だけブランドブルーの2トーン。下に細いサブ帯（毎時更新＋サイト名）
+ *  - 左上にはサイト名を置かない（oc カードの左上サイト名廃止と同方針・文言はロケール依存 ja/tw/th）
  *
  * テキスト・絵文字・アイコンの描画機構は AbstractCardImageGenerator（共通基盤）に置いてある。
  */
@@ -84,8 +84,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $blue = imagecolorallocate($im, 37, 99, 235);
         $subNavy = imagecolorallocate($im, 62, 82, 138);
 
-        // --- 左上: サイト名 ---
-        $this->drawLine($im, t('オプチャグラフ'), 56, 34, 30, $navy, $this->fontsBold);
+        // サイト名はサブ帯に含まれるため左上には置かない（oc カードの左上サイト名廃止と同方針）
 
         // --- 中央: 白バナー帯の見出し2行＋サブ帯 ---
         $maxTextW = self::WIDTH - 2 * 56 - 2 * 36; // 両端余白とバナー左右パディングを引いた最大文字幅
