@@ -57,6 +57,13 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         'recommend' => $recommend ?? null,
       ]) ?>
 
+      <?php // シェア導線（oc ページと共通のコンポーネント）。共有リンクの og:image は
+            // テーマ専用の動的カード(/recommend/{tag}/card)で展開される ?>
+      <?php viewComponent('share_buttons', [
+        '_shareUrl' => $canonical,
+        '_shareGa' => ['content_type' => 'recommend', 'item_id' => htmlspecialchars_decode($tag)],
+      ]) ?>
+
     </section>
     <section class="recommend-ranking-section">
       <?php if (isset($recommend)) : ?>

@@ -111,6 +111,14 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
 
+        <?php // シェア導線（oc ページと共通のコンポーネント）。ヒーロー内だと検索→コンテンツの流れを
+              // 分断するため、コンテンツを見終えた後のページ末尾（フッター手前）に置く。
+              // og:image は言語別デフォルトOGP ?>
+        <?php viewComponent('share_buttons', [
+            '_shareUrl' => url(),
+            '_shareGa' => ['content_type' => 'top'],
+        ]) ?>
+
         <?php if ($enableAdsense): ?>
             <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
                   // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>

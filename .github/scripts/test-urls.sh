@@ -107,6 +107,34 @@ test_json_url() {
     fi
 }
 
+# PNG画像エンドポイントのテスト（ステータス200に加え、本文が実際にPNGであることを確認。
+# 生成失敗時のフォールバックもPNGなので「HTMLのエラーページが返る」劣化を検知できる）
+test_png_url() {
+    local url="$1"
+    local description="$2"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+    echo -n "Testing PNG: ${url} ... " | tee -a "$LOG_FILE"
+
+    local body_file=$(mktemp)
+    local status_code=$(curl -k -s -o "$body_file" -w "%{http_code}" --max-time 30 -H "$API_CLIENT_HEADER" "$url")
+
+    # PNG シグネチャ(89 50 4E 47 0D 0A 1A 0A)で判定（text/html のエラーページを弾く）
+    local sig=$(head -c 8 "$body_file" | od -An -tx1 | tr -d ' \n')
+    if [ "$status_code" = "200" ] && [ "$sig" = "89504e470d0a1a0a" ]; then
+        echo -e "${GREEN}OK${NC}" | tee -a "$LOG_FILE"
+        rm -f "$body_file"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    else
+        echo -e "${RED}FAILED (Status: ${status_code}, Body: $(head -c 60 "$body_file" | tr -d '\0'))${NC}" | tee -a "$LOG_FILE"
+        rm -f "$body_file"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+}
+
 # サイトマップにURLが含まれているかテスト
 test_sitemap_contains_url() {
     local sitemap_dir="$1"
@@ -440,6 +468,27 @@ main() {
     # レコメンドページ - 日本語
     log "レコメンドページのテスト（日本語）"
     test_url "${BASE_URL}/recommend/%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89" "レコメンド（ポケモン）"
+    echo ""
+
+    # 動的OGP画像（シェアカード /card・検索用1:1サムネ /thumb）と言語別デフォルトOGP
+    # 200 かつ本文が実PNGであること（500やHTMLエラーページへの劣化を検知）。
+    # アイコン取得は外部(LINE CDN)依存だが、失敗してもプレースホルダで200のPNGを返す設計。
+    log "動的OGP画像のテスト"
+    if [ -n "$JA_OC_ID" ]; then
+        test_png_url "${BASE_URL}/oc/${JA_OC_ID}/card?d=ci" "OCシェアカード"
+        test_png_url "${BASE_URL}/oc/${JA_OC_ID}/thumb?d=ci" "OC 1:1サムネ"
+    fi
+    test_png_url "${BASE_URL}/recommend/%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89/card?d=ci" "レコメンドシェアカード"
+    test_png_url "${BASE_URL}/recommend/%E3%83%9D%E3%82%B1%E3%83%83%E3%83%88%E3%83%A2%E3%83%B3%E3%82%B9%E3%82%BF%E3%83%BC%EF%BC%88%E3%83%9D%E3%82%B1%E3%83%A2%E3%83%B3%EF%BC%89/thumb?d=ci" "レコメンド1:1サムネ"
+    if [ -n "$TW_OC_ID" ]; then
+        test_png_url "${BASE_URL}/tw/oc/${TW_OC_ID}/card?d=ci" "OCシェアカード（繁体字）"
+    fi
+    if [ -n "$TH_OC_ID" ]; then
+        test_png_url "${BASE_URL}/th/oc/${TH_OC_ID}/card?d=ci" "OCシェアカード（タイ語）"
+    fi
+    test_png_url "${BASE_URL}/assets/ogp.png" "デフォルトOGP（ja）"
+    test_png_url "${BASE_URL}/assets/ogp_tw.png" "デフォルトOGP（tw）"
+    test_png_url "${BASE_URL}/assets/ogp_th.png" "デフォルトOGP（th）"
     echo ""
 
     # レコメンドページ - 繁体字
