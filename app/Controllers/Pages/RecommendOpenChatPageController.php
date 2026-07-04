@@ -160,8 +160,12 @@ class RecommendOpenChatPageController
         $count = min($recommend->getCount(), AppConfig::LIST_LIMIT_RECOMMEND);
         $headline = sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag);
         $_meta->setTitle($headline);
-        $_meta->setImageUrl(imgUrl($recommendList[0]['img_url']));
-        $_meta->thumbnail = imgPreviewUrl($recommendList[0]['img_url']);
+        // og:image は動的カード（/recommend/{tag}/card）、thumbnail(検索用)は 1:1 の動的サムネ
+        // （/recommend/{tag}/thumb）。以前はどちらも部屋アイコンの LINE CDN 直リンクで、
+        // 見栄え・情報量に欠けた。日付クエリでSNS側のクロールキャッシュを1日単位で更新させる
+        $_meta->setImageUrl(url('recommend/' . urlencode($tag) . '/card') . '?d=' . date('Ymd'))
+            ->setTwitterCard('summary_large_image')
+            ->setThumbnail(url('recommend/' . urlencode($tag) . '/thumb') . '?d=' . date('Ymd'));
 
         // 表示中の上位部屋を ItemList として同梱（AI検索・検索エンジンの機械可読引用向け）
         $_schema = $this->breadcrumbsShema->generateRecommend(
