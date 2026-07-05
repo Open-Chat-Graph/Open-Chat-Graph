@@ -110,13 +110,12 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         );
 
         // 帯グループ全体を縦中央に置く（見出しが1行でも2行でもバランスを保つ）
-        $headGap = 8;  // 見出し行同士（他の帯との間隔より詰めてひとかたまりに見せる）
-        $bandGap = 14; // 見出し⇔ランキングラベル⇔サブ帯
-        $headH = count($headLines) * (int)round($size * 1.72) + (count($headLines) - 1) * $headGap;
+        $bandGap = 14; // 帯同士の間隔（見出し行同士も含めてすべて同じ）
+        $headH = count($headLines) * (int)round($size * 1.72) + (count($headLines) - 1) * $bandGap;
         $total = $headH + $bandGap + (int)round(56 * 1.72) + $bandGap + (int)round(30 * 1.72);
         $y = intdiv(self::HEIGHT - $total, 2);
         foreach ($headLines as $i => $segments) {
-            $y = $this->drawBanner($im, $segments, $size, $y + ($i > 0 ? $headGap : 0), $this->fontsBold);
+            $y = $this->drawBanner($im, $segments, $size, $y + ($i > 0 ? $bandGap : 0), $this->fontsBold);
         }
 
         $y = $this->drawBanner($im, [[t('人気ランキング'), $navy]], 56, $y + $bandGap, $this->fontsBold);
