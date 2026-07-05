@@ -11,9 +11,8 @@ namespace App\Services\OgImage;
  *  - 背景: ライトブルー＋淡い斜めストライプの上に、ランキング上位の部屋を「ミニカード」
  *    （白い角丸カード・アイコン＋部屋名＋メンバー数）として散らし、ぼかし＋半透明の青い霞で
  *    沈める（コラージュ感を出しつつ前景の文字を立たせる）
- *  - 前景: 白いバナー帯に特大のネイビー文字（「タグ」のLINEオープンチャット＝1行に収まらない
- *    長いタグは「タグ」の／LINEオープンチャット の2行に折る／人気・活発な部屋ランキング）。
- *    タグ部分だけブランドブルーの2トーン。下に細いサブ帯（サイト名＋更新頻度）
+ *  - 前景: 白いバナー帯に特大のネイビー文字を2行（「タグ」のオープンチャット／人気ランキング）。
+ *    タグ部分だけブランドブルーの2トーン。下に細いサブ帯（オプチャグラフ（毎時更新））
  *  - 左上にはサイト名を置かない（oc カードの左上サイト名廃止と同方針・文言はロケール依存 ja/tw/th）
  *
  * テキスト・絵文字・アイコンの描画機構は AbstractCardImageGenerator（共通基盤）に置いてある。
@@ -26,12 +25,6 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     /** 見出し行の最大/最小フォントサイズ。入らなければ縮小→タグ末尾… で退避 */
     private const HEADLINE_MAX_SIZE = 56;
     private const HEADLINE_MIN_SIZE = 32;
-
-    /**
-     * 見出しの翻訳キー。| は「1行に収まらないとき2行に折る位置」のマーカーで、表示時は取り除く
-     * （ja: 「タグ」の／LINEオープンチャット の2行になる。このキーはこのカード専用）
-     */
-    private const HEADLINE_FORMAT = '「%s」の|LINEオープンチャット';
 
     /** 背景ミニカードのアイコン取得に使ってよい合計秒数（超過分はプレースホルダで描く） */
     private const ICON_TOTAL_BUDGET = 6;
@@ -93,13 +86,13 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
 
         // サイト名はサブ帯に含まれるため左上には置かない（oc カードの左上サイト名廃止と同方針）
 
-        // --- 中央: 白バナー帯の見出し（1〜2行）＋ランキングラベル＋サブ帯 ---
+        // --- 中央: 白バナー帯の見出し2行＋サブ帯 ---
         $maxTextW = self::WIDTH - 2 * 56 - 2 * 36; // 両端余白とバナー左右パディングを引いた最大文字幅
 
-        // 見出し「タグ」のLINEオープンチャット: タグ部分だけブランドブルーの2トーン。
-        // 1行に収まらない長いタグは「タグ」の／LINEオープンチャット の2行に折る（タグを大きい
-        // サイズのまま出せる）。2行でも入らないタグはサイズを縮め、最後はタグ末尾を…で省略
-        [$headLines, $size] = $this->buildHeadlineLines(
+        // 1行目「タグ」のオープンチャット: タグ部分だけブランドブルーの2トーン。
+        // 入らないタグはサイズを下限まで縮め、それでも溢れる場合はタグ末尾を…で省略
+        [$segments, $size] = $this->buildTagSegments(
+            '「%s」のオープンチャット',
             $tag,
             $maxTextW,
             self::HEADLINE_MAX_SIZE,
@@ -108,22 +101,18 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             $blue,
         );
 
-        // 帯グループ全体を縦中央に置く（見出しが1行でも2行でもバランスを保つ）
-        $headGap = 8;  // 見出し行同士（他の帯との間隔より詰めてひとかたまりに見せる）
-        $bandGap = 14; // 見出し⇔ランキングラベル⇔サブ帯
-        $headH = count($headLines) * (int)round($size * 1.72) + (count($headLines) - 1) * $headGap;
-        $total = $headH + $bandGap + (int)round(56 * 1.72) + $bandGap + (int)round(30 * 1.72);
+        // 帯グループ全体を縦中央に置く（見出しの縮小サイズに関わらずバランスを保つ）
+        $bandGap = 14;
+        $total = (int)round($size * 1.72) + $bandGap + (int)round(56 * 1.72) + $bandGap + (int)round(30 * 1.72);
         $y = intdiv(self::HEIGHT - $total, 2);
-        foreach ($headLines as $i => $segments) {
-            $y = $this->drawBanner($im, $segments, $size, $y + ($i > 0 ? $headGap : 0), $this->fontsBold);
-        }
+        $y = $this->drawBanner($im, $segments, $size, $y, $this->fontsBold);
 
-        $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 56, $y + $bandGap, $this->fontsBold);
+        $y = $this->drawBanner($im, [[t('人気ランキング'), $navy]], 56, $y + $bandGap, $this->fontsBold);
 
         // サブ帯: ブランド名（太字）＋更新頻度（細字・丸括弧）。URLは出さない
         $this->drawBanner($im, [
             [t('オプチャグラフ'), $navy, $this->fontsBold],
-            ['（' . t('1時間ごとに更新') . '）', $subNavy],
+            ['（' . t('毎時更新') . '）', $subNavy],
         ], 30, $y + $bandGap, $this->fontsMedium);
 
         // --- PNG をバイト列で返す（ファイルには書かない） ---
@@ -157,7 +146,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
         $total = (int)round($size * 1.72) + $gap + (int)round(26 * 1.72) + $gap + (int)round(22 * 1.72);
         $y = intdiv($s - $total, 2);
         $y = $this->drawBanner($im, $segments, $size, $y, $this->fontsBold, $s);
-        $y = $this->drawBanner($im, [[t('人気・活発な部屋ランキング'), $navy]], 26, $y + $gap, $this->fontsBold, $s);
+        $y = $this->drawBanner($im, [[t('人気ランキング'), $navy]], 26, $y + $gap, $this->fontsBold, $s);
         $this->drawBanner($im, [[t('オプチャグラフ'), $subNavy]], 22, $y + $gap, $this->fontsMedium, $s);
 
         return $this->encodePng($im);
@@ -187,7 +176,7 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
     /**
      * タグ入り見出しのセグメント（[テキスト, 色] の並び）と、収まるフォントサイズを決める。
      * ロケールの $format（%s にタグが入る翻訳キー）で整形し、タグ部分だけアクセント色にする。
-     * サイズを下限まで縮めても入らない長いタグは末尾を…で省略する（サムネの1行見出し用）。
+     * サイズを下限まで縮めても入らない長いタグは末尾を…で省略する。
      *
      * @return array{0: array{0:string,1:int}[], 1:int}
      */
@@ -208,51 +197,6 @@ class RecommendCardImageGenerator extends AbstractCardImageGenerator
             $segments = $compose(rtrim($tag) . '…');
         }
         return [$segments, $size];
-    }
-
-    /**
-     * OGP用見出し（HEADLINE_FORMAT）の行組み（1〜2行）と、収まるフォントサイズを決める。
-     * まず | を除いた全文1行で最大→最小サイズを試し、収まらなければ | の位置で2行に折る
-     * （ja: 「タグ」の／LINEオープンチャット。タグを縮小せず大きいまま出すのが狙い）。
-     * 2行の下限サイズでも入らない長いタグは末尾を…で省略する。
-     *
-     * @return array{0: array<int, array{0:string,1:int}[]>, 1:int} [行ごとのセグメント配列, フォントサイズ]
-     */
-    private function buildHeadlineLines(string $tag, int $maxTextW, int $maxSize, int $minSize, int $navy, int $blue): array
-    {
-        $tpl = t(self::HEADLINE_FORMAT);
-        $width = $this->segmentsWidth(...);
-
-        // 1行に収まるなら1行のまま（短いタグは従来と同じ見た目）
-        $single = $this->composeTagSegments(str_replace('|', '', $tpl), $tag, $navy, $blue);
-        for ($size = $maxSize; $size >= $minSize; $size -= 2) {
-            if ($width($single, $size) <= $maxTextW) {
-                return [[$single], $size];
-            }
-        }
-
-        // | の位置で2行に折る（| が無い訳文はそのまま1行＝旧来の縮小→…退避になる）
-        $parts = explode('|', $tpl, 2);
-        $compose = fn(string $t): array => array_map(
-            fn(string $lineTpl) => $this->composeTagSegments($lineTpl, $t, $navy, $blue),
-            $parts,
-        );
-        $fits = fn(array $lines, int $size): bool => max(array_map(
-            fn(array $segments) => $width($segments, $size),
-            $lines,
-        )) <= $maxTextW;
-
-        $lines = $compose($tag);
-        $size = $maxSize;
-        while ($size > $minSize && !$fits($lines, $size)) {
-            $size -= 2;
-        }
-        // 下限サイズでも入らない長いタグは末尾を削って…（書式ごと組み直してロケール差異を保つ）
-        while ($tag !== '' && !$fits($lines, $size)) {
-            $tag = mb_substr($tag, 0, -1);
-            $lines = $compose(rtrim($tag) . '…');
-        }
-        return [$lines, $size];
     }
 
     /** セグメント（[テキスト, 色] の並び）を太字フォントで描いたときの総送り幅。 */
