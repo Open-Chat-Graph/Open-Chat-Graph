@@ -43,7 +43,9 @@ class OcCardImageController
             return false;
         }
 
-        // 直近1週間のメンバー数系列（先週の同じ曜日→今日の8点。ページの「1週間」統計と同じ観測窓）。
+        // 直近1週間のメンバー数系列（最後の実データ点を終点とする8点。ページの「1週間」統計と同じ観測窓）。
+        // 「今日」の日次データはまだ無い時間帯が長いため、1日分広めに取得してから最後の実データ点
+        // 基準のちょうど1週間に切り詰める（今日ぴったりの窓だと増減が出せず消えてしまう）。
         // 無い部屋は数値のみのカードになる
         $series = [];
         $dates = [];
@@ -51,7 +53,7 @@ class OcCardImageController
         $dto = $chartService->buildStatisticsChartArray(
             $open_chat_id,
             null,
-            date('Y-m-d', time() - 7 * 86400),
+            date('Y-m-d', time() - 8 * 86400),
             date('Y-m-d'),
         );
         if ($dto && $dto->member) {
@@ -66,14 +68,17 @@ class OcCardImageController
                 }
             }
             if ($lastIdx !== null) {
-                // ちょうど1週間前（同じ曜日）の点があるときだけ増減を出す。窓が8点しか無いので、
-                // 旧実装の max(0, ...) の丸めだと「最終データが数日前の部屋」で1週間未満の増減を
-                // 「/ 1週間」と表示してしまう（旧30日窓ではクランプが実質発火しなかった）
+                // 終点からちょうど1週間前（同じ曜日）の点があるときだけ増減を出す。丸めて近い点で
+                // 代用すると「1週間未満の増減」を「/ 1週間」と表示してしまう（レビュー指摘済み）
                 $weekAgoIdx = $lastIdx - 7;
                 $weekAgo = $weekAgoIdx >= 0 ? $series[$weekAgoIdx] : null;
                 if ($weekAgo !== null) {
                     $diffWeek = (int)$series[$lastIdx] - (int)$weekAgo;
                 }
+                // グラフも増減と同じ「終点基準の1週間」に切り詰める（観測窓の矛盾を出さない）
+                $start = max(0, $weekAgoIdx);
+                $series = array_slice($series, $start, $lastIdx - $start + 1);
+                $dates = array_slice($dates, $start, $lastIdx - $start + 1);
             }
         }
 
