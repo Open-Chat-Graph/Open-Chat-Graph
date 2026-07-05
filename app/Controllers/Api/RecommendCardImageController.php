@@ -20,7 +20,7 @@ use App\Services\Security\ConcurrentRequestGuard;
  *  - 生成は 1IP×同時1本に制限（ConcurrentRequestGuard）。スコープは /oc/{id}/card と共通の
  *    'og-card'＝1つのIPがOGP生成系エンドポイント全体で複数ワーカーを同時に食えないようにする。
  *    溢れた分は即デフォルト画像で返す。
- *  - アイコン取得（最大5件）は FileDownloader の timeout/max_duration でワーカー拘束を厳密化。
+ *  - アイコン取得（最大6件）は FileDownloader の timeout/max_duration でワーカー拘束を厳密化。
  */
 class RecommendCardImageController
 {
