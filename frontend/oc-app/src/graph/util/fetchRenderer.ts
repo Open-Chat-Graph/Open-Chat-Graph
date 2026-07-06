@@ -205,6 +205,28 @@ function neededFromForView(limit: ChartLimit): string {
     : windowFromForLimit(limit)
 }
 
+/**
+ * 折れ線の組み立てに使う窓開始日。必要層すべてが揃っている範囲まで窓を古い側へ広げる。
+ *
+ * chart は保持データ(initData)の末尾スライスで期間タブを切り替える
+ * (currentConfigCoversLimit → chart.update)ため、窓ぴったりで組み立てると
+ * 「層キャッシュは全期間あるのに chart は現在の窓ぶんしか持っていない」状態になる。
+ * 例: 全期間を表示した後に週タブへ戻して順位表示をOFFにすると、chart が週窓だけで
+ * 作り直され、その後の全期間タブがスライスだけで済まされて1週間分しか表示されない。
+ * 全必要層が共通して持つ最古日まで広げて渡すことで、層キャッシュと chart の保持範囲を
+ * 常に一致させる（chart 側が limit で末尾スライスするため、窓より広くてもよい）。
+ */
+function coveredFromForView(limit: ChartLimit): string {
+  const neededFrom = neededFromForView(limit)
+  let from = chartMeta.startDate
+  for (const name of requiredLayers()) {
+    const entry = layers.get(layerKey(name))
+    const loadedFrom = entry?.loadedFrom ?? SENTINEL_FROM
+    if (loadedFrom > from) from = loadedFrom
+  }
+  return from > neededFrom ? neededFrom : from
+}
+
 /** windowFrom..endDate を1日刻みで埋めた密な日付配列（バックエンドの date 軸と一致する） */
 function buildDateAxis(from: string): string[] {
   const dates: string[] = []
@@ -394,8 +416,8 @@ function assembleResponse(limit: ChartLimit): ChartResponse {
     return response
   }
 
-  // 折れ線: 日次 date 軸で組み立てる
-  const date = buildDateAxis(neededFromForView(limit))
+  // 折れ線: 日次 date 軸で組み立てる（必要層が揃っている範囲まで窓を広げて chart に持たせる）
+  const date = buildDateAxis(coveredFromForView(limit))
   const response: ChartResponse = { date, member: [], position: [], totalCount: [] }
 
   // member（常に必要）
