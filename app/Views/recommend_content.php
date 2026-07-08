@@ -85,7 +85,16 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </header>
             <?php $listArray = $recommend->getList(false, AppConfig::LIST_LIMIT_RECOMMEND) ?>
 
-            <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
+            <?php // top5 の下（高視認位置）に広告を1枠。自動広告オフに伴い、以前ここにあった枠を復活させる。
+                  // リストを top5 と残りに分割し間に挿入する（未使用スロット recommendSeparatorResponsive を流用）。
+                  // currentCount で残りチャンクの連番を継続。広告オフ/5件以下では従来どおり一本のリスト。 ?>
+            <?php if ($enableAdsense && count($listArray) > 5) : ?>
+              <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 0, 5), 'showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
+              <?php GAd::output('recommendSeparatorResponsive') ?>
+              <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 5), 'showListMedal' => false, 'currentCount' => 5, 'showApiCreatedAt' => true]) ?>
+            <?php else : ?>
+              <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
+            <?php endif ?>
 
             <?php if (isset($_dto->tagRecordCounts[$_tagIndex]) && ((int)$_dto->tagRecordCounts[$_tagIndex]) > $count) : ?>
               <a class="top-ranking-readMore unset ranking-url white-btn" style="margin-top: 1rem;" href="<?php echo url('ranking?keyword=' . urlencode('tag:' . $_tagIndex)) ?>">

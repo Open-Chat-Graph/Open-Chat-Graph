@@ -28,6 +28,13 @@
  *  no fill(unfilled)・iframe無し枠は除外し、誤検知ゼロを維持。
  */
 
+// 運用方針転換により一旦無効化（GoogleAdsenseConfig::$enableAdBlockGuard）。
+// 各 View の viewComponent('ad_guard') 呼び出しは残すが、フラグが false の間は何も出力しない。
+// 復活させたいときは同フラグを true に戻すだけでよい。
+if (!\App\Config\GoogleAdsenseConfig::$enableAdBlockGuard) {
+    return;
+}
+
 // --- 乱数識別子（毎リクエスト） ---
 $rid = static function (): string {
     return 'o' . substr(bin2hex(random_bytes(8)), 0, 10);
