@@ -90,7 +90,9 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                   // currentCount で残りチャンクの連番を継続。広告オフ/5件以下では従来どおり一本のリスト。 ?>
             <?php if ($enableAdsense && count($listArray) > 5) : ?>
               <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 0, 5), 'showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
-              <?php GAd::output('recommendSeparatorResponsive') ?>
+              <?php // リスト内はルーム行が左右1remインデントされているので、広告も画面幅へはみ出さず
+                    // コンテナ幅に収める（full-width-responsive=false）＝行と左右がそろう ?>
+              <?php GAd::output('recommendSeparatorResponsive', false) ?>
               <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 5), 'showListMedal' => false, 'currentCount' => 5, 'showApiCreatedAt' => true]) ?>
             <?php else : ?>
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
@@ -118,11 +120,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
       <?php viewComponent('theme_discovery', ['discovery' => $_discovery]) ?>
     <?php endif ?>
 
-    <?php if ($enableAdsense && isset($recommend)): ?>
-      <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
-            // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('ocTopHorizontal') ?>
-    <?php endif ?>
+    <?php // フッター前の横長枠は撤去: 視認率15%/CTR0.03%（AdSense実測）＝90%到達0.7%で「見られない死に枠」。
+          // 収益は top5 直下の枠（本題直後・到達7.1%）に集約する。 ?>
 
     <?php viewComponent('footer_inner') ?>
 
