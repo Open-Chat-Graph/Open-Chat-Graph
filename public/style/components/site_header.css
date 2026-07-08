@@ -754,6 +754,14 @@ ins.responsive-google[data-ad-status='unfilled'] {
   max-width: 812px;
 }
 
+/* recommend リスト内(top5 直下)の広告だけは、ルーム行の左右1remインデント
+   (.pad-side-top-ranking .top-ranking の margin)の外へ出し、コンテナ幅いっぱいに表示する。
+   行と左右をそろえる従来方針から「広告は横幅いっぱい」へ変更。負マージンでインデントを相殺。 */
+.top-ranking > .responsive-google-parent {
+  margin-left: -1rem;
+  margin-right: -1rem;
+}
+
 @media screen and (min-width: 512px) {
   .rectangle3-ads,
   .rectangle4-ads,

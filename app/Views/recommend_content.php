@@ -90,8 +90,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
                   // currentCount で残りチャンクの連番を継続。広告オフ/5件以下では従来どおり一本のリスト。 ?>
             <?php if ($enableAdsense && count($listArray) > 5) : ?>
               <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 0, 5), 'showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
-              <?php // リスト内はルーム行が左右1remインデントされているので、広告も画面幅へはみ出さず
-                    // コンテナ幅に収める（full-width-responsive=false）＝行と左右がそろう ?>
+              <?php // 広告だけはルーム行の左右1remインデントの外へ出し、コンテナ幅いっぱいで表示する
+                    // （CSS .top-ranking > .responsive-google-parent の負マージンで相殺）。full-width-responsive=false のまま。 ?>
               <?php GAd::output('recommendSeparatorResponsive', false) ?>
               <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 5), 'showListMedal' => false, 'currentCount' => 5, 'showApiCreatedAt' => true]) ?>
             <?php else : ?>
