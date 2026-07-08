@@ -215,6 +215,9 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     <?php if ($enableAdsense): ?>
       <?php // ocTopWide2(手動横長)は撤去済み: impRPM¥14/CTR0.21%で「関連ルーム」棚への回遊を遮るだけだった(2026-06実測)。gTag は自動広告に必要なので維持 ?>
       <?php GAd::gTag() ?>
+      <?php // グラフ直後・関連ルームの前にレスポンシブ1枠（中盤に紛れ込ませ）。既存の未使用スロットを流用。
+            // 下部のコメント下枠(ocTopHorizontal)とは関連ルームを挟むので2枠が近接しない ?>
+      <?php GAd::output('ocSeparatorResponsive') ?>
     <?php endif ?>
 
     <?php // 関連ルーム(類似サイズ/おすすめ)は recommend 静的キャッシュ(.dat)から都度組み立て（MySQL不使用） ?>
