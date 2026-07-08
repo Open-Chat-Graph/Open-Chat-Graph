@@ -246,11 +246,8 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       </section>
     <?php endif ?>
 
-    <?php if ($enableAdsense): ?>
-      <?php // コメントの下・フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
-            // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-      <?php GAd::output('ocTopHorizontal') ?>
-    <?php endif ?>
+    <?php // コメント下の横長枠は撤去: 視認率15%/CTR0.03%（AdSense実測）＝ここまでスクロール到達0.9%で「見られない死に枠」。
+          // 収益はグラフ直後の枠（本題直後・高視認）に集約する。 ?>
     <?php viewComponent('footer_inner') ?>
 
   </div>
