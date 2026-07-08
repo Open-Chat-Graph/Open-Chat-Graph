@@ -11,8 +11,12 @@ class GoogleAdsense
      * 広告を出力
      *
      * @param string $slotKey スロット識別子（例: 'ocTopRectangle'）
+     * @param bool $fullWidthResponsive レスポンシブ枠を端末幅いっぱいに広げるか（既定 true）。
+     *                                  リスト内など横インデントされた文脈では false にすると、
+     *                                  画面幅への「はみ出し」をやめてコンテナ幅（＝周囲の行と同じ位置）に収まる。
+     *                                  固定サイズ（cssClass 有り）の枠には影響しない。
      */
-    public static function output(string $slotKey)
+    public static function output(string $slotKey, bool $fullWidthResponsive = true)
     {
         if (AppConfig::$isStaging) return;
 
@@ -25,7 +29,7 @@ class GoogleAdsense
 
         // レスポンシブ広告（CSSクラスがnull）
         if ($cssClass === null) {
-            self::responsive($slotId, 'responsive-google');
+            self::responsive($slotId, 'responsive-google', $fullWidthResponsive);
         } else {
             self::rectangle($slotId, $cssClass);
         }
@@ -48,16 +52,17 @@ class GoogleAdsense
         EOT;
     }
 
-    private static function responsive(string $adSlot, string $cssClass)
+    private static function responsive(string $adSlot, string $cssClass, bool $fullWidthResponsive = true)
     {
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
+        $fullWidth = $fullWidthResponsive ? 'true' : 'false';
 
         echo <<<EOT
         <div class="{$cssClass}-parent">
         EOT;
 
         echo <<<EOT
-            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            <ins class="adsbygoogle manual {$cssClass}" data-ad-client="{$adClient}" data-ad-slot="{$adSlot}" data-ad-format="auto" data-full-width-responsive="{$fullWidth}"></ins>
         EOT;
 
         echo <<<EOT

@@ -119,12 +119,8 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             '_shareGa' => ['content_type' => 'top'],
         ]) ?>
 
-        <?php if ($enableAdsense): ?>
-            <?php // フッター直前にOC横長1枠（固定。高さ確保済みでCLSなし）。
-                  // 広告ブロック検出(ad_guard)はページに ins.adsbygoogle が1つも無いと動作しないため、その維持も兼ねる ?>
-            <?php \App\Views\Ads\GoogleAdsense::output('ocTopHorizontal') ?>
-        <?php endif ?>
-
+        <?php // フッター前の横長枠は撤去: 視認率15%/CTR0.03%/RPM¥12（AdSense実測）で「見られない死に枠」。
+              // トップは下も上もスクロール到達が壊滅的（30%到達2.6%）＝埋め込み広告に不向きなため置かない。 ?>
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
             <div class="refresh-icon"></div><time style="font-size: 11px; color: var(--c-text-5); margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
