@@ -8,6 +8,15 @@ class GoogleAdsenseConfig
     static string $googleAdsenseClient = 'ca-pub-2330982526015125'; // 広告クライアントID
 
     /**
+     * アンチアドブロック（ad_guard: 未表示検出→全画面オーバーレイ）の有効/無効。
+     *
+     * 運用方針転換により一旦 false（無効）。各 View の viewComponent('ad_guard') 呼び出しは
+     * 残すが、false の間 ad_guard.php は冒頭で return し何も出力しない。復活させたいときは
+     * true に戻すだけでよい。
+     */
+    static bool $enableAdBlockGuard = false;
+
+    /**
      * Google AdSense広告スロット設定
      *
      * キー: スロット識別子（文字列）
@@ -17,8 +26,8 @@ class GoogleAdsenseConfig
      * 'newSlotKey' => ['slotId' => '1234567890', 'cssClass' => 'rectangle3-ads'],
      */
     static array $googleAdsenseSlots = [
-        // OCトップ-horizontal
-        'ocTopHorizontal' => ['slotId' => '9641198670', 'cssClass' => 'horizontal-ads'],
+        // OCトップ-horizontal（方針転換で横長固定→幅いっぱいのレスポンシブ表示に変更・cssClass=null）
+        'ocTopHorizontal' => ['slotId' => '9641198670', 'cssClass' => null],
         // OCトップ-rectangle
         'ocTopRectangle' => ['slotId' => '8037531176', 'cssClass' => 'rectangle3-ads'],
         // OCトップ2-rectangle
@@ -49,8 +58,8 @@ class GoogleAdsenseConfig
         'siteSeparatorResponsive' => ['slotId' => '4243068812', 'cssClass' => null],
         // サイトセパレーター-rectangle
         'siteSeparatorRectangle' => ['slotId' => '9793281538', 'cssClass' => 'rectangle-ads'],
-        // サイトセパレーター-横長
-        'siteSeparatorWide' => ['slotId' => '7150203685', 'cssClass' => 'rectangle2-ads'],
+        // サイトセパレーター-横長（jump ページの最高単価枠。固定→幅いっぱいのレスポンシブ表示に変更・cssClass=null）
+        'siteSeparatorWide' => ['slotId' => '7150203685', 'cssClass' => null],
         // サイト-bottom-wide
         'siteBottomWide' => ['slotId' => '8637392164', 'cssClass' => 'rectangle2-ads'],
         // おすすめトップ-rectangle

@@ -724,6 +724,22 @@ html.is-ios .site_header_outer.header-hidden {
   box-sizing: border-box;
 }
 
+/* レスポンシブ広告(data-ad-format="auto" + full-width-responsive)は配信サイズが可変。
+   読み込み前に高さを予約しておかないとレイアウトがガタつく(CLS)ため、既存の
+   rectangle 枠と同じ約280pxを min-height で確保する（大きめディスプレイを誘導）。 */
+.responsive-google {
+  min-height: 280px;
+}
+
+/* no fill(在庫なし)のときは予約した高さを畳み、空の余白を残さない。
+   Google が data-ad-status="unfilled" を付けた枠だけを対象にするので、
+   フィル済み(filled)の枠には影響しない。 */
+ins.responsive-google[data-ad-status='unfilled'] {
+  min-height: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
 .openchat-item-list .google-auto-placed {
   margin: 0 -1rem;
   width: 100vw !important;
