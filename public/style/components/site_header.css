@@ -719,8 +719,11 @@ html.is-ios .site_header_outer.header-hidden {
   margin: 1rem 0;
 }
 
+/* 広告が直前のセクション(共有ボタン・ランキング切替など)に詰まって見えるので、上に余白を確保する
+   （横長固定枠時代の .horizontal-ads-parent の margin 相当を復活）。padding なのでマージンの相殺を
+   受けず、確実に約1rem分あく。jump ページは .oc-jump-ad 側で 0 に上書きされるため対象外。 */
 .responsive-google-parent {
-  padding: 0;
+  padding: 1rem 0 0;
   box-sizing: border-box;
 }
 
@@ -738,6 +741,11 @@ ins.responsive-google[data-ad-status='unfilled'] {
   min-height: 0 !important;
   height: 0 !important;
   display: none !important;
+}
+
+/* no fill時は上に足した余白も畳んで空白を残さない */
+.responsive-google-parent:has(> ins.responsive-google[data-ad-status='unfilled']) {
+  padding-top: 0;
 }
 
 .openchat-item-list .google-auto-placed {
