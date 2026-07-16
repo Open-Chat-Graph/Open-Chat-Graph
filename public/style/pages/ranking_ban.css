@@ -433,7 +433,7 @@ body > .google-auto-placed {
   height: 50px;
   border-radius: 10px;
   background-color: var(--c-brand);
-  color: #fff;
+  color: var(--c-text-inverse);
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
@@ -901,7 +901,7 @@ body > .google-auto-placed {
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--c-shadow);
   transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 

@@ -79,8 +79,8 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(15, 23, 42, 0.78);
-  color: #fff;
+  background: var(--c-graph-hint-bg);
+  color: var(--c-text-inverse);
   border-radius: 999px;
   font-size: 12.5px;
   white-space: nowrap;
