@@ -360,8 +360,8 @@ body {
   --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
   --c-text-2: #d3d6d8 /* slate-300 */;
   --c-text-3: #7d8287 /* slate-400 */;      /* theme.ts text.secondary #7d8287 */
-  --c-text-4: #686d72 /* slate-500 */;
-  --c-text-5: #686d72 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-4: #7d8287 /* slate-400 */;
+  --c-text-5: #7d8287 /* slate-400 */;      /* 黒背景でも通常文字の AA コントラストを確保 */
   --c-text-steel: #7d8287 /* slate-400 */;
   --c-text-link: #1d9bf0;            /* app.tsx primary.main */
   /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
@@ -418,7 +418,7 @@ body {
   --c-cool-surface-hover: #1e2126 /* slate-750 */;
   --c-cool-border-soft: #2f3336 /* slate-700 */;
   --c-cool-border: #3f4347 /* slate-600 */;
-  --c-cool-text-weak: #686d72 /* slate-500 */;
+  --c-cool-text-weak: #7d8287 /* slate-400 */;
   --c-cool-text: #7d8287 /* slate-400 */;
   --c-cool-text-strong: #e7e9ea /* slate-200 */;
   --c-cool-text-heading: #eff1f2 /* slate-100 */;
@@ -608,8 +608,8 @@ body {
   --c-text-1: #e7e9ea /* slate-200 */;      /* theme.ts text.primary #e7e9ea */
   --c-text-2: #d3d6d8 /* slate-300 */;
   --c-text-3: #7d8287 /* slate-400 */;      /* theme.ts text.secondary #7d8287 */
-  --c-text-4: #686d72 /* slate-500 */;
-  --c-text-5: #686d72 /* slate-500 */;      /* 要調整: text-4 と同値に集約 */
+  --c-text-4: #7d8287 /* slate-400 */;
+  --c-text-5: #7d8287 /* slate-400 */;      /* 黒背景でも通常文字の AA コントラストを確保 */
   --c-text-steel: #7d8287 /* slate-400 */;
   --c-text-link: #1d9bf0;            /* app.tsx primary.main */
   /* --c-text-inverse は変更なし（緑グラデ・黒幕上の白文字は共通） */
@@ -666,7 +666,7 @@ body {
   --c-cool-surface-hover: #1e2126 /* slate-750 */;
   --c-cool-border-soft: #2f3336 /* slate-700 */;
   --c-cool-border: #3f4347 /* slate-600 */;
-  --c-cool-text-weak: #686d72 /* slate-500 */;
+  --c-cool-text-weak: #7d8287 /* slate-400 */;
   --c-cool-text: #7d8287 /* slate-400 */;
   --c-cool-text-strong: #e7e9ea /* slate-200 */;
   --c-cool-text-heading: #eff1f2 /* slate-100 */;
