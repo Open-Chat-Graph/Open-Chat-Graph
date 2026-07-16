@@ -29,11 +29,18 @@
         const admin = 1;
     </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-    <link rel="canonical" href="<?php echo url(path()) ?>">
+    <?php $canonical = $canonical ?? url(strstr(path(), '?', true) ?: path()); ?>
+    <link rel="canonical" href="<?php echo h($canonical) ?>">
+    <?php foreach (($hreflang ?? []) as $language => $href) : ?>
+        <link rel="alternate" hreflang="<?php echo h($language) ?>" href="<?php echo h($href) ?>">
+    <?php endforeach ?>
     <?php if (isset($noindex)) : ?>
-        <meta name="robots" content="noindex, nofollow">
+        <meta name="robots" content="noindex, follow">
+    <?php else : ?>
+        <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <?php endif ?>
     <?php if (!isset($disableGAd) || !$disableGAd) : ?>
         <?php //\App\Views\Ads\GoogleAdsense::gTag($dataOverlays ?? null) ?>
     <?php endif ?>
+    <script defer src="<?php echo fileUrl('/js/seo-observability.js', urlRoot: '') ?>"></script>
 </head>

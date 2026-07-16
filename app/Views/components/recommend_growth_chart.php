@@ -92,8 +92,10 @@ if (isset($recommend) && $recommend !== null) {
       if ((int)($row['id'] ?? 0) === $leaderId) {
         $leader = $row;
         $t = $row['table_name'] ?? '';
-        $leaderHref = url('/oc/' . (int)$row['id'])
-          . ($t === \App\Config\AppConfig::RANKING_HOUR_TABLE_NAME || $t === \App\Config\AppConfig::RANKING_DAY_TABLE_NAME ? '?limit=hour' : '');
+        $leaderHref = \App\Services\Seo\OpenChatUrlNormalizer::roomUrl(
+          (int)$row['id'],
+          $t === \App\Config\AppConfig::RANKING_HOUR_TABLE_NAME || $t === \App\Config\AppConfig::RANKING_DAY_TABLE_NAME ? ['limit' => 'hour'] : []
+        );
         break;
       }
     }

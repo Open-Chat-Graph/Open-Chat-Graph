@@ -8,7 +8,7 @@ use Shared\MimimalCmsConfig;
 $enableAdsense = true;
 
 /** @var \App\Services\StaticData\Dto\StaticTopPageDto $dto */
-viewComponent('head', compact('_css', '_meta', '_schema')) ?>
+viewComponent('head', compact('_css', '_meta', '_schema', 'canonical', 'hreflang')) ?>
 
 <body class="top-page">
     <?php if ($enableAdsense): ?>
@@ -89,9 +89,21 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <div id="myListDiv" data-nosnippet style="transition: all 0.3s; opacity: 0;"></div>
         <?php endif ?>
         <div class="modify-top-padding" style="margin-bottom: 0rem;">
-            <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
-            AppConfig::$listLimitTopRanking = 10; ?>
+            <?php viewComponent('topic_tag', ['topPageDto' => $dto, 'tagLimit' => 6]); ?>
         </div>
+
+        <nav class="home-discovery-hub" aria-labelledby="home-discovery-title">
+            <h2 id="home-discovery-title"><?php echo t('目的から探す') ?></h2>
+            <ul>
+                <li><a href="<?php echo url('ranking') ?>"><?php echo t('すべてのランキング') ?></a></li>
+                <?php foreach (array_slice(AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot], 0, 2, true) as $name => $id): ?>
+                    <li><a href="<?php echo url('ranking/' . $id) ?>"><?php echo $name ?><?php echo t('カテゴリー') ?></a></li>
+                <?php endforeach ?>
+                <li><a href="<?php echo url('policy') ?>#methodology"><?php echo t('データの取得方法') ?></a></li>
+                <li><a href="<?php echo url('api') ?>"><?php echo t('公開データAPI') ?></a></li>
+                <li><a href="<?php echo url('reports/' . $_updatedAt->format('Y-m')) ?>"><?php echo t('月次データレポート') ?></a></li>
+            </ul>
+        </nav>
 
         <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。急上昇テーマ直後（≈20%深度）に置き到達率を最大化。ja のみ。 ?>
             <?php viewComponent('home_blog_shelf') ?>
@@ -100,16 +112,9 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
-        <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
-            <?php viewComponent('top_ranking_recent_comments') ?>
-        <?php endif ?>
-
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
-
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
-        <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
 
         <?php // シェア導線（oc ページと共通のコンポーネント）。ヒーロー内だと検索→コンテンツの流れを
               // 分断するため、コンテンツを見終えた後のページ末尾（フッター手前）に置く。

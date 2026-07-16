@@ -208,4 +208,18 @@ class OpenChatListRepository implements OpenChatListRepositoryInterface, OpenCha
               ORDER BY o.id ASC"
         );
     }
+
+    public function getExistingThemeNames(): array
+    {
+        return DB::fetchAll(
+            "SELECT r.tag
+               FROM recommend r
+               INNER JOIN open_chat o ON o.id = r.id
+              WHERE TRIM(r.tag) <> ''
+              GROUP BY r.tag
+              HAVING COUNT(*) > 0
+              ORDER BY r.tag ASC",
+            args: [\PDO::FETCH_COLUMN],
+        );
+    }
 }

@@ -1,16 +1,20 @@
-import { updateURLSearchParams } from './util'
-
 const categoryParam: urlParamsValue<'category'>[] = ['in', 'all']
 const barParam: urlParamsValue<'bar'>[] = ['ranking', 'rising', 'none']
 const limitParam: urlParamsValue<'limit'>[] = ['hour', 'week', 'month', 'all']
 const chartParam: urlParamsValue<'chart'>[] = ['line', 'candlestick']
 
+const graphStateParams = (url: URL): URLSearchParams => {
+  if (!url.hash.startsWith('#graph')) return new URLSearchParams()
+  const queryIndex = url.hash.indexOf('?')
+  return new URLSearchParams(queryIndex === -1 ? '' : url.hash.slice(queryIndex + 1))
+}
+
 const validParam = <T extends urlParamsName>(
   definition: urlParamsValue<T>[],
-  url: URL,
+  params: URLSearchParams,
   name: T
 ): urlParamsValue<T> | null => {
-  const param = url.searchParams.get(name) ?? ''
+  const param = params.get(name) ?? ''
   return validParamString<T>(definition, param)
 }
 
@@ -84,23 +88,25 @@ export const defaultRankEmphasis: boolean = getStoregeRankEmphasis()
 
 export function getCurrentUrlParams(): urlParams {
   const url = new URL(window.location.href)
+  const params = graphStateParams(url)
   return {
-    category: validParam<'category'>(categoryParam, url, 'category') ?? defaultCategory,
-    bar: validParam<'bar'>(barParam, url, 'bar') ?? defaultBar,
-    limit: validParam<'limit'>(limitParam, url, 'limit') ?? defaultLimit,
-    chart: validParam<'chart'>(chartParam, url, 'chart') ?? defaultChart,
+    category: validParam<'category'>(categoryParam, params, 'category') ?? defaultCategory,
+    bar: validParam<'bar'>(barParam, params, 'bar') ?? defaultBar,
+    limit: validParam<'limit'>(limitParam, params, 'limit') ?? defaultLimit,
+    chart: validParam<'chart'>(chartParam, params, 'chart') ?? defaultChart,
   }
 }
 
 export function setUrlParams(params: urlParams) {
-  window.history.replaceState(
-    null,
-    '',
-    updateURLSearchParams({
-      bar: params.bar === defaultBar ? '' : params.bar,
-      category: params.category === defaultCategory || params.bar === 'none' ? '' : params.category,
-      limit: params.limit === defaultLimit ? '' : params.limit,
-      chart: params.chart === defaultChart ? '' : params.chart,
-    })
-  )
+  const state = new URLSearchParams()
+  const values = {
+    bar: params.bar === defaultBar ? '' : params.bar,
+    category: params.category === defaultCategory || params.bar === 'none' ? '' : params.category,
+    limit: params.limit === defaultLimit ? '' : params.limit,
+    chart: params.chart === defaultChart ? '' : params.chart,
+  }
+  Object.entries(values).forEach(([key, value]) => value && state.set(key, value))
+  const url = new URL(window.location.href)
+  url.hash = `graph${state.size ? `?${state.toString()}` : ''}`
+  window.history.replaceState(null, '', url)
 }

@@ -50,9 +50,9 @@ class AdminEndPointController
             purgeCacheCloudFlare(
                 files: [
                     url("oc/{$id}"),
-                    url("oc/{$id}?limit=hour"),
-                    url("oc/{$id}?limit=month"),
-                    url("oc/{$id}?limit=all"),
+                    \App\Services\Seo\OpenChatUrlNormalizer::roomUrl((int)$id, ['limit' => 'hour']),
+                    \App\Services\Seo\OpenChatUrlNormalizer::roomUrl((int)$id, ['limit' => 'month']),
+                    \App\Services\Seo\OpenChatUrlNormalizer::roomUrl((int)$id, ['limit' => 'all']),
                 ]
             );
         } catch (\RuntimeException $e) {

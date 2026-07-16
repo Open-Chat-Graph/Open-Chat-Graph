@@ -25,20 +25,24 @@
         <link rel="stylesheet" href="<?php echo fileUrl("style/{$css}.css", urlRoot: '') ?>">
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
-    <?php if (isset($canonical)) : ?>
-        <link rel="canonical" href="<?php echo $canonical ?>">
-    <?php else : ?>
-        <link rel="canonical" href="<?php echo url(strstr(path(), '?', true) ?: path()) ?>">
+    <?php $canonical = $canonical ?? url(strstr(path(), '?', true) ?: path()); ?>
+    <link rel="canonical" href="<?php echo h($canonical) ?>">
+    <?php if (isset($alternateJsonUrl)) : ?>
+        <link rel="alternate" type="application/json" href="<?php echo h($alternateJsonUrl) ?>">
     <?php endif ?>
+    <?php foreach (($hreflang ?? []) as $language => $href) : ?>
+        <link rel="alternate" hreflang="<?php echo h($language) ?>" href="<?php echo h($href) ?>">
+    <?php endforeach ?>
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
     <?php endif ?>
     <?php if (isset($noindex)) : ?>
-        <meta name="robots" content="noindex, nofollow">
+        <meta name="robots" content="noindex, follow, max-image-preview:large">
     <?php else : ?>
         <?php // Google Discover / リッチリザルトで大きな画像プレビューを許可（要件）。 ?>
         <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <?php endif ?>
+    <script defer src="<?php echo fileUrl('/js/seo-observability.js', urlRoot: '') ?>"></script>
     <?php if (!isset($disableGAd) || !$disableGAd) : ?>
         <?php //\App\Views\Ads\GoogleAdsense::gTag($dataOverlays ?? null) ?>
     <?php endif ?>
