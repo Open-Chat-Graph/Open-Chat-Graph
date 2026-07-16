@@ -12,14 +12,16 @@ final class PublicApiDocumentationController
 
     public function index()
     {
+        header('X-Robots-Tag: noindex, follow');
         $_css = ['components/site_header', 'components/site_footer', 'pages/terms'];
         $canonical = url('api');
+        $noindex = true;
         $_meta = meta()
             ->setTitle('公開データAPI')
             ->setDescription('オプチャグラフの部屋・ランキング・テーマ・統計を取得できる公開JSON APIです。')
             ->setOgpDescription('オプチャグラフの公開JSON API仕様と利用方法。')
             ->setCanonicalUrl($canonical);
-        return view('api_documentation_content', compact('_css', '_meta', 'canonical'));
+        return view('api_documentation_content', compact('_css', '_meta', 'canonical', 'noindex'));
     }
 
     public function openapi(PublicApiResponder $responder): \Shadow\Kernel\Response

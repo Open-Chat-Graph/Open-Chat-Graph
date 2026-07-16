@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
-<?php viewComponent('head', compact('_css', 'canonical') + ['_meta' => $_meta->generateTags()]) ?>
+<?php viewComponent('head', compact('_css', 'canonical', 'noindex') + ['_meta' => $_meta->generateTags()]) ?>
 <body>
 <?php viewComponent('site_header') ?>
 <main>
