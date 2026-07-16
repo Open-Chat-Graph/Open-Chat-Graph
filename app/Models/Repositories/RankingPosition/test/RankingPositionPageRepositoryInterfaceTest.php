@@ -10,7 +10,7 @@ declare(strict_types=1);
 use App\Models\SQLite\Repositories\Statistics\SqliteStatisticsRankingUpdaterRepository;
 use PHPUnit\Framework\TestCase;
 
-class SqliteStatisticsRankingUpdaterRepositoryTest extends TestCase
+class RankingPositionPageRepositoryInterfaceTest extends TestCase
 {
     private SqliteStatisticsRankingUpdaterRepository $instance;
 
