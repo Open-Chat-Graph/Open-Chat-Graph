@@ -21,7 +21,7 @@ $hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[Mimimal
 $enableAdsense = true;
 $noindex = $noindex ?? null;
 
-viewComponent('head', compact('_css', '_schema', 'canonical', 'noindex') + ['_meta' => $_meta->generateTags(), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
+viewComponent('head', compact('_css', '_schema', 'canonical', 'noindex', 'alternateJsonUrl') + ['_meta' => $_meta->generateTags(), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
 <body>
   <?php viewComponent('site_header') ?>

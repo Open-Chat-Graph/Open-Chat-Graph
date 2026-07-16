@@ -120,6 +120,7 @@ class RecommendOpenChatPageController
         );
 
         $canonical = url('recommend/' . urlencode($tag));
+        $alternateJsonUrl = url('api/v1/themes/' . urlencode($tag));
         $_meta->setCanonicalUrl($canonical);
 
         $topPageDto = $staticDataGeneration->getTopPageData();
@@ -159,6 +160,7 @@ class RecommendOpenChatPageController
                 '_dto',
                 '_discovery',
                 'canonical',
+                'alternateJsonUrl',
                 'tagDescription',
                 'noindex',
                 '_themeResource',
@@ -212,6 +214,7 @@ class RecommendOpenChatPageController
             '_dto',
             '_discovery',
             'canonical',
+            'alternateJsonUrl',
             'hourlyUpdatedAt',
             'tagDescription',
             'growth',
