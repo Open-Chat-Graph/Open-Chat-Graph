@@ -267,7 +267,7 @@
   min-height: 44px;
   padding: 0 .75rem;
   border-radius: 8px;
-  background: var(--c-bg-2, #f3f5f6);
+  background: var(--c-surface, #f3f5f6);
   color: var(--c-text-1, #222);
   text-decoration: none;
 }
