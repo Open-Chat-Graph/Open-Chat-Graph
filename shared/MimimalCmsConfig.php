@@ -44,6 +44,7 @@ class MimimalCmsConfig
         \App\Models\Repositories\RankingPosition\HourMemberRankingUpdaterRepositoryInterface::class => \App\Models\RankingPositionDB\Repositories\HourMemberRankingUpdaterRepository::class,
         
         \App\Models\Repositories\OpenChatListRepositoryInterface::class => \App\Models\Repositories\OpenChatListRepository::class,
+        \App\Models\PublicApi\PublicResourceRepositoryInterface::class => \App\Models\PublicApi\PublicResourceRepository::class,
         \App\Models\Repositories\OpenChatRecentListRepositoryInterface::class => \App\Models\Repositories\OpenChatListRepository::class,
         \App\Models\Repositories\OpenChatPageRepositoryInterface::class => \App\Models\Repositories\OpenChatPageRepository::class,
         \App\Models\Repositories\OcNarrativeRepositoryInterface::class => \App\Models\Repositories\OcNarrativeRepository::class,
