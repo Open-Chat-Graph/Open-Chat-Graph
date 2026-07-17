@@ -24,7 +24,6 @@ class Metadata
     public string $site_url;
     public string $og_type;
     public string $thumbnail;
-    private ?string $canonicalUrl = null;
 
     /** twitter:card の種別。動的OGP画像(1200x630)を持つページは summary_large_image にする */
     public string $twitterCard = 'summary';
@@ -99,26 +98,12 @@ class Metadata
         return $this;
     }
 
-    public function setCanonicalUrl(string $canonicalUrl): static
-    {
-        $this->canonicalUrl = rtrim($canonicalUrl, '/');
-        return $this;
-    }
-
-    public function getCanonicalUrl(): string
-    {
-        return $this->canonicalUrl
-            ?? rtrim(url(strstr(path(), '?', true) ?: path()), '/');
-    }
-
     public function generateTags(bool $query = false): string
     {
         if (!isset($this->thumbnail)) $this->thumbnail = $this->image_url;
 
-        // canonical / og:url / JSON-LD URLs must identify the same resource.
-        // $query remains for source compatibility, but query strings are never
-        // allowed to create another public document identity.
-        $url = $this->getCanonicalUrl();
+        $url = $query ? rtrim(url(path()), '/')
+            : rtrim(url(strstr(path(), '?', true) ?: path()), '/');
 
         $tags = '';
         $tags .= '<title>' . $this->title . '</title>' . "\n";

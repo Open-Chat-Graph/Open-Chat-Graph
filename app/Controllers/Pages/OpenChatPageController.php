@@ -86,10 +86,6 @@ class OpenChatPageController
             );
         }
 
-        // 30日差分・ピーク・観測期間は narrative と同じ事前計算済み統計を使う。
-        // キャッシュ未更新の部屋では空表示にし、ページリクエスト中の重い再集約は行わない。
-        $_roomMetrics = is_array($_narrative['metrics'] ?? null) ? $_narrative['metrics'] : null;
-
         // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」も事前計算済み（oc_page_cache.chart_meta JOIN）。
         // これを HTML に埋め込むとフロントは初回 XHR(meta=1) を撃たずに済む。
         // 未生成（バックフィル前/生成不可）は null → フロントは従来通り meta=1 でライブ計算にフォールバック。
@@ -141,7 +137,6 @@ class OpenChatPageController
         // thumbnail(検索用)は 1:1 の動的サムネ（/oc/{id}/thumb）。以前は部屋アイコンの LINE CDN 直リンク。
         // 日付クエリでSNS側のクロールキャッシュを1日単位で更新させる
         $_meta = $meta->generateMetadata($open_chat_id, [...$oc, 'description' => $formatedDescription], null)
-            ->setCanonicalUrl(url('oc', (string)$open_chat_id))
             ->setImageUrl(url('oc', (string)$open_chat_id, 'card') . '?d=' . date('Ymd'))
             ->setTwitterCard('summary_large_image')
             ->setThumbnail(url('oc', (string)$open_chat_id, 'thumb') . '?d=' . date('Ymd'));
@@ -164,7 +159,6 @@ class OpenChatPageController
             new \DateTime($oc['created_at']),
             $_dateModified,
             $oc,
-            $_roomMetrics,
         );
 
         $_hourlyRange = $this->buildHourlyRange($oc);
@@ -178,9 +172,6 @@ class OpenChatPageController
 
         $formatedRowDescription = trim(preg_replace("/(\r\n){3,}|\r{3,}|\n{3,}/", "\n\n", $oc['description']));
 
-        $canonical = url('oc', (string)$open_chat_id);
-        $alternateJsonUrl = url('api/v1/rooms/' . $open_chat_id);
-
         // officialDto / topPageDto は oc_content では未使用のため取得も view 渡しもしない
         // (ファイル読み込みとビューの再帰エスケープの無駄を避ける)。410 ページは別経路で取得する。
         return view('oc_content', compact(
@@ -193,7 +184,6 @@ class OpenChatPageController
             '_breadcrumbsShema',
             '_schema',
             '_narrative',
-            '_roomMetrics',
             '_chartMeta',
             '_recommend',
             '_similarSize',
@@ -201,8 +191,6 @@ class OpenChatPageController
             '_adminDto',
             'formatedDescription',
             'formatedRowDescription',
-            'canonical',
-            'alternateJsonUrl',
         ));
     }
 

@@ -4,7 +4,7 @@
 
 use App\Config\SecretsConfig;
 
-viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) ?>
+viewComponent('policy_head', compact('_css', '_meta')) ?>
 
 <body>
     <script type="application/json" id="comment-app-init-dto">
@@ -23,8 +23,7 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>・ユーザーがオープンチャットを見つけて参加する機会を作る</p>
                 <p>・オープンチャットの管理者が成長傾向を把握し、比較できる事で運営に役立つ</p>
 
-                <h2 id="methodology">データの取得方法と算出方法</h2>
-                <p><b>結論：</b>公開中のLINEオープンチャット情報を定期観測し、同じルームの観測値同士の差から人数変化を算出しています。推定値で欠測を埋めることはありません。</p>
+                <h2>オープンチャットの情報を掲載する仕組み</h2>
                 <p>
                     オプチャグラフは「<a href="https://openchat.line.me/jp" rel="external" target="_blank">LINEオープンチャット公式サイト</a>」のデータを基に、グラフやランキングを作成して掲載しています。
                 </p>
@@ -34,17 +33,6 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>
                     <b>データの取得は公式サイトのみから行います。LINEアプリ本体に係るデータを取得することはありません。</b>
                 </p>
-                <section style="margin: 1rem 0;">
-                    <h3>統計値、欠測、制約</h3>
-                    <ul style="font-size: 18px; line-height: 2;">
-                        <li>メンバー数：各観測時点で公式サイトに表示された人数</li>
-                        <li>期間変化：最新観測値から、1時間・24時間・7日・30日前に最も近い観測値を引いた値</li>
-                        <li>ピーク：当サイトが観測を開始してからの最大メンバー数</li>
-                        <li>欠測：取得不能・観測期間不足の場合は0ではなく「データなし」として扱う</li>
-                    </ul>
-                    <p>公式サイトの掲載状況、更新遅延、通信障害、ルーム情報の変更により観測が途切れる場合があります。数値はLINE社内の全データやトーク数を表すものではなく、当サイトが公開情報を観測した範囲に限られます。</p>
-                    <p><a href="<?php echo url('api') ?>">公開JSON APIとOpenAPI仕様</a>から、本文と同じ基礎データを機械可読形式で取得できます。</p>
-                </section>
                 <section style="margin: 1rem 0;">
                     <h3>オプチャグラフに掲載される条件</h3>
                     <p>
@@ -214,7 +202,7 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>・為使用者提供機會找到並加入社群</p>
                 <p>・協助社群的管理員掌握成長趨勢並進行比較，對管理運營有所幫助</p>
 
-                <h2 id="methodology">資料取得與計算方式</h2>
+                <h2>社群資訊的收錄機制</h2>
                 <p>
                     LINE社群成長統計根據「<a href="https://openchat.line.me/jp" rel="external" target="_blank">LINE 社群官方網站</a>」的數據，製作圖表和排名並展示於網站上。
                 </p>
@@ -224,8 +212,6 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>
                     <b>數據僅從官方網站獲取，不會取得與 LINE 應用程式本體相關的數據。</b>
                 </p>
-                <p>人數變化以最新觀測值減去各期間以前最接近的觀測值計算。資料不足或取得失敗時會回傳缺值，不以 0 或推估值補齊。數據僅代表本站可觀測到的公開資訊。</p>
-                <p><a href="<?php echo url('api') ?>">公開 JSON API 與 OpenAPI 規格</a></p>
                 <section style="margin: 1rem 0;">
                     <h3>LINE社群成長統計收錄的條件</h3>
                     <p>
@@ -269,7 +255,7 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>・สร้างโอกาสให้ผู้ใช้ค้นหาและเข้าร่วม OpenChat</p>
                 <p>・ช่วยให้ผู้ดูแล OpenChat เข้าใจแนวโน้มการเติบโตและเปรียบเทียบข้อมูลเพื่อสนับสนุนการจัดการ</p>
 
-                <h2 id="methodology">วิธีเก็บและคำนวณข้อมูล</h2>
+                <h2>ระบบการรวบรวมข้อมูล OpenChat</h2>
                 <p>
                     LINE OPENCHAT สถิติการเติบโต สร้างกราฟและการจัดอันดับโดยใช้ข้อมูลจาก「<a href="https://openchat.line.me/jp" rel="external" target="_blank">เว็บไซต์ทางการของ LINE OpenChat</a>」
                 </p>
@@ -279,8 +265,6 @@ viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) 
                 <p>
                     <b>ข้อมูลจะถูกรวบรวมจากเว็บไซต์ทางการเท่านั้น จะไม่มีการรวบรวมข้อมูลจากตัวแอปพลิเคชัน LINE</b>
                 </p>
-                <p>การเปลี่ยนแปลงจำนวนสมาชิกคำนวณจากค่าล่าสุดลบด้วยค่าที่สังเกตได้ใกล้ช่วงเวลานั้นที่สุด หากข้อมูลขาดหายหรือช่วงสังเกตไม่เพียงพอ ระบบจะแสดงว่าไม่มีข้อมูลและไม่แทนด้วยศูนย์หรือค่าประมาณ ข้อมูลจำกัดเฉพาะข้อมูลสาธารณะที่เว็บไซต์นี้สังเกตได้</p>
-                <p><a href="<?php echo url('api') ?>">JSON API สาธารณะและข้อกำหนด OpenAPI</a></p>
                 <section style="margin: 1rem 0;">
                     <h3>เงื่อนไขการรวบรวมข้อมูลใน LINE OPENCHAT สถิติการเติบโต</h3>
                     <p>

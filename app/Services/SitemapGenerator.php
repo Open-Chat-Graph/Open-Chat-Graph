@@ -10,6 +10,7 @@ use Asika\Sitemap\ChangeFreq;
 use Asika\Sitemap\SitemapIndex;
 use App\Models\Repositories\OpenChatListRepositoryInterface;
 use App\Services\Blog\BlogService;
+use App\Services\Recommend\RecommendUpdater;
 use App\Services\Storage\FileStorageInterface;
 use Shared\MimimalCmsConfig;
 
@@ -25,6 +26,7 @@ class SitemapGenerator
 
     function __construct(
         private OpenChatListRepositoryInterface $ocRepo,
+        private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
         private BlogService $blogService,
     ) {}
@@ -89,12 +91,11 @@ class SitemapGenerator
         $datetime = $this->fileStorage->getContents('@hourlyCronUpdatedAtDatetime');
 
         $sitemap = new Sitemap();
-        $sitemap->addItem(rtrim($this->currentUrl, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime($datetime));
+        $sitemap->addItem(rtrim($this->currentUrl, "/"), changeFreq: ChangeFreq::DAILY, lastmod: new \DateTime);
 
         if (MimimalCmsConfig::$urlRoot === '') {
             $sitemap->addItem($this->currentUrl . 'oc');
             $sitemap->addItem($this->currentUrl . 'blog');
-            $sitemap->addItem($this->currentUrl . 'reports/' . (new \DateTimeImmutable($datetime))->format('Y-m'), lastmod: new \DateTime($datetime));
             foreach ($this->blogService->list() as $a) {
                 // lastmod は鮮度を反映する更新日（BlogService が公開日へのフォールバック済み）。
                 // frontmatter の日付 typo 1件で毎時のサイトマップ生成全体が中断しないよう
@@ -108,19 +109,21 @@ class SitemapGenerator
             }
         }
 
-        $sitemap->addItem($this->currentUrl . 'policy', lastmod: new \DateTime('@' . filemtime(MimimalCmsConfig::$viewsDir . '/policy_content.php')));
-        $sitemap->addItem($this->currentUrl . 'privacy', lastmod: new \DateTime('@' . filemtime(MimimalCmsConfig::$viewsDir . '/privacy_content.php')));
-        if (MimimalCmsConfig::$urlRoot === '') {
-            $sitemap->addItem($this->currentUrl . 'terms', lastmod: new \DateTime('@' . filemtime(MimimalCmsConfig::$viewsDir . '/term_content.php')));
-        }
+        $sitemap->addItem($this->currentUrl . 'policy');
         $sitemap->addItem($this->currentUrl . 'ranking', lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][1]), lastmod: $datetime);
+        $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('badge:' . AppConfig::OFFICIAL_EMBLEMS[MimimalCmsConfig::$urlRoot][2]), lastmod: $datetime);
 
         foreach (AppConfig::OPEN_CHAT_CATEGORY[MimimalCmsConfig::$urlRoot] as $category) {
             $category && $sitemap->addItem($this->currentUrl . 'ranking/' . $category, lastmod: $datetime);
         }
 
-        foreach ($this->ocRepo->getExistingThemeNames() as $tag) {
+        foreach ($this->recommendUpdater->getAllTagNames() as $tag) {
             $sitemap->addItem($this->currentUrl . 'recommend/' . urlencode($tag), lastmod: $datetime);
+        }
+
+        foreach ($this->recommendUpdater->getAllTagNames() as $tag) {
+            $sitemap->addItem($this->currentUrl . 'ranking?keyword=' . urlencode('tag:' . $tag), lastmod: $datetime);
         }
 
         return $this->saveXml($sitemap, $langCode);

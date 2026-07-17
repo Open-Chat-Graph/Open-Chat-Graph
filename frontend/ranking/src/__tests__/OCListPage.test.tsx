@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import OCListPage from '../pages/OCListPage'
 
@@ -43,16 +43,14 @@ function renderWithRouter(path: string) {
 }
 
 describe('OCListPage', () => {
-  it('renders without crashing at /ranking', async () => {
+  it('renders without crashing at /ranking', () => {
     const { container } = renderWithRouter('/ranking')
     expect(container.querySelector('.category-tab')).toBeInTheDocument()
-    await waitFor(() => expect(fetch).toHaveBeenCalled())
   })
 
-  it('renders category page at /ranking/20', async () => {
+  it('renders category page at /ranking/20', () => {
     const { container } = renderWithRouter('/ranking/20')
     expect(container.querySelector('.category-tab')).toBeInTheDocument()
-    await waitFor(() => expect(fetch).toHaveBeenCalled())
   })
 
   it('redirects to 404 for invalid category', () => {

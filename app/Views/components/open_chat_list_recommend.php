@@ -15,21 +15,17 @@
   $hideIncrease = $hideIncrease ?? false;   // おすすめ系wrapper(recommend_list2/similar_size_rooms)は true で24h増加を隠す。/recommendタグページのみ既定falseで表示
 
   foreach ($listArray as $key => $oc) : ?>
-    <?php $roomHref = \App\Services\Seo\OpenChatUrlNormalizer::roomUrl(
-      (int)$oc['id'],
-      (isset($oc['table_name']) && ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME)) ? ['limit' => 'hour'] : []
-    ) ?>
     <li class="unset">
       <div class="openchat-item <?php if ($showListMedal && $key === 0) echo 'goldmedal';
                                 elseif ($showListMedal && $key === 1) echo 'silvermedal';
                                 elseif ($showListMedal && $key === 2) echo 'blonzemedal';
                                 elseif ($currentCount && $currentCount + $key + 1 >= 100) echo 'hundred' ?>">
-        <a class="link-overlay unset" href="<?php echo $roomHref ?>" tabindex="-1" aria-hidden="true">
+        <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id']) . ((isset($oc['table_name']) && ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME)) ? '?limit=hour' : '') ?>" tabindex="-1" aria-hidden="true">
           <span class="visually-hidden"><?php echo $oc['name'] ?></span>
         </a>
         <img alt="<?php echo $oc['name'] ?>" class="openchat-item-img" loading="lazy" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
         <h3 class="unset">
-          <a class="openchat-item-title unset" href="<?php echo $roomHref ?>"><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><?php if (($oc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><?php echo $oc['name'] ?></a>
+          <a class="openchat-item-title unset" href="<?php echo url('/oc/' . $oc['id']) . ((isset($oc['table_name']) && ($oc['table_name'] === AppConfig::RANKING_HOUR_TABLE_NAME || $oc['table_name'] === AppConfig::RANKING_DAY_TABLE_NAME)) ? '?limit=hour' : '') ?>"><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><?php if (($oc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><?php echo $oc['name'] ?></a>
         </h3>
         <p class="openchat-item-desc unset"><?php
                                             // 説明文は行の生成時に collapse + 40字 truncate 済み (RecommendRowFormat)。

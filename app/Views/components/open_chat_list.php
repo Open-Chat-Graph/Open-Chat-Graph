@@ -6,14 +6,13 @@
   use App\Views\Classes\CollapseKeywordEnumerations;
 
   foreach ($openChatList as $oc) : ?>
-    <?php $roomHref = \App\Services\Seo\OpenChatUrlNormalizer::roomUrl((int)$oc['id'], (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null) ? ['limit' => 'hour'] : []) ?>
     <li class="openchat-item unset  <?php echo isset($oc['archived_at']) ? 'registration' : '' ?>">
-      <a class="link-overlay unset" href="<?php echo $roomHref ?>" tabindex="-1" aria-hidden="true">
+      <a class="link-overlay unset" href="<?php echo url('/oc/' . $oc['id'] . (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null ? '?limit=hour' : '')) ?>" tabindex="-1" aria-hidden="true">
         <span class="visually-hidden"><?php echo $oc['name'] ?></span>
       </a>
       <img alt="<?php echo $oc['name'] ?>" class="openchat-item-img" loading="lazy" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
       <h3 class="unset">
-        <a class="openchat-item-title unset" href="<?php echo $roomHref ?>"><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><?php if (($oc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><span><?php echo $oc['name'] ?></span></a>
+        <a class="openchat-item-title unset" href="<?php echo url('/oc/' . $oc['id'] . (($isHourly ?? false) && ($oc['diff_member'] ?? null) !== null ? '?limit=hour' : '')) ?>"><?php if (($oc['emblem'] ?? 0) === 1) : ?><span class="super-icon sp"></span><?php elseif (($oc['emblem'] ?? 0) === 2) : ?><span class="super-icon official"></span><?php endif ?><?php if (($oc['join_method_type'] ?? 0) === 2) : ?><span class="lock-icon"></span><?php endif ?><span><?php echo $oc['name'] ?></span></a>
       </h3>
       <p class="openchat-item-desc unset"><?php echo h(CollapseKeywordEnumerations::collapse(htmlspecialchars_decode($oc['description']), extraText: htmlspecialchars_decode($oc['name']))) ?></p>
       <footer class="openchat-item-lower-outer">

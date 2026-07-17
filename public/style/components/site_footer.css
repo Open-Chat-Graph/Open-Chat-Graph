@@ -112,12 +112,6 @@
   color: var(--c-text-5);
 }
 
-.open-btn2 .app_link {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-}
-
 .open-btn2 {
   all: unset;
   display: flex;

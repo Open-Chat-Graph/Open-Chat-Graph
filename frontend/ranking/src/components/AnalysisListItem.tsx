@@ -38,8 +38,8 @@ export default function AnalysisListItem({
   showCategory: boolean
 }) {
   const { id, name, desc, member, img, emblem, joinMethodType, category } = item
-  // 長期分析からの遷移は全期間グラフを fragment state で開く
-  const ocUrl = `${rankingArgDto.baseUrl}/oc/${id}#graph?limit=all`
+  // 長期分析からの遷移は全期間グラフ(?limit=all)を開く
+  const ocUrl = `${rankingArgDto.baseUrl}/oc/${id}?limit=all`
 
   return (
     <div className="openchat-item">

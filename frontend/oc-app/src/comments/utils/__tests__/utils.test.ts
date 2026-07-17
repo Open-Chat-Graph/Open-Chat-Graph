@@ -37,8 +37,7 @@ describe('fetchApiFormData', () => {
     const mockResponse = { commentId: 1, images: [] }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      status: 200,
-      text: async () => JSON.stringify(mockResponse),
+      json: async () => mockResponse,
     } as Response)
 
     const formData = new FormData()
@@ -49,7 +48,6 @@ describe('fetchApiFormData', () => {
     expect(result).toEqual(mockResponse)
     expect(fetch).toHaveBeenCalledWith('/api/test', {
       method: 'POST',
-      headers: { 'Accept': 'application/json' },
       body: formData,
     })
   })
@@ -57,8 +55,7 @@ describe('fetchApiFormData', () => {
   it('throws on error response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: false,
-      status: 400,
-      text: async () => JSON.stringify({ error: { code: '400', message: 'Bad Request' } }),
+      json: async () => ({ error: { code: '400', message: 'Bad Request' } }),
     } as Response)
 
     const formData = new FormData()

@@ -9,7 +9,6 @@ use App\Controllers\Api\CommentPostApiController;
 use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
-use App\Controllers\Api\PublicApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
@@ -30,8 +29,6 @@ use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
 use App\Controllers\Pages\BlogController;
 use App\Controllers\Pages\PolicyPageController;
-use App\Controllers\Pages\PublicApiDocumentationController;
-use App\Controllers\Pages\MonthlyReportPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
 use App\Controllers\Pages\ReactAnalysisPageController;
@@ -54,7 +51,6 @@ use Shared\MimimalCmsConfig;
 
 Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
-    ->matchNum('page', min: 0, default: 0, emptyAble: true)
     ->matchNum('category', min: 1)
     ->match(function (int $category, FileStorageInterface $fileStorage) {
         if (!getCategoryName($category)) {
@@ -65,39 +61,19 @@ Route::path('ranking/{category}', [ReactRankingPageController::class, 'ranking']
 
 Route::path('ranking', [ReactRankingPageController::class, 'ranking'])
     ->matchStr('list', default: 'all', emptyAble: true)
-    ->matchNum('page', min: 0, default: 0, emptyAble: true)
     ->matchNum('category', emptyAble: true)
     ->match(function (FileStorageInterface $fileStorage) {
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('policy', [PolicyPageController::class, 'index'])
-    ->match(function () {
-        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/policy_content.php'));
-    });
-
-Route::path('privacy', [PolicyPageController::class, 'privacy'])
-    ->match(function () {
-        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/privacy_content.php'));
-    });
-
-// Terms are a Japanese legal document; translated URLs intentionally do not exist.
-Route::path('terms', [PolicyPageController::class, 'term'])
-    ->match(function () {
-        if (MimimalCmsConfig::$urlRoot !== '') {
-            return false;
-        }
-        checkLastModified(filemtime(MimimalCmsConfig::$viewsDir . '/term_content.php'));
+    ->match(function (FileStorageInterface $fileStorage) {
+        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
 Route::path('blog', [BlogController::class, 'index']);
 
 Route::path('blog/{slug}', [BlogController::class, 'article']);
-
-Route::path('reports/{month}', [MonthlyReportPageController::class, 'index'])
-    ->match(function () {
-        return MimimalCmsConfig::$urlRoot === '';
-    });
 
 Route::path('robots.txt', [RobotsController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {
@@ -114,21 +90,6 @@ Route::path('ads.txt', [AdsTxtController::class, 'index'])
 
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
-
-// Public, read-only JSON API. Locale prefixes (/tw, /th) are handled by the
-// framework's urlRoot in exactly the same way as HTML routes.
-Route::path('api/v1/rooms/{id}', [PublicApiController::class, 'room'])
-    ->matchNum('id', min: 1);
-Route::path('api/v1/rooms', [PublicApiController::class, 'rooms']);
-Route::path('api/v1/rankings', [PublicApiController::class, 'rankings']);
-Route::path('api/v1/themes/{tag}', [PublicApiController::class, 'theme'])
-    ->matchStr('tag', maxLen: 1000);
-Route::path('api/v1/themes', [PublicApiController::class, 'themes']);
-Route::path('api/v1/stats', [PublicApiController::class, 'stats']);
-Route::path('api/openapi.json', [PublicApiDocumentationController::class, 'openapi']);
-Route::path('api', [PublicApiDocumentationController::class, 'index']);
-Route::path('llms.txt', [PublicApiDocumentationController::class, 'llms'])
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path('assets/icon-192x192.png', [StagingIconController::class, 'icon192'])
     ->match(function () {

@@ -19,9 +19,8 @@ $hourlyUpdatedAt = $hourlyUpdatedAt ?? new DateTime();
 $hourlyUpdatedAt->setTimezone(new DateTimeZone(AppConfig::DATE_TIME_ZONE[MimimalCmsConfig::$urlRoot]));
 
 $enableAdsense = true;
-$noindex = $noindex ?? null;
 
-viewComponent('head', compact('_css', '_schema', 'canonical', 'noindex', 'alternateJsonUrl') + ['_meta' => $_meta->generateTags(), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
+viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_meta->generateTags(true), 'titleP' => true, 'dataOverlays' => 'bottom']) ?>
 
 <body>
   <?php viewComponent('site_header') ?>
@@ -57,25 +56,6 @@ viewComponent('head', compact('_css', '_schema', 'canonical', 'noindex', 'altern
         'extractTag' => $extractTag,
         'recommend' => $recommend ?? null,
       ]) ?>
-
-      <?php if (isset($_themeResource)): ?>
-        <section class="theme-facts" aria-labelledby="theme-facts-title">
-          <h2 id="theme-facts-title"><?php echo sprintfT('「%s」の統計概要', $tag) ?></h2>
-          <dl class="theme-facts__grid">
-            <div><dt><?php echo t('掲載ルーム数') ?></dt><dd><?php echo number_format($_themeResource->roomCount) ?></dd></div>
-            <div><dt><?php echo t('合計メンバー数') ?></dt><dd><?php echo number_format($_themeResource->totalMembers) ?><?php echo t('人') ?></dd></div>
-            <div><dt><?php echo t('24時間の増減') ?></dt><dd><?php echo signedNumF($_themeResource->change24h) ?><?php echo t('人') ?></dd></div>
-            <div><dt><?php echo t('7日以内の新規ルーム') ?></dt><dd><?php echo number_format($_themeResource->newRooms7d) ?></dd></div>
-          </dl>
-          <?php if (!empty($_themeHighlights['largest'])): ?>
-            <p><?php echo t('最大のルーム') ?>：<a href="<?php echo url('oc', (string)$_themeHighlights['largest']['id']) ?>"><?php echo $_themeHighlights['largest']['name'] ?></a>（<?php echo number_format((int)$_themeHighlights['largest']['member']) ?><?php echo t('人') ?>）</p>
-          <?php endif ?>
-          <?php if (!empty($_themeHighlights['fastest'])): ?>
-            <p><?php echo t('24時間で最も伸びたルーム') ?>：<a href="<?php echo url('oc', (string)$_themeHighlights['fastest']['id']) ?>"><?php echo $_themeHighlights['fastest']['name'] ?></a>（<?php echo signedNumF((int)$_themeHighlights['fastest']['change_24h']) ?><?php echo t('人') ?>）</p>
-          <?php endif ?>
-          <p><time datetime="<?php echo $_themeResource->updatedAt ?>"><?php echo (new DateTimeImmutable($_themeResource->updatedAt))->format(t('Y年n月j日 G:i')) ?></time> <?php echo t('更新') ?></p>
-        </section>
-      <?php endif ?>
 
       <?php // シェア導線（oc ページと共通のコンポーネント）。共有リンクの og:image は
             // テーマ専用の動的カード(/recommend/{tag}/card)で展開される。
