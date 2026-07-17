@@ -27,6 +27,8 @@
     <?php endforeach ?>
     <link rel="icon" type="image/png" href="<?php echo fileUrl(\App\Config\AppConfig::SITE_ICON_FILE_PATH, urlRoot: '') ?>">
     <link rel="canonical" href="<?php echo url(strstr(path(), '?', true) ?: path()) ?>">
+    <?php // Google Discover / リッチリザルトで大きな画像プレビューを許可（head.php と同一方針）。 ?>
+    <meta name="robots" content="max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <?php if (isset($_schema)) : ?>
         <?php echo $_schema ?>
     <?php endif ?>

@@ -191,14 +191,12 @@ class AppConfig
     static bool $isMockEnvironment = false;
     static bool $isStaging = false;
     static bool $disableStaticDataFile = false;
-    static bool $disableAds = false;
     static bool $verboseCronLog = true;
     static bool $enableCloudflare = false;
 
     /** GitHubリポジトリ（ログのソースコードリンク用） */
     static string $githubRepo = 'Open-Chat-Graph/Open-Chat-Graph';
     static string $githubBranch = 'main';
-    static bool $disableAdTags = true;
 
     // 重複通報の受付をスキップ（管理者が既に対応している通報をさらに通報されるのを防止）
     static bool $skipDuplicateReport = false;

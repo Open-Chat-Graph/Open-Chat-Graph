@@ -17,6 +17,7 @@
                 <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li>
                     <li><a class="unset" href="<?php echo url('blog') ?>">ブログ</a></li>
+                    <li><a class="unset" href="<?php echo url('mcp') ?>">AI連携・データAPI (MCP)</a></li>
                 <?php endif ?>
             </ul>
         </section>

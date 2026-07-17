@@ -9,6 +9,7 @@ use App\Controllers\Api\CommentPostApiController;
 use App\Controllers\Api\CommentImageThumbnailController;
 use App\Controllers\Api\CommentReportApiController;
 use App\Controllers\Api\DatabaseApiController;
+use App\Controllers\Api\McpApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
@@ -753,6 +754,20 @@ Route::path(
     [DatabaseApiController::class, 'schema']
 )
     ->match($databaseApiPostAuth);
+
+// 公開 MCP エンドポイント（AI アシスタント向け・認証なし）
+// レートリミット・SQLガード・非公開テーブルの遮断は McpServerService 側。
+// CORS/OPTIONS・405 はコントローラ側で処理するため GET/OPTIONS もルートに含める。
+// Cloudflare の bot チャレンジ除外(/mcp)とセット（oc-infra 参照）。
+Route::path(
+    'mcp@post@get@options',
+    [McpApiController::class, 'index']
+)
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '') {
+            return false;
+        }
+    });
 
 cache();
 Route::run();

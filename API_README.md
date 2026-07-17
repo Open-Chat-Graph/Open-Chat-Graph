@@ -5,6 +5,48 @@
 - エンドポイント: `POST /database/{username}/query`
 - **Basic認証**（`{username}` / `{password}` をそのまま）を付け、POSTボディに `stmt`（SQL）と `password` を渡す。結果は JSON。
 - POSTボディの `password` は申請時に渡すパスワードの **SHA256（16進）**。`{username}` はパスに入れる（[認証情報の取得](#認証情報の取得)）。
+- **認証不要で使いたい場合は [MCP サーバー](#mcp-サーバー認証不要ai-アシスタント向け)** もある（AI アシスタント向け・レートリミットあり）。
+
+---
+
+## MCP サーバー（認証不要・AI アシスタント向け）
+
+Claude・ChatGPT などの AI アシスタントやエージェントから、申請なしでこのデータベースへアクセスできる
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) サーバーを公開している。
+
+- エンドポイント: `https://openchat-review.me/mcp`（Streamable HTTP・POST・レスポンスは常に JSON。SSE/セッション管理なしのステートレス実装）
+- 認証: 不要
+- ツール:
+  | ツール | 内容 |
+  | --- | --- |
+  | `search_openchat` | 部屋名・説明文のキーワード検索（メンバー数順・最大20件） |
+  | `get_openchat_stats` | 部屋の基本情報＋直近24時間の毎時推移（メンバー数・LINE公式「ランキング」「急上昇」順位）＋直近30日の日次推移＋公式順位の日次履歴 |
+  | `get_database_schema` | テーブル定義（DDL・日本語コメント付き）を取得 |
+  | `query_database` | 読み取り専用 SQL（SELECT / WITH のみ・1クエリ100行まで。超える分は OFFSET でページング） |
+- 回数のレートリミットは無し（使い放題）。サイト全体の同時実行2件までの保護だけある（非力なサーバーなので手加減してほしい）
+- 返される部屋は**現在オプチャグラフに掲載中のもののみ**（`openchat_existing` で常に絞り込み。削除済み部屋のアーカイブは返さない）
+- LINE公式ランキングの未掲載（掲載制限）記録 `ranking_ban`（[掲載分析ページ](https://openchat-review.me/labs/publication-analytics) と同じ内容）もSQLで分析できる
+- 非公開テーブル: `ban_user`・`comment_log`・`ban_room`（IPアドレス等を含む運営用データ）にはアクセスできない
+- 出典表記のお願い: データを引用する際は「オプチャグラフ (openchat-review.me)」と部屋ページ URL（`https://openchat-review.me/oc/{id}`）を添えてほしい
+
+Claude Code / Claude Desktop での接続例:
+
+```bash
+claude mcp add --transport http openchat-graph https://openchat-review.me/mcp
+```
+
+```json
+{
+  "mcpServers": {
+    "openchat-graph": {
+      "type": "http",
+      "url": "https://openchat-review.me/mcp"
+    }
+  }
+}
+```
+
+一般ユーザー向けの案内ページは [`https://openchat-review.me/mcp`](https://openchat-review.me/mcp)（同URLをブラウザで開くと表示）、サイト概要の機械可読版は [`https://openchat-review.me/llms.txt`](https://openchat-review.me/llms.txt) にある。
 
 ---
 
@@ -106,6 +148,7 @@ curl -u "{username}:{password}" -X POST "https://openchat-review.me/database/{us
 | `line_official_activity_ranking_history` | LINE公式「ランキング」の順位履歴 |
 | `line_official_activity_trending_history` | LINE公式「急上昇」の順位履歴 |
 | `line_official_ranking_total_count` | 公式ランキング/急上昇の総件数履歴 |
+| `ranking_ban` | LINE公式ランキングの未掲載（掲載制限）記録 |
 | `openchat_master` | 部屋の基本情報（マスタ） |
 | `openchat_existing` | 現存する部屋のID一覧 |
 | `comment` | コメント |

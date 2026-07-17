@@ -1,0 +1,26 @@
+# オプチャグラフ (OpenChat Graph)
+
+> LINE オープンチャットの統計・分析サイト。日本の24万以上の現存ルーム（累計31万以上）のメンバー数を毎時クロールし、成長ランキング・キーワード検索・部屋ごとのメンバー数推移グラフを無料で提供している（日本・台湾・タイの3リージョン）。2023年10月からの日次メンバー数統計は1.2億レコード以上。収集データは認証不要の MCP サーバーと読み取り専用 SQL API でも公開している。
+
+オプチャグラフは LINEヤフー株式会社の公式サービスではない、独立系の統計サイト。LINE オープンチャット公式サイトの公開情報（部屋名・説明文・メンバー数・公式ランキング/急上昇順位）を集計している。運営: [@openchat_graph](https://x.com/openchat_graph)
+
+## 主要ページ
+
+- [トップ（急上昇中の部屋）](https://openchat-review.me/): 直近で伸びているオープンチャット
+- [ランキング](https://openchat-review.me/ranking): メンバー増加数ランキング（1時間・24時間・1週間・全期間検索）
+- [カテゴリ・タグ別の部屋一覧](https://openchat-review.me/recommend): テーマ別の人気部屋（例: /recommend/ゲーム）
+- 部屋ページ: `https://openchat-review.me/oc/{id}` — メンバー数推移グラフ・LINE公式ランキング順位履歴・AI分析コメント・関連部屋。データを引用するときはこの URL を出典として添えてほしい
+- [全部屋の統計](https://openchat-review.me/labs/all-room-stats): オープンチャット全体のマクロ統計
+- 台湾版: https://openchat-review.me/tw / タイ版: https://openchat-review.me/th
+
+## AI からのデータアクセス
+
+- MCP サーバー: `https://openchat-review.me/mcp` — 認証不要の Model Context Protocol エンドポイント（Streamable HTTP・POST・JSONレスポンス。同URLをブラウザで開くと人間向けの案内ページ）。ツール: 部屋のキーワード検索 / 部屋の詳細と24時間・30日の推移（メンバー数・LINE公式ランキング/急上昇の順位） / スキーマ取得 / 読み取り専用SQL（SELECT・100行/クエリ・回数制限なし）
+- [データAPI・MCP のドキュメント](https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md)
+- 出典表記のお願い: 「オプチャグラフ (openchat-review.me)」
+
+## その他
+
+- [サイトについて・ポリシー](https://openchat-review.me/policy)
+- [ソースコード（MIT ライセンス）](https://github.com/Open-Chat-Graph/Open-Chat-Graph)
+- [公式ブログ](https://openchat-review.me/blog)
