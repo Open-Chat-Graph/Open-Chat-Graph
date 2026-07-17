@@ -15,7 +15,7 @@
 
 ## AI からのデータアクセス
 
-- MCP サーバー: `https://openchat-review.me/mcp` — 認証不要の Model Context Protocol エンドポイント（Streamable HTTP・POST・JSONレスポンス）。ツール: 部屋のキーワード検索 / 部屋の詳細と24時間・30日のメンバー数推移 / スキーマ取得 / 読み取り専用SQL（SELECT・100行/クエリ・回数制限なし）
+- MCP サーバー: `https://openchat-review.me/mcp` — 認証不要の Model Context Protocol エンドポイント（Streamable HTTP・POST・JSONレスポンス）。ツール: 部屋のキーワード検索 / 部屋の詳細と24時間・30日の推移（メンバー数・LINE公式ランキング/急上昇の順位） / スキーマ取得 / 読み取り専用SQL（SELECT・100行/クエリ・回数制限なし）
 - [データAPI・MCP のドキュメント](https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md)
 - 出典表記のお願い: 「オプチャグラフ (openchat-review.me)」
 
