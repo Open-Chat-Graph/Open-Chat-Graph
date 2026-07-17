@@ -1,0 +1,56 @@
+name: X Post (manual)
+
+# 手動実行で任意のテキストを X (@openchat_graph) に投稿する。
+# PRマージ時の自動投稿（deploy.yml）とは別の、普通の投稿用。
+# 入力の text 内の「\n」(2文字) は改行に変換される（API/フォームどちらからでも
+# 改行入りの本文を渡せるようにするため）。
+# URL を含めると X API の従量課金が上がる（URL 無し $0.015 / 有り $0.20）点だけ注意。
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: '投稿本文（そのまま投稿。\n は改行に変換）'
+        required: true
+        type: string
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install twitter-api-v2
+        run: npm install twitter-api-v2
+
+      - name: Post to X
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          POST_TEXT: ${{ inputs.text }}
+        run: |
+          cat > x-post.js << 'EOF'
+          import { TwitterApi } from 'twitter-api-v2';
+
+          const client = new TwitterApi({
+            appKey: process.env.TWITTER_API_KEY,
+            appSecret: process.env.TWITTER_API_SECRET,
+            accessToken: process.env.TWITTER_ACCESS_TOKEN,
+            accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+          });
+
+          async function post() {
+            const text = (process.env.POST_TEXT || '').replace(/\\n/g, '\n').trim();
+            if (!text) {
+              console.error('text is empty');
+              process.exit(1);
+            }
+            // "$WORD" は cashtag と解釈され 2 個以上で 403 になるため全角に置換（deploy.yml と同じ対策）
+            const neutralized = text.replace(/\$(?=[A-Za-z_])/g, '＄');
+            const tweet = await client.v2.tweet(neutralized);
+            console.log('Tweet posted: ' + tweet.data.id);
+          }
+
+          post().catch((e) => { console.error(e); process.exit(1); });
+          EOF
+          node x-post.js
