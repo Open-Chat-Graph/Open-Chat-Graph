@@ -46,7 +46,7 @@ claude mcp add --transport http openchat-graph https://openchat-review.me/mcp
 }
 ```
 
-サイト概要の機械可読版は [`https://openchat-review.me/llms.txt`](https://openchat-review.me/llms.txt) にもある。
+一般ユーザー向けの案内ページは [`https://openchat-review.me/mcp`](https://openchat-review.me/mcp)（同URLをブラウザで開くと表示）、サイト概要の機械可読版は [`https://openchat-review.me/llms.txt`](https://openchat-review.me/llms.txt) にある。
 
 ---
 

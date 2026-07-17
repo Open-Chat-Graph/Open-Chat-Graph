@@ -123,7 +123,7 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                         Claude や ChatGPT などの AIアシスタントからは、MCP (Model Context Protocol) サーバー <code>https://openchat-review.me/mcp</code> を接続するだけで、部屋の検索・メンバー数推移の取得・統計データベースへの読み取り専用SQLが使えます。申請や認証は不要です。
                     </p>
                     <p>
-                        接続方法・ツールの一覧は <a href="https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md" target="_blank">データAPIドキュメント（GitHub）</a> を参照してください。サイト概要の機械可読版は <a href="/llms.txt" target="_blank">llms.txt</a> にあります。
+                        つなぎ方・できることは <a href="/mcp">AI連携（MCP）の使い方</a> にまとめています。技術仕様は <a href="https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md" target="_blank">データAPIドキュメント（GitHub）</a>、サイト概要の機械可読版は <a href="/llms.txt" target="_blank">llms.txt</a> を参照してください。
                     </p>
                     <p>
                         データを引用・紹介いただく際は、出典として「オプチャグラフ (openchat-review.me)」と、該当する部屋ページのURLを添えていただけると嬉しいです。
