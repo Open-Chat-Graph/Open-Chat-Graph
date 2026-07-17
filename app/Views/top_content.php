@@ -42,11 +42,15 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <p class="oc-home-hero__tagline"><?php echo t('LINEオープンチャットの人数推移とランキングを毎時間記録') ?></p>
             <div class="oc-home-hero__metarow">
                 <div class="oc-home-hero__meta"><span class="oc-home-hero__dot" aria-hidden="true"></span><?php echo t('1時間ごとに更新') ?><span class="oc-home-hero__time">・<?php echo $_updatedAt->format('G:i') ?></span></div>
-                <?php // 上級者向けの分析ツール（分析Labs）への控えめな導線。悪目立ちさせない小さなテキストリンク。ja のみ。 ?>
+                <?php // 上級者向けの分析ツール（分析Labs）とAI連携(MCP)への控えめな導線。悪目立ちさせない小さなテキストリンク。ja のみ。 ?>
                 <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
                     <a class="oc-home-hero__labs unset" href="<?php echo url('labs') ?>" aria-label="分析Labs（上級者向けの分析ツール）を開く">
                         <svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M209-120q-42 0-70.5-28.5T110-217q0-14 3-25.5t9-21.5l228-341q10-14 15-31t5-34v-110h-20q-13 0-21.5-8.5T320-810q0-13 8.5-21.5T350-840h260q13 0 21.5 8.5T640-810q0 13-8.5 21.5T610-780h-20v110q0 17 5 34t15 31l227 341q6 9 9.5 20.5T850-217q0 41-28 69t-69 28H209Zm271-340Z"/></svg>
                         <span>分析Labs</span>
+                    </a>
+                    <a class="oc-home-hero__labs unset" href="<?php echo url('mcp') ?>" aria-label="AI連携・データAPI（MCP）の案内ページを開く">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9L12 2zm7 11l1 3.2 3.2 1-3.2 1-1 3.2-1-3.2-3.2-1 3.2-1 1-3.2z"/></svg>
+                        <span>AI連携 (MCP)</span>
                     </a>
                 <?php endif ?>
             </div>
