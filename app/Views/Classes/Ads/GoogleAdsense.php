@@ -97,7 +97,9 @@ class GoogleAdsense
      */
     public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
-        if (!GoogleAdsenseConfig::$enableAds) return;
+        // display広告停止中もオファーウォール（全画面メッセージ）は継続するため、
+        // タグ自体は $enableOfferwallTag が有効なら出力する
+        if (!GoogleAdsenseConfig::$enableAds && !GoogleAdsenseConfig::$enableOfferwallTag) return;
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         if ($suppressOfferwall) {
