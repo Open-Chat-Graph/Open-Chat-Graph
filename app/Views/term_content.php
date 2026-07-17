@@ -7,7 +7,36 @@ use App\Config\AppConfig;
 <!DOCTYPE html>
 <html lang="<?php echo t('ja') ?>">
 
-<?php viewComponent('head', compact('_css', 'canonical') + ['_meta' => $_meta->generateTags()]) ?>
+<head prefix="og: http://ogp.me/ns#">
+    <?php echo gTag(AppConfig::$gtmId) ?>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover.0, viewport-fit=cover">
+    <?php /* OSステータスバー/ツールバーの色。初期HTMLに必須（JS生成だけだとiOSが拾わないことがある）。
+             実際の値は theme.js が解決テーマに合わせて即時更新する */ ?>
+    <meta name="theme-color" content="#ffffff">
+    <?php /* 「ホーム画面に追加」(PWA)時のみ有効: ページがステータスバー/ダイナミックアイランドの
+             下まで広がり、blur付きヘッダーとコンテンツが周囲に透ける（通常のSafari縦持ちでは
+             この帯はSafari描画のため不可）。black-translucent はステータス文字が常に白の
+             ためライトのPWA起動では視認性が落ちるトレードオフあり */ ?>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>利用規約</title>
+    <meta name="description" content="利用規約">
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:url" content="<?php url(path()) ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="利用規約">
+    <meta property="og:description" content="利用規約">
+    <meta property="og:site_name" content="openchat-review.me">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/png" href="<?php echo fileUrl('assets/icon-192x192.png', urlRoot: '') ?>">
+    <?php /* テーマ確定はCSSより先（FOUC防止のため同期読み込み） */ ?>
+    <script src="<?php echo fileUrl('/js/theme.js', urlRoot: '') ?>"></script>
+    <link rel="stylesheet" href="<?php echo fileUrl('style/tokens.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/base/mvp.css', urlRoot: '') ?>">
+    <link rel="stylesheet" href="<?php echo fileUrl('style/base/unset.css', urlRoot: '') ?>">
+</head>
 
 <body>
     <style>

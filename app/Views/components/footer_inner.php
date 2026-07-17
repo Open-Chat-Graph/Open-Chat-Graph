@@ -7,9 +7,9 @@
         <section class="unset footer-link-box" style="padding: 0 1rem;">
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('') ?>"><?php echo t('トップ') ?></a></li>
-                <li><a class="unset" href="<?php echo url('privacy') ?>"><?php echo t('プライバシーポリシー') ?></a></li>
+                <li><a class="unset" href="<?php echo url('policy/privacy') ?>"><?php echo t('プライバシーポリシー') ?></a></li>
                     <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
-                <li><a class="unset" href="<?php echo url('terms') ?>">利用規約</a></li>
+                <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></li>
                 <?php endif ?>
             </ul>
             <ul class="footer-link-inner">

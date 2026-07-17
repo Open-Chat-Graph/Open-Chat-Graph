@@ -28,8 +28,7 @@ class RelatedTagsService
 
     /**
      * 全タグの関連タグマップを構築する。
-     * スコアは共起数を各タグの総共起量で正規化した cosine 近似値。
-     * 母数の大きい汎用タグが共起件数だけで上位を独占する偏りを抑える。
+     * スコアは共起部屋数（recommend×oc_tag + recommend×oc_tag2 を対称化した合計）。
      *
      * @return array<string, array<string, int>> [タグ => [関連タグ => スコア（降順）]]
      */
@@ -46,21 +45,9 @@ class RelatedTagsService
             $score[$b][$a] = ($score[$b][$a] ?? 0) + $cnt;
         }
 
-        $marginals = [];
         foreach ($score as $tag => $related) {
-            $marginals[$tag] = array_sum($related);
-        }
-
-        foreach ($score as $tag => $related) {
-            $normalized = [];
-            foreach ($related as $other => $count) {
-                $denominator = sqrt(($marginals[$tag] ?? 0) * ($marginals[$other] ?? 0));
-                if ($denominator <= 0) continue;
-                // 静的キャッシュの既存契約(string=>int)を維持しつつ精度を確保する。
-                $normalized[$other] = (int)round(($count / $denominator) * 1_000_000);
-            }
-            arsort($normalized, SORT_NUMERIC);
-            $score[$tag] = array_slice($normalized, 0, self::RELATED_LIMIT, true);
+            arsort($related);
+            $score[$tag] = array_slice($related, 0, self::RELATED_LIMIT, true);
         }
 
         return $score;

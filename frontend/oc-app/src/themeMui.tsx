@@ -63,7 +63,7 @@ export function buildMuiTheme(isDark: boolean) {
                 },
                 '&:disabled': {
                   borderColor: '#2f3336',
-                  color: '#7d8287',
+                  color: '#686d72',
                 },
               },
               '&.MuiButton-text': {
@@ -71,19 +71,6 @@ export function buildMuiTheme(isDark: boolean) {
                 '&:hover': {
                   backgroundColor: 'rgba(231, 233, 234, 0.1)',
                 },
-              },
-            }),
-          },
-        },
-      },
-      MuiTab: {
-        styleOverrides: {
-          root: {
-            ...(isDark && {
-              color: '#7d8287',
-              opacity: 1,
-              '&.Mui-selected': {
-                color: '#f5f7f8',
               },
             }),
           },

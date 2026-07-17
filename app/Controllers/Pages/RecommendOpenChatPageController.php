@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
-use App\Models\PublicApi\PublicResourceRepositoryInterface;
-use App\Services\PublicApi\PublicResourceFactory;
 use App\Services\Recommend\RecommendPageList;
 use App\Services\Recommend\ThemeDiscoveryService;
 use App\Services\Recommend\TagDefinition\Ja\RecommendTagDescription;
@@ -52,8 +50,6 @@ class RecommendOpenChatPageController
         RecommendPageList $recommendPageList,
         StaticDataFile $staticDataGeneration,
         ThemeDiscoveryService $themeDiscoveryService,
-        PublicResourceRepositoryInterface $publicResourceRepository,
-        PublicResourceFactory $publicResourceFactory,
         string $tag
     ) {
         AppConfig::$listLimitTopRanking = 5;
@@ -120,15 +116,10 @@ class RecommendOpenChatPageController
         );
 
         $canonical = url('recommend/' . urlencode($tag));
-        $alternateJsonUrl = url('api/v1/themes/' . urlencode($tag));
-        $_meta->setCanonicalUrl($canonical);
 
         $topPageDto = $staticDataGeneration->getTopPageData();
 
         $recommend = $recommendPageList->getListDto($tag);
-        $themeRow = $publicResourceRepository->findTheme($tag);
-        $_themeResource = $themeRow ? $publicResourceFactory->theme($themeRow) : null;
-        $_themeHighlights = $themeRow ? $publicResourceRepository->findThemeHighlights($tag) : [];
 
         // テーマ発見セクション（/recommend 着地客の回遊導線）。表示ロジックは Service が確定し DTO を返す。
         // View へは `_discovery` で渡し、フレームワークの自動エスケープを通さない（View 側で明示エスケープ）。
@@ -146,7 +137,6 @@ class RecommendOpenChatPageController
             $_schema = '';
             $_meta->setTitle(sprintfT('「%s」のオープンチャット｜人気・活発な部屋ランキング', $tag));
             noStore();
-            $noindex = true;
             // topPageDto は ThemeDiscoveryService への入力のみで recommend_content では未使用のため
             // view へは渡さない (ビューの再帰エスケープの無駄を避ける)
             return view('recommend_content', compact(
@@ -160,11 +150,7 @@ class RecommendOpenChatPageController
                 '_dto',
                 '_discovery',
                 'canonical',
-                'alternateJsonUrl',
                 'tagDescription',
-                'noindex',
-                '_themeResource',
-                '_themeHighlights',
             ));
         }
 
@@ -214,12 +200,9 @@ class RecommendOpenChatPageController
             '_dto',
             '_discovery',
             'canonical',
-            'alternateJsonUrl',
             'hourlyUpdatedAt',
             'tagDescription',
             'growth',
-            '_themeResource',
-            '_themeHighlights',
         ));
     }
 }
