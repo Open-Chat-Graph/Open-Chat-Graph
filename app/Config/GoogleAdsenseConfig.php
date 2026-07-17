@@ -8,6 +8,15 @@ class GoogleAdsenseConfig
     static string $googleAdsenseClient = 'ca-pub-2330982526015125'; // 広告クライアントID
 
     /**
+     * AdSense 広告全体（display広告ユニット・adsbygoogle.js タグ・アンカー広告）の有効/無効。
+     *
+     * 運用方針転換により一旦 false（全停止）。各 View の GoogleAdsense::output() / gTag() /
+     * loadAdsTag() 呼び出しは残すが、false の間はクラス側の冒頭ガードで何も出力しない。
+     * 復活させたいときは true に戻すだけでよい。ads.txt はアカウント維持のため出力を続ける。
+     */
+    static bool $enableAds = false;
+
+    /**
      * アンチアドブロック（ad_guard: 未表示検出→全画面オーバーレイ）の有効/無効。
      *
      * 運用方針転換により一旦 false（無効）。各 View の viewComponent('ad_guard') 呼び出しは

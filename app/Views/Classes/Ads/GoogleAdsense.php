@@ -18,6 +18,7 @@ class GoogleAdsense
      */
     public static function output(string $slotKey, bool $fullWidthResponsive = true)
     {
+        if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging) return;
 
         // 設定を取得
@@ -72,6 +73,7 @@ class GoogleAdsense
 
     public static function loadAdsTag()
     {
+        if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         // 遅延読み込み(IntersectionObserver)はしない。広告ブロック検出(ad_guard)
@@ -95,6 +97,7 @@ class GoogleAdsense
      */
     public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
+        if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         if ($suppressOfferwall) {
