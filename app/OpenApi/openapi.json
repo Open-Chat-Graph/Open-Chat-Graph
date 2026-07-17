@@ -1,0 +1,142 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Open Chat Graph Public API",
+    "version": "1.0.0",
+    "description": "Public room, ranking, theme and aggregate statistics. Comments, user identifiers, IP addresses, LINE internal identifiers and direct invitation URLs are never exposed."
+  },
+  "servers": [
+    {"url": "https://openchat-review.me", "description": "Japanese"},
+    {"url": "https://openchat-review.me/tw", "description": "Traditional Chinese"},
+    {"url": "https://openchat-review.me/th", "description": "Thai"}
+  ],
+  "paths": {
+    "/api/v1/rooms/{id}": {
+      "get": {
+        "operationId": "getRoom",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}],
+        "responses": {
+          "200": {"description": "Room", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoomResponse"}}}},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "410": {"description": "Previously published room has been removed"},
+          "429": {"$ref": "#/components/responses/RateLimited"}
+        }
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "operationId": "listRooms",
+        "parameters": [
+          {"$ref": "#/components/parameters/Limit"},
+          {"$ref": "#/components/parameters/Cursor"},
+          {"name": "q", "in": "query", "schema": {"type": "string", "maxLength": 100}}
+        ],
+        "responses": {"200": {"description": "Rooms", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoomCollectionResponse"}}}}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      }
+    },
+    "/api/v1/rankings": {
+      "get": {
+        "operationId": "listRankings",
+        "parameters": [
+          {"$ref": "#/components/parameters/Limit"}, {"$ref": "#/components/parameters/Cursor"},
+          {"name": "period", "in": "query", "schema": {"type": "string", "enum": ["hour", "day", "week", "members"], "default": "day"}},
+          {"name": "category", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}}
+        ],
+        "responses": {"200": {"description": "Rankings", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RankingCollectionResponse"}}}}, "400": {"$ref": "#/components/responses/InvalidRequest"}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      }
+    },
+    "/api/v1/themes": {
+      "get": {
+        "operationId": "listThemes",
+        "parameters": [{"$ref": "#/components/parameters/Limit"}, {"$ref": "#/components/parameters/Cursor"}],
+        "responses": {"200": {"description": "Themes", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ThemeCollectionResponse"}}}}, "400": {"$ref": "#/components/responses/InvalidRequest"}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      }
+    },
+    "/api/v1/themes/{tag}": {
+      "get": {
+        "operationId": "getTheme",
+        "parameters": [
+          {"name": "tag", "in": "path", "required": true, "schema": {"type": "string", "maxLength": 1000}},
+          {"$ref": "#/components/parameters/Limit"}, {"$ref": "#/components/parameters/Cursor"}
+        ],
+        "responses": {"200": {"description": "Theme and ranked rooms", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ThemeDetailResponse"}}}}, "400": {"$ref": "#/components/responses/InvalidRequest"}, "404": {"$ref": "#/components/responses/NotFound"}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      }
+    },
+    "/api/v1/stats": {
+      "get": {"operationId": "getStats", "responses": {"200": {"description": "Aggregate site statistics", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StatsResponse"}}}}, "429": {"$ref": "#/components/responses/RateLimited"}}}
+    }
+  },
+  "components": {
+    "parameters": {
+      "Limit": {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 50, "default": 20}},
+      "Cursor": {"name": "cursor", "in": "query", "schema": {"type": "string", "description": "Signed opaque cursor; do not modify"}}
+    },
+    "responses": {
+      "InvalidRequest": {"description": "Invalid request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}},
+      "NotFound": {"description": "Resource not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}},
+      "RateLimited": {"description": "Rate limit exceeded", "headers": {"Retry-After": {"schema": {"type": "integer"}}}}
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object", "required": ["data", "meta", "links"],
+        "properties": {"data": {}, "meta": {"type": "object"}, "links": {"type": "object"}}
+      },
+      "Room": {
+        "type": "object",
+        "required": ["id", "name", "description", "member_count", "category", "themes", "verification_type", "join_method", "changes", "opened_at", "observed_at", "data_updated_at", "canonical_url", "line_transition_url", "methodology_url"],
+        "properties": {
+          "id": {"type": "integer"}, "name": {"type": "string"}, "description": {"type": "string"}, "member_count": {"type": "integer"},
+          "category": {"type": ["object", "null"]}, "themes": {"type": "array", "items": {"type": "string"}},
+          "verification_type": {"type": "string", "enum": ["none", "special", "official"]},
+          "join_method": {"type": "string", "enum": ["open", "approval", "passcode"]},
+          "changes": {"type": "object", "properties": {"one_hour": {"type": ["integer", "null"]}, "twenty_four_hours": {"type": ["integer", "null"]}, "seven_days": {"type": ["integer", "null"]}}},
+          "opened_at": {"type": ["string", "null"], "format": "date-time"}, "observed_at": {"type": "string", "format": "date-time"},
+          "data_updated_at": {"type": "string", "format": "date-time"}, "canonical_url": {"type": "string", "format": "uri"},
+          "line_transition_url": {"type": "string", "format": "uri"}, "methodology_url": {"type": "string", "format": "uri"}
+        }
+      },
+      "Theme": {
+        "type": "object",
+        "required": ["tag", "room_count", "total_members", "change_24h", "new_rooms_7d", "largest_room_members", "fastest_growth_24h", "data_updated_at", "canonical_url"],
+        "properties": {
+          "tag": {"type": "string"}, "room_count": {"type": "integer"}, "total_members": {"type": "integer"},
+          "change_24h": {"type": "integer"}, "new_rooms_7d": {"type": "integer"}, "largest_room_members": {"type": "integer"},
+          "fastest_growth_24h": {"type": "integer"}, "data_updated_at": {"type": "string", "format": "date-time"},
+          "canonical_url": {"type": "string", "format": "uri"}
+        }
+      },
+      "RankingItem": {
+        "type": "object", "required": ["position", "period", "change", "room"],
+        "properties": {"position": {"type": "integer", "minimum": 1}, "period": {"type": "string", "enum": ["hour", "day", "week", "members"]}, "change": {"type": ["integer", "null"]}, "room": {"$ref": "#/components/schemas/Room"}}
+      },
+      "Stats": {
+        "type": "object", "required": ["room_count", "total_members", "new_rooms_7d", "tracking_started_at", "data_updated_at"],
+        "properties": {"room_count": {"type": "integer"}, "total_members": {"type": "integer"}, "new_rooms_7d": {"type": "integer"}, "tracking_started_at": {"type": ["string", "null"], "format": "date-time"}, "data_updated_at": {"type": "string", "format": "date-time"}}
+      },
+      "RoomResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"$ref": "#/components/schemas/Room"}}}]},
+      "RoomCollectionResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Room"}}}}]},
+      "RankingCollectionResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/RankingItem"}}}}]},
+      "ThemeCollectionResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Theme"}}}}]},
+      "ThemeDetailResponse": {
+        "allOf": [
+          {"$ref": "#/components/schemas/Envelope"},
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": ["theme", "rooms"],
+                "properties": {
+                  "theme": {"$ref": "#/components/schemas/Theme"},
+                  "rooms": {"type": "array", "items": {"$ref": "#/components/schemas/Room"}}
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StatsResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"$ref": "#/components/schemas/Stats"}}}]},
+      "ErrorResponse": {"allOf": [{"$ref": "#/components/schemas/Envelope"}, {"type": "object", "properties": {"data": {"type": "null"}}}]}
+    }
+  }
+}

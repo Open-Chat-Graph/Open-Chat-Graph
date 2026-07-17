@@ -60,4 +60,7 @@ interface OpenChatListRepositoryInterface
      * @return array{ id: int, updated_at: string }[]
      */
     public function getOpenChatSiteMapData(): array;
+
+    /** @return string[] themes that currently have at least one live room */
+    public function getExistingThemeNames(): array;
 }

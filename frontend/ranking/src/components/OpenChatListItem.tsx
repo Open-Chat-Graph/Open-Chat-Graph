@@ -33,9 +33,9 @@ function LockIcon() {
 const getOcUrlParam = (listParam: ListParams['list'], cateIndex: number): string => {
   switch (listParam) {
     case 'hourly':
-      return '?limit=hour'
+      return '#graph?limit=hour'
     case 'daily':
-      return '?limit=hour'
+      return '#graph?limit=hour'
     default:
       return ''
   }

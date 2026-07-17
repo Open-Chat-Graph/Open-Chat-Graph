@@ -15,9 +15,16 @@ class MockIntersectionObserver {
 }
 globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
+
 // Setup the arg-dto JSON element that config.ts reads on module load
 const argDto = {
-  baseUrl: '',
+  baseUrl: 'http://localhost',
   rankingUpdatedAt: '2025/1/5 1:20',
   modifiedUpdatedAtDate: '2025-01-04',
   hourlyUpdatedAt: '2025-01-05 00:30:00',

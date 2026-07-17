@@ -818,3 +818,37 @@ section aside:hover {
   
 
 }
+.theme-facts {
+  margin: 0 1rem 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+}
+
+.theme-facts h2 {
+  margin: 0 0 .75rem;
+  font-size: 1.05rem;
+}
+
+.theme-facts__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 0 0 .8rem;
+}
+
+.theme-facts__grid dt {
+  color: var(--c-text-5);
+  font-size: .78rem;
+}
+
+.theme-facts__grid dd {
+  margin: .15rem 0 0;
+  font-weight: 700;
+}
+
+.theme-facts a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

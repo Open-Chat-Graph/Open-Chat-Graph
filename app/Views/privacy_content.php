@@ -4,7 +4,7 @@
 
 use Shared\MimimalCmsConfig;
 
-viewComponent('policy_head', compact('_css', '_meta')) ?>
+viewComponent('policy_head', compact('_css', '_meta', 'canonical', 'hreflang')) ?>
 
 <body>
     <?php viewComponent('site_header') ?>

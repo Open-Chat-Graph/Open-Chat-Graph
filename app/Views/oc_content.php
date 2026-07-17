@@ -8,7 +8,7 @@ use Shared\MimimalCmsConfig;
 
 $enableAdsense = !isset($_adminDto);
 
-viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' => 'bottom']); ?>
+viewComponent('oc_head', compact('_css', '_meta', '_schema', 'canonical', 'alternateJsonUrl') + ['dataOverlays' => 'bottom']); ?>
 
 <body>
   <?php viewComponent('site_header') ?>
@@ -17,7 +17,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     <article class="unset" style="display: block;">
       <section class="openchat-header unset" style="padding: 10px 1rem 8px 1rem;">
         <div class="talkroom_banner_img_area">
-          <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgUrl($oc['img_url']) ?>">
+          <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>" width="120" height="120" decoding="async" fetchpriority="high">
           <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
             <nav class="my-list-form">
               <label class="checkbox-label" for="my-list-checkbox">
@@ -171,8 +171,21 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
       <?php if ($_narrative !== null): ?>
         <?php viewComponent('oc_narrative_section', ['narrative' => $_narrative]) ?>
       <?php endif ?>
+      <section class="oc-stat-summary" aria-labelledby="oc-stat-summary-title">
+        <h2 id="oc-stat-summary-title"><?php echo t('現在の統計') ?></h2>
+        <p><?php echo sprintfT('現在のメンバー数は%s人です。', number_format((int)$oc['member'])) ?></p>
+        <dl class="oc-stat-summary__grid">
+          <div><dt><?php echo t('1時間変化') ?></dt><dd><?php echo isset($oc['rh_diff_member']) ? signedNumF((int)$oc['rh_diff_member']) . t('人') : '—' ?></dd></div>
+          <div><dt><?php echo t('24時間変化') ?></dt><dd><?php echo isset($oc['rh24_diff_member']) ? signedNumF((int)$oc['rh24_diff_member']) . t('人') : '—' ?></dd></div>
+          <div><dt><?php echo t('7日変化') ?></dt><dd><?php echo isset($oc['rw_diff_member']) ? signedNumF((int)$oc['rw_diff_member']) . t('人') : '—' ?></dd></div>
+          <div><dt><?php echo t('30日変化') ?></dt><dd><?php echo isset($_roomMetrics['change_30d']) ? signedNumF((int)$_roomMetrics['change_30d']) . t('人') : '—' ?></dd></div>
+          <div><dt><?php echo t('観測ピーク') ?></dt><dd><?php echo isset($_roomMetrics['peak']) ? number_format((int)$_roomMetrics['peak']) . t('人') : '—' ?><?php if (!empty($_roomMetrics['peak_date'])): ?> <time datetime="<?php echo $_roomMetrics['peak_date'] ?>"><?php echo convertDatetime($_roomMetrics['peak_date'], format: 'Y/m/d') ?></time><?php endif ?></dd></div>
+          <div><dt><?php echo t('観測期間') ?></dt><dd><?php if (!empty($_roomMetrics['observed_from']) && !empty($_roomMetrics['observed_at'])): ?><time datetime="<?php echo $_roomMetrics['observed_from'] ?>"><?php echo convertDatetime($_roomMetrics['observed_from'], format: 'Y/m/d') ?></time>–<time datetime="<?php echo $_roomMetrics['observed_at'] ?>"><?php echo convertDatetime($_roomMetrics['observed_at'], format: 'Y/m/d') ?></time><?php else: ?>—<?php endif ?></dd></div>
+        </dl>
+        <p class="oc-stat-summary__method"><a href="<?php echo url('policy') ?>#methodology"><?php echo t('データの取得方法と算出方法') ?></a></p>
+      </section>
       <?php // 変動データ(日付・人数・グラフ)のセクション全体をGoogle検索スニペットから除外 ?>
-      <section class="openchat-graph-section" data-nosnippet style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
+      <section class="openchat-graph-section" data-nosnippet data-lazy-module="/<?php echo getFilePath('js/oc-app', 'graph-*.js') ?>" style="padding-bottom: 0rem; padding-top: var(--sp-section-gap);">
         <div class="title-bar" style="margin-bottom: 1.5rem;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -208,7 +221,6 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
         <?php // グラフ初回ロードのタブ/ボタン出し分け「可用性メタ」を事前計算済みなら埋め込む（null=未生成→フロントは meta=1 でライブ計算） ?>
         <script type="application/json" id="chart-meta"><?php echo json_encode($_chartMeta ?? null, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?></script>
         <?php // 統計データ(#stats-dto)はサーバー注入をやめ、graph(React)が /oc/{id}/stats から初回も非同期取得する ?>
-        <script async type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'graph-*.js') ?>"></script>
       </section>
     </article>
 
@@ -226,7 +238,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
 
     <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効
     ?>
-      <section class="comment-section" style="padding-top: var(--sp-section-gap); padding-bottom: 12px;" id="comment-section">
+      <section class="comment-section" data-lazy-module="/<?php echo getFilePath('js/oc-app', 'comments-*.js') ?>" data-lazy-style="/<?php echo getFilePath('js/oc-app', 'comments-*.css') ?>" style="padding-top: var(--sp-section-gap); padding-bottom: 12px;" id="comment-section">
         <div style="display: flex; flex-direction: row; align-items: center; gap: 6px; margin-bottom: -2px;">
           <img class="openchat-item-title-img" aria-hidden="true" alt="<?php echo $oc['name'] ?>" src="<?php echo imgPreviewUrl($oc['img_url']) ?>">
           <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -291,11 +303,7 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
     })();
   </script>
 
-  <?php if (MimimalCmsConfig::$urlRoot === ''): // TODO:日本以外ではコメントが無効 
-  ?>
-    <link rel="stylesheet" crossorigin href="/<?php echo getFilePath('js/oc-app', 'comments-*.css') ?>">
-    <script defer type="module" crossorigin src="/<?php echo getFilePath('js/oc-app', 'comments-*.js') ?>"></script>
-  <?php endif ?>
+  <script defer src="<?php echo fileUrl('/js/room-lazy-modules.js', urlRoot: '') ?>"></script>
 
   <script src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
 

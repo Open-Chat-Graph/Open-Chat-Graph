@@ -963,3 +963,56 @@ html {
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
+.oc-stat-summary {
+  max-width: 720px;
+  margin: var(--sp-section-gap) auto 0;
+  padding: 0 1rem;
+}
+
+.oc-stat-summary h2 {
+  margin: 0 0 .5rem;
+  font-size: 1.25rem;
+}
+
+.oc-stat-summary > p {
+  margin: .35rem 0 .8rem;
+}
+
+.oc-stat-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-border);
+}
+
+.oc-stat-summary__grid > div {
+  min-width: 0;
+  padding: .7rem .8rem;
+  background: var(--c-bg);
+}
+
+.oc-stat-summary__grid dt {
+  color: var(--c-text-5);
+  font-size: .78rem;
+}
+
+.oc-stat-summary__grid dd {
+  margin: .2rem 0 0;
+  font-weight: 700;
+}
+
+.oc-stat-summary__method a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .oc-stat-summary__grid {
+    grid-template-columns: 1fr;
+  }
+}

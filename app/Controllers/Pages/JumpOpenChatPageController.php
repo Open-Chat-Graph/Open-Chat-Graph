@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Pages;;
+namespace App\Controllers\Pages;
 
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use Shared\MimimalCmsConfig;
@@ -13,6 +13,7 @@ class JumpOpenChatPageController
         OpenChatPageRepositoryInterface $ocRepo,
         int $open_chat_id,
     ) {
+        header('X-Robots-Tag: noindex, nofollow');
         $oc = $ocRepo->getOpenChatById($open_chat_id);
         if (!$oc) return false;
 

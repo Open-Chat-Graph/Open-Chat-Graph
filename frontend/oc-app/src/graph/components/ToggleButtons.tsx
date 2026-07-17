@@ -54,7 +54,6 @@ function CategoryToggle() {
       direction="row"
       spacing={1}
       alignItems="center"
-      sx={{ opacity: isDisabled ? 0.2 : undefined }}
     >
       <ToggleButtonGroup
         value={category}
@@ -81,8 +80,9 @@ function CategoryToggle() {
                     backgroundColor: 'rgba(231, 233, 234, 0.15)',
                   },
                   '&.Mui-disabled': {
-                    color: 'rgba(239, 241, 242, 0.35)',
+                    color: '#7d8287',
                     borderColor: '#3f4347',
+                    opacity: 1,
                   },
                 },
               }

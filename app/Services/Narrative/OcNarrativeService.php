@@ -120,7 +120,7 @@ class OcNarrativeService
      * @param int $openchatId
      * @param array $oc ルーム属性 (id, name, description, category, member, created_at など)
      * @param ?string $categoryLabel Controller 側で解決済みのカテゴリ表示名 (locale-aware)。null ならカテゴリ言及を出さない
-     * @return ?array{summary: string, detail: string, meta_description: string, pattern: string}
+     * @return ?array{summary: string, detail: string, meta_description: string, pattern: string, metrics: array}
      */
     public function generate(int $openchatId, array $oc, ?string $categoryLabel = null): ?array
     {
@@ -162,6 +162,18 @@ class OcNarrativeService
                 'detail' => $detail,
                 'meta_description' => $metaDescription,
                 'pattern' => $state['pattern'],
+                // HTML・JSON-LD が同じ事前計算済み数値を使えるよう、表示に必要な
+                // 集約値だけを narrative キャッシュへ同梱する。個別ページ表示時に
+                // SQLite の時系列を再集約しないための Resource DTO 相当データ。
+                'metrics' => [
+                    'current' => $curr,
+                    'change_30d' => $diff30,
+                    'peak' => isset($metrics['all_time_peak']) ? (int)$metrics['all_time_peak'] : null,
+                    'peak_date' => $metrics['all_time_peak_date'] ?? null,
+                    'observed_from' => $metrics['first_date'] ?? null,
+                    'observed_at' => $metrics['curr_date'] ?? null,
+                    'sample_count' => (int)($metrics['sample_n'] ?? 0),
+                ],
             ];
         } catch (\Throwable $e) {
             // どんな例外でも null。ページは既存ロジックで完全動作する。
