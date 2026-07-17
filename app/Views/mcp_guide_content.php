@@ -47,9 +47,11 @@
                 <ul>
                     <li><b>Claude</b>（クロード）… 有料プラン（Pro以上）の「コネクタ」機能で追加できます。<b>一度設定すればスマホアプリでもそのまま使えます</b>。</li>
                     <li><b>ChatGPT</b> … 有料プラン（Plus以上）の「コネクタ」機能で追加できます。こちらも設定後はスマホアプリから使えます。</li>
-                    <li><b>Claude Code・Cursor・VS Code など</b> … 開発ツール系はほぼ全対応（エンジニア向け）。</li>
+                    <li><b>Gemini CLI</b>（ジェミナイ）… <b>無料で使える数少ない選択肢</b>。Googleアカウントがあれば無料枠で使えます。ただしパソコンの「ターミナル」で動く黒い画面のツールなので、少し敷居は高めです（下に設定方法）。</li>
+                    <li><b>Claude Code・Cursor・VS Code など</b> … 開発ツール系はほぼ全対応（エンジニア向け）。VS Code（GitHub Copilot）は無料枠でもMCPが使えます。</li>
                 </ul>
-                <p>残念ながら今のところ、主要AIチャットの<b>無料プランでは外部データの接続（カスタムコネクタ）が使えないことが多い</b>です。対応アプリは増え続けているので、「このアプリでも使えた」という情報は<a href="https://x.com/openchat_graph" target="_blank">X (@openchat_graph)</a>まで教えてもらえると嬉しいです。</p>
+                <p><b>スマホだけで完結したい場合</b>: ClaudeやChatGPTの有料プランなら、スマホのブラウザで claude.ai / chatgpt.com を開いて上記の設定を一度行えば、あとはスマホアプリだけで使えます。<b>無料かつスマホだけ</b>で使える方法は、残念ながら今のところ見つかっていません。</p>
+                <p>対応アプリは増え続けているので、「このアプリでも使えた」という情報は<a href="https://x.com/openchat_graph" target="_blank">X (@openchat_graph)</a>まで教えてもらえると嬉しいです。</p>
 
                 <h2>つなぎ方（1分）</h2>
                 <h3>Claudeの場合</h3>
@@ -65,6 +67,18 @@
                     <li>「作成」からURLに <code>https://openchat-review.me/mcp</code> を貼って追加（認証は「なし」でOK）</li>
                     <li>チャットでそのままオープンチャットについて質問する</li>
                 </ol>
+                <h3>Gemini CLI の場合（無料）</h3>
+                <ol>
+                    <li>パソコンに <a href="https://github.com/google-gemini/gemini-cli" target="_blank">Gemini CLI</a> をインストールして、Googleアカウントでログインする</li>
+                    <li>ホームフォルダの <code>.gemini/settings.json</code> に次を追記する</li>
+                </ol>
+                <pre><code>{
+  "mcpServers": {
+    "openchat-graph": {
+      "httpUrl": "https://openchat-review.me/mcp"
+    }
+  }
+}</code></pre>
                 <p>エンジニア向けの接続コマンドやSQLの仕様は<a href="https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md" target="_blank">データAPIドキュメント（GitHub）</a>にまとめてあります。</p>
 
                 <h2>データの範囲と約束ごと</h2>
