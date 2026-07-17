@@ -40,8 +40,13 @@ class McpServerService
     private const MAX_LIMIT = 100;
     private const MAX_GLOBAL_SLOTS = 2;
 
-    /** 公開MCPからのアクセスを拒否するテーブル（IP等の個人情報・運営内部データ） */
-    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
+    /**
+     * 公開MCPからのアクセスを拒否するテーブル。
+     * ban_user / comment_log: IP等の個人情報を含む。ban_room: 運営内部データ。
+     * open_chat_deleted: オプチャ本体の削除が確認された部屋の記録で、掲載中のみ返す
+     * 公開MCPでは意味を持たないため非公開（本人指示）。
+     */
+    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room', 'open_chat_deleted'];
 
     /**
      * 「現在オプチャグラフに掲載中の部屋」(openchat_existing) で常に絞り込むテーブルと、
@@ -50,7 +55,6 @@ class McpServerService
      * 実現方法: 同名の TEMP VIEW を作る。SQLite は名前解決で temp スキーマを main より
      * 優先するため、query_database の生SQLが実テーブル名を書いても VIEW 側が使われる。
      * `main.` 修飾による素通りは filterPublicQuery で拒否する。
-     * ※ open_chat_deleted（削除履歴そのもの）は対象外として残す。
      */
     private const EXISTING_FILTERED_TABLES = [
         'openchat_master' => 'openchat_id',
@@ -60,6 +64,7 @@ class McpServerService
         'growth_ranking_past_week' => 'openchat_id',
         'line_official_activity_ranking_history' => 'openchat_id',
         'line_official_activity_trending_history' => 'openchat_id',
+        'ranking_ban' => 'open_chat_id',
         'comment' => 'open_chat_id',
     ];
 
@@ -380,7 +385,16 @@ class McpServerService
      */
     private function createExistingFilteredViews(\PDO $pdo): void
     {
+        // まだ作られていないテーブル（デプロイ直後の ranking_ban 等・初回インポートで作成される）は
+        // スキップする。実在するテーブルの VIEW 作成失敗は例外のまま伝播させる（フィルタ必須のため
+        // fail-closed。PDO は既定で ERRMODE_EXCEPTION）。
+        $tables = $pdo->query("SELECT name FROM main.sqlite_master WHERE type = 'table'")
+            ->fetchAll(\PDO::FETCH_COLUMN);
+
         foreach (self::EXISTING_FILTERED_TABLES as $table => $idColumn) {
+            if (!in_array($table, $tables, true)) {
+                continue;
+            }
             $pdo->exec(
                 "CREATE TEMP VIEW IF NOT EXISTS {$table} AS
                  SELECT t.* FROM main.{$table} AS t
@@ -451,7 +465,8 @@ class McpServerService
             'note' => 'SELECT/WITH のみ・LIMIT ' . self::MAX_LIMIT . ' まで。テーブル ' . implode(', ', self::BLOCKED_TABLES)
                 . ' は公開MCPからはアクセス不可。また ' . implode(', ', array_keys(self::EXISTING_FILTERED_TABLES))
                 . ' は「現在オプチャグラフに掲載中の部屋」(openchat_existing) のレコードだけが返る'
-                . '（削除済み部屋のアーカイブは含まれない。削除履歴は open_chat_deleted を参照）。',
+                . '（削除済み部屋のアーカイブは含まれない）。ranking_ban は LINE公式ランキング未掲載'
+                . '（掲載制限）の記録で、end_datetime が NULL の行は現在も未掲載中。',
             'schema' => $this->filterSchemaForPublic($schemaContent),
         ];
     }
