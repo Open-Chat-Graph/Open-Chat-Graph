@@ -54,6 +54,8 @@ TXT;
     private function getProductionRobotsTxt(): string
     {
         return <<<TXT
+# AI/LLM: サイト概要とデータアクセス方法(MCP/API)は https://openchat-review.me/llms.txt を参照
+
 # Google AdSenseクローラーのみ許可
 User-agent: Mediapartners-Google
 Allow: /oc/*/jump

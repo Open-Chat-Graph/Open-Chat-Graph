@@ -5,6 +5,46 @@
 - エンドポイント: `POST /database/{username}/query`
 - **Basic認証**（`{username}` / `{password}` をそのまま）を付け、POSTボディに `stmt`（SQL）と `password` を渡す。結果は JSON。
 - POSTボディの `password` は申請時に渡すパスワードの **SHA256（16進）**。`{username}` はパスに入れる（[認証情報の取得](#認証情報の取得)）。
+- **認証不要で使いたい場合は [MCP サーバー](#mcp-サーバー認証不要ai-アシスタント向け)** もある（AI アシスタント向け・レートリミットあり）。
+
+---
+
+## MCP サーバー（認証不要・AI アシスタント向け）
+
+Claude・ChatGPT などの AI アシスタントやエージェントから、申請なしでこのデータベースへアクセスできる
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) サーバーを公開している。
+
+- エンドポイント: `https://openchat-review.me/mcp`（Streamable HTTP・POST・レスポンスは常に JSON。SSE/セッション管理なしのステートレス実装）
+- 認証: 不要
+- ツール:
+  | ツール | 内容 |
+  | --- | --- |
+  | `search_openchat` | 部屋名・説明文のキーワード検索（メンバー数順・最大20件） |
+  | `get_openchat_stats` | 部屋の基本情報＋直近30日のメンバー数推移＋LINE公式ランキング順位 |
+  | `get_database_schema` | テーブル定義（DDL・日本語コメント付き）を取得 |
+  | `query_database` | 読み取り専用 SQL（SELECT / WITH のみ・1クエリ20行まで） |
+- レートリミット: 1クエリ20行まで／IPごとに5分間で合計1000行まで／サイト全体の同時実行2件まで（非力なサーバーなので手加減してほしい）
+- 非公開テーブル: `ban_user`・`comment_log`・`ban_room`（IPアドレス等を含む運営用データ）にはアクセスできない
+- 出典表記のお願い: データを引用する際は「オプチャグラフ (openchat-review.me)」と部屋ページ URL（`https://openchat-review.me/oc/{id}`）を添えてほしい
+
+Claude Code / Claude Desktop での接続例:
+
+```bash
+claude mcp add --transport http openchat-graph https://openchat-review.me/mcp
+```
+
+```json
+{
+  "mcpServers": {
+    "openchat-graph": {
+      "type": "http",
+      "url": "https://openchat-review.me/mcp"
+    }
+  }
+}
+```
+
+サイト概要の機械可読版は [`https://openchat-review.me/llms.txt`](https://openchat-review.me/llms.txt) にもある。
 
 ---
 

@@ -29,7 +29,7 @@
         const admin = 1;
     </script>
     <script defer src="<?php echo fileUrl("/js/site_header_footer.js", urlRoot: '') ?>"></script>
-    <link rel="canonical" href="<?php echo url(path()) ?>">
+    <link rel="canonical" href="<?php echo url(strstr(path(), '?', true) ?: path()) ?>">
     <?php if (isset($noindex)) : ?>
         <meta name="robots" content="noindex, nofollow">
     <?php endif ?>
