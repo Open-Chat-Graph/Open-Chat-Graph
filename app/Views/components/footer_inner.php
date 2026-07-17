@@ -17,6 +17,7 @@
                 <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li>
                     <li><a class="unset" href="<?php echo url('blog') ?>">ブログ</a></li>
+                    <li><a class="unset" href="https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md" target="_blank">AI連携・データAPI (MCP)</a></li>
                 <?php endif ?>
             </ul>
         </section>

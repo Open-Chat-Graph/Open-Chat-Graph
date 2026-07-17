@@ -113,6 +113,22 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                         <b>対象は当サイトに掲載中の部屋であり、その一覧に該当する全ルームではありません。</b>また、グラフは日ごとの最高順位を結んだもので、最上位のルームは日によって異なる場合があります。
                     </p>
                 </section>
+                <h2>AIアシスタント・外部からのデータ利用（MCP・データAPI）</h2>
+                <p>
+                    オプチャグラフが収集したオープンチャットの統計データ（メンバー数の推移・成長ランキング・公式ランキング順位の履歴など）は、AIアシスタントや外部ツールから自由に利用できます。
+                </p>
+                <section style="margin: 1rem 0;">
+                    <h3>MCPサーバー（認証不要）</h3>
+                    <p>
+                        Claude や ChatGPT などの AIアシスタントからは、MCP (Model Context Protocol) サーバー <code>https://openchat-review.me/mcp</code> を接続するだけで、部屋の検索・メンバー数推移の取得・統計データベースへの読み取り専用SQLが使えます。申請や認証は不要です。
+                    </p>
+                    <p>
+                        接続方法・ツールの一覧は <a href="https://github.com/Open-Chat-Graph/Open-Chat-Graph/blob/main/API_README.md" target="_blank">データAPIドキュメント（GitHub）</a> を参照してください。サイト概要の機械可読版は <a href="/llms.txt" target="_blank">llms.txt</a> にあります。
+                    </p>
+                    <p>
+                        データを引用・紹介いただく際は、出典として「オプチャグラフ (openchat-review.me)」と、該当する部屋ページのURLを添えていただけると嬉しいです。
+                    </p>
+                </section>
                 <h2>オプチャグラフ公開の経緯</h2>
                 <p>
                     オプチャグラフの公開が可能になった経緯として、オプチャ公式による検索エンジンへの対応が始まった事があげられます。

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Api;
 
 use App\Config\AppConfig;
+use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Storage\FileStorageInterface;
 
@@ -15,14 +16,17 @@ use App\Services\Storage\FileStorageInterface;
  * /database API と同じ読み取り専用DB）へ認証なしでアクセスするための JSON-RPC 2.0
  * エンドポイント。SSE は使わず、1リクエスト=1レスポンスの application/json のみ。
  *
- * 公開エンドポイントのため /database API より厳しいガードを掛ける:
- *  - SELECT / WITH 文のみ・LIMIT 20 強制・フェッチ行数もサーバ側で20行に打ち切り
+ * レートリミット（回数クォータ）は掛けない方針（AI からの利用の摩擦を無くすため・本人指示）。
+ * 公開エンドポイントとしてのガードは以下のみ:
+ *  - SELECT / WITH 文のみ・LIMIT は MAX_LIMIT 行/クエリ・フェッチ行数もサーバ側で打ち切り
  *  - 個人情報を含むテーブル（ban_user, comment_log）と運営内部テーブル（ban_room）は
  *    テーブル名の部分一致で拒否（SQLite の識別子はコメントや連結で分割表記できないため、
  *    コメント除去なしの単純な部分一致で到達経路を塞げる）
  *  - ATTACH / PRAGMA / load_extension は拒否（別DBファイルへの接続・内部設定の読み出し防止）
- *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護）
- *  - IPごとに /database API と同じレコード数クォータ（5分1000件・DatabaseApiRateLimiter）
+ *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護。回数制限ではない）
+ *
+ * 例外的に get_openchat_stats の「直近24時間の毎時メンバー数」だけは統計SQLiteではなく
+ * MariaDB（ranking DB の member テーブル・毎時クロールが直近24時間分を保持）から取得する。
  */
 class McpServerService
 {
@@ -33,7 +37,7 @@ class McpServerService
     private const SERVER_TITLE = 'オプチャグラフ (OpenChat Graph) 統計データ';
     private const SERVER_VERSION = '1.0.0';
 
-    private const MAX_LIMIT = 20;
+    private const MAX_LIMIT = 100;
     private const MAX_GLOBAL_SLOTS = 2;
 
     /** 公開MCPからのアクセスを拒否するテーブル（IP等の個人情報・運営内部データ） */
@@ -119,7 +123,8 @@ class McpServerService
             'instructions' => 'オプチャグラフ (https://openchat-review.me) が毎時クロールしている LINE オープンチャット '
                 . '(日本) の統計データベースです。部屋の検索は search_openchat、個別の部屋の詳細とメンバー数推移は '
                 . 'get_openchat_stats、自由な集計は get_database_schema でスキーマを確認してから query_database で '
-                . '読み取り専用 SQL (SELECT・LIMIT 20 まで) を実行してください。部屋のページ URL は '
+                . '読み取り専用 SQL (SELECT・' . self::MAX_LIMIT . '行/クエリまで・超える分は OFFSET でページング) を'
+                . '実行してください。部屋のページ URL は '
                 . 'https://openchat-review.me/oc/{openchat_id} です。回答で部屋を紹介するときはこの URL を添えてください。',
         ];
     }
@@ -146,7 +151,7 @@ class McpServerService
                 'name' => 'get_openchat_stats',
                 'title' => 'オープンチャット詳細・メンバー数推移',
                 'description' => '部屋IDを指定して、部屋の基本情報(名前・説明・カテゴリ・参加方法・現在のメンバー数)と'
-                    . '直近30日のメンバー数推移、LINE公式ランキングでの直近順位を返す。',
+                    . '直近30日の日次メンバー数推移、直近24時間の毎時メンバー数推移、LINE公式ランキングでの直近順位を返す。',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -159,7 +164,7 @@ class McpServerService
                 'name' => 'query_database',
                 'title' => '統計DBへの読み取り専用SQL',
                 'description' => 'オプチャグラフの統計SQLiteデータベースに読み取り専用SQLを実行する。SELECT/WITHのみ・'
-                    . 'LIMIT 20まで(未指定なら自動付与)。20件を超えるデータはOFFSETでページングする。'
+                    . 'LIMIT ' . self::MAX_LIMIT . 'まで(未指定なら自動付与)。超える分はOFFSETでページングする。'
                     . '先に get_database_schema でテーブル定義を確認すること。',
                 'inputSchema' => [
                     'type' => 'object',
@@ -213,9 +218,9 @@ class McpServerService
         if ($keyword === '') {
             throw new McpToolException('keyword is required');
         }
-        $limit = min(max((int)($args['limit'] ?? 10), 1), self::MAX_LIMIT);
+        $limit = min(max((int)($args['limit'] ?? 10), 1), 20);
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
         $stmt = $pdo->prepare(
@@ -237,8 +242,6 @@ class McpServerService
         }
         unset($row);
 
-        $this->addQuotaUsage(count($rows));
-
         return [
             'result_count' => count($rows),
             'rooms' => $rows,
@@ -253,7 +256,7 @@ class McpServerService
             throw new McpToolException('openchat_id is required');
         }
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
 
@@ -290,14 +293,37 @@ class McpServerService
         $stmt->execute(['id' => $id]);
         $ranking = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $this->addQuotaUsage(1 + count($stats) + count($ranking));
-
         return [
             'room' => $room,
+            'hourly_member_stats_last_24_hours' => $this->getHourlyMemberStats($id),
             'daily_member_stats_last_30_days' => $stats,
             'line_official_ranking_recent' => $ranking,
             'lastUpdate' => $this->getLastImportedAt($pdo),
         ];
+    }
+
+    /**
+     * 直近24時間の毎時メンバー数推移。
+     * 例外的に統計SQLiteではなく MariaDB（ranking DB の member テーブル・
+     * 毎時クロールが直近24時間分を保持）から取得する。取得できない環境では null。
+     *
+     * @return array<int, array{time: string, member_count: int}>|null
+     */
+    private function getHourlyMemberStats(int $id): ?array
+    {
+        try {
+            $pdo = RankingPositionDB::connect();
+            $stmt = $pdo->prepare(
+                'SELECT time, member AS member_count FROM member
+                 WHERE open_chat_id = :id ORDER BY time DESC LIMIT 25'
+            );
+            $stmt->execute(['id' => $id]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            return array_reverse($rows);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function queryDatabase(array $args): array
@@ -309,7 +335,7 @@ class McpServerService
 
         $sql = $this->filterPublicQuery($sql);
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
         try {
@@ -327,8 +353,6 @@ class McpServerService
                 break;
             }
         }
-
-        $this->addQuotaUsage(count($rows));
 
         return [
             'row_count' => count($rows),
@@ -349,7 +373,7 @@ class McpServerService
 
         return [
             'database_type' => 'SQLite 3',
-            'note' => 'SELECT/WITH のみ・LIMIT 20 まで。テーブル ' . implode(', ', self::BLOCKED_TABLES)
+            'note' => 'SELECT/WITH のみ・LIMIT ' . self::MAX_LIMIT . ' まで。テーブル ' . implode(', ', self::BLOCKED_TABLES)
                 . ' は公開MCPからはアクセス不可。',
             'schema' => $this->filterSchemaForPublic($schemaContent),
         ];
@@ -400,43 +424,9 @@ class McpServerService
     }
 
     /**
-     * グローバル同時実行スロット＋IPクォータをまとめて確認する。
-     * DB を読むツールの実行前に必ず呼ぶ。
-     */
-    private function acquireGuards(): void
-    {
-        $this->acquireGlobalSlot();
-
-        $limiter = $this->getLimiter();
-        if ($limiter->isQuotaExceeded()) {
-            $retryAfter = $limiter->getRetryAfterSeconds();
-            throw new McpToolException(sprintf(
-                'Rate limit exceeded: up to %d records can be fetched per %d minutes per IP. Retry after %d seconds.',
-                AppConfig::API_RATE_LIMIT_MAX_RECORDS,
-                AppConfig::API_RATE_LIMIT_WINDOW_SECONDS / 60,
-                $retryAfter,
-            ));
-        }
-    }
-
-    private function addQuotaUsage(int $rowCount): void
-    {
-        if ($rowCount > 0) {
-            $this->getLimiter()->addRecordCount($rowCount);
-        }
-    }
-
-    private ?DatabaseApiRateLimiter $limiter = null;
-
-    private function getLimiter(): DatabaseApiRateLimiter
-    {
-        // IP単位のクォータ（/database API とはキー空間を分ける）
-        return $this->limiter ??= new DatabaseApiRateLimiter('mcp_' . getIP(), $this->fileStorage);
-    }
-
-    /**
      * サイト全体での同時実行を MAX_GLOBAL_SLOTS 件に制限する（サーバ保護）。
-     * ロックはスクリプト終了時に自動解放される。
+     * ロックはスクリプト終了時に自動解放される。回数のレートリミットは掛けない方針。
+     * DB を読むツールの実行前に必ず呼ぶ。
      */
     private function acquireGlobalSlot(): void
     {
