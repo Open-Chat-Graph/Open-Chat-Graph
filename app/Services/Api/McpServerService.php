@@ -45,8 +45,11 @@ class McpServerService
      * ban_user / comment_log: IP等の個人情報を含む。ban_room: 運営内部データ。
      * open_chat_deleted: オプチャ本体の削除が確認された部屋の記録で、掲載中のみ返す
      * 公開MCPでは意味を持たないため非公開（本人指示）。
+     * comment / comment_like: サイト内コメントはAI向け公開の対象外（本人指示）。
+     * 判定は部分一致のため 'comment' が comment_like / comment_log も同時に塞ぐが、
+     * 意図を明示するため個別に列挙する。
      */
-    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room', 'open_chat_deleted'];
+    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room', 'open_chat_deleted', 'comment', 'comment_like'];
 
     /**
      * 「現在オプチャグラフに掲載中の部屋」(openchat_existing) で常に絞り込むテーブルと、
@@ -65,7 +68,6 @@ class McpServerService
         'line_official_activity_ranking_history' => 'openchat_id',
         'line_official_activity_trending_history' => 'openchat_id',
         'ranking_ban' => 'open_chat_id',
-        'comment' => 'open_chat_id',
     ];
 
     /** @var resource[] 保持中のグローバル同時実行ロック */
