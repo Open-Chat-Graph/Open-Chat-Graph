@@ -959,11 +959,18 @@ class OcreviewApiDataImporter
      * このため、openchat_master.openchat_id = open_chat_deleted.id でJOINできます。
      */
     /**
-     * 公式ランキング未掲載（掲載制限）記録のインポート
+     * 公式ランキング未掲載（掲載制限）記録のインポート（差分同期）
      *
-     * 【全件リフレッシュの仕組み】
-     * ranking_ban は既存行が更新される（復活時に end_datetime が入る・update_items が追記される）ため、
-     * 差分同期ではなく成長ランキングと同じ全削除→全件入れ直しで同期する（レコード数は少ない）。
+     * 【差分同期の仕組み】
+     * ranking_ban の行は「未掲載検知で INSERT（flag=0・end_datetime NULL）→ 復活時に一度だけ
+     * UPDATE（flag=1・end_datetime 設定・update_items）→ 以後不変」というライフサイクル
+     * （RankingBanTableUpdater::updateTable は flag=0 の行しか更新しない）。そのため
+     *   1. 新規行: id がターゲットの最大 id より大きい行
+     *   2. 変更行: 復活で閉じられた行だけ ＝ end_datetime がターゲットの最終クローズ時刻以降の行
+     * の2種類を UPSERT すれば完全に追随でき、全件リフレッシュは不要（約270万行を毎時
+     * 入れ直すとサーバ負荷と Discord 進捗通知の連打になるため差分化した経緯がある）。
+     * 境界の重複取得は INSERT OR REPLACE で冪等。ターゲットが空のときだけ初回全件ロード。
+     * 進捗メッセージは渡さない（Discord 通知を出さない）。
      * sort_datetime は MariaDB の VIRTUAL 生成列のためインポート対象外。
      */
     private function importRankingBan(): void
@@ -985,58 +992,98 @@ class OcreviewApiDataImporter
         $this->targetPdo->exec("CREATE INDEX IF NOT EXISTS idx_ranking_ban_open_chat ON ranking_ban(open_chat_id)");
         $this->targetPdo->exec("CREATE INDEX IF NOT EXISTS idx_ranking_ban_datetime ON ranking_ban(datetime)");
 
-        // ソーステーブルのレコード数を取得
-        $totalCount = $this->sourcePdo->query("SELECT COUNT(*) FROM ranking_ban")->fetchColumn();
+        $columnList = 'id, open_chat_id, datetime, percentage, member, flag, updated_at, update_items, end_datetime';
 
-        // ターゲットテーブルを全削除（SQLiteはTRUNCATEをサポートしていないため DELETE を使用）
-        $this->targetPdo->exec("DELETE FROM ranking_ban");
+        $targetCount = (int)$this->targetPdo->query("SELECT COUNT(*) FROM ranking_ban")->fetchColumn();
+
+        if ($targetCount === 0) {
+            // 初回のみ全件ロード
+            $totalCount = (int)$this->sourcePdo->query("SELECT COUNT(*) FROM ranking_ban")->fetchColumn();
+            if ($totalCount === 0) {
+                return;
+            }
+
+            $stmt = $this->sourcePdo->prepare(
+                "SELECT {$columnList} FROM ranking_ban ORDER BY id LIMIT ? OFFSET ?"
+            );
+
+            $this->processInChunks(
+                $stmt,
+                [],
+                $totalCount,
+                self::CHUNK_SIZE,
+                function (array $data) {
+                    $this->upsertRankingBanRows($data);
+                },
+            );
+            return;
+        }
+
+        // 差分同期: 新規行（id 超過分）＋ 復活で閉じられた行（end_datetime が境界以降）
+        $maxId = (int)$this->targetPdo->query("SELECT MAX(id) FROM ranking_ban")->fetchColumn();
+        $since = $this->targetPdo->query("SELECT MAX(end_datetime) FROM ranking_ban")->fetchColumn()
+            ?: '1970-01-01 00:00:00';
+
+        $countStmt = $this->sourcePdo->prepare(
+            "SELECT COUNT(*) FROM ranking_ban WHERE id > ? OR end_datetime >= ?"
+        );
+        $countStmt->execute([$maxId, $since]);
+        $totalCount = (int)$countStmt->fetchColumn();
 
         if ($totalCount === 0) {
             return;
         }
 
-        $query = "
-            SELECT
-                id,
-                open_chat_id,
-                datetime,
-                percentage,
-                member,
-                flag,
-                updated_at,
-                update_items,
-                end_datetime
-            FROM
-                ranking_ban
-            ORDER BY id
-            LIMIT ? OFFSET ?
-        ";
-
-        $stmt = $this->sourcePdo->prepare($query);
+        $stmt = $this->sourcePdo->prepare(
+            "SELECT {$columnList} FROM ranking_ban
+             WHERE id > ? OR end_datetime >= ?
+             ORDER BY id LIMIT ? OFFSET ?"
+        );
 
         $this->processInChunks(
             $stmt,
-            [],
+            [
+                1 => [$maxId, PDO::PARAM_INT],
+                2 => [$since, PDO::PARAM_STR],
+            ],
             $totalCount,
             self::CHUNK_SIZE,
             function (array $data) {
-                if (!empty($data)) {
-                    $this->sqlImporter->import($this->targetPdo, 'ranking_ban', $data, self::CHUNK_SIZE);
-                }
+                $this->upsertRankingBanRows($data);
             },
-            'ranking_ban: %d / %d 件処理完了'
         );
+    }
 
-        // レコード数の整合性を検証し、不一致があれば修正
-        $this->verifyAndFixRecordCount(
-            'ranking_ban',
-            'ranking_ban',
-            'id',
-            'id',
-            null,
-            $this->sourcePdo,
-            $this->targetPdo
-        );
+    /**
+     * ranking_ban 行の一括 UPSERT（主キー id・全カラム置き換え）。
+     * 共通の sqliteUpsert は主キーが openchat_id 前提のためここでは使わない。
+     */
+    private function upsertRankingBanRows(array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $columns = array_keys($rows[0]);
+        $columnCount = count($columns);
+        // SQLiteのパラメータ数制限（999）内に収める
+        $recordsPerBatch = (int)floor(999 / $columnCount) - 20;
+
+        foreach (array_chunk($rows, $recordsPerBatch) as $chunk) {
+            $placeholders = '(' . implode(', ', array_fill(0, $columnCount, '?')) . ')';
+            $sql = "INSERT OR REPLACE INTO ranking_ban (" . implode(', ', $columns) . ") VALUES "
+                . implode(', ', array_fill(0, count($chunk), $placeholders));
+
+            $params = [];
+            foreach ($chunk as $row) {
+                foreach ($columns as $column) {
+                    $params[] = $row[$column];
+                }
+            }
+
+            $stmt = $this->targetPdo->prepare($sql);
+            $stmt->execute($params);
+        }
     }
 
     private function importOpenChatDeleted(): void
