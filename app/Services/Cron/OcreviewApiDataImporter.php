@@ -88,6 +88,9 @@ class OcreviewApiDataImporter
         // 削除されたオープンチャット履歴のインポート（差分同期）
         $this->importOpenChatDeleted();
 
+        // 公式ランキング未掲載（掲載制限）記録のインポート（全件リフレッシュ）
+        $this->importRankingBan();
+
         // コメント関連データのインポート（差分同期）
         $commentImporter = new OcreviewApiCommentDataImporter($this->sourceCommentPdo, $this->targetPdo);
         $commentImporter->execute();
@@ -955,6 +958,87 @@ class OcreviewApiDataImporter
      * open_chat_deleted.id は AUTO_INCREMENT だが、実際には openchat_id の値が明示的に挿入されています。
      * このため、openchat_master.openchat_id = open_chat_deleted.id でJOINできます。
      */
+    /**
+     * 公式ランキング未掲載（掲載制限）記録のインポート
+     *
+     * 【全件リフレッシュの仕組み】
+     * ranking_ban は既存行が更新される（復活時に end_datetime が入る・update_items が追記される）ため、
+     * 差分同期ではなく成長ランキングと同じ全削除→全件入れ直しで同期する（レコード数は少ない）。
+     * sort_datetime は MariaDB の VIRTUAL 生成列のためインポート対象外。
+     */
+    private function importRankingBan(): void
+    {
+        // 新規テーブルのため、存在しなければ作成（本番の既存DBにも自動反映）
+        $this->targetPdo->exec(
+            "CREATE TABLE IF NOT EXISTS ranking_ban (
+                id INTEGER PRIMARY KEY,
+                open_chat_id INTEGER NOT NULL,
+                datetime TEXT NOT NULL,
+                percentage INTEGER NOT NULL,
+                member INTEGER NOT NULL,
+                flag INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL,
+                update_items TEXT,
+                end_datetime TEXT
+            )"
+        );
+        $this->targetPdo->exec("CREATE INDEX IF NOT EXISTS idx_ranking_ban_open_chat ON ranking_ban(open_chat_id)");
+        $this->targetPdo->exec("CREATE INDEX IF NOT EXISTS idx_ranking_ban_datetime ON ranking_ban(datetime)");
+
+        // ソーステーブルのレコード数を取得
+        $totalCount = $this->sourcePdo->query("SELECT COUNT(*) FROM ranking_ban")->fetchColumn();
+
+        // ターゲットテーブルを全削除（SQLiteはTRUNCATEをサポートしていないため DELETE を使用）
+        $this->targetPdo->exec("DELETE FROM ranking_ban");
+
+        if ($totalCount === 0) {
+            return;
+        }
+
+        $query = "
+            SELECT
+                id,
+                open_chat_id,
+                datetime,
+                percentage,
+                member,
+                flag,
+                updated_at,
+                update_items,
+                end_datetime
+            FROM
+                ranking_ban
+            ORDER BY id
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->sourcePdo->prepare($query);
+
+        $this->processInChunks(
+            $stmt,
+            [],
+            $totalCount,
+            self::CHUNK_SIZE,
+            function (array $data) {
+                if (!empty($data)) {
+                    $this->sqlImporter->import($this->targetPdo, 'ranking_ban', $data, self::CHUNK_SIZE);
+                }
+            },
+            'ranking_ban: %d / %d 件処理完了'
+        );
+
+        // レコード数の整合性を検証し、不一致があれば修正
+        $this->verifyAndFixRecordCount(
+            'ranking_ban',
+            'ranking_ban',
+            'id',
+            'id',
+            null,
+            $this->sourcePdo,
+            $this->targetPdo
+        );
+    }
+
     private function importOpenChatDeleted(): void
     {
         // ターゲットDBから最終削除日時を取得（差分同期の起点）

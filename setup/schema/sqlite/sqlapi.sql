@@ -142,6 +142,25 @@ CREATE TABLE IF NOT EXISTS import_meta (
 );
 
 -- ==============================================================================
+-- LINE公式ランキングからの未掲載（掲載制限）記録
+-- 公式「ランキング」から消えたことを検知した部屋の履歴。/labs/ranking-ban で公開している内容と同じ。
+-- end_datetime が NULL の行は現在も未掲載中。
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS ranking_ban (
+    id INTEGER PRIMARY KEY,                 -- レコードID
+    open_chat_id INTEGER NOT NULL,          -- オープンチャットID（openchat_master.openchat_idと紐づく）
+    datetime TEXT NOT NULL,                 -- 公式ランキングから消えたことを確認した日時
+    percentage INTEGER NOT NULL,            -- 検知時点のメンバー増減率(%)
+    member INTEGER NOT NULL,                -- 検知時点のメンバー数
+    flag INTEGER NOT NULL DEFAULT 0,        -- フラグ（内部用）
+    updated_at INTEGER NOT NULL,            -- 内部用の更新管理値
+    update_items TEXT,                      -- 未掲載期間中に変更が検知されたプロフィール項目
+    end_datetime TEXT                       -- 公式ランキングに復活した日時（NULL=未掲載中）
+);
+CREATE INDEX IF NOT EXISTS idx_ranking_ban_open_chat ON ranking_ban(open_chat_id);
+CREATE INDEX IF NOT EXISTS idx_ranking_ban_datetime ON ranking_ban(datetime);
+
+-- ==============================================================================
 -- 削除されたオープンチャット履歴
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS open_chat_deleted (

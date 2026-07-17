@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Api;
 
 use App\Config\AppConfig;
+use App\Models\RankingPositionDB\RankingPositionDB;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Storage\FileStorageInterface;
 
@@ -15,14 +16,17 @@ use App\Services\Storage\FileStorageInterface;
  * /database API と同じ読み取り専用DB）へ認証なしでアクセスするための JSON-RPC 2.0
  * エンドポイント。SSE は使わず、1リクエスト=1レスポンスの application/json のみ。
  *
- * 公開エンドポイントのため /database API より厳しいガードを掛ける:
- *  - SELECT / WITH 文のみ・LIMIT 20 強制・フェッチ行数もサーバ側で20行に打ち切り
+ * レートリミット（回数クォータ）は掛けない方針（AI からの利用の摩擦を無くすため・本人指示）。
+ * 公開エンドポイントとしてのガードは以下のみ:
+ *  - SELECT / WITH 文のみ・LIMIT は MAX_LIMIT 行/クエリ・フェッチ行数もサーバ側で打ち切り
  *  - 個人情報を含むテーブル（ban_user, comment_log）と運営内部テーブル（ban_room）は
  *    テーブル名の部分一致で拒否（SQLite の識別子はコメントや連結で分割表記できないため、
  *    コメント除去なしの単純な部分一致で到達経路を塞げる）
  *  - ATTACH / PRAGMA / load_extension は拒否（別DBファイルへの接続・内部設定の読み出し防止）
- *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護）
- *  - IPごとに /database API と同じレコード数クォータ（5分1000件・DatabaseApiRateLimiter）
+ *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護。回数制限ではない）
+ *
+ * 例外的に get_openchat_stats の「直近24時間の毎時メンバー数」だけは統計SQLiteではなく
+ * MariaDB（ranking DB の member テーブル・毎時クロールが直近24時間分を保持）から取得する。
  */
 class McpServerService
 {
@@ -33,11 +37,36 @@ class McpServerService
     private const SERVER_TITLE = 'オプチャグラフ (OpenChat Graph) 統計データ';
     private const SERVER_VERSION = '1.0.0';
 
-    private const MAX_LIMIT = 20;
+    private const MAX_LIMIT = 100;
     private const MAX_GLOBAL_SLOTS = 2;
 
-    /** 公開MCPからのアクセスを拒否するテーブル（IP等の個人情報・運営内部データ） */
-    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
+    /**
+     * 公開MCPからのアクセスを拒否するテーブル。
+     * ban_user / comment_log: IP等の個人情報を含む。ban_room: 運営内部データ。
+     * open_chat_deleted: オプチャ本体の削除が確認された部屋の記録で、掲載中のみ返す
+     * 公開MCPでは意味を持たないため非公開（本人指示）。
+     */
+    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room', 'open_chat_deleted'];
+
+    /**
+     * 「現在オプチャグラフに掲載中の部屋」(openchat_existing) で常に絞り込むテーブルと、
+     * その部屋IDカラム名。sqlapi の openchat_master 等は削除済み部屋もアーカイブして
+     * いるため、公開MCPでは掲載中の部屋のレコードだけを返す（本人指示）。
+     * 実現方法: 同名の TEMP VIEW を作る。SQLite は名前解決で temp スキーマを main より
+     * 優先するため、query_database の生SQLが実テーブル名を書いても VIEW 側が使われる。
+     * `main.` 修飾による素通りは filterPublicQuery で拒否する。
+     */
+    private const EXISTING_FILTERED_TABLES = [
+        'openchat_master' => 'openchat_id',
+        'daily_member_statistics' => 'openchat_id',
+        'growth_ranking_past_hour' => 'openchat_id',
+        'growth_ranking_past_24_hours' => 'openchat_id',
+        'growth_ranking_past_week' => 'openchat_id',
+        'line_official_activity_ranking_history' => 'openchat_id',
+        'line_official_activity_trending_history' => 'openchat_id',
+        'ranking_ban' => 'open_chat_id',
+        'comment' => 'open_chat_id',
+    ];
 
     /** @var resource[] 保持中のグローバル同時実行ロック */
     private array $globalLockHandles = [];
@@ -117,9 +146,11 @@ class McpServerService
                 'version' => self::SERVER_VERSION,
             ],
             'instructions' => 'オプチャグラフ (https://openchat-review.me) が毎時クロールしている LINE オープンチャット '
-                . '(日本) の統計データベースです。部屋の検索は search_openchat、個別の部屋の詳細とメンバー数推移は '
+                . '(日本) の統計データベースです。返される部屋は現在オプチャグラフに掲載中のものだけです'
+                . '（削除済み部屋は含まれません）。部屋の検索は search_openchat、個別の部屋の詳細とメンバー数推移は '
                 . 'get_openchat_stats、自由な集計は get_database_schema でスキーマを確認してから query_database で '
-                . '読み取り専用 SQL (SELECT・LIMIT 20 まで) を実行してください。部屋のページ URL は '
+                . '読み取り専用 SQL (SELECT・' . self::MAX_LIMIT . '行/クエリまで・超える分は OFFSET でページング) を'
+                . '実行してください。部屋のページ URL は '
                 . 'https://openchat-review.me/oc/{openchat_id} です。回答で部屋を紹介するときはこの URL を添えてください。',
         ];
     }
@@ -146,7 +177,8 @@ class McpServerService
                 'name' => 'get_openchat_stats',
                 'title' => 'オープンチャット詳細・メンバー数推移',
                 'description' => '部屋IDを指定して、部屋の基本情報(名前・説明・カテゴリ・参加方法・現在のメンバー数)と'
-                    . '直近30日のメンバー数推移、LINE公式ランキングでの直近順位を返す。',
+                    . '直近24時間の毎時推移(メンバー数・LINE公式「ランキング」「急上昇」の順位と掲載総数)、'
+                    . '直近30日の日次メンバー数推移、LINE公式ランキング順位の日次履歴を返す。',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -159,7 +191,7 @@ class McpServerService
                 'name' => 'query_database',
                 'title' => '統計DBへの読み取り専用SQL',
                 'description' => 'オプチャグラフの統計SQLiteデータベースに読み取り専用SQLを実行する。SELECT/WITHのみ・'
-                    . 'LIMIT 20まで(未指定なら自動付与)。20件を超えるデータはOFFSETでページングする。'
+                    . 'LIMIT ' . self::MAX_LIMIT . 'まで(未指定なら自動付与)。超える分はOFFSETでページングする。'
                     . '先に get_database_schema でテーブル定義を確認すること。',
                 'inputSchema' => [
                     'type' => 'object',
@@ -213,9 +245,9 @@ class McpServerService
         if ($keyword === '') {
             throw new McpToolException('keyword is required');
         }
-        $limit = min(max((int)($args['limit'] ?? 10), 1), self::MAX_LIMIT);
+        $limit = min(max((int)($args['limit'] ?? 10), 1), 20);
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
         $stmt = $pdo->prepare(
@@ -237,8 +269,6 @@ class McpServerService
         }
         unset($row);
 
-        $this->addQuotaUsage(count($rows));
-
         return [
             'result_count' => count($rows),
             'rooms' => $rows,
@@ -253,24 +283,24 @@ class McpServerService
             throw new McpToolException('openchat_id is required');
         }
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
 
+        // 掲載中の部屋のみ返す（openchat_master は削除済み部屋もアーカイブしているため）
         $stmt = $pdo->prepare(
             "SELECT m.openchat_id AS id, m.display_name AS name, m.description,
                     m.current_member_count AS member_count, c.category_name AS category,
-                    m.join_method, m.verification_badge, m.established_at, m.last_updated_at,
-                    (e.openchat_id IS NOT NULL) AS still_exists
+                    m.join_method, m.verification_badge, m.established_at, m.last_updated_at
              FROM openchat_master m
-             LEFT JOIN openchat_existing e ON e.openchat_id = m.openchat_id
+             JOIN openchat_existing e ON e.openchat_id = m.openchat_id
              LEFT JOIN categories c ON c.category_id = m.category_id
              WHERE m.openchat_id = :id"
         );
         $stmt->execute(['id' => $id]);
         $room = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$room) {
-            throw new McpToolException("openchat_id {$id} not found");
+            throw new McpToolException("openchat_id {$id} not found (or no longer listed on OpenChat Graph)");
         }
         $room['url'] = 'https://openchat-review.me/oc/' . $id;
 
@@ -290,14 +320,98 @@ class McpServerService
         $stmt->execute(['id' => $id]);
         $ranking = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $this->addQuotaUsage(1 + count($stats) + count($ranking));
+        $hourly = $this->getHourly24hFromRankingDb($id, $this->getCategoryNames($pdo));
 
         return [
             'room' => $room,
+            'hourly_member_stats_last_24_hours' => $hourly['member'] ?? null,
+            'line_official_ranking_last_24_hours' => $hourly['ranking'] ?? null,
+            'line_official_rising_last_24_hours' => $hourly['rising'] ?? null,
             'daily_member_stats_last_30_days' => $stats,
-            'line_official_ranking_recent' => $ranking,
+            'line_official_ranking_daily_history' => $ranking,
             'lastUpdate' => $this->getLastImportedAt($pdo),
         ];
+    }
+
+    /**
+     * 直近24時間の毎時データ（メンバー数・LINE公式「ランキング」「急上昇」の順位）。
+     * 例外的に統計SQLiteではなく MariaDB（ranking DB。毎時クロールが直近24時間分を保持）
+     * から取得する。取得できない環境では null。
+     *
+     * @param array<int, string> $categoryNames category_id => カテゴリ名
+     * @return array{member: array, ranking: array, rising: array}|null
+     */
+    private function getHourly24hFromRankingDb(int $id, array $categoryNames): ?array
+    {
+        try {
+            $pdo = RankingPositionDB::connect();
+
+            $stmt = $pdo->prepare(
+                'SELECT time, member AS member_count FROM member
+                 WHERE open_chat_id = :id ORDER BY time DESC LIMIT 25'
+            );
+            $stmt->execute(['id' => $id]);
+            $member = array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+
+            // 公式「ランキング」「急上昇」の毎時順位（カテゴリ別 + category=0 は全体）。
+            // total_count はその時間の掲載総数（「何件中何位」の分母）
+            $positions = [];
+            foreach (['ranking' => 'total_count_ranking', 'rising' => 'total_count_rising'] as $table => $totalCol) {
+                $stmt = $pdo->prepare(
+                    "SELECT t.time, t.category AS category_id, t.position, tc.{$totalCol} AS total_count
+                     FROM {$table} AS t
+                     LEFT JOIN total_count AS tc ON tc.time = t.time AND tc.category = t.category
+                     WHERE t.open_chat_id = :id
+                     ORDER BY t.time ASC, t.category ASC"
+                );
+                $stmt->execute(['id' => $id]);
+                $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                foreach ($rows as &$row) {
+                    $row['category'] = $categoryNames[(int)$row['category_id']] ?? ((int)$row['category_id'] === 0 ? 'すべて' : null);
+                }
+                unset($row);
+                $positions[$table] = $rows;
+            }
+
+            return ['member' => $member, 'ranking' => $positions['ranking'], 'rising' => $positions['rising']];
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * 「現在掲載中の部屋」で絞り込む同名 TEMP VIEW を作る（query_database 用）。
+     * 接続はリクエスト内で使い回されるため IF NOT EXISTS で冪等にする。
+     */
+    private function createExistingFilteredViews(\PDO $pdo): void
+    {
+        // まだ作られていないテーブル（デプロイ直後の ranking_ban 等・初回インポートで作成される）は
+        // スキップする。実在するテーブルの VIEW 作成失敗は例外のまま伝播させる（フィルタ必須のため
+        // fail-closed。PDO は既定で ERRMODE_EXCEPTION）。
+        $tables = $pdo->query("SELECT name FROM main.sqlite_master WHERE type = 'table'")
+            ->fetchAll(\PDO::FETCH_COLUMN);
+
+        foreach (self::EXISTING_FILTERED_TABLES as $table => $idColumn) {
+            if (!in_array($table, $tables, true)) {
+                continue;
+            }
+            $pdo->exec(
+                "CREATE TEMP VIEW IF NOT EXISTS {$table} AS
+                 SELECT t.* FROM main.{$table} AS t
+                 JOIN main.openchat_existing AS e ON e.openchat_id = t.{$idColumn}"
+            );
+        }
+    }
+
+    /** @return array<int, string> category_id => カテゴリ名 */
+    private function getCategoryNames(\PDO $sqlitePdo): array
+    {
+        try {
+            $rows = $sqlitePdo->query('SELECT category_id, category_name FROM categories')->fetchAll(\PDO::FETCH_KEY_PAIR);
+            return $rows ?: [];
+        } catch (\Exception) {
+            return [];
+        }
     }
 
     private function queryDatabase(array $args): array
@@ -309,9 +423,10 @@ class McpServerService
 
         $sql = $this->filterPublicQuery($sql);
 
-        $this->acquireGuards();
+        $this->acquireGlobalSlot();
 
         $pdo = $this->getPdo();
+        $this->createExistingFilteredViews($pdo);
         try {
             $result = $pdo->query($sql);
         } catch (\Exception $e) {
@@ -327,8 +442,6 @@ class McpServerService
                 break;
             }
         }
-
-        $this->addQuotaUsage(count($rows));
 
         return [
             'row_count' => count($rows),
@@ -349,8 +462,11 @@ class McpServerService
 
         return [
             'database_type' => 'SQLite 3',
-            'note' => 'SELECT/WITH のみ・LIMIT 20 まで。テーブル ' . implode(', ', self::BLOCKED_TABLES)
-                . ' は公開MCPからはアクセス不可。',
+            'note' => 'SELECT/WITH のみ・LIMIT ' . self::MAX_LIMIT . ' まで。テーブル ' . implode(', ', self::BLOCKED_TABLES)
+                . ' は公開MCPからはアクセス不可。また ' . implode(', ', array_keys(self::EXISTING_FILTERED_TABLES))
+                . ' は「現在オプチャグラフに掲載中の部屋」(openchat_existing) のレコードだけが返る'
+                . '（削除済み部屋のアーカイブは含まれない）。ranking_ban は LINE公式ランキング未掲載'
+                . '（掲載制限）の記録で、end_datetime が NULL の行は現在も未掲載中。',
             'schema' => $this->filterSchemaForPublic($schemaContent),
         ];
     }
@@ -379,6 +495,12 @@ class McpServerService
             }
         }
 
+        // スキーマ修飾（main.openchat_master 等）は掲載中フィルタの TEMP VIEW を素通り
+        // してしまうため拒否する
+        if (preg_match('/\b(main|temp)\s*\./i', $sql)) {
+            throw new McpToolException('Schema-qualified table names (main./temp.) are not allowed');
+        }
+
         // 非公開テーブル。SQLite の識別子はコメント・連結で分割表記できないため、
         // 部分一致の拒否でテーブルへの全到達経路を塞げる（文字列リテラル内の偽陽性は許容）
         foreach (self::BLOCKED_TABLES as $table) {
@@ -400,43 +522,9 @@ class McpServerService
     }
 
     /**
-     * グローバル同時実行スロット＋IPクォータをまとめて確認する。
-     * DB を読むツールの実行前に必ず呼ぶ。
-     */
-    private function acquireGuards(): void
-    {
-        $this->acquireGlobalSlot();
-
-        $limiter = $this->getLimiter();
-        if ($limiter->isQuotaExceeded()) {
-            $retryAfter = $limiter->getRetryAfterSeconds();
-            throw new McpToolException(sprintf(
-                'Rate limit exceeded: up to %d records can be fetched per %d minutes per IP. Retry after %d seconds.',
-                AppConfig::API_RATE_LIMIT_MAX_RECORDS,
-                AppConfig::API_RATE_LIMIT_WINDOW_SECONDS / 60,
-                $retryAfter,
-            ));
-        }
-    }
-
-    private function addQuotaUsage(int $rowCount): void
-    {
-        if ($rowCount > 0) {
-            $this->getLimiter()->addRecordCount($rowCount);
-        }
-    }
-
-    private ?DatabaseApiRateLimiter $limiter = null;
-
-    private function getLimiter(): DatabaseApiRateLimiter
-    {
-        // IP単位のクォータ（/database API とはキー空間を分ける）
-        return $this->limiter ??= new DatabaseApiRateLimiter('mcp_' . getIP(), $this->fileStorage);
-    }
-
-    /**
      * サイト全体での同時実行を MAX_GLOBAL_SLOTS 件に制限する（サーバ保護）。
-     * ロックはスクリプト終了時に自動解放される。
+     * ロックはスクリプト終了時に自動解放される。回数のレートリミットは掛けない方針。
+     * DB を読むツールの実行前に必ず呼ぶ。
      */
     private function acquireGlobalSlot(): void
     {

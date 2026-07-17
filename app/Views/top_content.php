@@ -11,9 +11,9 @@ $enableAdsense = true;
 viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
-    <?php if ($enableAdsense): ?>
-        <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
-    <?php endif ?>
+    <?php // トップはオファーウォールを出さない方針のため gTag（adsbygoogle.js）自体を読み込まない。
+          // display広告停止中もトップ以外はオファーウォール用に gTag を出している（GoogleAdsenseConfig::$enableOfferwallTag）。
+          // 復活させる場合: if ($enableAdsense) { \App\Views\Ads\GoogleAdsense::gTag(); } ?>
 
     <?php // トップ表示時は最上部に独自の検索を置くため、ヘッダーの検索ボタンは隠す（hideSearchButton） ?>
     <?php // ヒーロー側が h1 を持つため、ヘッダーのサイトタイトルは p に降格（demoteTitle） ?>

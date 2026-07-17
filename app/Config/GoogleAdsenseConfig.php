@@ -8,13 +8,23 @@ class GoogleAdsenseConfig
     static string $googleAdsenseClient = 'ca-pub-2330982526015125'; // 広告クライアントID
 
     /**
-     * AdSense 広告全体（display広告ユニット・adsbygoogle.js タグ・アンカー広告）の有効/無効。
+     * display広告ユニット（<ins> 枠・loadAdsTag）の有効/無効。
      *
-     * 運用方針転換により一旦 false（全停止）。各 View の GoogleAdsense::output() / gTag() /
+     * 運用方針転換により一旦 false（全停止）。各 View の GoogleAdsense::output() /
      * loadAdsTag() 呼び出しは残すが、false の間はクラス側の冒頭ガードで何も出力しない。
      * 復活させたいときは true に戻すだけでよい。ads.txt はアカウント維持のため出力を続ける。
      */
     static bool $enableAds = false;
+
+    /**
+     * オファーウォール等のページ単位メッセージ用に adsbygoogle.js タグ（gTag）を出力するか。
+     *
+     * display広告停止中（$enableAds=false）もオファーウォールは収益源として継続するため
+     * true。トップページだけはオファーウォールを出さない方針のため、top_content.php 側で
+     * gTag の呼び出し自体を外してある（このフラグはトップ以外の gTag 呼び出しに効く）。
+     * 全部止めたいときはこれも false にする。
+     */
+    static bool $enableOfferwallTag = true;
 
     /**
      * アンチアドブロック（ad_guard: 未表示検出→全画面オーバーレイ）の有効/無効。
