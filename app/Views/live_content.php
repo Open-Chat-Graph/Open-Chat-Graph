@@ -3,6 +3,7 @@
 <?php viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header') ?>
     <!-- オープンチャット表示ヘッダー -->

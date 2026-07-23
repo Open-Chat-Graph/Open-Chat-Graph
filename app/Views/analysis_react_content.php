@@ -34,6 +34,7 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         }
     </style>
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
 </head>
 
 <body style="margin: 0;">

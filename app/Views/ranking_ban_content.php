@@ -7,6 +7,7 @@ use Shadow\Kernel\Reception as R;
 viewComponent('head', compact('_css', '_meta')) ?>
 
 <body class="body">
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <!-- 固定ヘッダー -->
     <?php viewComponent('site_header', compact('_updatedAt')) ?>
     <main style="max-width: 812px; padding: 0 1rem; overflow: hidden;">

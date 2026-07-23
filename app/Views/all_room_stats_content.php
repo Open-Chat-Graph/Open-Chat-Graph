@@ -27,6 +27,7 @@ function trendColorClass(int $value, string $positiveClass = 'text-emerald-600 d
 ?>
 
 <body>
+    <?php \App\Views\Ads\GoogleAdsense::gTag() ?>
     <div class="body">
         <?php viewComponent('site_header') ?>
         <main style="overflow: hidden;">

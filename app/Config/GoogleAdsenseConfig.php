@@ -20,8 +20,7 @@ class GoogleAdsenseConfig
      * オファーウォール等のページ単位メッセージ用に adsbygoogle.js タグ（gTag）を出力するか。
      *
      * display広告停止中（$enableAds=false）もオファーウォールは収益源として継続するため
-     * true。トップページだけはオファーウォールを出さない方針のため、top_content.php 側で
-     * gTag の呼び出し自体を外してある（このフラグはトップ以外の gTag 呼び出しに効く）。
+     * true。トップページ・Labs 配下を含む全ページで gTag を呼び出している。
      * 全部止めたいときはこれも false にする。
      */
     static bool $enableOfferwallTag = true;
