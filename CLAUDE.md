@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **dev-env** — 環境の起動・操作（Docker/Makefile・Mock・Shared mode・Codespaces・CI・ポート一覧）
 - **coding-guide** — 実装（ページ追加MVC・DBアクセス・スキーマ変更・DI/ServiceProvider・クローラ設定・フロントビルド・キャッシュ生成/genetop の詳細）
-- **pr-guide** — PR・コミット（タイトル/本文の書き方・スクショの撮り方/添付・skip-ci/skip-post・デプロイ確認手順・署名の詳細）
+- **pr-guide** — PR・コミット（タイトル/本文の書き方・skip-ci/skip-post・デプロイ確認手順・署名の詳細）
 
 ## インフラ操作（oc-infra スキル・本人のみ）
 
@@ -34,9 +34,11 @@ ln -sfn ~/repos/oc-infra ~/.claude/skills/oc-infra   # /oc-infra スキルとし
 
 ### 環境保護（最重要）
 
-- `.env` の `DATA_PROTECTION=true` のときは本番データを使用した環境。**`make up-mock` / `make ci-test` 等の mock環境操作はユーザーの明示的な指示なしに実行してはいけない**（本番DBが破壊される）
-- ただし禁止対象は「本番DBを壊す mock環境操作」だけ。phpunit（`docker compose exec app vendor/bin/phpunit <path>`）や curl でローカル環境を叩く類のテストは普通に実行してよい（「テスト全般がNG」ではない）
-- `DATA_PROTECTION=false` のときはテスト実行も mock環境の操作も自己判断で自由に行ってよい
+`.env` の `DATA_PROTECTION=true` は本番データを載せた環境。このとき **`make up-mock` / `make ci-test` など
+mock環境を作り直す操作だけ**は、明示の指示なしに実行してはいけない（本番DBが飛ぶ）。
+
+禁止はそれだけで、phpunit（`docker compose exec app vendor/bin/phpunit <path>`）や curl でローカルを叩く
+検証は普通にやってよい。`DATA_PROTECTION=false` なら mock環境の操作も含め自由。
 
 ### MimimalCMS フレームワーク本体は改造しない
 
@@ -77,17 +79,26 @@ CI/デプロイの挙動など実態を変えたら、対応する記述も同�
 
 対象クラス・具体例は coding-guide。
 
+### 依頼されたら本番リリースまで一気にやる
+
+「やって」と言われたら、実装・PR・stg デプロイ・本番デプロイまで通しで進める。途中で止めて指示を待たない。
+例外は次の2つだけ:
+
+1. **stg に出た時点で、確認用の URL を提示して OK をもらう**。OK が出てから本番（stg→main 昇格 PR）へ進む
+2. **X（SNS）へ自動投稿するかどうかは毎回聞く**。それ以外は聞かずに進める
+
+本番デプロイは Deploy job（`deploy.yml`）が success になるまで見届けてから完了と報告する。
+本番・stg への SSH は、依頼された作業に必要なら行ってよい（自発的な調査目的では入らない）。
+
 ### PR・コミット
 
 - `docker compose`（スペース区切り）を使う。`docker-compose` は不可
-- UI を変えた PR は実装後のスクショを本文に必ず添付する
 - PR タイトルは一般人に伝わる書き方（コード用語を避け、具体数値と業務影響。SNS に自動投稿される）
 - PHP 非変更の PR はデフォルトで skip-ci（確実に効かせるため PR タイトルを `skip-ci:` 始まりに。例外条件あり）
-- マージで終わりにしない。本番 Deploy job（`deploy.yml`）が success になるまで見届けてから完了報告する。本番 SSH はしない
 - 全コミット・全 GitHub 投稿（PR本文・issue・コメント）の末尾に環境署名を付ける（`Co-Authored-By` は付けない。他リポにも適用）:
 
   ```
-  🤖 Generated with Claude Code (<モデルID>)
+  🤖 Generated with Claude Code
   Committed from: <hostname>:<作業ディレクトリ(~短縮)>
   ```
 

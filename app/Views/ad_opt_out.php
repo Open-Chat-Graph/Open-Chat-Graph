@@ -120,7 +120,10 @@ $topUrl = url();
             color: var(--mist);
         }
 
-        input[type="password"] {
+        /* 合言葉は日本語なので type="password" は使わない。iOS は安全入力欄(secure text entry)で
+           日本語IMEを無効にして英数キーボードに固定するため、日本語の合言葉が打てなくなる。
+           伏せ字にもしない（滅多に開かない隠しページで、打った文字が見えないほうが不便）。 */
+        input.secret {
             width: 100%;
             padding: 15px 16px;
             font-family: var(--mono);
@@ -134,7 +137,7 @@ $topUrl = url();
             transition: border-color .18s, box-shadow .18s;
         }
 
-        input[type="password"]:focus-visible {
+        input.secret:focus-visible {
             border-color: var(--ember);
             box-shadow: 0 0 0 3px rgba(232, 93, 4, .22);
         }
@@ -387,7 +390,7 @@ $topUrl = url();
             <form method="post" action="">
                 <div class="field">
                     <label for="passphrase">合言葉</label>
-                    <input type="password" id="passphrase" name="passphrase" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required autofocus>
+                    <input type="text" class="secret" id="passphrase" name="passphrase" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required autofocus>
                 </div>
                 <button type="submit">通る</button>
             </form>
