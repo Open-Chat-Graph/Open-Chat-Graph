@@ -36,6 +36,34 @@ class GoogleAdsenseConfig
     static bool $enableAdBlockGuard = false;
 
     /**
+     * 広告を一切出さないオープンチャット（open_chat.id のリスト）
+     *
+     * ここに ID を書いた部屋では、その部屋のページ（`/oc/{id}` と `/oc/{id}/jump`）から
+     * AdSense 関連の出力が全て消える:
+     *   - adsbygoogle.js の読み込み（GoogleAdsense::gTag）→ 自動広告・オファーウォールも出ない
+     *   - 広告枠 <ins>（GoogleAdsense::output）と push スクリプト（loadAdsTag）
+     *   - アンチアドブロックのオーバーレイ（ad_guard）
+     *
+     * 後から増やすときはこの配列に ID を1行足すだけ（他のファイルは触らなくてよい）:
+     *   123456, // 追加理由をコメントで残す
+     *
+     * ※ ここに書くのは URL の `/oc/` に続く数値 ID（open_chat.id）。LINE の emid ではない。
+     */
+    static array $adDisabledOpenChatIds = [
+        137181,
+        149382,
+        473106,
+    ];
+
+    /**
+     * 指定の部屋が「広告を一切出さない部屋」かどうか
+     */
+    public static function isAdDisabledOpenChat(int $openChatId): bool
+    {
+        return in_array($openChatId, self::$adDisabledOpenChatIds, true);
+    }
+
+    /**
      * Google AdSense広告スロット設定
      *
      * キー: スロット識別子（文字列）
