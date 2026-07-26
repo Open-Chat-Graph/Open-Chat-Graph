@@ -35,6 +35,12 @@ if (!\App\Config\GoogleAdsenseConfig::$enableAdBlockGuard) {
     return;
 }
 
+// 広告非表示の部屋（GoogleAdsenseConfig::$adDisabledOpenChatIds）でも何も出力しない。
+// そもそも広告枠が無いので検出は成立しないが、広告関連のスクリプトを一切出さないため。
+if (\App\Views\Ads\GoogleAdsense::isSuppressed()) {
+    return;
+}
+
 // --- 乱数識別子（毎リクエスト） ---
 $rid = static function (): string {
     return 'o' . substr(bin2hex(random_bytes(8)), 0, 10);
