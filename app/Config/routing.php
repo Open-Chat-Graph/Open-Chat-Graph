@@ -12,6 +12,7 @@ use App\Controllers\Api\DatabaseApiController;
 use App\Controllers\Api\McpApiController;
 use Shadow\Kernel\Route;
 use App\Services\Admin\AdminAuthService;
+use App\Services\Ads\AdOptOutService;
 use App\Controllers\Api\OpenChatRankingPageApiController;
 use App\Controllers\Api\OpenChatChartApiController;
 use App\Controllers\Api\AdvancedGrowthAnalysisApiController;
@@ -22,6 +23,7 @@ use App\Controllers\Pages\AdminCommentImageController;
 use App\Controllers\Pages\AdminBanUserController;
 use App\Controllers\Pages\AdminCommentLogController;
 use App\Controllers\Pages\AdminRecommendTagController;
+use App\Controllers\Pages\AdOptOutPageController;
 use App\Controllers\Pages\FuriganaPageController;
 use App\Controllers\Pages\IndexPageController;
 use App\Controllers\Pages\JumpOpenChatPageController;
@@ -419,6 +421,20 @@ Route::path('admin/cookie')
             return false;
 
         return redirect();
+    });
+
+// 広告オプトアウト設定ページ（合言葉を知っている人だけ、自分のブラウザで広告を消せる）。
+// 管理者クッキーは不要（合言葉のみで判定）。合言葉と導出鍵は secrets（$adOptOutPassphrase /
+// $adOptOutSecret）にあり、未設定の環境ではページ自体を出さない。
+// CDN・オリジンにキャッシュさせないため noStore()。GET で CSRF クッキーを発行し POST で検証する。
+Route::path('admin/disable-ads@get@post', [AdOptOutPageController::class, 'index'])
+    ->middleware([VerifyCsrfToken::class])
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '' || !AdOptOutService::isConfigured()) {
+            return false;
+        }
+
+        noStore();
     });
 
 // 管理者かどうかをサーバ側で検証する軽量エンドポイント（広告ブロック検出 ad_guard から呼ぶ）。

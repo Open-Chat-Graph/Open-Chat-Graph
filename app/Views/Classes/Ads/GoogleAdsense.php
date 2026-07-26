@@ -59,6 +59,9 @@ class GoogleAdsense
         $slotId = $config['slotId'];
         $cssClass = $config['cssClass'] ?? null;
 
+        // 広告オプトアウト（合言葉）のガードを先に出す。枠を畳む CSS がここで入る。
+        AdOptOutGuard::render();
+
         // レスポンシブ広告（CSSクラスがnull）
         if ($cssClass === null) {
             self::responsive($slotId, 'responsive-google', $fullWidthResponsive);
@@ -108,12 +111,18 @@ class GoogleAdsense
         if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
+        AdOptOutGuard::render();
+        $optOut = AdOptOutGuard::isEnabled()
+            ? 'if (window.' . AdOptOutGuard::flagVar() . ') return;'
+            : '';
+
         // 遅延読み込み(IntersectionObserver)はしない。広告ブロック検出(ad_guard)
         // （window load 時の未処理チェック・10秒間の1px潰し監視）は「広告がページ表示時に
         // 読み込まれている」前提のため、遅延させると検出が成立しなくなる
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                {$optOut}
                 document.querySelectorAll('ins.manual').forEach(function() {
                     (adsbygoogle = window.adsbygoogle || []).push({});
                 });
@@ -136,6 +145,13 @@ class GoogleAdsense
         // display広告停止中もオファーウォール（全画面メッセージ）は継続するため、
         // タグ自体は $enableOfferwallTag が有効なら出力する
         if (!GoogleAdsenseConfig::$enableAds && !GoogleAdsenseConfig::$enableOfferwallTag) return;
+
+        // 広告オプトアウト（合言葉）のガードは stg・ローカルでも出す。
+        // stg/ローカルはそもそも広告タグを読み込まないので、ここで出しておかないと
+        // 「クッキーが正しく認識されるか」を本番以外で一切確認できなくなるため
+        // （ガードは html にクラスを付けるだけなので、広告が無い環境では無害）。
+        AdOptOutGuard::render();
+
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         if ($suppressOfferwall) {
@@ -151,12 +167,13 @@ class GoogleAdsense
             EOT;
         }
 
-        $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
+        $src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}";
 
-        echo <<<EOT
-        <script async {$dataOverlaysAttr}id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
-        EOT;
+        // 広告オプトアウト（合言葉）に対応するため、素の <script src> ではなく
+        // 「JS が昇格させたときだけ本物になる」形で出力する。
+        // オプトアウトしていない訪問者では従来と同じ async 読み込みになり、挙動は変わらない。
+        echo AdOptOutGuard::scriptTag($src, 'ads-by-google-script', $dataOverlays);
 
         self::anchorGuard();
     }

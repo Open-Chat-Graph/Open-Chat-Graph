@@ -223,6 +223,10 @@ SecretsConfig::$cloudFlareZoneId = '';
 SecretsConfig::$cloudFlareApiKey = '';
 SecretsConfig::$yahooClientId = '';
 SecretsConfig::$discordWebhookUrl = 'https://discord.com/api/webhooks/x/x';
+// 広告オプトアウト(/admin/disable-ads)のローカル用ダミー値。
+// 本番・stg の合言葉と鍵は各サーバの prod-secrets.php にあり、Git には入れない。
+SecretsConfig::$adOptOutPassphrase = 'local';
+SecretsConfig::$adOptOutSecret = 'local-dummy-secret-not-used-in-production';
 
 MimimalCmsConfig::$dbHost = 'mysql';
 MimimalCmsConfig::$dbUserName = 'root';
