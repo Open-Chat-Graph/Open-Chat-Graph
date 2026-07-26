@@ -41,6 +41,14 @@ if (\App\Views\Ads\GoogleAdsense::isSuppressed()) {
     return;
 }
 
+// 広告オプトアウト（/admin/disable-ads の合言葉）済みの人は、そもそも広告が出ない状態なので
+// 検出もオーバーレイも行わない。判定は同じガードが立てるグローバルフラグを見るだけ
+// （フラグが undefined ＝ 通常の訪問者では従来どおり検出が動く＝フェイルオープン）。
+\App\Views\Ads\AdOptOutGuard::render();
+$optOutGuardJs = \App\Views\Ads\AdOptOutGuard::isEnabled()
+    ? 'if (window.' . \App\Views\Ads\AdOptOutGuard::flagVar() . ') { return; }'
+    : '';
+
 // --- 乱数識別子（毎リクエスト） ---
 $rid = static function (): string {
     return 'o' . substr(bin2hex(random_bytes(8)), 0, 10);
@@ -150,6 +158,7 @@ $zindex = 2147483000 + random_int(0, 647);
 ?>
 <script>/* <?php echo $nonce; ?> */(function () {
   try {
+    <?php echo $optOutGuardJs; ?>
     var <?php echo $N['key']; ?> = <?php echo $keyJs; ?>;
     function <?php echo $N['dec']; ?>(a) {
       var b = new Uint8Array(a.length);

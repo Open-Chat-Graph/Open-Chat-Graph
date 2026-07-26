@@ -22,6 +22,12 @@ class AppConfig
     ];
 
     /**
+     * 通用口ページ（/admin/disable-ads）専用のOGP画像。
+     * 再生成: batch/exec/generate_premium_ogp.php（PremiumOgpImageGenerator）
+     */
+    const OGP_PREMIUM_IMAGE_FILE_PATH = 'assets/ogp-premium.png';
+
+    /**
      * 現在ロケールのデフォルトOGP画像パスを解決する（未知の urlRoot は日本語版へフォールバック）。
      * og:image メタ（Metadata）とOGカード生成失敗時の送出（OgCardHttpResponder）が同じ解決を共有する。
      */

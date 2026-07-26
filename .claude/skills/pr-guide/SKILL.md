@@ -1,53 +1,57 @@
 ---
 name: pr-guide
-description: PR・コミット作法の詳細。タイトル/本文の書き方（一般人向け・用語の言い換え）、UI スクリーンショットの撮り方と添付、skip-ci/skip-post の挙動と例外、本番デプロイの確認手順、環境署名フォーマット。PR 作成・コミット・マージ・デプロイ確認の前に読む。
+description: PR・コミット作法の詳細。タイトル/本文の書き方（一般人向け・用語の言い換え）、stg 確認から本番昇格までの進め方、skip-ci/skip-post の挙動と例外、本番デプロイの確認手順、環境署名フォーマット。PR 作成・コミット・マージ・デプロイ確認の前に読む。
 ---
 
 # PR・コミットガイド
 
-> 前提: CLAUDE.md の必守ルール（スクショ添付・デプロイ見届け・署名・skip-ci デフォルト方針）に従う。本ガイドはその具体的な手順と書き方。
+> 前提: CLAUDE.md の必守ルール（本番リリースまで通しで進める・署名・skip-ci デフォルト方針）に従う。本ガイドはその具体的な手順と書き方。
 
-## 画面(UI)を変えた PR はスクリーンショットを本文に必ず添付する
+## UI を変えた PR にスクリーンショットは貼らない
 
-画面に機能を追加・改修した PR は、**実装後の各画面のスクリーンショットを PR 本文に貼る**。文章だけだと
-レビュー側がどんな見た目になるか判断できないため。
+CLI から GitHub の画像 CDN へ直接アップロードできず、人手のドラッグ&ドロップが必要になって手が止まるため、
+**PR 本文へのスクショ添付は求めない**（2026-07-26 ユーザー指示）。見た目の確認は stg の URL を提示して
+ブラウザで見てもらう形に一本化する。スクショホスティング用のブランチも作らない。
 
-- 撮り方: 実環境（`.env` の `HTTPS_PORT`）を headless Chrome（`google-chrome --headless=new
-  --ignore-certificate-errors --screenshot=...`）かブラウザで開いて撮る。エラー画面・5xx・空状態など特殊な
-  状態は、対象エンドポイントに一時的に例外を throw する等で再現してから撮り、**撮影後に必ず元へ戻す**。
-- 添付方法: GitHub web UI へのドラッグ&ドロップで添付する（CLI から GitHub の画像 CDN へ直接アップロードは
-  できない）。**スクショホスティング用のブランチ（`assets/pr-screenshots` 等）は作らない**（2026-06-27 ユーザー指示）。
+見た目を自分で確認したいときは headless Chrome で実環境（`.env` の `HTTPS_PORT`）を開いて撮ればよいが、
+それは自分の検証用であって PR に貼るものではない。
 
-## 報告は本番デプロイ完了まで待つ
+## stg で確認をもらってから本番へ
 
-PR をマージして終わりにしない。**本番デプロイ（`deploy.yml` の Deploy job）が success になるまで見届けてから「完了」と報告する**。マージ＝デプロイ成功ではない（別 PR が `deploy.yml` 等に残した不整合で本番デプロイだけが落ちることがある）。
+1. 作業ブランチ → **base=stg** で PR を出し、CI(test) が pass したらマージする
+2. stg の Deploy job が success になったら、**確認用 URL をユーザーに提示して OK をもらう**
+   （stg は Basic 認証あり。`SecretsConfig::$stagingBasicAuthUser` / `$stagingBasicAuthPassword`）
+3. OK が出たら stg→main の昇格 PR を作り、**test が success になってからマージ**する
+   （待たずにマージすると本番デプロイの CI ゲートが落ちる）
+4. 本番 Deploy job が success になるまで見届けてから「完了」と報告する
+
+マージ＝デプロイ成功ではない（別 PR が `deploy.yml` 等に残した不整合で本番デプロイだけが落ちることがある）。
 
 - main マージ後、`gh run list --workflow=deploy.yml --limit 4` で該当 Deploy run を特定し、`gh run view <id> --json status,conclusion` を completed/success までポーリングする。本番かどうかの確実な見分け方は env `IS_STG: false`（run タイトルの `[PROD]` は `pr-title-prefix.yml` が main 向け PR タイトルに自動付与したもの）。
 - 失敗したら原因を直して再デプロイし、success を確認してから報告する。
-- 本番 SSH はしない（確認は Actions の結果まで）。
 
 ## 環境署名（全コミット・全 GitHub 投稿）
 
-GitHub に投稿する本文（PR 本文・issue・PR/issue コメント等）の**末尾**に、区切り線を入れて以下の署名ブロックを付ける。どのマシン・ディレクトリから、どのモデル・ツールで投稿されたかを残すため。
+GitHub に投稿する本文（PR 本文・issue・PR/issue コメント等）の**末尾**に、区切り線を入れて以下の署名ブロックを付ける。どのマシン・ディレクトリから投稿されたかを残すため。
 
 ```markdown
 ---
-🤖 Generated with Claude Code (<モデルID>)
+🤖 Generated with Claude Code
 Posted from: `<hostname>:<作業ディレクトリ>`
 ```
 
-- モデルはその時のセッションの実際のモデル ID を書く（表示名は省く。例: Opus 4.8 → `claude-opus-4-8[1m]`）
 - `<hostname>` は `hostname`、`<作業ディレクトリ>` は `pwd` の値だが**ホームディレクトリは `~` に短縮**する（例: `/home/user/repos/Open-Chat-Graph` → `user-B550M-Pro4:~/repos/Open-Chat-Graph`）
-- **コミットメッセージにも毎回 環境署名を入れる**（PR/issue/コメント本文だけでなく、全コミット）。末尾に署名2行を付ける。`Co-Authored-By: Claude ...` は 🤖 行とモデル情報が重複するので**付けない**（全廃）:
+- モデル ID は書かない（Claude Code 側の方針でリポジトリへ残す成果物にモデル識別子を入れられないため。以前の署名には入っていたが現在は不可）
+- **コミットメッセージにも毎回 環境署名を入れる**（PR/issue/コメント本文だけでなく、全コミット）。末尾に署名2行を付ける。`Co-Authored-By: Claude ...` は 🤖 行と重複するので**付けない**（全廃）:
 
   ```
   <コミット本文>
 
-  🤖 Generated with Claude Code (claude-opus-4-8[1m])
+  🤖 Generated with Claude Code
   Committed from: user-B550M-Pro4:~/repos/Open-Chat-Graph
   ```
 
-  - モデル・hostname・ディレクトリの書き方は上記と同じ（ホームは `~` 短縮、リポごとに実ディレクトリを書く）。
+  - hostname・ディレクトリの書き方は上記と同じ（ホームは `~` 短縮、リポごとに実ディレクトリを書く）。
   - **このルールは infra リポ(oc-infra)など他リポのコミットにも全て適用する**。
 
 ## タイトルの書き方
@@ -119,12 +123,29 @@ CI Test (`ci.yml`) は Mock 環境のクローリング＋URLテストのみで�
 - PR に `skip-ci` ラベルを付ける
 - または PR タイトルを `skip-ci:` 始まりにする（例: `skip-ci: Fix typo in README`）
 
-**デフォルト方針（PHP を触らない PR は skip-ci）:**
-CI(`ci.yml`)は Mock 環境のクローリング＋URLテストなので、その挙動は基本的に PHP 側で決まる。
-そのため **PHP コードを一切変更していない PR は、デフォルトで skip-ci にする**（フロント JS/CSS・
-ドキュメント・翻訳 JSON 等だけの変更）。確実に効かせるため **PR タイトルを `skip-ci:` 始まりにする**
-（ラベルだけは PR 作成時にレースして効かないことがある。既存 PR に後付けする場合は、ラベルを
-付けてから次の push をすると `synchronize` で再評価されて効く）。
+**デフォルト方針（stg 向けは基本 skip-ci・本番前に手動 CI）:**
+
+CI(`ci.yml`)がやっているのは Mock 環境のクローリングと URL テストだけ。つまり **cron のクローリング処理に
+影響しない変更では、CI の完走を待つ意味がない**。そのため:
+
+- **stg 向け PR は、クローリング周りに影響しない変更なら常に skip-ci にする**（View/CSS/JS・ドキュメント・
+  管理画面・クローリングを経由しないページ追加など）。確実に効かせるため **PR タイトルを `skip-ci:` 始まりにする**
+  （ラベルだけは PR 作成時にレースして効かないことがある。既存 PR に後付けする場合は、ラベルを
+  付けてから次の push をすると `synchronize` で再評価されて効く）
+- **本番へ上げる直前に CI を手動実行し、success を確認してから昇格 PR をマージする**:
+
+  ```bash
+  gh workflow run ci.yml --ref stg
+  gh run list --workflow=ci.yml --limit 1   # run id を取って completed/success までポーリング
+  ```
+
+  手動実行（`workflow_dispatch`）では skip 判定が効かず、必ず本体のテストが走る（skip 判定は
+  `github.event_name == 'pull_request'` のときだけ）。
+
+**なぜ本番前の手動実行が要るか（重要）:**
+`ci.yml` は **head が `stg` の PR を無条件で skip する**（`[ "$HEAD" = "stg" ]`）。つまり stg→main の昇格 PR では
+CI が実質走らない。さらに `deploy.yml` の「Check CI status」ゲートは `success` だけでなく **`skipped` も通す**。
+結果として、手動実行しない限り一度もテストされないまま本番へ出てしまう。
 
 注意: stg/main 向け PR はタイトル先頭に `[STG]`/`[PROD]` が自動付与される（`pr-title-prefix.yml`）ため、
 付与後の push ではタイトル判定が効かなくなる。確実なのは「タイトル `skip-ci:` 始まり（opened 時に判定される）
@@ -151,7 +172,8 @@ CI(`ci.yml`)は Mock 環境のクローリング＋URLテストなので、そ�
 - PR に `skip-post` ラベルを付ける
 - または PR タイトルを `skip-post:` 始まりにする（例: `skip-post: Internal configuration update`）
 
-X 自動投稿はリリース履歴を兼ねるため、**skip-post を自己判断で付けない**（ユーザー指示があるときだけ）。
+X 自動投稿はリリース履歴を兼ねるため、**付けるかどうかは自己判断せず毎回ユーザーに聞く**（CLAUDE.md の
+「聞くのは X 投稿の可否だけ」がこれにあたる）。
 
 ### 任意テキストのX投稿（PRマージ形式ではない普通の投稿）
 
