@@ -53,6 +53,7 @@ class GoogleAdsenseConfig
         137181,
         149382,
         473106,
+        453823,
     ];
 
     /**
