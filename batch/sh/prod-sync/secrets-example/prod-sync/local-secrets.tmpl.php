@@ -30,6 +30,9 @@ SecretsConfig::$cloudFlareZoneId = '';
 SecretsConfig::$cloudFlareApiKey = '';
 SecretsConfig::$yahooClientId = 'REPLACE_ME';
 SecretsConfig::$discordWebhookUrl = 'REPLACE_ME';
+// 広告オプトアウト(/admin/disable-ads)。空のままだとこの機能は無効(ページも404)になる。
+SecretsConfig::$adOptOutPassphrase = 'REPLACE_ME';
+SecretsConfig::$adOptOutSecret = 'REPLACE_ME';
 
 MimimalCmsConfig::$dbHost = '${MYSQL_HOST}';
 MimimalCmsConfig::$dbUserName = '${MYSQL_USER}';

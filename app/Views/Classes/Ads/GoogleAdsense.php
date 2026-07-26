@@ -8,6 +8,36 @@ use App\Config\GoogleAdsenseConfig;
 class GoogleAdsense
 {
     /**
+     * このリクエストで広告出力を全面停止するか（部屋単位の広告非表示）
+     *
+     * View の呼び出し側（oc_content / oc_jump_page など）を書き換えるのではなく、
+     * このクラスの出口（output / loadAdsTag / gTag）と ad_guard で一括して止める。
+     * こうしておけば新しい広告枠や新しいページを足しても、対象の部屋では自動的に
+     * 「広告タグを一切読み込まない」状態が保たれる（消し忘れが起きない）。
+     */
+    private static bool $suppressed = false;
+
+    /**
+     * 部屋ページのコントローラから呼ぶ。対象の部屋なら以降このリクエストの広告出力を全て止める。
+     *
+     * 対象の判定は GoogleAdsenseConfig::$adDisabledOpenChatIds（ID を足すだけで増やせる）。
+     */
+    public static function suppressForOpenChat(int $openChatId): void
+    {
+        if (GoogleAdsenseConfig::isAdDisabledOpenChat($openChatId)) {
+            self::$suppressed = true;
+        }
+    }
+
+    /**
+     * このリクエストが広告全面停止かどうか（ad_guard など View 側の分岐用）
+     */
+    public static function isSuppressed(): bool
+    {
+        return self::$suppressed;
+    }
+
+    /**
      * 広告を出力
      *
      * @param string $slotKey スロット識別子（例: 'ocTopRectangle'）
@@ -18,6 +48,7 @@ class GoogleAdsense
      */
     public static function output(string $slotKey, bool $fullWidthResponsive = true)
     {
+        if (self::$suppressed) return;
         if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging) return;
 
@@ -27,6 +58,9 @@ class GoogleAdsense
 
         $slotId = $config['slotId'];
         $cssClass = $config['cssClass'] ?? null;
+
+        // 広告オプトアウト（合言葉）のガードを先に出す。枠を畳む CSS がここで入る。
+        AdOptOutGuard::render();
 
         // レスポンシブ広告（CSSクラスがnull）
         if ($cssClass === null) {
@@ -73,8 +107,14 @@ class GoogleAdsense
 
     public static function loadAdsTag()
     {
+        if (self::$suppressed) return;
         if (!GoogleAdsenseConfig::$enableAds) return;
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
+
+        AdOptOutGuard::render();
+        $optOut = AdOptOutGuard::isEnabled()
+            ? 'if (window.' . AdOptOutGuard::flagVar() . ') return;'
+            : '';
 
         // 遅延読み込み(IntersectionObserver)はしない。広告ブロック検出(ad_guard)
         // （window load 時の未処理チェック・10秒間の1px潰し監視）は「広告がページ表示時に
@@ -82,6 +122,7 @@ class GoogleAdsense
         echo <<<EOT
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                {$optOut}
                 document.querySelectorAll('ins.manual').forEach(function() {
                     (adsbygoogle = window.adsbygoogle || []).push({});
                 });
@@ -97,9 +138,20 @@ class GoogleAdsense
      */
     public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
+        // 広告非表示の部屋では adsbygoogle.js 自体を読み込まない
+        // （自動広告・オファーウォールも含めて一切出さないため）
+        if (self::$suppressed) return;
+
         // display広告停止中もオファーウォール（全画面メッセージ）は継続するため、
         // タグ自体は $enableOfferwallTag が有効なら出力する
         if (!GoogleAdsenseConfig::$enableAds && !GoogleAdsenseConfig::$enableOfferwallTag) return;
+
+        // 広告オプトアウト（合言葉）のガードは stg・ローカルでも出す。
+        // stg/ローカルはそもそも広告タグを読み込まないので、ここで出しておかないと
+        // 「クッキーが正しく認識されるか」を本番以外で一切確認できなくなるため
+        // （ガードは html にクラスを付けるだけなので、広告が無い環境では無害）。
+        AdOptOutGuard::render();
+
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         if ($suppressOfferwall) {
@@ -115,12 +167,13 @@ class GoogleAdsense
             EOT;
         }
 
-        $dataOverlaysAttr = $dataOverlays ? ('data-overlays="' . $dataOverlays . '" ') : '';
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
+        $src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}";
 
-        echo <<<EOT
-        <script async {$dataOverlaysAttr}id="ads-by-google-script" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}" crossorigin="anonymous"></script>
-        EOT;
+        // 広告オプトアウト（合言葉）に対応するため、素の <script src> ではなく
+        // 「JS が昇格させたときだけ本物になる」形で出力する。
+        // オプトアウトしていない訪問者では従来と同じ async 読み込みになり、挙動は変わらない。
+        echo AdOptOutGuard::scriptTag($src, 'ads-by-google-script', $dataOverlays);
 
         self::anchorGuard();
     }

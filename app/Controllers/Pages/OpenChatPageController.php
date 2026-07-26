@@ -14,6 +14,7 @@ use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
 use App\Services\StaticData\StaticDataFile;
+use App\Views\Ads\GoogleAdsense;
 use App\Views\Meta\OcPageMeta;
 use App\Views\Schema\OcPageSchema;
 use App\Views\Schema\PageBreadcrumbsListSchema;
@@ -43,6 +44,10 @@ class OpenChatPageController
     ) {
         $this->fileStorage = $fileStorage;
         AppConfig::$listLimitTopRanking = 5;
+
+        // 広告非表示に指定された部屋なら、このリクエストの広告出力を全て止める
+        // （GoogleAdsenseConfig::$adDisabledOpenChatIds に ID を足すだけで増やせる）
+        GoogleAdsense::suppressForOpenChat($open_chat_id);
 
         $_adminDto = isset($isAdminPage) ? $this->getAdminDto($open_chat_id) : null;
 

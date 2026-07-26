@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;;
 
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
+use App\Views\Ads\GoogleAdsense;
 use Shared\MimimalCmsConfig;
 
 class JumpOpenChatPageController
@@ -15,6 +16,10 @@ class JumpOpenChatPageController
     ) {
         $oc = $ocRepo->getOpenChatById($open_chat_id);
         if (!$oc) return false;
+
+        // 広告非表示に指定された部屋なら、このリクエストの広告出力を全て止める
+        // （GoogleAdsenseConfig::$adDisabledOpenChatIds に ID を足すだけで増やせる）
+        GoogleAdsense::suppressForOpenChat($open_chat_id);
 
         $_meta = meta()->setTitle(t('【参加確認】') . $oc['name'])
             ->setDescription(t('【参加確認】') . $oc['description'])
