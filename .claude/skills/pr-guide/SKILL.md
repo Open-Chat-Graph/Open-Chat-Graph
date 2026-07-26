@@ -123,12 +123,29 @@ CI Test (`ci.yml`) は Mock 環境のクローリング＋URLテストのみで�
 - PR に `skip-ci` ラベルを付ける
 - または PR タイトルを `skip-ci:` 始まりにする（例: `skip-ci: Fix typo in README`）
 
-**デフォルト方針（PHP を触らない PR は skip-ci）:**
-CI(`ci.yml`)は Mock 環境のクローリング＋URLテストなので、その挙動は基本的に PHP 側で決まる。
-そのため **PHP コードを一切変更していない PR は、デフォルトで skip-ci にする**（フロント JS/CSS・
-ドキュメント・翻訳 JSON 等だけの変更）。確実に効かせるため **PR タイトルを `skip-ci:` 始まりにする**
-（ラベルだけは PR 作成時にレースして効かないことがある。既存 PR に後付けする場合は、ラベルを
-付けてから次の push をすると `synchronize` で再評価されて効く）。
+**デフォルト方針（stg 向けは基本 skip-ci・本番前に手動 CI）:**
+
+CI(`ci.yml`)がやっているのは Mock 環境のクローリングと URL テストだけ。つまり **cron のクローリング処理に
+影響しない変更では、CI の完走を待つ意味がない**。そのため:
+
+- **stg 向け PR は、クローリング周りに影響しない変更なら常に skip-ci にする**（View/CSS/JS・ドキュメント・
+  管理画面・クローリングを経由しないページ追加など）。確実に効かせるため **PR タイトルを `skip-ci:` 始まりにする**
+  （ラベルだけは PR 作成時にレースして効かないことがある。既存 PR に後付けする場合は、ラベルを
+  付けてから次の push をすると `synchronize` で再評価されて効く）
+- **本番へ上げる直前に CI を手動実行し、success を確認してから昇格 PR をマージする**:
+
+  ```bash
+  gh workflow run ci.yml --ref stg
+  gh run list --workflow=ci.yml --limit 1   # run id を取って completed/success までポーリング
+  ```
+
+  手動実行（`workflow_dispatch`）では skip 判定が効かず、必ず本体のテストが走る（skip 判定は
+  `github.event_name == 'pull_request'` のときだけ）。
+
+**なぜ本番前の手動実行が要るか（重要）:**
+`ci.yml` は **head が `stg` の PR を無条件で skip する**（`[ "$HEAD" = "stg" ]`）。つまり stg→main の昇格 PR では
+CI が実質走らない。さらに `deploy.yml` の「Check CI status」ゲートは `success` だけでなく **`skipped` も通す**。
+結果として、手動実行しない限り一度もテストされないまま本番へ出てしまう。
 
 注意: stg/main 向け PR はタイトル先頭に `[STG]`/`[PROD]` が自動付与される（`pr-title-prefix.yml`）ため、
 付与後の push ではタイトル判定が効かなくなる。確実なのは「タイトル `skip-ci:` 始まり（opened 時に判定される）
