@@ -174,17 +174,23 @@ React ソースは**このリポ内 `frontend/`**（別リポではない）。�
 X（旧Twitter）のプロフィール欄に `https://openchat-review.me/x` を置き、**踏んだ人はそのブラウザを
 閉じるまで広告なし**にする裏口。合言葉は要らない。
 
-- `/x` は `noStore()` でキャッシュさせず、`Set-Cookie`（**有効期限なし＝セッションクッキー**）を返して
-  `/?utm_source=x&utm_medium=profile&utm_campaign=ad_free` へ 302。utm は GA4 で流入を数えるため
+- `/x` は `noStore()` でキャッシュさせず、`Set-Cookie`（**3時間で切れる**）を返して
+  `/?utm_source=x&utm_medium=profile&utm_campaign=ad_free` へ 302。utm は GA4 で流入を数えるため。
+  **Cloudflare 側に `/x` のキャッシュバイパスを入れてある**（ゾーンは Cache Everything なので、
+  入れないと 302＋Set-Cookie がキャッシュされて機能が黙って死ぬ。oc-infra の `cloudflare/CHANGES.md` 参照）
+- **セッションクッキー（expires 0）にしてはいけない**。Chromium は「前回開いていたタブを復元」や
+  アップデート再起動でセッションクッキーごと復元するため、「閉じたら消える」が実態として成立しない
 - クッキー名もトークンも**合言葉側と別**（`X_TOKEN_LABEL` / `X_COOKIE_LABEL`）。ガードは 2 本を独立に
   照合し、どちらか一致で広告オフ。分けている理由は 2 つ:
   - **X 経路だけ失効させられる**（`X_TOKEN_LABEL` の版番号を上げてデプロイ。`$adOptOutSecret` を回すと
     合言葉ユーザーまで巻き添えになる）
   - 同名だと、自分の X リンクを踏んだ瞬間に合言葉の永続クッキーがセッションクッキーで上書きされる
-- **「X から来たか」は判定できない**（iOS の SFSafariViewController は UA が Safari と同一、Android にも
-  X 固有トークンは無い、t.co 経由の Referer は空になりがち）。必須条件にすると正規のフォロワーを弾くので、
-  `isAllowedXEntryReferer()` は「空 or X 系 or 自サイトなら配る／それ以外の外部サイトからの流入では配らない」
-  という弱いフィルタに留めている
+- **UA では「X から来たか」を判定できない**（iOS の SFSafariViewController は UA が Safari と同一、
+  Android にも X 固有トークンは無い）。代わりに **Referer を必須**にしている（`isAllowedXEntryReferer()`）。
+  X のリンクは必ず t.co を経由し、**t.co は実ブラウザに HTTP 200 の HTML＋JS リダイレクトを返す**
+  （bot にだけ 301）ため、t.co がドキュメントとして読み込まれ転送先に `Referer: https://t.co/...` が付く。
+  アプリ内ブラウザも UA は普通のブラウザなので同じ経路。よって **Referer 無し＝X 由来ではない**
+  （ブックマーク・直打ち・コピペ）と見なして配らない。万一 Referer が落ちても広告が出るだけで安全側
 - 追加の secrets は不要（既存の `$adOptOutSecret` から導出）。Cloudflare 側のルール追加も不要
   （`/admin/disable-ads` と同じく `noStore()` で Cache Everything を素通りする）
 

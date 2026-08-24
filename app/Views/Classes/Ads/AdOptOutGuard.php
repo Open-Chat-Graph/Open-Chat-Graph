@@ -15,7 +15,7 @@ use App\Services\Ads\AdOptOutService;
  *
  * 検証するクッキーは2本ある（どちらか一方でも一致すれば広告オフ）:
  *   1. 合言葉（`/admin/disable-ads`）で配る永続クッキー
- *   2. X プロフィールの通用口（`/x`）で配るセッションクッキー（ブラウザを閉じると消える）
+ *   2. X プロフィールの通用口（`/x`）で配る 3 時間で切れるクッキー
  * トークンもクッキー名も別なので、X 経路だけを失効させられる（`AdOptOutService` 参照）。
  *
  * サイトのページは Cloudflare の Cache Everything でキャッシュされるため、サーバが返す HTML は
@@ -130,7 +130,7 @@ class AdOptOutGuard
         $keyJs = '[' . implode(',', self::$keyBytes) . ']';
         $cookieEnc = self::enc(AdOptOutService::cookieName() . '=');
         $hashEnc = self::enc(AdOptOutService::pageHash());
-        // X プロフィールの通用口（/x）で配るセッションクッキー。合言葉側とは別名・別トークンなので
+        // X プロフィールの通用口（/x）で配るクッキー。合言葉側とは別名・別トークンなので
         // 2本を独立に照合する（どちらか一方でも一致すれば広告オフ）。
         $xCookieEnc = self::enc(AdOptOutService::xCookieName() . '=');
         $xHashEnc = self::enc(AdOptOutService::xPageHash());
