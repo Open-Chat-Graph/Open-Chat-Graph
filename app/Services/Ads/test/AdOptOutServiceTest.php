@@ -95,6 +95,8 @@ class AdOptOutServiceTest extends TestCase
             'twitter.com' => ['https://twitter.com/openchat_graph'],
             'mobile.twitter.com' => ['https://mobile.twitter.com/openchat_graph'],
             'Android の X アプリ' => ['android-app://com.twitter.android'],
+            'lit.link（プロフィールのリンク集）' => ['https://lit.link/openchatgraph'],
+            'lit.link のサブドメイン' => ['https://www.lit.link/openchatgraph'],
             '自サイト' => ['https://openchat-review.me/ranking'],
             '自サイト（ポート付き）' => ['https://openchat-review.me:8443/ranking'],
         ];
@@ -121,6 +123,7 @@ class AdOptOutServiceTest extends TestCase
             '検索エンジン' => ['https://www.google.com/'],
             'ホストを詐称した紛らわしいドメイン' => ['https://x.com.evil.example/'],
             'サブドメインに見せかけた文字列' => ['https://notx.com/'],
+            'lit.link に似せた別ドメイン' => ['https://lit.link.evil.example/'],
             'ホストの無いURL' => ['not-a-url'],
         ];
     }

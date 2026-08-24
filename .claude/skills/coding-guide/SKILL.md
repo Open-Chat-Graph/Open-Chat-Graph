@@ -190,7 +190,9 @@ X（旧Twitter）のプロフィール欄に `https://openchat-review.me/x` を�
   X のリンクは必ず t.co を経由し、**t.co は実ブラウザに HTTP 200 の HTML＋JS リダイレクトを返す**
   （bot にだけ 301）ため、t.co がドキュメントとして読み込まれ転送先に `Referer: https://t.co/...` が付く。
   アプリ内ブラウザも UA は普通のブラウザなので同じ経路。よって **Referer 無し＝X 由来ではない**
-  （ブックマーク・直打ち・コピペ）と見なして配らない。万一 Referer が落ちても広告が出るだけで安全側
+  （ブックマーク・直打ち・コピペ）と見なして配らない。万一 Referer が落ちても広告が出るだけで安全側。
+  許可ホストは t.co / x.com / twitter.com に加えて **lit.link**（プロフィールのリンク集）と自サイト、
+  Android の X アプリ（`android-app://com.twitter.android`）
 - 追加の secrets は不要（既存の `$adOptOutSecret` から導出）。Cloudflare 側のルール追加も不要
   （`/admin/disable-ads` と同じく `noStore()` で Cache Everything を素通りする）
 
