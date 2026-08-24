@@ -49,11 +49,14 @@ use App\Config\SecretsConfig;
  *  2. 同じクッキー名にすると、合言葉で入れた永続クッキーが自分の X リンクを踏んだ瞬間
  *     セッションクッキーに上書きされてしまう。
  *
- * 「X から来たか」自体は判定できない（iOS の SFSafariViewController は UA が Safari と同一、
- * Android も X 固有トークンなし、t.co 経由の Referer は空になることが多い）。そこで
- * **必須条件にはせず**、Referer が「空 or X 系 or 自サイト」のときだけ配る＝他サイトへ
- * 転載されたリンクからの流入では配らない、という弱いフィルタだけ掛けている
- * （X の正規流入は referer が空か t.co なので誤爆しない）。
+ * UA からは「X から来たか」を判定できない（iOS の SFSafariViewController は UA が Safari と同一、
+ * Android にも X 固有トークンは無い）。代わりに **Referer を必須条件**にしている。X のリンクは必ず
+ * t.co を経由し、t.co は実ブラウザに HTML＋JS リダイレクトを返す＝ t.co がドキュメントとして
+ * 読み込まれるので、転送先には `Referer: https://t.co/...` が付く。よって Referer の無いリクエストは
+ * X 由来ではない（ブックマーク・直打ち・コピペ）と見なして配らない。
+ *
+ * クッキーは 3 時間で切れる。期限なしのセッションクッキーは Chromium のタブ復元で生き残り、
+ * 「そのセッションだけ」が実態として無期限になってしまうため。
  */
 class AdOptOutService
 {
@@ -81,6 +84,15 @@ class AdOptOutService
 
     /** クッキーの有効期間（秒）: 1年 */
     public const COOKIE_LIFETIME = 3600 * 24 * 365;
+
+    /**
+     * X 通用口で配るクッキーの有効期間（秒）: 3時間
+     *
+     * 期限なしのセッションクッキーにはしない。Chromium は「前回開いていたタブを復元」や
+     * アップデート再起動のときに **セッションクッキーごと復元** するため、「ブラウザを閉じたら消える」
+     * が実態として成立せず、いつまでも広告オフのままになりかねないため。明示的に切る。
+     */
+    public const X_COOKIE_LIFETIME = 3600 * 3;
 
     /**
      * 機能が使える状態か（合言葉と鍵の両方が secrets に入っているか）
@@ -206,34 +218,37 @@ class AdOptOutService
     }
 
     /**
-     * X 通用口のクッキーを発行する（有効期限なし＝ブラウザを閉じるまでのセッションクッキー）
+     * X 通用口のクッキーを発行する（3時間で切れる）
      *
-     * `expires` に 0 を渡すと Set-Cookie に Expires/Max-Age が付かない。永続化させないのが要点で、
-     * 「X から来たそのセッションだけ広告なし」という仕様がこれで成立する。
+     * セッションクッキー（expires 0）にすると Chromium のタブ復元で生き残ってしまい、
+     * 「そのセッションだけ」が実態として無期限になる。明示的に有効期限を切る。
      * 判定はクライアント JS なので httpOnly は必ず false（合言葉側と同じ）。
      */
-    public static function issueXSessionCookie(): void
+    public static function issueXCookie(): void
     {
         cookie(
             [self::xCookieName() => self::xToken()],
-            0,
+            time() + self::X_COOKIE_LIFETIME,
             samesite: 'Lax',
             httpOnly: false
         );
     }
 
     /**
-     * この Referer に対して X 通用口のクッキーを配ってよいか
+     * この Referer に対して X 通用口のクッキーを配ってよいか（**X 由来の Referer 必須**）
      *
-     * 「X から来た」ことは技術的に確認できない（UA も Referer も当てにならない）ので、
-     * ここでやるのは **明らかに X 以外の外部サイトから飛んで来た場合だけ配らない** という
-     * 弱いフィルタ。X の正規流入は Referer が空か t.co なので通る。
+     * X のリンクは必ず t.co を経由し、t.co は **実ブラウザに HTTP 200 の HTML＋JS
+     * (`location.replace`) を返す**（bot にだけ 301）。つまり t.co が本物のドキュメントとして
+     * 読み込まれ、その次の遷移に `Referer: https://t.co/...` が付く。X アプリのアプリ内ブラウザも
+     * UA は普通のブラウザなので同じ経路をたどる。したがって **Referer が空のリクエストは
+     * X から来ていない**（ブックマーク・URL の直打ち・コピペ）と判断してよい。
      *
-     * - 空（＝アプリ内ブラウザ・直打ち・referrer-policy で落ちた場合）… 配る
      * - t.co / x.com / twitter.com とそのサブドメイン … 配る
      * - `android-app://com.twitter.android`（Android の Custom Tabs） … 配る
      * - 自サイト … 配る（サイト内から辿った場合と、動作確認のため）
-     * - それ以外の外部サイト（まとめサイト等への転載） … 配らない
+     * - 空・それ以外の外部サイト（ブックマーク／直打ち／転載） … 配らない
+     *
+     * 万一 Referer が落ちる端末があっても、その人には広告が出るだけ（安全側に倒れる）。
      *
      * @param ?string $referer リクエストの Referer ヘッダ
      * @param ?string $selfHost 自サイトのホスト名（`$_SERVER['HTTP_HOST']` 相当）
@@ -242,7 +257,7 @@ class AdOptOutService
     {
         $referer = trim((string) $referer);
         if ($referer === '') {
-            return true;
+            return false;
         }
 
         $lower = strtolower($referer);
