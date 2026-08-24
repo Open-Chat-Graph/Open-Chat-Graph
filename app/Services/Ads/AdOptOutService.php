@@ -54,6 +54,7 @@ use App\Config\SecretsConfig;
  * t.co を経由し、t.co は実ブラウザに HTML＋JS リダイレクトを返す＝ t.co がドキュメントとして
  * 読み込まれるので、転送先には `Referer: https://t.co/...` が付く。よって Referer の無いリクエストは
  * X 由来ではない（ブックマーク・直打ち・コピペ）と見なして配らない。
+ * プロフィールのリンク集サービス lit.link 経由も、本人のプロフィールページなので同じ扱いで許可する。
  *
  * クッキーは 3 時間で切れる。期限なしのセッションクッキーは Chromium のタブ復元で生き残り、
  * 「そのセッションだけ」が実態として無期限になってしまうため。
@@ -76,8 +77,13 @@ class AdOptOutService
     /** /x を踏んだ人の転送先（GA4 で流入を数えるため utm を付ける） */
     public const X_ENTRY_REDIRECT = '?utm_source=x&utm_medium=profile&utm_campaign=ad_free';
 
-    /** /x でクッキーを配ってよい Referer のホスト（サブドメインも許可） */
-    private const X_REFERER_HOSTS = ['t.co', 'x.com', 'twitter.com'];
+    /**
+     * /x でクッキーを配ってよい Referer のホスト（サブドメインも許可）
+     *
+     * X 本体（リンクは必ず t.co を経由する）に加えて、プロフィールのリンク集サービス lit.link も許可する。
+     * lit.link は本人のプロフィールページなので、そこからの流入は X プロフィールからの流入と同じ扱いにする。
+     */
+    private const X_REFERER_HOSTS = ['t.co', 'x.com', 'twitter.com', 'lit.link'];
 
     /** Android の Custom Tabs が付ける Referer（X アプリから開いた場合） */
     private const X_REFERER_ANDROID_APPS = ['android-app://com.twitter.android'];
@@ -244,6 +250,7 @@ class AdOptOutService
      * X から来ていない**（ブックマーク・URL の直打ち・コピペ）と判断してよい。
      *
      * - t.co / x.com / twitter.com とそのサブドメイン … 配る
+     * - lit.link とそのサブドメイン（プロフィールのリンク集） … 配る
      * - `android-app://com.twitter.android`（Android の Custom Tabs） … 配る
      * - 自サイト … 配る（サイト内から辿った場合と、動作確認のため）
      * - 空・それ以外の外部サイト（ブックマーク／直打ち／転載） … 配らない
