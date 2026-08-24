@@ -79,7 +79,7 @@ class AdOptOutServiceTest extends TestCase
     }
 
     /**
-     * Referer フィルタ: X の正規流入（空・t.co・x.com・Androidアプリ）は必ず通す
+     * Referer フィルタ: X 由来（t.co・x.com・Androidアプリ）は必ず通す
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('allowedRefererProvider')]
     public function testAllowedReferers(?string $referer): void
@@ -90,8 +90,6 @@ class AdOptOutServiceTest extends TestCase
     public static function allowedRefererProvider(): array
     {
         return [
-            'なし（アプリ内ブラウザ・直打ち）' => [null],
-            '空文字' => [''],
             't.co' => ['https://t.co/AbCdEfG'],
             'x.com' => ['https://x.com/openchat_graph'],
             'twitter.com' => ['https://twitter.com/openchat_graph'],
@@ -103,10 +101,13 @@ class AdOptOutServiceTest extends TestCase
     }
 
     /**
-     * Referer フィルタ: X 以外の外部サイトからの転載流入では配らない
+     * Referer フィルタ: Referer が無い（ブックマーク・直打ち・コピペ）と X 以外の外部サイトには配らない
+     *
+     * X のリンクは必ず t.co を経由し、t.co は実ブラウザに HTML＋JS リダイレクトを返す＝ t.co が
+     * ドキュメントになるので Referer が付く。よって Referer 無し＝X 由来ではない。
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('deniedRefererProvider')]
-    public function testDeniedReferers(string $referer): void
+    public function testDeniedReferers(?string $referer): void
     {
         $this->assertFalse(AdOptOutService::isAllowedXEntryReferer($referer, 'openchat-review.me'));
     }
@@ -114,6 +115,8 @@ class AdOptOutServiceTest extends TestCase
     public static function deniedRefererProvider(): array
     {
         return [
+            'Referer なし（ブックマーク・直打ち）' => [null],
+            'Referer 空文字' => [''],
             'よそのサイト' => ['https://example.com/matome'],
             '検索エンジン' => ['https://www.google.com/'],
             'ホストを詐称した紛らわしいドメイン' => ['https://x.com.evil.example/'],
@@ -129,6 +132,14 @@ class AdOptOutServiceTest extends TestCase
     {
         $this->assertTrue(AdOptOutService::isAllowedXEntryReferer('https://t.co/abc', null));
         $this->assertFalse(AdOptOutService::isAllowedXEntryReferer('https://openchat-review.me/', null));
+    }
+
+    /**
+     * クッキーは 3 時間で切れる（セッションクッキーだと Chromium のタブ復元で生き残るため）
+     */
+    public function testXCookieLifetimeIsThreeHours(): void
+    {
+        $this->assertSame(3600 * 3, AdOptOutService::X_COOKIE_LIFETIME);
     }
 
     /**

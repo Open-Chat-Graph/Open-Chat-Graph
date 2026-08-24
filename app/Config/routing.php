@@ -444,8 +444,9 @@ Route::path('admin/disable-ads@get@post', [AdOptOutPageController::class, 'index
 // 「X から来た人にだけ違う HTML を返す」ことが原理的にできないため（AdOptOutService のコメント参照）。
 // このパスは noStore() で CDN・オリジンともキャッシュさせず、Set-Cookie を確実に本人へ届ける。
 //
-// 「X から来たか」自体は判定できない（iOS は UA が Safari と同一・t.co 経由で Referer は空になりがち）ので
-// 必須条件にはせず、明らかに X 以外の外部サイトから飛んで来た場合だけ配らない弱いフィルタを掛ける。
+// クッキーを配る条件は「X 由来の Referer があること」。X のリンクは必ず t.co を経由し、t.co は実ブラウザに
+// HTML＋JS リダイレクトを返す（＝ t.co がドキュメントになる）ので転送先に Referer が付く。Referer の無い
+// リクエスト（ブックマーク・直打ち・コピペ）には配らない。クッキーは 3 時間で切れる。
 Route::path('x')
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '' || !AdOptOutService::isConfigured()) {
@@ -461,7 +462,7 @@ Route::path('x')
         );
 
         if ($allowed) {
-            AdOptOutService::issueXSessionCookie();
+            AdOptOutService::issueXCookie();
         }
 
         // クッキーを配らなかった場合もトップへは通す（リンク自体は普通に踏めるべきなので）
