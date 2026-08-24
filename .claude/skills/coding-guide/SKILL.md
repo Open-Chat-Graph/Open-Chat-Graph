@@ -146,7 +146,7 @@ React ソースは**このリポ内 `frontend/`**（別リポではない）。�
 - **翻訳**: フロント側の翻訳 TS（`ranking` は `src/config/translation.ts`、`oc-app` は `src/graph/util/translation.ts`）は PHP の `storage/translation.json` と**別物**。両方直す。
 - **デプロイ**: `deploy.yml` が `frontend/<name>/**` の変更を検知し自動で `npm ci && npm run build` → 配信。
 
-## 広告出力とオプトアウト（合言葉で自分だけ広告を消す）
+## 広告出力とオプトアウト（合言葉で自分だけ広告を消す／X から来た人はそのセッションだけ消す）
 
 ### 広告出力の出口は3つだけ
 
@@ -168,6 +168,25 @@ React ソースは**このリポ内 `frontend/`**（別リポではない）。�
 
 `$adOptOutSecret`（ランダム鍵）は必須。これが無いと本リポが OSS である以上、合言葉候補を
 総当たりして埋め込みハッシュと突き合わせる辞書攻撃でトークンが復元できてしまう。
+
+### X プロフィールの通用口 `/x`（そのセッションだけ広告オフ）
+
+X（旧Twitter）のプロフィール欄に `https://openchat-review.me/x` を置き、**踏んだ人はそのブラウザを
+閉じるまで広告なし**にする裏口。合言葉は要らない。
+
+- `/x` は `noStore()` でキャッシュさせず、`Set-Cookie`（**有効期限なし＝セッションクッキー**）を返して
+  `/?utm_source=x&utm_medium=profile&utm_campaign=ad_free` へ 302。utm は GA4 で流入を数えるため
+- クッキー名もトークンも**合言葉側と別**（`X_TOKEN_LABEL` / `X_COOKIE_LABEL`）。ガードは 2 本を独立に
+  照合し、どちらか一致で広告オフ。分けている理由は 2 つ:
+  - **X 経路だけ失効させられる**（`X_TOKEN_LABEL` の版番号を上げてデプロイ。`$adOptOutSecret` を回すと
+    合言葉ユーザーまで巻き添えになる）
+  - 同名だと、自分の X リンクを踏んだ瞬間に合言葉の永続クッキーがセッションクッキーで上書きされる
+- **「X から来たか」は判定できない**（iOS の SFSafariViewController は UA が Safari と同一、Android にも
+  X 固有トークンは無い、t.co 経由の Referer は空になりがち）。必須条件にすると正規のフォロワーを弾くので、
+  `isAllowedXEntryReferer()` は「空 or X 系 or 自サイトなら配る／それ以外の外部サイトからの流入では配らない」
+  という弱いフィルタに留めている
+- 追加の secrets は不要（既存の `$adOptOutSecret` から導出）。Cloudflare 側のルール追加も不要
+  （`/admin/disable-ads` と同じく `noStore()` で Cache Everything を素通りする）
 
 ### 触るときの必守ポイント
 

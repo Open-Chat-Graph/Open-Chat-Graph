@@ -36,12 +36,48 @@ use App\Config\SecretsConfig;
  * アドブロッカーを入れるのと同じ手間で、防ぎようがない（クライアントで判定する以上は必然）。
  * 一方「合言葉を知らない人がクッキーを偽造する」は HMAC のおかげで現実的に不可能であり、
  * 求めている「外からは普通に破れない」は満たしている。
+ *
+ * ## X（旧Twitter）プロフィール用の通用口（/x）
+ *
+ * 上とは別に、X のプロフィール欄に置く URL（`/x`）を踏んだ人へ **そのセッション限りの**
+ * 広告オフを配る経路がある。合言葉は要らず、URL を踏むだけで通る（公開リンクなので当然）。
+ *
+ * 合言葉側と **クッキー名もトークンも完全に分けて** ある。理由は2つ:
+ *
+ *  1. X 経路だけを失効させたいとき、`X_TOKEN_LABEL` の版番号を上げるだけで済む
+ *     （`$adOptOutSecret` を回すと合言葉ユーザーのクッキーまで巻き添えで消える）。
+ *  2. 同じクッキー名にすると、合言葉で入れた永続クッキーが自分の X リンクを踏んだ瞬間
+ *     セッションクッキーに上書きされてしまう。
+ *
+ * 「X から来たか」自体は判定できない（iOS の SFSafariViewController は UA が Safari と同一、
+ * Android も X 固有トークンなし、t.co 経由の Referer は空になることが多い）。そこで
+ * **必須条件にはせず**、Referer が「空 or X 系 or 自サイト」のときだけ配る＝他サイトへ
+ * 転載されたリンクからの流入では配らない、という弱いフィルタだけ掛けている
+ * （X の正規流入は referer が空か t.co なので誤爆しない）。
  */
 class AdOptOutService
 {
     /** 導出に使うラベル（用途ごとに鍵を分離するため。変更すると発行済みクッキーが無効になる） */
     private const TOKEN_LABEL = 'ocg-ad-opt-out|v1';
     private const COOKIE_LABEL = 'ocg-ad-opt-out-cookie|v1';
+
+    /**
+     * X プロフィールの通用口（/x）用のラベル。合言葉側とは別トークン・別クッキー名になる。
+     *
+     * ※ 末尾の版番号を上げると、**X 経由で配ったクッキーだけ**が一括で無効になる（緊急停止用）。
+     *    合言葉ユーザーのクッキーには影響しない。
+     */
+    private const X_TOKEN_LABEL = 'ocg-ad-opt-out-x|v1';
+    private const X_COOKIE_LABEL = 'ocg-ad-opt-out-x-cookie|v1';
+
+    /** /x を踏んだ人の転送先（GA4 で流入を数えるため utm を付ける） */
+    public const X_ENTRY_REDIRECT = '?utm_source=x&utm_medium=profile&utm_campaign=ad_free';
+
+    /** /x でクッキーを配ってよい Referer のホスト（サブドメインも許可） */
+    private const X_REFERER_HOSTS = ['t.co', 'x.com', 'twitter.com'];
+
+    /** Android の Custom Tabs が付ける Referer（X アプリから開いた場合） */
+    private const X_REFERER_ANDROID_APPS = ['android-app://com.twitter.android'];
 
     /** クッキーの有効期間（秒）: 1年 */
     public const COOKIE_LIFETIME = 3600 * 24 * 365;
@@ -140,5 +176,100 @@ class AdOptOutService
     public static function clearCookie(): void
     {
         cookie()->remove(self::cookieName());
+    }
+
+    /**
+     * X 通用口（/x）用のクッキー名。合言葉側とは別名になる。
+     */
+    public static function xCookieName(): string
+    {
+        return '_' . substr(hash_hmac('sha256', self::X_COOKIE_LABEL, SecretsConfig::$adOptOutSecret), 0, 12);
+    }
+
+    /**
+     * X 通用口用のトークン（合言葉は噛ませない。URL を踏めば通るのが仕様）
+     *
+     * 合言葉側と違い入力が無いので、鍵とラベルだけから導出する。ページに出るのはこの sha256
+     * だけなので、リポジトリからラベルが読めてもトークンは作れない（鍵が要る）。
+     */
+    public static function xToken(): string
+    {
+        return hash_hmac('sha256', self::X_TOKEN_LABEL, SecretsConfig::$adOptOutSecret);
+    }
+
+    /**
+     * X 通用口トークンの照合用ハッシュ（ページに埋め込む値）
+     */
+    public static function xPageHash(): string
+    {
+        return hash('sha256', self::xToken());
+    }
+
+    /**
+     * X 通用口のクッキーを発行する（有効期限なし＝ブラウザを閉じるまでのセッションクッキー）
+     *
+     * `expires` に 0 を渡すと Set-Cookie に Expires/Max-Age が付かない。永続化させないのが要点で、
+     * 「X から来たそのセッションだけ広告なし」という仕様がこれで成立する。
+     * 判定はクライアント JS なので httpOnly は必ず false（合言葉側と同じ）。
+     */
+    public static function issueXSessionCookie(): void
+    {
+        cookie(
+            [self::xCookieName() => self::xToken()],
+            0,
+            samesite: 'Lax',
+            httpOnly: false
+        );
+    }
+
+    /**
+     * この Referer に対して X 通用口のクッキーを配ってよいか
+     *
+     * 「X から来た」ことは技術的に確認できない（UA も Referer も当てにならない）ので、
+     * ここでやるのは **明らかに X 以外の外部サイトから飛んで来た場合だけ配らない** という
+     * 弱いフィルタ。X の正規流入は Referer が空か t.co なので通る。
+     *
+     * - 空（＝アプリ内ブラウザ・直打ち・referrer-policy で落ちた場合）… 配る
+     * - t.co / x.com / twitter.com とそのサブドメイン … 配る
+     * - `android-app://com.twitter.android`（Android の Custom Tabs） … 配る
+     * - 自サイト … 配る（サイト内から辿った場合と、動作確認のため）
+     * - それ以外の外部サイト（まとめサイト等への転載） … 配らない
+     *
+     * @param ?string $referer リクエストの Referer ヘッダ
+     * @param ?string $selfHost 自サイトのホスト名（`$_SERVER['HTTP_HOST']` 相当）
+     */
+    public static function isAllowedXEntryReferer(?string $referer, ?string $selfHost = null): bool
+    {
+        $referer = trim((string) $referer);
+        if ($referer === '') {
+            return true;
+        }
+
+        $lower = strtolower($referer);
+        foreach (self::X_REFERER_ANDROID_APPS as $app) {
+            if (str_starts_with($lower, $app)) {
+                return true;
+            }
+        }
+
+        $host = strtolower((string) parse_url($referer, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        $allowed = self::X_REFERER_HOSTS;
+        // 自サイトのホスト（ポート番号が付く場合があるので落とす）
+        $self = strtolower(explode(':', (string) $selfHost)[0]);
+        if ($self !== '') {
+            $allowed[] = $self;
+        }
+
+        foreach ($allowed as $a) {
+            if ($host === $a || str_ends_with($host, '.' . $a)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

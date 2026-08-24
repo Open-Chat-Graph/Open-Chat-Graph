@@ -437,6 +437,37 @@ Route::path('admin/disable-ads@get@post', [AdOptOutPageController::class, 'index
         noStore();
     });
 
+// X（旧Twitter）プロフィールの website 欄に置く通用口。踏んだブラウザにだけ「そのセッション限りの
+// 広告オフ」クッキーを配ってトップへ送る。合言葉は要らない（公開リンクなので当然）。
+//
+// ここが専用パスなのは、通常ページが Cloudflare の Cache Everything でキャッシュされていて
+// 「X から来た人にだけ違う HTML を返す」ことが原理的にできないため（AdOptOutService のコメント参照）。
+// このパスは noStore() で CDN・オリジンともキャッシュさせず、Set-Cookie を確実に本人へ届ける。
+//
+// 「X から来たか」自体は判定できない（iOS は UA が Safari と同一・t.co 経由で Referer は空になりがち）ので
+// 必須条件にはせず、明らかに X 以外の外部サイトから飛んで来た場合だけ配らない弱いフィルタを掛ける。
+Route::path('x')
+    ->match(function () {
+        if (MimimalCmsConfig::$urlRoot !== '' || !AdOptOutService::isConfigured()) {
+            return false;
+        }
+
+        noStore();
+        header('X-Robots-Tag: noindex');
+
+        $allowed = AdOptOutService::isAllowedXEntryReferer(
+            $_SERVER['HTTP_REFERER'] ?? null,
+            $_SERVER['HTTP_HOST'] ?? null
+        );
+
+        if ($allowed) {
+            AdOptOutService::issueXSessionCookie();
+        }
+
+        // クッキーを配らなかった場合もトップへは通す（リンク自体は普通に踏めるべきなので）
+        return redirect(AdOptOutService::X_ENTRY_REDIRECT);
+    });
+
 // 管理者かどうかをサーバ側で検証する軽量エンドポイント（広告ブロック検出 ad_guard から呼ぶ）。
 // admin-enable クッキー(JS可視・偽造可)を信用せず、HttpOnly の admin クッキーを auth() で検証する。
 // Cloudflare 側で X-Ocg-Client ヘッダ必須＋レート制限（直叩き・総当たり対策）を併用する。
