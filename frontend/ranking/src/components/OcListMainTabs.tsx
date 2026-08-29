@@ -137,10 +137,14 @@ function OcListSwiper({
               //   置くと棚の高さ分だけダミーリストを押し下げてマージン過多になり、棚自身もスクロールで
               //   画面外へ消える（スクロール中スワイプの不具合）。棚をダミーの絶対配置コンテナ内に入れ、
               //   リストと一緒に正しい位置へ置く。
+              // active: 隣接スライド（ダミー）では棚の /oclist-tags を取得しない。3枚ぶん取ると
+              // 絞り込み1タップで棚3本＋一覧3本＝6本になり、CF のレート制限を実ユーザーが踏む。
+              // 取得しない側はキャッシュ or スケルトンで同じ高さを保つのでレイアウトは変わらない。
               const shelf = (
                 <RecommendThemeShelf
                   category={OPEN_CHAT_CATEGORY[i][1]}
                   subCategory={isActive ? params.sub_category : ''}
+                  active={isActive || isTransition}
                 />
               )
 

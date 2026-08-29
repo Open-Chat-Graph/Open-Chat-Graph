@@ -15,6 +15,16 @@ class MockIntersectionObserver {
 }
 globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
+// Mock ResizeObserver (not available in jsdom)。useRightFadeMask が「関連テーマ」棚の幅変化を
+// 監視するのに使う。無いと棚を含むコンポーネントの render が ReferenceError で落ちる。
+class MockResizeObserver {
+  constructor() {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
+
 // Setup the arg-dto JSON element that config.ts reads on module load
 const argDto = {
   baseUrl: '',
