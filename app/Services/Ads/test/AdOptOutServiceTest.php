@@ -79,65 +79,6 @@ class AdOptOutServiceTest extends TestCase
     }
 
     /**
-     * Referer フィルタ: X 由来（t.co・x.com・Androidアプリ）は必ず通す
-     */
-    #[\PHPUnit\Framework\Attributes\DataProvider('allowedRefererProvider')]
-    public function testAllowedReferers(?string $referer): void
-    {
-        $this->assertTrue(AdOptOutService::isAllowedXEntryReferer($referer, 'openchat-review.me'));
-    }
-
-    public static function allowedRefererProvider(): array
-    {
-        return [
-            't.co' => ['https://t.co/AbCdEfG'],
-            'x.com' => ['https://x.com/openchat_graph'],
-            'twitter.com' => ['https://twitter.com/openchat_graph'],
-            'mobile.twitter.com' => ['https://mobile.twitter.com/openchat_graph'],
-            'Android の X アプリ' => ['android-app://com.twitter.android'],
-            'lit.link（プロフィールのリンク集）' => ['https://lit.link/openchatgraph'],
-            'lit.link のサブドメイン' => ['https://www.lit.link/openchatgraph'],
-            '自サイト' => ['https://openchat-review.me/ranking'],
-            '自サイト（ポート付き）' => ['https://openchat-review.me:8443/ranking'],
-        ];
-    }
-
-    /**
-     * Referer フィルタ: Referer が無い（ブックマーク・直打ち・コピペ）と X 以外の外部サイトには配らない
-     *
-     * X のリンクは必ず t.co を経由し、t.co は実ブラウザに HTML＋JS リダイレクトを返す＝ t.co が
-     * ドキュメントになるので Referer が付く。よって Referer 無し＝X 由来ではない。
-     */
-    #[\PHPUnit\Framework\Attributes\DataProvider('deniedRefererProvider')]
-    public function testDeniedReferers(?string $referer): void
-    {
-        $this->assertFalse(AdOptOutService::isAllowedXEntryReferer($referer, 'openchat-review.me'));
-    }
-
-    public static function deniedRefererProvider(): array
-    {
-        return [
-            'Referer なし（ブックマーク・直打ち）' => [null],
-            'Referer 空文字' => [''],
-            'よそのサイト' => ['https://example.com/matome'],
-            '検索エンジン' => ['https://www.google.com/'],
-            'ホストを詐称した紛らわしいドメイン' => ['https://x.com.evil.example/'],
-            'サブドメインに見せかけた文字列' => ['https://notx.com/'],
-            'lit.link に似せた別ドメイン' => ['https://lit.link.evil.example/'],
-            'ホストの無いURL' => ['not-a-url'],
-        ];
-    }
-
-    /**
-     * 自サイトのホストが分からない場合でも X 系は通り、他所は弾く
-     */
-    public function testRefererFilterWithoutSelfHost(): void
-    {
-        $this->assertTrue(AdOptOutService::isAllowedXEntryReferer('https://t.co/abc', null));
-        $this->assertFalse(AdOptOutService::isAllowedXEntryReferer('https://openchat-review.me/', null));
-    }
-
-    /**
      * クッキーは 3 時間で切れる（セッションクッキーだと Chromium のタブ復元で生き残るため）
      */
     public function testXCookieLifetimeIsThreeHours(): void

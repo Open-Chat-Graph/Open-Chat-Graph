@@ -185,14 +185,10 @@ X（旧Twitter）のプロフィール欄に `https://openchat-review.me/x` を�
   - **X 経路だけ失効させられる**（`X_TOKEN_LABEL` の版番号を上げてデプロイ。`$adOptOutSecret` を回すと
     合言葉ユーザーまで巻き添えになる）
   - 同名だと、自分の X リンクを踏んだ瞬間に合言葉の永続クッキーがセッションクッキーで上書きされる
-- **UA では「X から来たか」を判定できない**（iOS の SFSafariViewController は UA が Safari と同一、
-  Android にも X 固有トークンは無い）。代わりに **Referer を必須**にしている（`isAllowedXEntryReferer()`）。
-  X のリンクは必ず t.co を経由し、**t.co は実ブラウザに HTTP 200 の HTML＋JS リダイレクトを返す**
-  （bot にだけ 301）ため、t.co がドキュメントとして読み込まれ転送先に `Referer: https://t.co/...` が付く。
-  アプリ内ブラウザも UA は普通のブラウザなので同じ経路。よって **Referer 無し＝X 由来ではない**
-  （ブックマーク・直打ち・コピペ）と見なして配らない。万一 Referer が落ちても広告が出るだけで安全側。
-  許可ホストは t.co / x.com / twitter.com に加えて **lit.link**（プロフィールのリンク集）と自サイト、
-  Android の X アプリ（`android-app://com.twitter.android`）
+- **「X から来たか」の検証はしない**。UA では判定できず（iOS の SFSafariViewController は Safari と同一、
+  Android にも X 固有トークンは無い）、Referer 必須にすると **lit.link のようなリンク集（外部リンクを
+  `rel="noreferrer"` で出力する）からの流入が全滅**する（実際に起きた）。URL を踏んだ人には誰でも配る。
+  歯止めは 3 時間の有効期限と、`X_TOKEN_LABEL` の版番号による一括失効
 - 追加の secrets は不要（既存の `$adOptOutSecret` から導出）。Cloudflare 側のルール追加も不要
   （`/admin/disable-ads` と同じく `noStore()` で Cache Everything を素通りする）
 
