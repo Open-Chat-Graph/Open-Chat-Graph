@@ -444,9 +444,8 @@ Route::path('admin/disable-ads@get@post', [AdOptOutPageController::class, 'index
 // 「X から来た人にだけ違う HTML を返す」ことが原理的にできないため（AdOptOutService のコメント参照）。
 // このパスは noStore() で CDN・オリジンともキャッシュさせず、Set-Cookie を確実に本人へ届ける。
 //
-// クッキーを配る条件は「X 由来の Referer があること」。X のリンクは必ず t.co を経由し、t.co は実ブラウザに
-// HTML＋JS リダイレクトを返す（＝ t.co がドキュメントになる）ので転送先に Referer が付く。Referer の無い
-// リクエスト（ブックマーク・直打ち・コピペ）には配らない。クッキーは 3 時間で切れる。
+// 踏んだ人には誰でも配る（参照元の検証はしない）。lit.link 等のリンク集は rel="noreferrer" で
+// 参照元を消すため、参照元必須にするとそこからの流入が全滅する。クッキーは 3 時間で切れる。
 Route::path('x')
     ->match(function () {
         if (MimimalCmsConfig::$urlRoot !== '' || !AdOptOutService::isConfigured()) {
@@ -455,17 +454,8 @@ Route::path('x')
 
         noStore();
         header('X-Robots-Tag: noindex');
+        AdOptOutService::issueXCookie();
 
-        $allowed = AdOptOutService::isAllowedXEntryReferer(
-            $_SERVER['HTTP_REFERER'] ?? null,
-            $_SERVER['HTTP_HOST'] ?? null
-        );
-
-        if ($allowed) {
-            AdOptOutService::issueXCookie();
-        }
-
-        // クッキーを配らなかった場合もトップへは通す（リンク自体は普通に踏めるべきなので）
         return redirect(AdOptOutService::X_ENTRY_REDIRECT);
     });
 

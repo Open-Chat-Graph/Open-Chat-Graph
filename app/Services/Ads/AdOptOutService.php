@@ -49,12 +49,10 @@ use App\Config\SecretsConfig;
  *  2. 同じクッキー名にすると、合言葉で入れた永続クッキーが自分の X リンクを踏んだ瞬間
  *     セッションクッキーに上書きされてしまう。
  *
- * UA からは「X から来たか」を判定できない（iOS の SFSafariViewController は UA が Safari と同一、
- * Android にも X 固有トークンは無い）。代わりに **Referer を必須条件**にしている。X のリンクは必ず
- * t.co を経由し、t.co は実ブラウザに HTML＋JS リダイレクトを返す＝ t.co がドキュメントとして
- * 読み込まれるので、転送先には `Referer: https://t.co/...` が付く。よって Referer の無いリクエストは
- * X 由来ではない（ブックマーク・直打ち・コピペ）と見なして配らない。
- * プロフィールのリンク集サービス lit.link 経由も、本人のプロフィールページなので同じ扱いで許可する。
+ * 「X から来たか」の検証はしない。UA では判定できず（iOS の SFSafariViewController は UA が Safari と
+ * 同一、Android にも X 固有トークンは無い）、Referer 必須にすると lit.link のようなリンク集
+ * （外部リンクを `rel="noreferrer"` で出力する）からの流入が全滅するため。URL を踏んだ人には誰でも配る。
+ * URL は公開リンクなので秘密ではなく、歯止めは 3 時間の有効期限とラベル版番号による一括失効。
  *
  * クッキーは 3 時間で切れる。期限なしのセッションクッキーは Chromium のタブ復元で生き残り、
  * 「そのセッションだけ」が実態として無期限になってしまうため。
@@ -76,17 +74,6 @@ class AdOptOutService
 
     /** /x を踏んだ人の転送先（GA4 で流入を数えるため utm を付ける） */
     public const X_ENTRY_REDIRECT = '?utm_source=x&utm_medium=profile&utm_campaign=ad_free';
-
-    /**
-     * /x でクッキーを配ってよい Referer のホスト（サブドメインも許可）
-     *
-     * X 本体（リンクは必ず t.co を経由する）に加えて、プロフィールのリンク集サービス lit.link も許可する。
-     * lit.link は本人のプロフィールページなので、そこからの流入は X プロフィールからの流入と同じ扱いにする。
-     */
-    private const X_REFERER_HOSTS = ['t.co', 'x.com', 'twitter.com', 'lit.link'];
-
-    /** Android の Custom Tabs が付ける Referer（X アプリから開いた場合） */
-    private const X_REFERER_ANDROID_APPS = ['android-app://com.twitter.android'];
 
     /** クッキーの有効期間（秒）: 1年 */
     public const COOKIE_LIFETIME = 3600 * 24 * 365;
@@ -238,60 +225,5 @@ class AdOptOutService
             samesite: 'Lax',
             httpOnly: false
         );
-    }
-
-    /**
-     * この Referer に対して X 通用口のクッキーを配ってよいか（**X 由来の Referer 必須**）
-     *
-     * X のリンクは必ず t.co を経由し、t.co は **実ブラウザに HTTP 200 の HTML＋JS
-     * (`location.replace`) を返す**（bot にだけ 301）。つまり t.co が本物のドキュメントとして
-     * 読み込まれ、その次の遷移に `Referer: https://t.co/...` が付く。X アプリのアプリ内ブラウザも
-     * UA は普通のブラウザなので同じ経路をたどる。したがって **Referer が空のリクエストは
-     * X から来ていない**（ブックマーク・URL の直打ち・コピペ）と判断してよい。
-     *
-     * - t.co / x.com / twitter.com とそのサブドメイン … 配る
-     * - lit.link とそのサブドメイン（プロフィールのリンク集） … 配る
-     * - `android-app://com.twitter.android`（Android の Custom Tabs） … 配る
-     * - 自サイト … 配る（サイト内から辿った場合と、動作確認のため）
-     * - 空・それ以外の外部サイト（ブックマーク／直打ち／転載） … 配らない
-     *
-     * 万一 Referer が落ちる端末があっても、その人には広告が出るだけ（安全側に倒れる）。
-     *
-     * @param ?string $referer リクエストの Referer ヘッダ
-     * @param ?string $selfHost 自サイトのホスト名（`$_SERVER['HTTP_HOST']` 相当）
-     */
-    public static function isAllowedXEntryReferer(?string $referer, ?string $selfHost = null): bool
-    {
-        $referer = trim((string) $referer);
-        if ($referer === '') {
-            return false;
-        }
-
-        $lower = strtolower($referer);
-        foreach (self::X_REFERER_ANDROID_APPS as $app) {
-            if (str_starts_with($lower, $app)) {
-                return true;
-            }
-        }
-
-        $host = strtolower((string) parse_url($referer, PHP_URL_HOST));
-        if ($host === '') {
-            return false;
-        }
-
-        $allowed = self::X_REFERER_HOSTS;
-        // 自サイトのホスト（ポート番号が付く場合があるので落とす）
-        $self = strtolower(explode(':', (string) $selfHost)[0]);
-        if ($self !== '') {
-            $allowed[] = $self;
-        }
-
-        foreach ($allowed as $a) {
-            if ($host === $a || str_ends_with($host, '.' . $a)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
