@@ -73,8 +73,8 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php if ($enableAdsense): ?>
           <?php GAd::gTag() ?>
         <?php endif ?>
-        <?php // 手動広告(recommendSeparatorResponsive)は撤去済み: impRPM¥20=自動広告(¥220)の1/11なのに
-              // リストを分断していた(2026-06実測)。広告挿入のためだけだったチャンク分割も廃止し30件を一本のリストで表示 ?>
+        <?php // 手動ディスプレイ広告: リストを5件ずつに分け、チャンクの間に固定高さ(rectangle2-ads)の枠を挟む。
+              // 最後のチャンクの後には置かない。枠は昔の「おすすめ横長」スロット群を上から順に使う。 ?>
         <ol class="openchat-item-list parent unset">
           <li class="top-ranking" style="padding-top: 8px; gap: 8px;">
             <header class="recommend-ranking-section-header">
@@ -85,15 +85,16 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
             </header>
             <?php $listArray = $recommend->getList(false, AppConfig::LIST_LIMIT_RECOMMEND) ?>
 
-            <?php // top5 の下（高視認位置）に広告を1枠。自動広告オフに伴い、以前ここにあった枠を復活させる。
-                  // リストを top5 と残りに分割し間に挿入する（未使用スロット recommendSeparatorResponsive を流用）。
-                  // currentCount で残りチャンクの連番を継続。広告オフ/5件以下では従来どおり一本のリスト。 ?>
+            <?php // 5件ごとに固定高さの枠。currentCount でチャンクをまたいだ連番を継続し、メダルは先頭チャンクだけ。
+                  // 広告オフ／5件以下では従来どおり一本のリスト。 ?>
+            <?php $_adSlots = ['recommendTopWide', 'recommendTopWide2', 'recommendThirdWide', 'recommendSeparatorWide', 'recommendListBottomWide']; ?>
             <?php if ($enableAdsense && count($listArray) > 5) : ?>
-              <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 0, 5), 'showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
-              <?php // 広告だけはルーム行の左右1remインデントの外へ出し、コンテナ幅いっぱいで表示する
-                    // （CSS .top-ranking > .responsive-google-parent の負マージンで相殺）。full-width-responsive=false のまま。 ?>
-              <?php GAd::output('recommendSeparatorResponsive', false) ?>
-              <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => array_slice($listArray, 5), 'showListMedal' => false, 'currentCount' => 5, 'showApiCreatedAt' => true]) ?>
+              <?php foreach (array_chunk($listArray, 5) as $_i => $_chunk) : ?>
+                <?php viewComponent('open_chat_list_recommend', ['recommend' => $recommend, 'listArray' => $_chunk, 'showListMedal' => $_i === 0, 'currentCount' => $_i * 5, 'showApiCreatedAt' => true]) ?>
+                <?php if (($_i + 1) * 5 < count($listArray) && isset($_adSlots[$_i])) : ?>
+                  <?php GAd::output($_adSlots[$_i]) ?>
+                <?php endif ?>
+              <?php endforeach ?>
             <?php else : ?>
               <?php viewComponent('open_chat_list_recommend', compact('recommend', 'listArray') + ['showListMedal' => true, 'currentCount' => 0, 'showApiCreatedAt' => true]) ?>
             <?php endif ?>

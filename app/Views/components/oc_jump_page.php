@@ -83,6 +83,11 @@ $_css[] = 'pages/oc-jump';
         <span class="oc-jump-source"><?php echo $txt['sourceLabel'] ?><a href="<?php echo $txt['sourceUrl'] ?>" target="_blank" rel="noopener nofollow"><?php echo $txt['sourceText'] ?></a></span>
       </section>
 
+      <!-- 広告2枠目: 禁止事項と入室ボタンの間（入室ボタンより上＝到達率が高い位置に2枠目を置く） -->
+      <div class="oc-jump-ad oc-jump-rise">
+        <?php GAd::output('siteSeparatorResponsive', true) ?>
+      </div>
+
       <!-- 6. 入室ボタン -->
       <?php if ($oc['url']) : ?>
         <section class="oc-jump-action oc-jump-rise">
@@ -107,7 +112,8 @@ $_css[] = 'pages/oc-jump';
       <?php endif ?>
 
     </article>
-    <?php // 最下部広告(siteSeparatorResponsive)は撤去済み: impRPM¥45/CTR0.32%/¥5日(2026-06実測)。siteSeparatorWide(高単価)は維持 ?>
+    <?php // 最下部（フッター前）には置かない: 2026-06 実測で impRPM¥45/CTR0.32%/¥5日の死に枠だった。
+          // 2枠目は禁止事項と入室ボタンの間に置いてある（siteSeparatorResponsive を流用） ?>
     <?php viewComponent('footer_inner') ?>
   </div>
   <?php GAd::loadAdsTag() ?>

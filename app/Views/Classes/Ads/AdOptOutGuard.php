@@ -13,9 +13,12 @@ use App\Services\Ads\AdOptOutService;
  * クッキーで入っている。このガードはそのクッキーを **同期で** 検証し、正しければ
  * そのページの広告コードを一切実行させない。
  *
- * 検証するクッキーは2本ある（どちらか一方でも一致すれば広告オフ）:
- *   1. 合言葉（`/admin/disable-ads`）で配る永続クッキー
- *   2. X プロフィールの通用口（`/x`）で配る 3 時間で切れるクッキー
+ * 検証するクッキーは2本あり、立てるフラグが違う:
+ *   1. 合言葉（`/admin/disable-ads`）で配る永続クッキー → `flagVar()` が true ＝ 広告を一切出さない
+ *      （adsbygoogle.js を昇格させず、枠も CSS で畳む）
+ *   2. X プロフィールの通用口（`/x`）で配る 3 時間で切れるクッキー → `xFlagVar()` が true ＝
+ *      オファーウォール（全画面メッセージ）だけ出さない。ディスプレイ広告は通常どおり出す
+ *      （GoogleAdsense::gTag が Funding Choices の controlledMessagingFunction で抑止する）
  * トークンもクッキー名も別なので、X 経路だけを失効させられる（`AdOptOutService` 参照）。
  *
  * サイトのページは Cloudflare の Cache Everything でキャッシュされるため、サーバが返す HTML は
@@ -76,7 +79,7 @@ class AdOptOutGuard
         $rid = static fn(): string => 'z' . substr(bin2hex(random_bytes(8)), 0, 10);
 
         self::$names = [];
-        foreach (['flag', 'dec', 'key', 'hash', 'cookie', 'cookieX', 'cls', 'K', 'H', 'pdec', 'pkey'] as $k) {
+        foreach (['flag', 'flagX', 'dec', 'key', 'hash', 'cookie', 'cookieX', 'cls', 'K', 'H', 'pdec', 'pkey'] as $k) {
             self::$names[$k] = $rid();
         }
 
@@ -103,12 +106,23 @@ class AdOptOutGuard
     }
 
     /**
-     * 「広告オフ」を表すグローバル変数名（true のとき広告を出さない）
+     * 「広告オフ」を表すグローバル変数名（true のとき広告を一切出さない。合言葉＝スタッフエントランス）
      */
     public static function flagVar(): string
     {
         self::init();
         return self::$names['flag'];
+    }
+
+    /**
+     * 「オファーウォールだけオフ」を表すグローバル変数名（true のとき全画面メッセージを出さない。X の通用口 /x）
+     *
+     * ディスプレイ広告はそのまま出す。adsbygoogle.js の昇格も止めない。
+     */
+    public static function xFlagVar(): string
+    {
+        self::init();
+        return self::$names['flagX'];
     }
 
     /**
@@ -131,7 +145,8 @@ class AdOptOutGuard
         $cookieEnc = self::enc(AdOptOutService::cookieName() . '=');
         $hashEnc = self::enc(AdOptOutService::pageHash());
         // X プロフィールの通用口（/x）で配るクッキー。合言葉側とは別名・別トークンなので
-        // 2本を独立に照合する（どちらか一方でも一致すれば広告オフ）。
+        // 2本を独立に照合する。合言葉は「広告を一切出さない」、X は「オファーウォールだけ出さない」で
+        // 立てるフラグが違う（両方あれば合言葉が勝つ）。
         $xCookieEnc = self::enc(AdOptOutService::xCookieName() . '=');
         $xHashEnc = self::enc(AdOptOutService::xPageHash());
         $nonce = bin2hex(random_bytes(8));
@@ -185,9 +200,11 @@ class AdOptOutGuard
               if(p[i].indexOf({$N['cookie']})===0){v=p[i].slice({$N['cookie']}.length);}
               else if(p[i].indexOf({$N['cookieX']})===0){vx=p[i].slice({$N['cookieX']}.length);}
             }
-            if((v&&{$N['hash']}(v)==={$hashEnc})||(vx&&{$N['hash']}(vx)==={$xHashEnc})){
+            if(v&&{$N['hash']}(v)==={$hashEnc}){
               window.{$N['flag']}=true;
               document.documentElement.className+=' {$N['cls']}';
+            }else if(vx&&{$N['hash']}(vx)==={$xHashEnc}){
+              window.{$N['flagX']}=true;
             }
           }catch(e){}
         })();</script>
