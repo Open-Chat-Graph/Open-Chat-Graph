@@ -102,8 +102,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         <?php endif ?>
 
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
-        <?php // ディスプレイ広告1枠。ヘッダーや最下部ではなく、1時間ランキングと24時間ランキングの間（上のほう）に置く。
-              // トップは下部へのスクロール到達が壊滅的（30%到達2.6%・2026-06実測）なので、置くならここ。 ?>
+        <?php // 1枠目: 1時間ランキングと24時間ランキングの間（ヘッダーには置かない）。トップは計3枠。 ?>
         <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
@@ -111,9 +110,15 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('top_ranking_recent_comments') ?>
         <?php endif ?>
 
+        <?php // 2枠目: 最近のコメントの直後・週間ランキングの前（固定サイズ rectangle） ?>
+        <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorRectangle') ?>
+
         <?php viewComponent('top_ranking_comment_list_week', compact('dto')) ?>
 
         <?php viewComponent('top_ranking_comment_list_member', compact('dto')) ?>
+
+        <?php // 3枠目: メンバー数ランキングの直後・公式おすすめの前（固定高さ rectangle2） ?>
+        <?php \App\Views\Ads\GoogleAdsense::output('siteBottomWide') ?>
 
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto, 'id' => 0]) ?>
         <?php viewComponent('recommend_list2', ['recommend' => $officialDto2, 'id' => 0]) ?>
@@ -127,7 +132,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
         ]) ?>
 
         <?php // フッター前の横長枠は撤去: 視認率15%/CTR0.03%/RPM¥12（AdSense実測）で「見られない死に枠」。
-              // トップの枠は1時間ランキング直後の1つだけ。 ?>
+              // トップの枠は「1時間ランキング直後」「最近のコメント直後」「メンバー数ランキング直後」の3つ。 ?>
         <?php viewComponent('footer_inner') ?>
         <div class="refresh-time" style="width: fit-content; margin: auto; padding-bottom: 0.5rem; margin-top: -9px;">
             <div class="refresh-icon"></div><time style="font-size: 11px; color: var(--c-text-5); margin-left:3px" datetime="<?php echo $_updatedAt->format(\DateTime::ATOM) ?>"><?php echo $_updatedAt->format('Y/n/j G:i') ?></time>
