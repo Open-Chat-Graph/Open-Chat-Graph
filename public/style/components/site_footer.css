@@ -47,6 +47,15 @@
   height: 14px;
 }
 
+/* 運営者の X リンク。行頭の X ロゴは文字色に追従（ダークモードでも自然） */
+.footer-link-inner .footer-x-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  fill: currentColor;
+}
+
 /* 言語切り替え（トップのヒーローから移設）。各言語のブランド名で各国トップへ */
 .footer-lang-row {
   display: flex;

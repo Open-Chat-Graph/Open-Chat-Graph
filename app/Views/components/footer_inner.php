@@ -11,6 +11,8 @@
                     <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                 <li><a class="unset" href="<?php echo url('policy/term') ?>">利用規約</a></li>
                 <?php endif ?>
+                <?php // 運営者の X。全言語に出す（ラベルは日本語版だけ「運営者」を付け、他言語は ID のみで翻訳不要にする） ?>
+                <li><a class="unset footer-x-link" href="https://x.com/pika_0203" target="_blank" rel="noopener"><svg class="footer-x-icon" viewBox="0 0 240 240" aria-hidden="true"><path d="M88.2 60.66L169.46 178.81H151.42L70.16 60.66H88.2ZM92.93 51.66H53.04L146.68 187.81H186.57L92.93 51.66Z"/><path d="M132.54 109.25L182.24 51.66H170.99L127.55 101.99L132.54 109.25Z"/><path d="M105.36 127.72L53.04 188.34H64.3L110.35 134.98L105.36 127.72Z"/></svg><?php echo \Shared\MimimalCmsConfig::$urlRoot === '' ? '運営者 ' : '' ?>@pika_0203<span class="line-link-icon777"></span></a></li>
             </ul>
             <ul class="footer-link-inner">
                 <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></li>
