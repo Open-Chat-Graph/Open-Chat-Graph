@@ -134,7 +134,9 @@ class GoogleAdsense
     /**
      * @param bool $suppressOfferwall true でこのページの Offerwall（全画面メッセージ）のみ常時抑制する。
      *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
-     *                                （blog 記事など「初見読者に絶対 Offerwall を出さない」ページ用）
+     *                                （blog 記事やトップなど「絶対 Offerwall を出さない」ページ用）
+     *                                これとは別に、X の通用口（/x）を踏んだ訪問者にはページを問わず
+     *                                Offerwall だけを抑止する（ディスプレイ広告は出す）。
      */
     public static function gTag(?string $dataOverlays = null, bool $suppressOfferwall = false)
     {
@@ -154,18 +156,25 @@ class GoogleAdsense
 
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
-        if ($suppressOfferwall) {
-            // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
-            // https://developers.google.com/funding-choices/fc-api-docs
-            echo <<<EOT
-            <script>
+        // オファーウォール（全画面メッセージ）の抑止。次のどちらかで抑止する:
+        //   - $suppressOfferwall（ページ単位・常時。ブログやトップ）
+        //   - X の通用口（/x）のクッキーを持つ訪問者（AdOptOutGuard::xFlagVar() が true）
+        // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
+        // フラグが undefined（ガード未実行）なら抑止しない＝従来どおり出る（フェイルオープン）。
+        // https://developers.google.com/funding-choices/fc-api-docs
+        $staticSuppress = $suppressOfferwall ? 'true' : 'false';
+        $xFlag = AdOptOutGuard::isEnabled() ? ('!!window.' . AdOptOutGuard::xFlagVar()) : 'false';
+        echo <<<EOT
+        <script>
+            (function () {
+                if (!({$staticSuppress} || {$xFlag})) return;
                 window.googlefc = window.googlefc || {};
                 googlefc.controlledMessagingFunction = function (message) {
                     message.proceed(false, [window.googlefc.MessageTypeEnum.OFFERWALL]);
                 };
-            </script>
-            EOT;
-        }
+            })();
+        </script>
+        EOT;
 
         $adClient = GoogleAdsenseConfig::$googleAdsenseClient;
         $src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={$adClient}";

@@ -10,11 +10,17 @@ class GoogleAdsenseConfig
     /**
      * display広告ユニット（<ins> 枠・loadAdsTag）の有効/無効。
      *
-     * 運用方針転換により一旦 false（全停止）。各 View の GoogleAdsense::output() /
-     * loadAdsTag() 呼び出しは残すが、false の間はクラス側の冒頭ガードで何も出力しない。
-     * 復活させたいときは true に戻すだけでよい。ads.txt はアカウント維持のため出力を続ける。
+     * 2026-07 に一旦 false（全停止）にし、2026-09-18 に手動ディスプレイ枠を復活（true）。
+     * false にすると各 View の GoogleAdsense::output() / loadAdsTag() はクラス側の冒頭ガードで
+     * 何も出力しなくなる（呼び出しは残る）。ads.txt はアカウント維持のため常に出力する。
+     *
+     * 現在の枠（ヘッダーには置かない）:
+     *   - トップ: 1時間ランキングと24時間ランキングの間に1枠（オファーウォールは出さない）
+     *   - 部屋 /oc/{id}: グラフ直後 と 関連ルーム直後（コメント欄の前）の2枠
+     *   - 参加 /oc/{id}/jump: 説明文と禁止事項の間 と 禁止事項と入室ボタンの間 の2枠
+     *   - おすすめ /recommend/{tag}: 5件ごとに固定高さの枠（最後のチャンクの後には置かない）
      */
-    static bool $enableAds = false;
+    static bool $enableAds = true;
 
     /**
      * オファーウォール等のページ単位メッセージ用に adsbygoogle.js タグ（gTag）を出力するか。
