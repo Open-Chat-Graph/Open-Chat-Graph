@@ -103,7 +103,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php // 1枠目: 1時間ランキングと24時間ランキングの間（ヘッダーには置かない）。トップは計3枠。 ?>
-        <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive') ?>
+        <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive', false) ?>
         <?php viewComponent('top_ranking_comment_list_hour24', compact('dto')) ?>
 
         <?php if (MimimalCmsConfig::$urlRoot === ''): ?>
