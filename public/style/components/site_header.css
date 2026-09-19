@@ -723,8 +723,28 @@ html.is-ios .site_header_outer.header-hidden {
    （横長固定枠時代の .horizontal-ads-parent の margin 相当を復活）。padding なのでマージンの相殺を
    受けず、確実に約1rem分あく。jump ページは .oc-jump-ad 側で 0 に上書きされるため対象外。 */
 .responsive-google-parent {
-  padding: 1rem 0 0;
+  padding: 1rem 1rem 0;
   box-sizing: border-box;
+}
+
+/* 広告枠の左右にページ共通の余白(1rem)を入れて、周りのセクション（.top-ranking の margin や
+   各 section の padding）と左右をそろえる。おすすめページのようにリスト(.top-ranking)の
+   内側に置いた枠は、リスト側の余白で既にそろっているので二重にしない。 */
+.rectangle-ads-parent,
+.rectangle2-ads-parent,
+.rectangle3-ads-parent,
+.rectangle4-ads-parent {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.top-ranking .responsive-google-parent,
+.top-ranking .rectangle-ads-parent,
+.top-ranking .rectangle2-ads-parent,
+.top-ranking .rectangle3-ads-parent,
+.top-ranking .rectangle4-ads-parent {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* レスポンシブ広告(data-ad-format="auto" + full-width-responsive)は配信サイズが可変。
@@ -754,13 +774,7 @@ ins.responsive-google[data-ad-status='unfilled'] {
   max-width: 812px;
 }
 
-/* recommend リスト内(top5 直下)の広告だけは、ルーム行の左右1remインデント
-   (.pad-side-top-ranking .top-ranking の margin)の外へ出し、コンテナ幅いっぱいに表示する。
-   行と左右をそろえる従来方針から「広告は横幅いっぱい」へ変更。負マージンでインデントを相殺。 */
-.top-ranking > .responsive-google-parent {
-  margin-left: -1rem;
-  margin-right: -1rem;
-}
+/* 旧「広告は横幅いっぱい」方針の負マージンは撤回。左右はページ共通の余白でそろえる。 */
 
 @media screen and (min-width: 512px) {
   .rectangle3-ads,
