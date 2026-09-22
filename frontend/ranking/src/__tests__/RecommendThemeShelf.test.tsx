@@ -64,4 +64,55 @@ describe('RecommendThemeShelf', () => {
     expect(screen.queryAllByRole('link')).toHaveLength(0)
     expect(container.querySelector('.MuiSkeleton-root')).not.toBeNull()
   })
+
+  // CF のレート制限（/oclist-tags も /oclist と同じ枠）を実ユーザーが踏まないよう、
+  // 隣接スライドの先出し分は取得しない。高さだけスケルトンで確保する。
+  it('active=false（隣接スライド）では取得せず、スケルトンで高さだけ確保する', () => {
+    const fetchMock = vi.fn(() => new Promise(() => {}))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { container } = render(
+      <SWRConfig value={{ provider: () => new Map() }}>
+        <MemoryRouter>
+          <Provider>
+            <RecommendThemeShelf category={0} subCategory="" active={false} />
+          </Provider>
+        </MemoryRouter>
+      </SWRConfig>
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(container.querySelector('.MuiSkeleton-root')).not.toBeNull()
+  })
+
+  // 隣接スライドがアクティブになると描画分岐が変わって再マウントする。そこで初回取得が走ること。
+  it('アクティブになった時点（再マウント）で1回だけ取得する', async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve([{ name: 'ゲーム', slug: 'g' }]) })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrap = (active: boolean) => (
+      <SWRConfig value={{ provider: () => new Map() }}>
+        <MemoryRouter>
+          <Provider>
+            {active ? (
+              <RecommendThemeShelf category={0} subCategory="" active />
+            ) : (
+              <div>
+                <RecommendThemeShelf category={0} subCategory="" active={false} />
+              </div>
+            )}
+          </Provider>
+        </MemoryRouter>
+      </SWRConfig>
+    )
+
+    const { rerender } = render(wrap(false))
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    rerender(wrap(true))
+    await waitFor(() => expect(screen.getAllByRole('link')).toHaveLength(1))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })

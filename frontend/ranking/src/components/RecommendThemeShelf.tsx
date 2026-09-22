@@ -39,13 +39,17 @@ const SKELETON_CHIP_WIDTHS = [76, 56, 92, 64, 84]
  *   swiper-no-swiping を付与しネイティブスクロール。右端フェードは mask-image（CSSのみ）。
  * - category / subCategory は描画中スライドの値を受け取る（隣接スライドにも先出しできるよう props 化）。
  * - 取得後にタグが無い文脈では何も出さない。並び替え中も keepPreviousData でちらつかせない。
+ * - active=false（隣接スライドの先出し）では取得しない。詳細は下の useSWR のコメント。
  */
 const RecommendThemeShelf = memo(function RecommendThemeShelf({
   category,
   subCategory,
+  active = true,
 }: {
   category: number
   subCategory: string
+  /** 表示中スライドか。false（隣接スライドの先出し）なら /oclist-tags を取得しない */
+  active?: boolean
 }) {
   const params = useAtomValue(listParamsState)
   const sp = isSP()
@@ -62,9 +66,20 @@ const RecommendThemeShelf = memo(function RecommendThemeShelf({
     page: '0',
   }).toString()
 
+  // Cloudflare のレート制限（対象パスを IP ごと 120req/10s）は `/oclist-tags` も `/oclist` と
+  // 同じ枠で数える。棚は「アクティブ＋前後の隣接スライド」の3枚ぶん描画されるので、素で取ると
+  // 絞り込みタブ1タップあたり一覧3本＋棚3本＝6本になり、連続タップで実ユーザーが 429 を踏む
+  // （2026-07-30 実測。iPhone が3分で 429×25）。取得を実際に必要な分だけに絞る:
+  // - isPaused: 非アクティブ（隣接スライドの先出し）では取得しない。キャッシュがあれば表示に使い、
+  //   無ければスケルトンで高さだけ確保する（レイアウトずれは起こさない）。アクティブになると
+  //   スライドの描画分岐が変わって再マウントするので、そこで初回取得が走る。
+  // - revalidateIfStale: スワイプで前後スライドを往復するだけの再マウントで再検証させない
+  //   （304 でも CF は1リクエストとして数えるため枠を食う）。棚の中身は毎時更新なので許容。
   const { data } = useSWR(`${rankingArgDto.baseUrl}/oclist-tags?${query}`, fetcher, {
     keepPreviousData: true,
     revalidateOnFocus: false,
+    revalidateIfStale: false,
+    isPaused: () => !active,
   })
   const themes = data ?? []
 
