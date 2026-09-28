@@ -252,7 +252,7 @@ docker compose exec app sh -c 'find /var/www/html/storage -name "*.db" -exec cho
 
 ## 🏗️ 技術スタック
 
-- PHP 8.5 + [MimimalCMS](https://github.com/mimimiku778/MimimalCMS)（自作MVCフレームワーク）
+- PHP 8.5 + [MimimalCMS](https://github.com/pika-02-03/MimimalCMS)（自作MVCフレームワーク）
 - MySQL/MariaDB + SQLite
 - React + TypeScript + Vite / Create React App
 
