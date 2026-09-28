@@ -21,10 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## インフラ操作（oc-infra スキル・本人のみ）
 
 GA4/GTM/Search Console/AdSense・Cloudflare・本番/stg の SSH・MySQL など、このリポの外側のインフラは
-private リポ `oc-infra` をスキルとして登録して操作する（本人 mimimiku778 のみアクセス可。詳細は oc-infra の `SKILL.md`）:
+private リポ `oc-infra` をスキルとして登録して操作する（本人 pika-02-03 のみアクセス可。詳細は oc-infra の `SKILL.md`）:
 
 ```bash
-git clone https://github.com/mimimiku778/oc-infra.git ~/repos/oc-infra
+git clone https://github.com/pika-02-03/oc-infra.git ~/repos/oc-infra
 ln -sfn ~/repos/oc-infra ~/.claude/skills/oc-infra   # /oc-infra スキルとして登録
 ```
 
