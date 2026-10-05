@@ -151,11 +151,6 @@ Route::path('oclist', [OpenChatRankingPageApiController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-Route::path('oclist-tags', [OpenChatRankingPageApiController::class, 'themeTags'])
-    ->match(function (FileStorageInterface $fileStorage) {
-        checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
-    });
-
 // 詳細成長分析（/labs/growth）。専門ユーザー向け・重いクエリ。React は /ranking と同一バンドル
 // （React Router が URL で AnalysisPage を出し分け）。ページ HTML は毎時更新基準でCDNキャッシュ。
 Route::path('labs/growth', [ReactAnalysisPageController::class, 'index'])

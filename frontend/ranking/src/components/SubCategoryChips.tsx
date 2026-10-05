@@ -9,7 +9,6 @@ import { useSetListParams } from '../hooks/ListParamsHooks'
 import { rankingArgDto } from '../config/config'
 import { useAtom } from 'jotai'
 import { subCategoryChipsStackScrollLeft } from '../store/atom'
-import { t } from '../config/translation'
 import { trackEvent } from '../utils/track'
 
 const Chips = memo(function Chips({
@@ -39,20 +38,7 @@ const Chips = memo(function Chips({
   }, [])
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center">
-      <span
-        style={{
-          flexShrink: 0,
-          fontFamily: 'var(--font-family, sans-serif)',
-          fontSize: '12px',
-          fontWeight: 700,
-          color: 'var(--c-cool-text)',
-          whiteSpace: 'nowrap',
-          paddingRight: '2px',
-        }}
-      >
-        {t('サブカテゴリ')}:
-      </span>
+    <Stack direction="row" spacing={1}>
       {existsProp &&
         rankingArgDto.subCategories[category as SubCategoryKey].map((el, i) =>
           sub_category === el ? (

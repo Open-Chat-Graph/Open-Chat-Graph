@@ -264,7 +264,6 @@
   --c-shadow-strong: rgba(0, 0, 0, 0.3);      /* 検索オーバーレイの影 */
   --c-border-gray: #e0e0e0;                   /* 画像添付・ギャラリー枠 */
   --c-mui-blue: #1976d2;                      /* ドラッグ中の枠（MUI標準青） */
-  --c-green-shelf: #06a34a;                   /* テーマ棚の緑文字（統合候補: --c-btn-blog-text） */
   --c-overlay-60: rgba(0, 0, 0, 0.6);         /* 画像プレビュー黒幕 */
   --c-overlay-text: rgba(255, 255, 255, 0.7); /* 黒幕上の白70% */
   --c-overlay-btn: rgba(255, 255, 255, 0.15);
@@ -470,7 +469,6 @@ body {
   --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
   --c-mui-blue: #1d9bf0;
-  --c-green-shelf: #4ade80;          /* 要調整 */
   --c-overlay-60: rgba(0, 0, 0, 0.7);
 
   /* 公開分析バッジ・チップ */
@@ -544,7 +542,6 @@ body {
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
-  --c-green-shelf: #34d399;
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 
@@ -718,7 +715,6 @@ body {
   --c-chip-dark: #3f4347; /* slate-600: 中明度の面＋白文字（明るいピルは浮くため不採用） */
   --c-icon-ghost: rgba(255, 255, 255, 0.18);
   --c-mui-blue: #1d9bf0;
-  --c-green-shelf: #4ade80;          /* 要調整 */
   --c-overlay-60: rgba(0, 0, 0, 0.7);
 
   /* 公開分析バッジ・チップ */
@@ -792,7 +788,6 @@ body {
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
-  --c-green-shelf: #34d399;
   --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 

@@ -14,11 +14,6 @@ type RankingArgDto = {
   urlRoot: '' | '/tw' | '/th'
 }
 
-type ThemeTag = {
-  name: string
-  slug: string
-}
-
 interface ErrorResponse {
   error: {
     code: string

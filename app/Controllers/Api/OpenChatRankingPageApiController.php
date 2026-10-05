@@ -82,16 +82,4 @@ class OpenChatRankingPageApiController
     {
         return response($this->dispatchRanking($repo));
     }
-
-    /**
-     * 回遊導線: いま表示中（現在の絞り込み）の上位ルームが持つ recommend タグを集約して返す。
-     * カテゴリ/キーワード/list（時間軸）/sort/order に連動する。ページは先頭固定。
-     */
-    function themeTags(OpenChatStatsRankingApiRepository $repo)
-    {
-        $this->args->page = 0;
-        $ids = array_map(fn($dto) => $dto->id, $this->dispatchRanking($repo));
-
-        return response($repo->aggregateRecommendTags($ids, 12));
-    }
 }
