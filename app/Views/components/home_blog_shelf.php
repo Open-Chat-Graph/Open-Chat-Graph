@@ -6,8 +6,8 @@
  * viewComponent 経由なので自動エスケープは無く、表示値は h() でエスケープする。
  */
 
-// トップ棚は GA4 の実測PV上位をハードコードで指名する（2026-07-04 時点・直近28日:
-// growing 161PV / kensaku-ranking-ochi 108PV / kyujosho 90PV / … / ninzu-jogen 33PV）。
+// トップ棚は GA4 の実測PV上位をハードコードで指名する（2026-10-05 時点・6/5〜10/4 の合計PV:
+// growing 708 / kensaku-ranking-ochi 343 / ninzu-jogen 110 / member-fuyasu 63。記事は 2026-10 にこの4本へ統合）。
 // ブログ全体のPVがまだ小さく上位の偏りも安定しているため自動集計はせず、
 // 順位が入れ替わったらここを手で更新する。指名記事が消えた場合は更新日順で埋める。
 $_pinnedSlugs = ['growing-openchat-features', 'openchat-kensaku-ranking-ochi'];
