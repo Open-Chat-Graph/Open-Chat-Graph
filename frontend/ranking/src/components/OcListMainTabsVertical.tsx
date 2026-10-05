@@ -10,7 +10,6 @@ import { CategoryListAppBar } from './CategoryListAppBar'
 import SiteHeaderVertical from './SiteHeaderVertical'
 import SiteHeaderVerticalSearch from './SiteHeaderVerticalSearch'
 import { t } from '../config/translation'
-import RecommendThemeShelf from './RecommendThemeShelf'
 import { trackEvent } from '../utils/track'
 
 function TabPanel({ children, value, index }: TabPanelProps) {
@@ -118,10 +117,6 @@ export default function OcListMainTabsVertical({ cateIndex }: { cateIndex: numbe
           <SiteHeaderVerticalSearch />
         </Box>
         <Box sx={{ p: '1.5rem', pt: '1rem' }}>
-          <RecommendThemeShelf
-            category={OPEN_CHAT_CATEGORY[cateIndex][1]}
-            subCategory={params.sub_category}
-          />
           {OPEN_CHAT_CATEGORY.map((el, i) => (
             <TabPanel value={cateIndex} index={i} key={i}>
               <FetchOpenChatRankingList query={query} cateIndex={cateIndex} />

@@ -12,7 +12,6 @@ import { listParamsState } from '../store/atom'
 import { useAtom } from 'jotai'
 import SiteHeader from './SiteHeader'
 import { useInView } from 'react-intersection-observer'
-import RecommendThemeShelf from './RecommendThemeShelf'
 import CategoryTabsBar from './CategoryTabsBar'
 import { trackEvent } from '../utils/track'
 
@@ -131,41 +130,14 @@ function OcListSwiper({
               const showList = isActive || isTransition || isPrev || isNext
               if (!showList) return null
 
-              // 関連テーマ棚はリストと一緒に出す。
-              // - active / 遷移中: 通常フロー（リストの上）。リストごと縦スクロールする。
-              // - ダミー（隣接スライド）: ダミーリストは絶対配置(top:scrollY)なので、棚を通常フローに
-              //   置くと棚の高さ分だけダミーリストを押し下げてマージン過多になり、棚自身もスクロールで
-              //   画面外へ消える（スクロール中スワイプの不具合）。棚をダミーの絶対配置コンテナ内に入れ、
-              //   リストと一緒に正しい位置へ置く。
-              const shelf = (
-                <RecommendThemeShelf
-                  category={OPEN_CHAT_CATEGORY[i][1]}
-                  subCategory={isActive ? params.sub_category : ''}
-                />
-              )
-
               if (isActive) {
-                return (
-                  <>
-                    {shelf}
-                    <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
-                  </>
-                )
+                return <OpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
               }
               if (isTransition && tIndex) {
-                return (
-                  <>
-                    {shelf}
-                    <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
-                  </>
-                )
+                return <OpenChatRankingList query={tIndex[1]} cateIndex={i} />
               }
               return (
-                <DummyOpenChatRankingList
-                  query={getQuery(i, cateIndex, params)}
-                  cateIndex={i}
-                  shelf={shelf}
-                />
+                <DummyOpenChatRankingList query={getQuery(i, cateIndex, params)} cateIndex={i} />
               )
             })()}
             {i === cateIndex && (

@@ -8,6 +8,7 @@ use App\Config\AppConfig;
 use App\Services\Blog\BlogService;
 use App\Services\Blog\Dto\BlogSummaryDto;
 use App\Views\Schema\PageBreadcrumbsListSchema;
+use Shadow\Kernel\Response;
 use Shadow\Kernel\ViewInterface;
 use Spatie\SchemaOrg\Organization;
 use Spatie\SchemaOrg\Schema;
@@ -15,6 +16,23 @@ use Spatie\SchemaOrg\Schema;
 class BlogController
 {
     private const CSS = ['components/site_header', 'components/site_footer', 'components/room_list', 'pages/blog'];
+
+    /**
+     * 2026-10 に統合・削除した記事の旧 slug → 移転先パス（301）。
+     * 検索結果・外部リンク・AI 検索からの着地を 404 にせず、内容が近い残存記事（または一覧）へ送る。
+     * 統合: 急上昇の条件／ランキングの仕組み → growing-openchat-features、始め方 → 人数を増やす方法、
+     *       通報・凍結 → 検索に出てこない（凍結との見分け方を収録）。それ以外は一覧か人気ランキングへ。
+     */
+    private const MOVED = [
+        'openchat-kyujosho-ranking' => 'blog/growing-openchat-features',
+        'openchat-ranking-shikumi' => 'blog/growing-openchat-features',
+        'openchat-hajimekata' => 'blog/openchat-member-fuyasu',
+        'openchat-tsuho-tobei' => 'blog/openchat-kensaku-ranking-ochi',
+        'openchat-kanrinin-kotsu' => 'blog',
+        'openchat-kiken-anzen' => 'blog',
+        'openchat-taikai-sakujo' => 'blog',
+        'openchat-sagashikata' => 'ranking',
+    ];
 
     public function index(BlogService $blog, PageBreadcrumbsListSchema $breadcrumbsShema): ViewInterface
     {
@@ -46,8 +64,12 @@ class BlogController
         return view('blog_index_content', compact('_meta', '_css', '_breadcrumbsShema', '_schema', 'articles'));
     }
 
-    public function article(BlogService $blog, PageBreadcrumbsListSchema $breadcrumbsShema, string $slug): ViewInterface|false
+    public function article(BlogService $blog, PageBreadcrumbsListSchema $breadcrumbsShema, string $slug): ViewInterface|Response|false
     {
+        if (isset(self::MOVED[$slug])) {
+            return redirect(self::MOVED[$slug], 301);
+        }
+
         $article = $blog->get($slug);
         if (!$article) return false; // 404
 

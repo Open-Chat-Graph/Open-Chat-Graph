@@ -120,27 +120,11 @@
 .MuiChip-root.openchat-item-header-chip.category {
   font-weight: normal;
   border-radius: 8px;
-  height: 26px;
-  font-size: 12px;
+  height: 32px;
 }
 
 .MuiChip-root.openchat-item-header-chip.category:hover {
   background-color: var(--c-surface);
-}
-
-/* 急上昇テーマ送客チップ（/ranking → /recommend）。形は既存 .category と共通（角丸8px）で、色だけ緑にしてサブカテゴリ絞り込みと区別する。-webkit-user-drag でリンクのネイティブドラッグを抑止（ドラッグ横スクロールを邪魔しない）。 */
-.MuiChip-root.openchat-item-header-chip.theme-link {
-  background-color: var(--c-chip-hot-bg);
-  color: var(--c-chip-hot-text);
-  font-weight: 700;
-  font-size: 14px;
-  height: 32px;
-  border-radius: 99px;
-  -webkit-user-drag: none;
-}
-
-.MuiChip-root.openchat-item-header-chip.theme-link:hover {
-  background-color: var(--c-chip-hot-bg-hover);
 }
 
 .MuiChip-root.openchat-item-header-chip.selected {
