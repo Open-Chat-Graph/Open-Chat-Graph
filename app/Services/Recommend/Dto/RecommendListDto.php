@@ -105,6 +105,16 @@ class RecommendListDto
         return array_slice($result, 0, $limit);
     }
 
+    /**
+     * ヘッダーのサムネイルタイル用に、表示順の先頭 $len 件を返す（シャッフルしない）。
+     *
+     * @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[]
+     */
+    function getPreviewList(int $len): array
+    {
+        return array_slice($this->mergedElements, 0, $len);
+    }
+
     function getCount(): int
     {
         return count($this->mergedElements);

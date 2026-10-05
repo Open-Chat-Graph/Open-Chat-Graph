@@ -43,6 +43,21 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </h1>
       </div>
 
+      <?php // 上位5室のサムネイルをタイル状に並べる（1枚目を大きく＋4枚）。装飾なので aria-hidden。
+            // 2026-05 に「テーマの勢い」グラフへ置き換えていたが、グラフ撤去にあわせて元に戻した ?>
+      <?php if (isset($recommend) && $count >= 5) : ?>
+        <figure class="talkroom_banner_img_figure">
+          <?php $ocList = $recommend->getPreviewList(5) ?>
+          <div class="talkroom_banner_img_area">
+            <?php foreach ($ocList as $previewOc) : ?>
+              <div class="talkroom_banner_img_area_inner">
+                <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $previewOc['name'] ?>" src="<?php echo imgUrl($previewOc['img_url']) ?>">
+              </div>
+            <?php endforeach ?>
+          </div>
+        </figure>
+      <?php endif ?>
+
       <section class="recommend-lead">
         <?php if (!empty($tagDescription)) : ?>
           <p class="recommend-lead__theme"><?php echo $tagDescription // View が自動でhtmlエスケープ済み ?></p>
