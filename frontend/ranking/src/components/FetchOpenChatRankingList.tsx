@@ -163,33 +163,25 @@ const ListTitleDesc = memo(OCListTitleDesc)
 export function DummyOpenChatRankingList({
   query,
   cateIndex,
-  shelf,
 }: {
   query: string
   cateIndex: number
-  // 関連テーマ棚。絶対配置コンテナの中（リストの上）に入れて、スクロール中スワイプでも棚の高さ分
-  // リストを押し下げず、棚もリストと一緒に正しい位置へ来るようにする。
-  shelf?: React.ReactNode
 }) {
   const params = useAtomValue(listParamsState)
 
   return (
     <div className="dummy-list" style={{ position: 'relative' }}>
-      {/* 絶対配置のラッパに「棚」と「リスト」を縦に並べる。棚を .div-fetchOpenChatRankingList の中に
-          入れると、`.div-fetchOpenChatRankingList * { font-family }`(OpenChatList.css)で棚のフォントが
-          上書きされ、通常フローのアクティブ側の棚（var(--font-family)）と字面/サイズがズレる（iOSで顕著・
-          切替直後にガタつく）。棚はこのセレクタの外＝ラッパ直下に置き、アクティブ側と同じフォントにする。 */}
-      <div style={{ position: 'absolute', top: `${window.scrollY}px`, width: '100%' }}>
-        {shelf}
-        <div className="div-fetchOpenChatRankingList">
-          <ListTitleDesc
-            cateIndex={cateIndex}
-            isSearch={!!params.keyword}
-            list={params.list}
-            visibility={false}
-          />
-          <FetchDummyList cateIndex={cateIndex} query={query} />
-        </div>
+      <div
+        className="div-fetchOpenChatRankingList"
+        style={{ position: 'absolute', top: `${window.scrollY}px`, width: '100%' }}
+      >
+        <ListTitleDesc
+          cateIndex={cateIndex}
+          isSearch={!!params.keyword}
+          list={params.list}
+          visibility={false}
+        />
+        <FetchDummyList cateIndex={cateIndex} query={query} />
       </div>
     </div>
   )
