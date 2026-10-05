@@ -79,8 +79,13 @@
   font-weight: 700;
 }
 
+/* 地球アイコン: 周りの文字色（--c-text-4）に追従・文字より少し小さく・次の文字に寄せる（行の gap 12px を相殺） */
 .footer-lang-globe {
-  font-size: 12px;
+  width: 11px;
+  height: 11px;
+  flex: none;
+  margin-right: -7px;
+  color: var(--c-text-4);
 }
 
 .copyright {
