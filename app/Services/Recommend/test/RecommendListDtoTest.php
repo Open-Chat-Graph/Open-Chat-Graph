@@ -48,7 +48,6 @@ class RecommendListDtoTest extends TestCase
             'mergedElements' => $merged,
             'shuffledMergedElements' => null,
             'sortAndUniqueTags' => [],
-            'themeMomentum' => [],
             'relatedTags' => [],
         ];
         $parts = '';

@@ -51,20 +51,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </section>
 
-      <?php viewComponent('recommend_growth_chart', [
-        'growth' => $growth ?? [],
-        'extractTag' => $extractTag,
-        'recommend' => $recommend ?? null,
-      ]) ?>
-
       <?php // シェア導線（oc ページと共通のコンポーネント）。共有リンクの og:image は
             // テーマ専用の動的カード(/recommend/{tag}/card)で展開される。
-            // 余白は実測で上下とも28pxに揃える: 上=勢いグラフの margin-bottom 28px（自前の上マージンは0）、
+            // 余白は上下とも28pxに揃える: 上=リード文との間（旧「テーマの勢い」グラフの分を自前で確保）、
             // 下=見出しまで素で8pxしか無いので margin-bottom 20px を足して 28px にする ?>
       <?php viewComponent('share_buttons', [
         '_shareUrl' => $canonical,
         '_shareGa' => ['content_type' => 'recommend', 'item_id' => htmlspecialchars_decode($tag)],
-        '_shareStyle' => 'margin: 0 1rem 20px',
+        '_shareStyle' => 'margin: 28px 1rem 20px',
       ]) ?>
 
     </section>

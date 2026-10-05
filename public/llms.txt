@@ -23,4 +23,3 @@
 
 - [サイトについて・ポリシー](https://openchat-review.me/policy)
 - [ソースコード（MIT ライセンス）](https://github.com/Open-Chat-Graph/Open-Chat-Graph)
-- [公式ブログ](https://openchat-review.me/blog)

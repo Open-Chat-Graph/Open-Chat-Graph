@@ -97,10 +97,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
 
-        <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。急上昇テーマ直後（≈20%深度）に置き到達率を最大化。ja のみ。 ?>
-            <?php viewComponent('home_blog_shelf') ?>
-        <?php endif ?>
-
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php // 1枠目: 1時間ランキングと24時間ランキングの間（ヘッダーには置かない）。トップは計3枠。 ?>
         <?php \App\Views\Ads\GoogleAdsense::output('siteSeparatorResponsive', false) ?>

@@ -242,18 +242,9 @@
   --c-border-mid: #ccc;              /* 管理プレビュー枠 */
   --c-text-mid-3: #888;              /* 統合候補: --c-text-3 */
 
-  /* recommend グループUI（--c-rg-*） */
-  --c-rg-text-strong: #2b2f36;
-  --c-rg-text-heading: #1f2328;
+  /* recommend / labs の本文色・影（--c-rg-*）。未使用トークンはテーマの勢いグラフ撤去時に削除 */
   --c-rg-text: #6b7178;
-  --c-rg-text-soft: #7b828b;
-  --c-rg-text-mid: #777e87;
   --c-rg-muted: #9aa0a6;
-  --c-rg-border: #eceff3;
-  --c-rg-line: #e7eaee;              /* 枠と淡面の兼用 */
-  --c-rg-surface: #f7f8fa;
-  --c-rg-green-bg: #eef6f0;
-  --c-rg-green-border: #cfe9d9;
   --c-rg-shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 4px 16px rgba(20, 22, 26, 0.05);
 
   /* React UI 系 */
@@ -492,17 +483,8 @@ body {
   --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
-  --c-rg-text-strong: #e7e9ea /* slate-200 */;
-  --c-rg-text-heading: #eff1f2 /* slate-100 */;
   --c-rg-text: #7d8287 /* slate-400 */;
-  --c-rg-text-soft: #686d72 /* slate-500 */;
-  --c-rg-text-mid: #7d8287 /* slate-400 */;
   --c-rg-muted: #686d72 /* slate-500 */;
-  --c-rg-border: #2f3336 /* slate-700 */;
-  --c-rg-line: #2f3336 /* slate-700 */;
-  --c-rg-surface: #16181c /* slate-800 */;
-  --c-rg-green-bg: rgba(6, 199, 85, 0.1);
-  --c-rg-green-border: rgba(6, 199, 85, 0.3);
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */
@@ -738,17 +720,8 @@ body {
   --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
-  --c-rg-text-strong: #e7e9ea /* slate-200 */;
-  --c-rg-text-heading: #eff1f2 /* slate-100 */;
   --c-rg-text: #7d8287 /* slate-400 */;
-  --c-rg-text-soft: #686d72 /* slate-500 */;
-  --c-rg-text-mid: #7d8287 /* slate-400 */;
   --c-rg-muted: #686d72 /* slate-500 */;
-  --c-rg-border: #2f3336 /* slate-700 */;
-  --c-rg-line: #2f3336 /* slate-700 */;
-  --c-rg-surface: #16181c /* slate-800 */;
-  --c-rg-green-bg: rgba(6, 199, 85, 0.1);
-  --c-rg-green-border: rgba(6, 199, 85, 0.3);
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */

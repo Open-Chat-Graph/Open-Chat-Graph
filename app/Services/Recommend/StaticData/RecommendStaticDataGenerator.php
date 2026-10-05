@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Recommend\StaticData;
 
 use App\Config\AppConfig;
-use App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface;
 use App\Services\Recommend\Dto\RecommendListDto;
 use App\Services\Recommend\RecommendRankingBuilder;
 use App\Services\Recommend\RecommendUpdater;
@@ -33,7 +32,6 @@ class RecommendStaticDataGenerator
         private RecommendUpdater $recommendUpdater,
         private FileStorageInterface $fileStorage,
         private RecommendRankingBuilder $recommendRankingBuilder,
-        private RecommendGrowthRepositoryInterface $recommendGrowthRepository,
     ) {}
 
     // ============================================================
@@ -42,21 +40,11 @@ class RecommendStaticDataGenerator
 
     function getRecomendRanking(string $tag): RecommendListDto
     {
-        $dto = $this->fromFileOrDb(
+        return $this->fromFileOrDb(
             'recommendStaticDataDir',
             hash('crc32', $tag),
             fn() => $this->recommendRankingBuilder->buildTag($tag)
         );
-
-        // テーマの勢いは毎時バッチが .dat に同梱する。null（新規タグの即時生成・旧 .dat）の場合も
-        // この層でライブ集計して埋め、呼び出し側へ null を漏らさない。
-        // 「静的データが無ければその場で生成してフォールバックする」のは静的データ層の責務
-        // （リスト本体の fromFileOrDb と同じ考え方）で、コントローラには持ち込まない。
-        if ($dto->themeMomentum === null) {
-            $this->setThemeMomentum($dto);
-        }
-
-        return $dto;
     }
 
     function getCategoryRanking(int $category): RecommendListDto
@@ -153,7 +141,6 @@ class RecommendStaticDataGenerator
             foreach ($tagChunk as $tag) {
                 // 念のためのフォールバック（バルクは全タグ分の DTO を返すため通常は通らない）。
                 $dto = $dtoByTag[$tag] ?? $this->recommendRankingBuilder->buildTag($tag);
-                $this->setThemeMomentum($dto);
                 $dto->relatedTags = $relatedTagsMap[$tag] ?? [];
 
                 $fileName = hash('crc32', $tag);
@@ -163,27 +150,6 @@ class RecommendStaticDataGenerator
                 );
             }
         }
-    }
-
-    /**
-     * テーマの勢い(themeMomentum)を事前計算して DTO に同梱する。
-     *
-     * /recommend/{tag} がアクセスごとに ranking_position.db を集計していたのを、
-     * 毎時の .dat 生成時の1回に寄せる。対象はタグ .dat のみ（勢いを表示するのはタグページだけ）。
-     * 集計窓の起点・対象IDはページ側のライブ計算と同一
-     * (RecommendOpenChatPageController::index と揃えること)。
-     */
-    private function setThemeMomentum(RecommendListDto $dto): void
-    {
-        if (!$dto->getCount()) {
-            $dto->themeMomentum = [];
-            return;
-        }
-
-        $dto->themeMomentum = $this->recommendGrowthRepository->themeMomentum(
-            array_column($dto->getList(false, null), 'id'),
-            new \DateTime($dto->hourlyUpdatedAt)
-        );
     }
 
     private function updateCategoryStaticData(): void

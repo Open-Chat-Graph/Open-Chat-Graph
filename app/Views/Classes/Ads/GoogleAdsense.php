@@ -157,7 +157,7 @@ class GoogleAdsense
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         // オファーウォール（全画面メッセージ）の抑止。次のどちらかで抑止する:
-        //   - $suppressOfferwall（ページ単位・常時。ブログやトップ）
+        //   - $suppressOfferwall（ページ単位・常時。トップ）
         //   - X の通用口（/x）のクッキーを持つ訪問者（AdOptOutGuard::xFlagVar() が true）
         // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
         // フラグが undefined（ガード未実行）なら抑止しない＝従来どおり出る（フェイルオープン）。
