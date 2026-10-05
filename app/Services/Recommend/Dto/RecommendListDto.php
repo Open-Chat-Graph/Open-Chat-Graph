@@ -24,12 +24,6 @@ class RecommendListDto
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
 
-    /**
-     * テーマの勢い(RecommendGrowthRepository::themeMomentum の結果)。毎時バッチの .dat 生成時に
-     * 事前計算して同梱。null = 未計算 → ページ側がライブ計算にフォールバック。[] = 計算済みデータ不足。
-     */
-    public ?array $themeMomentum = null;
-
     /** このタグの関連タグ(タグ => 共起スコア)。毎時バッチが .dat に同梱。null = 未同梱(旧 .dat)。 */
     public ?array $relatedTags = null;
 
