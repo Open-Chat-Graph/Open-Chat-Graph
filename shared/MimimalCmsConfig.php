@@ -51,7 +51,6 @@ class MimimalCmsConfig
         \App\Models\Repositories\OcPageCacheRepositoryInterface::class => \App\Models\Repositories\OcPageCacheRepository::class,
 
         \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepositoryInterface::class => \App\Models\Repositories\OpenChatDataForUpdaterWithCacheRepository::class,
-        \App\Models\Repositories\Recommend\RecommendGrowthRepositoryInterface::class => \App\Models\Repositories\Recommend\RecommendGrowthRepository::class,
         \App\Models\Repositories\Recommend\TrendingThemeRepositoryInterface::class => \App\Models\Repositories\Recommend\TrendingThemeRepository::class,
 
         \App\Models\CommentRepositories\CommentListRepositoryInterface::class => \App\Models\CommentRepositories\CommentListRepository::class,

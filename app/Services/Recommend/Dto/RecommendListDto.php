@@ -24,12 +24,6 @@ class RecommendListDto
     public array $mergedElements;
     public ?array $shuffledMergedElements = null;
 
-    /**
-     * テーマの勢い(RecommendGrowthRepository::themeMomentum の結果)。毎時バッチの .dat 生成時に
-     * 事前計算して同梱。null = 未計算 → ページ側がライブ計算にフォールバック。[] = 計算済みデータ不足。
-     */
-    public ?array $themeMomentum = null;
-
     /** このタグの関連タグ(タグ => 共起スコア)。毎時バッチが .dat に同梱。null = 未同梱(旧 .dat)。 */
     public ?array $relatedTags = null;
 
@@ -109,6 +103,16 @@ class RecommendListDto
                 ?: ((int)$b['member'] <=> (int)$a['member']));
 
         return array_slice($result, 0, $limit);
+    }
+
+    /**
+     * ヘッダーのサムネイルタイル用に、表示順の先頭 $len 件を返す（シャッフルしない）。
+     *
+     * @return array{ id:int,name:string,img_url:string,member:int,table_name:string,emblem:int }[]
+     */
+    function getPreviewList(int $len): array
+    {
+        return array_slice($this->mergedElements, 0, $len);
     }
 
     function getCount(): int

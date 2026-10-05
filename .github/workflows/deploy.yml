@@ -185,7 +185,8 @@ jobs:
             API_KEY="$CF_API_KEY"
           fi
           if [ -z "$ZONE_ID" ] || [ -z "$API_KEY" ]; then
-            echo "Cloudflare credentials not configured. Skipping cache purge."
+            # 無言で success にすると、古い HTML がエッジに残ったまま「デプロイ済み」に見える（stg で実際に起きた）
+            echo "::warning::Cloudflare credentials not configured (IS_STG=$IS_STG). Skipping cache purge — old HTML may stay cached at the edge."
             exit 0
           fi
           echo "Purging Cloudflare cache..."

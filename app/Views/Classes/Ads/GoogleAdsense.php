@@ -134,7 +134,7 @@ class GoogleAdsense
     /**
      * @param bool $suppressOfferwall true でこのページの Offerwall（全画面メッセージ）のみ常時抑制する。
      *                                同意メッセージ・広告ブロック回復など他のメッセージ表示には影響しない。
-     *                                （blog 記事やトップなど「絶対 Offerwall を出さない」ページ用）
+     *                                （トップなど「絶対 Offerwall を出さない」ページ用）
      *                                これとは別に、X の通用口（/x）を踏んだ訪問者にはページを問わず
      *                                Offerwall だけを抑止する（ディスプレイ広告は出す）。
      */
@@ -157,7 +157,7 @@ class GoogleAdsense
         if (AppConfig::$isStaging || AppConfig::$isDevlopment) return;
 
         // オファーウォール（全画面メッセージ）の抑止。次のどちらかで抑止する:
-        //   - $suppressOfferwall（ページ単位・常時。ブログやトップ）
+        //   - $suppressOfferwall（ページ単位・常時。トップ）
         //   - X の通用口（/x）のクッキーを持つ訪問者（AdOptOutGuard::xFlagVar() が true）
         // adsbygoogle.js のロードより前に定義される必要があるため、スクリプトタグの直前で出力する。
         // フラグが undefined（ガード未実行）なら抑止しない＝従来どおり出る（フェイルオープン）。

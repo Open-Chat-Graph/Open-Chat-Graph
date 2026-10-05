@@ -43,6 +43,21 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         </h1>
       </div>
 
+      <?php // 上位5室のサムネイルをタイル状に並べる（1枚目を大きく＋4枚）。装飾なので aria-hidden。
+            // 2026-05 に「テーマの勢い」グラフへ置き換えていたが、グラフ撤去にあわせて元に戻した ?>
+      <?php if (isset($recommend) && $count >= 5) : ?>
+        <figure class="talkroom_banner_img_figure">
+          <?php $ocList = $recommend->getPreviewList(5) ?>
+          <div class="talkroom_banner_img_area">
+            <?php foreach ($ocList as $previewOc) : ?>
+              <div class="talkroom_banner_img_area_inner">
+                <img class="talkroom_banner_img" aria-hidden="true" alt="<?php echo $previewOc['name'] ?>" src="<?php echo imgUrl($previewOc['img_url']) ?>">
+              </div>
+            <?php endforeach ?>
+          </div>
+        </figure>
+      <?php endif ?>
+
       <section class="recommend-lead">
         <?php if (!empty($tagDescription)) : ?>
           <p class="recommend-lead__theme"><?php echo $tagDescription // View が自動でhtmlエスケープ済み ?></p>
@@ -51,20 +66,14 @@ viewComponent('head', compact('_css', '_schema', 'canonical') + ['_meta' => $_me
         <?php endif ?>
       </section>
 
-      <?php viewComponent('recommend_growth_chart', [
-        'growth' => $growth ?? [],
-        'extractTag' => $extractTag,
-        'recommend' => $recommend ?? null,
-      ]) ?>
-
       <?php // シェア導線（oc ページと共通のコンポーネント）。共有リンクの og:image は
             // テーマ専用の動的カード(/recommend/{tag}/card)で展開される。
-            // 余白は実測で上下とも28pxに揃える: 上=勢いグラフの margin-bottom 28px（自前の上マージンは0）、
+            // 余白は上下とも28pxに揃える: 上=リード文との間（旧「テーマの勢い」グラフの分を自前で確保）、
             // 下=見出しまで素で8pxしか無いので margin-bottom 20px を足して 28px にする ?>
       <?php viewComponent('share_buttons', [
         '_shareUrl' => $canonical,
         '_shareGa' => ['content_type' => 'recommend', 'item_id' => htmlspecialchars_decode($tag)],
-        '_shareStyle' => 'margin: 0 1rem 20px',
+        '_shareStyle' => 'margin: 28px 1rem 20px',
       ]) ?>
 
     </section>

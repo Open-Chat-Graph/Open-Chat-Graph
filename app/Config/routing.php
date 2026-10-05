@@ -30,7 +30,7 @@ use App\Controllers\Pages\JumpOpenChatPageController;
 use App\Controllers\Pages\AllRoomStatsPageController;
 use App\Controllers\Pages\LabsPageController;
 use App\Controllers\Pages\OpenChatPageController;
-use App\Controllers\Pages\BlogController;
+use App\Controllers\Pages\BlogRedirectController;
 use App\Controllers\Pages\PolicyPageController;
 use App\Controllers\Pages\RankingBanLabsPageController;
 use App\Controllers\Pages\ReactRankingPageController;
@@ -74,9 +74,10 @@ Route::path('policy', [PolicyPageController::class, 'index'])
         checkLastModified($fileStorage->getContents('@hourlyCronUpdatedAtDatetime'));
     });
 
-Route::path('blog', [BlogController::class, 'index']);
+// 旧ブログ URL は 301 転送だけ残す（ブログ本体は 2026-10 に撤去）
+Route::path('blog', [BlogRedirectController::class, 'index']);
 
-Route::path('blog/{slug}', [BlogController::class, 'article']);
+Route::path('blog/{slug}', [BlogRedirectController::class, 'article']);
 
 Route::path('robots.txt', [RobotsController::class, 'index'])
     ->match(function (FileStorageInterface $fileStorage) {

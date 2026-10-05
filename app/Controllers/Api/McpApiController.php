@@ -80,7 +80,7 @@ class McpApiController
     }
 
     /**
-     * 一般ユーザー向けの MCP 案内ページ（ブログと同じトンマナ）。
+     * 一般ユーザー向けの MCP 案内ページ（記事スタイルは pages/blog.css を流用）。
      * 「AIに教えるURL」をそのままブラウザで開いた人にも意味が通るようにする。
      */
     private function guidePage(PageBreadcrumbsListSchema $breadcrumbsShema)

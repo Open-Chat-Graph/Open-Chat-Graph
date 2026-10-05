@@ -176,11 +176,6 @@ class RecommendOpenChatPageController
             $recommend->mergedElements,
         );
 
-        // テーマの勢い: 毎時バッチが .dat 生成時に事前計算して DTO に同梱している。
-        // .dat が無い場合のライブ集計フォールバックも静的データ層(getRecomendRanking)が保証する
-        // ため、コントローラでは同梱値を使うだけ（アクセスごとの SQLite 集計はしない）。
-        $growth = $recommend->themeMomentum ?? [];
-
         // ビュー(recommend_content)が使うのは mergedElements(表示30件) とスカラーのみ。
         // 母集団(最大300件)の $list を空にして、view() の再帰エスケープが
         // 表示されない数百行を毎回走査するのを避ける。
@@ -202,7 +197,6 @@ class RecommendOpenChatPageController
             'canonical',
             'hourlyUpdatedAt',
             'tagDescription',
-            'growth',
         ));
     }
 }

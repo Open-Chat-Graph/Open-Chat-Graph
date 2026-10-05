@@ -7,7 +7,7 @@ base/         … サイト骨格
                 mvpmin.css = 軽量版（検索・ポリシー・エラー系ヘッダ用）
                 unset.css  = .unset（all: unset の打ち消し一式）
 components/   … 2ページ以上で使う部品CSS（ヘッダ・フッタ・一覧アイテム・検索フォーム等）
-pages/        … 特定ページ（ファミリー）専用CSS（ルーム詳細・recommend・ブログ等）
+pages/        … 特定ページ（ファミリー）専用CSS（ルーム詳細・recommend・MCP案内（blog.css を流用）等）
 react/        … React コンポーネント用の手書きCSS（Viteビルド成果物ではない）
 ```
 

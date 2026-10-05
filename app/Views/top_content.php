@@ -12,7 +12,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
     <?php // トップはオファーウォールを出さない方針。ディスプレイ広告のために adsbygoogle.js は読むが、
-          // ブログと同じく Funding Choices の API でオファーウォールだけ常時抑止する。 ?>
+          // Funding Choices の API でオファーウォールだけ常時抑止する。 ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
 
     <?php // トップ表示時は最上部に独自の検索を置くため、ヘッダーの検索ボタンは隠す（hideSearchButton） ?>
@@ -96,10 +96,6 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
             <?php viewComponent('topic_tag', ['topPageDto' => $dto]);
             AppConfig::$listLimitTopRanking = 10; ?>
         </div>
-
-        <?php if (MimimalCmsConfig::$urlRoot === ''): // 読み物（ブログ）棚。急上昇テーマ直後（≈20%深度）に置き到達率を最大化。ja のみ。 ?>
-            <?php viewComponent('home_blog_shelf') ?>
-        <?php endif ?>
 
         <?php viewComponent('top_ranking_comment_list_hour', compact('dto')) ?>
         <?php // 1枠目: 1時間ランキングと24時間ランキングの間（ヘッダーには置かない）。トップは計3枠。 ?>

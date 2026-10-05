@@ -25,6 +25,7 @@ class RecommendListDtoTest extends TestCase
         $restored = unserialize(serialize($dto));
         $this->assertSame(30, $restored->getCount(), '表示は先頭30件');
         $this->assertSame(array_column(array_slice($rows, 0, 30), 'id'), array_column($restored->getList(false, 30), 'id'));
+        $this->assertSame(array_column(array_slice($rows, 0, 5), 'id'), array_column($restored->getPreviewList(5), 'id'), 'ヘッダーのサムネイルタイルは表示順の先頭5件');
         // プールはfindByMemberRangeで全50件から絞れる
         $near = $restored->findByMemberRange(0, 500, 0, 1000, 5);
         $this->assertNotEmpty($near);
@@ -48,7 +49,6 @@ class RecommendListDtoTest extends TestCase
             'mergedElements' => $merged,
             'shuffledMergedElements' => null,
             'sortAndUniqueTags' => [],
-            'themeMomentum' => [],
             'relatedTags' => [],
         ];
         $parts = '';

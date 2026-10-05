@@ -216,7 +216,7 @@ html.is-ios .site_header_outer.header-hidden {
   width: fit-content;
 }
 
-/* 右側アクション群（ブログ／カテゴリ）。検索ボタン(右端absolute)分の50pxを確保 */
+/* 右側アクション群（カテゴリ）。検索ボタン(右端absolute)分の50pxを確保 */
 .header-actions {
   display: flex;
   align-items: center;

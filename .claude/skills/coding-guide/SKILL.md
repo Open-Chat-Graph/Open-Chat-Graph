@@ -152,7 +152,7 @@ React ソースは**このリポ内 `frontend/`**（別リポではない）。�
 
 | 訪問者 | オファーウォール | ディスプレイ広告 |
 |---|---|---|
-| 通常 | 出る（トップとブログは `gTag(suppressOfferwall: true)` で常時抑止） | 出る |
+| 通常 | 出る（トップは `gTag(suppressOfferwall: true)` で常時抑止） | 出る |
 | `/x` を踏んだ人（3時間） | **出ない**（`AdOptOutGuard::xFlagVar()` → `gTag` が Funding Choices の `controlledMessagingFunction` で抑止） | 出る |
 | スタッフエントランス（合言葉） | 出ない | 出ない（`flagVar()` → adsbygoogle.js を昇格させず枠も畳む） |
 

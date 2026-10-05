@@ -20,6 +20,7 @@ CLI から GitHub の画像 CDN へ直接アップロードできず、人手の
 
 1. 作業ブランチ → **base=stg** で PR を出し、CI(test) が pass したらマージする
 2. stg の Deploy job が success になったら、**確認用 URL をユーザーに提示して OK をもらう**
+   - 確認はハードリロードか `?v=<短縮SHA>` 付き URL で行う。stg の Deploy は Cloudflare パージ用の secrets（`STG_CLOUDFLARE_*`）が未設定だとパージをスキップし（ログに warning）、HTML の `Last-Modified` も毎時 cron まで変わらないため、古い HTML がエッジ/ブラウザに残り得る。必要なら oc-infra の手順で stg ゾーンを手動パージする
    （stg は Basic 認証あり。`SecretsConfig::$stagingBasicAuthUser` / `$stagingBasicAuthPassword`）
 3. OK が出たら stg→main の昇格 PR を作り、**test が success になってからマージ**する
    （待たずにマージすると本番デプロイの CI ゲートが落ちる）

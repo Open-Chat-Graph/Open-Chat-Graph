@@ -18,7 +18,6 @@
                 <li><a class="unset" href="<?php echo url('policy') ?>"><?php echo t('オプチャグラフとは？') ?></a></li>
                 <?php if (\Shared\MimimalCmsConfig::$urlRoot === ''): ?>
                     <li><a class="unset" href="<?php echo url('labs') ?>">分析Labs</a></li>
-                    <li><a class="unset" href="<?php echo url('blog') ?>">ブログ</a></li>
                     <li><a class="unset" href="<?php echo url('mcp') ?>">AI連携・データAPI (MCP)</a></li>
                 <?php endif ?>
             </ul>
@@ -45,7 +44,8 @@
             </div>
             <?php // 言語切り替え（トップのヒーローから移設）。各言語のブランド名をアンカーにする ?>
             <div class="footer-lang-row" aria-label="Language">
-                <span class="footer-lang-globe" aria-hidden="true">🌐</span>
+                <?php // 地球アイコンは絵文字だと色が固定で浮くため、文字色に追従する SVG（currentColor） ?>
+                <svg class="footer-lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <?php foreach (array_keys(\App\Config\AppConfig::LINE_OPEN_URL) as $lang): ?>
                     <?php if ($lang === \Shared\MimimalCmsConfig::$urlRoot): ?>
                         <span class="footer-lang-current"><?php echo t('オプチャグラフ', $lang) ?></span>
