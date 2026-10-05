@@ -216,10 +216,6 @@
   padding: var(--sp-section-gap) 0 var(--sp-section-pad-btm);
 }
 
-.top-page .home-blog-shelf {
-  margin-top: var(--sp-section-gap);
-}
-
 .top-page .modify-top-padding {
   margin-top: var(--sp-section-gap-sm);
 }

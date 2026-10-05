@@ -120,8 +120,8 @@ class OcPageCacheDataBuilder
             ? $this->buildHourAvailabilityLive($open_chat_id, $inCategory, $none)
             : $this->buildHourAvailabilityFromEntry($category, $hourEntry);
 
-        // 急上昇/ランキングの掲載状態（週窓）。ブログ導線(OcBlogContextLinkResolver)の状態駆動に使う。
-        // 同種の派生データの相乗りが今後増える想定（perf都合で per-room 取得に密結合する）。
+        // 急上昇/ランキングの掲載状態（週窓）。narrative_data に相乗りして保存する派生データ
+        // （旧ブログ導線の状態駆動に使っていた。現在の消費者は無いが、同種の派生データの相乗り先として維持）。
         $risingStatus = [
             'on_ranking_week' => $daily['week']['ranking_all'] || $daily['week']['ranking_in'],
             'on_rising_week' => $daily['week']['rising_all'] || $daily['week']['rising_in'],
