@@ -149,10 +149,9 @@
   --c-overlay: rgba(0, 0, 0, 0.8);   /* ツールチップ・モーダルの黒幕 */
   --c-surface-3: #f0f0f0;            /* 広告情報ボタン等の小さな面 */
 
-  /* ブログボタン（ヘッダー内・緑系） */
+  /* 緑アクセントのボタン（pages/blog.css が MCP 案内ページで使用） */
   --c-btn-blog-text: #05a648;
   --c-btn-blog-bg: #f1faf4;
-  --c-btn-blog-border: #bfe9cf;
 
   /* SNS ブランド色（シェアアイコン背景） */
   --c-sns-x: #000000;
@@ -227,24 +226,20 @@
   --c-grad-blue-btn: linear-gradient(135deg, #7eb8ff, #3a7bd5);
   --c-grad-orange-btn: linear-gradient(135deg, #ffa751, #e85d04);
 
-  /* ブログ系 */
+  /* 記事スタイル系（pages/blog.css・MCP 案内ページで使用） */
   --c-green-pale: #e2f6ea;           /* パンくず hover */
   --c-green-underline: #a8e6c2;      /* リンク下線 */
-  --c-green-text-deep: #235f3e;      /* 引用ブロック文字 */
   --c-text-silver: #c5c9ce;          /* パンくず区切り */
-  --c-blog-icon-border: #bfe7cd;     /* 記事アイコンの淡緑枠（統合候補: --c-chip-hot-border） */
   --c-brand-shadow: rgba(6, 199, 85, 0.28);
   --c-brand-shadow-soft: rgba(6, 199, 85, 0.09);
-  --c-brand-shadow-soft-2: rgba(6, 199, 85, 0.1);
   --c-ink-shadow: rgba(17, 17, 17, 0.03);
   --c-shadow-3: #777;                /* terms カードのぼかし影 */
   --c-border-plain-2: #e6e6e6;       /* labs フォーム枠（統合候補: --c-border-plain） */
   --c-border-mid: #ccc;              /* 管理プレビュー枠 */
   --c-text-mid-3: #888;              /* 統合候補: --c-text-3 */
 
-  /* recommend / labs の本文色・影（--c-rg-*）。未使用トークンはテーマの勢いグラフ撤去時に削除 */
+  /* recommend / labs の本文色・影（--c-rg-*） */
   --c-rg-text: #6b7178;
-  --c-rg-muted: #9aa0a6;
   --c-rg-shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 4px 16px rgba(20, 22, 26, 0.05);
 
   /* React UI 系 */
@@ -397,10 +392,9 @@ body {
   --c-text-dim: #d3d6d8 /* slate-300 */;
   --c-overlay: rgba(0, 0, 0, 0.85);
 
-  /* ブログボタン（緑系・暗面用に反転） */
+  /* 緑アクセントのボタン（pages/blog.css が MCP 案内ページで使用・暗面用に反転） */
   --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
   --c-btn-blog-bg: rgba(6, 199, 85, 0.12);
-  --c-btn-blog-border: rgba(6, 199, 85, 0.35);
 
   /* クールグレー系 → slate へ寄せる */
   --c-cool-surface: #16181c /* slate-800 */;
@@ -473,18 +467,14 @@ body {
   --c-chip-hot-border-hover: rgba(6, 199, 85, 0.45);
   --c-brand-ring: rgba(6, 199, 85, 0.25);
 
-  /* ブログ系 */
+  /* 記事スタイル系（pages/blog.css・MCP 案内ページで使用） */
   --c-green-pale: rgba(6, 199, 85, 0.14);
   --c-green-underline: rgba(6, 199, 85, 0.5);
-  --c-green-text-deep: #6ee7a0;      /* 要調整 */
-  --c-blog-icon-border: rgba(6, 199, 85, 0.3);
   --c-brand-shadow: rgba(0, 0, 0, 0.5);
   --c-brand-shadow-soft: rgba(0, 0, 0, 0.35);
-  --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
   --c-rg-text: #7d8287 /* slate-400 */;
-  --c-rg-muted: #686d72 /* slate-500 */;
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */
@@ -524,7 +514,6 @@ body {
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
-  --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 
   /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、
@@ -634,10 +623,9 @@ body {
   --c-text-dim: #d3d6d8 /* slate-300 */;
   --c-overlay: rgba(0, 0, 0, 0.85);
 
-  /* ブログボタン（緑系・暗面用に反転） */
+  /* 緑アクセントのボタン（pages/blog.css が MCP 案内ページで使用・暗面用に反転） */
   --c-btn-blog-text: #4ade80;        /* 要調整 green-400 */
   --c-btn-blog-bg: rgba(6, 199, 85, 0.12);
-  --c-btn-blog-border: rgba(6, 199, 85, 0.35);
 
   /* クールグレー系 → slate へ寄せる */
   --c-cool-surface: #16181c /* slate-800 */;
@@ -710,18 +698,14 @@ body {
   --c-chip-hot-border-hover: rgba(6, 199, 85, 0.45);
   --c-brand-ring: rgba(6, 199, 85, 0.25);
 
-  /* ブログ系 */
+  /* 記事スタイル系（pages/blog.css・MCP 案内ページで使用） */
   --c-green-pale: rgba(6, 199, 85, 0.14);
   --c-green-underline: rgba(6, 199, 85, 0.5);
-  --c-green-text-deep: #6ee7a0;      /* 要調整 */
-  --c-blog-icon-border: rgba(6, 199, 85, 0.3);
   --c-brand-shadow: rgba(0, 0, 0, 0.5);
   --c-brand-shadow-soft: rgba(0, 0, 0, 0.35);
-  --c-brand-shadow-soft-2: rgba(0, 0, 0, 0.35);
 
   /* recommend グループUI */
   --c-rg-text: #7d8287 /* slate-400 */;
-  --c-rg-muted: #686d72 /* slate-500 */;
   --c-rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.35);
 
   /* MVP レガシー */
@@ -761,7 +745,6 @@ body {
   --c-brand-2: #10b981;              /* 明るすぎた #11d871 を emerald-500 に減光 */
   --c-btn-blog-text: #34d399;        /* 緑文字は emerald-400 で統一（眩しさを抑える） */
   --c-chip-hot-text: #34d399;
-  --c-green-text-deep: #34d399;
   --ocj-green-text: #34d399;
 
   /* ブランド緑グラデのダーク版: αでの減光では「LINEで開く」CTAがまだ眩しいため、

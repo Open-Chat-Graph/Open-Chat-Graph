@@ -541,7 +541,7 @@ section aside:hover {
 /* タグ固有の紹介リード。h1 を唯一の見出しとし、ここは「リード本文」として従属させる。 */
 /* 旧版は __main を h1 と同等の太字18pxで出していたため、見出しが二重に並び、       */
 /* タイトルとほぼ同義の文が大きく繰り返される=量産ページ的な見え方になっていた。     */
-/* H1直下のサブタイトル(リストの説明)。カード(勢い)と競合しないよう、緑罫・箱を外した素のテキストにする。 */
+/* H1直下のサブタイトル(リストの説明)。緑罫・箱を外した素のテキストにする。 */
 .recommend-lead {
   display: block;
   margin: 5px 1rem 0;
@@ -566,12 +566,4 @@ section aside:hover {
   }
 }
 
-/* 継続チャンクの順位区切り。反復していた同一H2の置き換え(見出しではない控えめなラベル)。 */
-.recommend-ranking-continue {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--c-rg-muted);
-  padding: 2px 0 2px 2px;
-}
 

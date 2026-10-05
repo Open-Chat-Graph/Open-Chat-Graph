@@ -12,7 +12,7 @@ viewComponent('head', compact('_css', '_meta', '_schema')) ?>
 
 <body class="top-page">
     <?php // トップはオファーウォールを出さない方針。ディスプレイ広告のために adsbygoogle.js は読むが、
-          // ブログと同じく Funding Choices の API でオファーウォールだけ常時抑止する。 ?>
+          // Funding Choices の API でオファーウォールだけ常時抑止する。 ?>
     <?php \App\Views\Ads\GoogleAdsense::gTag(suppressOfferwall: true) ?>
 
     <?php // トップ表示時は最上部に独自の検索を置くため、ヘッダーの検索ボタンは隠す（hideSearchButton） ?>

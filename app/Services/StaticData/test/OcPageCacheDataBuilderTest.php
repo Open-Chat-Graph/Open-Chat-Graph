@@ -152,7 +152,7 @@ class OcPageCacheDataBuilderTest extends TestCase
             $meta['positionAvailability']['all'],
         );
 
-        // meta ブロックのキー集合（risingStatus はブログ導線の状態駆動用にキャッシュへ相乗りさせた派生データ）
+        // meta ブロックのキー集合（risingStatus は旧ブログ導線用に相乗りさせた派生データ。現在の消費者は無いが維持）
         $this->assertSame(
             ['startDate', 'endDate', 'dateCount', 'hourAvailability', 'positionAvailability', 'ohlcAvailability', 'risingStatus'],
             array_keys($meta),
