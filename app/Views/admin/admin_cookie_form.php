@@ -13,6 +13,10 @@
 <body>
     <main>
         <h2>管理クッキーの発行</h2>
+        <p>このブラウザを管理者として扱うためのクッキーを発行します。この環境の管理 API キー（<code>adminApiKey</code>）を入力してください。</p>
+        <?php if ($error): ?>
+            <p style="color: var(--c-accent-red);"><?php echo $error ?></p>
+        <?php endif ?>
         <form method="POST" action="<?php echo url('admin/cookie') ?>">
             <label for="admin-key">管理 API キー</label>
             <input type="password" id="admin-key" name="key" autocomplete="off" required style="width: 100%; max-width: 32rem;">
