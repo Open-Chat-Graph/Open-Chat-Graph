@@ -25,13 +25,13 @@ class StringCryptor implements StringCryptorInterface
         );
     }
 
-    public function setSeacretKey(string $hkdfKey, string $opensslKey)
+    public function setSeacretKey(#[\SensitiveParameter] string $hkdfKey, #[\SensitiveParameter] string $opensslKey)
     {
         $this->hkdfKey = $hkdfKey;
         $this->opensslKey = $opensslKey;
     }
 
-    public function encryptAndHashString(string $string): string
+    public function encryptAndHashString(#[\SensitiveParameter] string $string): string
     {
         $encryptedString = $this->encryptAesCbcString($string);
         $hash = $this->hashHkdf($encryptedString);
@@ -63,7 +63,7 @@ class StringCryptor implements StringCryptorInterface
         return $decryptedString;
     }
 
-    public function encryptAndHashWithValidity(string $string, int $expires): string
+    public function encryptAndHashWithValidity(#[\SensitiveParameter] string $string, int $expires): string
     {
         if ($expires < time()) {
             throw new \InvalidArgumentException(
@@ -113,7 +113,7 @@ class StringCryptor implements StringCryptorInterface
         return [(int) $expires, $decryptedString];
     }
 
-    public function hashHkdf(string $string): string
+    public function hashHkdf(#[\SensitiveParameter] string $string): string
     {
         $salt = random_bytes(16);
         $hash = hash_hkdf('SHA3-224', $this->hkdfKey, 0, $string, $salt);
@@ -122,7 +122,7 @@ class StringCryptor implements StringCryptorInterface
         return base64_encode($hash) . '@' . base64_encode($salt);
     }
 
-    public function hkdfEquals(string $string, string $hashedString): bool
+    public function hkdfEquals(#[\SensitiveParameter] string $string, #[\SensitiveParameter] string $hashedString): bool
     {
         $components = explode('@', $hashedString);
 
@@ -138,7 +138,7 @@ class StringCryptor implements StringCryptorInterface
         return hash_equals($hash, $reHash);
     }
 
-    public function encryptAesCbcString(string $targetString): string
+    public function encryptAesCbcString(#[\SensitiveParameter] string $targetString): string
     {
         $iv = random_bytes(16);
 

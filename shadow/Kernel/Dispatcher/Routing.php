@@ -134,7 +134,7 @@ class Routing implements RoutingInterface
 
         if (
             $this->routeDto->requestMethod === 'HEAD'
-            && ($allowedMethod === false || in_array(['GET', 'HEAD'], $allowedMethod, true))
+            && ($allowedMethod === false || in_array('GET', $allowedMethod, true) || in_array('HEAD', $allowedMethod, true))
         ) {
             exit;
         }
