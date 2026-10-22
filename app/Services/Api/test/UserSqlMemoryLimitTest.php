@@ -78,6 +78,39 @@ class UserSqlMemoryLimitTest extends TestCase
     }
 
     /**
+     * 入れ子で呼んでも、外側が終わるまで上限は下がったまま
+     */
+    public function testNestedRunKeepsLimitUntilOuterEnds(): void
+    {
+        UserSqlMemoryLimit::run(function () {
+            UserSqlMemoryLimit::run(fn() => null);
+            $this->assertTrue(UserSqlMemoryLimit::isActive());
+            $this->assertSame(1, posix_getrlimit(POSIX_RLIMIT_AS)[0] % 2);
+        });
+        $this->assertFalse(UserSqlMemoryLimit::isActive());
+    }
+
+    /**
+     * 取り出す行数と値の合計サイズの上限
+     */
+    public function testFetchRowsCapsRowsAndBytes(): void
+    {
+        $sql = 'WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c LIMIT 100) ';
+
+        $rows = UserSqlMemoryLimit::fetchRows($this->pdo->query($sql . 'SELECT x FROM c'), 20);
+        $this->assertCount(20, $rows);
+        $this->assertSame(['x' => 1], $rows[0]);
+
+        // 1 行 800KB × 100 行（1 つ 1 つはメモリ上限よりずっと小さい）
+        try {
+            UserSqlMemoryLimit::fetchRows($this->pdo->query($sql . "SELECT printf('%800000s', '') v FROM c"), 100);
+            $this->fail('合計サイズの上限で止まらなかった');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('Result too large', $e->getMessage());
+        }
+    }
+
+    /**
      * 致命的エラーで戻せずに残った上限（目印の奇数）は、次のリクエストの最初に戻せる。
      * 目印の無い（偶数の）上限は運用側の設定とみなして触らない
      */

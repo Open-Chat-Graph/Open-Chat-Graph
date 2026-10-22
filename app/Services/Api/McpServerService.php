@@ -447,20 +447,11 @@ class McpServerService
         }
         try {
             // 値は取り出すときに計算されるので、フェッチまでメモリ上限を掛けたまま行う
-            $rows = UserSqlMemoryLimit::run(function () use ($pdo, $sql) {
-                $result = $pdo->query($sql);
-
-                // LIMIT はバリデーション済みだが、サブクエリ内 LIMIT 等のすり抜けに備えて
-                // フェッチ行数自体も上限で打ち切る
-                $rows = [];
-                while (($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
-                    $rows[] = $row;
-                    if (count($rows) >= self::MAX_LIMIT) {
-                        break;
-                    }
-                }
-                return $rows;
-            });
+            // LIMIT はバリデーション済みだが、サブクエリ内 LIMIT 等のすり抜けに備えて
+            // フェッチ行数自体も上限で打ち切る
+            $rows = UserSqlMemoryLimit::run(
+                fn() => UserSqlMemoryLimit::fetchRows($pdo->query($sql), self::MAX_LIMIT)
+            );
         } catch (\Exception $e) {
             throw new McpToolException('SQL error: ' . $e->getMessage());
         }

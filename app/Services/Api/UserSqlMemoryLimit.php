@@ -13,6 +13,8 @@ use App\Config\AppConfig;
  * SQLite のメモリは PHP の memory_limit の外で確保されるため、printf の桁指定・|| の入れ子・
  * 直積の group_concat などで、短いクエリから 1GB 級の値を作れてしまう（キーワードでは塞ぎきれない）。
  * 上限を超える確保は失敗し、SQLite は「out of memory」の例外を返す。
+ * 上限より小さい値を何行も返させて、その後の JSON 化で PHP を落とす・巨大な応答を返させることも
+ * できるので、結果は fetchRows で合計 AppConfig::USER_SQL_MAX_RESULT_BYTES までに抑える。
  *
  * Web の PHP は FastCGI で、プロセスが次のリクエストにも使い回されるため、終わったら必ず元に戻す。
  * 致命的エラーで止まった場合は例外ハンドラの通知の前と shutdown で戻し、それでも残ったら
@@ -32,12 +34,39 @@ final class UserSqlMemoryLimit
      */
     public static function run(\Closure $fn): mixed
     {
-        self::lower();
+        $lowered = self::lower();
         try {
             return $fn();
         } finally {
-            self::restore();
+            if ($lowered) {
+                self::restore();
+            }
         }
+    }
+
+    /**
+     * 結果を最大 $maxRows 行、値の合計 AppConfig::USER_SQL_MAX_RESULT_BYTES バイトまで取り出す。
+     * 超えたら例外（呼び出し側でエラーの応答にする）。
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function fetchRows(\PDOStatement $result, int $maxRows): array
+    {
+        $rows = [];
+        $bytes = 0;
+        while (count($rows) < $maxRows && ($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
+            foreach ($row as $value) {
+                $bytes += is_string($value) ? strlen($value) : 8;
+            }
+            if ($bytes > AppConfig::USER_SQL_MAX_RESULT_BYTES) {
+                throw new \RuntimeException(sprintf(
+                    'Result too large: up to %d MB per query. Select fewer columns or rows (use substr() for long text).',
+                    AppConfig::USER_SQL_MAX_RESULT_BYTES / 1024 / 1024
+                ));
+            }
+            $rows[] = $row;
+        }
+        return $rows;
     }
 
     /** 上限を下げている最中か（致命的エラーが利用者の SQL によるものかの判定に使う） */
@@ -68,21 +97,22 @@ final class UserSqlMemoryLimit
         }
     }
 
-    private static function lower(): void
+    /** @return bool このとき上限を下げたか（既に下げている入れ子の呼び出しでは false） */
+    private static function lower(): bool
     {
         $limit = self::getLimit();
         if (self::$active || $limit === null || $limit[0] !== $limit[1]) {
-            return;
+            return false;
         }
 
-        $status = @file_get_contents('/proc/self/status');
-        if ($status === false || !preg_match('/^VmSize:\s+(\d+) kB$/m', $status, $m)) {
-            return;
+        // フレームワークのエラーハンドラは @ を付けても警告を例外にするので、読めるか先に確かめる
+        if (!is_readable('/proc/self/status') || !preg_match('/^VmSize:\s+(\d+) kB$/m', (string)file_get_contents('/proc/self/status'), $m)) {
+            return false;
         }
 
         $soft = ((int)$m[1] * 1024 + AppConfig::USER_SQL_MEMORY_HEADROOM_BYTES) | 1;
         if ($limit[1] !== POSIX_RLIMIT_INFINITY && $limit[1] <= $soft) {
-            return; // もともと十分低い
+            return false; // もともと十分低い
         }
 
         if (!self::$shutdownRegistered) {
@@ -91,6 +121,7 @@ final class UserSqlMemoryLimit
         }
 
         self::$active = posix_setrlimit(POSIX_RLIMIT_AS, $soft, $limit[1]);
+        return self::$active;
     }
 
     /** @return array{0: int, 1: int}|null [soft, hard]。unlimited は POSIX_RLIMIT_INFINITY */

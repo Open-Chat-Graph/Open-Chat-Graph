@@ -101,6 +101,10 @@ class AppConfig
     // 先に効くよう、その倍以上にしておく。
     const USER_SQL_MEMORY_HEADROOM_BYTES = 256 * 1024 * 1024;
 
+    // 利用者が書いた SQL の 1 回の結果（値の合計）の上限。JSON 化で PHP のメモリが尽きない・
+    // 小さなリクエストで巨大な応答を返させないため（普通の結果は数百 KB まで）。
+    const USER_SQL_MAX_RESULT_BYTES = 4 * 1024 * 1024;
+
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
     // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団

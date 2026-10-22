@@ -67,11 +67,7 @@ class DatabaseApiController
                 }
 
                 // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
-                $data = [];
-                while (count($data) < self::MAX_LIMIT && ($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
-                    $data[] = $row;
-                }
-                return $data;
+                return UserSqlMemoryLimit::fetchRows($result, self::MAX_LIMIT);
             });
 
             $limiter?->addRecordCount(count($data));
