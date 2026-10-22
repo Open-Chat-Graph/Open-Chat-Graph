@@ -45,15 +45,23 @@ class Routing implements RoutingInterface
     {
         $paths = $this->routeDto->parsedPathArray;
 
-        if ($paths[0] !== '' && preg_grep('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $paths) === []) {
-            throw new NotFoundException(
-                "Invalid path: It must starts with letter or underscore, followed by any number of letters, numbers, or underscores."
-            );
-        }
-
         // If there is a 3rd path, return 404 error
         if (count($paths) > 2) {
             throw new NotFoundException('Three or more Paths are not supported without parametars.');
+        }
+
+        if ($paths === ['']) {
+            return;
+        }
+
+        // Every segment becomes part of a class or method name, so all of them must be plain identifiers.
+        // Names starting with "__" are reserved for magic methods (__construct, __destruct, __call, ...).
+        foreach ($paths as $path) {
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $path) || str_starts_with($path, '__')) {
+                throw new NotFoundException(
+                    "Invalid path: It must starts with letter or underscore, followed by any number of letters, numbers, or underscores."
+                );
+            }
         }
     }
 
@@ -83,13 +91,31 @@ class Routing implements RoutingInterface
             $this->routeDto->methodName = RoutingInterface::DEFAULT_CONTROLLER_METHOD_NAME;
         }
 
-        if (class_exists($this->routeDto->controllerClassName)) {
-            if (!method_exists($this->routeDto->controllerClassName, $this->routeDto->methodName)) {
-                throw new NotFoundException('Could not find controller method.');
-            }
-        } else {
+        if (!class_exists($this->routeDto->controllerClassName)) {
             throw new NotFoundException('Could not find controller file');
         }
+
+        if (!$this->isCallableAction($this->routeDto->controllerClassName, $this->routeDto->methodName)) {
+            throw new NotFoundException('Could not find controller method.');
+        }
+    }
+
+    /**
+     * Only public, non-static, non-magic methods can be reached from a URL.
+     */
+    protected function isCallableAction(string $className, string $methodName): bool
+    {
+        if (str_starts_with($methodName, '__') || !method_exists($className, $methodName)) {
+            return false;
+        }
+
+        $method = new \ReflectionMethod($className, $methodName);
+
+        return $method->isPublic()
+            && !$method->isStatic()
+            && !$method->isAbstract()
+            && !$method->isConstructor()
+            && !$method->isDestructor();
     }
 
     /**

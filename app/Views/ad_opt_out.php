@@ -369,6 +369,7 @@ $topUrl = url();
             <?php if ($message): ?><div class="alert ok"><?php echo h($message) ?></div><?php endif ?>
 
             <form class="field" method="post" action="">
+                <?php csrfField() ?>
                 <input type="hidden" name="action" value="clear">
                 <button type="submit" class="ghost">広告を再表示する</button>
             </form>
@@ -388,6 +389,7 @@ $topUrl = url();
             <?php if ($error): ?><div class="alert ng"><?php echo h($error) ?></div><?php endif ?>
 
             <form method="post" action="">
+                <?php csrfField() ?>
                 <div class="field">
                     <label for="passphrase">合言葉</label>
                     <input type="text" class="secret" id="passphrase" name="passphrase" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required autofocus>

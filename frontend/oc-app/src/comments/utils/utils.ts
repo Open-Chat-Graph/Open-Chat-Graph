@@ -40,15 +40,28 @@ export class ServerBusyError extends Error {
   name = 'ServerBusyError'
 }
 
+// サーバが GET（コメント一覧の取得など）で発行する CSRF-Token クッキー。POST 等では X-CSRF-Token ヘッダで
+// 送り返さないと CSRF 検証を通らない（クッキーは他サイトからのリクエストにも自動で付くので証明にならない）
+export function getCsrfTokenFromCookie(): string {
+  const match = document.cookie.match(/(?:^|;\s*)CSRF-Token=([^;]*)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
 export async function fetchApi<T>(url: string, method: string = 'GET', bodyData: unknown) {
   const body = bodyData ? JSON.stringify(bodyData) : undefined
+
+  // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-Ocg-Client': '1' }
+  const csrfToken = getCsrfTokenFromCookie()
+  if (method !== 'GET' && csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken
+  }
 
   let response: Response
   try {
     response = await fetch(url, {
       method,
-      // X-Ocg-Client: サイト内JSからのfetchであることを示す（Cloudflare側で検証。直叩き収集対策）
-      headers: { 'Content-Type': 'application/json', 'X-Ocg-Client': '1' },
+      headers,
       body,
     })
   } catch (e) {

@@ -16,9 +16,9 @@ LINE オープンチャットのメンバー数を毎時記録し、ランキン
 
 ## 技術スタック
 
-- PHP 8.5 + [MimimalCMS](https://github.com/pika-02-03/MimimalCMS)（自作の軽量 MVC フレームワーク）
+- PHP 8.5 + [MimimalCMS](https://github.com/pika-02-03/MimimalCMS)（自作の軽量 MVC フレームワーク。composer パッケージ `pika-02-03/mimimalcms`）
 - MySQL/MariaDB（主データ）+ SQLite（ランキング・統計）
-- React / Preact + TypeScript（`frontend/`）
+- React + TypeScript（Vite。`frontend/`）
 - 開発環境は Docker Compose
 
 ## 開発環境
@@ -55,11 +55,21 @@ make up-mock  # Mock 環境（LINE Mock API 同梱。ネット接続なしで動
 
 | ソース | 出力先 | 内容 |
 |---|---|---|
-| `frontend/stats-graph/` | `public/js/chart/` | グラフ（Vite + Preact） |
-| `frontend/ranking/` | `public/js/react/` | ランキング（Create React App） |
-| `frontend/comments/` | `public/js/comment/` | コメント（Vite + React） |
+| `frontend/oc-app/` | `public/js/oc-app/` | ルームページのグラフ・コメント（React + Chart.js） |
+| `frontend/ranking/` | `public/js/react/` | ランキング（React） |
+| `frontend/all-room-stats/` | `public/js/all-room-stats/` | 全体統計（Chart.js） |
 
-バックエンドを起動した状態で `npm run dev`（ranking は `npm start`）すると HMR 付きで開発できる。API はプロキシ経由で `.env` の `HTTPS_PORT` に転送される。
+ビルドは `make build-frontend`（個別は `make build-frontend:oc-app` など）。バックエンドを起動した状態で各ディレクトリの `npm run dev` を実行すると HMR 付きで開発できる（oc-app・ranking は API を `.env` の `HTTPS_PORT` にプロキシする）。
+
+### フレームワーク（MimimalCMS）
+
+`shadow/` と `shared/MimimalCMS_{Enums,ExceptionHandler,HelperFunctions}.php`・`shared/Exceptions/` は
+composer パッケージ `pika-02-03/mimimalcms`（[MimimalCMS](https://github.com/pika-02-03/MimimalCMS)）のコピー。
+本番は vendor を使わずこのコピーで動くので、git にもコミットしている。
+
+- 直すとき: MimimalCMS リポで修正・タグ付け → ここで `docker compose exec app composer update pika-02-03/mimimalcms`（コピーが上書きされる）→ 差分ごとコミット
+- 手で書き換えると次の update で消える。`docker compose exec app composer mimimalcms-check` でパッケージとの差分を確認できる
+- `shared/MimimalCmsConfig.php`（DI バインド・設定）と `shared/MimimalCMS_Settings.php`（起動時の設定）はアプリ側のファイルで、同期の対象外
 
 ### DB にテーブル・カラムを追加する
 
@@ -81,7 +91,7 @@ batch/        cron・バッチ処理
 frontend/     フロントエンドのソース（ビルド → public/js/）
 public/       公開ディレクトリ（静的ファイル・index.php）
 setup/        DB スキーマ・初期化スクリプト
-shadow/       MimimalCMS フレームワーク本体
+shadow/       MimimalCMS フレームワーク本体（composer パッケージからのコピー）
 shared/       DI 設定・フレームワークの設定と共通関数
 storage/      SQLite・ログ・キャッシュ・翻訳データ
 ```

@@ -280,69 +280,65 @@ function getUA(): string
 }
 
 /**
- * This function returns the user's IP address as a string. 
- * It first checks several HTTP headers for possible IP addresses, 
- * and then falls back to the REMOTE_ADDR server variable.
+ * Returns the client's IP address as a string.
+ *
+ * Proxy headers are only trusted when listed in `MimimalCmsConfig::$trustedIpHeaders`
+ * (e.g. `['HTTP_CF_CONNECTING_IP']` behind Cloudflare). Any client can send headers such as
+ * X-Forwarded-For, so trusting them without a proxy in front lets the client choose its own IP.
+ * Falls back to REMOTE_ADDR.
  *
  * @return string The client's IP address, or 'null' if it cannot be determined.
  */
 function getIP(): string
 {
-    static $ip = null;
+    static $cached = null;
 
-    if ($ip !== null) {
-        return $ip;
+    if ($cached !== null) {
+        return $cached;
     }
 
-    $headers = [
-        'HTTP_CF_CONNECTING_IP',
-        'HTTP_SP_HOST',
-        'HTTP_VIA',
-        'HTTP_CLIENT_IP',
-        'HTTP_FORWARDED',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_FROM'
-    ];
+    $headers = isset(MimimalCmsConfig::$trustedIpHeaders) ? MimimalCmsConfig::$trustedIpHeaders : [];
 
     foreach ($headers as $header) {
-        if (!isset($_SERVER[$header])) {
+        if (!isset($_SERVER[$header]) || !is_string($_SERVER[$header])) {
             continue;
         }
 
-        $ips = array_map('trim', explode(',', $_SERVER[$header]));
-        foreach ($ips as $ip) {
+        foreach (array_map('trim', explode(',', $_SERVER[$header])) as $ip) {
             if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                return $ip;
+                return $cached = $ip;
             }
         }
     }
 
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'null';
-    return $ip;
+    return $cached = $_SERVER['REMOTE_ADDR'] ?? 'null';
 }
 
 /**
- * Generate a random CSRF token, save it to the session, and returns the token.
- * 
+ * Returns the current CSRF token, issuing one (session + `CSRF-Token` cookie) when there is none.
+ * The same token is shared by forms (`csrfField()`) and scripts (`X-CSRF-Token` header).
+ * The session must be started.
+ *
  * @return string CSRF token
  */
 function getCsrfToken(): string
 {
-    $token = bin2hex(random_bytes(16));
-    $_SESSION['_csrf'] = hash('sha256', $token);
-    return $token;
+    return \Shadow\Kernel\Cookie::csrfToken();
 }
 
 /**
- * Generate a random CSRF token, save it to the session, and output an HTML input element containing the token.
+ * Output a hidden input element containing the current CSRF token.
  */
 function csrfField()
 {
-    echo '<input type="hidden" name="_csrf" value="' . getCsrfToken() . '" />';
+    echo '<input type="hidden" name="_csrf" value="' . htmlspecialchars(getCsrfToken(), ENT_QUOTES, 'UTF-8') . '" />';
 }
 
 /**
- * Verify CSRF token from the session and the request in `$_POST['_csrf']` or `$_SERVER["HTTP_X_CSRF_TOKEN"]` or `$_COOKIE['CSRF-Token']`.
+ * Verify the CSRF token in `$_POST['_csrf']` or the `X-CSRF-Token` header against the session.
+ *
+ * The `CSRF-Token` cookie is NOT accepted as the request token: browsers attach cookies to
+ * cross-site requests automatically, so a token taken from the cookie proves nothing.
  *
  * @param bool $removeTokenFromSession [option]
  * @throws \Shared\Exceptions\BadRequestException         If CSRF token is not found on the request parameter.
@@ -357,8 +353,6 @@ function verifyCsrfToken(bool $removeTokenFromSession = false)
         $token = $_POST['_csrf'];
     } elseif (isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
         $token = $_SERVER['HTTP_X_CSRF_TOKEN'];
-    } elseif (isset($_COOKIE['CSRF-Token'])) {
-        $token = $_COOKIE['CSRF-Token'];
     } else {
         throw new \Shared\Exceptions\BadRequestException('CSRF token was not found on the request parameter.');
     }
@@ -559,14 +553,22 @@ function isWithinHalfExpires(int $futureUnixTime, int $expirationTimeInSeconds):
  *
  * @param string $targetFile The path to the file that should be rewritten.
  * @param string $content The new content to write to the file.
+ * @param int $permissions [optional] The mode of the file, default is 0644.
  * @return void Throws an Exception if the rename operation fails.
  * @throws RuntimeException if the temporary file cannot be renamed to the target file.
  */
-function safeFileRewrite(string $targetFile, string $content, int $permissions = 0777)
+function safeFileRewrite(string $targetFile, string $content, int $permissions = 0644)
 {
-    $tempFile = tempnam(sys_get_temp_dir(), 'TMP_');
+    // Create the temporary file next to the target so that rename() stays atomic (same filesystem).
+    $tempFile = tempnam(dirname($targetFile), 'TMP_');
+    if ($tempFile === false) {
+        throw new \RuntimeException("Could not create a temporary file.");
+    }
 
-    file_put_contents($tempFile, $content);
+    if (file_put_contents($tempFile, $content) === false) {
+        @unlink($tempFile);
+        throw new \RuntimeException("Could not write the temporary file.");
+    }
 
     if (!chmod($tempFile, $permissions)) {
         throw new \RuntimeException("Could not set the desired file permissions on the temporary file.");
@@ -650,11 +652,13 @@ function saveSerializedFile(string $path, mixed $value): void
 
 /**
  * Retrieve and unserialize value from a file.
+ * Only read files your application wrote itself: unserialize() on untrusted data can instantiate objects.
  *
  * @param string $path The name of the file.
+ * @param array|bool $allowedClasses [optional] Passed to unserialize() as `allowed_classes`. Default is true.
  * @return mixed The unserialized value, or false if an invalid file or error occurs.
  */
-function getUnserializedFile(string $path): mixed
+function getUnserializedFile(string $path, array|bool $allowedClasses = true): mixed
 {
     if (!file_exists($path)) {
         return false;
@@ -665,7 +669,7 @@ function getUnserializedFile(string $path): mixed
         return false;
     }
 
-    return unserialize(gzdecode($data));
+    return unserialize(gzdecode($data), ['allowed_classes' => $allowedClasses]);
 }
 
 /**
@@ -754,11 +758,11 @@ function getStorageFileList(string $path, string $pattern = '/*.*', bool $fullPa
  * Create a directory if it does not exist.
  *
  * @param string $directory The directory path.
- * @param int $permissions [optional] The mode, default is 0777 (widest possible access).
+ * @param int $permissions [optional] The mode, default is 0755.
  * @param bool $recursive [optional] Allow creating nested directories, default is true.
  * @throws \RuntimeException If there is an issue with directory creation.
  */
-function mkdirIfNotExists(string $directory, int $permissions = 0777, bool $recursive = true): void
+function mkdirIfNotExists(string $directory, int $permissions = 0755, bool $recursive = true): void
 {
     try {
         if (!is_dir($directory)) {
@@ -794,7 +798,7 @@ function deleteDirectory(string $dir): bool
 
         $itemPath = $dir . '/' . $item;
         if (!deleteDirectory($itemPath)) {
-            chmod($itemPath, 0777);
+            chmod($itemPath, 0700);
             if (!deleteDirectory($itemPath)) {
                 return false;
             }

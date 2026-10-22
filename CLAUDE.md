@@ -40,14 +40,17 @@ mock環境を作り直す操作だけ**は、明示の指示なしに実行し�
 禁止はそれだけで、phpunit（`docker compose exec app vendor/bin/phpunit <path>`）や curl でローカルを叩く
 検証は普通にやってよい。`DATA_PROTECTION=false` なら mock環境の操作も含め自由。
 
-### MimimalCMS フレームワーク本体は改造しない
+### MimimalCMS フレームワーク本体はこのリポで直接書き換えない
 
-本体はアプリと別管理で、改変すると本体アップデートと衝突し保守不能になる。
+本体は composer パッケージ `pika-02-03/mimimalcms`（[MimimalCMS](https://github.com/pika-02-03/MimimalCMS)）で管理し、
+このリポには同じ配置でコピーしてコミットしている（本番は vendor ではなくこのコピーで動く）。
+ここで直接書き換えても、次の `composer update` でパッケージの内容に上書きされて消える。
 
-- 改造禁止: `shadow/` 配下すべて、`shared/MimimalCMS_ExceptionHandler.php` / `_HelperFunctions.php` / `_Settings.php` / `_Enums.php`
-- 編集可: `shared/MimimalCmsConfig.php`（DIバインド・`$httpErrors` 等の拡張点）、`shared/bootstrap.php`、`app/` 配下すべて
-- 横断的な振る舞いはアプリ側の拡張点で実現する（拡張点の一覧は coding-guide）
-- 本体に手を入れないと解決できない／本体側の問題だと判断したら、勝手に直さず必ずユーザーに提案する
+- 同期で上書きされる（直接編集しない）: `shadow/` 配下すべて、`shared/MimimalCMS_ExceptionHandler.php` / `_HelperFunctions.php` / `_Enums.php`、`shared/Exceptions/`
+- 編集可（アプリ側）: `shared/MimimalCmsConfig.php`（DIバインド・`$httpErrors` 等の拡張点）、`shared/MimimalCMS_Settings.php`、`shared/bootstrap.php`、`app/` 配下すべて
+- 横断的な振る舞いはまずアプリ側の拡張点で実現する（拡張点の一覧は coding-guide）
+- 本体を直す必要があるときは MimimalCMS リポで直してテスト・タグ push → このリポで
+  `docker compose exec app composer update pika-02-03/mimimalcms` で同期し、`composer.lock` とコピーをまとめてコミットする（手順は coding-guide）
 
 ### Repository は必ず Interface とセットで作る
 
