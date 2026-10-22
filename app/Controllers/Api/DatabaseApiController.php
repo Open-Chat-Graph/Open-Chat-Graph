@@ -24,8 +24,11 @@ class DatabaseApiController
      */
     private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
 
-    /** 別 DB ファイルへの接続・内部設定・拡張ロード・終わらない再帰クエリを拒否するキーワード */
-    private const BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'recursive'];
+    /**
+     * 別 DB ファイルへの接続・内部設定（pragma_* 関数を含む）・拡張ロード・生ページ読み出しを拒否するキーワード。
+     * 前方一致で判定する（pragma_database_list 等も弾く）。終わらないクエリは時間制限で打ち切る。
+     */
+    private const BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat'];
 
     function index(string $username, string $stmt)
     {
@@ -59,7 +62,9 @@ class DatabaseApiController
 
         try {
             $pdo = $this->getPdo();
-            $result = $pdo->query($this->filterQuery($stmt));
+            $query = $this->filterQuery($stmt);
+            set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+            $result = $pdo->query($query);
             $data = $result->fetchAll(\PDO::FETCH_ASSOC);
 
             $limiter?->addRecordCount(count($data));
@@ -146,7 +151,7 @@ class DatabaseApiController
         }
 
         foreach (self::BLOCKED_KEYWORDS as $kw) {
-            if (preg_match('/\b' . $kw . '\b/i', $query)) {
+            if (preg_match('/\b' . $kw . '/i', $query)) {
                 throw new ValidationException("'{$kw}' is not allowed");
             }
         }

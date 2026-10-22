@@ -22,7 +22,8 @@ use App\Services\Storage\FileStorageInterface;
  *  - 個人情報を含むテーブル（ban_user, comment_log）と運営内部テーブル（ban_room）は
  *    テーブル名の部分一致で拒否（SQLite の識別子はコメントや連結で分割表記できないため、
  *    コメント除去なしの単純な部分一致で到達経路を塞げる）
- *  - ATTACH / PRAGMA / load_extension / RECURSIVE は拒否（別DBファイルへの接続・内部設定の読み出し・終わらない再帰クエリの防止）
+ *  - ATTACH / PRAGMA（pragma_* 関数も）/ load_extension / sqlite_dbpage / dbstat は拒否（別DBファイルへの接続・内部設定や生ページの読み出し防止）
+ *  - 実行時間は AppConfig::USER_SQL_TIME_LIMIT_SECONDS 秒まで（再帰CTE・直積など終わらないクエリはプロセスごと打ち切る）
  *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護。回数制限ではない）
  *
  * 例外的に get_openchat_stats の「直近24時間の毎時メンバー数」だけは統計SQLiteではなく
@@ -429,6 +430,8 @@ class McpServerService
 
         $pdo = $this->getPdo();
         $this->createExistingFilteredViews($pdo);
+        // 上限を過ぎるとプロセスごと終了し、グローバルスロットの flock も解放される
+        set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
         try {
             $result = $pdo->query($sql);
         } catch (\Exception $e) {
@@ -490,10 +493,11 @@ class McpServerService
             throw new McpToolException('Only SELECT / WITH (read-only) statements are allowed');
         }
 
-        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード）。再帰CTEは終わらないクエリで
-        // PHP ワーカーを塞げる（SQLite 実行中は max_execution_time が効かない）ため拒否する
-        foreach (['attach', 'pragma', 'load_extension', 'recursive'] as $kw) {
-            if (preg_match('/\b' . $kw . '\b/i', $sql)) {
+        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード・生ページ読み出し）。前方一致で
+        // pragma_database_list 等のテーブル値関数も弾く。終わらないクエリはキーワードでは防げない
+        // （RECURSIVE を書かなくても再帰CTEは動く・直積もある）ので、実行時間の上限で打ち切る
+        foreach (['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat'] as $kw) {
+            if (preg_match('/\b' . $kw . '/i', $sql)) {
                 throw new McpToolException("'{$kw}' is not allowed");
             }
         }

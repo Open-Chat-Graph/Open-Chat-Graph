@@ -85,6 +85,11 @@ class AppConfig
     const API_RATE_LIMIT_WINDOW_SECONDS = 300;
     const API_RATE_LIMIT_MAX_RECORDS = 1000;
 
+    // 利用者が書いた SQL（/database API・公開 MCP）の実行時間の上限（秒）。
+    // 再帰CTEや直積など終わらないクエリはキーワードでは防ぎきれないため、時間で打ち切る。
+    // SQLite の実行中でも、上限を過ぎると PHP がプロセスごと終了する（NTS ビルドの hard_timeout。既定 2 秒）。
+    const USER_SQL_TIME_LIMIT_SECONDS = 10;
+
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
     // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団
