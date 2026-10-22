@@ -36,6 +36,7 @@ class VerifyCsrfToken
                 throw $e;
             }
 
+            http_response_code(400);
             view('errors/invalid_cookie')->render();
             exit;
         } catch (\Exception $e) {
