@@ -391,7 +391,7 @@ class OcreviewApiCommentDataImporter
                 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 if (!empty($data)) {
-                    $this->sqliteInsert('ban_user', $this->hashPersonalColumns($data));
+                    $this->sqliteInsert('ban_user', $this->removePersonalColumns($data));
                 }
             }
         }
@@ -453,7 +453,7 @@ class OcreviewApiCommentDataImporter
             self::CHUNK_SIZE,
             function (array $data) {
                 if (!empty($data)) {
-                    $this->sqliteInsert('comment_log', $this->hashPersonalColumns($data));
+                    $this->sqliteInsert('comment_log', $this->removePersonalColumns($data));
                 }
             },
             'comment_log: %d / %d 件処理完了'
@@ -464,23 +464,25 @@ class OcreviewApiCommentDataImporter
             'log',
             'comment_log',
             'id',
-            'id'
+            'id',
+            fn(array $record): array => $this->removePersonalColumns([$record])[0]
         );
     }
 
     /**
-     * 公開用 SQLite に書き出す個人情報列（IP・UA）を、サイト表示（ipHash / uaHash）と同じ短いハッシュに置き換える。
-     * sqlapi.db は登録ユーザーが SQL で読める公開データなので、生の IP / UA は持ち込まない。
+     * 公開用 SQLite に書き出す個人情報列（IP・UA）を空にする。
+     * sqlapi.db は登録ユーザーが SQL で読める公開データで、IP / UA を持ち込む理由がない
+     * （短いハッシュでも IPv4 は総当たりで戻せるため、ハッシュ化ではなく書き出さない）。
      *
      * @param array<int, array<string, mixed>> $rows
      * @return array<int, array<string, mixed>>
      */
-    private function hashPersonalColumns(array $rows): array
+    private function removePersonalColumns(array $rows): array
     {
         foreach ($rows as &$row) {
             foreach (['ip', 'ua'] as $col) {
-                if (isset($row[$col]) && $row[$col] !== '') {
-                    $row[$col] = self::shortHash((string)$row[$col]);
+                if (array_key_exists($col, $row)) {
+                    $row[$col] = '';
                 }
             }
         }
@@ -489,31 +491,17 @@ class OcreviewApiCommentDataImporter
         return $rows;
     }
 
-    private static function shortHash(string $value): string
-    {
-        return substr(hash('sha256', $value), 0, 7);
-    }
-
     /**
-     * 既に書き出し済みの生の IP / UA を一度だけハッシュ化する（冪等。7桁 hex 以外の値だけを対象にする）。
+     * 既に書き出し済みの IP / UA を空にする（冪等。空でない値だけが対象）。
      */
     private function anonymizeExportedPersonalData(): void
     {
-        $hex7 = str_repeat('[0-9a-f]', 7);
         foreach (['ban_user' => ['ip'], 'comment_log' => ['ip', 'ua']] as $table => $columns) {
             foreach ($columns as $col) {
-                $rows = $this->targetPdo
-                    ->query("SELECT id, {$col} AS v FROM {$table} WHERE {$col} != '' AND NOT ({$col} GLOB '{$hex7}')")
-                    ->fetchAll(PDO::FETCH_ASSOC);
-                if (empty($rows)) {
-                    continue;
+                $count = $this->targetPdo->exec("UPDATE {$table} SET {$col} = '' WHERE {$col} != ''");
+                if ($count) {
+                    $this->log(sprintf('%s.%s: %d 件を空にした', $table, $col, $count));
                 }
-
-                $stmt = $this->targetPdo->prepare("UPDATE {$table} SET {$col} = ? WHERE id = ?");
-                foreach ($rows as $r) {
-                    $stmt->execute([self::shortHash((string)$r['v']), $r['id']]);
-                }
-                $this->log(sprintf('%s.%s: %d 件をハッシュ化', $table, $col, count($rows)));
             }
         }
     }
