@@ -101,9 +101,10 @@ class AppConfig
     // 先に効くよう、その倍以上にしておく。
     const USER_SQL_MEMORY_HEADROOM_BYTES = 256 * 1024 * 1024;
 
-    // 利用者が書いた SQL の 1 回の結果（値の合計）の上限。JSON 化で PHP のメモリが尽きない・
-    // 小さなリクエストで巨大な応答を返させないため（普通の結果は数百 KB まで）。
-    const USER_SQL_MAX_RESULT_BYTES = 4 * 1024 * 1024;
+    // 利用者が書いた SQL の結果（値の合計）の、1 リクエストあたりの上限（MCP の一括リクエストは合計）。
+    // JSON 化で PHP のメモリが尽きない・小さなリクエストで巨大な応答を返させないため。MCP は結果を 2 回
+    // JSON にするので、エスケープされる文字（\ や制御文字）だと応答は値の数倍になる（普通の結果は 100 行で数十 KB）。
+    const USER_SQL_MAX_RESULT_BYTES = 1024 * 1024;
 
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。

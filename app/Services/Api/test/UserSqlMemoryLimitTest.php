@@ -51,14 +51,13 @@ class UserSqlMemoryLimitTest extends TestCase
         $before = posix_getrlimit(POSIX_RLIMIT_AS);
 
         $result = UserSqlMemoryLimit::run(function () {
-            $this->assertTrue(UserSqlMemoryLimit::isActive());
             $this->assertSame(1, posix_getrlimit(POSIX_RLIMIT_AS)[0] % 2, '下げた値は目印の奇数');
             return $this->pdo->query("SELECT length(printf('%1000000s', ''))")->fetchColumn();
         });
 
         $this->assertSame(1000000, $result);
-        $this->assertFalse(UserSqlMemoryLimit::isActive());
         $this->assertSame($before, posix_getrlimit(POSIX_RLIMIT_AS));
+        $this->assertTrue(UserSqlMemoryLimit::hasRun());
     }
 
     /**
@@ -73,7 +72,6 @@ class UserSqlMemoryLimitTest extends TestCase
         } catch (\PDOException) {
         }
 
-        $this->assertFalse(UserSqlMemoryLimit::isActive());
         $this->assertSame($before, posix_getrlimit(POSIX_RLIMIT_AS));
     }
 
@@ -82,28 +80,33 @@ class UserSqlMemoryLimitTest extends TestCase
      */
     public function testNestedRunKeepsLimitUntilOuterEnds(): void
     {
+        $before = posix_getrlimit(POSIX_RLIMIT_AS);
+
         UserSqlMemoryLimit::run(function () {
             UserSqlMemoryLimit::run(fn() => null);
-            $this->assertTrue(UserSqlMemoryLimit::isActive());
             $this->assertSame(1, posix_getrlimit(POSIX_RLIMIT_AS)[0] % 2);
         });
-        $this->assertFalse(UserSqlMemoryLimit::isActive());
+        $this->assertSame($before, posix_getrlimit(POSIX_RLIMIT_AS));
     }
 
     /**
-     * 取り出す行数と値の合計サイズの上限
+     * 取り出す行数と値の合計サイズの上限。サイズは 1 リクエスト（MCP の一括）の合計で数える
      */
-    public function testFetchRowsCapsRowsAndBytes(): void
+    public function testFetchRowsCapsRowsAndBytesPerRequest(): void
     {
         $sql = 'WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c LIMIT 100) ';
 
-        $rows = UserSqlMemoryLimit::fetchRows($this->pdo->query($sql . 'SELECT x FROM c'), 20);
+        $bytes = 0;
+        $rows = UserSqlMemoryLimit::fetchRows($this->pdo->query($sql . 'SELECT x FROM c'), 20, $bytes);
         $this->assertCount(20, $rows);
         $this->assertSame(['x' => 1], $rows[0]);
 
-        // 1 行 800KB × 100 行（1 つ 1 つはメモリ上限よりずっと小さい）
+        // 1 つ 1 つは上限より小さい結果でも、合計が上限を超えたら止まる
+        $bytes = 0;
+        $half = "SELECT printf('%600000s', '') v";
+        $this->assertCount(1, UserSqlMemoryLimit::fetchRows($this->pdo->query($half), 100, $bytes));
         try {
-            UserSqlMemoryLimit::fetchRows($this->pdo->query($sql . "SELECT printf('%800000s', '') v FROM c"), 100);
+            UserSqlMemoryLimit::fetchRows($this->pdo->query($half), 100, $bytes);
             $this->fail('合計サイズの上限で止まらなかった');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('Result too large', $e->getMessage());

@@ -14,7 +14,7 @@ use App\Config\AppConfig;
  * 直積の group_concat などで、短いクエリから 1GB 級の値を作れてしまう（キーワードでは塞ぎきれない）。
  * 上限を超える確保は失敗し、SQLite は「out of memory」の例外を返す。
  * 上限より小さい値を何行も返させて、その後の JSON 化で PHP を落とす・巨大な応答を返させることも
- * できるので、結果は fetchRows で合計 AppConfig::USER_SQL_MAX_RESULT_BYTES までに抑える。
+ * できるので、結果は fetchRows で 1 リクエスト合計 AppConfig::USER_SQL_MAX_RESULT_BYTES までに抑える。
  *
  * Web の PHP は FastCGI で、プロセスが次のリクエストにも使い回されるため、終わったら必ず元に戻す。
  * 致命的エラーで止まった場合は例外ハンドラの通知の前と shutdown で戻し、それでも残ったら
@@ -25,6 +25,8 @@ final class UserSqlMemoryLimit
 {
     private static bool $active = false;
 
+    private static bool $ran = false;
+
     private static bool $shutdownRegistered = false;
 
     /**
@@ -34,6 +36,7 @@ final class UserSqlMemoryLimit
      */
     public static function run(\Closure $fn): mixed
     {
+        self::$ran = true;
         $lowered = self::lower();
         try {
             return $fn();
@@ -45,22 +48,22 @@ final class UserSqlMemoryLimit
     }
 
     /**
-     * 結果を最大 $maxRows 行、値の合計 AppConfig::USER_SQL_MAX_RESULT_BYTES バイトまで取り出す。
-     * 超えたら例外（呼び出し側でエラーの応答にする）。
+     * 結果を最大 $maxRows 行取り出す。値の大きさは $bytes に足していき、1 リクエストの合計が
+     * AppConfig::USER_SQL_MAX_RESULT_BYTES を超えたら例外（呼び出し側でエラーの応答にする）。
      *
+     * @param int $bytes このリクエストでこれまでに取り出した値の合計（一括リクエストでは同じ変数を渡し続ける）
      * @return array<int, array<string, mixed>>
      */
-    public static function fetchRows(\PDOStatement $result, int $maxRows): array
+    public static function fetchRows(\PDOStatement $result, int $maxRows, int &$bytes): array
     {
         $rows = [];
-        $bytes = 0;
         while (count($rows) < $maxRows && ($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
             foreach ($row as $value) {
                 $bytes += is_string($value) ? strlen($value) : 8;
             }
             if ($bytes > AppConfig::USER_SQL_MAX_RESULT_BYTES) {
                 throw new \RuntimeException(sprintf(
-                    'Result too large: up to %d MB per query. Select fewer columns or rows (use substr() for long text).',
+                    'Result too large: up to %d MB per request in total. Select fewer columns or rows (use substr() for long text).',
                     AppConfig::USER_SQL_MAX_RESULT_BYTES / 1024 / 1024
                 ));
             }
@@ -69,10 +72,13 @@ final class UserSqlMemoryLimit
         return $rows;
     }
 
-    /** 上限を下げている最中か（致命的エラーが利用者の SQL によるものかの判定に使う） */
-    public static function isActive(): bool
+    /**
+     * このリクエストで利用者の SQL を実行したか。実行時間の上限もこのときに掛けるので、以降の致命的エラー
+     * （メモリ・実行時間の上限）は利用者の SQL が原因とみなす（クエリの合間に時間切れになることもある）
+     */
+    public static function hasRun(): bool
     {
-        return self::$active;
+        return self::$ran;
     }
 
     public static function restore(): void

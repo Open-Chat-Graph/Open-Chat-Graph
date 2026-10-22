@@ -46,6 +46,9 @@ class McpServerService
     /** query_database の実行時間の上限を、このリクエストで既に掛けたか */
     private bool $timeLimitArmed = false;
 
+    /** このリクエスト（一括を含む）で query_database が返した値の合計バイト数（UserSqlMemoryLimit::fetchRows） */
+    private int $resultBytes = 0;
+
     /**
      * 公開MCPからのアクセスを拒否するテーブル。
      * ban_user / comment_log: IP等の個人情報を含む。ban_room: 運営内部データ。
@@ -204,6 +207,7 @@ class McpServerService
                 'title' => '統計DBへの読み取り専用SQL',
                 'description' => 'オプチャグラフの統計SQLiteデータベースに読み取り専用SQLを実行する。SELECT/WITHのみ・'
                     . 'LIMIT ' . self::MAX_LIMIT . 'まで(未指定なら自動付与)。超える分はOFFSETでページングする。'
+                    . '結果は1リクエスト(一括を含む)合計 ' . (AppConfig::USER_SQL_MAX_RESULT_BYTES / 1024 / 1024) . 'MB まで(長い文字列は substr で切る)。'
                     . '先に get_database_schema でテーブル定義を確認すること。',
                 'inputSchema' => [
                     'type' => 'object',
@@ -450,7 +454,7 @@ class McpServerService
             // LIMIT はバリデーション済みだが、サブクエリ内 LIMIT 等のすり抜けに備えて
             // フェッチ行数自体も上限で打ち切る
             $rows = UserSqlMemoryLimit::run(
-                fn() => UserSqlMemoryLimit::fetchRows($pdo->query($sql), self::MAX_LIMIT)
+                fn() => UserSqlMemoryLimit::fetchRows($pdo->query($sql), self::MAX_LIMIT, $this->resultBytes)
             );
         } catch (\Exception $e) {
             throw new McpToolException('SQL error: ' . $e->getMessage());

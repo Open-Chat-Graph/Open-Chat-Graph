@@ -67,7 +67,8 @@ class DatabaseApiController
                 }
 
                 // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
-                return UserSqlMemoryLimit::fetchRows($result, self::MAX_LIMIT);
+                $bytes = 0;
+                return UserSqlMemoryLimit::fetchRows($result, self::MAX_LIMIT, $bytes);
             });
 
             $limiter?->addRecordCount(count($data));
