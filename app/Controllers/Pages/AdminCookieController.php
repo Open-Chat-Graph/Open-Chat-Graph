@@ -17,14 +17,16 @@ class AdminCookieController
     function form()
     {
         noStore();
-        return view('admin/admin_cookie_form');
+        return view('admin/admin_cookie_form', ['error' => '']);
     }
 
     function register(AdminAuthService $adminAuthService, string $key)
     {
         noStore();
         if (!$adminAuthService->registerAdminCookie($key)) {
-            return false;
+            // 鍵が違うときは 400 ページではなくフォームに戻して知らせる（環境ごとに鍵が違うため取り違えやすい）
+            http_response_code(403);
+            return view('admin/admin_cookie_form', ['error' => '鍵が違います（本番と stg では鍵が別です）']);
         }
 
         return redirect();
