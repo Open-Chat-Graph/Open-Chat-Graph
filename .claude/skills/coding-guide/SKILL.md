@@ -107,6 +107,10 @@ composer パッケージ `pika-02-03/mimimalcms`（https://github.com/pika-02-03
 本番は `composer install --no-dev` なのでパッケージ自体は入らず、コミットしたコピーで動く。
 `shared/MimimalCmsConfig.php` と `shared/MimimalCMS_Settings.php` はアプリ側のファイルで、同期の対象外。
 
+- `composer update` はローカルのコンテナ（dev 依存あり）でだけ打つ。パッケージは `require-dev` なので、
+  `--no-dev` の環境（本番など）で打つと `post-update-cmd` の同期クラスが見つからずに失敗する
+- CI は `composer mimimalcms-check` でコピーとパッケージの一致を確かめる（直接編集すると CI が落ちる）
+
 ## 新規ページ追加（MVC）
 
 ### 1. ルート追加 — `/app/Config/routing.php`
