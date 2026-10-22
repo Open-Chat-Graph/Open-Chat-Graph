@@ -18,7 +18,7 @@ APIにログインできるユーザーは `app/Config/ApiUser.php`（gitignore�
 - 直近5分間で取得できるレコード数は合計1000件まで（超過は 429 + `Retry-After`）
 - 上限値は `AppConfig::API_RATE_LIMIT_WINDOW_SECONDS` / `API_RATE_LIMIT_MAX_RECORDS` で変更する
 - 状態は `storage/ja/api_rate_limit/`（gitignore済・ユーザー名のSHA256がファイル名）に保存。消せばリセットされる
-- `{username}` が `adminApiKey` の場合はレートリミット対象外
+- `{username}` が `admin` の場合はレートリミット対象外（`admin` は `routing.php` で管理 API キーの Basic 認証を通ったときだけ使える）
 
 ```php
 namespace App\Config;

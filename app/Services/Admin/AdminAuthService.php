@@ -44,7 +44,7 @@ class AdminAuthService
         return true;
     }
 
-    function registerAdminCookie(mixed $key): bool
+    function registerAdminCookie(#[\SensitiveParameter] mixed $key): bool
     {
         if (
             !is_string($key)
@@ -72,5 +72,27 @@ class AdminAuthService
         );
 
         return true;
+    }
+
+    /**
+     * 外部サイトからのページ遷移（GET）で管理クッキーが付いていないとき、同じ URL を自サイトから開き直す
+     * 小さなページを返して終了する。開き直しは同一サイトの遷移になるので SameSite=Strict のクッキーが付く。
+     * GET で副作用の無い画面（確認画面など）でだけ使うこと。副作用のある GET で使うと Strict の意味がなくなる。
+     */
+    function reloadIfCrossSiteNavigation(): void
+    {
+        if (
+            cookie()->has('admin')
+            || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET'
+            || ($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '') !== 'cross-site'
+            || ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate'
+        ) {
+            return;
+        }
+
+        noStore();
+        header('Content-Type: text/html; charset=UTF-8');
+        echo '<!DOCTYPE html><meta charset="UTF-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0">';
+        exit;
     }
 }

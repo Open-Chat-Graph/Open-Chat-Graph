@@ -106,9 +106,11 @@ curl -u "{username}:{password}" -X POST "https://openchat-review.me/database/{us
 - `SELECT` のみ。`UPDATE` / `DELETE` / `INSERT` は拒否。
 - `LIMIT` は最大 20。未指定なら自動で `LIMIT 20`、20超はエラー。20件より多く取るときは `OFFSET` でページング。
 - `stmt` は最大 10000 文字。
-- `ATTACH` / `PRAGMA` / `load_extension` / `RECURSIVE`（再帰CTE）を含む SQL は拒否。
+- `ATTACH` / `PRAGMA`（`pragma_*` 関数を含む）/ `load_extension` / `sqlite_dbpage` / `dbstat` / `zeroblob` / `randomblob` を含む SQL は拒否。
+- 1 クエリの実行時間は 10 秒まで。超えると処理ごと打ち切られ、JSON ではなく空の応答やエラーページになる（再帰CTEや直積など重いクエリは条件を絞る）。
+- 返す行数は `LIMIT` の書き方に関係なく 1 回 20 行まで。
 - 非公開テーブル: `ban_user`・`comment_log`（個人情報）・`ban_room`（運営内部）。これらを参照する SQL はエラーになる。
-  データベース内でも IP・UA は生の値ではなくサイト表示と同じ短いハッシュ（SHA-256 の先頭7桁）で保持している。
+  データベース内でも IP・UA は保持していない（空）。
 
 ### レートリミット
 

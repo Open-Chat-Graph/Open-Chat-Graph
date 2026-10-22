@@ -19,13 +19,10 @@ class DatabaseApiController
 
     /**
      * 登録ユーザーにも見せないテーブル（公開 MCP と同じ基準）。
-     * ban_user / comment_log は IP 等の個人情報（sqlapi.db にはハッシュ化して書き出すが二重に塞ぐ）、
+     * ban_user / comment_log は個人情報を含むテーブル（sqlapi.db には IP・UA を書き出さないが二重に塞ぐ）、
      * ban_room は運営内部データ。
      */
     private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
-
-    /** 別 DB ファイルへの接続・内部設定・拡張ロード・終わらない再帰クエリを拒否するキーワード */
-    private const BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'recursive'];
 
     function index(string $username, string $stmt)
     {
@@ -59,8 +56,18 @@ class DatabaseApiController
 
         try {
             $pdo = $this->getPdo();
-            $result = $pdo->query($this->filterQuery($stmt));
-            $data = $result->fetchAll(\PDO::FETCH_ASSOC);
+            $query = $this->filterQuery($stmt);
+            set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+            $result = $pdo->query($query);
+            if ($limiter) {
+                // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
+                $data = [];
+                while (count($data) < self::MAX_LIMIT && ($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
+                    $data[] = $row;
+                }
+            } else {
+                $data = $result->fetchAll(\PDO::FETCH_ASSOC);
+            }
 
             $limiter?->addRecordCount(count($data));
 
@@ -145,8 +152,8 @@ class DatabaseApiController
             throw new ValidationException('Query too long');
         }
 
-        foreach (self::BLOCKED_KEYWORDS as $kw) {
-            if (preg_match('/\b' . $kw . '\b/i', $query)) {
+        foreach (AppConfig::USER_SQL_BLOCKED_KEYWORDS as $kw) {
+            if (preg_match('/\b' . $kw . '/i', $query)) {
                 throw new ValidationException("'{$kw}' is not allowed");
             }
         }

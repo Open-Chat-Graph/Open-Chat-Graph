@@ -20,7 +20,7 @@ class AdminCookieController
         return view('admin/admin_cookie_form', ['error' => '']);
     }
 
-    function register(AdminAuthService $adminAuthService, string $key)
+    function register(AdminAuthService $adminAuthService, #[\SensitiveParameter] string $key)
     {
         noStore();
         if (!$adminAuthService->registerAdminCookie($key)) {
