@@ -92,8 +92,14 @@ class AppConfig
 
     // 利用者が書いた SQL で拒否するキーワード（前方一致。pragma_database_list 等の関数形も弾く）。
     // 別 DB ファイルへの接続・内部設定・拡張ロード・生ページ読み出しと、CPU をほぼ使わずに巨大な値を
-    // 作る関数（時間制限では止まらない。本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。
+    // 作る関数（巨大な値そのものは USER_SQL_MEMORY_HEADROOM_BYTES のメモリ上限で止まる）。
     const USER_SQL_BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat', 'zeroblob', 'randomblob'];
+
+    // 利用者が書いた SQL の実行中に、プロセスが追加で使えるメモリの上限（UserSqlMemoryLimit）。
+    // SQLite のメモリは PHP の memory_limit の外なので、OS の上限（RLIMIT_AS）で抑える
+    // （本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。PHP 側の memory_limit（128M）が
+    // 先に効くよう、その倍以上にしておく。
+    const USER_SQL_MEMORY_HEADROOM_BYTES = 256 * 1024 * 1024;
 
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
