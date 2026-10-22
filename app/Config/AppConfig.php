@@ -15,7 +15,7 @@ class AppConfig
      * 管理者がコメント・いいね・マイリストを操作するときに comment DB の user_id に入れる固定値。
      * 一般ユーザーの user_id は暗号化クッキー由来の sha3-256（64桁hex）なので衝突しない。
      * 以前は管理 API キーそのものを user_id に入れていたため、公開用 SQLite(sqlapi.db) へ
-     * 鍵が生のまま書き出されていた。鍵は user_id として一切保存しない（移行は /admin/migrateadminuserid）。
+     * 鍵が生のまま書き出されていた。鍵は user_id として一切保存しない。
      */
     const ADMIN_COMMENT_USER_ID = 'admin';
 
