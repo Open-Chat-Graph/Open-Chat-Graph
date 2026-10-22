@@ -23,6 +23,9 @@ class AdminEndPointController
     function __construct(AdminAuthService $adminAuthService)
     {
         if (!$adminAuthService->auth()) {
+            // Discord の Web 版など外部サイトのリンクから開くと SameSite=Strict の管理クッキーが付かない。
+            // ここの GET は確認画面を出すだけなので、自サイトから開き直させてクッキー付きで再リクエストさせる
+            $adminAuthService->reloadIfCrossSiteNavigation();
             throw new NotFoundException;
         }
     }

@@ -571,8 +571,10 @@ Route::path(
     [AdminEndPointController::class, 'index']
 );
 
+// deletecomment / deleteuser は通報の Discord 通知から GET のリンクで開く。GET は確認画面を出すだけで、
+// 実行は確認画面からの POST（confirmed）のときだけ（AdminEndPointController::requireConfirmation）
 Route::path(
-    'admin-api/deletecomment@post',
+    'admin-api/deletecomment@post@get',
     [AdminEndPointController::class, 'deletecomment']
 )
     ->matchNum('id')
@@ -581,7 +583,7 @@ Route::path(
     ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post',
+    'admin-api/deleteuser@post@get',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
