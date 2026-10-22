@@ -29,7 +29,8 @@ class AdminEndPointController
 
     private function requireConfirmation(string $title, string $description, string $action, array $params, ?string $cancelUrl = null)
     {
-        if (!empty($_REQUEST['confirmed'])) {
+        // 確認済みフラグは確認画面のフォーム(POST)からだけ受け付ける（URL のクエリでは素通りできない）
+        if (!empty($_POST['confirmed'])) {
             return null;
         }
 
@@ -44,6 +45,11 @@ class AdminEndPointController
 
     function index(string $type, string $id, AdminEndPoint $adminEndPoint)
     {
+        // 呼べる操作は明示した 2 つだけ（任意のメソッド名を URL から渡させない）
+        if (!in_array($type, ['modifyTag', 'deleteModifyTag'], true)) {
+            throw new NotFoundException('unknown admin action');
+        }
+
         $adminEndPoint->{$type}($id);
 
         try {

@@ -9,6 +9,7 @@ use App\Config\SecretsConfig;
 use App\Models\RecommendRepositories\RecommendRankingRepository;
 use App\Models\Repositories\OpenChatPageRepositoryInterface;
 use App\Services\OpenChatAdmin\AdminOpenChat;
+use App\Services\Admin\AdminAuthService;
 use App\Services\Recommend\RecommendGenarator;
 use App\Services\Recommend\SimilarSizeRoomService;
 use App\Services\StaticData\Dto\StaticTopPageDto;
@@ -37,6 +38,7 @@ class OpenChatPageController
         RankingPositionChartArgDtoFactoryInterface $rankingPositionChartArgDtoFactory,
         CollapseKeywordEnumerationsInterface $collapseKeywordEnumerations,
         FileStorageInterface $fileStorage,
+        AdminAuthService $adminAuthService,
         int $open_chat_id,
         ?string $isAdminPage,
     ) {
@@ -47,6 +49,11 @@ class OpenChatPageController
         // （GoogleAdsenseConfig::$adDisabledOpenChatIds に ID を足すだけで増やせる）
         GoogleAdsense::suppressForOpenChat($open_chat_id);
 
+        // 管理表示フラグは /oc/{id}/admin ルートの match が注入するが、同名のクエリ文字列(?isAdminPage=1)でも
+        // 同じ引数に入ってしまうため、管理クッキーの検証を通った場合だけ有効にする
+        if (isset($isAdminPage) && !$adminAuthService->auth()) {
+            $isAdminPage = null;
+        }
         $_adminDto = isset($isAdminPage) ? $this->getAdminDto($open_chat_id) : null;
 
         if (MimimalCmsConfig::$urlRoot === '') {

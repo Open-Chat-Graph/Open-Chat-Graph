@@ -22,7 +22,7 @@ use App\Services\Storage\FileStorageInterface;
  *  - 個人情報を含むテーブル（ban_user, comment_log）と運営内部テーブル（ban_room）は
  *    テーブル名の部分一致で拒否（SQLite の識別子はコメントや連結で分割表記できないため、
  *    コメント除去なしの単純な部分一致で到達経路を塞げる）
- *  - ATTACH / PRAGMA / load_extension は拒否（別DBファイルへの接続・内部設定の読み出し防止）
+ *  - ATTACH / PRAGMA / load_extension / RECURSIVE は拒否（別DBファイルへの接続・内部設定の読み出し・終わらない再帰クエリの防止）
  *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護。回数制限ではない）
  *
  * 例外的に get_openchat_stats の「直近24時間の毎時メンバー数」だけは統計SQLiteではなく
@@ -490,8 +490,9 @@ class McpServerService
             throw new McpToolException('Only SELECT / WITH (read-only) statements are allowed');
         }
 
-        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード）
-        foreach (['attach', 'pragma', 'load_extension'] as $kw) {
+        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード）。再帰CTEは終わらないクエリで
+        // PHP ワーカーを塞げる（SQLite 実行中は max_execution_time が効かない）ため拒否する
+        foreach (['attach', 'pragma', 'load_extension', 'recursive'] as $kw) {
             if (preg_match('/\b' . $kw . '\b/i', $sql)) {
                 throw new McpToolException("'{$kw}' is not allowed");
             }
@@ -536,7 +537,7 @@ class McpServerService
 
         $dir = $this->fileStorage->getStorageFilePath('apiRateLimitDir');
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0755, true);
         }
 
         for ($i = 0; $i < self::MAX_GLOBAL_SLOTS; $i++) {

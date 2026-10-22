@@ -660,6 +660,9 @@ function sessionStart(): bool
         session_name("session");
     }
 
+    // セッション固定化対策: 未知のセッションIDは受け付けず、サーバ側で新規発番する
+    ini_set('session.use_strict_mode', '1');
+
     return session_start();
 }
 

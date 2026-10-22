@@ -115,7 +115,10 @@
                     <td class="date-col" data-label="バン日時"><?php echo htmlspecialchars($ban['created_at']) ?></td>
                     <td class="name-col" data-label="ユーザー名" title="<?php echo htmlspecialchars($ban['name']) ?>"><?php echo htmlspecialchars($ban['name'] ?: '-') ?></td>
                     <td data-label="操作">
-                        <a class="btn-unban" href="<?php echo url('admin-api/unbanuser') ?>?banId=<?php echo $ban['id'] ?>">解除</a>
+                        <form method="POST" action="<?php echo url('admin-api/unbanuser') ?>" style="display: inline;">
+                            <input type="hidden" name="banId" value="<?php echo $ban['id'] ?>">
+                            <button type="submit" class="btn-unban">解除</button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>

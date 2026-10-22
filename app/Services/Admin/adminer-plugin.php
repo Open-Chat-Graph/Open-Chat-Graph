@@ -37,4 +37,4 @@ function adminer_object() {
 }
 
 // Include Adminer
-include __DIR__ . '/adminer-5.4.1.php';
+include __DIR__ . '/adminer-5.4.4.php';

@@ -46,15 +46,23 @@ class AdminAuthService
 
     function registerAdminCookie(mixed $key): bool
     {
-        if ($key !== SecretsConfig::$adminApiKey) {
+        if (
+            !is_string($key)
+            || SecretsConfig::$adminApiKey === ''
+            || !hash_equals(SecretsConfig::$adminApiKey, $key)
+        ) {
             return false;
         }
 
         $expires = time() + 3600 * 24 * 365;
 
+        // 管理クッキーは SameSite=Strict。管理操作の多くが GET で動く（AdminPageController の動的ルート・
+        // admin-api 等）ため、外部サイトのリンク遷移にクッキーが乗ると踏むだけで実行される。Strict なら
+        // サイト外からの遷移には一切付かない（外部リンクで管理ページを開いたときは一度リロードが要る）。
         cookie(
             ['admin' => $this->cryptor->hashHkdf(SecretsConfig::$adminApiKey)],
-            $expires
+            $expires,
+            samesite: 'strict'
         );
 
         cookie(

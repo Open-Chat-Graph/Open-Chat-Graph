@@ -12,6 +12,14 @@ class AppConfig
     const SITE_ICON_FILE_PATH = 'assets/icon-192x192.png';
 
     /**
+     * 管理者がコメント・いいね・マイリストを操作するときに comment DB の user_id に入れる固定値。
+     * 一般ユーザーの user_id は暗号化クッキー由来の sha3-256（64桁hex）なので衝突しない。
+     * 以前は管理 API キーそのものを user_id に入れていたため、公開用 SQLite(sqlapi.db) へ
+     * 鍵が生のまま書き出されていた。鍵は user_id として一切保存しない（移行は /admin/migrateadminuserid）。
+     */
+    const ADMIN_COMMENT_USER_ID = 'admin';
+
+    /**
      * 言語別のデフォルトOGP画像（トップ等の og:image・動的OGカード生成失敗時のフォールバック）。
      * 画像は SiteOgpImageGenerator で生成してコミットする（再生成: batch/exec/generate_default_ogp.php）
      */
@@ -238,8 +246,6 @@ class AppConfig
     const ROOT_PATH =   __DIR__ . '/../../';
     const SITEMAP_DIR = __DIR__ . '/../../public/sitemap.xml';
     const TRANSLATION_FILE = __DIR__ . '/../../storage/translation.json';
-
-    const FURIGANA_CACHE_DIR = __DIR__ . '/../../storage/furigana';
 
     /** SQLite ocgraph_sqlapi database path (Japanese only, not multi-language) */
     const SQLITE_OCGRAPH_SQLAPI_DB_PATH = __DIR__ . '/../../storage/ja/SQLite/ocgraph_sqlapi/sqlapi.db';

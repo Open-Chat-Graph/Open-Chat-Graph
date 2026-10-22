@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Config\AppConfig;
-use App\Config\SecretsConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Api\DatabaseApiRateLimiter;
 use App\Services\Storage\FileStorageInterface;
@@ -18,14 +17,24 @@ class DatabaseApiController
     private const MAX_LIMIT = 20;
     private const DEFAULT_LIMIT = 20;
 
+    /**
+     * 登録ユーザーにも見せないテーブル（公開 MCP と同じ基準）。
+     * ban_user / comment_log は IP 等の個人情報（sqlapi.db にはハッシュ化して書き出すが二重に塞ぐ）、
+     * ban_room は運営内部データ。
+     */
+    private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
+
+    /** 別 DB ファイルへの接続・内部設定・拡張ロード・終わらない再帰クエリを拒否するキーワード */
+    private const BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'recursive'];
+
     function index(string $username, string $stmt)
     {
         header('Content-Type: application/json');
         ob_start('ob_gzhandler');
 
-        // レートリミット（管理用キーは対象外）
+        // レートリミット（管理者は対象外。{username}=admin は routing.php で Basic 認証済み）
         $limiter = null;
-        if ($username !== SecretsConfig::$adminApiKey) {
+        if ($username !== 'admin') {
             $limiter = new DatabaseApiRateLimiter($username, app(FileStorageInterface::class));
 
             // 1. 同時実行は1リクエストまで
@@ -132,9 +141,21 @@ class DatabaseApiController
 
     private function filterQuery(string $query): string
     {
-        // 長さチェックのみ
         if (strlen($query) > 10000) {
             throw new ValidationException('Query too long');
+        }
+
+        foreach (self::BLOCKED_KEYWORDS as $kw) {
+            if (preg_match('/\b' . $kw . '\b/i', $query)) {
+                throw new ValidationException("'{$kw}' is not allowed");
+            }
+        }
+
+        // SQLite の識別子はコメントや連結で分割表記できないため、部分一致の拒否で到達経路を塞げる
+        foreach (self::BLOCKED_TABLES as $table) {
+            if (stripos($query, $table) !== false) {
+                throw new ValidationException("Table '{$table}' is not accessible via the database API");
+            }
         }
 
         // UPDATE / DELETE / INSERT を禁止（大文字小文字を問わず）

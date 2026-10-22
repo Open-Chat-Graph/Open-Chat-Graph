@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Controllers\Pages;
 
 use App\Config\AppConfig;
+use App\Config\SecretsConfig;
+use App\Models\CommentRepositories\CommentDB;
 use App\Models\Repositories\SyncOpenChatStateRepositoryInterface;
 use App\Services\Admin\AdminAuthService;
 use Shadow\DB;
 use App\Models\SQLite\SQLiteStatistics;
+use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Models\UserLogRepositories\UserLogRepository;
 use App\Services\Admin\AdminTool;
 use App\Services\Cron\Enum\BatchScript;
@@ -156,15 +159,42 @@ class AdminPageController
     }
 
     /**
-     * 管理者用cookie登録
+     * 管理者コメントの user_id を「管理 API キーそのもの」から固定値(AppConfig::ADMIN_COMMENT_USER_ID)へ移す。
+     * comment DB の comment / like / ban_user と、公開用 SQLite(sqlapi.db) の既存行を書き換える（冪等）。
+     * ※ 管理 API キーをローテーションする「前」に、言語ごと（/admin, /tw/admin, /th/admin）に 1 回ずつ実行する
      */
-    function cookie(AdminAuthService $adminAuthService, ?string $key)
+    function migrateadminuserid()
     {
-        if (!$adminAuthService->registerAdminCookie($key)) {
-            return false;
+        $old = SecretsConfig::$adminApiKey;
+        $new = AppConfig::ADMIN_COMMENT_USER_ID;
+        if ($old === '') {
+            return view('admin/admin_message_page', ['title' => 'migrateadminuserid', 'message' => '管理 API キーが未設定です。']);
         }
 
-        return view('admin/admin_message_page', ['title' => 'cookie取得完了', 'message' => 'アクセス用のcookieを取得しました']);
+        $lines = [];
+        foreach (['comment', '`like`', 'ban_user'] as $table) {
+            $count = CommentDB::execute(
+                "UPDATE {$table} SET user_id = :new WHERE user_id = :old",
+                ['new' => $new, 'old' => $old]
+            )->rowCount();
+            $lines[] = "{$table}: {$count} 行";
+        }
+
+        // 公開用 SQLite は日本語版のみ
+        if (MimimalCmsConfig::$urlRoot === '') {
+            try {
+                $pdo = SQLiteOcgraphSqlapi::connect();
+                foreach (['comment', 'comment_like', 'ban_user'] as $table) {
+                    $stmt = $pdo->prepare("UPDATE {$table} SET user_id = :new WHERE user_id = :old");
+                    $stmt->execute(['new' => $new, 'old' => $old]);
+                    $lines[] = "sqlapi.db {$table}: {$stmt->rowCount()} 行";
+                }
+            } catch (\Throwable $e) {
+                $lines[] = 'sqlapi.db: ' . $e->getMessage();
+            }
+        }
+
+        return view('admin/admin_message_page', ['title' => 'migrateadminuserid', 'message' => implode("\n", $lines)]);
     }
 
     /**
@@ -337,7 +367,7 @@ class AdminPageController
         }
 
         // パスワードなしSQLite接続を許可するプラグイン版を読み込む
-        // adminer-plugin.php内でadminer-5.4.1.phpも読み込まれる
+        // adminer-plugin.php 内で Adminer 本体（adminer-<version>.php）も読み込まれる
         include AppConfig::ROOT_PATH . 'app/Services/Admin/adminer-plugin.php';
         exit;
     }

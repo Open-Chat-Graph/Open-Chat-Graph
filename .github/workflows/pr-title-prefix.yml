@@ -15,11 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add environment prefix to PR title
+        # PR タイトルは run: に直接展開せず env 経由で渡す（タイトルに引用符やシェル記法が含まれても
+        # スクリプトとして解釈されない。フォーク PR のタイトルは第三者が自由に書けるため）
         env:
           GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.event.pull_request.base.ref }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
-          BASE="${{ github.event.pull_request.base.ref }}"
 
           # 既にプレフィックスがある場合はスキップ
           if [[ "$TITLE" == "[PROD]"* ]] || [[ "$TITLE" == "[STG]"* ]]; then
