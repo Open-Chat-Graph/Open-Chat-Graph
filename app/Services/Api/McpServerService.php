@@ -40,6 +40,10 @@ class McpServerService
 
     private const MAX_LIMIT = 100;
     private const MAX_GLOBAL_SLOTS = 2;
+    private const MAX_BATCH_SIZE = 10;
+
+    /** query_database の実行時間の上限を、このリクエストで既に掛けたか */
+    private bool $timeLimitArmed = false;
 
     /**
      * 公開MCPからのアクセスを拒否するテーブル。
@@ -86,6 +90,10 @@ class McpServerService
     {
         // バッチ（2025-03-26 まで許容）
         if (is_array($body) && array_is_list($body)) {
+            if (count($body) > self::MAX_BATCH_SIZE) {
+                return $this->errorResponse(null, -32600, 'Invalid Request: batch too large (max ' . self::MAX_BATCH_SIZE . ' messages)');
+            }
+
             $responses = [];
             foreach ($body as $msg) {
                 $res = $this->handleSingle($msg);
@@ -430,8 +438,12 @@ class McpServerService
 
         $pdo = $this->getPdo();
         $this->createExistingFilteredViews($pdo);
-        // 上限を過ぎるとプロセスごと終了し、グローバルスロットの flock も解放される
-        set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+        // 上限を過ぎるとプロセスごと終了し、グローバルスロットの flock も解放される。
+        // set_time_limit は呼ぶたびに計り直すので、バッチ内の複数クエリで延長できないよう 1 リクエスト 1 回だけ掛ける
+        if (!$this->timeLimitArmed) {
+            set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+            $this->timeLimitArmed = true;
+        }
         try {
             $result = $pdo->query($sql);
         } catch (\Exception $e) {
@@ -493,10 +505,9 @@ class McpServerService
             throw new McpToolException('Only SELECT / WITH (read-only) statements are allowed');
         }
 
-        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード・生ページ読み出し）。前方一致で
-        // pragma_database_list 等のテーブル値関数も弾く。終わらないクエリはキーワードでは防げない
+        // 危険キーワード（AppConfig::USER_SQL_BLOCKED_KEYWORDS）。終わらないクエリはキーワードでは防げない
         // （RECURSIVE を書かなくても再帰CTEは動く・直積もある）ので、実行時間の上限で打ち切る
-        foreach (['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat'] as $kw) {
+        foreach (AppConfig::USER_SQL_BLOCKED_KEYWORDS as $kw) {
             if (preg_match('/\b' . $kw . '/i', $sql)) {
                 throw new McpToolException("'{$kw}' is not allowed");
             }

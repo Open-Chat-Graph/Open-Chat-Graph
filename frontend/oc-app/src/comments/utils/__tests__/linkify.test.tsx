@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment-options {"url": "https://openchat-review.me/oc/1"}
+ */
 import { describe, it, expect } from 'vitest'
 import { isValidElement } from 'react'
 import { linkify } from '../linkify'
@@ -22,6 +25,15 @@ describe('linkify', () => {
     const o = window.location.origin
     expect(
       links(`${o}/admin-api/deletecomment?id=1 ${o}/admin/cookie ${o}/tw/admin-api/x ${o}/th/ADMIN/y`)
+    ).toEqual([])
+  })
+
+  it('does not link admin pages on same-site hosts or with path variants', () => {
+    const { protocol, host } = window.location
+    expect(
+      links(
+        `${protocol}//stg.${host}/admin/deleteoc ${protocol}//${host}//admin/x ${protocol}//${host}/%61dmin/x ${protocol}//${host}/tw//admin`
+      )
     ).toEqual([])
   })
 

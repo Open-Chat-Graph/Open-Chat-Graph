@@ -497,6 +497,8 @@ Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetai
 Route::path('admin/log/admin-action', [AdminCommentLogController::class, 'index'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->match(function (AdminAuthService $adminAuthService) {
+        // 通報の Discord 通知から開く閲覧ページ（外部サイトからなら開き直してクッキーを付ける）
+        $adminAuthService->reloadIfCrossSiteNavigation();
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
@@ -676,6 +678,8 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 1)
     ->match(function (AdminAuthService $adminAuthService) {
+        // 通報の Discord 通知から開く閲覧ページ（外部サイトからなら開き直してクッキーを付ける）
+        $adminAuthService->reloadIfCrossSiteNavigation();
         if (!$adminAuthService->auth())
             return false;
         noStore();

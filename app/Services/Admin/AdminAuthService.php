@@ -82,7 +82,8 @@ class AdminAuthService
     function reloadIfCrossSiteNavigation(): void
     {
         if (
-            ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET'
+            cookie()->has('admin')
+            || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET'
             || ($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '') !== 'cross-site'
             || ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '') !== 'navigate'
         ) {

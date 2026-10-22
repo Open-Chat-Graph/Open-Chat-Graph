@@ -90,6 +90,11 @@ class AppConfig
     // SQLite の実行中でも、上限を過ぎると PHP がプロセスごと終了する（NTS ビルドの hard_timeout。既定 2 秒）。
     const USER_SQL_TIME_LIMIT_SECONDS = 10;
 
+    // 利用者が書いた SQL で拒否するキーワード（前方一致。pragma_database_list 等の関数形も弾く）。
+    // 別 DB ファイルへの接続・内部設定・拡張ロード・生ページ読み出しと、CPU をほぼ使わずに巨大な値を
+    // 作る関数（時間制限では止まらない。本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。
+    const USER_SQL_BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat', 'zeroblob', 'randomblob'];
+
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
     // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団
