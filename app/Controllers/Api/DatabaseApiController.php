@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Config\AppConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Api\DatabaseApiRateLimiter;
+use App\Services\Api\UserSqlMemoryLimit;
 use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\ValidationException;
 
@@ -58,16 +59,17 @@ class DatabaseApiController
             $pdo = $this->getPdo();
             $query = $this->filterQuery($stmt);
             set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
-            $result = $pdo->query($query);
-            if ($limiter) {
-                // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
-                $data = [];
-                while (count($data) < self::MAX_LIMIT && ($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
-                    $data[] = $row;
+            // 値は取り出すときに計算されるので、フェッチまでメモリ上限を掛けたまま行う
+            $data = UserSqlMemoryLimit::run(function () use ($pdo, $query, $limiter) {
+                $result = $pdo->query($query);
+                if (!$limiter) {
+                    return $result->fetchAll(\PDO::FETCH_ASSOC);
                 }
-            } else {
-                $data = $result->fetchAll(\PDO::FETCH_ASSOC);
-            }
+
+                // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
+                $bytes = 0;
+                return UserSqlMemoryLimit::fetchRows($result, self::MAX_LIMIT, $bytes);
+            });
 
             $limiter?->addRecordCount(count($data));
 

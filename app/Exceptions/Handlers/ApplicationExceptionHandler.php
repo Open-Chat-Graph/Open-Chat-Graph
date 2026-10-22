@@ -35,6 +35,18 @@ class ApplicationExceptionHandler implements ApplicationExceptionHandlerInterfac
      */
     public static function reportUnhandledException(\Throwable $e): void
     {
+        // 利用者が書いた SQL を実行したリクエストの致命的エラー（メモリ・実行時間の上限）は、不具合ではないので
+        // 通知しない（exception.log には記録済み。公開 MCP は認証なしなので、通知を連打させられないように）。
+        // メモリの上限を下げたまま落ちた場合は、この後の処理のメモリ確保が失敗しないよう先に戻す
+        \App\Services\Api\UserSqlMemoryLimit::restore();
+        if (
+            \App\Services\Api\UserSqlMemoryLimit::hasRun()
+            && $e instanceof \ErrorException
+            && $e->getSeverity() === E_ERROR
+        ) {
+            return;
+        }
+
         if (MimimalCmsConfig::$exceptionHandlerDisplayErrorTraceDetails && !\App\Config\AppConfig::$isStaging) {
             return;
         }

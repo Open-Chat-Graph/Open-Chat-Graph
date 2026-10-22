@@ -1886,16 +1886,16 @@
         },
         {
             "name": "pika-02-03/mimimalcms",
-            "version": "v1.1.1",
+            "version": "v1.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pika-02-03/MimimalCMS.git",
-                "reference": "5f68b04633990463e22c2273af1c454a00e0bc0a"
+                "reference": "98fefec0a458f5e55473639db518c1862903d567"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pika-02-03/MimimalCMS/zipball/5f68b04633990463e22c2273af1c454a00e0bc0a",
-                "reference": "5f68b04633990463e22c2273af1c454a00e0bc0a",
+                "url": "https://api.github.com/repos/pika-02-03/MimimalCMS/zipball/98fefec0a458f5e55473639db518c1862903d567",
+                "reference": "98fefec0a458f5e55473639db518c1862903d567",
                 "shasum": ""
             },
             "require": {
@@ -1941,10 +1941,10 @@
             ],
             "description": "MimimalCMS: a small PHP MVC framework (router, DI container, views, helpers). The bundled Composer script copies the framework files into your project.",
             "support": {
-                "source": "https://github.com/pika-02-03/MimimalCMS/tree/v1.1.1",
+                "source": "https://github.com/pika-02-03/MimimalCMS/tree/v1.1.2",
                 "issues": "https://github.com/pika-02-03/MimimalCMS/issues"
             },
-            "time": "2026-10-22T19:13:38+00:00"
+            "time": "2026-10-22T20:20:57+00:00"
         },
         {
             "name": "sebastian/cli-parser",
