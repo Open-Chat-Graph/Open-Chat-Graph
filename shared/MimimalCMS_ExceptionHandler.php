@@ -95,16 +95,19 @@ class ExceptionHandler
 
     private static function response500(\Throwable $e, bool $log = true)
     {
-        self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
-
-        // Optional hook: lets the application report unhandled exceptions (chat notification, etc.).
-        // Define `public static function reportUnhandledException(\Throwable $e)` on ApplicationExceptionHandler.
-        $appHandlerClass = ApplicationExceptionHandler::class;
-        if (class_exists($appHandlerClass) && method_exists($appHandlerClass, 'reportUnhandledException')) {
-            try {
-                $appHandlerClass::reportUnhandledException($e);
-            } catch (\Throwable $exception) {
-                self::errorLog($exception);
+        try {
+            self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
+        } finally {
+            // Optional hook: lets the application report unhandled exceptions (chat notification, etc.).
+            // Define `public static function reportUnhandledException(\Throwable $e)` on ApplicationExceptionHandler.
+            // Runs even if rendering the error page failed, so the report is never lost.
+            $appHandlerClass = ApplicationExceptionHandler::class;
+            if (class_exists($appHandlerClass) && method_exists($appHandlerClass, 'reportUnhandledException')) {
+                try {
+                    $appHandlerClass::reportUnhandledException($e);
+                } catch (\Throwable $exception) {
+                    self::errorLog($exception);
+                }
             }
         }
     }
@@ -139,8 +142,13 @@ class ExceptionHandler
             return;
         }
 
-        // Set the HTTP response code
-        http_response_code($httpCode);
+        // Set the HTTP response code.
+        // On a fatal error with display_errors off, PHP has already set its own "HTTP/1.0 500" status line,
+        // and since PHP 8.5 calling http_response_code() after that raises a warning, which the error handler
+        // above turns into an exception and the error page is never shown. After output, it cannot be set at all.
+        if (!headers_sent() && http_response_code() !== $httpCode) {
+            http_response_code($httpCode);
+        }
 
         // Determine whether to show detailed error information
         $className = MimimalCmsConfig::class;
