@@ -131,7 +131,7 @@ class AdOptOutService
     /**
      * 入力された合言葉が正しいか（タイミング攻撃を避けるため hash_equals で比較）
      */
-    public static function verifyPassphrase(string $input): bool
+    public static function verifyPassphrase(#[\SensitiveParameter] string $input): bool
     {
         if (!self::isConfigured()) {
             return false;

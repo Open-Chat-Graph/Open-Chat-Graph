@@ -705,7 +705,7 @@ Route::path(
 //     大文字を含むキーは {username} に直接入れても照合できない。Basic認証は小文字化されない）
 //   - 登録ユーザー: Basic認証（username / 登録パスワード）に加えて、
 //     POSTボディの password（登録パスワードを SHA256 した16進文字列）も必要（二重認証）
-$databaseApiPostAuth = function (string $username, $password = null) {
+$databaseApiPostAuth = function (string $username, #[\SensitiveParameter] $password = null) {
     if (MimimalCmsConfig::$urlRoot !== '') {
         return false;
     }

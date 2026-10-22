@@ -44,7 +44,7 @@ class AdminAuthService
         return true;
     }
 
-    function registerAdminCookie(mixed $key): bool
+    function registerAdminCookie(#[\SensitiveParameter] mixed $key): bool
     {
         if (
             !is_string($key)
