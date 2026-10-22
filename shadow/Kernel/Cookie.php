@@ -76,19 +76,29 @@ class Cookie implements CookieInterface
         return isset($_COOKIE[$key]);
     }
 
-    public static function csrfToken()
+    public static function csrfToken(): string
     {
-        if (!isset($_SESSION['_csrf']) || !isset($_COOKIE['CSRF-Token'])) {
-            $token = bin2hex(random_bytes(16));
-            $_SESSION['_csrf'] = hash('sha256', $token);
-            self::push(['CSRF-Token' => $token]);
+        $token = $_COOKIE['CSRF-Token'] ?? null;
+        if (
+            is_string($token)
+            && is_string($_SESSION['_csrf'] ?? null)
+            && hash_equals($_SESSION['_csrf'], hash('sha256', $token))
+        ) {
+            return $token;
         }
+
+        return self::refreshCsrfToken();
     }
 
-    public static function refreshCsrfToken()
+    public static function refreshCsrfToken(): string
     {
         $token = bin2hex(random_bytes(16));
         $_SESSION['_csrf'] = hash('sha256', $token);
-        self::push(['CSRF-Token' => $token]);
+
+        // Readable from JavaScript on purpose: scripts echo it back in the X-CSRF-Token header.
+        self::push(['CSRF-Token' => $token], httpOnly: false);
+        $_COOKIE['CSRF-Token'] = $token;
+
+        return $token;
     }
 }

@@ -203,6 +203,13 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u www-data app composer dump-autoload --optimize
 
+      # shadow/ と shared/MimimalCMS_* はフレームワーク（pika-02-03/mimimalcms）のコピー。
+      # このリポで直接直すと次の composer update で黙って巻き戻るので、パッケージと一致しているかを確かめる。
+      - name: Check framework files match the MimimalCMS package
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T -u www-data app composer mimimalcms-check
+
       - name: Check if any frontend changed
         if: steps.skip.outputs.skip != 'true'
         id: any_frontend

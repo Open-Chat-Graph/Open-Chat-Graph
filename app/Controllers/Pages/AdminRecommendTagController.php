@@ -110,13 +110,9 @@ class AdminRecommendTagController
 
         $_meta = meta()->setTitle('おすすめタグ編集');
 
-        // 保存POST用のCSRFトークンを発行し画面に埋め込む。保存fetchは X-CSRF-Token ヘッダで
-        // これを送る（HttpOnly cookie の自動送信に依存しない確実な方式）。
-        // verifyCsrfToken は hash('sha256', token) === $_SESSION['_csrf'] で照合する。
-        $csrfToken = bin2hex(random_bytes(16));
-        $_SESSION['_csrf'] = hash('sha256', $csrfToken);
-        \Shadow\Kernel\Cookie::push(['CSRF-Token' => $csrfToken]);
-        $_COOKIE['CSRF-Token'] = $csrfToken;
+        // 保存POST用のCSRFトークンを画面に埋め込む。保存fetchは X-CSRF-Token ヘッダでこれを送る。
+        // サイト共通のトークンを使い回す（ここで作り直すと、開いている他のページのトークンが無効になる）。
+        $csrfToken = \Shadow\Kernel\Cookie::csrfToken();
 
         // _tagJson / _tagData は View のサニタイズ (htmlspecialchars) をスキップする命名規約
         // (キーが '_' で始まると View::sanitizeArray が素通しする)。これを使わないと

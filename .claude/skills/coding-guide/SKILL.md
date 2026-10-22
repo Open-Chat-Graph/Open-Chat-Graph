@@ -5,7 +5,7 @@ description: 実装ガイド。新規ページ追加（ルーティング/コン
 
 # 実装ガイド
 
-> 前提: CLAUDE.md の必守ルール（MimimalCMS 本体改造禁止・Repository は Interface とセット・スキーマ変更は schema SQL 編集だけ・キャッシュ生成の genetop/ドキュメント同期）に従う。本ガイドはその詳細と実装手順。
+> 前提: CLAUDE.md の必守ルール（MimimalCMS 本体は MimimalCMS リポで直して composer で同期・Repository は Interface とセット・スキーマ変更は schema SQL 編集だけ・キャッシュ生成の genetop/ドキュメント同期）に従う。本ガイドはその詳細と実装手順。
 
 ## アーキテクチャ
 
@@ -24,7 +24,7 @@ description: 実装ガイド。新規ページ追加（ルーティング/コン
     - `Crawler/Config/` - クローラ設定（OpenChatCrawlerConfig）
   - `ServiceProvider/` - DI 用サービスプロバイダ
   - `Views/` - テンプレートと React コンポーネント
-- `/shadow/` - MimimalCMS フレームワーク本体（改造禁止）
+- `/shadow/` - MimimalCMS フレームワーク本体（composer パッケージ `pika-02-03/mimimalcms` のコピー。直接編集しない）
 - `/batch/` - バックグラウンド処理・cron ジョブ
 - `/shared/` - フレームワーク設定・DI マッピング
 - `/storage/` - 多言語データファイル・SQLite データベース
@@ -32,9 +32,9 @@ description: 実装ガイド。新規ページ追加（ルーティング/コン
 設定ファイル:
 
 - 環境固有の設定は `local-secrets.php`（gitignore 済・DB 接続情報もここ）
-- フレームワーク設定は `/shared/MimimalCMS_*.php`
+- フレームワーク設定は `/shared/MimimalCmsConfig.php`（DI・Cookie・`$httpErrors` 等）と `/shared/MimimalCMS_Settings.php`（起動時の環境判定・secrets 読み込み）。どちらもアプリ側のファイルで編集してよい
 - Autoload (PSR-4): `Shadow\` → `shadow/`、`App\` → `app/`、`Shared\` → `shared/`、`App\Views\` → `app/Views/Classes`
-- ヘルパー関数の定義場所: `meta()` / `t()` / `getFilePath()` は `app/Helpers/functions.php`、`view()` / `url()` / `fileUrl()` は `shared/MimimalCMS_HelperFunctions.php`（本体側・改造禁止）
+- ヘルパー関数の定義場所: `meta()` / `t()` / `getFilePath()` は `app/Helpers/functions.php`、`view()` / `url()` / `fileUrl()` は `shared/MimimalCMS_HelperFunctions.php`（パッケージのコピー・直接編集しない）
 
 ## DB アクセス
 
@@ -80,8 +80,36 @@ Repository を新規作成するときは必ず `XxxRepositoryInterface` を作�
 
 - 例外→HTTP コード対応: `MimimalCmsConfig::$httpErrors` ＋ `app/Exceptions/`
 - アプリ固有の例外ハンドリング: `app/Exceptions/Handlers/ApplicationExceptionHandler`（`$exceptionMap`）
+- 未処理例外（500）の通知: `ApplicationExceptionHandler::reportUnhandledException()`（本番・stg で Discord 通知）
+- `getIP()` が信用するプロキシヘッダ: `MimimalCmsConfig::$trustedIpHeaders`（CF-Connecting-IP のみ）
 - DI 差し替え: `app/ServiceProvider/`
 - DB 接続の解放など: app 側の Repository にメソッドを生やしてコントローラから呼ぶ
+
+### CSRF
+
+`VerifyCsrfToken` ミドルウェアを付けたルートは、GET で `CSRF-Token` クッキー（JS から読める）を配り、
+POST 等ではリクエスト側のトークン（フォームの `_csrf` か `X-CSRF-Token` ヘッダ）をセッションと照合する。
+クッキーだけでは通らない（他サイトからのリクエストにもクッキーは自動で付くため）。
+
+- フォーム: `<form method="post">` の中に `<?php csrfField() ?>`
+- JS: `CSRF-Token` クッキーの値を `X-CSRF-Token` ヘッダで送る（oc-app の `fetchApi` は GET 以外で自動で付ける）
+
+### フレームワーク（MimimalCMS）を直すとき
+
+`shadow/`・`shared/MimimalCMS_{Enums,ExceptionHandler,HelperFunctions}.php`・`shared/Exceptions/` は
+composer パッケージ `pika-02-03/mimimalcms`（https://github.com/pika-02-03/MimimalCMS ）のコピー。
+このリポで直接書き換えると次の `composer update` で消えるので、次の手順で直す:
+
+1. MimimalCMS リポで修正し、`vendor/bin/phpunit` を通してタグ（`v1.x.y`）を push
+2. このリポで `docker compose exec app composer update pika-02-03/mimimalcms`（`post-update-cmd` がコピーを上書きする）
+3. `docker compose exec app composer mimimalcms-check` で差分なしを確認し、`composer.lock` とコピーをまとめてコミット
+
+本番は `composer install --no-dev` なのでパッケージ自体は入らず、コミットしたコピーで動く。
+`shared/MimimalCmsConfig.php` と `shared/MimimalCMS_Settings.php` はアプリ側のファイルで、同期の対象外。
+
+- `composer update` はローカルのコンテナ（dev 依存あり）でだけ打つ。パッケージは `require-dev` なので、
+  `--no-dev` の環境（本番など）で打つと `post-update-cmd` の同期クラスが見つからずに失敗する
+- CI は `composer mimimalcms-check` でコピーとパッケージの一致を確かめる（直接編集すると CI が落ちる）
 
 ## 新規ページ追加（MVC）
 

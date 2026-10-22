@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { validateStringNotEmpty, fetchApiFormData } from '../utils'
+import { validateStringNotEmpty, fetchApi, fetchApiFormData } from '../utils'
 
 describe('validateStringNotEmpty', () => {
   it('returns false for empty string', () => {
@@ -28,6 +28,40 @@ describe('validateStringNotEmpty', () => {
   })
 })
 
+describe('fetchApi', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    document.cookie = 'CSRF-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  })
+
+  const mockOk = () =>
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response)
+
+  it('sends the CSRF-Token cookie as X-CSRF-Token header on POST', async () => {
+    document.cookie = 'CSRF-Token=abc%2B123'
+    mockOk()
+
+    await fetchApi('/api/test', 'POST', { a: 1 })
+
+    const headers = vi.mocked(fetch).mock.calls[0][1]?.headers as Record<string, string>
+    expect(headers['X-CSRF-Token']).toBe('abc+123')
+  })
+
+  it('does not send X-CSRF-Token on GET', async () => {
+    document.cookie = 'CSRF-Token=abc123'
+    mockOk()
+
+    await fetchApi('/api/test', 'GET', null)
+
+    const headers = vi.mocked(fetch).mock.calls[0][1]?.headers as Record<string, string>
+    expect(headers['X-CSRF-Token']).toBeUndefined()
+  })
+})
+
 describe('fetchApiFormData', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -37,7 +71,8 @@ describe('fetchApiFormData', () => {
     const mockResponse = { commentId: 1, images: [] }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => mockResponse,
+      status: 200,
+      text: async () => JSON.stringify(mockResponse),
     } as Response)
 
     const formData = new FormData()
@@ -48,6 +83,7 @@ describe('fetchApiFormData', () => {
     expect(result).toEqual(mockResponse)
     expect(fetch).toHaveBeenCalledWith('/api/test', {
       method: 'POST',
+      headers: { 'Accept': 'application/json' },
       body: formData,
     })
   })
@@ -55,7 +91,8 @@ describe('fetchApiFormData', () => {
   it('throws on error response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: false,
-      json: async () => ({ error: { code: '400', message: 'Bad Request' } }),
+      status: 400,
+      text: async () => JSON.stringify({ error: { code: '400', message: 'Bad Request' } }),
     } as Response)
 
     const formData = new FormData()

@@ -1,7 +1,7 @@
 <?php
 $_meta = meta()->setTitle("400 Bad Request")
-    ->setDescription('Cookie を有効にしてください。')
-    ->setOgpDescription('Cookie を有効にしてください。');
+    ->setDescription('ページを再読み込みしてから、もう一度送信してください。')
+    ->setOgpDescription('ページを再読み込みしてから、もう一度送信してください。');
 
 $_css = ['components/room_list', 'components/site_header', 'components/site_footer'];
 ?>
@@ -43,7 +43,7 @@ $_css = ['components/room_list', 'components/site_header', 'components/site_foot
             <h1>400</h1>
             <h2>Bad Request</h2>
             <br>
-            <p>Cookie を有効にしてください。</p>
+            <p>ページの有効期限が切れたか、Cookie が無効になっています。<br>ページを再読み込みしてから、もう一度送信してください。</p>
         </header>
     </main>
     <footer style="margin-top: 3rem;">

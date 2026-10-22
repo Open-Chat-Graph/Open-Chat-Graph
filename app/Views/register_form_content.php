@@ -62,6 +62,7 @@
             <div style="font-size: 17px; margin: 1rem;" class="add-openchat-message false" id="add-openchat-describedby"><?php echo h($error['message']) ?></div>
         <?php endforeach ?>
         <form class="add-openchat-form unset" id="add-openchat-form" action="/oc" method="POST">
+            <?php csrfField() ?>
             <labe>公式サイトのURL</labe>
             <input name="url" id="add-openchat-input-url" placeholder="https://openchat.line.me/jp/cover/..." spellcheck="false" type="text" aria-describedby="add-openchat-describedby" autocomplete="off">
             <span class="add-openchat-message" id="add-openchat-describedby">正しいURLを入力してください</span>
