@@ -30,6 +30,31 @@ class ApplicationExceptionHandler implements ApplicationExceptionHandlerInterfac
     }
 
     /**
+     * 未処理の例外で 500 を返した直後にフレームワークの例外ハンドラから呼ばれる（MimimalCMS のフック）。
+     * 本番と stg では Discord に通知する（エラー詳細を画面に出すローカルでは通知しない）。
+     */
+    public static function reportUnhandledException(\Throwable $e): void
+    {
+        // 利用者が書いた SQL を実行したリクエストの致命的エラー（メモリ・実行時間の上限）は、不具合ではないので
+        // 通知しない（exception.log には記録済み。公開 MCP は認証なしなので、通知を連打させられないように）。
+        // メモリの上限を下げたまま落ちた場合は、この後の処理のメモリ確保が失敗しないよう先に戻す
+        \App\Services\Api\UserSqlMemoryLimit::restore();
+        if (
+            \App\Services\Api\UserSqlMemoryLimit::hasRun()
+            && $e instanceof \ErrorException
+            && $e->getSeverity() === E_ERROR
+        ) {
+            return;
+        }
+
+        if (MimimalCmsConfig::$exceptionHandlerDisplayErrorTraceDetails && !\App\Config\AppConfig::$isStaging) {
+            return;
+        }
+
+        \App\Services\Admin\AdminTool::sendDiscordNotify($e->__toString() . "\nIP: " . getIp() . "\nUA: " . getUA());
+    }
+
+    /**
      * 一過性DB障害(TransientDatabaseException)の処理。
      *
      * この経路に来るのは Web の未 catch 例外のみ。CLI(cron/batch)は batch/cron/cron_crawling.php の
@@ -65,8 +90,8 @@ class ApplicationExceptionHandler implements ApplicationExceptionHandlerInterfac
      *
      * ログ記録(exception.log)と通知は呼び出し元の handleTransientDatabase() が担う（ここは描画専用）。
      * 一過性障害の検出と TransientDatabaseException への変換は App\Models\Repositories\DB(MySQL) と
-     * App\Models\SQLite\AbstractSQLite(SQLite) が行い、フレームワーク本体(shadow/・shared/MimimalCMS_*.php)
-     * には手を入れない方針。
+     * App\Models\SQLite\AbstractSQLite(SQLite) が行う（アプリ固有の処理なので、composer パッケージから同期する
+     * フレームワーク本体(shadow/・shared/MimimalCMS_*.php)には置かない）。
      */
     private static function renderServiceUnavailable(): void
     {

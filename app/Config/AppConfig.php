@@ -85,6 +85,28 @@ class AppConfig
     const API_RATE_LIMIT_WINDOW_SECONDS = 300;
     const API_RATE_LIMIT_MAX_RECORDS = 1000;
 
+    // 利用者が書いた SQL（/database API・公開 MCP）の実行時間の上限（秒）。
+    // 再帰CTEや直積など終わらないクエリはキーワードでは防ぎきれないため、時間で打ち切る。
+    // SQLite の実行中でも、上限を過ぎると PHP がプロセスごと終了する（NTS ビルドの hard_timeout。既定 2 秒）。
+    const USER_SQL_TIME_LIMIT_SECONDS = 10;
+
+    // 利用者が書いた SQL で拒否するキーワード（前方一致。pragma_database_list 等の関数形も弾く）。
+    // 別 DB ファイルへの接続・内部設定・拡張ロード・生ページ読み出しと、CPU をほぼ使わずに巨大な値を
+    // 作る関数（巨大な値そのものは USER_SQL_MEMORY_HEADROOM_BYTES のメモリ上限で止まる）。
+    const USER_SQL_BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'sqlite_dbpage', 'dbstat', 'zeroblob', 'randomblob'];
+
+    // 利用者が書いた SQL の実行中に、プロセスが追加で使えるメモリの上限（UserSqlMemoryLimit）。
+    // SQLite のメモリは PHP の memory_limit の外なので、OS の上限（RLIMIT_AS）で抑える
+    // （本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。値を PHP に渡すときは SQLite 3.26 と
+    // PDO で値の約 3 倍を使う（stg 実測: 90MB の値で +258MB）。この 1/3〜1/2（85〜128MB）の値だと PHP 自身の
+    // 確保が上限で失敗し、エラーも出せずにプロセスが終わる（サーバーの 500 ページ・ログなし・プロセスは作り直される）。
+    const USER_SQL_MEMORY_HEADROOM_BYTES = 256 * 1024 * 1024;
+
+    // 利用者が書いた SQL の結果（値の合計）の、1 リクエストあたりの上限（MCP の一括リクエストは合計）。
+    // JSON 化で PHP のメモリが尽きない・小さなリクエストで巨大な応答を返させないため。MCP は結果を 2 回
+    // JSON にするので、エスケープされる文字（\ や制御文字）だと応答は値の数倍になる（普通の結果は 100 行で数十 KB）。
+    const USER_SQL_MAX_RESULT_BYTES = 1024 * 1024;
+
     // recommend静的キャッシュ(.dat)が保持する「人数降順の裾(member)」の件数。
     // 表示は従来どおり LIST_LIMIT_RECOMMEND 件のまま（mergedElements はコンストラクタで30件キャップ）。
     // 残りは /oc の関連ルームで「メンバー数が近い部屋」を人数レンジで絞り込むための母集団

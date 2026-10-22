@@ -59,12 +59,20 @@ interface CookieInterface
 
 
     /**
-     * Generate a CSRF token and store it in the session and cookie.
+     * Ensure a CSRF token exists in the session and the `CSRF-Token` cookie, and return it.
+     * An existing valid token is reused; a new one is issued only when missing or mismatched.
+     *
+     * The cookie is readable from JavaScript (not HttpOnly) so that scripts can send it back
+     * in the `X-CSRF-Token` header (double submit). The cookie itself is never accepted as proof.
+     *
+     * @return string The CSRF token.
      */
     public static function csrfToken();
 
     /**
-     * Refresh CSRF token in the session and cookie.
+     * Issue a new CSRF token in the session and cookie, and return it.
+     *
+     * @return string The CSRF token.
      */
     public static function refreshCsrfToken();
 }

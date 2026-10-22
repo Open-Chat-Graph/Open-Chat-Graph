@@ -9,26 +9,6 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class AdminTool
 {
-    static function sendPutRequestAdminApiSelf(string $url, array $json = []): string|int
-    {
-        if (!defined('CURL_SSLVERSION_TLSv1_2')) {
-            define('CURL_SSLVERSION_TLSv1_2', 6);
-        }
-
-        $json['key'] = SecretsConfig::$adminApiKey;
-        $options =  compact('json');
-
-        $httpClient = HttpClient::create();
-        $response = $httpClient->request('PUT', $url, $options);
-
-        $statusCode = $response->getStatusCode();
-        if ($statusCode === 200) {
-            return $response->getContent();
-        } else {
-            return $statusCode;
-        }
-    }
-
     static function sendGetRequest(string $url, string $cookie = ''): string|int
     {
         if (!defined('CURL_SSLVERSION_TLSv1_2')) {

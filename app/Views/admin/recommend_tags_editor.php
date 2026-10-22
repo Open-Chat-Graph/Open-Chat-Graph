@@ -9,7 +9,7 @@
  *   $_meta                 … meta() (title 設定済み・__toString で metaタグ出力)
  *
  * 保存: POST {url}/admin/recommend-tags/save に {lang}.json 全体を JSON ボディで送信（url()でロケール別）。
- *       CSRF は HttpOnly クッキーを same-origin fetch が自動送信するため追加処理不要。
+ *       CSRF はサーバが埋め込んだトークン（$_csrfToken）を X-CSRF-Token ヘッダで送る。
  *
  * データはサーバ側で安全にエンコードして <script type="application/json"> に埋め込み、
  * クライアントで parse する（<script> 注入防止のため JSON_HEX_* を付与）。

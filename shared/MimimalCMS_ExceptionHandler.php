@@ -95,21 +95,19 @@ class ExceptionHandler
 
     private static function response500(\Throwable $e, bool $log = true)
     {
-        self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
-
-        $configClass = MimimalCmsConfig::class;
-        $appConfigClass = \App\Config\AppConfig::class;
-        $adminToolClass = \App\Services\Admin\AdminTool::class;
-        if (
-            class_exists($configClass)
-            && class_exists($appConfigClass)
-            && (!($configClass::$exceptionHandlerDisplayErrorTraceDetails ?? false) || ($appConfigClass::$isStaging ?? false))
-            && class_exists($adminToolClass)
-        ) {
-            try {
-                $adminToolClass::sendDiscordNotify($e->__toString() . "\nIP: " . getIp() . "\nUA: " . getUA());
-            } catch (\Throwable $exception) {
-                self::errorLog($exception);
+        try {
+            self::errorResponse($e, 'please try again later', 500, $log, 'Internal Server Error😥');
+        } finally {
+            // Optional hook: lets the application report unhandled exceptions (chat notification, etc.).
+            // Define `public static function reportUnhandledException(\Throwable $e)` on ApplicationExceptionHandler.
+            // Runs even if rendering the error page failed, so the report is never lost.
+            $appHandlerClass = ApplicationExceptionHandler::class;
+            if (class_exists($appHandlerClass) && method_exists($appHandlerClass, 'reportUnhandledException')) {
+                try {
+                    $appHandlerClass::reportUnhandledException($e);
+                } catch (\Throwable $exception) {
+                    self::errorLog($exception);
+                }
             }
         }
     }
@@ -144,8 +142,13 @@ class ExceptionHandler
             return;
         }
 
-        // Set the HTTP response code
-        http_response_code($httpCode);
+        // Set the HTTP response code.
+        // On a fatal error with display_errors off, PHP has already set its own "HTTP/1.0 500" status line,
+        // and since PHP 8.5 calling http_response_code() after that raises a warning, which the error handler
+        // above turns into an exception and the error page is never shown. After output, it cannot be set at all.
+        if (!headers_sent() && http_response_code() !== $httpCode) {
+            http_response_code($httpCode);
+        }
 
         // Determine whether to show detailed error information
         $className = MimimalCmsConfig::class;
@@ -241,8 +244,11 @@ class ExceptionHandler
             $e->getTraceAsString()
         );
 
-        // Get request headers as string
+        // Get request headers as string (credentials such as cookies and auth headers are masked)
         $headerString = implode("\n", array_map(function ($key, $val) {
+            if (self::isSensitiveServerKey((string)$key)) {
+                return "{$key}: [masked]";
+            }
             if (!is_string($val)) {
                 $val = var_export($val, true);
             }
@@ -262,6 +268,15 @@ class ExceptionHandler
         } catch (\Throwable $e) {
             return;
         }
+    }
+
+    /**
+     * Whether a $_SERVER key may hold a credential (cookies, auth headers, CSRF tokens,
+     * and environment variables such as DB_PASSWORD or API_KEY) and must not be written to the log.
+     */
+    private static function isSensitiveServerKey(string $key): bool
+    {
+        return (bool)preg_match('/COOKIE|AUTH|PASS|SECRET|TOKEN|KEY|CREDENTIAL|SESSION/i', $key);
     }
 
     private static function jsonResponse(array $data)

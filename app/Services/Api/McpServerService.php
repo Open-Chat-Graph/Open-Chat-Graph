@@ -22,7 +22,9 @@ use App\Services\Storage\FileStorageInterface;
  *  - 個人情報を含むテーブル（ban_user, comment_log）と運営内部テーブル（ban_room）は
  *    テーブル名の部分一致で拒否（SQLite の識別子はコメントや連結で分割表記できないため、
  *    コメント除去なしの単純な部分一致で到達経路を塞げる）
- *  - ATTACH / PRAGMA / load_extension / RECURSIVE は拒否（別DBファイルへの接続・内部設定の読み出し・終わらない再帰クエリの防止）
+ *  - ATTACH / PRAGMA（pragma_* 関数も）/ load_extension / sqlite_dbpage / dbstat は拒否（別DBファイルへの接続・内部設定や生ページの読み出し防止）
+ *  - 実行時間は AppConfig::USER_SQL_TIME_LIMIT_SECONDS 秒まで（再帰CTE・直積など終わらないクエリはプロセスごと打ち切る）
+ *  - 実行中のメモリは UserSqlMemoryLimit で上限を掛ける（巨大な値を作るクエリは out of memory のエラーになる）
  *  - 同時実行はサイト全体で MAX_GLOBAL_SLOTS 件まで（非力なサーバの保護。回数制限ではない）
  *
  * 例外的に get_openchat_stats の「直近24時間の毎時メンバー数」だけは統計SQLiteではなく
@@ -39,6 +41,13 @@ class McpServerService
 
     private const MAX_LIMIT = 100;
     private const MAX_GLOBAL_SLOTS = 2;
+    private const MAX_BATCH_SIZE = 10;
+
+    /** query_database の実行時間の上限を、このリクエストで既に掛けたか */
+    private bool $timeLimitArmed = false;
+
+    /** このリクエスト（一括を含む）で query_database が返した値の合計バイト数（UserSqlMemoryLimit::fetchRows） */
+    private int $resultBytes = 0;
 
     /**
      * 公開MCPからのアクセスを拒否するテーブル。
@@ -85,6 +94,10 @@ class McpServerService
     {
         // バッチ（2025-03-26 まで許容）
         if (is_array($body) && array_is_list($body)) {
+            if (count($body) > self::MAX_BATCH_SIZE) {
+                return $this->errorResponse(null, -32600, 'Invalid Request: batch too large (max ' . self::MAX_BATCH_SIZE . ' messages)');
+            }
+
             $responses = [];
             foreach ($body as $msg) {
                 $res = $this->handleSingle($msg);
@@ -194,6 +207,7 @@ class McpServerService
                 'title' => '統計DBへの読み取り専用SQL',
                 'description' => 'オプチャグラフの統計SQLiteデータベースに読み取り専用SQLを実行する。SELECT/WITHのみ・'
                     . 'LIMIT ' . self::MAX_LIMIT . 'まで(未指定なら自動付与)。超える分はOFFSETでページングする。'
+                    . '結果は1リクエスト(一括を含む)合計 ' . (AppConfig::USER_SQL_MAX_RESULT_BYTES / 1024 / 1024) . 'MB まで(長い文字列は substr で切る)。'
                     . '先に get_database_schema でテーブル定義を確認すること。',
                 'inputSchema' => [
                     'type' => 'object',
@@ -429,20 +443,21 @@ class McpServerService
 
         $pdo = $this->getPdo();
         $this->createExistingFilteredViews($pdo);
+        // 上限を過ぎるとプロセスごと終了し、グローバルスロットの flock も解放される。
+        // set_time_limit は呼ぶたびに計り直すので、バッチ内の複数クエリで延長できないよう 1 リクエスト 1 回だけ掛ける
+        if (!$this->timeLimitArmed) {
+            set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+            $this->timeLimitArmed = true;
+        }
         try {
-            $result = $pdo->query($sql);
+            // 値は取り出すときに計算されるので、フェッチまでメモリ上限を掛けたまま行う
+            // LIMIT はバリデーション済みだが、サブクエリ内 LIMIT 等のすり抜けに備えて
+            // フェッチ行数自体も上限で打ち切る
+            $rows = UserSqlMemoryLimit::run(
+                fn() => UserSqlMemoryLimit::fetchRows($pdo->query($sql), self::MAX_LIMIT, $this->resultBytes)
+            );
         } catch (\Exception $e) {
             throw new McpToolException('SQL error: ' . $e->getMessage());
-        }
-
-        // LIMIT はバリデーション済みだが、サブクエリ内 LIMIT 等のすり抜けに備えて
-        // フェッチ行数自体も上限で打ち切る
-        $rows = [];
-        while (($row = $result->fetch(\PDO::FETCH_ASSOC)) !== false) {
-            $rows[] = $row;
-            if (count($rows) >= self::MAX_LIMIT) {
-                break;
-            }
         }
 
         return [
@@ -490,10 +505,10 @@ class McpServerService
             throw new McpToolException('Only SELECT / WITH (read-only) statements are allowed');
         }
 
-        // 危険キーワード（別DBファイル接続・内部設定・拡張ロード）。再帰CTEは終わらないクエリで
-        // PHP ワーカーを塞げる（SQLite 実行中は max_execution_time が効かない）ため拒否する
-        foreach (['attach', 'pragma', 'load_extension', 'recursive'] as $kw) {
-            if (preg_match('/\b' . $kw . '\b/i', $sql)) {
+        // 危険キーワード（AppConfig::USER_SQL_BLOCKED_KEYWORDS）。終わらないクエリはキーワードでは防げない
+        // （RECURSIVE を書かなくても再帰CTEは動く・直積もある）ので、実行時間の上限で打ち切る
+        foreach (AppConfig::USER_SQL_BLOCKED_KEYWORDS as $kw) {
+            if (preg_match('/\b' . $kw . '/i', $sql)) {
                 throw new McpToolException("'{$kw}' is not allowed");
             }
         }

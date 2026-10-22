@@ -497,6 +497,8 @@ Route::path('admin/log/exception/detail', [LogController::class, 'exceptionDetai
 Route::path('admin/log/admin-action', [AdminCommentLogController::class, 'index'])
     ->matchNum('page', min: 1, default: 1, emptyAble: true)
     ->match(function (AdminAuthService $adminAuthService) {
+        // 通報の Discord 通知から開く閲覧ページ（外部サイトからなら開き直してクッキーを付ける）
+        $adminAuthService->reloadIfCrossSiteNavigation();
         return MimimalCmsConfig::$urlRoot === '' && $adminAuthService->auth() ? noStore() : false;
     });
 
@@ -571,8 +573,10 @@ Route::path(
     [AdminEndPointController::class, 'index']
 );
 
+// deletecomment / deleteuser は通報の Discord 通知から GET のリンクで開く。GET は確認画面を出すだけで、
+// 実行は確認画面からの POST（confirmed）のときだけ（AdminEndPointController::requireConfirmation）
 Route::path(
-    'admin-api/deletecomment@post',
+    'admin-api/deletecomment@post@get',
     [AdminEndPointController::class, 'deletecomment']
 )
     ->matchNum('id')
@@ -581,7 +585,7 @@ Route::path(
     ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post',
+    'admin-api/deleteuser@post@get',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
@@ -674,6 +678,8 @@ Route::path(
 )
     ->matchNum('open_chat_id', min: 1)
     ->match(function (AdminAuthService $adminAuthService) {
+        // 通報の Discord 通知から開く閲覧ページ（外部サイトからなら開き直してクッキーを付ける）
+        $adminAuthService->reloadIfCrossSiteNavigation();
         if (!$adminAuthService->auth())
             return false;
         noStore();
@@ -703,7 +709,7 @@ Route::path(
 //     大文字を含むキーは {username} に直接入れても照合できない。Basic認証は小文字化されない）
 //   - 登録ユーザー: Basic認証（username / 登録パスワード）に加えて、
 //     POSTボディの password（登録パスワードを SHA256 した16進文字列）も必要（二重認証）
-$databaseApiPostAuth = function (string $username, $password = null) {
+$databaseApiPostAuth = function (string $username, #[\SensitiveParameter] $password = null) {
     if (MimimalCmsConfig::$urlRoot !== '') {
         return false;
     }

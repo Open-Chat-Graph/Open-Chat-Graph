@@ -7,6 +7,7 @@ namespace App\Controllers\Api;
 use App\Config\AppConfig;
 use App\Models\SQLite\SQLiteOcgraphSqlapi;
 use App\Services\Api\DatabaseApiRateLimiter;
+use App\Services\Api\UserSqlMemoryLimit;
 use App\Services\Storage\FileStorageInterface;
 use Shared\Exceptions\ValidationException;
 
@@ -19,13 +20,10 @@ class DatabaseApiController
 
     /**
      * 登録ユーザーにも見せないテーブル（公開 MCP と同じ基準）。
-     * ban_user / comment_log は IP 等の個人情報（sqlapi.db にはハッシュ化して書き出すが二重に塞ぐ）、
+     * ban_user / comment_log は個人情報を含むテーブル（sqlapi.db には IP・UA を書き出さないが二重に塞ぐ）、
      * ban_room は運営内部データ。
      */
     private const BLOCKED_TABLES = ['ban_user', 'comment_log', 'ban_room'];
-
-    /** 別 DB ファイルへの接続・内部設定・拡張ロード・終わらない再帰クエリを拒否するキーワード */
-    private const BLOCKED_KEYWORDS = ['attach', 'pragma', 'load_extension', 'recursive'];
 
     function index(string $username, string $stmt)
     {
@@ -59,8 +57,19 @@ class DatabaseApiController
 
         try {
             $pdo = $this->getPdo();
-            $result = $pdo->query($this->filterQuery($stmt));
-            $data = $result->fetchAll(\PDO::FETCH_ASSOC);
+            $query = $this->filterQuery($stmt);
+            set_time_limit(AppConfig::USER_SQL_TIME_LIMIT_SECONDS);
+            // 値は取り出すときに計算されるので、フェッチまでメモリ上限を掛けたまま行う
+            $data = UserSqlMemoryLimit::run(function () use ($pdo, $query, $limiter) {
+                $result = $pdo->query($query);
+                if (!$limiter) {
+                    return $result->fetchAll(\PDO::FETCH_ASSOC);
+                }
+
+                // LIMIT の検査は `LIMIT 5, 1000`・`LIMIT 1e3`・サブクエリ等ですり抜けられるので、取り出す行数でも打ち切る
+                $bytes = 0;
+                return UserSqlMemoryLimit::fetchRows($result, self::MAX_LIMIT, $bytes);
+            });
 
             $limiter?->addRecordCount(count($data));
 
@@ -145,8 +154,8 @@ class DatabaseApiController
             throw new ValidationException('Query too long');
         }
 
-        foreach (self::BLOCKED_KEYWORDS as $kw) {
-            if (preg_match('/\b' . $kw . '\b/i', $query)) {
+        foreach (AppConfig::USER_SQL_BLOCKED_KEYWORDS as $kw) {
+            if (preg_match('/\b' . $kw . '/i', $query)) {
                 throw new ValidationException("'{$kw}' is not allowed");
             }
         }

@@ -88,6 +88,11 @@ class MimimalCmsConfig
     public static bool $cookieDefaultHttpOnly = true;
     public static string $cookieDefaultSameSite = 'lax';
 
+    // getIP() が信用するプロキシヘッダ。本番・stg のオリジンは Cloudflare 経由（とループバック）しか受け付けない
+    // （.htaccess の allowlist）ので CF-Connecting-IP は CF が付けた値。それ以外（X-Forwarded-For 等）は
+    // クライアントが自由に送れるため信用しない。ローカル・ループバックでは REMOTE_ADDR になる。
+    public static array $trustedIpHeaders = ['HTTP_CF_CONNECTING_IP'];
+
     // Options for session
     public static string $flashSessionKeyName = 'mimimalFlashSession';
     public static string $sessionKeyName = 'mimimalSession';
