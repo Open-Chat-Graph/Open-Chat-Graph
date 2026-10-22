@@ -97,8 +97,9 @@ class AppConfig
 
     // 利用者が書いた SQL の実行中に、プロセスが追加で使えるメモリの上限（UserSqlMemoryLimit）。
     // SQLite のメモリは PHP の memory_limit の外なので、OS の上限（RLIMIT_AS）で抑える
-    // （本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。PHP 側の memory_limit（128M）が
-    // 先に効くよう、その倍以上にしておく。
+    // （本番の SQLite 3.26 にはメモリ上限 hard_heap_limit が無い）。値を PHP に渡すときは SQLite 3.26 と
+    // PDO で値の約 3 倍を使う（stg 実測: 90MB の値で +258MB）。この 1/3〜1/2（85〜128MB）の値だと PHP 自身の
+    // 確保が上限で失敗し、エラーも出せずにプロセスが終わる（サーバーの 500 ページ・ログなし・プロセスは作り直される）。
     const USER_SQL_MEMORY_HEADROOM_BYTES = 256 * 1024 * 1024;
 
     // 利用者が書いた SQL の結果（値の合計）の、1 リクエストあたりの上限（MCP の一括リクエストは合計）。
