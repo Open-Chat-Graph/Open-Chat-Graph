@@ -156,18 +156,6 @@ class AdminPageController
     }
 
     /**
-     * 管理者用cookie登録
-     */
-    function cookie(AdminAuthService $adminAuthService, ?string $key)
-    {
-        if (!$adminAuthService->registerAdminCookie($key)) {
-            return false;
-        }
-
-        return view('admin/admin_message_page', ['title' => 'cookie取得完了', 'message' => 'アクセス用のcookieを取得しました']);
-    }
-
-    /**
      * 全静的キャッシュデータ更新
      */
     function genetop()
@@ -337,7 +325,7 @@ class AdminPageController
         }
 
         // パスワードなしSQLite接続を許可するプラグイン版を読み込む
-        // adminer-plugin.php内でadminer-5.4.1.phpも読み込まれる
+        // adminer-plugin.php 内で Adminer 本体（adminer-<version>.php）も読み込まれる
         include AppConfig::ROOT_PATH . 'app/Services/Admin/adminer-plugin.php';
         exit;
     }

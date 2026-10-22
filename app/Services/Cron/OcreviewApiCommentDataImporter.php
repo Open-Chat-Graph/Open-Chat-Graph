@@ -70,6 +70,9 @@ class OcreviewApiCommentDataImporter
 
         // logテーブルのインポート（IDベース）
         $this->importCommentLogs();
+
+        // 過去に生のまま書き出した IP / UA を一度だけハッシュ化（以後は書き出し時にハッシュ化される）
+        $this->anonymizeExportedPersonalData();
     }
 
     /**
@@ -388,7 +391,7 @@ class OcreviewApiCommentDataImporter
                 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 if (!empty($data)) {
-                    $this->sqliteInsert('ban_user', $data);
+                    $this->sqliteInsert('ban_user', $this->hashPersonalColumns($data));
                 }
             }
         }
@@ -450,7 +453,7 @@ class OcreviewApiCommentDataImporter
             self::CHUNK_SIZE,
             function (array $data) {
                 if (!empty($data)) {
-                    $this->sqliteInsert('comment_log', $data);
+                    $this->sqliteInsert('comment_log', $this->hashPersonalColumns($data));
                 }
             },
             'comment_log: %d / %d 件処理完了'
@@ -463,6 +466,56 @@ class OcreviewApiCommentDataImporter
             'id',
             'id'
         );
+    }
+
+    /**
+     * 公開用 SQLite に書き出す個人情報列（IP・UA）を、サイト表示（ipHash / uaHash）と同じ短いハッシュに置き換える。
+     * sqlapi.db は登録ユーザーが SQL で読める公開データなので、生の IP / UA は持ち込まない。
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function hashPersonalColumns(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            foreach (['ip', 'ua'] as $col) {
+                if (isset($row[$col]) && $row[$col] !== '') {
+                    $row[$col] = self::shortHash((string)$row[$col]);
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private static function shortHash(string $value): string
+    {
+        return substr(hash('sha256', $value), 0, 7);
+    }
+
+    /**
+     * 既に書き出し済みの生の IP / UA を一度だけハッシュ化する（冪等。7桁 hex 以外の値だけを対象にする）。
+     */
+    private function anonymizeExportedPersonalData(): void
+    {
+        $hex7 = str_repeat('[0-9a-f]', 7);
+        foreach (['ban_user' => ['ip'], 'comment_log' => ['ip', 'ua']] as $table => $columns) {
+            foreach ($columns as $col) {
+                $rows = $this->targetPdo
+                    ->query("SELECT id, {$col} AS v FROM {$table} WHERE {$col} != '' AND NOT ({$col} GLOB '{$hex7}')")
+                    ->fetchAll(PDO::FETCH_ASSOC);
+                if (empty($rows)) {
+                    continue;
+                }
+
+                $stmt = $this->targetPdo->prepare("UPDATE {$table} SET {$col} = ? WHERE id = ?");
+                foreach ($rows as $r) {
+                    $stmt->execute([self::shortHash((string)$r['v']), $r['id']]);
+                }
+                $this->log(sprintf('%s.%s: %d 件をハッシュ化', $table, $col, count($rows)));
+            }
+        }
     }
 
     /**

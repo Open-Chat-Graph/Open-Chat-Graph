@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\CommentRepositories\Dto;
 
-use App\Config\SecretsConfig;
+use App\Config\AppConfig;
 
 class CommentListApi
 {
@@ -37,7 +37,7 @@ class CommentListApi
                     2 => '通報により削除済',
                     default => '削除済',
                 },
-                'userIdHash' => $this->userId === SecretsConfig::$adminApiKey
+                'userIdHash' => $this->userId === AppConfig::ADMIN_COMMENT_USER_ID
                     ? '管理者'
                     : substr(hash('sha256', $this->userId), 0, 7),
                 'uaHash' => $this->logUa !== null ? substr(hash('sha256', $this->logUa), 0, 7) : null,

@@ -23,11 +23,14 @@ jobs:
       # skip-ci判定
       - name: Check skip-ci
         id: skip
+        # PR タイトル等は run: に直接展開せず env 経由で渡す（タイトルに引用符やシェル記法が含まれても
+        # スクリプトとして解釈されない。フォーク PR のタイトルは第三者が自由に書けるため）
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          TITLE: ${{ github.event.pull_request.title }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
-            TITLE='${{ github.event.pull_request.title }}'
-            HEAD='${{ github.event.pull_request.head.ref }}'
             if echo "$LABELS" | grep -q "skip-ci" || [[ "$TITLE" == skip-ci* ]] || [ "$HEAD" = "stg" ]; then
               echo "skip=true" >> "$GITHUB_OUTPUT"
               echo "CI skipped"

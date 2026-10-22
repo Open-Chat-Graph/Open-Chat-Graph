@@ -435,7 +435,31 @@ class OcreviewApiDataImporterCommentTest extends TestCase
         $this->assertCount(2, $result);
         $this->assertEquals(1, $result[0]['id']);
         $this->assertEquals('user1', $result[0]['user_id']);
-        $this->assertEquals('192.168.1.1', $result[0]['ip']);
+        // 公開用 SQLite には生の IP を持ち込まず、短いハッシュに置き換える
+        $this->assertEquals(substr(hash('sha256', '192.168.1.1'), 0, 7), $result[0]['ip']);
+    }
+
+    /**
+     * 既に生のまま書き出されていた IP / UA は、次回のインポートで一度だけハッシュ化される
+     */
+    public function testAnonymizeExportedPersonalData(): void
+    {
+        // 旧版のインポートで生のまま書き出された状態を再現（ban_user は完全同期なのでソースにも同じ行を置く）
+        $this->mockSourceCommentPdo->exec("INSERT INTO ban_user (id, user_id, ip, created_at, type) VALUES (10, 'u', '10.0.0.1', '2024-01-01 00:00:00', 0)");
+        $this->mockTargetPdo->exec("INSERT INTO ban_user (id, user_id, ip, created_at, type) VALUES (10, 'u', '10.0.0.1', '2024-01-01 00:00:00', 0)");
+        $this->mockTargetPdo->exec("INSERT INTO comment_log (id, entity_id, type, data, ip, ua) VALUES (10, 1, 'AddComment', '', '10.0.0.2', 'Mozilla/5.0')");
+
+        $this->importer->execute();
+
+        $ban = $this->mockTargetPdo->query("SELECT ip FROM ban_user WHERE id = 10")->fetchColumn();
+        $log = $this->mockTargetPdo->query("SELECT ip, ua FROM comment_log WHERE id = 10")->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(substr(hash('sha256', '10.0.0.1'), 0, 7), $ban);
+        $this->assertSame(substr(hash('sha256', '10.0.0.2'), 0, 7), $log['ip']);
+        $this->assertSame(substr(hash('sha256', 'Mozilla/5.0'), 0, 7), $log['ua']);
+
+        // 冪等: もう一度回してもハッシュのハッシュにはならない
+        $this->importer->execute();
+        $this->assertSame($ban, $this->mockTargetPdo->query("SELECT ip FROM ban_user WHERE id = 10")->fetchColumn());
     }
 
     /**

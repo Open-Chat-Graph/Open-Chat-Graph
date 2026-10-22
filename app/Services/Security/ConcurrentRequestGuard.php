@@ -58,7 +58,7 @@ class ConcurrentRequestGuard
             if (!is_dir($dir)) {
                 // 併発リクエストが同時に mkdir すると「File exists」になるが、出来ていれば問題ない
                 try {
-                    mkdir($dir, 0777, true);
+                    mkdir($dir, 0755, true);
                 } catch (\Throwable $e) {
                     // レースは無視（直後の is_dir で確認）
                 }

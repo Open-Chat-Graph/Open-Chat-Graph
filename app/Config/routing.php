@@ -22,6 +22,7 @@ use App\Controllers\Api\RecentCommentApiController;
 use App\Controllers\Pages\AdminCommentImageController;
 use App\Controllers\Pages\AdminBanUserController;
 use App\Controllers\Pages\AdminCommentLogController;
+use App\Controllers\Pages\AdminCookieController;
 use App\Controllers\Pages\AdminRecommendTagController;
 use App\Controllers\Pages\AdOptOutPageController;
 use App\Controllers\Pages\FuriganaPageController;
@@ -410,14 +411,13 @@ Route::path(
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchStr('token');
 
-Route::path('admin/cookie')
-    ->match(function (AdminAuthService $adminAuthService, ?string $key) {
-        sessionStart();
-        if (!$adminAuthService->registerAdminCookie($key))
-            return false;
-
-        return redirect();
-    });
+// 管理クッキーの発行。GET はキー入力フォーム、POST で照合して発行する（鍵を URL のクエリに載せない）
+Route::path(
+    'admin/cookie@get@post',
+    [AdminCookieController::class, 'form', 'get'],
+    [AdminCookieController::class, 'register', 'post'],
+)
+    ->matchStr('key', 'post', maxLen: 256);
 
 // 広告オプトアウト設定ページ（合言葉を知っている人だけ、自分のブラウザで広告を消せる）。
 // 管理者クッキーは不要（合言葉のみで判定）。合言葉と導出鍵は secrets（$adOptOutPassphrase /
@@ -565,13 +565,14 @@ Route::path('admin/genocpagecache/{lang}', [AdminPageController::class, 'genocpa
     })
     ->matchStr('lang', regex: ['ja', 'th', 'tw']);
 
+// 状態を変える admin-api は POST のみ（GET のリンク遷移で実行させない。確認画面のフォームも POST）
 Route::path(
     'admin-api@post',
     [AdminEndPointController::class, 'index']
 );
 
 Route::path(
-    'admin-api/deletecomment@post@get',
+    'admin-api/deletecomment@post',
     [AdminEndPointController::class, 'deletecomment']
 )
     ->matchNum('id')
@@ -580,7 +581,7 @@ Route::path(
     ->matchNum('flag', min: 0, max: 5);
 
 Route::path(
-    'admin-api/deleteuser@post@get',
+    'admin-api/deleteuser@post',
     [AdminEndPointController::class, 'deleteuser']
 )
     ->matchNum('id')
@@ -588,14 +589,14 @@ Route::path(
     ->matchNum('commentId');
 
 Route::path(
-    'admin-api/commentbanroom@post@get',
+    'admin-api/commentbanroom@post',
     [AdminEndPointController::class, 'commentbanroom']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/commentunbanroom@post@get',
+    'admin-api/commentunbanroom@post',
     [AdminEndPointController::class, 'commentunbanroom']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -605,48 +606,48 @@ Route::path('admin-api/commentimagestorage@post', [AdminEndPointController::clas
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentimage@post@get',
+    'admin-api/deletecommentimage@post',
     [AdminEndPointController::class, 'deleteCommentImage']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('imageId');
 
 Route::path(
-    'admin-api/deletedcommentimages@post@get',
+    'admin-api/deletedcommentimages@post',
     [AdminEndPointController::class, 'deleteDeletedCommentImages']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '');
 
 Route::path(
-    'admin-api/deletecommentsall@post@get',
+    'admin-api/deletecommentsall@post',
     [AdminEndPointController::class, 'deletecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/restorecommentsall@post@get',
+    'admin-api/restorecommentsall@post',
     [AdminEndPointController::class, 'restorecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/harddeletecommentsall@post@get',
+    'admin-api/harddeletecommentsall@post',
     [AdminEndPointController::class, 'harddeletecommentsall']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/bulkshadowban@post@get',
+    'admin-api/bulkshadowban@post',
     [AdminEndPointController::class, 'bulkshadowban']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
     ->matchNum('id');
 
 Route::path(
-    'admin-api/unbanuser@post@get',
+    'admin-api/unbanuser@post',
     [AdminEndPointController::class, 'unbanuser']
 )
     ->match(fn() => MimimalCmsConfig::$urlRoot === '')
@@ -664,7 +665,7 @@ Route::path('oc/0/admin', [PolicyPageController::class, 'index'])
         if (!$adminAuthService->auth())
             return false;
         noStore();
-        return ['isAdmin' => true];
+        return ['isAdmin' => '1'];
     });
 
 Route::path(
@@ -678,10 +679,6 @@ Route::path(
         noStore();
         return ['isAdminPage' => '1'];
     });
-
-Route::path('furigana@POST')
-    ->match(fn() => MimimalCmsConfig::$urlRoot === '')
-    ->matchStr('json');
 
 Route::path('furigana/guideline')
     ->match(function () {
@@ -802,6 +799,9 @@ Route::path(
             return false;
         }
     });
+
+// ブラウザに Content-Type を推測させない（投稿画像や JSON を別種として解釈させない）
+header('X-Content-Type-Options: nosniff');
 
 cache();
 Route::run();

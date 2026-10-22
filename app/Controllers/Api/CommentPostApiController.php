@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
-use App\Config\SecretsConfig;
+use App\Config\AppConfig;
 use App\Models\CommentRepositories\CommentImageRepositoryInterface;
 use App\Models\CommentRepositories\CommentLogRepositoryInterface;
 use App\Models\CommentRepositories\CommentPostRepositoryInterface;
@@ -110,7 +110,7 @@ class CommentPostApiController
 
         return response([
             'commentId' => $commentId,
-            'userIdHash' => $args->user_id === SecretsConfig::$adminApiKey
+            'userIdHash' => $args->user_id === AppConfig::ADMIN_COMMENT_USER_ID
                 ? '管理者'
                 : substr(hash('sha256', $args->user_id), 0, 7),
             'uaHash' => substr(hash('sha256', getUA()), 0, 7),
