@@ -76,6 +76,9 @@ Disallow: /recently-registered
 Disallow: /oc/*/jump
 Disallow: /th/oc/*/jump
 Disallow: /tw/oc/*/jump
+Disallow: /oc/*/admin
+Disallow: /th/oc/*/admin
+Disallow: /tw/oc/*/admin
 
 Sitemap: https://openchat-review.me/sitemap.xml
 TXT;
