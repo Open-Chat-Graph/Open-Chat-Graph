@@ -139,7 +139,10 @@ viewComponent('oc_head', compact('_css', '_meta', '_schema') + ['dataOverlays' =
           <?php if (isset($_adminDto)) : ?>
             <a href="<?php echo url('oc', $oc['id']) ?>" style="display: flex; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-blue-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">✕</a>
           <?php else : ?>
-            <a id="admin-gear-btn" href="<?php echo url('oc', $oc['id'], 'admin') ?>" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-orange-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
+            <?php // 管理ページへのリンクは HTML に書かない（隠しリンクでも巡回ロボットがたどって 404 を大量に踏むため）。
+                  // admin-enable クッキーがあるときだけ、表示と同時にこのページの URL + /admin を入れる ?>
+            <a id="admin-gear-btn" style="display: none; align-items: center; justify-content: center; padding: 0 14px; background: var(--c-grad-orange-btn); border-radius: 99px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
+            <script>if(document.cookie.split('; ').find(r=>r.startsWith('admin-enable='))){const g=document.getElementById('admin-gear-btn');g.href=location.pathname.replace(/\/+$/,'')+'/admin';g.style.display='flex'}</script>
           <?php endif ?>
           <section class="open-btn sp-btn" style="flex: 1; margin: 0; padding: 0;">
             <?php if ($oc['url']) : ?>

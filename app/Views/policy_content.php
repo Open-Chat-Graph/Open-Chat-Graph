@@ -154,8 +154,9 @@ viewComponent('policy_head', compact('_css', '_meta')) ?>
                 </p>
 
                 <h2 style="margin-bottom: 2rem;">オプチャグラフに関する情報共有・コメント</h2>
-                <a id="admin-gear-btn" href="<?php echo url('oc/0/admin') ?>#comments" style="display: none; align-items: center; justify-content: center; width: 36px; height: 36px; margin-top: -1.5rem; margin-bottom: 1rem; background: var(--c-grad-orange-btn); border-radius: 8px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
-                <script>if(document.cookie.split('; ').find(r=>r.startsWith('admin-enable='))){document.getElementById('admin-gear-btn').style.display='flex'}</script>
+                <?php // 管理ページへのリンクは HTML に書かず、admin-enable クッキーがあるときだけ入れる（巡回ロボットにたどらせない） ?>
+                <a id="admin-gear-btn" style="display: none; align-items: center; justify-content: center; width: 36px; height: 36px; margin-top: -1.5rem; margin-bottom: 1rem; background: var(--c-grad-orange-btn); border-radius: 8px; color: var(--c-text-inverse); text-decoration: none; font-size: 18px;">⚙</a>
+                <script>if(document.cookie.split('; ').find(r=>r.startsWith('admin-enable='))){const g=document.getElementById('admin-gear-btn');g.href=<?php echo json_encode(url('oc/0/admin') . '#comments') ?>;g.style.display='flex'}</script>
 
                 <?php if (isset($_adminDto)): ?>
                     <div style="padding: 1rem; margin: 0 0 1rem; border: 1px solid var(--c-border-mid);">
