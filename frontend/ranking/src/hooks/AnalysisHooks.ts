@@ -120,10 +120,20 @@ function statusUrl(p: AnalysisParams): string {
 // 達するのはサーバ/回線が長時間ダウンしている場合だけ。
 const MAX_POLL_FAILS = 40
 
+// サーバーエラー(5xx)は待っても直らないことが多く、リトライするたびに重い集計と通知が積み上がる。
+// 通信断と違って早めに諦める。
+const MAX_SERVER_ERRORS = 3
+
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super('http ' + status)
+  }
+}
+
 async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { headers: { 'X-Ocg-Client': '1' }, signal })
   if (!res.ok) {
-    throw new Error('http ' + res.status)
+    throw new HttpError(res.status)
   }
   return res.json()
 }
@@ -220,6 +230,7 @@ export function useAnalysisJob(): AnalysisJob {
       // （サーバが計算済みチャンクを保持しているため、最初からやり直しにはならない）。
       // 連続で失敗し続けたときだけ諦めてエラー表示にする。
       let fails = 0
+      let serverErrors = 0
       try {
         // 1) 進捗ポーリング（1回1チャンク）。待ち時間の目安を % で表示
         // eslint-disable-next-line no-constant-condition
@@ -229,6 +240,7 @@ export function useAnalysisJob(): AnalysisJob {
             const st = await fetchJson<StatusResponse>(statusUrl(params), ac.signal)
             if (ac.signal.aborted) return
             fails = 0
+            serverErrors = 0
             setStalled(false)
             setPercent(st.percent)
             setComputed(st.computed)
@@ -237,6 +249,7 @@ export function useAnalysisJob(): AnalysisJob {
           } catch (e) {
             if (ac.signal.aborted) return
             // スリープ/通信断: 少し待って再試行（指数バックオフ）。復帰すれば続きから進む
+            if (e instanceof HttpError && e.status >= 500 && ++serverErrors >= MAX_SERVER_ERRORS) throw e
             if (++fails >= MAX_POLL_FAILS) throw e
             setStalled(true)
             await sleep(Math.min(500 * fails, 4000))
