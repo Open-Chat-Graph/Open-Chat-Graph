@@ -12,14 +12,20 @@ use Shared\Exceptions\BadRequestException;
 /**
  * 詳細成長分析（/labs/growth）。重い集計を「シンプルなポーリング」で進め、進捗(%)を返す。
  *
- * - status: open_chat_id レンジを CHUNK_COUNT 分割。1 回叩くごとに 1 チャンク集計して 1 つの
- *   ジョブファイルに積み増し、進捗% を返す。最終チャンクでソートして finished に。
- *   （1 リクエストでは進捗を出せないので、待ち時間の目安を見せるために分割ポーリングする）
- * - result: その finished ジョブを読み、絞り込み・並び替え・ページ切り出し・整形して返す。
+ * - status: open_chat_id レンジを CHUNK_COUNT 分割。1 回叩くごとに 1 チャンク集計して、そのチャンクだけを
+ *   小さなファイルに書き（既存分は読まない）、進捗% を返す。最終チャンクで全チャンクを結合・ソートして
+ *   1 つの完成ファイルにする。（1 リクエストでは進捗を出せないので、待ち時間の目安を見せるために分割する）
+ * - result: その完成ファイルを読み、絞り込み・並び替え・ページ切り出し・整形して返す。
  *   毎時更新なので同一 URL は CDN がキャッシュする（コントローラの checkLastModified）。
  * - ジョブファイルは短命（JOB_TTL_SECONDS）。結果は CDN が持つのでサーバには残し続けない。
  *
- * 行は省メモリのため数値配列で持つ（列順は I_* 定数）。
+ * 行は列ごとに pack したバイナリ（id / cat / val / base）で持つ。行ごとの PHP 配列＋serialize だと
+ * 1 行 ~350B で、全 27 万行を毎ポーリングで読み書きすると web の memory_limit(128MB) を超え、
+ * status が途中のチャンクで OOM のまま進まなくなった（2026-10-29）。いまは
+ *  - ポーリング 1 回の読み書きは「そのチャンク分」だけ（全体量に比例しない）
+ *  - 結合・ソートは最後に 1 回だけ
+ *  - result は既定の並び（完成ファイルの並びそのまま）なら必要な行だけを切り出して読む
+ * ので、メモリも I/O も小さい。
  */
 class AdvancedGrowthAnalysisService
 {
@@ -35,16 +41,18 @@ class AdvancedGrowthAnalysisService
     /** 増加率ソート時の最低 base メンバー数（極小規模からの暴騰%ノイズを除外） */
     private const RATE_MIN_BASE = 50;
 
-    // 行の列インデックス
+    /** pack に渡す引数の分割サイズ（巨大な展開引数を避ける） */
+    private const PACK_BATCH = 10000;
+
+    // computeChunk の行 [id, cat, val, base] の列インデックス
     private const I_ID = 0;
     private const I_CAT = 1;
-    // increase 行: [id, cat, diff, pct, base]
-    private const I_DIFF = 2;
-    private const I_PCT = 3;
-    private const I_BASE = 4;
-    // steady 行: [id, cat, score, base]（score は並び替え用・非表示）
-    private const I_SCORE = 2;
-    private const I_STEADY_BASE = 3;
+    /** increase: 増加数 / steady: スコア（並び替え用・非表示） */
+    private const I_VAL = 2;
+    private const I_BASE = 3;
+
+    /** 先頭の行数ヘッダ（pack 'V'） */
+    private const HEADER_BYTES = 4;
 
     public function __construct(
         private AnalysisStatsRepositoryInterface $stats,
@@ -67,11 +75,10 @@ class AdvancedGrowthAnalysisService
     {
         $spec = $this->resolveSpec($metric, $period, $from, $to);
         $this->sweepStale();
-        $jobPath = $this->jobPath($spec);
 
-        $job = $this->fileStorage->getSerializedFile($jobPath);
-        if (is_array($job) && !empty($job['finished'])) {
-            return $this->doneResponse($job);
+        $finished = $this->finishedRowCount($spec);
+        if ($finished !== null) {
+            return $this->doneResponse($finished);
         }
 
         $lockFp = fopen($this->jobDir() . '/' . $spec['key'] . '.lock', 'c');
@@ -80,35 +87,38 @@ class AdvancedGrowthAnalysisService
             if ($lockFp !== false) {
                 fclose($lockFp);
             }
-            return $this->progressResponse(is_array($job) ? $job : null);
+            return $this->progressResponse($this->readMeta($spec));
         }
 
         try {
-            $job = $this->fileStorage->getSerializedFile($jobPath);
-            if (is_array($job) && !empty($job['finished'])) {
-                return $this->doneResponse($job);
+            $finished = $this->finishedRowCount($spec);
+            if ($finished !== null) {
+                return $this->doneResponse($finished);
             }
-            if (!is_array($job)) {
+
+            $meta = $this->readMeta($spec);
+            if ($meta === null) {
                 $maxId = $this->rooms->getMaxOpenChatId();
-                $job = ['step' => intdiv(max($maxId, 1), self::CHUNK_COUNT) + 1, 'done' => 0, 'rows' => [], 'finished' => false];
+                $meta = ['step' => intdiv(max($maxId, 1), self::CHUNK_COUNT) + 1, 'done' => 0, 'computed' => 0];
             }
 
-            $i = (int)$job['done'];
-            $lo = $i * (int)$job['step'];
-            $hi = $lo + (int)$job['step'];
-            foreach ($this->computeChunk($spec, $lo, $hi) as $row) {
-                $job['rows'][] = $row;
-            }
-            $job['done'] = $i + 1;
-
-            if ($job['done'] >= self::CHUNK_COUNT) {
-                $primary = $spec['metric'] === 'increase' ? self::I_DIFF : self::I_SCORE;
-                usort($job['rows'], static fn($a, $b) => ($b[$primary] <=> $a[$primary]));
-                $job['finished'] = true;
+            if ($meta['done'] < self::CHUNK_COUNT) {
+                $i = $meta['done'];
+                $lo = $i * $meta['step'];
+                $rows = $this->computeChunk($spec, $lo, $lo + $meta['step']);
+                $this->fileStorage->safeFileRewrite($this->chunkPath($spec, $i), $this->packRows($spec['metric'], $rows));
+                $meta['done'] = $i + 1;
+                $meta['computed'] += count($rows);
+                unset($rows);
+                $this->writeMeta($spec, $meta);
             }
 
-            $this->fileStorage->saveSerializedFile($jobPath, $job);
-            return $job['finished'] ? $this->doneResponse($job) : $this->progressResponse($job);
+            if ($meta['done'] >= self::CHUNK_COUNT) {
+                $n = $this->finalize($spec);
+                return $n === null ? $this->progressResponse(null) : $this->doneResponse($n);
+            }
+
+            return $this->progressResponse($meta);
         } finally {
             flock($lockFp, LOCK_UN);
             fclose($lockFp);
@@ -134,46 +144,65 @@ class AdvancedGrowthAnalysisService
         int $limit,
     ): array {
         $spec = $this->resolveSpec($metric, $period, $from, $to);
-        $job = $this->fileStorage->getSerializedFile($this->jobPath($spec));
-        if (!is_array($job) || empty($job['finished'])) {
+        $bin = $this->readFinished($spec);
+        if ($bin === null) {
             return $page === 0 ? [['totalCount' => 0]] : [];
         }
 
-        /** @var array<int, array<int, int|float|null>> $rows */
-        $rows = $job['rows'];
+        $n = $this->rowCount($bin);
         $isIncrease = $spec['metric'] === 'increase';
+        $offset = $page * $limit;
 
-        if ($category > 0) {
-            $rows = array_values(array_filter($rows, static fn($r) => $r[self::I_CAT] === $category));
-        }
-        if ($keyword !== '') {
-            $ids = array_flip($this->rooms->findIdsByKeyword($keyword));
-            $rows = array_values(array_filter($rows, static fn($r) => isset($ids[$r[self::I_ID]])));
-        }
-        if ($isIncrease && $sort === 'rate') {
-            $rows = array_values(array_filter($rows, static fn($r) => (int)$r[self::I_BASE] >= self::RATE_MIN_BASE));
-        }
+        // 既定の並び（完成ファイルは val 降順）で絞り込みも無いなら、必要な行だけを切り出す
+        $keepsOrder = $category <= 0 && $keyword === '' && $order === 'desc'
+            && !($isIncrease && $sort === 'rate');
+        if ($keepsOrder) {
+            $total = $n;
+            $count = max(0, min($limit, $n - $offset));
+            $ids = $this->column($bin, $n, 'id', $spec['metric'], $offset, $count);
+            $vals = $this->column($bin, $n, 'val', $spec['metric'], $offset, $count);
+            $bases = $this->column($bin, $n, 'base', $spec['metric'], $offset, $count);
+            $slice = array_keys($ids);
+        } else {
+            $ids = $this->column($bin, $n, 'id', $spec['metric']);
+            $vals = $this->column($bin, $n, 'val', $spec['metric']);
+            $bases = $this->column($bin, $n, 'base', $spec['metric']);
 
-        $rows = $this->sortRows($rows, $isIncrease, $sort, $order);
-        $total = count($rows);
+            $pos = array_keys($ids);
+            if ($category > 0) {
+                $cats = $this->column($bin, $n, 'cat', $spec['metric']);
+                $pos = array_values(array_filter($pos, static fn($i) => $cats[$i] === $category));
+                unset($cats);
+            }
+            if ($keyword !== '') {
+                $hit = array_flip($this->rooms->findIdsByKeyword($keyword));
+                $pos = array_values(array_filter($pos, static fn($i) => isset($hit[$ids[$i]])));
+            }
+            if ($isIncrease && $sort === 'rate') {
+                $pos = array_values(array_filter($pos, static fn($i) => $bases[$i] >= self::RATE_MIN_BASE));
+            }
 
-        $slice = array_slice($rows, $page * $limit, $limit);
-        $hydrated = $this->rooms->hydrate(array_map(static fn($r) => (int)$r[self::I_ID], $slice));
+            $pos = $this->sortPositions($pos, $vals, $bases, $isIncrease, $sort, $order);
+            $total = count($pos);
+            $slice = array_slice($pos, $offset, $limit);
+        }
+        unset($bin);
+
+        $hydrated = $this->rooms->hydrate(array_map(static fn($i) => $ids[$i], $slice));
 
         $items = [];
-        foreach ($slice as $idx => $r) {
-            $id = (int)$r[self::I_ID];
+        foreach ($slice as $idx => $i) {
+            $id = $ids[$i];
             $d = $hydrated[$id] ?? null;
             if ($d === null) {
                 continue;
             }
 
+            $base = $bases[$i];
             if ($isIncrease) {
-                $base = (int)$r[self::I_BASE];
-                $diff = (int)$r[self::I_DIFF];
-                $pct = $r[self::I_PCT] !== null ? (float)$r[self::I_PCT] : null;
+                $diff = (int)$vals[$i];
+                $pct = GrowthMath::periodIncrease($base, $base + $diff)['pct'];
             } else {
-                $base = (int)$r[self::I_STEADY_BASE];
                 $diff = $d['member'] - $base;
                 $pct = GrowthMath::safePct($base, $d['member']);
             }
@@ -207,17 +236,19 @@ class AdvancedGrowthAnalysisService
     // ───────────────────────── 内部 ─────────────────────────
 
     /** @return array{done:bool, percent:int, computed:int, total:int} */
-    private function doneResponse(array $job): array
+    private function doneResponse(int $rowCount): array
     {
-        $n = count($job['rows'] ?? []);
-        return ['done' => true, 'percent' => 100, 'computed' => $n, 'total' => $n];
+        return ['done' => true, 'percent' => 100, 'computed' => $rowCount, 'total' => $rowCount];
     }
 
-    /** @return array{done:bool, percent:int, computed:int, total:null} */
-    private function progressResponse(?array $job): array
+    /**
+     * @param array{step:int, done:int, computed:int}|null $meta
+     * @return array{done:bool, percent:int, computed:int, total:null}
+     */
+    private function progressResponse(?array $meta): array
     {
-        $done = is_array($job) ? (int)($job['done'] ?? 0) : 0;
-        $computed = is_array($job) ? count($job['rows'] ?? []) : 0;
+        $done = $meta['done'] ?? 0;
+        $computed = $meta['computed'] ?? 0;
         return ['done' => false, 'percent' => min((int)floor($done / self::CHUNK_COUNT * 100), 99), 'computed' => $computed, 'total' => null];
     }
 
@@ -280,9 +311,9 @@ class AdvancedGrowthAnalysisService
     }
 
     /**
-     * 1 レンジ分（open_chat_id ∈ [lo,hi)）の指標を計算して数値配列の行群で返す。
+     * 1 レンジ分（open_chat_id ∈ [lo,hi)）の指標を計算して数値配列の行群 [id, cat, val, base] で返す。
      *
-     * @return array<int, array<int, int|float|null>>
+     * @return array<int, array<int, int|float>>
      */
     private function computeChunk(array $spec, int $lo, int $hi): array
     {
@@ -304,8 +335,7 @@ class AdvancedGrowthAnalysisService
                 if ($cur === null) {
                     continue;
                 }
-                $inc = GrowthMath::periodIncrease($bm, $cur);
-                $out[] = [$id, $rooms[$id]['category'], $inc['diff'], $inc['pct'], $bm];
+                $out[] = [$id, $rooms[$id]['category'], $cur - $bm, $bm];
             }
         } else { // steady
             $aggs = $this->stats->getSteadyAggregates($lo, $hi, $spec['from'], $spec['to']);
@@ -324,21 +354,222 @@ class AdvancedGrowthAnalysisService
         return $out;
     }
 
+    // ─────────────── 列バイナリ（行数ヘッダ + id / cat / val / base の順に n 個ずつ） ───────────────
+
     /**
-     * @param array<int, array<int, int|float|null>> $rows
-     * @return array<int, array<int, int|float|null>>
+     * 列名 => [pack フォーマット, 1 要素のバイト数]。val だけ metric で型が違う
+     * （increase は増加数＝整数、steady はスコア＝倍精度）。
+     *
+     * @return array<string, array{0:string, 1:int}>
      */
-    private function sortRows(array $rows, bool $isIncrease, string $sort, string $order): array
+    private function layout(string $metric): array
     {
-        $col = $isIncrease ? ($sort === 'rate' ? self::I_PCT : self::I_DIFF) : self::I_SCORE;
-        $primary = $isIncrease ? self::I_DIFF : self::I_SCORE;
-        if ($col === $primary && $order === 'desc') {
-            return $rows;
+        return [
+            'id' => ['l', 4],
+            'cat' => ['l', 4],
+            'val' => $metric === 'increase' ? ['l', 4] : ['e', 8],
+            'base' => ['l', 4],
+        ];
+    }
+
+    /** @param array<int, array<int, int|float>> $rows */
+    private function packRows(string $metric, array $rows): string
+    {
+        $bin = pack('V', count($rows));
+        foreach ($this->layout($metric) as $col => [$fmt]) {
+            $bin .= $this->packList($fmt, array_column($rows, $this->columnIndex($col)));
         }
-        usort($rows, $order === 'asc'
-            ? static fn($a, $b) => ($a[$col] <=> $b[$col])
-            : static fn($a, $b) => ($b[$col] <=> $a[$col]));
-        return $rows;
+        return $bin;
+    }
+
+    private function columnIndex(string $col): int
+    {
+        return match ($col) {
+            'id' => self::I_ID,
+            'cat' => self::I_CAT,
+            'val' => self::I_VAL,
+            'base' => self::I_BASE,
+        };
+    }
+
+    /** @param array<int, int|float> $values */
+    private function packList(string $fmt, array $values): string
+    {
+        $out = '';
+        foreach (array_chunk($values, self::PACK_BATCH) as $part) {
+            $out .= pack($fmt . '*', ...$part);
+        }
+        return $out;
+    }
+
+    private function rowCount(string $bin): int
+    {
+        return $bin === '' ? 0 : (int)unpack('V', $bin)[1];
+    }
+
+    /**
+     * 列を 0 始まりの配列で取り出す。$from / $count を渡すとその範囲だけ読む。
+     *
+     * @return array<int, int|float>
+     */
+    private function column(string $bin, int $n, string $col, string $metric, int $from = 0, ?int $count = null): array
+    {
+        $offset = self::HEADER_BYTES;
+        foreach ($this->layout($metric) as $name => [$fmt, $size]) {
+            if ($name === $col) {
+                $count ??= $n - $from;
+                if ($count <= 0) {
+                    return [];
+                }
+                $raw = substr($bin, $offset + $from * $size, $count * $size);
+                return array_values(unpack($fmt . '*', $raw));
+            }
+            $offset += $n * $size;
+        }
+        throw new \LogicException("unknown column: {$col}");
+    }
+
+    /**
+     * 行位置の配列を並び替える。val 降順が既定（完成ファイルの並び）。同値は元の順を保つ（安定ソート）。
+     *
+     * @param array<int, int> $pos
+     * @param array<int, int|float> $vals
+     * @param array<int, int> $bases
+     * @return array<int, int>
+     */
+    private function sortPositions(array $pos, array $vals, array $bases, bool $isIncrease, string $sort, string $order): array
+    {
+        $byRate = $isIncrease && $sort === 'rate';
+        if (!$byRate && $order === 'desc') {
+            return $pos;
+        }
+
+        $keys = [];
+        foreach ($pos as $i) {
+            $keys[$i] = $byRate
+                ? GrowthMath::safePct($bases[$i], $bases[$i] + (int)$vals[$i])
+                : $vals[$i];
+        }
+        $order === 'asc' ? asort($keys) : arsort($keys);
+
+        return array_keys($keys);
+    }
+
+    // ─────────────── ジョブファイル ───────────────
+
+    /**
+     * 完成していれば行数、未完成なら null。
+     */
+    private function finishedRowCount(array $spec): ?int
+    {
+        $path = $this->finishedPath($spec);
+        if (!is_file($path)) {
+            return null;
+        }
+        $fp = fopen($path, 'rb');
+        if ($fp === false) {
+            return null;
+        }
+        $head = fread($fp, self::HEADER_BYTES);
+        fclose($fp);
+
+        return strlen((string)$head) === self::HEADER_BYTES ? (int)unpack('V', $head)[1] : null;
+    }
+
+    private function readFinished(array $spec): ?string
+    {
+        $path = $this->finishedPath($spec);
+        if (!is_file($path)) {
+            return null;
+        }
+        $bin = $this->fileStorage->getContents($path);
+
+        return strlen($bin) >= self::HEADER_BYTES ? $bin : null;
+    }
+
+    /**
+     * 全チャンクを結合して val 降順に並べ、完成ファイルを書く。チャンクと進捗ファイルは消す。
+     * チャンクが欠けていたら（掃除された等）進捗を捨てて null を返す＝次のポーリングで最初からやり直す。
+     *
+     * @return int|null 行数
+     */
+    private function finalize(array $spec): ?int
+    {
+        $metric = $spec['metric'];
+        $layout = $this->layout($metric);
+
+        for ($i = 0; $i < self::CHUNK_COUNT; $i++) {
+            if (!is_file($this->chunkPath($spec, $i))) {
+                $this->safeUnlink($this->metaPath($spec));
+                return null;
+            }
+        }
+
+        $parts = [];
+        $n = 0;
+        for ($i = 0; $i < self::CHUNK_COUNT; $i++) {
+            $bin = $this->fileStorage->getContents($this->chunkPath($spec, $i));
+            $rows = $this->rowCount($bin);
+            $parts[] = [$bin, $rows];
+            $n += $rows;
+        }
+
+        // 列ごとに全チャンクを連結（同時に持つのは 1 列ぶんだけ）
+        $columns = [];
+        foreach ($layout as $col => [$fmt]) {
+            $values = [];
+            foreach ($parts as [$bin, $rows]) {
+                foreach ($this->column($bin, $rows, $col, $metric) as $v) {
+                    $values[] = $v;
+                }
+            }
+            $columns[$col] = $values;
+        }
+        unset($parts);
+
+        // 同値は連結順（チャンク順）を保つ安定ソート
+        $order = $columns['val'];
+        arsort($order);
+        $order = array_keys($order);
+
+        $out = pack('V', $n);
+        foreach ($layout as $col => [$fmt]) {
+            $sorted = [];
+            foreach ($order as $i) {
+                $sorted[] = $columns[$col][$i];
+            }
+            $out .= $this->packList($fmt, $sorted);
+            unset($columns[$col], $sorted);
+        }
+
+        $this->fileStorage->safeFileRewrite($this->finishedPath($spec), $out);
+
+        for ($i = 0; $i < self::CHUNK_COUNT; $i++) {
+            $this->safeUnlink($this->chunkPath($spec, $i));
+        }
+        $this->safeUnlink($this->metaPath($spec));
+
+        return $n;
+    }
+
+    /** @return array{step:int, done:int, computed:int}|null */
+    private function readMeta(array $spec): ?array
+    {
+        $path = $this->metaPath($spec);
+        if (!is_file($path)) {
+            return null;
+        }
+        $m = json_decode($this->fileStorage->getContents($path), true);
+
+        return is_array($m) && isset($m['step'], $m['done'], $m['computed'])
+            ? ['step' => (int)$m['step'], 'done' => (int)$m['done'], 'computed' => (int)$m['computed']]
+            : null;
+    }
+
+    /** @param array{step:int, done:int, computed:int} $meta */
+    private function writeMeta(array $spec, array $meta): void
+    {
+        $this->fileStorage->safeFileRewrite($this->metaPath($spec), json_encode($meta));
     }
 
     private function jobDir(): string
@@ -350,17 +581,48 @@ class AdvancedGrowthAnalysisService
         return $dir;
     }
 
-    private function jobPath(array $spec): string
+    /** ジョブ 1 件ぶんのファイル名の共通部分（クエリ × 時間帯） */
+    private function stem(array $spec): string
     {
-        return $this->jobDir() . '/' . $spec['key'] . '.' . $spec['hour'] . '.job';
+        return $this->jobDir() . '/' . $spec['key'] . '.' . $spec['hour'];
     }
 
-    /** TTL を過ぎた job/lock を掃除（@抑制警告も例外化される環境なので is_file 確認してから） */
+    private function finishedPath(array $spec): string
+    {
+        return $this->stem($spec) . '.bin';
+    }
+
+    private function metaPath(array $spec): string
+    {
+        return $this->stem($spec) . '.meta';
+    }
+
+    private function chunkPath(array $spec, int $i): string
+    {
+        return $this->stem($spec) . '.c' . sprintf('%02d', $i);
+    }
+
+    /**
+     * TTL を過ぎた job/lock を掃除（@抑制警告も例外化される環境なので is_file 確認してから）。
+     * 計算中のチャンクファイルは、同じジョブの進捗ファイル(.meta)が毎ポーリングで更新されている間は残す
+     * （全体で TTL を超える長いジョブでも途中のチャンクを消さない）。
+     */
     private function sweepStale(): void
     {
         $now = time();
-        foreach (glob($this->jobDir() . '/*') ?: [] as $file) {
-            if (is_file($file) && ($now - filemtime($file)) > self::JOB_TTL_SECONDS) {
+        $dir = $this->jobDir();
+        foreach (glob($dir . '/*') ?: [] as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+            $mtime = filemtime($file);
+            if (preg_match('/\.c\d{2}$/', $file)) {
+                $meta = preg_replace('/\.c\d{2}$/', '.meta', $file);
+                if (is_file($meta)) {
+                    $mtime = max($mtime, filemtime($meta));
+                }
+            }
+            if (($now - $mtime) > self::JOB_TTL_SECONDS) {
                 $this->safeUnlink($file);
             }
         }

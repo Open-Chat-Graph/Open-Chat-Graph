@@ -33,6 +33,12 @@
 - **「セッションが切れても再計算しない」**: 状態と結果は **ファイル**が持つ（`storage/{locale}/analysis_jobs/`）。
   キャッシュキー = `(locale, metric, period/from/to)` ＋ 毎時更新時刻(hour)。2バッチ目以降や同一検索の
   再訪はファイルから返す。重い計算は **(クエリ × 時間帯) で1回だけ**。
+- **低負荷の保存方式**: 1 回のポーリングが読み書きするのは「そのチャンク分だけ」（`.cNN` + 進捗 `.meta`）。
+  行は列ごとに pack したバイナリ（id/cat/val/base）で、最終チャンクで 1 回だけ結合・ソートして
+  完成ファイル `.bin` にし、チャンクは消す。`result` は既定の並び（val 降順・絞り込み無し）なら必要な行だけを
+  切り出して読む。行ごとの PHP 配列を serialize して毎回丸ごと読み書きしていた旧方式は、全 27 万行で
+  web の memory_limit(128MB) を超え OOM で止まっていた（2026-10-29）。27 万室規模でもピーク ~32MB。
+  フロントは 5xx を 3 回で諦める（待っても直らず、再試行のたびに重い集計と通知が積み上がるため）。
 - **CDN**: 毎時クロールでしか変わらない＝1時間は同一データ。`/analysis-result` は
   `checkLastModified(@hourlyCronUpdatedAtDatetime)` を付け、同一 URL クエリを Cloudflare がキャッシュ。
   `/analysis-status` `/analysis-cancel` は no-store。
